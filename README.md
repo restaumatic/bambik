@@ -20,7 +20,7 @@ TODO
 * profunctor optics tells us *polymorphic optics is polymorphic profunctor transformer* (PolyOptics a b s t === forall p. p a b -> p s t)
 * invariant optics tells us *monomorphic optics is polymorphic invariant transformer* (MonoOptics a s === forall i. i a -> i s)
 
-## Invariant Optics
+## Invariant optics
 
 By analogy to profunctor optics we can distinguish the following invariant optics: 
 
@@ -50,7 +50,7 @@ Invariant less demanding.
 Polymorphic profunctor/invariant transformers work as monomorphic/polymorhphic optics. 
 What else profunctors/invariant transformers can do?
 
-Profunctor/invariant polymorphic transformers (watch the word order!) are when we fix an instance of profunctor/invariant and the transformer itself is polymorphic.
+Profunctor/invariant polymorphic transformers (watch the word order) are when we fix an instance of profunctor/invariant and the transformer itself is polymorphic.
 
 ```
 myInvariantPolymorphicTransformer :: forall a . MyInvariant a -> MyInvariant a
@@ -66,6 +66,60 @@ This makes the pair complementary and orthogonal.
 
 As it will turn out, this complementarity and orthogonality is the same complementarity and orthogonality between the model and the presentation we see in user interfaces.
 
+## Optics and combinators
+
+Optics are transformers: functions from invariant/profunctor to the same invariant/profunctor.
+Combinators, in turn, are functions from two same invariants/profunctors to the same invariant/profunctor.
+
+Profunctor/invariant polymorphic transformers have the shape of `forall a b . MyProfunctor a b -> MyProfunctor a b`/`forall a . MyInvariant a -> MyInvariant a`.
+
+Profunctor/invariant polymorphic combinators, in turn, have the two arguments thus the shape is `forall a b . MyProfunctor a b -> MyProfunctor a b -> MyProfunctor a b`/`forall a . MyInvariant a -> MyInvariant a -> MyInvariant a`.
+
+## Foo
+
+The typeclass 
+```
+class Foo i where
+    iappend :: i a -> i a -> i a
+    iempty :: i a
+-- laws: 
+--  iappend a iempty == a = iappend iempty a
+--  iappend a (iappend b c) == iappend (iappend a b) c
+```
+is seemingly related to Haskell's `Alternative` or PureScript's `Plus`/`Alt`/`Alternative` but it differs in that it has no `Functor` nor `Applicative` constraint on `i`. 
+It's rather a relative of `Monoid` for `* -> *` kind types.
+
+Intuitively, `Foo i` denotes `i` have the quality of being able to reason about a number of `i a`'s as a single `i a`, for any `a`.
+Moreover, there is `iempty :: i a` for every a, that can be discarded when reasoning about a number of `i a`s. 
+
+Foo invartiants denote invariants that are not (effectful) functions (endomorphism) of shape `Applicative m => a -> m a` as then `iempty` must have been `pure`, so `iappend iempty a` would yield two `a`s from which one `a` must have been selected and the selection would have always been the oppostite to the selection of `iappend a iempty` which contradicts the first law.
+
+Foo invariants are then invariants that "fire" output not on input but on other external trigger.
+This, again, reminds of UI where the trigger is a user action rather than data populating the UI.
+
+Foo invariant enables:
+
+```
+combineCartesian :: (Invariant i, CartesianInvariant a, Foo i) => i a -> i b -> i (a, b)
+combineCartesian ia ib = first a `iappend` second b
+
+combineCoCartesian :: (Invariant i, CoCartesianInvariant a, Foo i) => i a -> i b -> i (Either a b)
+combineCoCartesian ia ib = left a `iappend` right b
+```
+
+Notice that foo profunctor doesn't enabled that:
+```
+combineCartesian :: (Profunctor i, CartesianProfunctor a, PFoo p) => p a b -> p c d -> p (a, c) (b, d)
+combineCartesian ia ib = first a `iappend` second b -- type mismatch
+
+combineCoCartesian :: (Profunctor i, CoCartesianProfunctor a, Foo i) => p a b -> p c d -> p (Either a c) (Either b d)
+combineCoCartesian ia ib = left a `iappend` right b -- type mismatch
+```
+
+For this reason, we won't analyse profunctor case here anymore, and will focus on invariants only:
+  * Polymorphic invariant transformers - adapters, lenses, prims
+  * Invariant polymorphic transformers - invariant non-optics
+  * Invariant polymorphic combinators - traversals, non-optics
 
 ---
 References
