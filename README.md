@@ -118,7 +118,7 @@ combineCoCartesian ia ib = left a `iappend` right b -- type mismatch
 
 For this reason, we won't analyse profunctor case here anymore, and will focus on invariants only:
   * Polymorphic invariant transformers - adapters, lenses, prims
-  * Invariant polymorphic transformers - invariant non-optics
+  * Invariant polymorphic transformers - non-optics
   * Invariant polymorphic combinators - traversals, non-optics
 
 ---
