@@ -1,6 +1,10 @@
 -- There exists Data.Functor.Invariant module in purescript-invariant (https://pursuit.purescript.org/packages/purescript-invariant/6.0.0) already,
 -- yet here we tweak class hierarchy of invariant, covariant and contravariant functors according to observation made in [1]: 
 -- "you could argue that in an ideal world the definition for Functor should change to class ExpFunctor f => Functor f".
+--
+-- References
+-- 1. Edward Kmett: Rotten Bananas, http://comonad.com/reader/2008/rotten-bananas/  
+
 module Data.Invariant
   ( class CartesianInvariant
   , class CoCartesianInvariant
