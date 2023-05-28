@@ -18,6 +18,7 @@ to generate this file without the comments in this block.
     , "either"
     , "tuples"
     , "refs"
+    , "maybe"
     ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

@@ -5,10 +5,10 @@ module Data.Invariant where
 
 import Prelude
 
-import Data.Either (Either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect (Effect(..))
+import Effect (Effect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
 
@@ -70,45 +70,84 @@ combineCoCartesian a b = invleft a `invappend` invright b
 
 -- Example
 
--- example = do
---     (Tuple inputFirstName storageFirstName) <- mkInput "John"
---     (Tuple inputLastName storageLastName) <- mkInput "Doe"
-  
--- mkinput :: a -> Effect (Tuple (a -> Effect Unit) (Storage a))
--- mkinput a = do
---     storage 
---     pure $ Tuple input storage
+newtype Widget a = Widget (a -> (a -> Effect Unit) -> Effect (a -> Effect Unit))
 
+mkstorage :: forall a . Show a => String -> Widget a
+mkstorage name = Widget \a callback -> do
+    let render a = log $ "render: " <> name <> ":=" <> show a
+    render a
+    pure render
 
-newtype Storage a = Storage (Effect
-    { render :: a -> Effect Unit
-    , listen :: (a -> Effect Unit) -> Effect Unit
-    })
+instance Invariant Widget where
+    invmap f g (Widget widget) = Widget $ \b callbackb -> (_ <<< g) <$> widget (g b) (callbackb <<< f)
 
-mkstorage :: forall a . Show a => String -> Effect (Tuple (Storage a) (a -> Effect Unit))
-mkstorage name = do
-    callbackRef <- Ref.new Nothing
-    let storage = { render: \a -> log $ "render: " <> name <> ":=" <> show a, listen: Just >>> flip Ref.write callbackRef }
-    let touch a = do
-            storage.render a
-            mcallback <- Ref.read callbackRef
-            case mcallback of
-                Just callback -> callback a
-                _ -> pure unit
-    pure $ Tuple (Storage (pure storage)) touch
+instance CartesianInvariant Widget where
+    invfirst (Widget widget) = Widget $ \ab callbackab -> do
+        bref <- Ref.new $ snd ab
+        update <- widget (fst ab) \a -> do
+            b <- Ref.read bref 
+            callbackab (Tuple a b)
+        pure $ \ab -> do
+            Ref.write (snd ab) bref
+            -- TODO: only if we know that (fst ab) has changed 
+            update (fst ab)
+    invsecond (Widget widget) = Widget $ \ab callbackab -> do
+        aref <- Ref.new $ fst ab
+        update <- widget (snd ab) \b -> do
+            a <- Ref.read aref
+            callbackab (Tuple a b)
+        pure $ \ab -> do
+            Ref.write (fst ab) aref
+            -- TODO: only if we know that (snd ab) has changed
+            update (snd ab)
 
-instance Invariant Storage where
-    invmap f g (Storage storage) = Storage do
-        { render, listen } <- storage
-        pure { render: g >>> render, listen: \callback -> listen (f >>> callback)}
+instance CoCartesianInvariant Widget where
+    invleft (Widget widget) = Widget $ \aorb callbackaorb -> do
+        -- TODO create slot
+        mupdateRef <- case aorb of
+            Left a -> do
+                update <- widget a $ callbackaorb <<< Left
+                Ref.new (Just update)
+            Right b -> Ref.new Nothing
+        pure $ \aorb -> case aorb of
+            Left a -> do
+              mUpdate <- Ref.read mupdateRef
+              update <- case mUpdate of
+                Just update -> pure update
+                Nothing -> do
+                    -- TODO cleanup slot
+                    update <- widget a $ callbackaorb <<< Left
+                    Ref.write (Just update) mupdateRef
+                    pure update
+              update a
+            Right _ -> do
+              -- TODO cleanup slot
+              Ref.write Nothing mupdateRef
+    invright (Widget widget) = Widget $ \aorb callbackaorb -> do
+        -- TODO create slot
+        mupdateRef <- case aorb of
+            Right b -> do
+                update <- widget b $ callbackaorb <<< Right
+                Ref.new (Just update)
+            Left a -> Ref.new Nothing
+        pure $ \aorb -> case aorb of
+            Right b -> do
+              mUpdate <- Ref.read mupdateRef
+              update <- case mUpdate of
+                Just update -> pure update
+                Nothing -> do
+                    -- TODO cleanup slot
+                    update <- widget b $ callbackaorb <<< Right
+                    Ref.write (Just update) mupdateRef
+                    pure update
+              update b
+            Left _ -> do
+              -- TODO cleanup slot
+              Ref.write Nothing mupdateRef
 
-instance CartesianInvariant Storage where
-    invfirst (Storage storage) = Storage do
-        { render, listen } <- storage
-        pure { render: storage.render <<< fst, listen:  }
-    -- invsecond (Storage storage) = Storage { render: storage.render <<< snd }
-
--- foo = Ref.new 0
+instance FooInvariant Widget where
+    invempty = Widget $ const $ const $ pure mempty
+    invappend (Widget widget1) (Widget widget2) = Widget widget1
 
 -- Invariant transformers
 
