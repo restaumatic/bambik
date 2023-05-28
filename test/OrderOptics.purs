@@ -1,4 +1,4 @@
-module Test.OrderModel
+module Test.OrderOptics
   ( Addition
   , Fulfillment
   , Hour
@@ -40,9 +40,9 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
+import Data.Invariant.Optics (propertyInvLens)
 import Data.Lens (lens, only, prism')
 import Data.Lens.AffineTraversal (affineTraversal)
-import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Show.Generic (genericShow)
 import Type.Proxy (Proxy(..))
@@ -106,8 +106,8 @@ type Product = String
 type Addition = String
 
 -- optics
-id = prop (Proxy :: Proxy "id")
-items = prop (Proxy :: Proxy "items")
+id = propertyInvLens (Proxy :: Proxy "id")
+items = propertyInvLens (Proxy :: Proxy "items")
 delivery = prism' Delivery $ case _ of
   Delivery d -> Just d
   _ -> Nothing
@@ -121,24 +121,24 @@ coords = prism' Coords $ case _ of
 address = prism' Address $ case _ of
   Address a -> Just a
   _ -> Nothing
-long = prop (Proxy :: Proxy "long")
-lat = prop (Proxy :: Proxy "lat")
-city = prop (Proxy :: Proxy "city")
-street = prop (Proxy :: Proxy "street")
-streetNumber = prop (Proxy :: Proxy "streetNumber")
-at = prop (Proxy :: Proxy "at")
-to = prop (Proxy :: Proxy "to")
-product = prop (Proxy :: Proxy "product")
-qty = prop (Proxy :: Proxy "qty")
-fulfillment = prop (Proxy :: Proxy "fulfillment")
-paymentMethod = prop (Proxy :: Proxy "paymentMethod")
+long = propertyInvLens (Proxy :: Proxy "long")
+lat = propertyInvLens (Proxy :: Proxy "lat")
+city = propertyInvLens (Proxy :: Proxy "city")
+street = propertyInvLens (Proxy :: Proxy "street")
+streetNumber = propertyInvLens (Proxy :: Proxy "streetNumber")
+at = propertyInvLens (Proxy :: Proxy "at")
+to = propertyInvLens (Proxy :: Proxy "to")
+product = propertyInvLens (Proxy :: Proxy "product")
+qty = propertyInvLens (Proxy :: Proxy "qty")
+fulfillment = propertyInvLens (Proxy :: Proxy "fulfillment")
+paymentMethod = propertyInvLens (Proxy :: Proxy "paymentMethod")
 hasNote = lens (\order -> isJust order.note) (\order -> case _ of
   true -> order { note = Just ""}
   false -> order { note = Nothing })
 
-note = prop (Proxy :: Proxy "note")
-paymentMethod' = prop (Proxy :: Proxy "paymentMethod")
-customer = prop (Proxy :: Proxy "customer")
+note = propertyInvLens (Proxy :: Proxy "note")
+paymentMethod' = propertyInvLens (Proxy :: Proxy "paymentMethod")
+customer = propertyInvLens (Proxy :: Proxy "customer")
 
 card = affineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of
   Delivery _ -> Left $ order
