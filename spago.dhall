@@ -19,6 +19,7 @@ to generate this file without the comments in this block.
     , "tuples"
     , "refs"
     , "maybe"
+    , "concur-core"
     ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

@@ -5,6 +5,7 @@ module Data.Invariant where
 
 import Prelude
 
+import Control.MonadFix (mfix)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -79,37 +80,37 @@ mkstorage name = Widget \a callback -> do
     pure render
 
 instance Invariant Widget where
-    invmap f g (Widget widget) = Widget $ \b callbackb -> (_ <<< g) <$> widget (g b) (callbackb <<< f)
+    invmap f g (Widget widget) = Widget  \b callbackb -> (_ <<< g) <$> widget (g b) (callbackb <<< f)
 
 instance CartesianInvariant Widget where
-    invfirst (Widget widget) = Widget $ \ab callbackab -> do
+    invfirst (Widget widget) = Widget \ab callbackab -> do
         bref <- Ref.new $ snd ab
         update <- widget (fst ab) \a -> do
             b <- Ref.read bref 
             callbackab (Tuple a b)
-        pure $ \ab -> do
+        pure  \ab -> do
             Ref.write (snd ab) bref
             -- TODO: only if we know that (fst ab) has changed 
             update (fst ab)
-    invsecond (Widget widget) = Widget $ \ab callbackab -> do
+    invsecond (Widget widget) = Widget \ab callbackab -> do
         aref <- Ref.new $ fst ab
         update <- widget (snd ab) \b -> do
             a <- Ref.read aref
             callbackab (Tuple a b)
-        pure $ \ab -> do
+        pure  \ab -> do
             Ref.write (fst ab) aref
             -- TODO: only if we know that (snd ab) has changed
             update (snd ab)
 
 instance CoCartesianInvariant Widget where
-    invleft (Widget widget) = Widget $ \aorb callbackaorb -> do
+    invleft (Widget widget) = Widget \aorb callbackaorb -> do
         -- TODO create slot
         mupdateRef <- case aorb of
             Left a -> do
                 update <- widget a $ callbackaorb <<< Left
                 Ref.new (Just update)
             Right b -> Ref.new Nothing
-        pure $ \aorb -> case aorb of
+        pure \aorb -> case aorb of
             Left a -> do
               mUpdate <- Ref.read mupdateRef
               update <- case mUpdate of
@@ -123,14 +124,14 @@ instance CoCartesianInvariant Widget where
             Right _ -> do
               -- TODO cleanup slot
               Ref.write Nothing mupdateRef
-    invright (Widget widget) = Widget $ \aorb callbackaorb -> do
+    invright (Widget widget) = Widget \aorb callbackaorb -> do
         -- TODO create slot
         mupdateRef <- case aorb of
             Right b -> do
                 update <- widget b $ callbackaorb <<< Right
                 Ref.new (Just update)
             Left a -> Ref.new Nothing
-        pure $ \aorb -> case aorb of
+        pure \aorb -> case aorb of
             Right b -> do
               mUpdate <- Ref.read mupdateRef
               update <- case mUpdate of
@@ -147,7 +148,19 @@ instance CoCartesianInvariant Widget where
 
 instance FooInvariant Widget where
     invempty = Widget $ const $ const $ pure mempty
-    invappend (Widget widget1) (Widget widget2) = Widget widget1
+    invappend (Widget widget1) (Widget widget2) = Widget \a callbacka -> do
+      { update1, update2 } <- mfix \get -> do -- :: forall a. ((Unit -> a) -> m a) -> m a 
+        let {update1: update1', update2: update2'} = get unit
+        update1 <- widget1 a $ \a -> do
+            update2' a
+            callbacka a
+        update2 <- widget2 a \a -> do
+            update1' a
+            callbacka a
+        pure { update1, update2 }
+      pure \a -> do
+        update1 a
+        update2 a
 
 -- Invariant transformers
 
