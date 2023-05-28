@@ -2,32 +2,29 @@
 -- yet here we tweak class hierarchy of invariant, covariant and contravariant functors according to observation made in [1]: 
 -- "you could argue that in an ideal world the definition for Functor should change to class ExpFunctor f => Functor f".
 module Data.Invariant
-  ( class Invariant
-  , invmap
-  , class Contravariant
-  , conmap
-  , class Covariant
-  , covmap
-  , class CartesianInvariant
-  , invfirst
-  , invsecond
+  ( class CartesianInvariant
   , class CoCartesianInvariant
-  , invleft
-  , invright
+  , class Contravariant
+  , class Covariant
   , class FooInvariant
-  , invempty
+  , class Invariant
+  , conmap
+  , covmap
   , invappend
+  , invempty
+  , invfirst
+  , invleft
+  , invmap
+  , invright
+  , invsecond
+  , invand
+  , invor
   )
   where
 
-import Prelude
 
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..), fst, snd)
-import Effect (Effect)
-import Effect.Class.Console (log)
-import Effect.Ref as Ref
+import Data.Either (Either)
+import Data.Tuple (Tuple)
 
 -- Functor class hierarchy
 
@@ -60,8 +57,8 @@ class Invariant i <= FooInvariant i where
     --  invappend a invempty == a = invappend invempty a
     --  invappend a (invappend b c) == invappend (invappend a b) c
 
-combineCartesian :: forall i a b . Invariant i => CartesianInvariant i => FooInvariant i => i a -> i b -> i (Tuple a b)
-combineCartesian a b = invfirst a `invappend` invsecond b
+invand :: forall i a b . Invariant i => CartesianInvariant i => FooInvariant i => i a -> i b -> i (Tuple a b)
+invand a b = invfirst a `invappend` invsecond b
 
-combineCoCartesian :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i => i a -> i b -> i (Either a b)
-combineCoCartesian a b = invleft a `invappend` invright b
+invor :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i => i a -> i b -> i (Either a b)
+invor a b = invleft a `invappend` invright b
