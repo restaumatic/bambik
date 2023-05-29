@@ -40,8 +40,8 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
-import Data.Invariant.Optics (propertyInvLens)
-import Data.Lens (lens, only, prism')
+import Data.Invariant (class CoCartesianInvariant)
+import Data.Invariant.Optics (InvPrism, InvLens, constructorInvPrism, invLens, propertyInvLens)
 import Data.Lens.AffineTraversal (affineTraversal)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Show.Generic (genericShow)
@@ -58,11 +58,7 @@ type Order =
 
 data PaymentMethod = Cash | Card
 
-derive instance Generic PaymentMethod _
 derive instance Eq PaymentMethod
-instance Show PaymentMethod where
-  show = genericShow
-
 
 data Fulfillment
   = DineIn
@@ -72,10 +68,6 @@ data Fulfillment
     { to :: Place
     , at :: Hour
     }
-derive instance Generic Fulfillment _
-derive instance Eq Fulfillment
-instance Show Fulfillment where
-  show = genericShow
 
 type Item =
   { product :: Product
@@ -95,48 +87,88 @@ data Place
     , street :: String
     , streetNumber :: String}
 
-derive instance Generic Place _
 derive instance Eq Place
-
-instance Show Place where
-  show = genericShow
 
 type Product = String
 
 type Addition = String
 
 -- optics
+id :: forall a r . InvLens a { id ∷ a | r }
 id = propertyInvLens (Proxy :: Proxy "id")
+
+items :: forall a r . InvLens a { items ∷ a | r }
 items = propertyInvLens (Proxy :: Proxy "items")
-delivery = prism' Delivery $ case _ of
+
+-- delivery :: forall a r . InvPrism a { items ∷ a | r }
+delivery :: InvPrism { at ∷ String , to ∷ Place } Fulfillment
+delivery = constructorInvPrism Delivery $ case _ of
   Delivery d -> Just d
   _ -> Nothing
-takeaway = prism' Takeaway $ case _ of
+  
+takeaway :: InvPrism { at ∷ String } Fulfillment
+takeaway = constructorInvPrism Takeaway $ case _ of
   Takeaway t -> Just t
   _ -> Nothing
-dineIn = only DineIn
-coords = prism' Coords $ case _ of
+  
+-- dineIn = only DineIn
+dineIn :: InvPrism Unit Fulfillment
+dineIn = constructorInvPrism (const DineIn) $ case _ of
+  DineIn -> Just unit
+  _ -> Nothing
+  
+coords :: InvPrism { lat ∷ String , long ∷ String } Place
+coords = constructorInvPrism Coords $ case _ of
   Coords c -> Just c
   _ -> Nothing
-address = prism' Address $ case _ of
+
+address :: InvPrism { city ∷ String , street ∷ String , streetNumber ∷ String } Place
+address = constructorInvPrism Address $ case _ of
   Address a -> Just a
   _ -> Nothing
+
+long :: forall a r . InvLens a { long ∷ a | r }
 long = propertyInvLens (Proxy :: Proxy "long")
+
+lat :: forall a r . InvLens a { lat ∷ a | r }
 lat = propertyInvLens (Proxy :: Proxy "lat")
+
+city :: forall a r . InvLens a { city ∷ a | r }
 city = propertyInvLens (Proxy :: Proxy "city")
+
+street :: forall a r . InvLens a { street ∷ a | r }
 street = propertyInvLens (Proxy :: Proxy "street")
+
+streetNumber :: forall a r . InvLens a { streetNumber ∷ a | r }
 streetNumber = propertyInvLens (Proxy :: Proxy "streetNumber")
+
+at :: forall a r . InvLens a { at ∷ a | r }
 at = propertyInvLens (Proxy :: Proxy "at")
+
+to :: forall a r . InvLens a { to ∷ a | r }
 to = propertyInvLens (Proxy :: Proxy "to")
+
+product :: forall a r . InvLens a { product ∷ a | r }
 product = propertyInvLens (Proxy :: Proxy "product")
+
+qty :: forall a r . InvLens a { qty ∷ a | r }
 qty = propertyInvLens (Proxy :: Proxy "qty")
+
+
+fulfillment :: forall a r . InvLens a { fulfillment ∷ a | r }
 fulfillment = propertyInvLens (Proxy :: Proxy "fulfillment")
+
+paymentMethod :: forall a r . InvLens a { paymentMethod ∷ a | r }
 paymentMethod = propertyInvLens (Proxy :: Proxy "paymentMethod")
-hasNote = lens (\order -> isJust order.note) (\order -> case _ of
+
+hasNote :: forall r . InvLens Boolean { note ∷ Maybe String | r }
+hasNote = invLens (\order -> isJust order.note) (\order -> case _ of
   true -> order { note = Just ""}
   false -> order { note = Nothing })
 
+note :: forall a r . InvLens a { note ∷ a | r }
 note = propertyInvLens (Proxy :: Proxy "note")
+
 paymentMethod' = propertyInvLens (Proxy :: Proxy "paymentMethod")
 customer = propertyInvLens (Proxy :: Proxy "customer")
 
@@ -149,17 +181,17 @@ cash = affineTraversal (\order bool -> if bool then order { paymentMethod = Cash
   _ -> Right $ order.paymentMethod == Cash
  )
 
-isDelivery = flip lens (\ff bool -> if bool then Delivery { to: Address {city: "", street: "", streetNumber: ""}, at: "12:15"} else ff) (case _ of
+isDelivery = flip invLens (\ff bool -> if bool then Delivery { to: Address {city: "", street: "", streetNumber: ""}, at: "12:15"} else ff) (case _ of
   Delivery _ -> true
   _ -> false
  )
 
-isDineIn = flip lens (\ff bool -> if bool then DineIn else ff) (case _ of
+isDineIn = flip invLens (\ff bool -> if bool then DineIn else ff) (case _ of
   DineIn -> true
   _ -> false
  )
 
-isTakeaway = flip lens (\ff bool -> if bool then Takeaway { at: "12:15" } else ff) (case _ of
+isTakeaway = flip invLens (\ff bool -> if bool then Takeaway { at: "12:15" } else ff) (case _ of
   Takeaway _ -> true
   _ -> false
  )
