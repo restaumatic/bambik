@@ -5,18 +5,20 @@ module Data.Invariant.Optics
   , InvOptic
   , InvPrism
   , constructorInvPrism
+  , invAdapter
+  , invAffineTraversal
+  , invAffineTraversal'
   , invLens
   , invPrism
   , propertyInvLens
+  , propertyInvLens'
   )
   where
 
 import Prelude
 
-import Control.Category (identity)
 import Data.Either (Either(..), either)
-import Data.Function (flip)
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant, invfirst, invleft, invmap)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Maybe (Maybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Symbol (class IsSymbol)
@@ -35,6 +37,9 @@ type InvLens a b = forall i. CartesianInvariant i => InvOptic i a b
 type InvPrism a b = forall i. CoCartesianInvariant i => InvOptic i a b
 
 -- TODO: InvTraversal
+
+invAdapter :: forall a b . (a -> b) -> (b -> a) -> InvAdapter a b
+invAdapter f g = invmap f g 
 
 invLens :: forall a s. (s -> a) -> (s -> a -> s) -> InvLens a s
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
@@ -62,3 +67,21 @@ invPrism review preview ia = invmap (\aors -> either review identity aors) previ
 
 constructorInvPrism :: forall a s. (a -> s) -> (s -> Maybe a) -> InvPrism a s
 constructorInvPrism construct deconstruct ia = invmap (\(aors :: Either a s) -> either construct identity aors) (\s -> maybe (Right s) Left (deconstruct s)) (invleft ia)
+
+invAffineTraversal
+  :: forall s a i
+   . CartesianInvariant i 
+  => CoCartesianInvariant i 
+  => (s -> a -> s)
+  -> (s -> Either s a)
+  -> i a -> i s
+invAffineTraversal set pre = invAffineTraversal' (\s -> Tuple (set s) (pre s))
+
+invAffineTraversal'
+  :: forall s a i
+   . CartesianInvariant i 
+  => CoCartesianInvariant i 
+  => (s -> Tuple (a -> s) (Either s a))
+  -> i a -> i s
+invAffineTraversal' to pab =
+  invmap (\(Tuple b f) -> either identity b f) to (invsecond (invright pab))

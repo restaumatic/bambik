@@ -21,6 +21,7 @@ module Test.OrderOptics
   , id
   , isDelivery
   , isDineIn
+  , isTakeaway
   , items
   , lat
   , long
@@ -39,12 +40,9 @@ module Test.OrderOptics
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Generic.Rep (class Generic)
-import Data.Invariant (class CoCartesianInvariant)
-import Data.Invariant.Optics (InvPrism, InvLens, constructorInvPrism, invLens, propertyInvLens)
-import Data.Lens.AffineTraversal (affineTraversal)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant)
+import Data.Invariant.Optics (InvLens, InvPrism, constructorInvPrism, invAffineTraversal, invLens, propertyInvLens)
 import Data.Maybe (Maybe(..), isJust)
-import Data.Show.Generic (genericShow)
 import Type.Proxy (Proxy(..))
 
 type Order =
@@ -100,7 +98,6 @@ id = propertyInvLens (Proxy :: Proxy "id")
 items :: forall a r . InvLens a { items ∷ a | r }
 items = propertyInvLens (Proxy :: Proxy "items")
 
--- delivery :: forall a r . InvPrism a { items ∷ a | r }
 delivery :: InvPrism { at ∷ String , to ∷ Place } Fulfillment
 delivery = constructorInvPrism Delivery $ case _ of
   Delivery d -> Just d
@@ -169,28 +166,36 @@ hasNote = invLens (\order -> isJust order.note) (\order -> case _ of
 note :: forall a r . InvLens a { note ∷ a | r }
 note = propertyInvLens (Proxy :: Proxy "note")
 
+paymentMethod' :: forall a r . InvLens a { paymentMethod :: a | r }
 paymentMethod' = propertyInvLens (Proxy :: Proxy "paymentMethod")
+
+customer :: forall a r . InvLens a { customer ∷ a | r }
 customer = propertyInvLens (Proxy :: Proxy "customer")
 
-card = affineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of
+card :: forall i r . CartesianInvariant i => CoCartesianInvariant i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
+card = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of
   Delivery _ -> Left $ order
   _ -> Right $ order.paymentMethod == Card
  )
 
-cash = affineTraversal (\order bool -> if bool then order { paymentMethod = Cash } else order) (\order -> case order.fulfillment of
+cash :: forall i r . CartesianInvariant i => CoCartesianInvariant i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
+cash = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Cash } else order) (\order -> case order.fulfillment of
   _ -> Right $ order.paymentMethod == Cash
  )
 
+isDelivery :: InvLens Boolean Fulfillment
 isDelivery = flip invLens (\ff bool -> if bool then Delivery { to: Address {city: "", street: "", streetNumber: ""}, at: "12:15"} else ff) (case _ of
   Delivery _ -> true
   _ -> false
  )
 
+isDineIn :: InvLens Boolean Fulfillment
 isDineIn = flip invLens (\ff bool -> if bool then DineIn else ff) (case _ of
   DineIn -> true
   _ -> false
  )
 
+isTakeaway :: InvLens Boolean Fulfillment
 isTakeaway = flip invLens (\ff bool -> if bool then Takeaway { at: "12:15" } else ff) (case _ of
   Takeaway _ -> true
   _ -> false
