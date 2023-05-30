@@ -11,12 +11,14 @@ module Data.Invariant.Optics
   )
   where
 
+import Prelude
+
 import Control.Category (identity)
 import Data.Either (Either(..), either)
 import Data.Function (flip)
 import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant, invfirst, invleft, invmap)
 import Data.Maybe (Maybe, maybe)
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Prim.Row as Row
@@ -38,14 +40,22 @@ invLens :: forall a s. (s -> a) -> (s -> a -> s) -> InvLens a s
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
 
 propertyInvLens
+  :: forall l r1 r a
+   . IsSymbol l
+  => Row.Cons l a r r1
+  => Proxy l
+  -> InvLens a (Record r1)
+propertyInvLens l = invLens (\s -> get l s) (\s a -> (set l) a s)
+
+propertyInvLens'
   :: forall l r1 r a s
    . IsSymbol l
   => Row.Cons l a r r1
   => Newtype s (Record r1)
   => Proxy s
   -> Proxy l
-  -> InvLens a (Record r1)
-propertyInvLens s l = invLens (\s -> get l s) (\s a -> (set l) a s)
+  -> InvLens a s
+propertyInvLens' _ l = invLens (\s -> get l (unwrap s)) (\s a -> wrap $ (set l) a (unwrap s))
 
 invPrism :: forall a s. (a -> s) -> (s -> Either a s) -> InvPrism a s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)
