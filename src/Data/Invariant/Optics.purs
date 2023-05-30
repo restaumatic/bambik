@@ -4,7 +4,9 @@ module Data.Invariant.Optics
   , InvLens
   , InvOptic
   , InvPrism
+  , factory
   , constructorInvPrism
+  , projection
   , invAdapter
   , invAffineTraversal
   , invAffineTraversal'
@@ -85,3 +87,12 @@ invAffineTraversal'
   -> i a -> i s
 invAffineTraversal' to pab =
   invmap (\(Tuple b f) -> either identity b f) to (invsecond (invright pab))
+
+projection :: forall i a s . CartesianInvariant i => (s -> a) -> i a -> i s
+projection f = invLens f (\s _ -> s) 
+
+factory :: forall i a s . CoCartesianInvariant i => (a -> s) -> i a -> i s
+factory f = invPrism f Right
+
+-- baz :: forall i a s . i a -> i s
+-- baz

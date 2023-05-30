@@ -41,7 +41,7 @@ module Test.OrderOptics
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class AffInvariant, class CartesianInvariant, class CoCartesianInvariant, invaff)
+import Data.Invariant (class EffInvariant, class CartesianInvariant, class CoCartesianInvariant, inveff)
 import Data.Invariant.Optics (InvLens, InvPrism, InvOptic, constructorInvPrism, invAffineTraversal, invLens, propertyInvLens)
 import Data.Maybe (Maybe(..), isJust)
 import Type.Proxy (Proxy(..))
@@ -202,5 +202,5 @@ isTakeaway = flip invLens (\ff bool -> if bool then Takeaway { at: "12:15" } els
   _ -> false
  )
 
-placeOrder :: forall i . AffInvariant i => InvOptic i Order Order
-placeOrder = invaff (\a -> pure a { id = Just "123"})
+placeOrder :: forall i . EffInvariant i => InvOptic i Order Order
+placeOrder = inveff mempty

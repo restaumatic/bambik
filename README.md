@@ -1,6 +1,16 @@
 # ?
 
-In this work I'll start with profunctor optics, extrapolate the idea to invariant optics and then expand the idea even beyond that: to the duals of optics.
+## Abstract
+
+In this work we'll start with presenting profunctor optics encoding where an optic is encoded as a polymorphic profunctor transformer. 
+Then we'll apply the same idea to invariants, which can be though of as a subtype of profunctors: monomorphic profunctors.
+They trade polymophism to the ability of forming arbitrary products and sums while preserving the ability to encode optics.
+After that, we'll turn "polymorphic invariant transformers encode optics" thinking into "optics are polymorphic invariant transformers" and see what other kind of optics we can discover.
+
+
+
+
+ and then expand the idea even beyond that: to the duals of optics.
 
 ## Profunctor optics
 

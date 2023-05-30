@@ -6,7 +6,7 @@
 -- 1. Edward Kmett: Rotten Bananas, http://comonad.com/reader/2008/rotten-bananas/  
 
 module Data.Invariant
-  ( class AffInvariant
+  ( class EffInvariant
   , class CartesianInvariant
   , class CoCartesianInvariant
   , class Contravariant
@@ -24,13 +24,16 @@ module Data.Invariant
   , invor
   , invright
   , invsecond
-  , invaff
+  , inveff
   )
   where
 
 
+import Prelude
+
 import Data.Either (Either)
 import Data.Tuple (Tuple)
+import Effect (Effect)
 import Effect.Aff (Aff)
 
 -- Functor class hierarchy
@@ -70,5 +73,5 @@ invand a b = invfirst a `invappend` invsecond b
 invor :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i => i a -> i b -> i (Either a b)
 invor a b = invleft a `invappend` invright b
 
-class Invariant i <= AffInvariant i where
-    invaff :: forall a . (a -> Aff a) -> i a -> i a
+class Invariant i <= EffInvariant i where
+    inveff :: forall a . (a -> Effect Unit) -> i a -> i a
