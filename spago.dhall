@@ -21,6 +21,7 @@ to generate this file without the comments in this block.
     , "maybe"
     , "newtype"
     , "record"
+    , "aff"
     ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

@@ -7,10 +7,12 @@ module Test.ConsoleWidget
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class FooInvariant, class Invariant)
+import Data.Invariant (class AffInvariant, class CartesianInvariant, class CoCartesianInvariant, class FooInvariant, class Invariant)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
 
@@ -23,7 +25,7 @@ consoleWidget name = ConsoleWidget \a callback -> do
     pure render
 
 instance Invariant ConsoleWidget where
-    invmap f g (ConsoleWidget widget) = ConsoleWidget  \b callbackb -> (_ <<< g) <$> widget (g b) (callbackb <<< f)
+    invmap f g (ConsoleWidget widget) = ConsoleWidget \b callbackb -> (_ <<< g) <$> widget (g b) (callbackb <<< f)
 
 instance CartesianInvariant ConsoleWidget where
     invfirst (ConsoleWidget widget) = ConsoleWidget \ab callbackab -> do
@@ -102,3 +104,8 @@ instance FooInvariant ConsoleWidget where
         update2 <- widget2 a $ update1 <> callbacka
         Ref.write (Just update2) mupdate2Ref
         pure $ update1 <> update2
+
+instance AffInvariant ConsoleWidget where
+    invaff effect (ConsoleWidget widget) = ConsoleWidget \a callbacka -> do
+        _ <- widget a (\a -> launchAff_ $ effect a >>= callbacka >>> liftEffect) 
+        pure mempty

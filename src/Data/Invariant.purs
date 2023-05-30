@@ -6,7 +6,8 @@
 -- 1. Edward Kmett: Rotten Bananas, http://comonad.com/reader/2008/rotten-bananas/  
 
 module Data.Invariant
-  ( class CartesianInvariant
+  ( class AffInvariant
+  , class CartesianInvariant
   , class CoCartesianInvariant
   , class Contravariant
   , class Covariant
@@ -14,21 +15,23 @@ module Data.Invariant
   , class Invariant
   , conmap
   , covmap
+  , invand
   , invappend
   , invempty
   , invfirst
   , invleft
   , invmap
+  , invor
   , invright
   , invsecond
-  , invand
-  , invor
+  , invaff
   )
   where
 
 
 import Data.Either (Either)
 import Data.Tuple (Tuple)
+import Effect.Aff (Aff)
 
 -- Functor class hierarchy
 
@@ -66,3 +69,6 @@ invand a b = invfirst a `invappend` invsecond b
 
 invor :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i => i a -> i b -> i (Either a b)
 invor a b = invleft a `invappend` invright b
+
+class Invariant i <= AffInvariant i where
+    invaff :: forall a . (a -> Aff a) -> i a -> i a
