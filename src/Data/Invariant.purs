@@ -6,16 +6,18 @@
 -- 1. Edward Kmett: Rotten Bananas, http://comonad.com/reader/2008/rotten-bananas/  
 
 module Data.Invariant
-  ( class CartesianInvariant
+  ( invorwith
+  , class CartesianInvariant
   , class CoCartesianInvariant
   , class Contravariant
   , class Covariant
   , class EffInvariant
-  , class FooInvariant
+  , class invandwithInvariant
   , class Invariant
   , class StaticInvariant
   , conmap
   , covmap
+  , invandwith
   , invand
   , invappend
   , inveff
@@ -61,18 +63,25 @@ class Invariant f <= CoCartesianInvariant f where
 
 -- TODO: MonoidalInvariant
 
-class Invariant i <= FooInvariant i where
+class Invariant i <= invandwithInvariant i where
     invappend :: forall a . i a -> i a -> i a
     invempty :: forall a . i a
     -- laws: 
     --  invappend a invempty == a = invappend invempty a
     --  invappend a (invappend b c) == invappend (invappend a b) c
 
-invand :: forall i a b . Invariant i => CartesianInvariant i => FooInvariant i => i a -> i b -> i (Tuple a b)
+invand :: forall i a b . Invariant i => CartesianInvariant i => invandwithInvariant i => i a -> i b -> i (Tuple a b)
 invand a b = invfirst a `invappend` invsecond b
 
-invor :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i => i a -> i b -> i (Either a b)
+invandwith :: forall i a b c . CartesianInvariant i => invandwithInvariant i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
+invandwith f g a b = invmap f g $ invand a b 
+
+invor :: forall i a b . Invariant i => CoCartesianInvariant i => invandwithInvariant i => i a -> i b -> i (Either a b)
 invor a b = invleft a `invappend` invright b
+
+invorwith :: forall i a b c . CoCartesianInvariant i => invandwithInvariant i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
+invorwith f g a b = invmap f g $ invor a b 
+
 
 class Invariant i <= EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a
