@@ -1,18 +1,17 @@
 module Test.ConsoleWidget
   ( ConsoleWidget(..)
   , consoleWidget
+  , constant
   )
   where
 
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class EffInvariant, class CartesianInvariant, class CoCartesianInvariant, class FooInvariant, class Invariant)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class FooInvariant, class Invariant, class StaticInvariant)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
-import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
 
@@ -24,7 +23,7 @@ consoleWidget name = ConsoleWidget \a callback -> do
     render a
     pure render
 
-constant :: forall a s . Show a => String -> a -> ConsoleWidget s
+constant :: forall a . Show a => String -> a -> ConsoleWidget Unit
 constant name a = ConsoleWidget $ \_ _ -> do
     log $ "render: " <> name <> ":=" <> show a
     pure mempty
@@ -110,7 +109,11 @@ instance FooInvariant ConsoleWidget where
         Ref.write (Just update2) mupdate2Ref
         pure $ update1 <> update2
 
+-- runs provided effect instead of calling callback
 instance EffInvariant ConsoleWidget where
-    inveff effect (ConsoleWidget widget) = ConsoleWidget \a callbacka -> do
-        update <- widget a $ effect <> callbacka 
-        pure $ update
+    inveff effect (ConsoleWidget widget) = ConsoleWidget \a _ -> widget a effect
+
+instance StaticInvariant ConsoleWidget where
+    invstatic (ConsoleWidget widget) = ConsoleWidget \_ _ -> do
+      _ <- widget unit mempty
+      pure mempty

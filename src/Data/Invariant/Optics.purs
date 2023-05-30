@@ -94,5 +94,5 @@ projection f = invLens f (\s _ -> s)
 factory :: forall i a s . CoCartesianInvariant i => (a -> s) -> i a -> i s
 factory f = invPrism f Right
 
--- baz :: forall i a s . i a -> i s
+-- baz :: forall i a s . a -> i a -> i s
 -- baz

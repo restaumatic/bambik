@@ -42,8 +42,9 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Invariant (class EffInvariant, class CartesianInvariant, class CoCartesianInvariant, inveff)
-import Data.Invariant.Optics (InvLens, InvPrism, InvOptic, constructorInvPrism, invAffineTraversal, invLens, propertyInvLens)
+import Data.Invariant.Optics (InvLens, InvPrism, constructorInvPrism, invAffineTraversal, invLens, propertyInvLens)
 import Data.Maybe (Maybe(..), isJust)
+import Effect.Aff (Aff, launchAff_)
 import Type.Proxy (Proxy(..))
 
 type Order =
@@ -202,5 +203,8 @@ isTakeaway = flip invLens (\ff bool -> if bool then Takeaway { at: "12:15" } els
   _ -> false
  )
 
-placeOrder :: forall i . EffInvariant i => InvOptic i Order Order
-placeOrder = inveff mempty
+placeOrder :: forall i . EffInvariant i => i Order -> i Order
+placeOrder = inveff (\order -> launchAff_ $ doPlaceOrder order)
+  where
+    doPlaceOrder :: Order -> Aff Unit
+    doPlaceOrder = mempty
