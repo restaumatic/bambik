@@ -47,7 +47,7 @@ import Data.Maybe (Maybe(..), isJust)
 import Type.Proxy (Proxy(..))
 
 type Order =
-  { id :: String
+  { id :: Maybe String
   , fulfillment :: Fulfillment
   , items :: Array Item
   , paymentMethod :: PaymentMethod
@@ -203,4 +203,4 @@ isTakeaway = flip invLens (\ff bool -> if bool then Takeaway { at: "12:15" } els
  )
 
 placeOrder :: forall i . AffInvariant i => InvOptic i Order Order
-placeOrder = invaff pure
+placeOrder = invaff (\a -> pure a { id = Just "123"})
