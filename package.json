@@ -5,12 +5,16 @@
   "version": "0.0.0",
   "description": "Invariant optics UI framework",
   "scripts": {
+    "bundle-demo": "spago bundle-app --main Demo --to output/Demo.js",
+    "run-demo": "parcel test/Demo.html"
   },
   "author": "Restaumatic.com",
   "dependencies": {
   },
   "devDependencies": {
     "spago": "^0.20.9",
-    "purescript": "^0.15.7"
+    "purescript": "^0.15.7",
+    "esbuild": "^0.14.38",
+    "parcel": "^2.8.2"
   }
 }
