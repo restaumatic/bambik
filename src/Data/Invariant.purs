@@ -86,4 +86,5 @@ class Invariant i <= EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a
 
 class Invariant i <= StaticInvariant i where
-    invstatic :: forall a . i Unit -> i a
+    -- lifts provided invariant (which once initialized is never updated nor never updates) into invariant of arbitrary type
+    invstatic :: forall a . i Void -> i a
