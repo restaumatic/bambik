@@ -1,14 +1,16 @@
 module Test.ConsoleWidget
   ( ConsoleWidget(..)
   , consoleWidget
-  , constant
+  , text
+  , immutable
+  , static
   )
   where
 
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class FooInvariant, class ImmutableInvariant, class Invariant, class StaticInvariant)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class FooInvariant, class Invariant)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -20,10 +22,23 @@ newtype ConsoleWidget a = ConsoleWidget ((a -> Effect Unit) -> Effect (a -> Effe
 consoleWidget :: String -> ConsoleWidget String
 consoleWidget name = ConsoleWidget \_ -> pure \a -> log $ "render: " <> name <> ":=" <> a
 
-constant :: forall a . Show a => a -> ConsoleWidget Void
-constant a = ConsoleWidget $ \_ -> do
-    log $ "static: " <> show a
+text :: String -> ConsoleWidget Void
+text str = ConsoleWidget $ \_ -> do
+    log str
     pure absurd
+
+-- lifts provided invariant (which once initialized is never updated nor never updates) into invariant of arbitrary type
+-- notice: `forall a i . CoCartesianInvariant i => i Void -> i a` `invstatic ia = invmap (\aors -> either absurd identity aors) Right (invleft ia)` has the same type but different constrain and behavior
+static :: forall a . ConsoleWidget Void -> ConsoleWidget a
+static (ConsoleWidget widget) = ConsoleWidget \_ -> do
+    _ <- widget absurd
+    pure mempty
+
+immutable :: forall a . a -> ConsoleWidget Unit -> ConsoleWidget a
+immutable a (ConsoleWidget widget) = ConsoleWidget \callbacka -> do
+    _ <- widget (const (callbacka a))
+    pure mempty
+
 
 instance Invariant ConsoleWidget where
     invmap f g (ConsoleWidget widget) = ConsoleWidget \callbackb -> (_ <<< g) <$> widget (callbackb <<< f)
@@ -101,13 +116,3 @@ instance FooInvariant ConsoleWidget where
 -- runs provided effect instead of calling callback
 instance EffInvariant ConsoleWidget where
     inveff effect (ConsoleWidget widget) = ConsoleWidget \_ -> widget effect
-
-instance StaticInvariant ConsoleWidget where
-    invstatic (ConsoleWidget widget) = ConsoleWidget \_ -> do
-      _ <- widget absurd
-      pure mempty
-
-instance ImmutableInvariant ConsoleWidget where
-    invimmutable a (ConsoleWidget widget) = ConsoleWidget \callbacka -> do
-      _ <- widget (const (callbacka a))
-      pure mempty
