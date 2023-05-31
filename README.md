@@ -131,6 +131,23 @@ For this reason, we won't analyse profunctor case here anymore, and will focus o
   * Invariant polymorphic transformers - non-optics
   * Invariant polymorphic combinators - traversals, non-optics
 
+
+## UI
+
+Notice that `Invariant i => i Void` denotes a widget that is not backed by any data model, in other words, is backed by void data model.
+This is a static widget that doesn't get updated nor does it update anything.
+
+But to be able to put such widget in an arbitrary place we need a way to lift it to arbitrary data type.
+This capability is descibed as StaticInvariant.
+
+```
+class Invariant i <= StaticInvariant i where
+    invstatic :: forall a . i Void -> i a
+```
+
+
+
+
 ---
 References
 
