@@ -1,5 +1,6 @@
 module Test.ConsoleWidget
-  ( ConsoleWidget(..)
+  ( ConsoleWidget
+  , runConsoleWidget
   , dyntext
   , immutable
   , static
@@ -20,6 +21,9 @@ import Effect.Class.Console (log)
 import Effect.Ref as Ref
 
 newtype ConsoleWidget a = ConsoleWidget ((a -> Effect Unit) -> Effect (a -> Effect Unit))
+
+runConsoleWidget :: forall a . ConsoleWidget a -> (a -> Effect Unit) -> Effect (a → Effect Unit)
+runConsoleWidget (ConsoleWidget w) = w
 
 textInput :: String -> ConsoleWidget String
 textInput label = ConsoleWidget \_ -> pure \a -> log $ "render: " <> label <> ": " <> a
