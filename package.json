@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "Bambik",
+  "displayName": "Bambik",
+  "version": "0.0.0",
+  "description": "Invariant optics UI framework",
+  "scripts": {
+  },
+  "author": "Restaumatic.com",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "spago": "^0.20.9",
+    "purescript": "^0.15.7"
+  }
+}
