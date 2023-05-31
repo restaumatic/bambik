@@ -6,7 +6,6 @@ import Data.Invariant (invappend, invstatic)
 import Effect (Effect)
 import Test.ConsoleWidget (ConsoleWidget(..), consoleWidget, constant)
 
-
 main :: Effect Unit
 main = do
   let (ConsoleWidget w)

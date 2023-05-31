@@ -80,11 +80,12 @@ invor :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i 
 invor a b = invleft a `invappend` invright b
 
 invorwith :: forall i a b c . CoCartesianInvariant i => FooInvariant i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
-invorwith f g a b = invmap f g $ invor a b 
+invorwith f g a b = invmap f g $ invor a b
 
 class Invariant i <= EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a
 
 class Invariant i <= StaticInvariant i where
     -- lifts provided invariant (which once initialized is never updated nor never updates) into invariant of arbitrary type
+    -- notice: `forall a i . CoCartesianInvariant i => i Void -> i a` `invstatic ia = invmap (\aors -> either absurd identity aors) Right (invleft ia)` has the same type but different constrain and behavior
     invstatic :: forall a . i Void -> i a
