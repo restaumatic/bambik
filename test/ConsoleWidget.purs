@@ -11,8 +11,9 @@ module Test.ConsoleWidget
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class FooInvariant, class Invariant)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class Invariant)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Plus (class Plus)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class.Console (log)
@@ -102,9 +103,9 @@ instance CoCartesianInvariant ConsoleWidget where
               -- TODO cleanup slot
               Ref.write Nothing mupdateRef
 
-instance FooInvariant ConsoleWidget where
-    invempty = ConsoleWidget $ const $ pure mempty
-    invappend (ConsoleWidget widget1) (ConsoleWidget widget2) = ConsoleWidget \callbacka -> do
+instance Plus ConsoleWidget where
+    zero = ConsoleWidget $ const $ pure mempty
+    plus (ConsoleWidget widget1) (ConsoleWidget widget2) = ConsoleWidget \callbacka -> do
         -- TODO how to get rid of this ref?
         mupdate2Ref <- Ref.new Nothing
         update1 <- widget1 $ (\a -> do

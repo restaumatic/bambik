@@ -1,11 +1,6 @@
 -- Polymorphic invariant transformers - invariant optics 
 module Data.Invariant.Optics
-  ( InvAdapter
-  , InvLens
-  , InvOptic
-  , InvPrism
-  , factory
-  , constructorInvPrism
+  ( constructorInvPrism
   , projection
   , invAdapter
   , invAffineTraversal
@@ -29,45 +24,36 @@ import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy)
 
-type InvOptic :: forall k. (k -> Type) -> k -> k -> Type
-type InvOptic i a b = i a -> i b
-
-type InvAdapter a b = forall i. Invariant i => InvOptic i a b
-
-type InvLens a b = forall i. CartesianInvariant i => InvOptic i a b
-
-type InvPrism a b = forall i. CoCartesianInvariant i => InvOptic i a b
-
--- TODO: InvTraversal
-
-invAdapter :: forall a b . (a -> b) -> (b -> a) -> InvAdapter a b
+invAdapter :: forall i a s . Invariant i => (a -> s) -> (s -> a) -> i a -> i s
 invAdapter f g = invmap f g 
 
-invLens :: forall a s. (s -> a) -> (s -> a -> s) -> InvLens a s
+invLens :: forall i a s. CartesianInvariant i => (s -> a) -> (s -> a -> s) -> i a -> i s
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
 
 propertyInvLens
-  :: forall l r1 r a
-   . IsSymbol l
+  :: forall i l r1 r a
+   . CartesianInvariant i
+  => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
-  -> InvLens a (Record r1)
+  -> i a -> i (Record r1)
 propertyInvLens l = invLens (\s -> get l s) (\s a -> (set l) a s)
 
 propertyInvLens'
-  :: forall l r1 r a s
-   . IsSymbol l
+  :: forall i l r1 r a s
+   . CartesianInvariant i
+  => IsSymbol l
   => Row.Cons l a r r1
   => Newtype s (Record r1)
   => Proxy s
   -> Proxy l
-  -> InvLens a s
+  -> i a -> i s
 propertyInvLens' _ l = invLens (\s -> get l (unwrap s)) (\s a -> wrap $ (set l) a (unwrap s))
 
-invPrism :: forall a s. (a -> s) -> (s -> Either a s) -> InvPrism a s
+invPrism :: forall i a s. CoCartesianInvariant i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)
 
-constructorInvPrism :: forall a s. (a -> s) -> (s -> Maybe a) -> InvPrism a s
+constructorInvPrism :: forall i a s. CoCartesianInvariant i => (a -> s) -> (s -> Maybe a) -> i a -> i s
 constructorInvPrism construct deconstruct ia = invmap (\(aors :: Either a s) -> either construct identity aors) (\s -> maybe (Right s) Left (deconstruct s)) (invleft ia)
 
 invAffineTraversal
@@ -90,6 +76,3 @@ invAffineTraversal' to pab =
 
 projection :: forall i a s . CartesianInvariant i => (s -> a) -> i a -> i s
 projection f = invLens f (\s _ -> s)
-
-factory :: forall i a s . CoCartesianInvariant i => (a -> s) -> i a -> i s
-factory f = invPrism f Right

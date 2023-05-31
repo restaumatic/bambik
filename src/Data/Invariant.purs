@@ -11,15 +11,12 @@ module Data.Invariant
   , class Contravariant
   , class Covariant
   , class EffInvariant
-  , class FooInvariant
   , class Invariant
   , conmap
   , covmap
   , invand
   , invandwith
-  , invappend
   , inveff
-  , invempty
   , invfirst
   , invleft
   , invmap
@@ -34,6 +31,7 @@ module Data.Invariant
 import Prelude
 
 import Data.Either (Either)
+import Data.Plus (class Plus, plus)
 import Data.Tuple (Tuple)
 import Effect (Effect)
 
@@ -61,24 +59,17 @@ class Invariant f <= CoCartesianInvariant f where
 
 -- TODO: MonoidalInvariant
 
-class Invariant i <= FooInvariant i where
-    invappend :: forall a . i a -> i a -> i a
-    invempty :: forall a . i a
-    -- laws: 
-    --  invappend a invempty == a = invappend invempty a
-    --  invappend a (invappend b c) == invappend (invappend a b) c
+invand :: forall i a b . CartesianInvariant i => Plus i => i a -> i b -> i (Tuple a b)
+invand a b = invfirst a `plus` invsecond b
 
-invand :: forall i a b . Invariant i => CartesianInvariant i => FooInvariant i => i a -> i b -> i (Tuple a b)
-invand a b = invfirst a `invappend` invsecond b
+invandwith :: forall i a b c . CartesianInvariant i => Plus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
+invandwith f g a b = invmap f g $ invand a b
 
-invandwith :: forall i a b c . CartesianInvariant i => FooInvariant i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
-invandwith f g a b = invmap f g $ invand a b 
+invor :: forall i a b . CoCartesianInvariant i => Plus i => i a -> i b -> i (Either a b)
+invor a b = invleft a `plus` invright b
 
-invor :: forall i a b . Invariant i => CoCartesianInvariant i => FooInvariant i => i a -> i b -> i (Either a b)
-invor a b = invleft a `invappend` invright b
-
-invorwith :: forall i a b c . CoCartesianInvariant i => FooInvariant i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
+invorwith :: forall i a b c . CoCartesianInvariant i => Plus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
 invorwith f g a b = invmap f g $ invor a b
 
-class Invariant i <= EffInvariant i where
+class EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a
