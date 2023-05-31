@@ -1,9 +1,10 @@
 module Test.ConsoleWidget
   ( ConsoleWidget(..)
-  , textInput
-  , text
+  , dyntext
   , immutable
   , static
+  , text
+  , textInput
   )
   where
 
@@ -26,6 +27,9 @@ text :: String -> ConsoleWidget Void
 text str = ConsoleWidget $ \_ -> do
     log str
     pure absurd
+
+dyntext :: String -> ConsoleWidget String
+dyntext label = ConsoleWidget \_ -> pure \a -> log $ "render: " <> label <> ": " <> a
 
 -- lifts provided invariant (which once initialized is never updated nor never updates) into invariant of arbitrary type
 -- notice: `forall a i . CoCartesianInvariant i => i Void -> i a` `invstatic ia = invmap (\aors -> either absurd identity aors) Right (invleft ia)` has the same type but different constrain and behavior
