@@ -2,8 +2,8 @@ module Demo where
 
 import Prelude hiding (zero)
 
-import Data.Plus (plus, zero)
 import Data.Invariant.Optics (projection)
+import Data.Plus (plus, zero)
 import Effect (Effect)
 import Test.ConsoleWidget (dyntext, immutable, runConsoleWidget, static, text, textInput)
 
