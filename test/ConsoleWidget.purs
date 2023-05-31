@@ -8,7 +8,7 @@ module Test.ConsoleWidget
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class FooInvariant, class Invariant, class StaticInvariant)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class FooInvariant, class ImmutableInvariant, class Invariant, class StaticInvariant)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -104,5 +104,10 @@ instance EffInvariant ConsoleWidget where
 
 instance StaticInvariant ConsoleWidget where
     invstatic (ConsoleWidget widget) = ConsoleWidget \_ -> do
-      _ <- widget mempty
+      _ <- widget absurd
+      pure mempty
+
+instance ImmutableInvariant ConsoleWidget where
+    invimmutable a (ConsoleWidget widget) = ConsoleWidget \callbacka -> do
+      _ <- widget (const (callbacka a))
       pure mempty

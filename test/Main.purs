@@ -2,8 +2,8 @@ module Test.Main where
 
 import Prelude
 
-import Data.Invariant (invappend, invstatic)
-import Data.Invariant.Optics (factory, projection)
+import Data.Invariant (invappend, invimmutable, invstatic)
+import Data.Invariant.Optics (projection)
 import Effect (Effect)
 import Test.ConsoleWidget (ConsoleWidget(..), consoleWidget, constant)
 
@@ -14,7 +14,7 @@ main = do
         `invappend` consoleWidget "widget2"
         `invappend` invstatic (constant "const")
         `invappend` (consoleWidget "widget3" # projection (_ <> "!"))
-        `invappend` (invstatic (constant "reset") # factory (const "factored value"))
+        `invappend` (invstatic (constant "reset") # invimmutable "new")
   update <- w mempty
   update "abc"
   update "abcd"

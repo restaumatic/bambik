@@ -145,8 +145,17 @@ class Invariant i <= StaticInvariant i where
     invstatic :: forall a . i Void -> i a
 ```
 
+`Invariant i => i Unit` denotes a widget...
 
+UI provides:
+  - primitive widgets (Widget Bool, Widget String etc.)
+  - widget wrappers (Widget a -> Widget a, Widget Void -> Widget a etc.)
+  - widget combinators (Widget a -> Widget a -> Widget a)
 
+Model provides:
+  - optics (i Customer -> i Order etc.)
+
+what model requites from ui is expressed in invariant constraints.
 
 ---
 References
