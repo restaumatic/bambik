@@ -1,6 +1,6 @@
 module Test.ConsoleWidget
   ( ConsoleWidget(..)
-  , consoleWidget
+  , textInput
   , text
   , immutable
   , static
@@ -19,8 +19,8 @@ import Effect.Ref as Ref
 
 newtype ConsoleWidget a = ConsoleWidget ((a -> Effect Unit) -> Effect (a -> Effect Unit))
 
-consoleWidget :: String -> ConsoleWidget String
-consoleWidget name = ConsoleWidget \_ -> pure \a -> log $ "render: " <> name <> ":=" <> a
+textInput :: String -> ConsoleWidget String
+textInput label = ConsoleWidget \_ -> pure \a -> log $ "render: " <> label <> ": " <> a
 
 text :: String -> ConsoleWidget Void
 text str = ConsoleWidget $ \_ -> do
@@ -38,7 +38,6 @@ immutable :: forall a . a -> ConsoleWidget Unit -> ConsoleWidget a
 immutable a (ConsoleWidget widget) = ConsoleWidget \callbacka -> do
     _ <- widget (const (callbacka a))
     pure mempty
-
 
 instance Invariant ConsoleWidget where
     invmap f g (ConsoleWidget widget) = ConsoleWidget \callbackb -> (_ <<< g) <$> widget (callbackb <<< f)
@@ -113,6 +112,6 @@ instance FooInvariant ConsoleWidget where
         Ref.write (Just update2) mupdate2Ref
         pure $ update1 <> update2
 
--- runs provided effect instead of calling callback
 instance EffInvariant ConsoleWidget where
+    -- runs provided effect instead of calling callback
     inveff effect (ConsoleWidget widget) = ConsoleWidget \_ -> widget effect
