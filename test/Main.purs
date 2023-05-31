@@ -13,7 +13,7 @@ main = do
         = consoleWidget "widget1"
         `invappend` consoleWidget "widget2"
         `invappend` invstatic (constant "const")
-        `invappend` (consoleWidget "widget2" # projection (_ <> "!"))
+        `invappend` (consoleWidget "widget3" # projection (_ <> "!"))
         `invappend` (invstatic (constant "reset") # factory (const "factored value"))
   update <- w mempty
   update "abc"
