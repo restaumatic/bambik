@@ -1,8 +1,10 @@
 module Test.OrderOptics
   ( Addition
+  , Customer
   , Fulfillment
   , Hour
   , Item
+  , Note
   , Order
   , PaymentMethod
   , Place
@@ -12,6 +14,7 @@ module Test.OrderOptics
   , card
   , cash
   , city
+  , clearNote
   , coords
   , customer
   , delivery
@@ -26,6 +29,7 @@ module Test.OrderOptics
   , lat
   , long
   , note
+  , numberOfItems
   , paymentMethod
   , paymentMethod'
   , placeOrder
@@ -40,9 +44,10 @@ module Test.OrderOptics
 
 import Prelude
 
+import Data.Array (length)
 import Data.Either (Either(..))
-import Data.Invariant (class EffInvariant, class CartesianInvariant, class CoCartesianInvariant, inveff)
-import Data.Invariant.Optics (InvLens, InvPrism, constructorInvPrism, invAffineTraversal, invLens, propertyInvLens)
+import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, inveff)
+import Data.Invariant.Optics (InvLens, InvPrism, constructorInvPrism, factory, invAffineTraversal, invLens, projection, propertyInvLens)
 import Data.Maybe (Maybe(..), isJust)
 import Effect.Aff (Aff, launchAff_)
 import Type.Proxy (Proxy(..))
@@ -52,9 +57,13 @@ type Order =
   , fulfillment :: Fulfillment
   , items :: Array Item
   , paymentMethod :: PaymentMethod
-  , customer :: String
-  , note :: Maybe String
+  , customer :: Customer
+  , note :: Maybe Note
   }
+
+type Customer = String
+
+type Note = String
 
 data PaymentMethod = Cash | Card
 
@@ -208,3 +217,9 @@ placeOrder = inveff (\order -> launchAff_ $ doPlaceOrder order)
   where
     doPlaceOrder :: Order -> Aff Unit
     doPlaceOrder = mempty
+
+numberOfItems :: forall i . CartesianInvariant i => i Int -> i Order
+numberOfItems = projection (\order -> length order.items)
+
+clearNote :: forall i . CoCartesianInvariant i => i Unit -> i (Maybe Note)
+clearNote = factory (const Nothing)
