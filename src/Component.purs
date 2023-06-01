@@ -10,7 +10,6 @@ module Component
   , onClick
   , radio
   , renderComponent
-  , replace
   , static
   , swallow
   , swallow'
@@ -70,9 +69,6 @@ instance Plus Component where
       f1 i ocallback
       f2 i ocallback
   zero = Component mempty
-
-replace :: forall a . Component a -> Component a -> Component a
-replace = const
 
 instance Invariant Component where
   invmap pre post c = wrap do

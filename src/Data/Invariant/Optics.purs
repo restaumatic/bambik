@@ -1,23 +1,26 @@
 -- Polymorphic invariant transformers - invariant optics 
 module Data.Invariant.Optics
   ( constructorInvPrism
-  , projection
   , invAdapter
   , invAffineTraversal
   , invAffineTraversal'
   , invLens
   , invPrism
+  , projection
   , propertyInvLens
   , propertyInvLens'
+  , replace
+  , zeroed
   )
   where
 
-import Prelude
+import Prelude hiding (zero)
 
 import Data.Either (Either(..), either)
 import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Maybe (Maybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Plus (class Plus, zero)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Prim.Row as Row
@@ -76,3 +79,11 @@ invAffineTraversal' to pab =
 
 projection :: forall i a s . CartesianInvariant i => (s -> a) -> i a -> i s
 projection f = invLens f (\s _ -> s)
+
+
+-- TODO: this is not a strict optic
+replace :: forall i a . Invariant i => i a -> i a -> i a
+replace = const
+
+zeroed :: forall i a s . Invariant i => Plus i => i a -> i s
+zeroed = const zero
