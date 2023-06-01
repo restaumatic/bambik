@@ -74,38 +74,38 @@ instance CartesianInvariant ConsoleWidget where
 instance CoCartesianInvariant ConsoleWidget where
     invleft (ConsoleWidget widget) = ConsoleWidget \callbackaorb -> do
         -- TODO create slot
-        mupdateRef <- Ref.new Nothing
-        pure \aorb -> case aorb of
+        mUpdateRef <- Ref.new Nothing
+        pure case _ of
             Left a -> do
-              mUpdate <- Ref.read mupdateRef
+              mUpdate <- Ref.read mUpdateRef
               update <- case mUpdate of
                 Just update -> pure update
                 Nothing -> do
                     -- TODO cleanup slot
                     update <- widget $ callbackaorb <<< Left
-                    Ref.write (Just update) mupdateRef
+                    Ref.write (Just update) mUpdateRef
                     pure update
               update a
             Right _ -> do
               -- TODO cleanup slot
-              Ref.write Nothing mupdateRef
+              Ref.write Nothing mUpdateRef
     invright (ConsoleWidget widget) = ConsoleWidget \callbackaorb -> do
         -- TODO create slot
-        mupdateRef <- Ref.new Nothing
-        pure \aorb -> case aorb of
+        mUpdateRef <- Ref.new Nothing
+        pure case _ of
             Right b -> do
-              mUpdate <- Ref.read mupdateRef
+              mUpdate <- Ref.read mUpdateRef
               update <- case mUpdate of
                 Just update -> pure update
                 Nothing -> do
                     -- TODO cleanup slot
                     update <- widget $ callbackaorb <<< Right
-                    Ref.write (Just update) mupdateRef
+                    Ref.write (Just update) mUpdateRef
                     pure update
               update b
             Left _ -> do
               -- TODO cleanup slot
-              Ref.write Nothing mupdateRef
+              Ref.write Nothing mUpdateRef
 
 instance Plus ConsoleWidget where
     zero = ConsoleWidget $ const $ pure mempty
