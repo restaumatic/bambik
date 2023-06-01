@@ -24,7 +24,7 @@ import Data.Identity (Identity(..))
 import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant)
 import Data.Invariant.Cayley (CayleyInvariant)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, modify, unwrap, wrap)
+import Data.Newtype (class Newtype, modify, overF, unwrap, wrap)
 import Data.Plus (class Plus, zero)
 import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -51,12 +51,17 @@ static' (Component widget) = Component \_ -> do
 
 instance Plus Component where
   plus c1 c2 = wrap \callback -> do
-    f1 <- unwrap c1 callback
-    f2 <- unwrap c2 callback
-    -- TODO propagate from c1 to c2 and vice-versa
+    -- TODO how to get rid of this ref?
+    mUpdate2Ref <- liftEffect $ Ref.new Nothing
+    update1 <- unwrap c1 $ (\a -> do
+      mUpdate2 <- Ref.read mUpdate2Ref
+      case mUpdate2 of
+        Just update2 -> update2 a
+        Nothing -> pure unit) <> callback
+    update2 <- unwrap c2 $ update1 <> callback
     pure \i -> do
-      f1 i
-      f2 i
+      update1 i
+      update2 i
   zero = Component mempty
 
 instance Invariant Component where

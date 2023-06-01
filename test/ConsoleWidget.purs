@@ -111,14 +111,14 @@ instance Plus ConsoleWidget where
     zero = ConsoleWidget $ const $ pure mempty
     plus (ConsoleWidget widget1) (ConsoleWidget widget2) = ConsoleWidget \callbacka -> do
         -- TODO how to get rid of this ref?
-        mupdate2Ref <- Ref.new Nothing
+        mUpdate2Ref <- Ref.new Nothing
         update1 <- widget1 $ (\a -> do
-            mupdate2 <- Ref.read mupdate2Ref
-            case mupdate2 of
+            mUpdate2 <- Ref.read mUpdate2Ref
+            case mUpdate2 of
                 Just update2 -> update2 a
                 Nothing -> pure unit) <> callbacka
         update2 <- widget2 $ update1 <> callbacka
-        Ref.write (Just update2) mupdate2Ref
+        Ref.write (Just update2) mUpdate2Ref
         pure $ update1 <> update2
 
 instance EffInvariant ConsoleWidget where
