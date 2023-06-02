@@ -7,7 +7,7 @@ module MDC
 
 import Prelude hiding (zero)
 
-import Component (ComponentWrapper, inside, onClick, static, text, textInput)
+import Component (ComponentWrapper, inside, onClick, staticText, textInput)
 import Component as Specular
 import Data.Plus (plus, zero)
 import Effect (Effect)
@@ -27,7 +27,7 @@ filledText hintText =
   inside "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\_ node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (inside "span" (const $ "class" := "mdc-text-field__ripple") mempty zero)
     `plus`
-    (inside "span" (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (text # static hintText))
+    (inside "span" (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (staticText hintText))
     `plus`
     (textInput (const $ "class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
     `plus`

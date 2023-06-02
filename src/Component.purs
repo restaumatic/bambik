@@ -7,7 +7,8 @@ module Component
   , onClick
   , radio
   , renderComponent
-  , static
+  -- , static
+  , staticText
   , swallow
   , swallow'
   , text
@@ -17,14 +18,14 @@ module Component
 
 import Prelude hiding (zero)
 
-import Control.Monad.Replace (Slot, destroySlot, newSlot, replaceSlot)
+import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Identity (Identity(..))
 import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant)
 import Data.Invariant.Cayley (CayleyInvariant)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, modify, overF, unwrap, wrap)
+import Data.Newtype (class Newtype, modify, unwrap, wrap)
 import Data.Plus (class Plus, zero)
 import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -48,6 +49,13 @@ static' :: forall a . Component Void -> Component a
 static' (Component widget) = Component \_ -> do
     _ <- widget absurd
     pure mempty
+
+sta :: forall a s . a -> Component a -> Component s
+sta a c = wrap \callback -> do
+  update <- unwrap c mempty
+  liftEffect $ update a
+  pure mempty
+
 
 instance Plus Component where
   plus c1 c2 = wrap \callback -> do
@@ -131,6 +139,9 @@ renderComponent componentw callback = do
   unwrap component callback
 
 -- Component primitives
+
+staticText :: forall f a . Applicative f => String -> ComponentWrapper f a
+staticText content = wrap $ pure $ wrap $ const $ S.text content *> mempty
 
 text :: forall f . Applicative f => ComponentWrapper f String
 text = wrap $ pure $ wrap \_ -> do
