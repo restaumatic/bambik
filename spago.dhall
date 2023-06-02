@@ -23,9 +23,14 @@ to generate this file without the comments in this block.
   , "prelude"
   , "record"
   , "refs"
-  , "specular"
   , "tuples"
+  , "foreign-object"
+  , "unsafe-reference"
+  , "functions"
+  , "partial"
+  , "transformers"
+  , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs", "src-specular-bits/**/*.purs", "test/**/*.purs" ]
 }

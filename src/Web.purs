@@ -1,4 +1,4 @@
-module Component
+module Web
   ( Component(..)
   , ComponentWrapper
   , checkbox
@@ -35,10 +35,8 @@ import Effect.Ref as Ref
 import Specular.Dom.Browser (Attrs, Node, TagName, setAttributes, (:=))
 import Specular.Dom.Browser as DOM
 import Specular.Dom.Builder (Builder)
-import Specular.Dom.Builder.Class (elDynAttr')
+import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Specular.Dom.Widgets.Input (setCheckboxChecked, setTextInputValue)
-import Specular.FRP (weaken)
 
 newtype Component :: Type -> Type
 newtype Component a = Component ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit))
@@ -151,7 +149,7 @@ text = wrap $ pure $ wrap \_ -> do
 
 inside :: forall f a b. Functor f => TagName -> (a -> Attrs) -> (a -> Node -> (b -> Effect Unit) -> Effect Unit) -> ComponentWrapper f a -> ComponentWrapper f a
 inside tagName attrs event = modify $ map \component -> wrap \callback -> do
-  Tuple node f <- elDynAttr' tagName (weaken (pure mempty)) $ unwrap component callback -- TODO: stop using (Weak)Dynamic
+  Tuple node f <- elAttr tagName mempty $ unwrap component callback -- TODO: stop using (Weak)Dynamic
   pure \a -> do
     f a
     setAttributes node (attrs a)
@@ -159,6 +157,12 @@ inside tagName attrs event = modify $ map \component -> wrap \callback -> do
     -- event a node bcallback
   -- outerEvent <- event dyn node
   -- pure $ innerEvent <> outerEvent
+
+foreign import getTextInputValue :: Node -> Effect String
+foreign import setTextInputValue :: Node -> String -> Effect Unit
+
+foreign import getCheckboxChecked :: Node -> Effect Boolean
+foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
 textInput :: forall f. Applicative f => (String -> Attrs) -> ComponentWrapper f String
 textInput attrs = zero # inside "input" attrs \str node callback -> do

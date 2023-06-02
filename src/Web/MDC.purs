@@ -1,4 +1,4 @@
-module MDC
+module Web.MDC
   ( button
   , filledText
   , checkbox
@@ -7,8 +7,8 @@ module MDC
 
 import Prelude hiding (zero)
 
-import Component (ComponentWrapper, inside, onClick, staticText, textInput)
-import Component as Specular
+import Web (ComponentWrapper, inside, onClick, staticText, textInput)
+import Web as Web
 import Data.Plus (plus, zero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -38,7 +38,7 @@ checkbox :: forall f. Applicative f => ComponentWrapper f Boolean
 checkbox =
   inside "div" (const $ "class" := "mdc-touch-target-wrapper") mempty $
     inside "div" (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\_ node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty) $
-      (Specular.checkbox (const $ "class" := "mdc-checkbox__native-control"))
+      (Web.checkbox (const $ "class" := "mdc-checkbox__native-control"))
       `plus`
       (inside "div" (const $ "class":= "mdc-checkbox__background") mempty $
         inside "svg" (const $ "class" := "mdc-checkbox__checkmark" <> "viewBox" := "0 0 24 24") mempty $
@@ -53,7 +53,7 @@ radioButton :: forall f. Applicative f => ComponentWrapper f Boolean
 radioButton = inside "div" (const $ "class" := "mdc-form-field") mempty
   (
     (inside "div" (const $ "class" := "mdc-radio") (\_ node _ -> mdcWith material.radio."MDCRadio" node mempty) $
-      (Specular.radio (const $ "class" := "mdc-radio__native-control" <> "id" := "radio-1"))
+      (Web.radio (const $ "class" := "mdc-radio__native-control" <> "id" := "radio-1"))
       `plus`
       (inside "div" (const $ "class" := "mdc-radio__background") mempty $
         inside "div" (const $ "class" := "mdc-radio__outer-circle") mempty zero
@@ -66,7 +66,6 @@ radioButton = inside "div" (const $ "class" := "mdc-form-field") mempty
     -- <>
     -- (inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
   )
----
 
 foreign import data ComponentClass :: Type
 foreign import data Component :: Type
