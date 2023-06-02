@@ -1,22 +1,20 @@
 module Demo where
 
-import Prelude hiding (zero)
-
-import Data.Invariant.Optics (projection)
-import Data.Plus (plus, zero)
+import Data.Identity (Identity)
+import Data.Plus (plus)
 import Effect (Effect)
-import Test.ConsoleWidget (dyntext, immutable, runConsoleWidget, static, text, textInput)
+import Effect.Class (liftEffect)
+import Prelude (Unit, bind, mempty, unit, ($))
+import Specular.Dom.Builder (runMainBuilderInBody)
+import Web (ComponentWrapper, renderComponent, staticText, text)
+import Web.MDC as MDC
+
+app ∷ ComponentWrapper Identity String
+app = MDC.filledText "Caption"
+      `plus`
+      text
 
 main :: Effect Unit
-main = do
-  let rootWidget
-        = textInput "input1"
-        `plus` (textInput "input2")
-        `plus` (text "some static content" # static)
-        `plus` (dyntext "dyntext" # projection (_ <> "!"))
-        `plus` (text "reset" # static # immutable "new")
-        `plus` zero
-  update <- runConsoleWidget rootWidget mempty
-  update "abc"
-  update "abcd"
-  pure unit
+main = runMainBuilderInBody $ do
+  update <- renderComponent app mempty
+  liftEffect $ update "aaa"

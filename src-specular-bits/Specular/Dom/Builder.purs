@@ -1,12 +1,14 @@
 module Specular.Dom.Builder
   ( Builder
-  , runBuilder
-  , local
-  , unBuilder
-  , mkBuilder'
-  , runBuilder'
   , getParentNode
-  ) where
+  , local
+  , mkBuilder'
+  , runBuilder
+  , runBuilder'
+  , runMainBuilderInBody
+  , unBuilder
+  )
+  where
 
 import Prelude
 
@@ -14,15 +16,15 @@ import Control.Apply (lift2)
 import Control.Monad.Cleanup (class MonadCleanup, onCleanup)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
-import Control.Monad.Replace (class MonadReplace, Slot(Slot), newSlot)
+import Control.Monad.Replace (class MonadReplace, Slot(Slot), destroySlot, newSlot, replaceSlot)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(Tuple))
+import Data.Tuple (Tuple(Tuple), fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
-import Specular.Dom.Builder.Class (class MonadDomBuilder)
-import Specular.Dom.Browser (Node, appendChild, appendRawHtml, createDocumentFragment, createElementNS, createTextNode, insertBefore, parentNode, removeAllBetween, removeNode, setAttributes)
 import Effect.Ref (modify_, new, read, write)
+import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
+import Specular.Dom.Browser (Node, appendChild, appendRawHtml, createDocumentFragment, createElementNS, createTextNode, insertBefore, parentNode, removeAllBetween, removeNode, setAttributes)
+import Specular.Dom.Builder.Class (class MonadDomBuilder)
 import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
 import Specular.Internal.RIO (RIO(..), rio, runRIO)
 import Specular.Internal.RIO as RIO
@@ -211,3 +213,29 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
 
 instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
   mempty = pure mempty
+
+
+-- | Runs a widget in the specified parent element. Returns the result and cleanup action.
+runWidgetInNode :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
+runWidgetInNode parent widget = runBuilder parent do
+  slot <- newSlot
+  onCleanup (destroySlot slot)
+  liftEffect $ replaceSlot slot widget
+
+foreign import documentBody :: Effect Node
+
+-- | Runs a widget `document.body`. Returns the result and cleanup action.
+runWidgetInBody :: forall a. Builder Unit a -> Effect (Tuple a (Effect Unit))
+runWidgetInBody widget = do
+  body <- documentBody
+  runWidgetInNode body widget
+
+-- | Runs a widget in the specified parent element and discards cleanup action.
+runMainWidgetInNode :: forall a. Node -> Builder Unit a -> Effect a
+runMainWidgetInNode parent widget = fst <$> runWidgetInNode parent widget
+
+-- | Runs a builder in `document.body` and discards cleanup action.
+runMainBuilderInBody :: forall a. Builder Unit a -> Effect a
+runMainBuilderInBody widget = do
+  body <- documentBody
+  runMainWidgetInNode body widget

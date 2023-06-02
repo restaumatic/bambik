@@ -9,6 +9,7 @@
   },
   "author": "Restaumatic.com",
   "dependencies": {
+    "material-components-web": "^0.44.0"
   },
   "devDependencies": {
     "spago": "^0.20.9",
