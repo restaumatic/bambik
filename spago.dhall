@@ -25,9 +25,6 @@ to generate this file without the comments in this block.
   , "refs"
   , "tuples"
   , "foreign-object"
-  , "unsafe-reference"
-  , "functions"
-  , "partial"
   , "transformers"
   , "unsafe-coerce"
   ]

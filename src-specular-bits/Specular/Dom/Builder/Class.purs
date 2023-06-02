@@ -72,7 +72,7 @@ elAttr_ tagName attrs = elAttr tagName attrs (pure unit)
 el :: forall m a. MonadDomBuilder m => String -> m a -> m (Tuple Node a)
 el tagName inner = elAttr tagName mempty inner
 
-el_ :: forall m. MonadDomBuilder m => String -> m (Tuple Node Unit) 
+el_ :: forall m. MonadDomBuilder m => String -> m (Tuple Node Unit)
 el_ tagName = el tagName (pure unit)
 
 -- dynRawHtml :: forall m. MonadDomBuilder m => MonadReplace m => MonadFRP m => WeakDynamic String -> m Unit
