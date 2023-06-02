@@ -1,11 +1,11 @@
 {
   "private": true,
-  "name": "Bambik",
+  "name": "bambik",
   "displayName": "Bambik",
   "version": "0.0.0",
   "description": "Invariant optics UI framework",
   "scripts": {
-    "demo": "parcel test/Demo.html & spago bundle-app --main Demo --to output/Demo.js -w"
+    "demo": "parcel test/Demo.html & spago bundle-app -y --main Demo --to output/Demo.js -w"
   },
   "author": "Restaumatic.com",
   "dependencies": {
