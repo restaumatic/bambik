@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Foreign.Object as Object
@@ -116,3 +117,8 @@ foreign import preventDefault :: Event -> Effect Unit
 
 -- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
+
+onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
+onDomEvent eventType node handler = do
+  void $ liftEffect $ addEventListener eventType handler node
+  -- onCleanup unsub

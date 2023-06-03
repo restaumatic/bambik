@@ -23,7 +23,7 @@ import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Identity (Identity(..))
 import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant)
-import Data.Invariant.Cayley (CayleyInvariant)
+import Data.Invariant.Cayley (CayleyInvariant(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, modify, unwrap, wrap)
 import Data.Plus (class Plus, zero)
@@ -31,9 +31,9 @@ import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Effect.Ref as Ref
-import Specular.Dom.Browser (Attrs, Node, TagName, setAttributes, (:=))
-import Specular.Dom.Browser as DOM
+import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder (Builder)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
@@ -65,6 +65,7 @@ instance Plus Component where
         Just update2 -> update2 a
         Nothing -> pure unit) <> callback
     update2 <- unwrap c2 $ update1 <> callback
+    liftEffect $ Ref.write (Just update2) mUpdate2Ref
     pure \i -> do
       update1 i
       update2 i
@@ -144,19 +145,14 @@ staticText content = wrap $ pure $ wrap $ const $ S.text content *> mempty
 text :: forall f . Applicative f => ComponentWrapper f String
 text = wrap $ pure $ wrap \_ -> do
   slot <- newSlot
-  pure \t -> do
-    replaceSlot slot $ S.text t
+  pure $ replaceSlot slot <<< S.text
 
-inside :: forall f a b. Functor f => TagName -> (a -> Attrs) -> (a -> Node -> (b -> Effect Unit) -> Effect Unit) -> ComponentWrapper f a -> ComponentWrapper f a
+inside :: forall f a . Functor f => TagName -> (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> ComponentWrapper f a -> ComponentWrapper f a
 inside tagName attrs event = modify $ map \component -> wrap \callback -> do
-  Tuple node f <- elAttr tagName mempty $ unwrap component callback -- TODO: stop using (Weak)Dynamic
+  Tuple node f <- elAttr tagName (attrs unit) $ unwrap component callback
+  liftEffect $ event node callback
   pure \a -> do
     f a
-    setAttributes node (attrs a)
-    -- TODO: propagate events from wrapper?
-    -- event a node bcallback
-  -- outerEvent <- event dyn node
-  -- pure $ innerEvent <> outerEvent
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
@@ -164,27 +160,34 @@ foreign import setTextInputValue :: Node -> String -> Effect Unit
 foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
-textInput :: forall f. Applicative f => (String -> Attrs) -> ComponentWrapper f String
-textInput attrs = zero # inside "input" attrs \str node callback -> do
-  setTextInputValue node str
-  -- (domEventWithSample (\_ -> getTextInputValue node <#> \value -> {path: [], value}) "input" node)
+textInput :: forall f. Applicative f => Attrs -> ComponentWrapper f String
+textInput attrs = CayleyInvariant $ pure $ wrap \callback -> do
+  Tuple node a <- elAttr "input" attrs (pure unit)
+  onDomEvent "input" node \event -> do
+    getTextInputValue node >>= callback
+  pure $ setTextInputValue node
 
-checkbox :: forall f. Applicative f => (Boolean -> Attrs) -> ComponentWrapper f Boolean
-checkbox attrs = zero # inside "input" (\enabled -> ("type" := "checkbox") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \bool node callback -> do
-  setCheckboxChecked node bool
-  -- domEventWithSample (\_ -> getCheckboxChecked node <#> \value -> { path: [], value }) "change" node
+checkbox :: forall f. Applicative f => Attrs -> ComponentWrapper f Boolean
+checkbox attrs = CayleyInvariant $ pure $ wrap \callback -> do
+  Tuple node a <- elAttr "input" attrs (pure unit)
+  onDomEvent "input" node \event -> do
+    getCheckboxChecked node >>= callback
+  pure $ setCheckboxChecked node
 
+-- TODO
 radio :: forall f. Applicative f => (Boolean -> Attrs) -> ComponentWrapper f Boolean
-radio attrs = zero # inside "input" (\enabled -> ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \value node callback -> do
-  setCheckboxChecked node value
+radio attrs = zero # inside "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
+  mempty
+  -- setCheckboxChecked node value
   -- onDomEvent "change" node (\_ -> getCheckboxChecked node >>= callback)
 -- radio :: forall a b f. Applicative f => (a -> Attrs) -> ComponentWrapper f a b
 -- radio attrs = zero # (inside "input" (\enabled -> ("type" := "checkbox") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \_ node -> do
 --   domEventWithSample (\_ -> getCheckboxChecked node <#> \value -> { path: [], value }) "change" node)
 
 
-onClick ∷ forall a. a → Node → (a -> Effect Unit) -> Effect Unit
-onClick a node callback = void $ DOM.addEventListener "click" (\_ -> callback a) node
+-- TODO
+onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
+onClick node callback = mempty -- void $ DOM.addEventListener "click" (\_ -> callback a) node
 
 -- Foldables
 
