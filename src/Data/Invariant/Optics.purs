@@ -17,13 +17,11 @@ module Data.Invariant.Optics
 import Prelude hiding (zero)
 
 import Data.Either (Either(..), either)
-import Data.Identity (Identity)
 import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Maybe (Maybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, zero)
 import Data.Symbol (class IsSymbol)
-import Data.Traversable (class Traversable, sequence)
 import Data.Tuple (Tuple(..))
 import Prim.Row as Row
 import Record (get, set)
@@ -36,14 +34,13 @@ invLens :: forall i a s. CartesianInvariant i => (s -> a) -> (s -> a -> s) -> i 
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
 
 propertyInvLens
-  :: forall i l r1 r a f
+  :: forall i l r1 r a
    . CartesianInvariant i
   => IsSymbol l
   => Row.Cons l a r r1
-  => Applicative f
   => Proxy l
-  -> i (f a) -> i (f (Record r1))
-propertyInvLens l = invLens (\s -> get l <$> s) (\s a -> set l <$> a <*> s)
+  -> i a -> i (Record r1)
+propertyInvLens l = invLens (\s -> get l s) (\s a -> (set l) a s)
 
 propertyInvLens'
   :: forall i l r1 r a s
@@ -59,8 +56,8 @@ propertyInvLens' _ l = invLens (\s -> get l (unwrap s)) (\s a -> wrap $ (set l) 
 invPrism :: forall i a s. CoCartesianInvariant i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)
 
-constructorInvPrism :: forall i a s f. Traversable f => CoCartesianInvariant i => (a -> s) -> (s -> Maybe a) -> i (f a) -> i (f s) -- TODO: why traversable?
-constructorInvPrism construct deconstruct ia = invmap (\aors -> either (map construct) identity aors) (\s -> maybe (Right s) Left (sequence $ (map deconstruct) s)) (invleft ia)
+constructorInvPrism :: forall i a s. CoCartesianInvariant i => (a -> s) -> (s -> Maybe a) -> i a -> i s
+constructorInvPrism construct deconstruct ia = invmap (\(aors :: Either a s) -> either construct identity aors) (\s -> maybe (Right s) Left (deconstruct s)) (invleft ia)
 
 invAffineTraversal
   :: forall s a i
@@ -80,8 +77,8 @@ invAffineTraversal'
 invAffineTraversal' to pab =
   invmap (\(Tuple b f) -> either identity b f) to (invsecond (invright pab))
 
-projection :: forall i a s f. Functor f =>CartesianInvariant i => (s -> a) -> i (f a) -> i (f s)
-projection f = invLens (map f) (\s _ -> s)
+projection :: forall i a s . CartesianInvariant i => (s -> a) -> i a -> i s
+projection f = invLens f (\s _ -> s)
 
 
 -- TODO: this is not a strict optic
