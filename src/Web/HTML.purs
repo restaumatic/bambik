@@ -11,24 +11,16 @@ module Web.HTML
 
 import Prelude hiding (zero)
 
-import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
-import Data.Either (Either(..))
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Plus (class Plus, zero)
-import Data.Tuple (Tuple(..), fst, snd)
+import Control.Monad.Replace (newSlot, replaceSlot)
+import Data.Newtype (unwrap, wrap)
+import Data.Plus (zero)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Ref as Ref
-import Specular.Dom.Browser (Attrs, Node, TagName, appendChild, createCommentNode, onDomEvent, (:=))
-import Specular.Dom.Builder (Builder, getEnv)
+import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (Component(..))
-
-withoutTag :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
-withoutTag builder = Component { builder, tag: mempty}
+import Web (Component, withoutTag)
 
 -- Component primitives
 
