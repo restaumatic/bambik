@@ -2,22 +2,20 @@ module Demo where
 
 import Prelude
 
-import Data.Identity (Identity)
 import Data.Plus (plus)
 import Effect (Effect)
-import Effect.Class (liftEffect)
 import Specular.Dom.Builder (runMainBuilderInBody)
-import Web (ComponentWrapper, inside, renderComponent, text)
+import Web (Component, inside, buildComponent, text)
 import Web.MDC (filledText)
 
-app ∷ ComponentWrapper Identity String
+app ∷ Component String
 app = (filledText "name" # inside "div" mempty mempty)
       `plus`
       (text # inside "div" mempty mempty)
       `plus` (text # inside "div" mempty mempty)
 
 main :: Effect Unit
-main = runMainBuilderInBody $ do
-  update <- renderComponent app mempty
-  _ <- liftEffect $ update "aaa!"
+main = do
+  update <- runMainBuilderInBody $ buildComponent app mempty
+  update "ccc!"
   pure unit

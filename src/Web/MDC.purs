@@ -8,7 +8,7 @@ module Web.MDC
 
 import Prelude hiding (zero)
 
-import Web (ComponentWrapper, inside, onClick, staticText, textInput)
+import Web (inside, onClick, staticText, textInput)
 import Web as Web
 import Data.Plus (plus, zero)
 import Effect (Effect)
@@ -16,14 +16,14 @@ import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
 
-button :: forall f a. Applicative f => ComponentWrapper f a -> ComponentWrapper f a
-button wrapped = 
+button :: forall a. Web.Component a -> Web.Component a
+button wrapped =
   inside "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick) $
     (inside "div" (const $ "class" := "mdc-button__ripple") mempty zero)
     `plus`
     (inside "span" (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledText :: forall f. Applicative f => String -> ComponentWrapper f String
+filledText :: String -> Web.Component String
 filledText hintText =
   inside "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (inside "span" (const $ "class" := "mdc-text-field__ripple") mempty zero)
@@ -35,7 +35,7 @@ filledText hintText =
     (inside "span" (const $ "class" := "mdc-line-ripple") mempty zero)
 
 
-checkbox :: forall f. Applicative f => ComponentWrapper f Boolean
+checkbox :: Web.Component Boolean
 checkbox =
   inside "div" (const $ "class" := "mdc-touch-target-wrapper") mempty $
     inside "div" (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty) $
@@ -50,7 +50,7 @@ checkbox =
       `plus`
       (inside "div" (const $ "class" := "mdc-checkbox__ripple") mempty zero)
 
-radioButton :: forall f. Applicative f => ComponentWrapper f Boolean
+radioButton :: Web.Component Boolean
 radioButton = inside "div" (const $ "class" := "mdc-form-field") mempty
   (
     (inside "div" (const $ "class" := "mdc-radio") (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $

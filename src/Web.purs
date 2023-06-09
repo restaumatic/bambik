@@ -1,16 +1,15 @@
 module Web
   ( Component(..)
-  , ComponentWrapper
+  , Tag
+  , Hop
   , checkbox
   , inside
   , noChoiceComponent
   , onClick
   , radio
-  , renderComponent
+  , buildComponent
   -- , static
   , staticText
-  , swallow
-  , swallow'
   , text
   , textInput
   )
@@ -20,18 +19,13 @@ import Prelude hiding (zero)
 
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
-import Data.Generic.Rep (class Generic)
-import Data.Identity (Identity(..))
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
-import Data.Invariant.Cayley (CayleyInvariant(..))
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, modify, unwrap, wrap)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, zero)
-import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Effect.Ref as Ref
 import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder (Builder)
@@ -39,120 +33,158 @@ import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
 
 newtype Component :: Type -> Type
-newtype Component a = Component ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit))
+newtype Component a = Component
+  { builder :: (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
+  , tag :: Tag
+  }
 
 derive instance Newtype (Component a) _
 
-static' :: forall a . Component Void -> Component a
-static' (Component widget) = Component \_ -> do
-    _ <- widget absurd
-    pure mempty
+withoutTag :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
+withoutTag builder = Component { builder, tag: mempty}
 
-sta :: forall a s . a -> Component a -> Component s
-sta a c = wrap \callback -> do
-  update <- unwrap c mempty
-  liftEffect $ update a
-  pure mempty
+-- static' :: forall a . Component Void -> Component a
+-- static' (Component widget) = Component \_ -> do
+--     _ <- widget absurd
+--     pure mempty
+
+-- sta :: forall a s . a -> Component a -> Component s
+-- sta a c = wrap \callback -> do
+--   update <- unwrap c mempty
+--   liftEffect $ update a
+--   pure mempty
+
+
+type Hop = String
+
+type Tag = Array (Array Hop)
+
+instance Tagged Tag Component where
+  getTag component = (unwrap component).tag
+  setTag tag (Component { builder } ) = Component {builder, tag}
 
 
 instance Plus Component where
-  plus c1 c2 = wrap \callback -> do
-    -- TODO how to get rid of this ref?
-    mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    update1 <- unwrap c1 $ (\a -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      case mUpdate2 of
-        Just update2 -> update2 a
-        Nothing -> pure unit) <> callback
-    update2 <- unwrap c2 $ update1 <> callback
-    liftEffect $ Ref.write (Just update2) mUpdate2Ref
-    pure \i -> do
-      update1 i
-      update2 i
-  zero = Component mempty
+  plus c1 c2 = wrap
+    { builder: \callback -> do
+      -- TODO how to get rid of this ref?
+      mUpdate2Ref <- liftEffect $ Ref.new Nothing
+      update1 <- (unwrap c1).builder $ (\a -> do
+        mUpdate2 <- Ref.read mUpdate2Ref
+        case mUpdate2 of
+          Just update2 -> update2 a
+          Nothing -> pure unit) <> callback
+      update2 <- (unwrap c2).builder $ update1 <> callback
+      liftEffect $ Ref.write (Just update2) mUpdate2Ref
+      pure \i -> do
+        update1 i
+        update2 i
+    , tag: (unwrap c1).tag <> (unwrap c2).tag
+    }
+  zero = Component
+    { builder: mempty
+    , tag: mempty
+    }
 
 instance Invariant Component where
-  invmap pre post c = wrap \callback -> do
-      f <- unwrap c $ callback <<< pre
+  invmap pre post c = wrap
+    { builder: \callback -> do
+      f <- (unwrap c).builder $ callback <<< pre
       pure $ f <<< post
+    , tag: (unwrap c).tag
+    }
 
 instance Cartesian Component where
-  invfirst c = wrap \abcallback -> do
-    bref <- liftEffect $ Ref.new Nothing
-    update <- unwrap c \a -> do
-      mb <- liftEffect $ Ref.read bref
-      maybe (pure unit) (\b -> abcallback (Tuple a b)) mb
-    pure $ \ab -> do
-      Ref.write (Just (snd ab)) bref
-      update (fst ab)
-  invsecond c = wrap \abcallback -> do
-    aref <- liftEffect $ Ref.new Nothing
-    update <- unwrap c \b -> do
-      ma <- liftEffect $ Ref.read aref
-      maybe (pure unit) (\a -> abcallback (Tuple a b)) ma
-    pure $ \ab -> do
-      Ref.write (Just (fst ab)) aref
-      update (snd ab)
+  invfirst c = wrap
+    { builder: \abcallback -> do
+      bref <- liftEffect $ Ref.new Nothing
+      update <- (unwrap c).builder \a -> do
+        mb <- liftEffect $ Ref.read bref
+        maybe (pure unit) (\b -> abcallback (Tuple a b)) mb
+      pure $ \ab -> do
+        Ref.write (Just (snd ab)) bref
+        update (fst ab)
+    , tag: (unwrap c).tag
+    }
+  invsecond c = wrap
+    { builder: \abcallback -> do
+      aref <- liftEffect $ Ref.new Nothing
+      update <- (unwrap c).builder \b -> do
+        ma <- liftEffect $ Ref.read aref
+        maybe (pure unit) (\a -> abcallback (Tuple a b)) ma
+      pure $ \ab -> do
+        Ref.write (Just (fst ab)) aref
+        update (snd ab)
+    , tag: (unwrap c).tag
+    }
 
 instance CoCartesian Component where
-  invleft c = wrap \abcallback -> do
-    slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
-    pure case _ of
-        Left a -> do
-          mUpdate <- liftEffect $ Ref.read mUpdateRef
-          update <- case mUpdate of
-            Just update -> pure update
-            Nothing -> do
-              newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Left)
-              liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-              pure newUpdate
-          update a
-        Right _ -> do
-          liftEffect $ destroySlot slot
-          pure unit
-  invright c = wrap \abcallback -> do
-    slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
-    pure case _ of
-        Right b -> do
-          mUpdate <- liftEffect $ Ref.read mUpdateRef
-          update <- case mUpdate of
-            Just update -> pure update
-            Nothing -> do
-              newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Right)
-              liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-              pure newUpdate
-          update b
-        Left _ -> do
-          liftEffect $ destroySlot slot
-          pure unit
+  invleft c = wrap
+    { builder: \abcallback -> do
+      slot <- newSlot
+      mUpdateRef <- liftEffect $ Ref.new Nothing
+      pure case _ of
+          Left a -> do
+            mUpdate <- liftEffect $ Ref.read mUpdateRef
+            update <- case mUpdate of
+              Just update -> pure update
+              Nothing -> do
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< Left)
+                liftEffect $ Ref.write (Just newUpdate) mUpdateRef
+                pure newUpdate
+            update a
+          Right _ -> do
+            liftEffect $ destroySlot slot
+            pure unit
+    , tag: (unwrap c).tag
+    }
+  invright c = wrap
+    { builder: \abcallback -> do
+      slot <- newSlot
+      mUpdateRef <- liftEffect $ Ref.new Nothing
+      pure case _ of
+          Right b -> do
+            mUpdate <- liftEffect $ Ref.read mUpdateRef
+            update <- case mUpdate of
+              Just update -> pure update
+              Nothing -> do
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< Right)
+                liftEffect $ Ref.write (Just newUpdate) mUpdateRef
+                pure newUpdate
+            update b
+          Left _ -> do
+            liftEffect $ destroySlot slot
+            pure unit
+    , tag: (unwrap c).tag
+    }
 
 
 noChoiceComponent :: forall a. Component a
-noChoiceComponent = wrap $ pure mempty
+noChoiceComponent = withoutTag $ pure mempty
 
-renderComponent :: forall a. ComponentWrapper Identity a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
-renderComponent componentw callback = do
-  let (Identity component) = unwrap componentw
-  unwrap component callback
+-- TODO: buildComponent?
+buildComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
+buildComponent component = (unwrap component).builder
 
 -- Component primitives
 
-staticText :: forall f a . Applicative f => String -> ComponentWrapper f a
-staticText content = wrap $ pure $ wrap $ const $ S.text content *> mempty
+staticText :: forall a . String -> Component a
+staticText content = withoutTag $ const $ S.text content *> mempty
 
-text :: forall f . Applicative f => ComponentWrapper f String
-text = wrap $ pure $ wrap \_ -> do
+text :: Component String
+text = withoutTag \_ -> do
   slot <- newSlot
   pure $ replaceSlot slot <<< S.text
 
-inside :: forall f a . Functor f => TagName -> (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> ComponentWrapper f a -> ComponentWrapper f a
-inside tagName attrs event = modify $ map \component -> wrap \callback -> do
-  Tuple node f <- elAttr tagName (attrs unit) $ unwrap component callback
-  liftEffect $ event node callback
-  pure \a -> do
-    f a
+inside :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
+inside tagName attrs event c = wrap
+  { builder: \callback -> do
+    Tuple node f <- elAttr tagName (attrs unit) $ (unwrap c).builder callback
+    liftEffect $ event node callback
+    pure \a -> do
+      f a
+  , tag: (unwrap c).tag
+  }
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
@@ -160,22 +192,22 @@ foreign import setTextInputValue :: Node -> String -> Effect Unit
 foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
-textInput :: forall f. Applicative f => Attrs -> ComponentWrapper f String
-textInput attrs = CayleyInvariant $ pure $ wrap \callback -> do
+textInput :: Attrs -> Component String
+textInput attrs = withoutTag \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getTextInputValue node >>= callback
   pure $ setTextInputValue node
 
-checkbox :: forall f. Applicative f => Attrs -> ComponentWrapper f Boolean
-checkbox attrs = CayleyInvariant $ pure $ wrap \callback -> do
+checkbox :: Attrs -> Component Boolean
+checkbox attrs = withoutTag \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getCheckboxChecked node >>= callback
   pure $ setCheckboxChecked node
 
 -- TODO
-radio :: forall f. Applicative f => (Boolean -> Attrs) -> ComponentWrapper f Boolean
+radio :: (Boolean -> Attrs) -> Component Boolean
 radio attrs = zero # inside "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
   mempty
   -- setCheckboxChecked node value
@@ -191,22 +223,20 @@ onClick node callback = mempty -- void $ DOM.addEventListener "click" (\_ -> cal
 
 -- Foldables
 
-swallow :: forall f a . Functor f => ComponentWrapper f a -> ComponentWrapper f a
-swallow = unwrap >>> map (\component -> wrap \callback -> do
-  f <- unwrap component mempty
-  pure $ \a -> f a) >>> wrap
+-- swallow :: forall f a . Functor f => ComponentWrapper f a -> ComponentWrapper f a
+-- swallow = unwrap >>> map (\component -> wrap \callback -> do
+--   f <- unwrap component mempty
+--   pure $ \a -> f a) >>> wrap
 
-swallow' :: forall a. Component a
-swallow' = wrap $ mempty
+-- swallow' :: forall a. Component a
+-- swallow' = wrap $ mempty
 
-static :: forall f a b. Functor f => a -> ComponentWrapper f a -> ComponentWrapper f b
-static a = unwrap >>> map (\component -> wrap \callback -> do
-  f <- unwrap component mempty
-  pure \_ -> f a) >>> wrap
+-- static :: forall f a b. Functor f => a -> ComponentWrapper f a -> ComponentWrapper f b
+-- static a = unwrap >>> map (\component -> wrap \callback -> do
+--   f <- unwrap component mempty
+--   pure \_ -> f a) >>> wrap
 
 --
-
-type ComponentWrapper f a = CayleyInvariant f Component a
 
 -- when :: forall a p. Profunctor p => Choice p => String -> a -> p a b -> p s t
 -- when  
@@ -264,19 +294,3 @@ type ComponentWrapper f a = CayleyInvariant f Component a
 --   in Shop (\s -> Tuple (s2a s) (s2b s)) (\s (Tuple a b) -> sb2s (sa2s s a) b)
 
 -- dimap (fork v id) u · first
-
-type Path = Array Hop
-
-data Hop = HopLeft | HopRight | HopFirst | HopSecond
-
-derive instance Generic Hop _
-derive instance Eq Hop
-
-instance Show Hop where
-  show = genericShow
-
--- Dynamic for lenses
-type WithPath a =
-  { path :: Path
-  , value :: a
-  }

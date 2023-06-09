@@ -13,7 +13,7 @@ module Data.Invariant
   , class EffInvariant
   , class Invariant
   , class Tagged
-  , readTag
+  , getTag
   , setTag
   , conmap
   , covmap
@@ -77,11 +77,11 @@ invorwith f g a b = invmap f g $ invor a b
 
 class Tagged :: forall k. Type -> (k -> Type) -> Constraint
 class Tagged t i where
-    readTag :: forall a. i a -> t
+    getTag :: forall a. i a -> t
     setTag :: forall a. t -> i a -> i a
 
 modifyTag :: forall t i a . Tagged t i => (t -> t) -> i a -> i a
-modifyTag f ia = setTag (f (readTag ia)) ia
+modifyTag f ia = setTag (f (getTag ia)) ia
 
 class EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a
