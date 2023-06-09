@@ -8,11 +8,13 @@ import Data.String (toUpper)
 import Effect (Effect)
 import Specular.Dom.Builder (runMainBuilderInBody)
 import Type.Proxy (Proxy(..))
-import Web (Component, buildComponent, inside, staticText, text)
+import Web (Component, buildComponent)
+import Web.HTML as HTML
 import Web.MDC as MDC
 
 type Order =
-      { customer :: Customer
+      { id :: String
+      , customer :: Customer
       }
 
 type Customer =
@@ -20,6 +22,7 @@ type Customer =
       , lastName :: String
       }
 
+id = propertyInvLensTagged (Proxy :: Proxy "id")
 customer = propertyInvLensTagged (Proxy :: Proxy "customer")
 firstName = propertyInvLensTagged (Proxy :: Proxy "firstName")
 lastName = propertyInvLensTagged (Proxy :: Proxy "lastName")
@@ -28,19 +31,19 @@ upperCase = projection toUpper
 app ∷ Component Order
 app =
   (
-    MDC.filledText "first name" # inside "div" mempty mempty # firstName
+    MDC.filledText "first name" # HTML.inside "div" mempty mempty # firstName
     ^
-    MDC.filledText "last name" # inside "div" mempty mempty # lastName
+    MDC.filledText "last name" # HTML.inside "div" mempty mempty # lastName
     ^
-    text # inside "div" mempty mempty # firstName
+    HTML.text # HTML.inside "div" mempty mempty # firstName
     ^
-    text # inside "div" mempty mempty # lastName
-  ) # inside "div" mempty mempty # customer
+    HTML.text # HTML.inside "div" mempty mempty # lastName
+  ) # HTML.inside "div" mempty mempty # customer
   ^
-  staticText "Summary: " ^ text # upperCase # lastName # customer
+  HTML.staticText "Summary: " ^ HTML.text # id ^ HTML.staticText " " ^ HTML.text # firstName # customer ^ HTML.staticText " " ^ HTML.text # upperCase # lastName # customer
 
 main :: Effect Unit
 main = do
   update <- runMainBuilderInBody $ buildComponent app mempty
-  update $ { customer: { firstName: "Joe", lastName: "Doe"}}
+  update $ { id: "6176", customer: { firstName: "John", lastName: "Doe"}}
   pure unit
