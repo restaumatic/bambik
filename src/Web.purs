@@ -1,6 +1,8 @@
 module Web
   ( Component(..)
   , Hop
+  , OnPath(..)
+  , Path
   , Tag(..)
   , buildMainComponent
   , withoutTag
@@ -20,20 +22,25 @@ import Data.Plus (class Plus)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Specular.Dom.Browser (appendChild, createCommentNode)
 import Specular.Dom.Builder (Builder, getEnv, runMainBuilderInBody)
 
 newtype Component :: Type -> Type
 newtype Component a = Component
-  { builder :: (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
+  { builder :: (OnPath a -> Effect Unit) -> Builder Unit (OnPath a -> Effect Unit)
   , tag :: Tag
   }
 
 derive instance Newtype (Component a) _
 
 withoutTag :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
-withoutTag builder = Component { builder, tag: emptyTag}
+withoutTag builder' = Component
+  { builder: \callback -> do
+      update <- builder' \value -> callback $ OnPath { path: [], value }
+      pure \(OnPath { value }) -> update value
+  , tag: emptyTag}
 
 -- static' :: forall a . Component Void -> Component a
 -- static' (Component widget) = Component \_ -> do
@@ -57,9 +64,18 @@ newtype Tag = Tag
 derive instance Newtype Tag _
 derive instance Eq Tag
 
+type Path = Array Hop
+
+newtype OnPath a = OnPath
+  { value :: a
+  , path :: Path}
+
+derive instance Functor OnPath
+
 instance Show Tag where
   show (Tag {hops, subtags}) = (intercalate "." hops) -- <> (if null subtags then "" else ("(" <> intercalate "," (show <$> subtags) <> ")"))
 
+emptyTag :: Tag
 emptyTag = Tag {hops: [], subtags: [] }
 
 instance Tagged Tag Component where
@@ -83,10 +99,16 @@ instance Plus Component where
         mUpdate2 <- Ref.read mUpdate2Ref
         case mUpdate2 of
           Just update2 -> update2 a
-          Nothing -> pure unit) <> callback
+          Nothing -> pure unit) <> (\(OnPath { path, value }) -> do
+            let newPath = (unwrap (unwrap c1).tag).hops <> path
+            -- log $ "path: " <> show newPath
+            callback $ OnPath { path: newPath, value })
       unless (null (unwrap (unwrap c1).tag).hops) $ addComment $ "bambik < " <> show (unwrap c1).tag
       unless (null (unwrap (unwrap c2).tag).hops) $ addComment $ "bambik > " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ update1 <> callback
+      update2 <- (unwrap c2).builder $ update1 <> (\(OnPath { path, value }) -> do
+            let newPath = (unwrap (unwrap c2).tag).hops <> path
+            -- log $ "path: " <> show newPath
+            callback $ OnPath { path: newPath, value })
       unless (null (unwrap (unwrap c2).tag).hops) $ addComment $ "bambik < " <> show (unwrap c2).tag
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
       pure \i -> do
@@ -102,8 +124,8 @@ instance Plus Component where
 instance Invariant Component where
   invmap pre post c = wrap
     { builder: \callback -> do
-      f <- (unwrap c).builder $ callback <<< pre
-      pure $ f <<< post
+      f <- (unwrap c).builder $ callback <<< map pre
+      pure $ f <<< map post
     , tag: (unwrap c).tag
     }
 
@@ -111,23 +133,23 @@ instance Cartesian Component where
   invfirst c = wrap
     { builder: \abcallback -> do
       bref <- liftEffect $ Ref.new Nothing
-      update <- (unwrap c).builder \a -> do
+      update <- (unwrap c).builder \(OnPath {path, value: a}) -> do
         mb <- liftEffect $ Ref.read bref
-        maybe (pure unit) (\b -> abcallback (Tuple a b)) mb
-      pure $ \ab -> do
+        maybe (pure unit) (\b -> abcallback (OnPath { path, value: Tuple a b})) mb
+      pure $ \(OnPath { path, value: ab}) -> do
         Ref.write (Just (snd ab)) bref
-        update (fst ab)
+        update $ OnPath {path, value: fst ab}
     , tag: (unwrap c).tag
     }
   invsecond c = wrap
     { builder: \abcallback -> do
       aref <- liftEffect $ Ref.new Nothing
-      update <- (unwrap c).builder \b -> do
+      update <- (unwrap c).builder \(OnPath {path, value: b}) -> do
         ma <- liftEffect $ Ref.read aref
-        maybe (pure unit) (\a -> abcallback (Tuple a b)) ma
-      pure $ \ab -> do
+        maybe (pure unit) (\a -> abcallback (OnPath {path, value: Tuple a b})) ma
+      pure $ \(OnPath { path, value: ab }) -> do
         Ref.write (Just (fst ab)) aref
-        update (snd ab)
+        update $ OnPath { path, value: snd ab }
     , tag: (unwrap c).tag
     }
 
@@ -137,16 +159,16 @@ instance CoCartesian Component where
       slot <- newSlot
       mUpdateRef <- liftEffect $ Ref.new Nothing
       pure case _ of
-          Left a -> do
+          OnPath {path, value: Left a} -> do
             mUpdate <- liftEffect $ Ref.read mUpdateRef
             update <- case mUpdate of
               Just update -> pure update
               Nothing -> do
-                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< Left)
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< map Left)
                 liftEffect $ Ref.write (Just newUpdate) mUpdateRef
                 pure newUpdate
-            update a
-          Right _ -> do
+            update $ OnPath { path, value: a}
+          OnPath _ -> do
             liftEffect $ destroySlot slot
             pure unit
     , tag: (unwrap c).tag
@@ -156,16 +178,16 @@ instance CoCartesian Component where
       slot <- newSlot
       mUpdateRef <- liftEffect $ Ref.new Nothing
       pure case _ of
-          Right b -> do
+          OnPath {path, value: Right b} -> do
             mUpdate <- liftEffect $ Ref.read mUpdateRef
             update <- case mUpdate of
               Just update -> pure update
               Nothing -> do
-                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< Right)
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< map Right)
                 liftEffect $ Ref.write (Just newUpdate) mUpdateRef
                 pure newUpdate
-            update b
-          Left _ -> do
+            update $ OnPath { path, value: b}
+          _ -> do
             liftEffect $ destroySlot slot
             pure unit
     , tag: (unwrap c).tag
@@ -176,7 +198,11 @@ instance CoCartesian Component where
 -- noChoiceComponent = withoutTag $ pure mempty
 
 buildComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
-buildComponent component = (unwrap component).builder
+buildComponent component callback = do
+  update <- (unwrap component).builder \(OnPath { path, value }) -> do
+    log $ intercalate "." path
+    callback value
+  pure \value -> update (OnPath {path: [], value })
 
 buildMainComponent ∷ ∀ (a ∷ Type). Component a → Effect (a → Effect Unit)
 buildMainComponent app = runMainBuilderInBody $ buildComponent app mempty

@@ -20,7 +20,7 @@ import Effect.Class (liftEffect)
 import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (Component, withoutTag)
+import Web (Component, OnPath, withoutTag)
 
 -- Component primitives
 
@@ -32,7 +32,7 @@ text = withoutTag \_ -> do
   slot <- newSlot
   pure $ replaceSlot slot <<< S.text
 
-inside :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
+inside :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (OnPath a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
 inside tagName attrs event c = wrap
   { builder: \callback -> do
     Tuple node f <- elAttr tagName (attrs unit) $ (unwrap c).builder callback
