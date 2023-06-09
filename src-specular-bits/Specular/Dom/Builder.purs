@@ -1,5 +1,6 @@
 module Specular.Dom.Builder
   ( Builder
+  , getEnv
   , getParentNode
   , local
   , mkBuilder'

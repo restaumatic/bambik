@@ -118,7 +118,13 @@ foreign import preventDefault :: Event -> Effect Unit
 -- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
 
+
 onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
 onDomEvent eventType node handler = do
   void $ liftEffect $ addEventListener eventType handler node
   -- onCleanup unsub
+
+foreign import createCommentNodeImpl :: String -> Effect Node
+
+createCommentNode ∷ String → Effect Node
+createCommentNode = createCommentNodeImpl

@@ -16,7 +16,7 @@ module Data.Invariant.Optics
 
 import Prelude hiding (zero)
 
-import Data.Array (cons)
+import Data.Array (cons, null)
 import Data.Either (Either(..), either)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged, invfirst, invleft, invmap, invright, invsecond, modifyTag)
 import Data.Maybe (Maybe, maybe)
@@ -47,12 +47,12 @@ propertyInvLensTagged
   :: forall i l r1 r a
    . Invariant i
   => Cartesian i
-  => Tagged (Array String) i
+  => Tagged (Array (Array String)) i
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
   -> i a -> i (Record r1)
-propertyInvLensTagged l ia = propertyInvLens l ia # modifyTag (reflectSymbol l `cons` _)
+propertyInvLensTagged l ia = let hop = reflectSymbol l in propertyInvLens l ia # modifyTag (\tag -> if null tag then [[hop]] else tag <#> (hop `cons` _))
 
 invPrism :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)

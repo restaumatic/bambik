@@ -17,15 +17,16 @@ to generate this file without the comments in this block.
   , "console"
   , "effect"
   , "either"
+  , "foreign-object"
   , "identity"
   , "maybe"
   , "newtype"
   , "prelude"
   , "record"
   , "refs"
-  , "tuples"
-  , "foreign-object"
+  , "strings"
   , "transformers"
+  , "tuples"
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall

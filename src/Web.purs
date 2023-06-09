@@ -27,8 +27,8 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
-import Specular.Dom.Builder (Builder)
+import Specular.Dom.Browser (Attrs, Node, TagName, appendChild, createCommentNode, onDomEvent, (:=))
+import Specular.Dom.Builder (Builder, getEnv)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
 
@@ -64,16 +64,24 @@ instance Tagged Tag Component where
   setTag tag (Component { builder } ) = Component {builder, tag}
 
 
+addComment :: forall a. String -> Builder a Unit
+addComment comment = do
+  env <- getEnv
+  placeholderBefore <- liftEffect $ createCommentNode comment
+  liftEffect $ appendChild placeholderBefore env.parent
+
 instance Plus Component where
   plus c1 c2 = wrap
     { builder: \callback -> do
       -- TODO how to get rid of this ref?
       mUpdate2Ref <- liftEffect $ Ref.new Nothing
+      addComment $ "bambik: " <> show (unwrap c1).tag
       update1 <- (unwrap c1).builder $ (\a -> do
         mUpdate2 <- Ref.read mUpdate2Ref
         case mUpdate2 of
           Just update2 -> update2 a
           Nothing -> pure unit) <> callback
+      addComment $ "bambik: " <> show (unwrap c2).tag
       update2 <- (unwrap c2).builder $ update1 <> callback
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
       pure \i -> do

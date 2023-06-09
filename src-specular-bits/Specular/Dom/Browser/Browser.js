@@ -7,6 +7,13 @@ export function createTextNodeImpl(text) {
   };
 }
 
+// createCommentNodeImpl :: String -> IOSync Node
+export function createCommentNodeImpl(text) {
+  return function () {
+    return document.createComment(text)
+  }
+};
+
 // setTextImpl :: Node -> String -> IOSync Node
 export function setTextImpl(node) {
   return function (text) {

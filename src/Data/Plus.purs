@@ -1,5 +1,6 @@
 module Data.Plus
-  ( class Plus
+  ( (^)
+  , class Plus
   , plus
   , zero
   )
@@ -13,4 +14,7 @@ class Plus i where
     -- laws:
     --  plus a zero == a = plus zero a
     --  plus a (plus b c) == plus (plus a b) c
+
+-- lower precedence than `#`` which is 0
+infixr 0 plus as ^
 
