@@ -1,9 +1,8 @@
 module Web
   ( Component(..)
-  , Tag
   , Hop
-  , noChoiceComponent
-  , buildComponent
+  , Tag
+  , buildMainComponent
   )
   where
 
@@ -20,7 +19,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Specular.Dom.Browser (appendChild, createCommentNode)
-import Specular.Dom.Builder (Builder, getEnv)
+import Specular.Dom.Builder (Builder, getEnv, runMainBuilderInBody)
 
 newtype Component :: Type -> Type
 newtype Component a = Component
@@ -157,8 +156,11 @@ instance CoCartesian Component where
     }
 
 
-noChoiceComponent :: forall a. Component a
-noChoiceComponent = withoutTag $ pure mempty
+-- noChoiceComponent :: forall a. Component a
+-- noChoiceComponent = withoutTag $ pure mempty
 
 buildComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
 buildComponent component = (unwrap component).builder
+
+buildMainComponent ∷ ∀ (a ∷ Type). Component a → Effect (a → Effect Unit)
+buildMainComponent app = runMainBuilderInBody $ buildComponent app mempty
