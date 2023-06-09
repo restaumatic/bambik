@@ -19,7 +19,6 @@ to generate this file without the comments in this block.
   , "either"
   , "foldable-traversable"
   , "foreign-object"
-  , "identity"
   , "maybe"
   , "newtype"
   , "prelude"
