@@ -8,7 +8,7 @@ module Data.Invariant.Optics
   , invPrism
   , projection
   , propertyInvLens
-  , propertyInvLens'
+  , propertyInvLensTagged
   , replace
   , zeroed
   )
@@ -16,12 +16,12 @@ module Data.Invariant.Optics
 
 import Prelude hiding (zero)
 
+import Data.Array (cons)
 import Data.Either (Either(..), either)
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged, invfirst, invleft, invmap, invright, invsecond, modifyTag)
 import Data.Maybe (Maybe, maybe)
-import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, zero)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Prim.Row as Row
 import Record (get, set)
@@ -43,17 +43,16 @@ propertyInvLens
   -> i a -> i (Record r1)
 propertyInvLens l = invLens (\s -> get l s) (\s a -> (set l) a s)
 
-propertyInvLens'
-  :: forall i l r1 r a s
+propertyInvLensTagged
+  :: forall i l r1 r a
    . Invariant i
   => Cartesian i
+  => Tagged (Array String) i
   => IsSymbol l
   => Row.Cons l a r r1
-  => Newtype s (Record r1)
-  => Proxy s
-  -> Proxy l
-  -> i a -> i s
-propertyInvLens' _ l = invLens (\s -> get l (unwrap s)) (\s a -> wrap $ (set l) a (unwrap s))
+  => Proxy l
+  -> i a -> i (Record r1)
+propertyInvLensTagged l ia = propertyInvLens l ia # modifyTag (reflectSymbol l `cons` _)
 
 invPrism :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)
