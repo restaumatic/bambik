@@ -46,7 +46,7 @@ import Prelude
 import Data.Array (length)
 import Data.Either (Either(..))
 import Data.Invariant (inveff)
-import Data.Invariant.Optics (constructorInvPrism, invAffineTraversal, invLens, projection, propertyInvLens)
+import Data.Invariant.Optics (constructorInvPrism, invAffineTraversal, invLens, projection, property)
 import Data.Maybe (Maybe(..), isJust)
 import Effect.Aff (Aff, launchAff_)
 import Type.Proxy (Proxy(..))
@@ -103,10 +103,10 @@ type Addition = String
 
 -- optics
 -- id :: forall a r . InvLens a { id ∷ a | r }
-id = propertyInvLens (Proxy :: Proxy "id")
+id = property (Proxy :: Proxy "id")
 
 -- items :: forall a r . InvLens a { items ∷ a | r }
-items = propertyInvLens (Proxy :: Proxy "items")
+items = property (Proxy :: Proxy "items")
 
 -- delivery :: InvPrism { at ∷ String , to ∷ Place } Fulfillment
 delivery = constructorInvPrism Delivery $ case _ of
@@ -134,38 +134,38 @@ address = constructorInvPrism Address $ case _ of
   _ -> Nothing
 
 -- long :: forall a r . InvLens a { long ∷ a | r }
-long = propertyInvLens (Proxy :: Proxy "long")
+long = property (Proxy :: Proxy "long")
 
 -- lat :: forall a r . InvLens a { lat ∷ a | r }
-lat = propertyInvLens (Proxy :: Proxy "lat")
+lat = property (Proxy :: Proxy "lat")
 
 -- city :: forall a r . InvLens a { city ∷ a | r }
-city = propertyInvLens (Proxy :: Proxy "city")
+city = property (Proxy :: Proxy "city")
 
 -- street :: forall a r . InvLens a { street ∷ a | r }
-street = propertyInvLens (Proxy :: Proxy "street")
+street = property (Proxy :: Proxy "street")
 
 -- streetNumber :: forall a r . InvLens a { streetNumber ∷ a | r }
-streetNumber = propertyInvLens (Proxy :: Proxy "streetNumber")
+streetNumber = property (Proxy :: Proxy "streetNumber")
 
 -- at :: forall a r . InvLens a { at ∷ a | r }
-at = propertyInvLens (Proxy :: Proxy "at")
+at = property (Proxy :: Proxy "at")
 
 -- to :: forall a r . InvLens a { to ∷ a | r }
-to = propertyInvLens (Proxy :: Proxy "to")
+to = property (Proxy :: Proxy "to")
 
 -- product :: forall a r . InvLens a { product ∷ a | r }
-product = propertyInvLens (Proxy :: Proxy "product")
+product = property (Proxy :: Proxy "product")
 
 -- qty :: forall a r . InvLens a { qty ∷ a | r }
-qty = propertyInvLens (Proxy :: Proxy "qty")
+qty = property (Proxy :: Proxy "qty")
 
 
 -- fulfillment :: forall a r . InvLens a { fulfillment ∷ a | r }
-fulfillment = propertyInvLens (Proxy :: Proxy "fulfillment")
+fulfillment = property (Proxy :: Proxy "fulfillment")
 
 -- paymentMethod :: forall a r . InvLens a { paymentMethod ∷ a | r }
-paymentMethod = propertyInvLens (Proxy :: Proxy "paymentMethod")
+paymentMethod = property (Proxy :: Proxy "paymentMethod")
 
 -- hasNote :: forall r . InvLens Boolean { note ∷ Maybe String | r }
 hasNote = invLens (\order -> isJust order.note) (\order -> case _ of
@@ -173,13 +173,13 @@ hasNote = invLens (\order -> isJust order.note) (\order -> case _ of
   false -> order { note = Nothing })
 
 -- note :: forall a r . InvLens a { note ∷ a | r }
-note = propertyInvLens (Proxy :: Proxy "note")
+note = property (Proxy :: Proxy "note")
 
 -- paymentMethod' :: forall a r . InvLens a { paymentMethod :: a | r }
-paymentMethod' = propertyInvLens (Proxy :: Proxy "paymentMethod")
+paymentMethod' = property (Proxy :: Proxy "paymentMethod")
 
 -- customer :: forall a r . InvLens a { customer ∷ a | r }
-customer = propertyInvLens (Proxy :: Proxy "customer")
+customer = property (Proxy :: Proxy "customer")
 
 -- card :: forall i r . Cartesian i => CoCartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
 card = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of

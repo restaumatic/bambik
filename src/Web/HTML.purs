@@ -20,15 +20,18 @@ import Effect.Class (liftEffect)
 import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (Component, OnPath, withoutTag)
+import Web (Component, OnPath, makeComponent)
 
--- Component primitives
+foreign import getTextInputValue :: Node -> Effect String
+foreign import setTextInputValue :: Node -> String -> Effect Unit
+foreign import getCheckboxChecked :: Node -> Effect Boolean
+foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
 staticText :: forall a . String -> Component a
-staticText content = withoutTag $ const $ S.text content *> mempty
+staticText content = makeComponent $ const $ S.text content *> mempty
 
 text :: Component String
-text = withoutTag \_ -> do
+text = makeComponent \_ -> do
   slot <- newSlot
   pure $ replaceSlot slot <<< S.text
 
@@ -42,21 +45,15 @@ inside tagName attrs event c = wrap
   , tag: (unwrap c).tag
   }
 
-foreign import getTextInputValue :: Node -> Effect String
-foreign import setTextInputValue :: Node -> String -> Effect Unit
-
-foreign import getCheckboxChecked :: Node -> Effect Boolean
-foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
-
 textInput :: Attrs -> Component String
-textInput attrs = withoutTag \callback -> do
+textInput attrs = makeComponent \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getTextInputValue node >>= callback
   pure $ setTextInputValue node
 
 checkbox :: Attrs -> Component Boolean
-checkbox attrs = withoutTag \callback -> do
+checkbox attrs = makeComponent \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getCheckboxChecked node >>= callback

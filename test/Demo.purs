@@ -2,7 +2,7 @@ module Demo where
 
 import Prelude
 
-import Data.Invariant.Optics (projection, propertyInvLensTagged)
+import Data.Invariant.Optics (projection, property)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
@@ -21,10 +21,10 @@ type Customer =
       , lastName :: String
       }
 
-id = propertyInvLensTagged (Proxy :: Proxy "id")
-customer = propertyInvLensTagged (Proxy :: Proxy "customer")
-firstName = propertyInvLensTagged (Proxy :: Proxy "firstName")
-lastName = propertyInvLensTagged (Proxy :: Proxy "lastName")
+id = property (Proxy :: Proxy "id")
+customer = property (Proxy :: Proxy "customer")
+firstName = property (Proxy :: Proxy "firstName")
+lastName = property (Proxy :: Proxy "lastName")
 upperCase = projection toUpper
 
 orderComponent ∷ Component Order

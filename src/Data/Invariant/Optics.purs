@@ -1,14 +1,15 @@
 -- Polymorphic invariant transformers - invariant optics 
 module Data.Invariant.Optics
-  ( constructorInvPrism
+  ( Hop
+  , Path(..)
+  , constructorInvPrism
   , invAdapter
   , invAffineTraversal
   , invAffineTraversal'
   , invLens
   , invPrism
   , projection
-  , propertyInvLens
-  , propertyInvLensTagged
+  , property
   , replace
   , zeroed
   )
@@ -16,17 +17,33 @@ module Data.Invariant.Optics
 
 import Prelude hiding (zero)
 
-import Data.Array (cons)
+import Data.Array (cons, intercalate)
 import Data.Either (Either(..), either)
+import Data.Function (on)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged, invfirst, invleft, invmap, invright, invsecond, modifyTag)
 import Data.Maybe (Maybe, maybe)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, zero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy)
-import Web (Tag(..))
+
+newtype Path = Path (Array Hop)
+
+derive instance Newtype Path _
+
+instance Semigroup Path where
+  append p1 p2 = wrap $ on (<>) unwrap p1 p2
+
+instance Monoid Path where
+  mempty = wrap []
+
+instance Show Path where
+  show (Path hops) = intercalate "." hops
+
+type Hop = String
 
 invAdapter :: forall i a s . Invariant i => (a -> s) -> (s -> a) -> i a -> i s
 invAdapter f g = invmap f g
@@ -34,7 +51,7 @@ invAdapter f g = invmap f g
 invLens :: forall i a s. Invariant i => Cartesian i => (s -> a) -> (s -> a -> s) -> i a -> i s
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
 
-propertyInvLens
+property'
   :: forall i l r1 r a
    . Invariant i
   => Cartesian i
@@ -42,18 +59,18 @@ propertyInvLens
   => Row.Cons l a r r1
   => Proxy l
   -> i a -> i (Record r1)
-propertyInvLens l = invLens (\s -> get l s) (\s a -> (set l) a s)
+property' l = invLens (\s -> get l s) (\s a -> (set l) a s)
 
-propertyInvLensTagged
+property
   :: forall i l r1 r a
    . Invariant i
   => Cartesian i
-  => Tagged Tag i
+  => Tagged Path i
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
   -> i a -> i (Record r1)
-propertyInvLensTagged l ia = let hop = reflectSymbol l in propertyInvLens l ia # modifyTag (\(Tag {hops, subtags}) -> Tag { hops: hop `cons` hops, subtags})
+property l ia = let hop = reflectSymbol l in property' l ia # modifyTag (\(Path hops) -> Path (hop `cons` hops))
 
 invPrism :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)
@@ -85,7 +102,7 @@ projection :: forall i a s . Invariant i => Cartesian i => (s -> a) -> i a -> i 
 projection f = invLens f (\s _ -> s)
 
 
--- TODO: this is not a strict optic
+-- TODO: these are not a strict optic
 replace :: forall i a . Invariant i => i a -> i a -> i a
 replace = const
 

@@ -75,6 +75,7 @@ invor a b = invleft a `plus` invright b
 invorwith :: forall i a b c . Invariant i => CoCartesian i => Plus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
 invorwith f g a b = invmap f g $ invor a b
 
+-- TODO move to optics?
 class Tagged :: forall k. Type -> (k -> Type) -> Constraint
 class Tagged t i where
     getTag :: forall a. i a -> t

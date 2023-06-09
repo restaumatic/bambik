@@ -1,21 +1,19 @@
 module Web
   ( Component(..)
-  , Hop
-  , OnPath(..)
-  , Path
-  , Tag(..)
+  , OnPath
+  , makeComponent
   , buildMainComponent
-  , withoutTag
   )
   where
 
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
-import Data.Array (filter, null)
+import Data.Array (null)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged)
+import Data.Invariant.Optics (Path)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
@@ -30,96 +28,16 @@ import Specular.Dom.Builder (Builder, getEnv, runMainBuilderInBody)
 newtype Component :: Type -> Type
 newtype Component a = Component
   { builder :: (OnPath a -> Effect Unit) -> Builder Unit (OnPath a -> Effect Unit)
-  , tag :: Tag
+  , tag :: Path
   }
 
 derive instance Newtype (Component a) _
-
-withoutTag :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
-withoutTag builder' = Component
-  { builder: \callback -> do
-      update <- builder' \value -> callback $ OnPath { path: [], value }
-      pure \(OnPath { value }) -> update value
-  , tag: emptyTag}
-
--- static' :: forall a . Component Void -> Component a
--- static' (Component widget) = Component \_ -> do
---     _ <- widget absurd
---     pure mempty
-
--- sta :: forall a s . a -> Component a -> Component s
--- sta a c = wrap \callback -> do
---   update <- unwrap c mempty
---   liftEffect $ update a
---   pure mempty
-
-
-type Hop = String
-
-newtype Tag = Tag
-  { hops :: Array Hop
-  , subtags :: Array Tag
-  }
-
-derive instance Newtype Tag _
-derive instance Eq Tag
-
-type Path = Array Hop
 
 newtype OnPath a = OnPath
   { value :: a
   , path :: Path}
 
 derive instance Functor OnPath
-
-instance Show Tag where
-  show (Tag {hops, subtags}) = (intercalate "." hops) -- <> (if null subtags then "" else ("(" <> intercalate "," (show <$> subtags) <> ")"))
-
-emptyTag :: Tag
-emptyTag = Tag {hops: [], subtags: [] }
-
-instance Tagged Tag Component where
-  getTag component = (unwrap component).tag
-  setTag tag (Component { builder } ) = Component {builder, tag}
-
-
-addComment :: forall a. String -> Builder a Unit
-addComment comment = do
-  env <- getEnv
-  placeholderBefore <- liftEffect $ createCommentNode comment
-  liftEffect $ appendChild placeholderBefore env.parent
-
-instance Plus Component where
-  plus c1 c2 = wrap
-    { builder: \callback -> do
-      -- TODO how to get rid of this ref?
-      mUpdate2Ref <- liftEffect $ Ref.new Nothing
-      unless (null (unwrap (unwrap c1).tag).hops) $ addComment $ "bambik > " <> show (unwrap c1).tag
-      update1 <- (unwrap c1).builder $ (\a -> do
-        mUpdate2 <- Ref.read mUpdate2Ref
-        case mUpdate2 of
-          Just update2 -> update2 a
-          Nothing -> pure unit) <> (\(OnPath { path, value }) -> do
-            let newPath = (unwrap (unwrap c1).tag).hops <> path
-            -- log $ "path: " <> show newPath
-            callback $ OnPath { path: newPath, value })
-      unless (null (unwrap (unwrap c1).tag).hops) $ addComment $ "bambik < " <> show (unwrap c1).tag
-      unless (null (unwrap (unwrap c2).tag).hops) $ addComment $ "bambik > " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ update1 <> (\(OnPath { path, value }) -> do
-            let newPath = (unwrap (unwrap c2).tag).hops <> path
-            -- log $ "path: " <> show newPath
-            callback $ OnPath { path: newPath, value })
-      unless (null (unwrap (unwrap c2).tag).hops) $ addComment $ "bambik < " <> show (unwrap c2).tag
-      liftEffect $ Ref.write (Just update2) mUpdate2Ref
-      pure \i -> do
-        update1 i
-        update2 i
-    , tag: Tag { hops: [], subtags: filter (_ /= emptyTag) [(unwrap c1).tag, (unwrap c2).tag]}
-    }
-  zero = Component
-    { builder: mempty
-    , tag: emptyTag
-    }
 
 instance Invariant Component where
   invmap pre post c = wrap
@@ -193,16 +111,72 @@ instance CoCartesian Component where
     , tag: (unwrap c).tag
     }
 
+instance Tagged Path Component where
+  getTag component = (unwrap component).tag
+  setTag tag (Component { builder } ) = Component {builder, tag}
 
--- noChoiceComponent :: forall a. Component a
--- noChoiceComponent = withoutTag $ pure mempty
+instance Plus Component where
+  plus c1 c2 = wrap
+    { builder: \callback -> do
+      -- TODO how to get rid of this ref?
+      mUpdate2Ref <- liftEffect $ Ref.new Nothing
+      unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik > " <> show (unwrap c1).tag
+      update1 <- (unwrap c1).builder $ (\a -> do
+        mUpdate2 <- Ref.read mUpdate2Ref
+        case mUpdate2 of
+          Just update2 -> update2 a
+          Nothing -> pure unit) <> (\(OnPath { path, value }) -> do
+            let newPath = (unwrap c1).tag <> path
+            -- log $ "path: " <> show newPath
+            callback $ OnPath { path: newPath, value })
+      unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik < " <> show (unwrap c1).tag
+      unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik > " <> show (unwrap c2).tag
+      update2 <- (unwrap c2).builder $ update1 <> (\(OnPath { path, value }) -> do
+            let newPath =(unwrap c2).tag <> path
+            -- log $ "path: " <> show newPath
+            callback $ OnPath { path: newPath, value })
+      unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik < " <> show (unwrap c2).tag
+      liftEffect $ Ref.write (Just update2) mUpdate2Ref
+      pure \i -> do
+        update1 i
+        update2 i
+    , tag: mempty
+    }
+  zero = wrap
+    { builder: mempty
+    , tag: mempty
+    }
+
+makeComponent :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
+makeComponent builder = Component
+  { builder: \callback -> do
+      update <- builder \value -> callback $ OnPath { path: mempty, value }
+      pure \(OnPath { value }) -> update value
+  , tag: mempty}
 
 buildComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
 buildComponent component callback = do
   update <- (unwrap component).builder \(OnPath { path, value }) -> do
-    log $ intercalate "." path
+    log $ intercalate "." (unwrap path)
     callback value
-  pure \value -> update (OnPath {path: [], value })
+  pure \value -> update (OnPath {path: wrap [], value })
 
 buildMainComponent ∷ ∀ (a ∷ Type). Component a → Effect (a → Effect Unit)
 buildMainComponent app = runMainBuilderInBody $ buildComponent app mempty
+
+addComment :: forall a. String -> Builder a Unit
+addComment comment = do
+  env <- getEnv
+  placeholderBefore <- liftEffect $ createCommentNode comment
+  liftEffect $ appendChild placeholderBefore env.parent
+
+-- static' :: forall a . Component Void -> Component a
+-- static' (Component widget) = Component \_ -> do
+--     _ <- widget absurd
+--     pure mempty
+
+-- sta :: forall a s . a -> Component a -> Component s
+-- sta a c = wrap \callback -> do
+--   update <- unwrap c mempty
+--   liftEffect $ update a
+--   pure mempty
