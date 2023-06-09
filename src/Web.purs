@@ -13,7 +13,7 @@ import Data.Array (null)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged)
-import Data.Invariant.Optics (Path)
+import Data.Invariant.Optics (Path, overlappingPaths, pathTail)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
@@ -121,25 +121,26 @@ instance Plus Component where
       -- TODO how to get rid of this ref?
       mUpdate2Ref <- liftEffect $ Ref.new Nothing
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik > " <> show (unwrap c1).tag
-      update1 <- (unwrap c1).builder $ (\a -> do
+      update1 <- (unwrap c1).builder $ (\op@(OnPath { path })  -> do
         mUpdate2 <- Ref.read mUpdate2Ref
         case mUpdate2 of
-          Just update2 -> update2 a
+          Just update2 -> when (overlappingPaths path (unwrap c2).tag) $ update2 op
           Nothing -> pure unit) <> (\(OnPath { path, value }) -> do
             let newPath = (unwrap c1).tag <> path
             -- log $ "path: " <> show newPath
             callback $ OnPath { path: newPath, value })
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik < " <> show (unwrap c1).tag
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik > " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ update1 <> (\(OnPath { path, value }) -> do
-            let newPath =(unwrap c2).tag <> path
+      update2 <- (unwrap c2).builder $ (\op@(OnPath { path }) -> when (overlappingPaths path (unwrap c1).tag) $ update1 op) <> (\(OnPath { path, value }) -> do
+            let newPath = (unwrap c2).tag <> path
             -- log $ "path: " <> show newPath
             callback $ OnPath { path: newPath, value })
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik < " <> show (unwrap c2).tag
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
-      pure \i -> do
-        update1 i
-        update2 i
+      pure \(OnPath { path, value }) -> do
+        let newPath = path
+        when (overlappingPaths (unwrap c1).tag newPath) $ update1 $ OnPath {path: newPath, value}
+        when (overlappingPaths (unwrap c2).tag newPath) $ update2 $ OnPath {path: newPath, value}
     , tag: mempty
     }
   zero = wrap

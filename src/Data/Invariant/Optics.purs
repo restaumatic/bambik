@@ -8,6 +8,8 @@ module Data.Invariant.Optics
   , invAffineTraversal'
   , invLens
   , invPrism
+  , overlappingPaths
+  , pathTail
   , projection
   , property
   , replace
@@ -17,15 +19,17 @@ module Data.Invariant.Optics
 
 import Prelude hiding (zero)
 
-import Data.Array (cons, intercalate)
+import Data.Array (cons, intercalate, length, null, tail, zipWith)
 import Data.Either (Either(..), either)
+import Data.Foldable (and)
 import Data.Function (on)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged, invfirst, invleft, invmap, invright, invsecond, modifyTag)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, zero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Debug (trace)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy)
@@ -42,6 +46,14 @@ instance Monoid Path where
 
 instance Show Path where
   show (Path hops) = intercalate "." hops
+
+overlappingPaths :: Path -> Path -> Boolean
+overlappingPaths (Path hops1) (Path hops2) = let
+  result = null hops1 || null hops2 || let commonPrefixComparison = zipWith (==) hops1 hops2 in and commonPrefixComparison && (length commonPrefixComparison == length hops1 || length commonPrefixComparison == length hops2)
+  in trace (show hops1 <> " vs " <> show hops2 <> " -> " <> show result) (const result)
+
+pathTail :: Path -> Path
+pathTail (Path hops) = Path $ fromMaybe [] $ tail hops
 
 type Hop = String
 
