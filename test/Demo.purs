@@ -27,21 +27,23 @@ firstName = propertyInvLensTagged (Proxy :: Proxy "firstName")
 lastName = propertyInvLensTagged (Proxy :: Proxy "lastName")
 upperCase = projection toUpper
 
-order ∷ Component Order
-order =
-  (
-    MDC.filledText "first name" # HTML.inside "div" mempty mempty # firstName
-    ^
-    MDC.filledText "last name" # HTML.inside "div" mempty mempty # lastName
-    ^
-    HTML.text # HTML.inside "div" mempty mempty # firstName
-    ^
-    HTML.text # HTML.inside "div" mempty mempty # lastName
-  ) # HTML.inside "div" mempty mempty # customer
+orderComponent ∷ Component Order
+orderComponent =
+  customerComponent # HTML.inside "div" mempty mempty # customer
   ^
   HTML.staticText "Summary: " ^ HTML.text # id ^ HTML.staticText " " ^ HTML.text # firstName # customer ^ HTML.staticText " " ^ HTML.text # upperCase # lastName # customer
 
+customerComponent :: Component Customer
+customerComponent =
+  MDC.filledText "first name" # HTML.inside "div" mempty mempty # firstName
+  ^
+  MDC.filledText "last name" # HTML.inside "div" mempty mempty # lastName
+  ^
+  HTML.text # HTML.inside "div" mempty mempty # firstName
+  ^
+  HTML.text # HTML.inside "div" mempty mempty # lastName
+
 main :: Effect Unit
 main = do
-  updateOrder <- buildMainComponent order
-  updateOrder { id: "6178", customer: { firstName: "John", lastName: "Doe"}}
+  updateOrder <- buildMainComponent orderComponent
+  updateOrder { id: "6179", customer: { firstName: "John", lastName: "Doe"}}
