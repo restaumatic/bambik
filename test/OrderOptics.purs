@@ -181,13 +181,13 @@ paymentMethod' = propertyInvLens (Proxy :: Proxy "paymentMethod")
 -- customer :: forall a r . InvLens a { customer ∷ a | r }
 customer = propertyInvLens (Proxy :: Proxy "customer")
 
--- card :: forall i r . CartesianInvariant i => CoCartesianInvariant i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
+-- card :: forall i r . Cartesian i => CoCartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
 card = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of
   Delivery _ -> Left $ order
   _ -> Right $ order.paymentMethod == Card
  )
 
--- cash :: forall i r . CartesianInvariant i => CoCartesianInvariant i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
+-- cash :: forall i r . Cartesian i => CoCartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
 cash = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Cash } else order) (\order -> case order.fulfillment of
   _ -> Right $ order.paymentMethod == Cash
  )
@@ -216,5 +216,5 @@ placeOrder = inveff (\order -> launchAff_ $ doPlaceOrder order)
     doPlaceOrder :: Order -> Aff Unit
     doPlaceOrder = mempty
 
--- numberOfItems :: forall i . CartesianInvariant i => i Int -> i Order
+-- numberOfItems :: forall i . Cartesian i => i Int -> i Order
 numberOfItems = projection (\order -> length order.items)

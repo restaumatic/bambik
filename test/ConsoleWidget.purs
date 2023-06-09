@@ -12,7 +12,7 @@ module Test.ConsoleWidget
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class EffInvariant, class Invariant)
+import Data.Invariant (class Cartesian, class CoCartesian, class EffInvariant, class Invariant)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Plus (class Plus)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -37,7 +37,7 @@ dyntext :: String -> ConsoleWidget String
 dyntext label = ConsoleWidget \_ -> pure \a -> log $ "render: " <> label <> ": " <> a
 
 -- lifts provided invariant (which once initialized is never updated nor never updates) into invariant of arbitrary type
--- notice: `forall a i . CoCartesianInvariant i => i Void -> i a` `invstatic ia = invmap (\aors -> either absurd identity aors) Right (invleft ia)` has the same type but different constrain and behavior
+-- notice: `forall a i . CoCartesian i => i Void -> i a` `invstatic ia = invmap (\aors -> either absurd identity aors) Right (invleft ia)` has the same type but different constrain and behavior
 static :: forall a . ConsoleWidget Void -> ConsoleWidget a
 static (ConsoleWidget widget) = ConsoleWidget \_ -> do
     _ <- widget absurd
@@ -51,7 +51,7 @@ immutable a (ConsoleWidget widget) = ConsoleWidget \callbacka -> do
 instance Invariant ConsoleWidget where
     invmap f g (ConsoleWidget widget) = ConsoleWidget \callbackb -> (_ <<< g) <$> widget (callbackb <<< f)
 
-instance CartesianInvariant ConsoleWidget where
+instance Cartesian ConsoleWidget where
     invfirst (ConsoleWidget widget) = ConsoleWidget \callbackab -> do
         bref <- Ref.new Nothing
         update <- widget \a -> do
@@ -71,7 +71,7 @@ instance CartesianInvariant ConsoleWidget where
             -- TODO: only if we know that (snd ab) has changed
             update (snd ab)
 
-instance CoCartesianInvariant ConsoleWidget where
+instance CoCartesian ConsoleWidget where
     invleft (ConsoleWidget widget) = ConsoleWidget \callbackaorb -> do
         -- TODO create slot
         mUpdateRef <- Ref.new Nothing

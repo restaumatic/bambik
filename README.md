@@ -110,10 +110,10 @@ This, again, reminds of UI where the trigger is a user action rather than data p
 Foo invariant enables:
 
 ```
-combineCartesian :: (Invariant i, CartesianInvariant a, Foo i) => i a -> i b -> i (a, b)
+combineCartesian :: (Invariant i, Cartesian a, Foo i) => i a -> i b -> i (a, b)
 combineCartesian ia ib = first a `iappend` second b
 
-combineCoCartesian :: (Invariant i, CoCartesianInvariant a, Foo i) => i a -> i b -> i (Either a b)
+combineCoCartesian :: (Invariant i, CoCartesian a, Foo i) => i a -> i b -> i (Either a b)
 combineCoCartesian ia ib = left a `iappend` right b
 ```
 

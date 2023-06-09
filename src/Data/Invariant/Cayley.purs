@@ -2,7 +2,7 @@ module Data.Invariant.Cayley where
 
 import Prelude hiding (zero)
 
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, plus, zero)
 
@@ -14,11 +14,11 @@ derive instance Newtype (CayleyInvariant f i a) _
 instance (Functor f, Invariant p) => Invariant (CayleyInvariant f p) where
   invmap f g = wrap <<< map (invmap f g) <<< unwrap
 
-instance (Functor f, CartesianInvariant i) => CartesianInvariant (CayleyInvariant f i) where
+instance (Functor f, Cartesian i) => Cartesian (CayleyInvariant f i) where
   invfirst  = wrap <<< map invfirst <<< unwrap
   invsecond = wrap <<< map invsecond <<< unwrap
 
-instance (Functor f, CoCartesianInvariant i) => CoCartesianInvariant (CayleyInvariant f i) where
+instance (Functor f, CoCartesian i) => CoCartesian (CayleyInvariant f i) where
   invleft   = wrap <<< map invleft <<< unwrap
   invright  = wrap <<< map invright <<< unwrap
 

@@ -22,7 +22,7 @@ import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Identity (Identity(..))
-import Data.Invariant (class CartesianInvariant, class CoCartesianInvariant, class Invariant)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
 import Data.Invariant.Cayley (CayleyInvariant(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, modify, unwrap, wrap)
@@ -76,7 +76,7 @@ instance Invariant Component where
       f <- unwrap c $ callback <<< pre
       pure $ f <<< post
 
-instance CartesianInvariant Component where
+instance Cartesian Component where
   invfirst c = wrap \abcallback -> do
     bref <- liftEffect $ Ref.new Nothing
     update <- unwrap c \a -> do
@@ -94,7 +94,7 @@ instance CartesianInvariant Component where
       Ref.write (Just (fst ab)) aref
       update (snd ab)
 
-instance CoCartesianInvariant Component where
+instance CoCartesian Component where
   invleft c = wrap \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
