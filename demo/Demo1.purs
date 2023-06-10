@@ -2,7 +2,8 @@ module Demo1 where
 
 import Prelude
 
-import Data.Invariant.Optics (projection, property)
+import Data.Invariant (class Cartesian, class Invariant)
+import Data.Invariant.Optics (class Tagged, projection, property)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
@@ -21,11 +22,22 @@ type Customer =
       , lastName :: String
       }
 
+id :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { id ∷ a | b }
 id = property (Proxy :: Proxy "id")
+
+customer :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { customer ∷ a | b }
 customer = property (Proxy :: Proxy "customer")
+
+firstName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { firstName ∷ a | b }
 firstName = property (Proxy :: Proxy "firstName")
+
+lastName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { lastName ∷ a | b }
 lastName = property (Proxy :: Proxy "lastName")
+
+upperCase :: forall i . Invariant i => Cartesian i => i String → i String
 upperCase = projection toUpper
+
+--
 
 orderComponent ∷ Component Order
 orderComponent =
