@@ -121,29 +121,28 @@ instance Plus Component where
       -- TODO how to get rid of this ref?
       mUpdate2Ref <- liftEffect $ Ref.new Nothing
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik > " <> show (unwrap c1).tag
-      update1 <- (unwrap c1).builder \(OnPath { path, value }) -> do
+      update1 <- (unwrap c1).builder \op -> do
         mUpdate2 <- Ref.read mUpdate2Ref
         let update2 = maybe mempty identity mUpdate2
-        let newPath = ((unwrap c1).tag <> path)
-        case remainingPath (unwrap c2).tag newPath of
-          Nothing -> mempty
-          Just remPath -> update2 $ OnPath {path: remPath, value}
-        callback $ OnPath {path: newPath, value}
+        onChildChange (unwrap c1).tag (unwrap c2).tag update2 callback op
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik < " <> show (unwrap c1).tag
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik > " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder \(OnPath { path, value }) -> do
-        let newPath = ((unwrap c2).tag <> path)
-        case remainingPath (unwrap c1).tag newPath of
-          Nothing -> mempty
-          Just remPath -> update1 $ OnPath {path: remPath, value}
-        callback $ OnPath {path: newPath, value}
+      update2 <- (unwrap c2).builder $ onChildChange (unwrap c2).tag (unwrap c1).tag update1 callback
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik < " <> show (unwrap c2).tag
-      pure \(OnPath { path, value }) -> do
-        maybe (mempty) (\newPath -> update1 (OnPath { path: newPath, value } )) (remainingPath (unwrap c1).tag path)
-        maybe (mempty) (\newPath -> update2 (OnPath { path: newPath, value } )) (remainingPath (unwrap c2).tag path)
+      pure $ onParentChange (unwrap c1).tag update1 <> onParentChange (unwrap c2).tag update2
     , tag: mempty
     }
+    where
+      onChildChange :: forall a . Path -> Path -> (OnPath a -> Effect Unit) -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
+      onChildChange myPath siblingPath updateSibling updateParent (OnPath { path, value }) = do
+        let newPath = myPath <> path
+        case remainingPath siblingPath newPath of
+          Nothing -> mempty
+          Just remPath -> updateSibling $ OnPath { path: remPath, value }
+        updateParent $ OnPath { path: newPath, value }
+      onParentChange :: forall a . Path -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
+      onParentChange childPath updateChild (OnPath { path, value }) = maybe (mempty) (\newPath -> updateChild (OnPath { path: newPath, value } )) (remainingPath childPath path)
   zero = wrap
     { builder: mempty
     , tag: mempty
