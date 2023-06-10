@@ -2,16 +2,19 @@
 module Data.Invariant.Optics
   ( Hop
   , Path(..)
+  , class Tagged
+  , getPath
+  , setPath
   , constructorInvPrism
   , invAdapter
   , invAffineTraversal
   , invAffineTraversal'
   , invLens
   , invPrism
-  , remainingPath
-  , pathTail
+  , modifyPath
   , projection
   , property
+  , remainingPath
   , replace
   , zeroed
   )
@@ -19,24 +22,34 @@ module Data.Invariant.Optics
 
 import Prelude hiding (zero)
 
-import Data.Array (cons, drop, intercalate, length, null, tail, zipWith)
+import Data.Array (cons, drop, intercalate, length, null, zipWith)
 import Data.Either (Either(..), either)
 import Data.Foldable (and)
 import Data.Function (on)
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged, invfirst, invleft, invmap, invright, invsecond, modifyTag)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, zero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
-import Debug (trace)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy)
 
+
+class Tagged :: forall k. (k -> Type) -> Constraint
+class Tagged i where
+    getPath :: forall a. i a -> Path
+    setPath :: forall a. Path -> i a -> i a
+
+modifyPath :: forall i a . Tagged i => (Path -> Path) -> i a -> i a
+modifyPath f ia = setPath (f (getPath ia)) ia
+
 newtype Path = Path (Array Hop)
 
 derive instance Newtype Path _
+
+type Hop = String
 
 instance Semigroup Path where
   append p1 p2 = wrap $ on (<>) unwrap p1 p2
@@ -45,19 +58,15 @@ instance Monoid Path where
   mempty = wrap []
 
 instance Show Path where
-  show (Path hops) = intercalate "." hops
+  show (Path hops) = "\"" <> intercalate "." hops <> "\""
 
 -- hops2 - hops1
 remainingPath :: Path -> Path -> Maybe Path
-remainingPath (Path hops1) (Path hops2) = let
-  overlapping = null hops1 || null hops2 || let commonPrefixComparison = zipWith (==) hops1 hops2 in and commonPrefixComparison && (length commonPrefixComparison == length hops1 || length commonPrefixComparison == length hops2)
-  result = if overlapping then Just $ Path $ drop (length hops1) hops2 else Nothing
-  in trace (show hops2 <> " - " <> show hops1 <> " -> " <> show result) (const result)
+remainingPath (Path hops1) (Path hops2) = if arePrefixing hops1 hops2 then Just $ Path $ drop (length hops1) hops2 else Nothing
 
-pathTail :: Path -> Path
-pathTail (Path hops) = Path $ fromMaybe [] $ tail hops
-
-type Hop = String
+-- TODO Move to extras
+arePrefixing :: forall a . Eq a => Array a -> Array a -> Boolean
+arePrefixing hops1 hops2 = null hops1 || null hops2 || let commonPrefixComparison = zipWith (==) hops1 hops2 in and commonPrefixComparison && (length commonPrefixComparison == length hops1 || length commonPrefixComparison == length hops2)
 
 invAdapter :: forall i a s . Invariant i => (a -> s) -> (s -> a) -> i a -> i s
 invAdapter f g = invmap f g
@@ -79,12 +88,12 @@ property
   :: forall i l r1 r a
    . Invariant i
   => Cartesian i
-  => Tagged Path i
+  => Tagged i
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
   -> i a -> i (Record r1)
-property l ia = let hop = reflectSymbol l in property' l ia # modifyTag (\(Path hops) -> Path (hop `cons` hops))
+property l ia = let hop = reflectSymbol l in property' l ia # modifyPath (\(Path hops) -> Path (hop `cons` hops))
 
 invPrism :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)

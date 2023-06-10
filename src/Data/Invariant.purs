@@ -12,12 +12,8 @@ module Data.Invariant
   , class Covariant
   , class EffInvariant
   , class Invariant
-  , class Tagged
-  , getTag
-  , setTag
   , conmap
   , covmap
-  , modifyTag
   , invand
   , invandwith
   , inveff
@@ -74,15 +70,6 @@ invor a b = invleft a `plus` invright b
 
 invorwith :: forall i a b c . Invariant i => CoCartesian i => Plus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
 invorwith f g a b = invmap f g $ invor a b
-
--- TODO move to optics?
-class Tagged :: forall k. Type -> (k -> Type) -> Constraint
-class Tagged t i where
-    getTag :: forall a. i a -> t
-    setTag :: forall a. t -> i a -> i a
-
-modifyTag :: forall t i a . Tagged t i => (t -> t) -> i a -> i a
-modifyTag f ia = setTag (f (getTag ia)) ia
 
 class EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a

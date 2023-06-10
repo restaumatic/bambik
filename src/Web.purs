@@ -12,8 +12,8 @@ import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Array (null)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate)
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, class Tagged)
-import Data.Invariant.Optics (Path, remainingPath, pathTail)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
+import Data.Invariant.Optics (class Tagged, Path, remainingPath)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
@@ -111,9 +111,9 @@ instance CoCartesian Component where
     , tag: (unwrap c).tag
     }
 
-instance Tagged Path Component where
-  getTag component = (unwrap component).tag
-  setTag tag (Component { builder } ) = Component {builder, tag}
+instance Tagged Component where
+  getPath component = (unwrap component).tag
+  setPath tag (Component { builder } ) = Component {builder, tag}
 
 instance Plus Component where
   plus c1 c2 = wrap
@@ -121,25 +121,27 @@ instance Plus Component where
       -- TODO how to get rid of this ref?
       mUpdate2Ref <- liftEffect $ Ref.new Nothing
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik > " <> show (unwrap c1).tag
-      update1 <- (unwrap c1).builder $ (\(OnPath { path, value })  -> do
+      update1 <- (unwrap c1).builder \(OnPath { path, value }) -> do
         mUpdate2 <- Ref.read mUpdate2Ref
-        case mUpdate2 of
-          Just update2 -> maybe (pure unit) (\newPath -> update2 (OnPath { path: newPath, value } )) (remainingPath (unwrap c2).tag path)
-          Nothing -> pure unit) <> (\(OnPath { path, value }) -> do
-            let newPath = (unwrap c1).tag <> path
-            -- log $ "path: " <> show newPath
-            callback $ OnPath { path: newPath, value })
+        let update2 = maybe mempty identity mUpdate2
+        let newPath = ((unwrap c1).tag <> path)
+        case remainingPath (unwrap c2).tag newPath of
+          Nothing -> mempty
+          Just remPath -> update2 $ OnPath {path: remPath, value}
+        callback $ OnPath {path: newPath, value}
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "bambik < " <> show (unwrap c1).tag
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik > " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ (\(OnPath { path, value }) -> maybe (pure unit) (\newPath -> update1 (OnPath { path: newPath, value } )) (remainingPath (unwrap c1).tag path)) <> (\(OnPath { path, value }) -> do
-            let newPath = (unwrap c2).tag <> path
-            -- log $ "path: " <> show newPath
-            callback $ OnPath { path: newPath, value })
-      unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik < " <> show (unwrap c2).tag
+      update2 <- (unwrap c2).builder \(OnPath { path, value }) -> do
+        let newPath = ((unwrap c2).tag <> path)
+        case remainingPath (unwrap c1).tag newPath of
+          Nothing -> mempty
+          Just remPath -> update1 $ OnPath {path: remPath, value}
+        callback $ OnPath {path: newPath, value}
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
+      unless (null (unwrap (unwrap c2).tag)) $ addComment $ "bambik < " <> show (unwrap c2).tag
       pure \(OnPath { path, value }) -> do
-        maybe (pure unit) (\newPath -> update1 (OnPath { path: newPath, value } )) (remainingPath (unwrap c1).tag path)
-        maybe (pure unit) (\newPath -> update2 (OnPath { path: newPath, value } )) (remainingPath (unwrap c2).tag path)
+        maybe (mempty) (\newPath -> update1 (OnPath { path: newPath, value } )) (remainingPath (unwrap c1).tag path)
+        maybe (mempty) (\newPath -> update2 (OnPath { path: newPath, value } )) (remainingPath (unwrap c2).tag path)
     , tag: mempty
     }
   zero = wrap
