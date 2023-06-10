@@ -13,7 +13,7 @@ import Data.Array (null)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
-import Data.Invariant.Optics (class Tagged, Path, remainingPath)
+import Data.Invariant.Optics (class Tagged, Path, pathDifference, prefixingPaths)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
@@ -118,31 +118,35 @@ instance Tagged Component where
 instance Plus Component where
   plus c1 c2 = wrap
     { builder: \callback -> do
+      -- optimization: we already know that it's redundant to propagade change between children unless
+      -- one child's path is a prefix of the other child's path,
+      -- in particular, when their paths are the same.
+      let propagationBetweenChildrenNecessary = prefixingPaths (unwrap c1).tag (unwrap c2).tag
       -- TODO how to get rid of this ref?
       mUpdate2Ref <- liftEffect $ Ref.new Nothing
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "path " <> show (unwrap c1).tag
       update1 <- (unwrap c1).builder \op -> do
         mUpdate2 <- Ref.read mUpdate2Ref
         let update2 = maybe mempty identity mUpdate2
-        onChildChange (unwrap c1).tag (unwrap c2).tag update2 callback op
+        onChildChange propagationBetweenChildrenNecessary (unwrap c1).tag (unwrap c2).tag update2 callback op
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "path /" <> show (unwrap c1).tag
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "path " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ onChildChange (unwrap c2).tag (unwrap c1).tag update1 callback
+      update2 <- (unwrap c2).builder $ onChildChange propagationBetweenChildrenNecessary (unwrap c2).tag (unwrap c1).tag update1 callback
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "path /" <> show (unwrap c2).tag
       pure $ onParentChange (unwrap c1).tag update1 <> onParentChange (unwrap c2).tag update2
     , tag: mempty
     }
     where
-      onChildChange :: forall a . Path -> Path -> (OnPath a -> Effect Unit) -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
-      onChildChange myPath siblingPath updateSibling updateParent (OnPath { path, value }) = do
+      onChildChange :: forall a . Boolean -> Path -> Path -> (OnPath a -> Effect Unit) -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
+      onChildChange siblingPropagationGuard myPath siblingPath updateSibling updateParent (OnPath { path, value }) = do
         let newPath = myPath <> path
-        case remainingPath siblingPath newPath of
+        when siblingPropagationGuard $ case pathDifference newPath siblingPath of
           Nothing -> mempty
           Just remPath -> updateSibling $ OnPath { path: remPath, value }
         updateParent $ OnPath { path: newPath, value }
       onParentChange :: forall a . Path -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
-      onParentChange childPath updateChild (OnPath { path, value }) = maybe (mempty) (\newPath -> updateChild (OnPath { path: newPath, value } )) (remainingPath childPath path)
+      onParentChange childPath updateChild (OnPath { path, value }) = maybe (mempty) (\newPath -> updateChild (OnPath { path: newPath, value } )) (pathDifference path childPath)
   zero = wrap
     { builder: mempty
     , tag: mempty

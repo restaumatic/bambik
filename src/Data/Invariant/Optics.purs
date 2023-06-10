@@ -3,19 +3,20 @@ module Data.Invariant.Optics
   ( Hop
   , Path(..)
   , class Tagged
-  , getPath
-  , setPath
   , constructorInvPrism
-  , invAdapter
+  , getPath
   , invAffineTraversal
   , invAffineTraversal'
   , invLens
   , invPrism
   , modifyPath
+  , pathDifference
+  , prefixingArrays
+  , prefixingPaths
   , projection
   , property
-  , remainingPath
   , replace
+  , setPath
   , zeroed
   )
   where
@@ -60,13 +61,22 @@ instance Monoid Path where
 instance Show Path where
   show (Path hops) = intercalate "." hops
 
--- hops2 - hops1
-remainingPath :: Path -> Path -> Maybe Path
-remainingPath (Path hops1) (Path hops2) = if arePrefixing hops1 hops2 then Just $ Path $ drop (length hops1) hops2 else Nothing
+pathDifference :: Path -> Path -> Maybe Path
+pathDifference (Path hops1) (Path hops2) = Path <$> arrayDifference hops1 hops2
 
 -- TODO Move to extras
-arePrefixing :: forall a . Eq a => Array a -> Array a -> Boolean
-arePrefixing hops1 hops2 = null hops1 || null hops2 || let commonPrefixComparison = zipWith (==) hops1 hops2 in and commonPrefixComparison && (length commonPrefixComparison == length hops1 || length commonPrefixComparison == length hops2)
+-- ar1 `arrayDifference` ar2 == Just ar3 <=> ar1 == ar2 <> a3 otherwise ar1 `arrayDifference` ar2 == Nothing
+arrayDifference :: forall a . Eq a => Array a -> Array a -> Maybe (Array a)
+arrayDifference ar1 ar2 = let z = zipWith (==) ar2 ar1 in if and z then Just (drop (length z) ar1) else Nothing
+
+-- commutative
+prefixingPaths :: Path -> Path -> Boolean
+prefixingPaths (Path hops1) (Path hops2) = prefixingArrays hops1 hops2
+
+-- TODO Move to exports
+-- commutative
+prefixingArrays ∷ ∀ (a ∷ Type). Eq a ⇒ Array a → Array a → Boolean
+prefixingArrays ar1 ar2 = and $ zipWith (==) ar1 ar2
 
 invAdapter :: forall i a s . Invariant i => (a -> s) -> (s -> a) -> i a -> i s
 invAdapter f g = invmap f g
