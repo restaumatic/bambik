@@ -2,8 +2,7 @@ module Demo1 where
 
 import Prelude
 
-import Data.Invariant (class Cartesian, class Invariant, class Tagged)
-import Data.Invariant.Optics (Path(..), projection, property)
+import Data.Invariant.Optics (projection, property)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
