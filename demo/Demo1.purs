@@ -41,19 +41,19 @@ upperCase = projection toUpper
 
 orderComponent ∷ Component Order
 orderComponent =
-  customerComponent # HTML.inside "div" mempty mempty # customer
+  customerComponent # HTML.inside "div" # customer
   ^
   HTML.staticText "Summary: " ^ HTML.text # id ^ HTML.staticText " " ^ HTML.text # firstName # customer ^ HTML.staticText " " ^ HTML.text # upperCase # lastName # customer
 
 customerComponent :: Component Customer
 customerComponent =
-  MDC.filledText "first name" # HTML.inside "div" mempty mempty # firstName
+  MDC.filledText "first name" # HTML.inside "div" # firstName
   ^
-  MDC.filledText "last name" # HTML.inside "div" mempty mempty # lastName
+  MDC.filledText "last name" # HTML.inside "div" # lastName
   ^
-  HTML.text # HTML.inside "div" mempty mempty # firstName
+  HTML.text # HTML.inside "div" # firstName
   ^
-  HTML.text # HTML.inside "div" mempty mempty # lastName
+  HTML.text # HTML.inside "div" # lastName
 
 main :: Effect Unit
 main = do

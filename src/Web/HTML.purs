@@ -1,6 +1,7 @@
 module Web.HTML
   ( checkbox
   , inside
+  , inside'
   , radio
   , staticText
   , text
@@ -35,8 +36,11 @@ text = makeComponent \_ -> do
   slot <- newSlot
   pure $ replaceSlot slot <<< S.text
 
-inside :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (OnPath a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
-inside tagName attrs event c = wrap
+inside :: forall a . TagName -> Component a -> Component a
+inside tagName = inside' tagName mempty mempty
+
+inside' :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (OnPath a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
+inside' tagName attrs event c = wrap
   { builder: \callback -> do
     Tuple node f <- elAttr tagName (attrs unit) $ (unwrap c).builder callback
     liftEffect $ event node callback
@@ -61,7 +65,7 @@ checkbox attrs = makeComponent \callback -> do
 
 -- TODO
 radio :: (Boolean -> Attrs) -> Component Boolean
-radio attrs = zero # inside "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
+radio attrs = zero # inside' "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
   mempty
   -- setCheckboxChecked node value
   -- onDomEvent "change" node (\_ -> getCheckboxChecked node >>= callback)
