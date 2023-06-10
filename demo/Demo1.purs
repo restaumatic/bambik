@@ -1,8 +1,9 @@
-module Demo where
+module Demo1 where
 
 import Prelude
 
-import Data.Invariant.Optics (projection, property)
+import Data.Invariant (class Cartesian, class Invariant, class Tagged)
+import Data.Invariant.Optics (Path(..), projection, property)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
@@ -46,4 +47,4 @@ customerComponent =
 main :: Effect Unit
 main = do
   updateOrder <- buildMainComponent orderComponent
-  updateOrder { id: "6179", customer: { firstName: "John", lastName: "Doe"}}
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}}
