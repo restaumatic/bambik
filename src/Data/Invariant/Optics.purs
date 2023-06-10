@@ -58,7 +58,7 @@ instance Monoid Path where
   mempty = wrap []
 
 instance Show Path where
-  show (Path hops) = "\"" <> intercalate "." hops <> "\""
+  show (Path hops) = intercalate "." hops
 
 -- hops2 - hops1
 remainingPath :: Path -> Path -> Maybe Path
