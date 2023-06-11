@@ -1,4 +1,9 @@
-# ?
+# Bambik
+
+##  Demo
+
+> npm install && npm run demo1
+
 
 ## Abstract
 
