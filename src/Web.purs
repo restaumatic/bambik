@@ -1,8 +1,11 @@
 module Web
   ( Component
+  -- component construtors
   , component
+  -- component polymorphic transformers
   , inside
   , inside'
+  -- component runners
   , runComponent
   , runMainComponent
   )
@@ -22,9 +25,9 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Browser (Attrs, Node, TagName, appendChild, createCommentNode)
-import Specular.Dom.Builder (Builder, getEnv, runMainBuilderInBody)
-import Specular.Dom.Builder.Class (elAttr)
+import Specular.Dom.Browser (Attrs, Node, TagName)
+import Specular.Dom.Builder (Builder, runMainBuilderInBody)
+import Specular.Dom.Builder.Class (comment, elAttr)
 
 newtype Component :: Type -> Type
 newtype Component a = Component
@@ -33,8 +36,19 @@ newtype Component a = Component
   }
 
 -- intentionally not making `instance Newtype Component _` in order to conceal `Component` constructor
--- instead using these local functions for (un)wrapping
+-- instead using these private functions for (un)wrapping
+wrapC :: forall a.
+  { builder :: (UserInput a -> Effect Unit) -> Builder Unit (UserInput a -> Effect Unit)
+  , tag :: Path
+  }
+  -> Component a
 wrapC a = Component a
+
+unwrapC :: forall a.
+  Component a
+  -> { builder :: (UserInput a -> Effect Unit) -> Builder Unit (UserInput a -> Effect Unit)
+     , tag :: Path
+     }
 unwrapC (Component a) = a
 
 instance Invariant Component where
@@ -138,7 +152,7 @@ instance Plus Component where
     where
       addComponentPathOpeningComment = addComponentPathTextComment "path "
       addComponentPathClosingComment = addComponentPathTextComment "path /"
-      addComponentPathTextComment text c = unless (null (unwrap (unwrapC c).tag)) $ addComment $ text <> show (unwrapC c).tag
+      addComponentPathTextComment text c = unless (null (unwrap (unwrapC c).tag)) $ comment $ text <> show (unwrapC c).tag
       propagateToSiblingAndParent :: forall a . Boolean -> Path -> Path -> (UserInput a -> Effect Unit) -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
       propagateToSiblingAndParent siblingPropagationGuard childPath siblingPath updateSibling updateParent userInput = do
         let userInputOnParent = propagatedUp childPath userInput
@@ -150,6 +164,15 @@ instance Plus Component where
     { builder: mempty
     , tag: mempty
     }
+
+-- Component constructors
+
+component :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
+component builder = Component
+  { builder: \callback -> do
+      update <- builder $ callback <<< userInput
+      pure $ update <<< userInputValue
+  , tag: mempty}
 
 -- Component polymorhphic combinators (wrappers)
 
@@ -166,15 +189,6 @@ inside' tagName attrs event c = Component
   , tag: (unwrapC c).tag
   }
 
--- Component constructors
-
-component :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
-component builder = Component
-  { builder: \callback -> do
-      update <- builder $ callback <<< userInput
-      pure $ update <<< userInputValue
-  , tag: mempty}
-
 -- Component runners
 
 runComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
@@ -184,10 +198,3 @@ runComponent c callback = do
 
 runMainComponent :: forall a. Component a -> Effect (a -> Effect Unit)
 runMainComponent app = runMainBuilderInBody $ runComponent app mempty
-
--- TODO: move to dom builder
-addComment :: forall a. String -> Builder a Unit
-addComment comment = do
-  env <- getEnv
-  placeholderBefore <- liftEffect $ createCommentNode comment
-  liftEffect $ appendChild placeholderBefore env.parent

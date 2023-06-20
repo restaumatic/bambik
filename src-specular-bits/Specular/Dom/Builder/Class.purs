@@ -19,6 +19,7 @@ module Specular.Dom.Builder.Class
   , elAttr
   , liftBuilder
   , liftBuilderWithRun
+  , comment
   )
   where
 
@@ -62,6 +63,8 @@ class Monad m <= MonadDomBuilder m where
 
 -- elAttr' :: forall m a. MonadDomBuilder m => String -> Attrs -> m a -> m (Tuple Node a)
 -- elAttr' tagName attrs inner = elDynAttr' tagName (pure attrs) inner
+
+  comment :: String -> m Unit
 
 elAttr_ :: forall m. MonadDomBuilder m => String -> Attrs -> m (Tuple Node Unit)
 elAttr_ tagName attrs = elAttr tagName attrs (pure unit)
@@ -109,3 +112,4 @@ instance monadDomBuilderReaderT :: MonadDomBuilder m => MonadDomBuilder (ReaderT
                 runEffectFn2 run benv' (runReaderT m e)
             )
       )
+  comment = lift <<< comment

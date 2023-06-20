@@ -24,7 +24,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (modify_, new, read, write)
 import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
-import Specular.Dom.Browser (Node, appendChild, appendRawHtml, createDocumentFragment, createElementNS, createTextNode, insertBefore, parentNode, removeAllBetween, removeNode, setAttributes)
+import Specular.Dom.Browser (Node, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElementNS, createTextNode, insertBefore, parentNode, removeAllBetween, removeNode, setAttributes)
 import Specular.Dom.Builder.Class (class MonadDomBuilder)
 import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
 import Specular.Internal.RIO (RIO(..), rio, runRIO)
@@ -208,6 +208,10 @@ instance monadDomBuilderBuilder :: MonadDomBuilder (Builder env) where
   liftBuilderWithRun fn =
     Builder $ rio \env ->
       runEffectFn2 fn env (mkEffectFn2 \env' (Builder (RIO m)) -> runEffectFn1 m env')
+
+  comment str = mkBuilder \env -> do
+    node <- createCommentNode str
+    appendChild node env.parent
 
 instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
   append = lift2 append
