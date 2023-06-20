@@ -130,12 +130,10 @@ instance Plus Component where
     }
     where
       onChildChange :: forall a . Boolean -> Path -> Path -> (UserInput a -> Effect Unit) -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
-      onChildChange siblingPropagationGuard myPath siblingPath updateSibling updateParent userInput = do
-        let userInputUp = propagatedUp myPath userInput
-        when siblingPropagationGuard $ case propagatedDown siblingPath userInputUp of
-          Nothing -> mempty
-          Just userInputDown -> updateSibling userInputDown
-        updateParent userInputUp
+      onChildChange siblingPropagationGuard childPath siblingPath updateSibling updateParent userInput = do
+        let userInputOnParent = propagatedUp childPath userInput
+        when siblingPropagationGuard $ maybe mempty updateSibling (propagatedDown siblingPath userInputOnParent)
+        updateParent userInputOnParent
       onParentChange :: forall a . Path -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
       onParentChange childPath updateChild userInput = maybe mempty updateChild (propagatedDown childPath userInput)
   zero = wrap
