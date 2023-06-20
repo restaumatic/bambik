@@ -3,7 +3,8 @@ module Demo1 where
 import Prelude
 
 import Data.Invariant (class Cartesian, class Invariant)
-import Data.Invariant.Optics (class Tagged, projection, property)
+import Data.Invariant.Optics (projection)
+import Data.Invariant.Optics.Tagged (class Tagged, property)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
