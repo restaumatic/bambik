@@ -65,9 +65,9 @@ pathDifference :: Path -> Path -> Maybe Path
 pathDifference (Path hops1) (Path hops2) = Path <$> arrayDifference hops1 hops2
 
 -- TODO Move to extras
--- ar1 `arrayDifference` ar2 == Just ar3 <=> ar1 == ar2 <> a3 otherwise ar1 `arrayDifference` ar2 == Nothing
+-- ar1 `arrayDifference` ar2 == Just ar3 <=> ar1 == ar2 <> a3 otherwise ar1 `arrayDifference` ar2 == Nothing - TODO that is wrong when ar1 = []
 arrayDifference :: forall a . Eq a => Array a -> Array a -> Maybe (Array a)
-arrayDifference ar1 ar2 = let z = zipWith (==) ar2 ar1 in if and z then Just (drop (length z) ar1) else Nothing
+arrayDifference ar1 ar2 = let z = zipWith (==) ar1 ar2 in if and z then Just (drop (length z) ar1) else Nothing
 
 -- commutative
 prefixingPaths :: Path -> Path -> Boolean
