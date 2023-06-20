@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Invariant (class Cartesian, class Invariant)
 import Data.Invariant.Optics (invProjection)
-import Data.Invariant.Optics.Tagged (class Tagged, property)
+import Data.Invariant.Optics.Tagged (class Tagged, invField)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
@@ -23,19 +23,19 @@ type Customer =
       , lastName :: String
       }
 
-id :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { id ∷ a | b }
-id = property (Proxy :: Proxy "id")
+id :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { id ∷ a | b }
+id = invField (Proxy :: Proxy "id")
 
-customer :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { customer ∷ a | b }
-customer = property (Proxy :: Proxy "customer")
+customer :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { customer ∷ a | b }
+customer = invField (Proxy :: Proxy "customer")
 
-firstName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { firstName ∷ a | b }
-firstName = property (Proxy :: Proxy "firstName")
+firstName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { firstName ∷ a | b }
+firstName = invField (Proxy :: Proxy "firstName")
 
-lastName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i { lastName ∷ a | b }
-lastName = property (Proxy :: Proxy "lastName")
+lastName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { lastName ∷ a | b }
+lastName = invField (Proxy :: Proxy "lastName")
 
-upperCase :: forall i . Invariant i => Cartesian i => i String → i String
+upperCase :: forall i . Invariant i => Cartesian i => i String -> i String
 upperCase = invProjection toUpper
 
 --

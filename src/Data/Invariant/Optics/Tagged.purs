@@ -4,13 +4,13 @@ module Data.Invariant.Optics.Tagged
   , UserInput(..)
   , UserInputType(..)
   , class Tagged
-  , constructorInvPrism
+  , invConstructor
   , getPath
   , prefixingPaths
   , propagatedDown
   , propagatedUp
-  , property
-  , property'
+  , invField
+  , invField'
   , setPath
   , userInput
   , userInputType
@@ -33,7 +33,7 @@ import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy)
 
-property'
+invField'
   :: forall i l r1 r a
    . Invariant i
   => Cartesian i
@@ -41,9 +41,9 @@ property'
   => Row.Cons l a r r1
   => Proxy l
   -> i a -> i (Record r1)
-property' l = invLens (\s -> get l s) (\s a -> (set l) a s)
+invField' l = invLens (\s -> get l s) (\s a -> (set l) a s)
 
-property
+invField
   :: forall i l r1 r a
    . Invariant i
   => Cartesian i
@@ -52,10 +52,10 @@ property
   => Row.Cons l a r r1
   => Proxy l
   -> i a -> i (Record r1)
-property l ia = let hop = reflectSymbol l in property' l ia # modifyPath (\(Path hops) -> Path (hop `cons` hops))
+invField l ia = let hop = reflectSymbol l in invField' l ia # modifyPath (\(Path hops) -> Path (hop `cons` hops))
 
-constructorInvPrism :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Maybe a) -> i a -> i s
-constructorInvPrism construct deconstruct ia = invmap (\(aors :: Either a s) -> either construct identity aors) (\s -> maybe (Right s) Left (deconstruct s)) (invleft ia)
+invConstructor :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Maybe a) -> i a -> i s
+invConstructor construct deconstruct ia = invmap (\(aors :: Either a s) -> either construct identity aors) (\s -> maybe (Right s) Left (deconstruct s)) (invleft ia)
 
 
 class Tagged :: forall k. (k -> Type) -> Constraint
