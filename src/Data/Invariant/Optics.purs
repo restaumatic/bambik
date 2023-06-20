@@ -178,10 +178,9 @@ invAffineTraversal' to pab =
 projection :: forall i a s . Invariant i => Cartesian i => (s -> a) -> i a -> i s
 projection f = invLens f (\s _ -> s)
 
+zeroed :: forall i a s . Invariant i => Plus i => i a -> i s
+zeroed = const zero
 
 -- TODO: these are not a strict optic
 replace :: forall i a . Invariant i => i a -> i a -> i a
 replace = const
-
-zeroed :: forall i a s . Invariant i => Plus i => i a -> i s
-zeroed = const zero
