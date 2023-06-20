@@ -23,7 +23,7 @@ module Data.Invariant.Optics
 
 import Prelude hiding (zero)
 
-import Data.Array (cons, drop, intercalate, length, null, zipWith)
+import Data.Array (cons, drop, intercalate, length, zipWith)
 import Data.Either (Either(..), either)
 import Data.Foldable (and)
 import Data.Function (on)
