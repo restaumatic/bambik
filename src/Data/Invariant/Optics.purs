@@ -1,8 +1,9 @@
 -- Polymorphic invariant transformers - invariant optics 
 module Data.Invariant.Optics
   ( Hop
-  , OnPath(..)
   , Path(..)
+  , UserInput
+  , UserInputType(..)
   , class Tagged
   , constructorInvPrism
   , getPath
@@ -15,9 +16,14 @@ module Data.Invariant.Optics
   , prefixingArrays
   , prefixingPaths
   , projection
+  , propagatedDown
+  , propagatedUp
   , property
   , replace
   , setPath
+  , userInput
+  , userInputType
+  , userInputValue
   , zeroed
   )
   where
@@ -62,11 +68,36 @@ instance Monoid Path where
 instance Show Path where
   show (Path hops) = intercalate "." hops
 
-newtype OnPath a = OnPath
+---
+
+newtype UserInput a = UserInput
   { value :: a
   , path :: Path}
 
-derive instance Functor OnPath
+derive instance Functor UserInput
+
+data UserInputType
+  = Alteration
+  | Replacement
+
+userInput :: forall a. a -> UserInput a
+userInput value = UserInput { value, path: mempty}
+
+propagatedUp :: forall a. Path -> UserInput a -> UserInput a
+propagatedUp propagationPath (UserInput {value, path}) = UserInput {value, path: propagationPath <> path}
+
+propagatedDown :: forall a. Path -> UserInput a -> Maybe (UserInput a)
+propagatedDown propagationPath (UserInput {value, path}) = pathDifference path propagationPath <#> \remPath -> UserInput { path: remPath, value }
+
+userInputType :: forall a. UserInput a -> UserInputType
+userInputType (UserInput { path }) = case path of
+  Path [] -> Replacement
+  Path _ -> Alteration
+
+userInputValue :: forall a. UserInput a -> a
+userInputValue (UserInput { value }) = value
+
+---
 
 pathDifference :: Path -> Path -> Maybe Path
 pathDifference (Path hops1) (Path hops2) = Path <$> arrayDifference hops1 hops2

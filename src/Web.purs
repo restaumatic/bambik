@@ -10,23 +10,21 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Array (null)
 import Data.Either (Either(..))
-import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
-import Data.Invariant.Optics (class Tagged, OnPath(..), Path, pathDifference, prefixingPaths)
+import Data.Invariant.Optics (class Tagged, Path, UserInput, prefixingPaths, propagatedDown, propagatedUp, userInput, userInputValue)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Specular.Dom.Browser (appendChild, createCommentNode)
 import Specular.Dom.Builder (Builder, getEnv, runMainBuilderInBody)
 
 newtype Component :: Type -> Type
 newtype Component a = Component
-  { builder :: (OnPath a -> Effect Unit) -> Builder Unit (OnPath a -> Effect Unit)
+  { builder :: (UserInput a -> Effect Unit) -> Builder Unit (UserInput a -> Effect Unit)
   , tag :: Path
   }
 
@@ -44,23 +42,23 @@ instance Cartesian Component where
   invfirst c = wrap
     { builder: \abcallback -> do
       bref <- liftEffect $ Ref.new Nothing
-      update <- (unwrap c).builder \(OnPath {path, value: a}) -> do
+      update <- (unwrap c).builder \userInput -> do
         mb <- liftEffect $ Ref.read bref
-        maybe (pure unit) (\b -> abcallback (OnPath { path, value: Tuple a b})) mb
-      pure $ \(OnPath { path, value: ab}) -> do
-        Ref.write (Just (snd ab)) bref
-        update $ OnPath {path, value: fst ab}
+        maybe (pure unit) (\b -> abcallback (userInput <#> \a -> Tuple a b)) mb
+      pure $ \userInput -> do
+        Ref.write (Just (snd (userInputValue userInput))) bref
+        update $ userInput <#> fst
     , tag: (unwrap c).tag
     }
   invsecond c = wrap
     { builder: \abcallback -> do
       aref <- liftEffect $ Ref.new Nothing
-      update <- (unwrap c).builder \(OnPath {path, value: b}) -> do
+      update <- (unwrap c).builder \userInput -> do
         ma <- liftEffect $ Ref.read aref
-        maybe (pure unit) (\a -> abcallback (OnPath {path, value: Tuple a b})) ma
-      pure $ \(OnPath { path, value: ab }) -> do
-        Ref.write (Just (fst ab)) aref
-        update $ OnPath { path, value: snd ab }
+        maybe (pure unit) (\a -> abcallback (userInput <#> \b -> Tuple a b)) ma
+      pure $ \userInput -> do
+        Ref.write (Just (fst (userInputValue userInput))) aref
+        update $ userInput <#> snd
     , tag: (unwrap c).tag
     }
 
@@ -69,8 +67,8 @@ instance CoCartesian Component where
     { builder: \abcallback -> do
       slot <- newSlot
       mUpdateRef <- liftEffect $ Ref.new Nothing
-      pure case _ of
-          OnPath {path, value: Left a} -> do
+      pure \userInput -> case userInputValue userInput of
+          Left a -> do
             mUpdate <- liftEffect $ Ref.read mUpdateRef
             update <- case mUpdate of
               Just update -> pure update
@@ -78,8 +76,8 @@ instance CoCartesian Component where
                 newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< map Left)
                 liftEffect $ Ref.write (Just newUpdate) mUpdateRef
                 pure newUpdate
-            update $ OnPath { path, value: a}
-          OnPath _ -> do
+            update $ userInput $> a
+          _ -> do
             liftEffect $ destroySlot slot
             pure unit
     , tag: (unwrap c).tag
@@ -88,8 +86,8 @@ instance CoCartesian Component where
     { builder: \abcallback -> do
       slot <- newSlot
       mUpdateRef <- liftEffect $ Ref.new Nothing
-      pure case _ of
-          OnPath {path, value: Right b} -> do
+      pure \userInput -> case userInputValue userInput of
+          Right b -> do
             mUpdate <- liftEffect $ Ref.read mUpdateRef
             update <- case mUpdate of
               Just update -> pure update
@@ -97,7 +95,7 @@ instance CoCartesian Component where
                 newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< map Right)
                 liftEffect $ Ref.write (Just newUpdate) mUpdateRef
                 pure newUpdate
-            update $ OnPath { path, value: b}
+            update $ userInput $> b
           _ -> do
             liftEffect $ destroySlot slot
             pure unit
@@ -131,15 +129,15 @@ instance Plus Component where
     , tag: mempty
     }
     where
-      onChildChange :: forall a . Boolean -> Path -> Path -> (OnPath a -> Effect Unit) -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
-      onChildChange siblingPropagationGuard myPath siblingPath updateSibling updateParent (OnPath { path, value }) = do
-        let newPath = myPath <> path
-        when siblingPropagationGuard $ case pathDifference newPath siblingPath of
+      onChildChange :: forall a . Boolean -> Path -> Path -> (UserInput a -> Effect Unit) -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
+      onChildChange siblingPropagationGuard myPath siblingPath updateSibling updateParent userInput = do
+        let userInputUp = propagatedUp myPath userInput
+        when siblingPropagationGuard $ case propagatedDown siblingPath userInputUp of
           Nothing -> mempty
-          Just remPath -> updateSibling $ OnPath { path: remPath, value }
-        updateParent $ OnPath { path: newPath, value }
-      onParentChange :: forall a . Path -> (OnPath a -> Effect Unit) -> OnPath a -> Effect Unit
-      onParentChange childPath updateChild (OnPath { path, value }) = maybe (mempty) (\newPath -> updateChild (OnPath { path: newPath, value } )) (pathDifference path childPath)
+          Just userInputDown -> updateSibling userInputDown
+        updateParent userInputUp
+      onParentChange :: forall a . Path -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
+      onParentChange childPath updateChild userInput = maybe mempty updateChild (propagatedDown childPath userInput)
   zero = wrap
     { builder: mempty
     , tag: mempty
@@ -148,16 +146,14 @@ instance Plus Component where
 makeComponent :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
 makeComponent builder = Component
   { builder: \callback -> do
-      update <- builder \value -> callback $ OnPath { path: mempty, value }
-      pure \(OnPath { value }) -> update value
+      update <- builder $ callback <<< userInput
+      pure $ update <<< userInputValue
   , tag: mempty}
 
 buildComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
 buildComponent component callback = do
-  update <- (unwrap component).builder \(OnPath { path, value }) -> do
-    log $ intercalate "." (unwrap path)
-    callback value
-  pure \value -> update (OnPath {path: wrap [], value })
+  update <- (unwrap component).builder $ callback <<< userInputValue
+  pure $ update <<< userInput
 
 buildMainComponent ∷ ∀ (a ∷ Type). Component a → Effect (a → Effect Unit)
 buildMainComponent app = runMainBuilderInBody $ buildComponent app mempty

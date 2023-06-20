@@ -13,7 +13,7 @@ module Web.HTML
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
-import Data.Invariant.Optics (OnPath)
+import Data.Invariant.Optics (UserInput)
 import Data.Newtype (unwrap, wrap)
 import Data.Plus (zero)
 import Data.Tuple (Tuple(..))
@@ -40,7 +40,7 @@ text = makeComponent \_ -> do
 inside :: forall a . TagName -> Component a -> Component a
 inside tagName = inside' tagName mempty mempty
 
-inside' :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (OnPath a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
+inside' :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (UserInput a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
 inside' tagName attrs event c = wrap
   { builder: \callback -> do
     Tuple node f <- elAttr tagName (attrs unit) $ (unwrap c).builder callback
