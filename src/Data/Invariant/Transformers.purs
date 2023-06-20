@@ -2,10 +2,9 @@ module Data.Invariant.Transformers where
 
 import Prelude hiding (zero)
 
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
-
 import Data.Either (Either(..))
 import Data.Function (on)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Newtype (class Newtype, wrap, unwrap)
 import Data.Plus (class Plus, plus, zero)
 import Data.Tuple (Tuple(..))
