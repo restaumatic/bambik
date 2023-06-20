@@ -1,12 +1,14 @@
--- Polymorphic invariant transformers - invariant optics 
+-- Polymorphic invariant transformers - invariant optics
+--
+-- This module included functions that turn basic encoding of adapters, lenses, prisms, affineTraversals etc. into invariant encoding
+-- i.e. polymorphic invariant transformers.
 module Data.Invariant.Optics
-  ( invAffineTraversal
-  , invAffineTraversal'
+  ( invAdapter
+  , invAffineTraversal
   , invLens
   , invPrism
-  , projection
-  , replace
-  , zeroed
+  , invProjection
+  , invZero
   )
   where
 
@@ -17,13 +19,17 @@ import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invf
 import Data.Plus (class Plus, zero)
 import Data.Tuple (Tuple(..))
 
-
+invAdapter :: forall f a b. Invariant f => (a -> b) -> (b -> a) -> f a -> f b
+invAdapter = invmap
 
 invLens :: forall i a s. Invariant i => Cartesian i => (s -> a) -> (s -> a -> s) -> i a -> i s
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
 
 invPrism :: forall i a s. Invariant i => CoCartesian i => (a -> s) -> (s -> Either a s) -> i a -> i s
 invPrism review preview ia = invmap (\aors -> either review identity aors) preview (invleft ia)
+
+invProjection :: forall i a s . Invariant i => Cartesian i => (s -> a) -> i a -> i s
+invProjection f = invLens f (\s _ -> s)
 
 invAffineTraversal
   :: forall s a i
@@ -45,12 +51,5 @@ invAffineTraversal'
 invAffineTraversal' to pab =
   invmap (\(Tuple b f) -> either identity b f) to (invsecond (invright pab))
 
-projection :: forall i a s . Invariant i => Cartesian i => (s -> a) -> i a -> i s
-projection f = invLens f (\s _ -> s)
-
-zeroed :: forall i a s . Invariant i => Plus i => i a -> i s
-zeroed = const zero
-
--- TODO: these are not a strict optic
-replace :: forall i a . Invariant i => i a -> i a -> i a
-replace = const
+invZero :: forall i a s . Invariant i => Plus i => i a -> i s
+invZero = const zero

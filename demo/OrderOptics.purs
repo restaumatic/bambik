@@ -46,7 +46,7 @@ import Prelude
 import Data.Array (length)
 import Data.Either (Either(..))
 import Data.Invariant (inveff)
-import Data.Invariant.Optics (invAffineTraversal, invLens, projection)
+import Data.Invariant.Optics (invAffineTraversal, invLens, invProjection)
 import Data.Invariant.Optics.Tagged (property, constructorInvPrism)
 import Data.Maybe (Maybe(..), isJust)
 import Effect.Aff (Aff, launchAff_)
@@ -218,4 +218,4 @@ placeOrder = inveff (\order -> launchAff_ $ doPlaceOrder order)
     doPlaceOrder = mempty
 
 -- numberOfItems :: forall i . Cartesian i => i Int -> i Order
-numberOfItems = projection (\order -> length order.items)
+numberOfItems = invProjection (\order -> length order.items)

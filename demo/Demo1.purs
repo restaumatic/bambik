@@ -3,7 +3,7 @@ module Demo1 where
 import Prelude
 
 import Data.Invariant (class Cartesian, class Invariant)
-import Data.Invariant.Optics (projection)
+import Data.Invariant.Optics (invProjection)
 import Data.Invariant.Optics.Tagged (class Tagged, property)
 import Data.Plus ((^))
 import Data.String (toUpper)
@@ -36,7 +36,7 @@ lastName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a → i {
 lastName = property (Proxy :: Proxy "lastName")
 
 upperCase :: forall i . Invariant i => Cartesian i => i String → i String
-upperCase = projection toUpper
+upperCase = invProjection toUpper
 
 --
 
