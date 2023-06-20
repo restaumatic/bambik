@@ -1,6 +1,5 @@
 module Web
   ( Component(..)
-  , OnPath
   , makeComponent
   , buildMainComponent
   )
@@ -13,7 +12,7 @@ import Data.Array (null)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
-import Data.Invariant.Optics (class Tagged, Path, pathDifference, prefixingPaths)
+import Data.Invariant.Optics (class Tagged, OnPath(..), Path, pathDifference, prefixingPaths)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
@@ -32,12 +31,6 @@ newtype Component a = Component
   }
 
 derive instance Newtype (Component a) _
-
-newtype OnPath a = OnPath
-  { value :: a
-  , path :: Path}
-
-derive instance Functor OnPath
 
 instance Invariant Component where
   invmap pre post c = wrap

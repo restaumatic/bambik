@@ -1,6 +1,7 @@
 -- Polymorphic invariant transformers - invariant optics 
 module Data.Invariant.Optics
   ( Hop
+  , OnPath(..)
   , Path(..)
   , class Tagged
   , constructorInvPrism
@@ -60,6 +61,12 @@ instance Monoid Path where
 
 instance Show Path where
   show (Path hops) = intercalate "." hops
+
+newtype OnPath a = OnPath
+  { value :: a
+  , path :: Path}
+
+derive instance Functor OnPath
 
 pathDifference :: Path -> Path -> Maybe Path
 pathDifference (Path hops1) (Path hops2) = Path <$> arrayDifference hops1 hops2

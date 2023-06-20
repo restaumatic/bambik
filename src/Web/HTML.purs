@@ -13,6 +13,7 @@ module Web.HTML
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
+import Data.Invariant.Optics (OnPath)
 import Data.Newtype (unwrap, wrap)
 import Data.Plus (zero)
 import Data.Tuple (Tuple(..))
@@ -21,7 +22,7 @@ import Effect.Class (liftEffect)
 import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (Component, OnPath, makeComponent)
+import Web (Component, makeComponent)
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
