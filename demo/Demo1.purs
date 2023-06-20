@@ -8,7 +8,7 @@ import Data.Plus ((^))
 import Data.String (toUpper)
 import Effect (Effect)
 import Type.Proxy (Proxy(..))
-import Web (Component, buildMainComponent)
+import Web (Component, inside, runMainComponent)
 import Web.HTML as HTML
 import Web.MDC as MDC
 
@@ -41,21 +41,21 @@ upperCase = projection toUpper
 
 orderComponent ∷ Component Order
 orderComponent =
-  customerComponent # HTML.inside "div" # customer
+  customerComponent # inside "div" # customer
   ^
   HTML.staticText "Summary: " ^ HTML.text # id ^ HTML.staticText " " ^ HTML.text # firstName # customer ^ HTML.staticText " " ^ HTML.text # upperCase # lastName # customer
 
 customerComponent :: Component Customer
 customerComponent =
-  MDC.filledText "first name" # HTML.inside "div" # firstName
+  MDC.filledText "first name" # inside "div" # firstName
   ^
-  MDC.filledText "last name" # HTML.inside "div" # lastName
+  MDC.filledText "last name" # inside "div" # lastName
   ^
-  HTML.text # HTML.inside "div" # firstName
+  HTML.text # inside "div" # firstName
   ^
-  HTML.text # HTML.inside "div" # lastName
+  HTML.text # inside "div" # lastName
 
 main :: Effect Unit
 main = do
-  updateOrder <- buildMainComponent orderComponent
+  updateOrder <- runMainComponent orderComponent
   updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}}

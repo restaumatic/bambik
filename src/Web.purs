@@ -1,7 +1,10 @@
 module Web
-  ( Component(..)
-  , makeComponent
-  , buildMainComponent
+  ( Component
+  , component
+  , inside
+  , inside'
+  , runComponent
+  , runMainComponent
   )
   where
 
@@ -13,14 +16,15 @@ import Data.Either (Either(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
 import Data.Invariant.Optics (class Tagged, Path, UserInput, prefixingPaths, propagatedDown, propagatedUp, userInput, userInputValue)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.Plus (class Plus)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Browser (appendChild, createCommentNode)
+import Specular.Dom.Browser (Attrs, Node, TagName, appendChild, createCommentNode)
 import Specular.Dom.Builder (Builder, getEnv, runMainBuilderInBody)
+import Specular.Dom.Builder.Class (elAttr)
 
 newtype Component :: Type -> Type
 newtype Component a = Component
@@ -28,42 +32,45 @@ newtype Component a = Component
   , tag :: Path
   }
 
-derive instance Newtype (Component a) _
+-- intentionally not making `instance Newtype Component _` in order to conceal `Component` constructor
+-- instead using these local functions for (un)wrapping
+wrapC a = Component a
+unwrapC (Component a) = a
 
 instance Invariant Component where
-  invmap pre post c = wrap
+  invmap pre post c = wrapC
     { builder: \callback -> do
-      f <- (unwrap c).builder $ callback <<< map pre
+      f <- (unwrapC c).builder $ callback <<< map pre
       pure $ f <<< map post
-    , tag: (unwrap c).tag
+    , tag: (unwrapC c).tag
     }
 
 instance Cartesian Component where
-  invfirst c = wrap
+  invfirst c = wrapC
     { builder: \abcallback -> do
       bref <- liftEffect $ Ref.new Nothing
-      update <- (unwrap c).builder \userInput -> do
+      update <- (unwrapC c).builder \userInput -> do
         mb <- liftEffect $ Ref.read bref
         maybe (pure unit) (\b -> abcallback (userInput <#> \a -> Tuple a b)) mb
       pure $ \userInput -> do
         Ref.write (Just (snd (userInputValue userInput))) bref
         update $ userInput <#> fst
-    , tag: (unwrap c).tag
+    , tag: (unwrapC c).tag
     }
-  invsecond c = wrap
+  invsecond c = wrapC
     { builder: \abcallback -> do
       aref <- liftEffect $ Ref.new Nothing
-      update <- (unwrap c).builder \userInput -> do
+      update <- (unwrapC c).builder \userInput -> do
         ma <- liftEffect $ Ref.read aref
         maybe (pure unit) (\a -> abcallback (userInput <#> \b -> Tuple a b)) ma
       pure $ \userInput -> do
         Ref.write (Just (fst (userInputValue userInput))) aref
         update $ userInput <#> snd
-    , tag: (unwrap c).tag
+    , tag: (unwrapC c).tag
     }
 
 instance CoCartesian Component where
-  invleft c = wrap
+  invleft c = wrapC
     { builder: \abcallback -> do
       slot <- newSlot
       mUpdateRef <- liftEffect $ Ref.new Nothing
@@ -73,16 +80,16 @@ instance CoCartesian Component where
             update <- case mUpdate of
               Just update -> pure update
               Nothing -> do
-                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< map Left)
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrapC c).builder (abcallback <<< map Left)
                 liftEffect $ Ref.write (Just newUpdate) mUpdateRef
                 pure newUpdate
             update $ userInput $> a
           _ -> do
             liftEffect $ destroySlot slot
             pure unit
-    , tag: (unwrap c).tag
+    , tag: (unwrapC c).tag
     }
-  invright c = wrap
+  invright c = wrapC
     { builder: \abcallback -> do
       slot <- newSlot
       mUpdateRef <- liftEffect $ Ref.new Nothing
@@ -92,43 +99,46 @@ instance CoCartesian Component where
             update <- case mUpdate of
               Just update -> pure update
               Nothing -> do
-                newUpdate <- liftEffect $ replaceSlot slot $ (unwrap c).builder (abcallback <<< map Right)
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrapC c).builder (abcallback <<< map Right)
                 liftEffect $ Ref.write (Just newUpdate) mUpdateRef
                 pure newUpdate
             update $ userInput $> b
           _ -> do
             liftEffect $ destroySlot slot
             pure unit
-    , tag: (unwrap c).tag
+    , tag: (unwrapC c).tag
     }
 
 instance Tagged Component where
-  getPath component = (unwrap component).tag
+  getPath c = (unwrapC c).tag
   setPath tag (Component { builder } ) = Component {builder, tag}
 
 instance Plus Component where
-  plus c1 c2 = wrap
+  plus c1 c2 = wrapC
     { builder: \callback -> do
       -- optimization: we already know that it's redundant to propagade change between children unless
       -- one child's path is a prefix of the other child's path,
       -- in particular, when their paths are the same.
-      let propagationBetweenChildrenNecessary = prefixingPaths (unwrap c1).tag (unwrap c2).tag
+      let propagationBetweenChildrenNecessary = prefixingPaths (unwrapC c1).tag (unwrapC c2).tag
       -- TODO how to get rid of this ref?
       mUpdate2Ref <- liftEffect $ Ref.new Nothing
-      unless (null (unwrap (unwrap c1).tag)) $ addComment $ "path " <> show (unwrap c1).tag
-      update1 <- (unwrap c1).builder \op -> do
+      addComponentPathOpeningComment c1
+      update1 <- (unwrapC c1).builder \op -> do
         mUpdate2 <- Ref.read mUpdate2Ref
         let update2 = maybe mempty identity mUpdate2
-        propagateToSiblingAndParent propagationBetweenChildrenNecessary (unwrap c1).tag (unwrap c2).tag update2 callback op
-      unless (null (unwrap (unwrap c1).tag)) $ addComment $ "path /" <> show (unwrap c1).tag
-      unless (null (unwrap (unwrap c2).tag)) $ addComment $ "path " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ propagateToSiblingAndParent propagationBetweenChildrenNecessary (unwrap c2).tag (unwrap c1).tag update1 callback
+        propagateToSiblingAndParent propagationBetweenChildrenNecessary (unwrapC c1).tag (unwrapC c2).tag update2 callback op
+      addComponentPathClosingComment c1
+      addComponentPathOpeningComment c2
+      update2 <- (unwrapC c2).builder $ propagateToSiblingAndParent propagationBetweenChildrenNecessary (unwrapC c2).tag (unwrapC c1).tag update1 callback
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
-      unless (null (unwrap (unwrap c2).tag)) $ addComment $ "path /" <> show (unwrap c2).tag
-      pure $ propagateToChild (unwrap c1).tag update1 <> propagateToChild (unwrap c2).tag update2
+      addComponentPathClosingComment c2
+      pure $ propagateToChild (unwrapC c1).tag update1 <> propagateToChild (unwrapC c2).tag update2
     , tag: mempty
     }
     where
+      addComponentPathOpeningComment = addComponentPathTextComment "path "
+      addComponentPathClosingComment = addComponentPathTextComment "path /"
+      addComponentPathTextComment text c = unless (null (unwrap (unwrapC c).tag)) $ addComment $ text <> show (unwrapC c).tag
       propagateToSiblingAndParent :: forall a . Boolean -> Path -> Path -> (UserInput a -> Effect Unit) -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
       propagateToSiblingAndParent siblingPropagationGuard childPath siblingPath updateSibling updateParent userInput = do
         let userInputOnParent = propagatedUp childPath userInput
@@ -136,39 +146,48 @@ instance Plus Component where
         updateParent userInputOnParent
       propagateToChild :: forall a . Path -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
       propagateToChild childPath updateChild userInput = maybe mempty updateChild (propagatedDown childPath userInput)
-  zero = wrap
+  zero = wrapC
     { builder: mempty
     , tag: mempty
     }
 
-makeComponent :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
-makeComponent builder = Component
+-- Component polymorhphic combinators (wrappers)
+
+inside :: forall a . TagName -> Component a -> Component a
+inside tagName = inside' tagName mempty mempty
+
+inside' :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (UserInput a -> Effect Unit) -> Effect Unit) -> Component a -> Component a
+inside' tagName attrs event c = Component
+  { builder: \callback -> do
+    Tuple node f <- elAttr tagName (attrs unit) $ (unwrapC c).builder callback
+    liftEffect $ event node callback
+    pure \a -> do
+      f a
+  , tag: (unwrapC c).tag
+  }
+
+-- Component constructors
+
+component :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
+component builder = Component
   { builder: \callback -> do
       update <- builder $ callback <<< userInput
       pure $ update <<< userInputValue
   , tag: mempty}
 
-buildComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
-buildComponent component callback = do
-  update <- (unwrap component).builder $ callback <<< userInputValue
+-- Component runners
+
+runComponent :: forall a. Component a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
+runComponent c callback = do
+  update <- (unwrapC c).builder $ callback <<< userInputValue
   pure $ update <<< userInput
 
-buildMainComponent ∷ ∀ (a ∷ Type). Component a → Effect (a → Effect Unit)
-buildMainComponent app = runMainBuilderInBody $ buildComponent app mempty
+runMainComponent :: forall a. Component a -> Effect (a -> Effect Unit)
+runMainComponent app = runMainBuilderInBody $ runComponent app mempty
 
+-- TODO: move to dom builder
 addComment :: forall a. String -> Builder a Unit
 addComment comment = do
   env <- getEnv
   placeholderBefore <- liftEffect $ createCommentNode comment
   liftEffect $ appendChild placeholderBefore env.parent
-
--- static' :: forall a . Component Void -> Component a
--- static' (Component widget) = Component \_ -> do
---     _ <- widget absurd
---     pure mempty
-
--- sta :: forall a s . a -> Component a -> Component s
--- sta a c = wrap \callback -> do
---   update <- unwrap c mempty
---   liftEffect $ update a
---   pure mempty
