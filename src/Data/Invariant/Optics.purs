@@ -72,27 +72,36 @@ instance Show Path where
 
 newtype UserInput a = UserInput
   { value :: a
-  , path :: Path}
+  , path :: Maybe Path}
 
 derive instance Functor UserInput
+
+instance Show (UserInput a) where
+  show (UserInput { path: Just path' }) = show path'
+  show (UserInput { path: Nothing }) = "-"
 
 data UserInputType
   = Alteration
   | Replacement
+  | Newness
 
 userInput :: forall a. a -> UserInput a
-userInput value = UserInput { value, path: mempty}
+userInput value = UserInput { value, path: Just mempty}
 
 propagatedUp :: forall a. Path -> UserInput a -> UserInput a
-propagatedUp propagationPath (UserInput {value, path}) = UserInput {value, path: propagationPath <> path}
+propagatedUp propagationPath (UserInput {value, path}) = UserInput {value, path: (propagationPath <> _) <$> path}
 
+-- TODO fix
 propagatedDown :: forall a. Path -> UserInput a -> Maybe (UserInput a)
-propagatedDown propagationPath (UserInput {value, path}) = pathDifference path propagationPath <#> \remPath -> UserInput { path: remPath, value }
+propagatedDown _ ui@(UserInput {path: Nothing}) = Just ui
+propagatedDown _ (UserInput {value, path: Just (Path [])}) = Just $ UserInput {value, path: Nothing }
+propagatedDown propagationPath (UserInput {value, path: Just path'}) = pathDifference path' propagationPath # \mRemPath -> mRemPath <#> \remPath -> UserInput { path: Just remPath, value }
 
 userInputType :: forall a. UserInput a -> UserInputType
 userInputType (UserInput { path }) = case path of
-  Path [] -> Replacement
-  Path _ -> Alteration
+  Nothing -> Newness
+  Just (Path []) -> Replacement
+  Just (Path _) -> Alteration
 
 userInputValue :: forall a. UserInput a -> a
 userInputValue (UserInput { value }) = value

@@ -119,23 +119,23 @@ instance Plus Component where
       update1 <- (unwrap c1).builder \op -> do
         mUpdate2 <- Ref.read mUpdate2Ref
         let update2 = maybe mempty identity mUpdate2
-        onChildChange propagationBetweenChildrenNecessary (unwrap c1).tag (unwrap c2).tag update2 callback op
+        propagateToSiblingAndParent propagationBetweenChildrenNecessary (unwrap c1).tag (unwrap c2).tag update2 callback op
       unless (null (unwrap (unwrap c1).tag)) $ addComment $ "path /" <> show (unwrap c1).tag
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "path " <> show (unwrap c2).tag
-      update2 <- (unwrap c2).builder $ onChildChange propagationBetweenChildrenNecessary (unwrap c2).tag (unwrap c1).tag update1 callback
+      update2 <- (unwrap c2).builder $ propagateToSiblingAndParent propagationBetweenChildrenNecessary (unwrap c2).tag (unwrap c1).tag update1 callback
       liftEffect $ Ref.write (Just update2) mUpdate2Ref
       unless (null (unwrap (unwrap c2).tag)) $ addComment $ "path /" <> show (unwrap c2).tag
-      pure $ onParentChange (unwrap c1).tag update1 <> onParentChange (unwrap c2).tag update2
+      pure $ propagateToChild (unwrap c1).tag update1 <> propagateToChild (unwrap c2).tag update2
     , tag: mempty
     }
     where
-      onChildChange :: forall a . Boolean -> Path -> Path -> (UserInput a -> Effect Unit) -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
-      onChildChange siblingPropagationGuard childPath siblingPath updateSibling updateParent userInput = do
+      propagateToSiblingAndParent :: forall a . Boolean -> Path -> Path -> (UserInput a -> Effect Unit) -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
+      propagateToSiblingAndParent siblingPropagationGuard childPath siblingPath updateSibling updateParent userInput = do
         let userInputOnParent = propagatedUp childPath userInput
         when siblingPropagationGuard $ maybe mempty updateSibling (propagatedDown siblingPath userInputOnParent)
         updateParent userInputOnParent
-      onParentChange :: forall a . Path -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
-      onParentChange childPath updateChild userInput = maybe mempty updateChild (propagatedDown childPath userInput)
+      propagateToChild :: forall a . Path -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
+      propagateToChild childPath updateChild userInput = maybe mempty updateChild (propagatedDown childPath userInput)
   zero = wrap
     { builder: mempty
     , tag: mempty
