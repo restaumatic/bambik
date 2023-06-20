@@ -133,7 +133,7 @@ arrayDifference ar1 ar2 = let z = zipWith (==) ar1 ar2 in if and z then Just (dr
 prefixingPaths :: Path -> Path -> Boolean
 prefixingPaths (Path hops1) (Path hops2) = prefixingArrays hops1 hops2
 
--- TODO Move to exports
+-- TODO Move to extras
 -- commutative
 prefixingArrays ∷ ∀ (a ∷ Type). Eq a ⇒ Array a → Array a → Boolean
 prefixingArrays ar1 ar2 = and $ zipWith (==) ar1 ar2
