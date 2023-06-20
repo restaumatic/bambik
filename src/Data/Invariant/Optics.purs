@@ -78,9 +78,6 @@ prefixingPaths (Path hops1) (Path hops2) = prefixingArrays hops1 hops2
 prefixingArrays ∷ ∀ (a ∷ Type). Eq a ⇒ Array a → Array a → Boolean
 prefixingArrays ar1 ar2 = and $ zipWith (==) ar1 ar2
 
-invAdapter :: forall i a s . Invariant i => (a -> s) -> (s -> a) -> i a -> i s
-invAdapter f g = invmap f g
-
 invLens :: forall i a s. Invariant i => Cartesian i => (s -> a) -> (s -> a -> s) -> i a -> i s
 invLens get set ia = invmap (\(Tuple a s) -> set s a) (\s -> Tuple (get s) s) (invfirst ia)
 
