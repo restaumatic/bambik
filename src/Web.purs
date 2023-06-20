@@ -174,7 +174,7 @@ component builder = Component
       pure $ update <<< userInputValue
   , tag: mempty}
 
--- Component polymorhphic combinators (wrappers)
+-- Component polymorhphic combinators
 
 inside :: forall a . TagName -> Component a -> Component a
 inside tagName = inside' tagName mempty mempty
