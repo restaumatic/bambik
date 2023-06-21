@@ -122,7 +122,7 @@ combineCoCartesian :: (Invariant i, CoCartesian a, Foo i) => i a -> i b -> i (Ei
 combineCoCartesian ia ib = left a `iappend` right b
 ```
 
-Notice that foo profunctor doesn't allow for that:
+Notice that Plus profunctor doesn't allow for that:
 ```
 combineCartesian :: (Profunctor i, CartesianProfunctor a, Plus p) => p a b -> p c d -> p (a, c) (b, d)
 combineCartesian ia ib = first a `iappend` second b -- type mismatch
