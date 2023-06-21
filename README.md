@@ -94,7 +94,7 @@ Profunctor/invariant polymorphic combinators, in turn, have the two arguments th
 
 The class
 ```
-class PLus i where
+class Plus i where
     iappend :: i a -> i a -> i a
     iempty :: i a
 -- laws:
