@@ -90,29 +90,29 @@ Profunctor/invariant polymorphic transformers have the shape of `forall a b . My
 
 Profunctor/invariant polymorphic combinators, in turn, have the two arguments thus the shape is `forall a b . MyProfunctor a b -> MyProfunctor a b -> MyProfunctor a b`/`forall a . MyInvariant a -> MyInvariant a -> MyInvariant a`.
 
-## Foo
+## Plus class
 
-The typeclass 
+The class
 ```
-class Foo i where
+class PLus i where
     iappend :: i a -> i a -> i a
     iempty :: i a
--- laws: 
+-- laws:
 --  iappend a iempty == a = iappend iempty a
 --  iappend a (iappend b c) == iappend (iappend a b) c
 ```
 is seemingly related to Haskell's `Alternative` or PureScript's `Plus`/`Alt`/`Alternative` but it differs in that it has no `Functor` nor `Applicative` constraint on `i`. 
 It's rather a relative of `Monoid` for `* -> *` kind types.
 
-Intuitively, `Foo i` denotes `i` have the quality of being able to reason about a number of `i a`'s as a single `i a`, for any `a`.
+Intuitively, `Foo i` denotes `i` having the quality of being able to reason about a number of `i a`'s as a single `i a`, for any `a`.
 Moreover, there is `iempty :: i a` for every a, that can be discarded when reasoning about a number of `i a`s. 
 
-Foo invartiants denote invariants that are not (effectful) functions (endomorphism) of shape `Applicative m => a -> m a` as then `iempty` must have been `pure`, so `iappend iempty a` would yield two `a`s from which one `a` must have been selected and the selection would have always been the oppostite to the selection of `iappend a iempty` which contradicts the first law.
+Plus invartiants denote invariants that are not (effectful) functions (endomorphism) of shape `Applicative m => a -> m a` as then `iempty` must have been `pure`, so `iappend iempty a` would yield two `a`s from which one `a` must have been selected and the selection would have always been the oppostite to the selection of `iappend a iempty` which contradicts the first law.
 
-Foo invariants are then invariants that "fire" output not on input but on other external trigger.
+Plus invariants are then invariants that "fire" output not on input but on external trigger.
 This, again, reminds of UI where the trigger is a user action rather than data populating the UI.
 
-Foo invariant enables:
+Plus invariant enables:
 
 ```
 combineCartesian :: (Invariant i, Cartesian a, Foo i) => i a -> i b -> i (a, b)
@@ -122,7 +122,7 @@ combineCoCartesian :: (Invariant i, CoCartesian a, Foo i) => i a -> i b -> i (Ei
 combineCoCartesian ia ib = left a `iappend` right b
 ```
 
-Notice that foo profunctor doesn't enabled that:
+Notice that foo profunctor doesn't allow for that:
 ```
 combineCartesian :: (Profunctor i, CartesianProfunctor a, PFoo p) => p a b -> p c d -> p (a, c) (b, d)
 combineCartesian ia ib = first a `iappend` second b -- type mismatch
