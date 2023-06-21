@@ -124,10 +124,10 @@ combineCoCartesian ia ib = left a `iappend` right b
 
 Notice that foo profunctor doesn't allow for that:
 ```
-combineCartesian :: (Profunctor i, CartesianProfunctor a, PFoo p) => p a b -> p c d -> p (a, c) (b, d)
+combineCartesian :: (Profunctor i, CartesianProfunctor a, Plus p) => p a b -> p c d -> p (a, c) (b, d)
 combineCartesian ia ib = first a `iappend` second b -- type mismatch
 
-combineCoCartesian :: (Profunctor i, CoCartesianProfunctor a, Foo i) => p a b -> p c d -> p (Either a c) (Either b d)
+combineCoCartesian :: (Profunctor p, CoCartesianProfunctor p, Plus p) => p a b -> p c d -> p (Either a c) (Either b d)
 combineCoCartesian ia ib = left a `iappend` right b -- type mismatch
 ```
 
