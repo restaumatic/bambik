@@ -19,7 +19,17 @@ After that, we'll turn "polymorphic invariant transformers encode optics" thinki
 
 ## Profunctor optics
 
-TODO
+Profunctor optics is a way of encoding optics, such as lenses, prisms, affine traversals, traversals etc. that is inherently composeable in contrast to alternative encoding like explicit encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS].
+
+Composeability that we consider in this context is composeablity in terms of category composition as well as the ability to combine different types of optics together e.g. composing a lens with a prism etc.
+
+For given types `A`, `B`, `S` and `T`, a function `Profunctor p => p A B -> p S T` encodes an optic.
+Notice that this function being polymorphic in `p` can only rely on profunctor `dimap` function.
+
+
+
+
+
 
 ## Profunctors and invariants
 
@@ -164,5 +174,9 @@ what model requites from ui is expressed in invariant constraints.
 
 ---
 References
+
+[LAAR] - Joachim Breitner: CIS 194: Introduction to Haskell (Fall 2016) https://www.cis.upenn.edu/~cis1940/fall16/lectures/14-lenses.html
+
+[EXIST-OPTICS] - Marco Perone: "Existential optics" https://www.tweag.io/blog/2022-05-05-existential-optics/
 
 [1] - Matthew Pickering, Jeremy Gibbons, and Nicolas Wu: "Profunctor Optics. Modular Data Accessors" - https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
