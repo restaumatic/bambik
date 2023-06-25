@@ -100,6 +100,10 @@ instance CoCartesian Component where
             update $ userInput $> a
           _ -> do
             liftEffect $ destroySlot slot
+            Ref.write Nothing mUpdateRef
+            -- interestingly, theoretically, here we could call:
+            -- abcallback userInput
+            -- I don't know whether it would be right, though
             pure unit
     , tag: (unwrapC c).tag
     }
@@ -119,6 +123,10 @@ instance CoCartesian Component where
             update $ userInput $> b
           _ -> do
             liftEffect $ destroySlot slot
+            Ref.write Nothing mUpdateRef
+            -- interestingly, theoretically, here we could call:
+            -- abcallback userInput
+            -- I don't know whether it would be right, though
             pure unit
     , tag: (unwrapC c).tag
     }

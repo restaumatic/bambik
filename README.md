@@ -19,14 +19,62 @@ After that, we'll turn "polymorphic invariant transformers encode optics" thinki
 
 ## Profunctor optics
 
-Profunctor optics is a way of encoding optics, such as lenses, prisms, affine traversals, traversals etc. that is inherently composeable in contrast to alternative encoding like explicit encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS].
+Profunctor optics [PO] provides a way of encoding optics (adapters, lenses, prisms, affine traversals, traversals etc) whose advantage over alternative encodings (explicit/concrete encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS]) is its inherent composability, both in terms of categorical composition as well as the ability to combine different types of optics together e.g. lenses with prismes etc.
 
-Composeability that we consider in this context is composeablity in terms of category composition as well as the ability to combine different types of optics together e.g. composing a lens with a prism etc.
+For given types `A`, `B`, `S` and `T`, a function
+```haskell
+Profunctor p => p A B -> p S T
+```
+encodes an optic.
+Notice that this function being polymorphic in `p` can only use profunctor's `dimap` function:
 
-For given types `A`, `B`, `S` and `T`, a function `Profunctor p => p A B -> p S T` encodes an optic.
-Notice that this function being polymorphic in `p` can only rely on profunctor `dimap` function.
+```haskell
+dimap :: Profunctor p => (S -> A) -> (B -> T) -> p A B -> p S T
+```
 
+That is, `Profunctor p => p A B -> p S T` can be obtained from a pair of functions: `f :: S -> A` and `g :: B -> T` that we know as the explicit encoding of *adapter* optics.
+It turns out that there's also an inverse function from profunctor encoding to explicit encoding, hence profunctor encoding is isomophic to explicit encoding [PO].
 
+Similarly,
+```haskell
+Profunctor p, Strong p => p A B -> p S T
+```
+function is isomorphic to explicit encoding of lenses which is a pair of functions `get :: S -> A` and `set :: S -> B -> T`.
+Additional constraint, `Strong p`, allows this function to use
+
+```haskell
+first :: Strong p => p a b -> p (a, c) (b, c)
+second :: Strong p => p a b -> p (c, a) (c, b)
+```
+functions, one of which is necesseary to encode a lens.
+
+The following function, in turn,
+```haskell
+Profunctor p, Choice p => p A B -> p S T
+```
+is isomorphic to explicit encoding of prisms which is a pair of functions `review :: A -> S` and `preview :: S -> Either B T`.
+Additional constraint, `Choice p`, allows this function to use
+```haskell
+left :: Choice p => p a b -> p (Either a c) (Either b c)
+right :: Choice p => p a b -> p (Either c a) (Either c b)
+```
+functions, one of which is necesseary to encode a prism.
+
+### Intuition
+
+`Strong p` denotes a profunctor `p`, whose specific output value, in a way, refers to specific input value that "caused" the output value, establishing a link between many output values to one input value.
+
+Think about it as follows: I've got `Profunctor p, Strong p => p a b` that can be turned into `p (a, c) (b, c)` for an arbitrary `c`.
+It is like saying: you can attach whetever `c` to the input value `a`, and when there is an output value `b` it has attached `c` too.
+How to get the attached `c` of an arbitrary, unconstrained type if not from the one attached to one of the input values that is somehow logically linked to the output value?
+
+In profunctor encoding of a lens we use `second :: p Part Part' -> p (Whole, Part) (Whole, Part')`, and the ouput value of type `Part'` logically linkes to the input value of type `Part`: `Part'` value is transformed `Part` value.
+
+Dually, `Choice p` denotes a profunctor `p`, where there is a link between many input values to one output value.
+
+When combined `Strong p, Choice p => p` the link between input and output values is one to one. 
+
+### Laws
 
 
 
@@ -36,10 +84,10 @@ Notice that this function being polymorphic in `p` can only rely on profunctor `
 * mapping: `dimap :: p a b -> (a' - a) -> (b -> b') -> p a' b'` turns into `invmap :: i a -> (a' -> a) -> (a -> a') -> i a'`
 * cartesianity (aka stregth, StrongProfunctor): `first :: p a b -> p (a, c) (b, c)` turns into `invfirst :: i a -> i (a, c)`
 * co-cartesianity (aka ChoiceProfunctor): `left :: p a b -> p (Either a c) (Either b c)` turns into `invleft :: i a -> i (Either a c)`
-* product-monoidality: 
+* product-monoidality:
     * `p a b -> p c d -> p (a, c) (b, d)` turns into `i a -> i b -> i (a, b)`
     * `p () ()` turns into `i ()`
-* sum-monoidality: 
+* sum-monoidality:
     * `p a b -> p c d -> p (Either a c) (Either b d)` turns into `i a -> i b -> i (Either a b)`
     * `p Void Void` turns into `i Void`
 * profunctor optics tells us *polymorphic optics is polymorphic profunctor transformer* (PolyOptics a b s t === forall p. p a b -> p s t)
@@ -179,4 +227,4 @@ References
 
 [EXIST-OPTICS] - Marco Perone: "Existential optics" https://www.tweag.io/blog/2022-05-05-existential-optics/
 
-[1] - Matthew Pickering, Jeremy Gibbons, and Nicolas Wu: "Profunctor Optics. Modular Data Accessors" - https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
+[PO] - Matthew Pickering, Jeremy Gibbons, and Nicolas Wu: "Profunctor Optics. Modular Data Accessors" - https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
