@@ -19,27 +19,27 @@ After that, we'll turn "polymorphic invariant transformers encode optics" thinki
 
 ## Profunctor optics
 
-Profunctor optics [PO] provides a way of encoding optics (adapters, lenses, prisms, affine traversals, traversals etc) whose advantage over alternative encodings (explicit/concrete encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS]) is its inherent composability, both in terms of categorical composition as well as the ability to combine different types of optics together e.g. lenses with prismes etc.
+Profunctor optics [PO] provides a way of encoding optics (adapters, lenses, prisms, affine traversals, traversals etc) whose advantage over alternative encodings (explicit/concrete encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS]) is its inherent composability, both in terms of categorical composition as well as the ability to combine different types of optics e.g. lenses with prismes etc.
 
-For given types `A`, `B`, `S` and `T`, a function
+For fixed types `a`, `b`, `s` and `t`, a function
 ```haskell
-Profunctor p => p A B -> p S T
+Profunctor p => p a b -> p s t
 ```
 encodes an optic.
-Notice that this function being polymorphic in `p` can only use profunctor's `dimap` function:
+Notice that this function being polymorphic in `p` can only rely on profunctor's `dimap` function:
 
 ```haskell
-dimap :: Profunctor p => (S -> A) -> (B -> T) -> p A B -> p S T
+dimap :: Profunctor p => (s -> a) -> (b -> t) -> p a b -> p s t
 ```
 
-That is, `Profunctor p => p A B -> p S T` can be obtained from a pair of functions: `f :: S -> A` and `g :: B -> T` that we know as the explicit encoding of *adapter* optics.
+That is, `Profunctor p => p a b -> p s t` can be obtained from a pair of functions: `f :: s -> a` and `g :: b -> t` that we know as the explicit encoding of *adapter* optics.
 It turns out that there's also an inverse function from profunctor encoding to explicit encoding, hence profunctor encoding is isomophic to explicit encoding [PO].
 
-Similarly,
+Similarly, for fixed `a`, `b`, `s` and `t`,
 ```haskell
-Profunctor p, Strong p => p A B -> p S T
+Profunctor p, Strong p => p a b -> p s t
 ```
-function is isomorphic to explicit encoding of lenses which is a pair of functions `get :: S -> A` and `set :: S -> B -> T`.
+function is isomorphic to explicit encoding of lenses which is a pair of functions `get :: s -> a` and `set :: s -> b -> t`.
 Additional constraint, `Strong p`, allows this function to use
 
 ```haskell
@@ -48,11 +48,22 @@ second :: Strong p => p a b -> p (c, a) (c, b)
 ```
 functions, one of which is necesseary to encode a lens.
 
-The following function, in turn,
+`Strong p` denotes a profunctor `p`, whose specific output occurence, in a way, refers to specific input occurence that "caused" the output value, establishing an implicit, logical link from output occurence to input occurence.
+
+Think about it as follows: for fixed `p . Profunctor p, Strong p`, and for all `a` and `b`, `p a b` can be lifted to `p (a, c) (b, c)` for an arbitrary `c`.
+This means that the structure of `p` coveys a context `c` along the manufacturing line from input to output.
+It is like saying: whetever `c` can be attached to the input `a` occurence, and if there is an output `b` occurence, it has attached `c` too.
+How to get the attached `c` value of an arbitrary, unconstrained type if not from the input?
+
+In profunctor encoding of a lens we use `second :: Profunctor p, Strong p => p Part Part' -> p (Whole, Part) (Whole, Part')`.
+Indeed, we can see `Part'` output occurence is related to `Part` input occurence: the former value is an alteration of the latter value.
+Therefore, `Whole` attached to `Part` on the input can be conveyed along to `Part'` on the output.
+
+The following function, in turn, for fixed `a`, `b`, `s` and `t`,
 ```haskell
-Profunctor p, Choice p => p A B -> p S T
+Profunctor p, Choice p => p a b -> p s t
 ```
-is isomorphic to explicit encoding of prisms which is a pair of functions `review :: A -> S` and `preview :: S -> Either B T`.
+is isomorphic to explicit encoding of prisms which is a pair of functions `review :: a -> s` and `preview :: s -> Either b t`.
 Additional constraint, `Choice p`, allows this function to use
 ```haskell
 left :: Choice p => p a b -> p (Either a c) (Either b c)
@@ -62,17 +73,8 @@ functions, one of which is necesseary to encode a prism.
 
 ### Intuition
 
-`Strong p` denotes a profunctor `p`, whose specific output value, in a way, refers to specific input value that "caused" the output value, establishing a link between many output values to one input value.
 
-Think about it as follows: I've got `Profunctor p, Strong p => p a b` that can be turned into `p (a, c) (b, c)` for an arbitrary `c`.
-It is like saying: you can attach whetever `c` to the input value `a`, and when there is an output value `b` it has attached `c` too.
-How to get the attached `c` of an arbitrary, unconstrained type if not from the one attached to one of the input values that is somehow logically linked to the output value?
 
-In profunctor encoding of a lens we use `second :: p Part Part' -> p (Whole, Part) (Whole, Part')`, and the ouput value of type `Part'` logically linkes to the input value of type `Part`: `Part'` value is transformed `Part` value.
-
-Dually, `Choice p` denotes a profunctor `p`, where there is a link between many input values to one output value.
-
-When combined `Strong p, Choice p => p` the link between input and output values is one to one. 
 
 ### Laws
 
