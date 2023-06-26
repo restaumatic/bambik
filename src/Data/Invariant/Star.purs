@@ -22,9 +22,9 @@ derive instance Newtype (InvStar f a) _
 instance Functor f => Invariant (InvStar f) where
   invmap post pre p = wrap $ pre >>> unwrap p >>> map post
 
-instance Applicative f => Cartesian (InvStar f) where
-  invfirst p = wrap \(Tuple a b) -> Tuple <$> unwrap p a <*> pure b
-  invsecond p = wrap \(Tuple a b) -> Tuple <$> pure a <*> unwrap p b
+instance Functor f => Cartesian (InvStar f) where
+  invfirst p = wrap \(Tuple a b) -> (_ `Tuple` b) <$> unwrap p a
+  invsecond p = wrap \(Tuple a b) -> (a `Tuple` _) <$> unwrap p b
 
 instance Applicative f => CoCartesian (InvStar f) where
   invleft p = wrap $ either (unwrap p >>> map Left) (pure <<< Right)
