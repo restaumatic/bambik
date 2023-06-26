@@ -58,6 +58,7 @@ How to get the attached `c` value of an arbitrary, unconstrained type if not fro
 In profunctor encoding of a lens we use `second :: Profunctor p, Strong p => p Part Part' -> p (Whole, Part) (Whole, Part')`.
 Indeed, we can see `Part'` output occurence is related to `Part` input occurence: the former value is an alteration of the latter value.
 Therefore, `Whole` attached to `Part` on the input can be conveyed along to `Part'` on the output.
+This makes possible to apply `rmap :: Profunctor p => (b -> c) -> p a b -> p a c` on lifted profunctor to turn `(Whole, Part')` into new `Whole'`. 
 
 The following function, in turn, for fixed `a`, `b`, `s` and `t`,
 ```haskell
@@ -69,17 +70,11 @@ Additional constraint, `Choice p`, allows this function to use
 left :: Choice p => p a b -> p (Either a c) (Either b c)
 right :: Choice p => p a b -> p (Either c a) (Either c b)
 ```
-functions, one of which is necesseary to encode a prism.
+functions, one of which is necessary to encode a prism.
 
-### Intuition
+TODO: Choice intuition
 
-
-
-
-### Laws
-
-
-
+The laws of explicit optics encoding (like `get (set s a) == a` for lenses) do not impose additional laws on profunctor encoding over inherent laws of Profunctors, Strong, Choice etc. (like `dimap id id = id`).
 
 ## Profunctors and invariants
 
