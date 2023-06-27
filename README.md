@@ -19,7 +19,7 @@ After that, we'll turn "polymorphic invariant transformers encode optics" thinki
 
 ## Profunctor optics
 
-Profunctor optics [PO] provides a way of encoding optics (adapters, lenses, prisms, affine traversals, traversals etc) whose advantage over alternative encodings (explicit/concrete encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS]) is its inherent composability, both in terms of categorical composition as well as the ability to combine different types of optics e.g. lenses with prismes etc.
+Profunctor optics [PO] provides a way of encoding optics (adapters, lenses, prisms, affine traversals, traversals etc) whose advantage over alternative encodings (concrete encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS]) is its inherent composability, both in terms of categorical composition as well as the ability to combine different types of optics e.g. lenses with prismes etc.
 
 For fixed types `a`, `b`, `s` and `t`, a function
 ```haskell
@@ -32,14 +32,14 @@ Notice that this function being polymorphic in `p` can only rely on profunctor's
 dimap :: Profunctor p => (s -> a) -> (b -> t) -> p a b -> p s t
 ```
 
-That is, `Profunctor p => p a b -> p s t` can be obtained from a pair of functions: `f :: s -> a` and `g :: b -> t` that we know as the explicit encoding of *adapter* optics.
-It turns out that there's also an inverse function from profunctor encoding to explicit encoding, hence profunctor encoding is isomophic to explicit encoding [PO].
+That is, `Profunctor p => p a b -> p s t` can be obtained from a pair of functions: `f :: s -> a` and `g :: b -> t` that we know as the concrete encoding of *adapter* optics.
+It turns out that there's also an inverse function from profunctor encoding to concrete encoding, hence profunctor encoding is isomophic to concrete encoding [PO].
 
 Similarly, for fixed `a`, `b`, `s` and `t`,
 ```haskell
 Profunctor p, Strong p => p a b -> p s t
 ```
-function is isomorphic to explicit encoding of lenses which is a pair of functions `get :: s -> a` and `set :: s -> b -> t`.
+function is isomorphic to concrete encoding of lenses which is a pair of functions `get :: s -> a` and `set :: s -> b -> t`.
 Additional constraint, `Strong p`, allows this function to use
 
 ```haskell
@@ -64,7 +64,7 @@ The following function, in turn, for fixed `a`, `b`, `s` and `t`,
 ```haskell
 Profunctor p, Choice p => p a b -> p s t
 ```
-is isomorphic to explicit encoding of prisms which is a pair of functions `review :: a -> s` and `preview :: s -> Either b t`.
+is isomorphic to concrete encoding of prisms which is a pair of functions `review :: a -> s` and `preview :: s -> Either b t`.
 Additional constraint, `Choice p`, allows this function to use
 ```haskell
 left :: Choice p => p a b -> p (Either a c) (Either b c)
@@ -74,7 +74,7 @@ functions, one of which is necessary to encode a prism.
 
 TODO: Choice intuition
 
-The laws of explicit optics encoding (like `get (set s a) == a` for lenses) do not impose additional laws on profunctor encoding over inherent laws of Profunctors, Strong, Choice etc. (like `dimap id id = id`).
+The laws of concrete optics encoding (like `get (set s a) == a` for lenses) do not impose additional laws on profunctor encoding over inherent laws of Profunctors, Strong, Choice etc. (like `dimap id id = id`).
 
 Profunctor optics evokes an idea on how to construct optics-based UIs.
 For example, in order for UI to support adapters, lenses and prisms as first-class citizens, UI must instantiate Profunctor, Strong and Choice.
