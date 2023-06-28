@@ -15,10 +15,12 @@ to generate this file without the comments in this block.
   [ "aff"
   , "arrays"
   , "console"
+  , "distributive"
   , "effect"
   , "either"
   , "foldable-traversable"
   , "foreign-object"
+  , "identity"
   , "maybe"
   , "newtype"
   , "prelude"
@@ -30,5 +32,10 @@ to generate this file without the comments in this block.
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "src-specular-bits/**/*.purs", "test/**/*.purs", "demo/**/*.purs" ]
+, sources =
+  [ "src/**/*.purs"
+  , "src-specular-bits/**/*.purs"
+  , "test/**/*.purs"
+  , "demo/**/*.purs"
+  ]
 }

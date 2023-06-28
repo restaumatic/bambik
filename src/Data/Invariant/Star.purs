@@ -6,14 +6,15 @@ module Data.Invariant.Star
 
 import Prelude hiding (zero)
 
+import Data.Distributive (class Distributive, distribute)
 import Data.Either (Either(..), either)
 import Data.Identity (Identity)
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
+import Data.Invariant (class Cartesian, class Closed, class CoCartesian, class Invariant)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus)
 import Data.Tuple (Tuple(..))
 
--- basically, invariant version of Star
+-- basically, invariant version of `Star`
 newtype InvStar :: (Type -> Type) -> Type -> Type
 newtype InvStar f a = InvStar (a -> f a)
 
@@ -33,5 +34,8 @@ instance Applicative f => CoCartesian (InvStar f) where
 instance Monad f => Plus (InvStar f) where
   plus p1 p2 = wrap $ unwrap p1 >=> unwrap p2
   zero = wrap pure
+
+instance Distributive f => Closed (InvStar f) where
+  closed i = wrap \a -> distribute (unwrap i <<< a)
 
 type Pure = InvStar Identity

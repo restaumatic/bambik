@@ -5,6 +5,7 @@
 module Data.Invariant.Optics
   ( invAdapter
   , invAffineTraversal
+  , invGrate
   , invLens
   , invPrism
   , invProjection
@@ -15,7 +16,7 @@ module Data.Invariant.Optics
 import Prelude hiding (zero)
 
 import Data.Either (Either, either)
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant (class Cartesian, class Closed, class CoCartesian, class Invariant, closed, invfirst, invleft, invmap, invright, invsecond)
 import Data.Plus (class Plus, zero)
 import Data.Tuple (Tuple(..))
 
@@ -53,3 +54,14 @@ invAffineTraversal' to pab =
 
 invZero :: forall i a s . Invariant i => Plus i => i a -> i s
 invZero = const zero
+
+invGrate :: forall i a s. Invariant i => Closed i => (((s -> a) -> a) -> s) -> i a -> i s
+invGrate f pab = invmap f (#) (closed pab)
+-- example:
+-- data Pair a = Pair a a
+-- fstOfPair (Pair a _) = a
+-- sndOfPair (Pair _ a) = a
+-- f :: forall a. ((Pair a -> a) -> a) -> Pair a
+-- f foo = Pair (foo fstOfPair) (foo sndOfPair)
+-- pair :: forall i a. Invariant i => Closed i => i a -> i (Pair a)
+-- pair = invGrate f

@@ -12,6 +12,8 @@ module Data.Invariant
   , class Covariant
   , class EffInvariant
   , class Invariant
+  , class Closed
+  , closed
   , conmap
   , covmap
   , invand
@@ -57,7 +59,14 @@ class CoCartesian f where
     invleft :: forall a b. f a -> f (Either a b)
     invright :: forall a b. f b -> f (Either a b)
 
--- TODO: MonoidalInvariant
+class Closed f where
+    closed :: forall a x. f a -> f (x -> a)
+
+-- TODO: MonoidalInvariant:
+-- class Monoidal f where
+--     par :: forall a b. f a -> f b -> f (Tuple a b)
+--     empty :: f Unit
+-- is this really needed, once we have invand and zero?
 
 invand :: forall i a b . Invariant i => Cartesian i => Plus i => i a -> i b -> i (Tuple a b)
 invand a b = invfirst a `plus` invsecond b
