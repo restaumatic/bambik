@@ -1,11 +1,9 @@
 module Web
   ( Component
-  -- component construtors
   , component
-  -- component polymorphic transformers
+  , foo
   , inside
   , inside'
-  -- component runners
   , runComponent
   , runMainComponent
   )
@@ -206,3 +204,28 @@ runComponent c callback = do
 
 runMainComponent :: forall a. Component a -> Effect (a -> Effect Unit)
 runMainComponent app = runMainBuilderInBody $ runComponent app mempty
+
+
+--
+
+foo :: forall a. Component (Effect a) -> Component a
+foo c = wrapC
+  { builder: \callbackA -> do
+    updateEffectA <- (unwrapC c).builder \userInputEffectA -> do
+      a <- userInputValue userInputEffectA
+      callbackA $ userInputEffectA $> a
+    pure \userInputA -> do
+      updateEffectA (pure <$> userInputA)
+  , tag: (unwrapC c).tag
+  }
+
+bar :: forall a. Component a -> Component (Effect a)
+bar c = wrapC
+  { builder: \callbackEffectA -> do
+    updateEffectA <- (unwrapC c).builder \userInputA -> do
+      callbackEffectA $ pure <$> userInputA
+    pure \userInputEffectA -> do
+      a <- userInputValue userInputEffectA
+      updateEffectA (userInputEffectA $> a)
+  , tag: (unwrapC c).tag
+  }
