@@ -2,12 +2,12 @@ module Data.Invariant.Transformers where
 
 import Prelude hiding (zero)
 
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Function (on)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Newtype (class Newtype, wrap, unwrap)
 import Data.Plus (class Plus, plus, zero)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst, snd)
 
 -- IOContext
 -- For arbitrary monoid c, i (Tuple c _) preserves invariance, cartesian invariance, co-cartesian invariance of i as well as plus instance of i.
@@ -37,6 +37,27 @@ instance (Invariant i, CoCartesian i, Monoid c) => CoCartesian (IOContext c i) w
 instance Plus i => Plus (IOContext c i) where
   zero = wrap zero
   plus foo1 foo2 = wrap $ (plus `on` unwrap) foo1 foo2
+
+
+--
+
+newtype Foo :: forall k1 k2. (k1 -> k2) -> (k2 -> Type) -> k1 -> Type
+newtype Foo f i a = Foo (i (f a))
+
+derive instance Newtype (Foo f i a) _
+
+instance (Functor f, Invariant i) => Invariant (Foo f i) where
+  invmap f g = wrap <<< invmap (map f) (map g) <<< unwrap
+
+instance (Applicative f, Invariant i, Cartesian i) => Cartesian (Foo f i) where
+  invfirst = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invfirst <<< unwrap
+  invsecond = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invsecond <<< unwrap
+
+instance (Applicative f, Invariant i, Cartesian i) => Cartesian (Foo f i) where
+  -- fmap Left ||| fmap Right
+  invleft = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) (\feab -> ) <<< invleft <<< unwrap
+  -- invright = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invsecond <<< unwrap
+
 
 -- Cayley
 -- For arbitrary functor f, f (i _)  preserves invariance, cartesian invariance, co-cartesian invariance of i.
