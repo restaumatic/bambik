@@ -14,11 +14,11 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Array (null)
 import Data.Either (Either(..))
-import Data.Invariant (class Cartesian, class Closed, class CoCartesian, class Invariant)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
 import Data.Invariant.Optics.Tagged (class Tagged, Path, UserInput, prefixingPaths, propagatedDown, propagatedUp, userInput, userInputValue)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
-import Data.Plus (class Plus)
+import Data.Plus (class Plus, class Plusoid)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -133,7 +133,7 @@ instance Tagged Component where
   getPath c = (unwrapC c).tag
   setPath tag (Component { builder } ) = Component {builder, tag}
 
-instance Plus Component where
+instance Plusoid Component where
   plus c1 c2 = wrapC
     { builder: \callback -> do
       -- optimization: we already know that it's redundant to propagade change between children unless
@@ -166,6 +166,8 @@ instance Plus Component where
         updateParent userInputOnParent
       propagateToChild :: forall a . Path -> (UserInput a -> Effect Unit) -> UserInput a -> Effect Unit
       propagateToChild childPath updateChild userInput = maybe mempty updateChild (propagatedDown childPath userInput)
+
+instance Plus Component where
   zero = wrapC
     { builder: mempty
     , tag: mempty

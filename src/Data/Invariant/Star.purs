@@ -11,7 +11,7 @@ import Data.Either (Either(..), either)
 import Data.Identity (Identity)
 import Data.Invariant (class Cartesian, class Closed, class CoCartesian, class Invariant)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Plus (class Plus)
+import Data.Plus (class Plus, class Plusoid)
 import Data.Tuple (Tuple(..))
 
 -- basically, invariant version of `Star`
@@ -31,8 +31,10 @@ instance Applicative f => CoCartesian (InvStar f) where
   invleft p = wrap $ either (unwrap p >>> map Left) (pure <<< Right)
   invright p = wrap $ either (pure <<< Left) (unwrap p >>> map Right)
 
-instance Monad f => Plus (InvStar f) where
+instance Monad f => Plusoid (InvStar f) where
   plus p1 p2 = wrap $ unwrap p1 >=> unwrap p2
+
+instance Monad f => Plus (InvStar f) where
   zero = wrap pure
 
 instance Distributive f => Closed (InvStar f) where
