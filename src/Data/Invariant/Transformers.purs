@@ -56,12 +56,12 @@ instance (Functor f, Invariant i) => Invariant (Foo f i) where
   invmap f g = wrap <<< invmap (map f) (map g) <<< unwrap
 
 -- If `i _` can be lifted with lenses, `i (f _)` can be lifted with lenses too as long as `Apply f`
-instance (Apply f, Invariant i, Cartesian i) => Cartesian (Foo f i) where
+instance (Apply f, Cartesian i) => Cartesian (Foo f i) where
   invfirst = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invfirst <<< unwrap
   invsecond = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invsecond <<< unwrap
 
 -- If `i _` can be lifted with prisms, `i (f _)` can be lifted with prisms too as long as `CoApply f`
-instance (CoApply f, Invariant i, CoCartesian i) => CoCartesian (Foo f i) where
+instance (CoApply f, CoCartesian i) => CoCartesian (Foo f i) where
   invleft = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) cozip <<< invleft <<< unwrap
   invright = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) cozip <<< invright <<< unwrap
 
