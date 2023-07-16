@@ -73,14 +73,14 @@ instance Plusoid i => Plusoid (Foo f i) where
 instance Plus i => Plus (Foo f i) where
   zero = wrap zero
 
-liftAdapter :: forall i f a b. Invariant i => Functor f => (forall o. Invariant o => o a -> o b) -> i (f a) -> i (f b)
-liftAdapter o ifa = unwrap (Foo ifa # o)
+liftAdapter :: forall i f a b. Invariant i => Functor f => (forall j. Invariant j => j a -> j b) -> i (f a) -> i (f b)
+liftAdapter adapter ifa = unwrap (Foo ifa # adapter)
 
-liftLens :: forall i f a b. Invariant i => Cartesian i => Apply f =>(forall o. Invariant o => Cartesian o => o a -> o b) -> i (f a) -> i (f b)
-liftLens o ifa = unwrap (Foo ifa # o)
+liftLens :: forall i f a b. Cartesian i => Apply f => (forall j. Cartesian j => j a -> j b) -> i (f a) -> i (f b)
+liftLens lens ifa = unwrap (Foo ifa # lens)
 
-liftPrism :: forall i f a b. Invariant i => CoCartesian i => CoApply f =>(forall o. Invariant o => CoCartesian o => o a -> o b) -> i (f a) -> i (f b)
-liftPrism o ifa = unwrap (Foo ifa # o)
+liftPrism :: forall i f a b. CoCartesian i => CoApply f => (forall j. CoCartesian j => j a -> j b) -> i (f a) -> i (f b)
+liftPrism prism ifa = unwrap (Foo ifa # prism)
 
 
 -- foo :: forall i f a b. Invariant i => Cartesian i => Apply f =>(i a -> i b) -> i (f a) -> i (f b)

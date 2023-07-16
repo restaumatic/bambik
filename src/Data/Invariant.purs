@@ -51,15 +51,15 @@ class Invariant f <= Contravariant f where
     conmap :: forall a b . (b -> a) -> f a -> f b
     -- law: invmap = const conmap
 
-class Cartesian f where
+class Invariant f <= Cartesian f where
     invfirst :: forall a b. f a -> f (Tuple a b)
     invsecond :: forall a b. f b -> f (Tuple a b)
 
-class CoCartesian f where
+class Invariant f <= CoCartesian f where
     invleft :: forall a b. f a -> f (Either a b)
     invright :: forall a b. f b -> f (Either a b)
 
-class Closed f where
+class Invariant f <= Closed f where
     closed :: forall a x. f a -> f (x -> a)
 
 -- TODO: MonoidalInvariant:
@@ -68,16 +68,16 @@ class Closed f where
 --     empty :: f Unit
 -- is this really needed, once we have invand and zero?
 
-invand :: forall i a b . Invariant i => Cartesian i => Plus i => i a -> i b -> i (Tuple a b)
+invand :: forall i a b . Cartesian i => Plus i => i a -> i b -> i (Tuple a b)
 invand a b = invfirst a `plus` invsecond b
 
-invandwith :: forall i a b c . Invariant i => Cartesian i => Plus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
+invandwith :: forall i a b c . Cartesian i => Plus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
 invandwith f g a b = invmap f g $ invand a b
 
-invor :: forall i a b . Invariant i => CoCartesian i => Plus i => i a -> i b -> i (Either a b)
+invor :: forall i a b . CoCartesian i => Plus i => i a -> i b -> i (Either a b)
 invor a b = invleft a `plus` invright b
 
-invorwith :: forall i a b c . Invariant i => CoCartesian i => Plus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
+invorwith :: forall i a b c . CoCartesian i => Plus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
 invorwith f g a b = invmap f g $ invor a b
 
 class EffInvariant i where
