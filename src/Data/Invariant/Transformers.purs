@@ -83,10 +83,6 @@ liftPrism :: forall i f a b. CoCartesian i => CoApply f => (forall j. CoCartesia
 liftPrism prism ifa = unwrap (Foo ifa # prism)
 
 
--- foo :: forall i f a b. Invariant i => Cartesian i => Apply f =>(i a -> i b) -> i (f a) -> i (f b)
--- foo o ifa = unwrap (Foo ifa # o)
-
-
 -- Cayley
 -- For arbitrary functor f, f (i _)  preserves invariance, cartesian invariance, co-cartesian invariance of i.
 -- For arbitrary applicative functor f, f (i _) preserves plus instance of i.
