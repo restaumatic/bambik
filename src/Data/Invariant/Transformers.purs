@@ -14,17 +14,17 @@ import Data.Newtype (unwrap, wrap)
 -- Prism can be passed if `ComposeInvOutside i f` is `CoCartesian` thus if `i` is `CoCartesian and `f` is a `CoApply`.
 -- Composed lens(es) and prism(s) can be passed if `i` is both `Cartesian and `CoCartesian` and `f` is both `Apply` and `CoApply` (e.g. `Identity`).
 invlift ∷ ∀ i f a b. Invariant i => Functor f => (ComposeInvOutside i f a → ComposeInvOutside i f b) → i (f a) → i (f b)
-invlift optic ifa = unwrap $ (wrap ifa) # optic
+invlift optic = unwrap <<< optic <<< wrap
 
 -- allows for e.g.: (private functions just to prove it typechecks)
 liftAdapter :: forall i f a b. Invariant i => Functor f => (forall j. Invariant j => j a -> j b) -> i (f a) -> i (f b)
-liftAdapter adapter ifa = invlift adapter ifa
+liftAdapter adapter = invlift adapter
 
 liftLens :: forall i f a b. Cartesian i => Apply f => (forall j. Cartesian j => j a -> j b) -> i (f a) -> i (f b)
-liftLens lens ifa = invlift lens ifa
+liftLens lens = invlift lens
 
 liftPrism :: forall i f a b. CoCartesian i => CoApply f => (forall j. CoCartesian j => j a -> j b) -> i (f a) -> i (f b)
-liftPrism prism ifa = invlift prism ifa
+liftPrism prism = invlift prism
 
 liftCustom :: forall i f a b c d
   . CoCartesian i
@@ -37,4 +37,4 @@ liftCustom :: forall i f a b c d
   -> (forall j. Cartesian j => j b -> j c)
   -> (forall j. Invariant j => j c -> j d)
   -> i (f a) -> i (f d)
-liftCustom prism lens adapter ifa = invlift (prism >>> lens >>> adapter) ifa
+liftCustom prism lens adapter = invlift (prism >>> lens >>> adapter)
