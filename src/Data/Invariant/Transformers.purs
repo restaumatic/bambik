@@ -1,5 +1,6 @@
 module Data.Invariant.Transformers
-  ( ComposeInvInside(..)
+  ( foo, (#*)
+  , ComposeInvInside(..)
   , ComposeInvOutside(..)
   , invlift
   )
@@ -42,6 +43,11 @@ instance (Applicative f, Plus i) => Plus (ComposeInvInside f i) where
 -- Composed lens(es) and prism(s) can be passed if `i` is both `Cartesian and `CoCartesian` and `f` is both `Apply` and `CoApply` (e.g. `Identity`).
 invlift ∷ ∀ i f a b. Invariant i => Functor f => (ComposeInvOutside i f a → ComposeInvOutside i f b) → i (f a) → i (f b)
 invlift optic = unwrap <<< optic <<< wrap
+
+foo :: forall i733 f734 a735 b736. Invariant i733 => Functor f734 => i733 (f734 a735) -> (ComposeInvOutside i733 f734 a735 -> ComposeInvOutside i733 f734 b736) -> i733 (f734 b736)
+foo inv optic = inv # invlift optic
+
+infixl 1 foo as #*
 
 -- allows for e.g.: (private functions just to prove it typechecks)
 liftAdapter :: forall i f a b. Invariant i => Functor f => (forall j. Invariant j => j a -> j b) -> i (f a) -> i (f b)

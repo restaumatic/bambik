@@ -7,7 +7,7 @@ import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
 import Data.Invariant.Optics.Tagged (class Tagged, invField)
-import Data.Invariant.Transformers (invlift)
+import Data.Invariant.Transformers (invlift, (#*))
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
@@ -55,7 +55,7 @@ orderComponent ∷ Component Order
 orderComponent =
   customerComponent # inside "div" # customer
   ^
-  MDC.list itemComponent # inside "div" # invlift (invAdapter reverseString reverseString) # items
+  MDC.list itemComponent # inside "div" #* invAdapter reverseString reverseString #* invAdapter reverseString reverseString# items
   ^
   HTML.staticText "Summary: "
     ^ HTML.text # id
