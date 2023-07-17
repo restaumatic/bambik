@@ -15,9 +15,25 @@ class Functor f <= CoApply f where -- TODO maybe Covariant?
 class CoApply f <= CoApplicative f where
   copure :: forall a. f a -> a
 
+-- Identity
+
 instance CoApply Identity where
   cozip (Identity (Left x)) = Left (Identity x)
   cozip (Identity (Right x)) = Right (Identity x)
+
+instance CoApplicative Identity where
+  copure (Identity x) = x
+
+-- Tuple
+
+instance CoApply (Tuple s) where
+  cozip (Tuple c (Left x)) = Left $ Tuple c x
+  cozip (Tuple c (Right x)) = Right $ Tuple c x
+
+instance CoApplicative (Tuple s) where
+  copure (Tuple _  x) = x
+
+-- Maybe
 
 instance CoApply Maybe where
   cozip :: forall a b. Maybe (Either a b) -> Either (Maybe a) (Maybe b)
@@ -25,8 +41,7 @@ instance CoApply Maybe where
   cozip (Just (Left a)) = Left (Just a)
   cozip (Just (Right b)) = Right (Just b)
 
-instance CoApplicative Identity where
-  copure (Identity x) = x
+-- NonEmpty
 
 instance CoApply (NonEmpty Array) where
   cozip ne = case head ne of
@@ -46,11 +61,3 @@ instance CoApplicative (NonEmpty Array) where
 --   copure (Costate _ a) = a
 --   cozip (Costate f (Left  a)) = Left  (Costate (f <<< Left ) a)
 --   cozip (Costate f (Right a)) = Right (Costate (f <<< Right) a)
-
-instance CoApply (Tuple s) where
-  cozip (Tuple c (Left x)) = Left $ Tuple c x
-  cozip (Tuple c (Right x)) = Right $ Tuple c x
-
-instance CoApplicative (Tuple s) where
-  copure (Tuple _  x) = x
-
