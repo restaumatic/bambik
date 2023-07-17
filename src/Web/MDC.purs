@@ -2,19 +2,32 @@ module Web.MDC
   ( button
   , checkbox
   , filledText
+  , list
   , radioButton
   )
   where
 
 import Prelude hiding (zero)
 
-import Web.HTML as HTML
-import Web as Web
+import Control.Monad.Replace (newSlot, replaceSlot)
+import Data.Array (updateAt)
+import Data.Foldable (for_)
+import Data.FoldableWithIndex (forWithIndex_)
+import Data.Invariant.Optics (invConst)
+import Data.Invariant.Optics.Tagged (UserInput(..))
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap, wrap)
 import Data.Plus (plus, zero)
+import Data.TraversableWithIndex (forWithIndex)
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Ref (new, write)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
+import Specular.Dom.Builder.Class (elAttr, elAttr_)
+import Web (unwrapC)
+import Web as Web
+import Web.HTML as HTML
 
 button :: forall a. Web.Component a -> Web.Component a
 button wrapped =
@@ -67,6 +80,20 @@ radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
     -- <>
     -- (HTML.inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
   )
+
+list :: forall a. Web.Component a -> Web.Component (Array a)
+list c = Web.component \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
+  slot <- newSlot
+  asRef <- liftEffect $ new []
+  pure $ \as -> replaceSlot slot do
+    liftEffect $ write as asRef
+    void $ elAttr "ol" mempty $
+      forWithIndex_ as \i a -> elAttr "li" mempty do
+        update <- (unwrapC c).builder \(UserInput { value }) -> do
+          let newas = fromMaybe as (updateAt i value as)
+          write newas asRef
+          callbackas newas
+        liftEffect $ update (UserInput {path: Nothing, value: a})
 
 foreign import data ComponentClass :: Type
 foreign import data Component :: Type

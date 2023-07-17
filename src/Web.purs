@@ -6,6 +6,7 @@ module Web
   , inside'
   , runComponent
   , runMainComponent
+  , unwrapC
   )
   where
 

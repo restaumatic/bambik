@@ -2,8 +2,9 @@ module Demo1 where
 
 import Prelude
 
+import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class Invariant)
-import Data.Invariant.Optics (invProjection)
+import Data.Invariant.Optics (invConst, invProjection)
 import Data.Invariant.Optics.Tagged (class Tagged, invField)
 import Data.Plus ((^))
 import Data.String (toUpper)
@@ -16,6 +17,7 @@ import Web.MDC as MDC
 type Order =
       { id :: String
       , customer :: Customer
+      , items :: Array String
       }
 
 type Customer =
@@ -35,6 +37,9 @@ firstName = invField (Proxy :: Proxy "firstName")
 lastName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { lastName ∷ a | b }
 lastName = invField (Proxy :: Proxy "lastName")
 
+items :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { items ∷ a | b }
+items = invField (Proxy :: Proxy "items")
+
 upperCase :: forall i . Invariant i => Cartesian i => i String -> i String
 upperCase = invProjection toUpper
 
@@ -44,19 +49,31 @@ orderComponent ∷ Component Order
 orderComponent =
   customerComponent # inside "div" # customer
   ^
-  HTML.staticText "Summary: " ^ HTML.text # id ^ HTML.staticText " " ^ HTML.text # firstName # customer ^ HTML.staticText " " ^ HTML.text # upperCase # lastName # customer
+  MDC.list itemComponent # inside "div" # items
+  ^
+  HTML.staticText "Summary: "
+    ^ HTML.text # id
+    ^ HTML.staticText " "
+    ^ HTML.text # firstName # customer
+    ^ HTML.staticText " "
+    ^ HTML.text # upperCase # lastName # customer
+    ^ HTML.staticText ": "
+    ^ HTML.text # invProjection (intercalate ", ") # items
 
 customerComponent :: Component Customer
 customerComponent =
-  MDC.filledText "first name" # inside "div" # firstName
+  MDC.filledText "First name" # inside "div" # firstName
   ^
-  MDC.filledText "last name" # inside "div" # lastName
+  MDC.filledText "Last name" # inside "div" # lastName
   ^
   HTML.text # inside "div" # firstName
   ^
   HTML.text # inside "div" # lastName
 
+itemComponent :: Component String
+itemComponent = MDC.filledText "Item"
+
 main :: Effect Unit
 main = do
   updateOrder <- runMainComponent orderComponent
-  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}}
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: ["a", "b", "c"]}

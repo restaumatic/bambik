@@ -5,6 +5,7 @@
 module Data.Invariant.Optics
   ( invAdapter
   , invAffineTraversal
+  , invConst
   , invGrate
   , invLens
   , invPrism
@@ -65,3 +66,6 @@ invGrate f pab = invmap f (#) (closed pab)
 -- f foo = Pair (foo fstOfPair) (foo sndOfPair)
 -- pair :: forall i a. Invariant i => Closed i => i a -> i (Pair a)
 -- pair = invGrate f
+
+invConst :: forall i a s. Invariant i => Cartesian i => a -> i a -> i s
+invConst a = invLens (const a) (\s _ -> s)
