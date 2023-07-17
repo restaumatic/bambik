@@ -21,7 +21,7 @@ import Data.Plus (plus, zero)
 import Data.TraversableWithIndex (forWithIndex)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Ref (new, write)
+import Effect.Ref (new, read, write)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
 import Specular.Dom.Builder.Class (elAttr, elAttr_)
@@ -90,7 +90,8 @@ list c = Web.component \callbackas -> do -- -> Builder Unit (UserInput a -> Effe
     void $ elAttr "ol" mempty $
       forWithIndex_ as \i a -> elAttr "li" mempty do
         update <- (unwrapC c).builder \(UserInput { value }) -> do
-          let newas = fromMaybe as (updateAt i value as)
+          currentAs <- read asRef
+          let newas = fromMaybe currentAs (updateAt i value currentAs)
           write newas asRef
           callbackas newas
         liftEffect $ update (UserInput {path: Nothing, value: a})
