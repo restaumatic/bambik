@@ -55,7 +55,7 @@ orderComponent ∷ Component Order
 orderComponent =
   customerComponent # inside "div" # customer
   ^
-  MDC.list itemComponent # inside "div" #* invAdapter reverseString reverseString #* invAdapter reverseString reverseString# items
+  MDC.list itemComponent # inside "div" #* invAdapter reverseString reverseString #* invAdapter reverseString reverseString # items
   ^
   HTML.staticText "Summary: "
     ^ HTML.text # id
