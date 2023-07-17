@@ -3,8 +3,10 @@ module Data.Invariant.Transformers where
 import Prelude hiding (zero)
 
 import Data.Array (mapMaybe)
+import Data.CoApplicative (class CoApply)
 import Data.Either (Either(..), either)
 import Data.Function (on)
+import Data.Functor.Compose (Compose(..))
 import Data.Identity (Identity(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Maybe (Maybe(..))
@@ -47,105 +49,19 @@ instance Plus i => Plus (IOContext c i) where
 
 --
 
-newtype Foo :: forall k1 k2. (k1 -> k2) -> (k2 -> Type) -> k1 -> Type
-newtype Foo f i a = Foo (i (f a))
-
-derive instance Newtype (Foo f i a) _
-
-instance (Functor f, Invariant i) => Invariant (Foo f i) where
-  invmap f g = wrap <<< invmap (map f) (map g) <<< unwrap
-
--- If `i _` can be lifted with lenses, `i (f _)` can be lifted with lenses too as long as `Apply f`
-instance (Apply f, Cartesian i) => Cartesian (Foo f i) where
-  invfirst = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invfirst <<< unwrap
-  invsecond = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invsecond <<< unwrap
-
--- If `i _` can be lifted with prisms, `i (f _)` can be lifted with prisms too as long as `CoApply f`
-instance (CoApply f, CoCartesian i) => CoCartesian (Foo f i) where
-  invleft = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) cozip <<< invleft <<< unwrap
-  invright = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) cozip <<< invright <<< unwrap
-
--- If `i _` can be appended, `i (f _)` can be appended too
-instance Plusoid i => Plusoid (Foo f i) where
-  plus c1 c2 = wrap $ plus (unwrap c1) (unwrap c2)
-
--- If `i _` has zero, `i (f _)` has zero too
-instance Plus i => Plus (Foo f i) where
-  zero = wrap zero
-
 liftAdapter :: forall i f a b. Invariant i => Functor f => (forall j. Invariant j => j a -> j b) -> i (f a) -> i (f b)
-liftAdapter adapter ifa = unwrap (Foo ifa # adapter)
+liftAdapter adapter ifa = unwrap (Compose ifa # adapter)
 
 liftLens :: forall i f a b. Cartesian i => Apply f => (forall j. Cartesian j => j a -> j b) -> i (f a) -> i (f b)
-liftLens lens ifa = unwrap (Foo ifa # lens)
+liftLens lens ifa = unwrap (Compose ifa # lens)
 
 liftPrism :: forall i f a b. CoCartesian i => CoApply f => (forall j. CoCartesian j => j a -> j b) -> i (f a) -> i (f b)
-liftPrism prism ifa = unwrap (Foo ifa # prism)
+liftPrism prism ifa = unwrap (Compose ifa # prism)
 
-
--- Cayley
+-- Compose
 -- For arbitrary functor f, f (i _)  preserves invariance, cartesian invariance, co-cartesian invariance of i.
 -- For arbitrary applicative functor f, f (i _) preserves plus instance of i.
-newtype Cayley :: forall k1 k2. (k1 -> Type) -> (k2 -> k1) -> k2 -> Type
-newtype Cayley f i a = Cayley (f (i a))
+-- newtype Compose :: forall k1 k2. (k1 -> Type) -> (k2 -> k1) -> k2 -> Type
+-- newtype Compose f i a = Compose (f (i a))
+-- derive instance Newtype (Compose f i a) _
 
-derive instance Newtype (Cayley f i a) _
-
-instance (Functor f, Invariant p) => Invariant (Cayley f p) where
-  invmap f g = wrap <<< map (invmap f g) <<< unwrap
-
-instance (Functor f, Cartesian i) => Cartesian (Cayley f i) where
-  invfirst  = wrap <<< map invfirst <<< unwrap
-  invsecond = wrap <<< map invsecond <<< unwrap
-
-instance (Functor f, CoCartesian i) => CoCartesian (Cayley f i) where
-  invleft   = wrap <<< map invleft <<< unwrap
-  invright  = wrap <<< map invright <<< unwrap
-
-instance (Apply f, Plus i) => Plusoid (Cayley f i) where
-  plus c1 c2 = wrap $ plus <$> unwrap c1 <*> unwrap c2
-
-instance (Applicative f, Plus i) => Plus (Cayley f i) where
-  zero = wrap $ pure zero
-
-
---
-
-class Functor f <= CoApply f where
-  cozip :: forall a b. f (Either a b) -> Either (f a) (f b)
-
-class CoApply f <= CoApplicative f where
-  copure :: forall a. f a -> a
-
-instance CoApply Identity where
-  cozip (Identity (Left x)) = Left (Identity x)
-  cozip (Identity (Right x)) = Right (Identity x)
-
-instance CoApplicative Identity where
-  copure (Identity x) = x
-
-instance CoApply (NonEmpty Array) where
-  cozip ne = case head ne of
-    Left x -> Left $ x :| mapMaybe (either Just (const Nothing)) (tail ne)
-    Right y -> Right $ y :| mapMaybe (either (const Nothing) Just) (tail ne)
-
-instance CoApplicative (NonEmpty Array) where
-  copure = head
-
--- instance CoApplicative w => CoApplicative (StoreT s w) where
---   copure (StoreT (Tuple wsa s)) = (copure wsa) s
---   cozip (StoreT (Tuple wsa s))  = case (copure wsa) s of
---     Left  a -> Left  (StoreT (Tuple (map $ either identity (const a) <<< wsa) s))
---     Right b -> Right (StoreT (Tuple (map $ either (const b) identity <<< wsa) s))
-
--- instance CoApplicative Costate where
---   copure (Costate _ a) = a
---   cozip (Costate f (Left  a)) = Left  (Costate (f <<< Left ) a)
---   cozip (Costate f (Right a)) = Right (Costate (f <<< Right) a)
-
-instance CoApply (Tuple s) where
-  cozip (Tuple c (Left x)) = Left $ Tuple c x
-  cozip (Tuple c (Right x)) = Right $ Tuple c x
-
-instance CoApplicative (Tuple s) where
-  copure (Tuple _  x) = x

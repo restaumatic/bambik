@@ -32,9 +32,12 @@ module Data.Invariant
 
 import Prelude
 
-import Data.Either (Either)
+import Data.Either (Either(..), either)
+import Data.Functor.Compose (Compose)
+import Data.CoApplicative (class CoApply, cozip)
+import Data.Newtype (unwrap, wrap)
 import Data.Plus (class Plus, plus)
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 
 -- Functor class hierarchy
@@ -82,3 +85,33 @@ invorwith f g a b = invmap f g $ invor a b
 
 class EffInvariant i where
     inveff :: forall a . (a -> Effect Unit) -> i a -> i a
+
+
+--
+
+instance (Functor f, Invariant i) => Invariant (Compose i f) where
+  invmap f g = wrap <<< invmap (map f) (map g) <<< unwrap
+
+-- If `i _` can be lifted with lenses, `i (f _)` can be lifted with lenses too as long as `Apply f`
+instance (Apply f, Cartesian i) => Cartesian (Compose i f) where
+  invfirst = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invfirst <<< unwrap
+  invsecond = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invsecond <<< unwrap
+
+-- If `i _` can be lifted with prisms, `i (f _)` can be lifted with prisms too as long as `CoApply f`
+instance (CoApply f, CoCartesian i) => CoCartesian (Compose i f) where
+  invleft = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) cozip <<< invleft <<< unwrap
+  invright = wrap <<< invmap (\efafb -> either (map Left) (map Right) efafb) cozip <<< invright <<< unwrap
+
+--
+
+instance (Functor f, Invariant i) => Invariant (Compose f i) where
+  invmap f g = wrap <<< map (invmap f g) <<< unwrap
+
+instance (Functor f, Cartesian i) => Cartesian (Compose f i) where
+  invfirst  = wrap <<< map invfirst <<< unwrap
+  invsecond = wrap <<< map invsecond <<< unwrap
+
+instance (Functor f, CoCartesian i) => CoCartesian (Compose f i) where
+  invleft   = wrap <<< map invleft <<< unwrap
+  invright  = wrap <<< map invright <<< unwrap
+
