@@ -2,12 +2,15 @@ module Demo1 where
 
 import Prelude
 
+import Data.Array (reverse)
 import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class Invariant)
-import Data.Invariant.Optics (invConst, invProjection)
+import Data.Invariant.Optics (invAdapter, invProjection)
 import Data.Invariant.Optics.Tagged (class Tagged, invField)
+import Data.Invariant.Transformers (invlift)
 import Data.Plus ((^))
 import Data.String (toUpper)
+import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Type.Proxy (Proxy(..))
 import Web (Component, inside, runMainComponent)
@@ -43,13 +46,16 @@ items = invField (Proxy :: Proxy "items")
 upperCase :: forall i . Invariant i => Cartesian i => i String -> i String
 upperCase = invProjection toUpper
 
+reverseString ∷ String → String
+reverseString = toCharArray >>> reverse >>> fromCharArray
+
 --
 
 orderComponent ∷ Component Order
 orderComponent =
   customerComponent # inside "div" # customer
   ^
-  MDC.list itemComponent # inside "div" # items
+  MDC.list itemComponent # inside "div" # invlift (invAdapter reverseString reverseString) # items
   ^
   HTML.staticText "Summary: "
     ^ HTML.text # id
@@ -65,10 +71,6 @@ customerComponent =
   MDC.filledText "First name" # inside "div" # firstName
   ^
   MDC.filledText "Last name" # inside "div" # lastName
-  ^
-  HTML.text # inside "div" # firstName
-  ^
-  HTML.text # inside "div" # lastName
 
 itemComponent :: Component String
 itemComponent = MDC.filledText "Item"

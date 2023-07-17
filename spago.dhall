@@ -31,6 +31,7 @@ to generate this file without the comments in this block.
   , "tuples"
   , "unsafe-coerce"
   , "transformers"
+  , "nonempty"
   ]
 , packages = ./packages.dhall
 , sources =
