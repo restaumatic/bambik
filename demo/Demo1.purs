@@ -17,16 +17,22 @@ import Web (Component, inside, runMainComponent)
 import Web.HTML as HTML
 import Web.MDC as MDC
 
+-- data
+
 type Order =
       { id :: String
       , customer :: Customer
-      , items :: Array String
+      , items :: Array Item
       }
 
 type Customer =
       { firstName :: String
       , lastName :: String
       }
+
+type Item = String
+
+-- Model (uses data)
 
 id :: forall i a b . Cartesian i => Tagged i => i a -> i { id ∷ a | b }
 id = invField (Proxy :: Proxy "id")
@@ -46,13 +52,13 @@ items = invField (Proxy :: Proxy "items")
 upperCase :: forall i . Cartesian i => i String -> i String
 upperCase = invProjection toUpper
 
-reversed ∷ forall i. Invariant i ⇒ i String → i String
+reversed ∷ forall i. Invariant i ⇒ i Item → i Item
 reversed = invAdapter reverseString reverseString
   where
     reverseString ∷ String → String
     reverseString = toCharArray >>> reverse >>> fromCharArray
 
---
+-- View (uses model)
 
 orderComponent ∷ Component Order
 orderComponent =
@@ -75,8 +81,10 @@ customerComponent =
   ^
   MDC.filledText "Last name" # inside "div" # lastName
 
-itemComponent :: Component String
+itemComponent :: Component Item
 itemComponent = MDC.filledText "Item"
+
+-- Glue (uses data and view)
 
 main :: Effect Unit
 main = do
