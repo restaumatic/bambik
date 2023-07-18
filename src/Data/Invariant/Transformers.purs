@@ -11,6 +11,7 @@ import Prelude hiding (zero)
 import Data.CoApplicative (class CoApply, cozip)
 import Data.Either (Either(..), either)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant.Optics.Tagged (class Tagged, getPath, setPath)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid, plus, zero)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -43,6 +44,7 @@ instance (Applicative f, Plus i) => Plus (ComposeInvInside f i) where
 -- Composed lens(es) and prism(s) can be passed if `i` is both `Cartesian and `CoCartesian` and `f` is both `Apply` and `CoApply` (e.g. `Identity`).
 invlift ∷ ∀ i f a b. Invariant i => Functor f => (ComposeInvOutside i f a → ComposeInvOutside i f b) → i (f a) → i (f b)
 invlift optic = unwrap <<< optic <<< wrap
+
 
 foo :: forall i733 f734 a735 b736. Invariant i733 => Functor f734 => i733 (f734 a735) -> (ComposeInvOutside i733 f734 a735 -> ComposeInvOutside i733 f734 b736) -> i733 (f734 b736)
 foo inv optic = inv # invlift optic
@@ -95,3 +97,8 @@ instance Plusoid i => Plusoid (ComposeInvOutside i f) where
 
 instance Plus i => Plus (ComposeInvOutside i f) where
   zero = wrap zero
+
+instance Tagged i => Tagged (ComposeInvOutside i f) where
+  getPath i = getPath $ unwrap i
+  setPath p i = wrap $ setPath p $ unwrap i
+

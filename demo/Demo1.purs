@@ -30,7 +30,9 @@ type Customer =
       , lastName :: String
       }
 
-type Item = String
+type Item =
+  { name :: String
+  }
 
 -- Model (uses data)
 
@@ -49,10 +51,13 @@ lastName = invField (Proxy :: Proxy "lastName")
 items :: forall i a b . Cartesian i => Tagged i => i a -> i { items ∷ a | b }
 items = invField (Proxy :: Proxy "items")
 
+name :: forall i a b . Cartesian i => Tagged i => i a -> i { name ∷ a | b }
+name = invField (Proxy :: Proxy "name")
+
 upperCase :: forall i . Cartesian i => i String -> i String
 upperCase = invProjection toUpper
 
-reversed ∷ forall i. Invariant i ⇒ i Item → i Item
+reversed ∷ forall i. Invariant i ⇒ i String → i String
 reversed = invAdapter reverseString reverseString
   where
     reverseString ∷ String → String
@@ -64,7 +69,7 @@ orderComponent ∷ Component Order
 orderComponent =
   customerComponent # inside "div" # customer
   ^
-  MDC.list itemComponent # inside "div" #* reversed #* reversed # items
+  MDC.list itemComponent # inside "div" # items
   ^
   HTML.staticText "Summary: "
     ^ HTML.text # id
@@ -73,7 +78,7 @@ orderComponent =
     ^ HTML.staticText " "
     ^ HTML.text # upperCase # lastName # customer
     ^ HTML.staticText ": "
-    ^ HTML.text # invProjection (intercalate ", ") # items
+    ^ HTML.text # invProjection (intercalate ", ") #* name # items
 
 customerComponent :: Component Customer
 customerComponent =
@@ -82,11 +87,11 @@ customerComponent =
   MDC.filledText "Last name" # inside "div" # lastName
 
 itemComponent :: Component Item
-itemComponent = MDC.filledText "Item"
+itemComponent = MDC.filledText "Name" # reversed # reversed # name
 
 -- Glue (uses data and view)
 
 main :: Effect Unit
 main = do
   updateOrder <- runMainComponent orderComponent
-  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: ["a", "b", "c"]}
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}]}

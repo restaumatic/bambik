@@ -24,7 +24,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref (modify, modify_, new, read, write)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
-import Specular.Dom.Builder.Class (elAttr, elAttr_)
+import Specular.Dom.Builder.Class (elAttr, elAttr_, text)
 import Web (unwrapC)
 import Web as Web
 import Web.HTML as HTML
@@ -87,12 +87,16 @@ list c = Web.component \callbackas -> do -- -> Builder Unit (UserInput a -> Effe
   asRef <- liftEffect $ new []
   pure $ \as -> replaceSlot slot do
     liftEffect $ write as asRef
-    void $ elAttr "ol" mempty $
-      forWithIndex_ as \i a -> elAttr "li" mempty do
-        update <- (unwrapC c).builder \(UserInput { value }) -> do
-          newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
-          callbackas newas
-        liftEffect $ update (UserInput {path: Nothing, value: a})
+    void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
+      forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
+        void $ elAttr "span" ("class" := "mdc-list-item__ripple") (pure unit)
+        void $ elAttr "span" ("class" := "mdc-list-item__text") do
+          void $ elAttr "span" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
+          void $ elAttr "span" ("class" := "mdc-list-item__primary-text") do
+            update <- (unwrapC c).builder \(UserInput { value }) -> do
+              newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
+              callbackas newas
+            liftEffect $ update (UserInput {path: Nothing, value: a})
 
 foreign import data ComponentClass :: Type
 foreign import data Component :: Type
