@@ -7,7 +7,7 @@ import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
 import Data.Invariant.Optics.Tagged (class Tagged, invField)
-import Data.Invariant.Transformers (invlift, (#*))
+import Data.Invariant.Transformers ((#*))
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
@@ -28,26 +28,29 @@ type Customer =
       , lastName :: String
       }
 
-id :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { id ∷ a | b }
+id :: forall i a b . Cartesian i => Tagged i => i a -> i { id ∷ a | b }
 id = invField (Proxy :: Proxy "id")
 
-customer :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { customer ∷ a | b }
+customer :: forall i a b . Cartesian i => Tagged i => i a -> i { customer ∷ a | b }
 customer = invField (Proxy :: Proxy "customer")
 
-firstName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { firstName ∷ a | b }
+firstName :: forall i a b . Cartesian i => Tagged i => i a -> i { firstName ∷ a | b }
 firstName = invField (Proxy :: Proxy "firstName")
 
-lastName :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { lastName ∷ a | b }
+lastName :: forall i a b . Cartesian i => Tagged i => i a -> i { lastName ∷ a | b }
 lastName = invField (Proxy :: Proxy "lastName")
 
-items :: forall i a b . Invariant i => Cartesian i => Tagged i => i a -> i { items ∷ a | b }
+items :: forall i a b . Cartesian i => Tagged i => i a -> i { items ∷ a | b }
 items = invField (Proxy :: Proxy "items")
 
-upperCase :: forall i . Invariant i => Cartesian i => i String -> i String
+upperCase :: forall i . Cartesian i => i String -> i String
 upperCase = invProjection toUpper
 
-reverseString ∷ String → String
-reverseString = toCharArray >>> reverse >>> fromCharArray
+reversed ∷ forall i. Invariant i ⇒ i String → i String
+reversed = invAdapter reverseString reverseString
+  where
+    reverseString ∷ String → String
+    reverseString = toCharArray >>> reverse >>> fromCharArray
 
 --
 
@@ -55,7 +58,7 @@ orderComponent ∷ Component Order
 orderComponent =
   customerComponent # inside "div" # customer
   ^
-  MDC.list itemComponent # inside "div" #* invAdapter reverseString reverseString #* invAdapter reverseString reverseString # items
+  MDC.list itemComponent # inside "div" #* reversed #* reversed # items
   ^
   HTML.staticText "Summary: "
     ^ HTML.text # id

@@ -35,8 +35,7 @@ import Type.Proxy (Proxy)
 
 invField'
   :: forall i l r1 r a
-   . Invariant i
-  => Cartesian i
+  . Cartesian i
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
@@ -45,8 +44,7 @@ invField' l = invLens (\s -> get l s) (\s a -> (set l) a s)
 
 invField
   :: forall i l r1 r a
-   . Invariant i
-  => Cartesian i
+  . Cartesian i
   => Tagged i
   => IsSymbol l
   => Row.Cons l a r r1
