@@ -125,8 +125,8 @@ type Indexed x i a = Tunneled (Tuple x) (Tunneling (Tuple x) i) a
 mkIndexed :: forall x i a. Cartesian i => Monoid x => i a -> Indexed x i a
 mkIndexed ia = wrap (Tuple mempty (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
 
-prependIndex :: forall x i a. Invariant i => Group x => x -> Indexed x i a -> Indexed x i a
-prependIndex indexToPrepend ia =
+concatIndex :: forall x i a. Invariant i => Group x => x -> Indexed x i a -> Indexed x i a
+concatIndex indexToPrepend ia =
   let
     Tuple index i = unwrap ia
     i' = invmap (\(Tuple index a) -> Tuple (indexToPrepend <> index) a) (\(Tuple index a) -> Tuple (ginverse indexToPrepend <> index) a) $ unwrap i
