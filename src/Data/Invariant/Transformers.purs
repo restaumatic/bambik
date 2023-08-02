@@ -2,17 +2,14 @@ module Data.Invariant.Transformers
   ( (#*)
   , Tunneled(..)
   , Tunneling(..)
-  , concatIndex
   , foo
-  , invField
   , invlift
-  , mkIndexed
   )
   where
 
 import Prelude hiding (zero)
 
-import Data.Array (cons, head, mapMaybe, tail, takeWhile, uncons, zipWith)
+import Data.Array (cons, mapMaybe, takeWhile, uncons, zipWith)
 import Data.CoApplicative (class CoApply, cozip)
 import Data.Either (Either(..), either)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
@@ -120,57 +117,54 @@ liftCustom :: forall i f a b c d
   -> i (f a) -> i (f d)
 liftCustom prism lens adapter = invlift (prism >>> lens >>> adapter)
 
--- Indexed
+-- Scoped
 
--- If an index of `i` prefixes or is prefixed by an index of `a` then `i` should be changed according to `a`
---                            index of `i`          index of `a`
---                                   v
---                                                        v
-type Indexed x i a = Tunneled (Tuple x) (Tunneling (Tuple x) i) a
--- For Semigroup `x`, `Tuple x`, i Functor, Apply and CoApply so `Indexed x i` preserves Invariant, Cartesian, CoCartesian, Plusoid of of `i`.
--- If, additionally, Monoid `x` then `Tuple x` instantiates Applicative thus `Indexed x i` does preserve Plus instance of `i`.
+-- If the scope of `i` overlaps with the scope of `a` then `i` should be changed according to `a`
+--                                 scope of `i`                 scope of `a`
+--                                   vvvvvvv
+--                                                               vvvvvvvv
+type Scoped s i a = Tunneled (Tuple (Scope s)) (Tunneling (Tuple (Scope s)) i) a
+-- For Eq `a`, `Scope a` is a Semigroup, so `Tuple (Scope a)` is a Functor, Apply and CoApply so `Scoped s i` preserves Invariant, Cartesian, CoCartesian, Plusoid of of `i`.
+-- If, additionally, `Scope a` is a Monoid, then `Tuple (Scope a)` instantiates Applicative thus `Scoped s i` does preserve Plus instance of `i`.
 
-data Scope = Scope (Array String)
+data Scope a = Scope (Array a)
 
 -- finds least common scope
-instance Semigroup Scope where
+instance Eq a => Semigroup (Scope a) where
   append (Scope a1) (Scope a2) = Scope $ mapMaybe identity $ takeWhile isJust $ zipWith (\e1 e2 -> if e1 == e2 then Just e1 else Nothing) a1 a2
 
 -- laws full <> x = full = x <> full
 class Semigroup s <= Full s where
   full :: s
 
-instance Full Scope where
+instance Eq a => Full (Scope a) where
   full = Scope []
 
-zoomOut :: String -> Scope -> Scope
+zoomOut :: forall a. a -> Scope a -> Scope a
 zoomOut hop (Scope hops) = Scope $ hop `cons` hops  -- zooming out full in not full
 
-zoomIn :: Scope -> Scope
-zoomIn s@(Scope hops) = case tail hops of
-  Just tail -> Scope tail
-  Nothing -> s -- zooming in into full is full
-
-zoomIn' :: String -> Scope -> Maybe Scope
-zoomIn' hop s@(Scope hops) = case uncons hops of
+-- kind of intersection? section?
+zoomIn :: forall a. Eq a => a -> Scope a -> Maybe (Scope a)
+zoomIn hop s@(Scope hops) = case uncons hops of
   Nothing -> Just s -- zooming in into full is full
   Just { head, tail }
     | head == hop -> Just $ Scope tail
     | otherwise -> Nothing -- cannot zooming in
 
+scoped :: forall s i a. Cartesian i => Eq s => i a -> Scoped s i a
+scoped ia = wrap (Tuple full (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
 
-mkIndexed :: forall x i a. Cartesian i => Monoid x => i a -> Indexed x i a
-mkIndexed ia = wrap (Tuple mempty (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
-
-concatIndex :: forall x i a. Invariant i => String -> Indexed Scope i a -> Indexed Scope i a
-concatIndex hop ia =
+scopedOut :: forall i a s. Invariant i => s -> Scoped s i a -> Scoped s i a
+scopedOut hop ia =
   let
     Tuple scope i = unwrap ia
-    i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple (zoomIn' hop scope) a) $ unwrap i
+    -- TODO problem: how to conditionally make invariant being indexed not update itself
+    -- i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple (zoomIn hop scope) a) $ unwrap i
+    i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple scope a) $ unwrap i
   in wrap $ Tuple (zoomOut hop scope) i
--- problem: how to conditionally make invariant being indexed not update itself
 
 -- then we can come up with an optic:
+
 invField
   :: forall i l r1 r a
   . Cartesian i
@@ -178,5 +172,5 @@ invField
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
-  -> Indexed Scope i a -> Indexed Scope i (Record r1)
-invField l = invLens (get l) (flip (set l)) >>> concatIndex [reflectSymbol l]
+  -> Scoped String i a -> Scoped String i (Record r1)
+invField l = invLens (get l) (flip (set l)) >>> scopedOut (reflectSymbol l)
