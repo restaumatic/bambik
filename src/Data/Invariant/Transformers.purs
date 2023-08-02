@@ -1,8 +1,12 @@
 module Data.Invariant.Transformers
-  ( foo, (#*)
+  ( (#*)
   , Tunneled(..)
   , Tunneling(..)
+  , concatIndex
+  , foo
+  , invField
   , invlift
+  , mkIndexed
   )
   where
 
@@ -10,13 +14,16 @@ import Prelude hiding (zero)
 
 import Data.CoApplicative (class CoApply, cozip)
 import Data.Either (Either(..), either)
-import Data.Group (class Group, ginverse)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Invariant.Optics (invLens)
 import Data.Invariant.Optics.Tagged (class Tagged, getPath, setPath)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid, plus, zero)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
+import Prim.Row as Row
+import Record (get, set)
+import Type.Proxy (Proxy)
 
 -- Tunneled
 
@@ -125,9 +132,21 @@ type Indexed x i a = Tunneled (Tuple x) (Tunneling (Tuple x) i) a
 mkIndexed :: forall x i a. Cartesian i => Monoid x => i a -> Indexed x i a
 mkIndexed ia = wrap (Tuple mempty (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
 
-concatIndex :: forall x i a. Invariant i => Group x => x -> Indexed x i a -> Indexed x i a
+concatIndex :: forall x i a. Invariant i => Semigroup x => x -> Indexed x i a -> Indexed x i a
 concatIndex indexToPrepend ia =
   let
     Tuple index i = unwrap ia
-    i' = invmap (\(Tuple index a) -> Tuple (indexToPrepend <> index) a) (\(Tuple index a) -> Tuple (ginverse indexToPrepend <> index) a) $ unwrap i
+    i' = invmap (\(Tuple index a) -> Tuple (indexToPrepend <> index) a) (\(Tuple index a) -> Tuple (indexToPrepend <> index) a) $ unwrap i
   in wrap $ Tuple (indexToPrepend <> index) i
+-- problem: how to conditionally make invariant being indexed not update itself
+
+-- then we can come up with an optic:
+invField
+  :: forall i l r1 r a
+  . Cartesian i
+  => Tagged i
+  => IsSymbol l
+  => Row.Cons l a r r1
+  => Proxy l
+  -> Indexed (Array String) i a -> Indexed (Array String) i (Record r1)
+invField l = invLens (get l) (flip (set l)) >>> concatIndex [reflectSymbol l]
