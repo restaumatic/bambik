@@ -24,7 +24,7 @@ Before that, let's make one observation.
 When describing the structure of data, the profunctors we use are specific class of profunctors where input and output types are the same...
 
 Invariant optics seems more handy yet equally expressive (in our case) than profuncor optics.
-Let's use then invariant optics instead of representation.
+Let's pick invariant optics and use them instead of representation.
 
 # 5. UI independent of representation
 
@@ -46,8 +46,8 @@ printPersonToConsole :: Person -> Effect Unit
 ```
 
 Since only `Person` (data type without data constructor) and optics are exported, we only can:
-  * pick whatever invariant that is cartesian
-  * use `String` as usual
+  * pick invariant, arbirary one but necessarily cartesian (1)
+  * use `String` as usual (2)
 
 Attempt 1:
 
@@ -76,7 +76,7 @@ instance Invariant ConsolePrint where ...
 instance Cartesian ConsolePrint where ...
 
 consoleStringPrint :: ConsolePrint String
-consoleStringPrint = ...
+consoleStringPrint = ... -- using String as usual (2)
 
 runConsolePrint :: ConsolePrint a -> a -> Effect Unit
 runConsolePrint = ...
@@ -84,12 +84,10 @@ runConsolePrint = ...
 -- and then:
 
 printPersonToConsole :: Person -> Effect Unit
-printPersonToConsole = runConsolePrint consolePersonPrint
-
-consolePersonPrint :: ConsolePrint Person
-consolePersonPrint = consoleStringPrint # name
--- or
-consolePersonPrint = name consoleStringPrint
+printPersonToConsole = runConsolePrint consolePersonPrint -- picking invariant (1)
+  where
+    consolePersonPrint :: ConsolePrint Person
+    consolePersonPrint = name consoleStringPrint
 
 ```
 
