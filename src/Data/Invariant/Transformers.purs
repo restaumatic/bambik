@@ -120,7 +120,7 @@ liftCustom prism lens adapter = invlift (prism >>> lens >>> adapter)
 -- Scoped
 
 -- If the scope of `i` overlaps with the scope of `a` then `i` should be changed according to `a`
---                                 scope of `i`                 scope of `a`
+--                                 scope of `i`                scope of `a`
 --                                   vvvvvvv
 --                                                               vvvvvvvv
 type Scoped s i a = Tunneled (Tuple (Scope s)) (Tunneling (Tuple (Scope s)) i) a
@@ -133,7 +133,7 @@ data Scope a = Scope (Array a)
 instance Eq a => Semigroup (Scope a) where
   append (Scope a1) (Scope a2) = Scope $ mapMaybe identity $ takeWhile isJust $ zipWith (\e1 e2 -> if e1 == e2 then Just e1 else Nothing) a1 a2
 
--- laws full <> x = full = x <> full
+-- law: full <> x = full = x <> full
 class Semigroup s <= Full s where
   full :: s
 
@@ -141,15 +141,15 @@ instance Eq a => Full (Scope a) where
   full = Scope []
 
 zoomOut :: forall a. a -> Scope a -> Scope a
-zoomOut hop (Scope hops) = Scope $ hop `cons` hops  -- zooming out full in not full
+zoomOut hop (Scope hops) = Scope (hop `cons` hops)  -- zooming out full is not full
 
 -- kind of intersection? section?
 zoomIn :: forall a. Eq a => a -> Scope a -> Maybe (Scope a)
 zoomIn hop s@(Scope hops) = case uncons hops of
-  Nothing -> Just s -- zooming in into full is full
+  Nothing -> Just s -- zooming in full is full
   Just { head, tail }
     | head == hop -> Just $ Scope tail
-    | otherwise -> Nothing -- cannot zooming in
+    | otherwise -> Nothing -- cannot zoom in
 
 scoped :: forall s i a. Cartesian i => Eq s => i a -> Scoped s i a
 scoped ia = wrap (Tuple full (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
