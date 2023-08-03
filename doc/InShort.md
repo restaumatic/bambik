@@ -1,6 +1,6 @@
 # 1. Lenses generalized to optics
 
-Optics are useful for navigation through data structures
+Lenses, prisms etc are useful for navigation through data structures.
 
 But they are heteregenous and not composable.
 
@@ -26,7 +26,7 @@ When describing the structure of data, the profunctors we use are specific class
 Invariant optics seems more handy yet equally expressive (in our case) than profuncor optics.
 Let's pick invariant optics and use them instead of representation.
 
-# 5. UI independent of representation
+# 5. Representation independence
 
 Suppose we're given with:
 
@@ -52,8 +52,6 @@ Since only `Person` (data type without data constructor) and optics are exported
 Attempt 1:
 
 ```
-module UI where
-
 import Business (Person, name)
 
 printPersonToConsole = Console.log <<< personString
@@ -65,13 +63,11 @@ personString = impossible
 Attempt 2:
 
 ```
-module UI where
-
 import Business (Person, name)
 
 -- introducing invariant:
 
-data ConsolePrint = ...
+data ConsolePrint a = ...
 instance Invariant ConsolePrint where ...
 instance Cartesian ConsolePrint where ...
 
@@ -91,3 +87,14 @@ printPersonToConsole = runConsolePrint consolePersonPrint -- picking invariant (
 
 ```
 
+Having done that, we decoupled representation from application, with optics being an "API" between the two.
+Optics specifies what application can and can not do over representated data: application can not do anything beyond optics over the data.
+And vice-versa, data cannot do anything beyond optics over application.
+This sounds like a clear separation between the data and application.
+
+And what is this `ConsolePrint a` invariant?
+We can interpret it is a representation of `a` in given application: printing to console in this case.
+Does it mean that invariant represents data in a given application?
+Deos it mean that optics represents binding between data and its applications?
+
+# 6. Invariant UI
