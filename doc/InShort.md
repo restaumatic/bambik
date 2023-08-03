@@ -17,14 +17,15 @@ Products, Co-products, isomorphisms, functions...
 Optics describes the structure of data without releaving its representation (data constructors, functions etc)
 
 What if we start using optics instead of representation (data constructors, functions etc)?
-Before that, let's make one observation.
+
+Before trying this, let's make one observation.
 
 # 4. Invariants - subclass of profunctors
 
-When describing the structure of data, the profunctors we use are specific class of profunctors where input and output types are the same...
-
+When describing the structure of data, profunctors we use are specific class of profunctors where input and output types are the same...
 Invariant optics seems more handy yet equally expressive (in our case) than profuncor optics.
-Let's pick invariant optics and use them instead of representation.
+
+Let's pick invariant optics and use them instead of data representation.
 
 # 5. Representation independence
 
@@ -95,6 +96,6 @@ This sounds like a clear separation between the data and application.
 And what is this `ConsolePrint a` invariant?
 We can interpret it is a representation of `a` in given application: printing to console in this case.
 Does it mean that invariant represents data in a given application?
-Deos it mean that optics represents binding between data and its applications?
+Does it mean that optics represents binding between data and its applications?
 
 # 6. Invariant UI
