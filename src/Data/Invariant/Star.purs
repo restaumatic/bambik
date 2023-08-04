@@ -14,7 +14,8 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid)
 import Data.Tuple (Tuple(..))
 
--- basically, invariant version of `Star`
+-- InvStar turns functors into invariants.
+-- Basically, invariant version of `Star`.
 newtype InvStar :: (Type -> Type) -> Type -> Type
 newtype InvStar f a = InvStar (a -> f a)
 
@@ -40,4 +41,5 @@ instance Monad f => Plus (InvStar f) where
 instance Distributive f => Closed (InvStar f) where
   closed i = wrap \a -> distribute (unwrap i <<< a)
 
+-- In particular, Pure turn any endomorphism
 type Pure = InvStar Identity
