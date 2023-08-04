@@ -4,9 +4,11 @@ module Data.Invariant.Transformers
   , Tunneled(..)
   , Tunneling(..)
   , foo
-  , invConstructor
-  , invField
   , invlift
+  --
+  , scoped
+  , invField
+  , invConstructor
   )
   where
 
@@ -89,6 +91,7 @@ instance Tagged i => Tagged (Tunneling f i) where
 -- Lens can be passed if `Tunneling f i` is `Cartesian` thus if `i` is `Cartesian` and `f` is an `Apply`.
 -- Prism can be passed if `Tunneling f i` is `CoCartesian` thus if `i` is `CoCartesian and `f` is a `CoApply`.
 -- Composed lens(es) and prism(s) can be passed if `i` is both `Cartesian and `CoCartesian` and `f` is both `Apply` and `CoApply` (e.g. `Identity`).
+-- TODO what is really is?
 invlift ∷ ∀ i f a b. (Tunneling f i a → Tunneling f i b) → i (f a) → i (f b)
 invlift optic = unwrap <<< optic <<< wrap
 
@@ -126,38 +129,40 @@ liftCustom prism lens adapter = invlift (prism >>> lens >>> adapter)
 --                                 scope of `i`                scope of `a`
 --                                   vvvvvvv
 --                                                               vvvvvvvv
-type Scoped s i a = Tunneled (Tuple (Scope s)) (Tunneling (Tuple (Scope s)) i) a
+type Scoped i a = Tunneled (Tuple Scope) (Tunneling (Tuple Scope) i) a
 -- For Eq `a`, `Scope a` is a Semigroup, so `Tuple (Scope a)` is a Functor, Apply and CoApply so `Scoped s i` preserves Invariant, Cartesian, CoCartesian, Plusoid of of `i`.
 -- If, additionally, `Scope a` is a Monoid, then `Tuple (Scope a)` instantiates Applicative thus `Scoped s i` does preserve Plus instance of `i`.
 
-data Scope a = Scope (Array a)
+newtype Scope = Scope (Array Hop)
+
+type Hop = String
 
 -- finds least common scope
-instance Eq a => Semigroup (Scope a) where
+instance Semigroup Scope where
   append (Scope a1) (Scope a2) = Scope $ mapMaybe identity $ takeWhile isJust $ zipWith (\e1 e2 -> if e1 == e2 then Just e1 else Nothing) a1 a2
 
 -- law: full <> x = full = x <> full
 class Semigroup s <= Full s where
   full :: s
 
-instance Eq a => Full (Scope a) where
+instance Full Scope where
   full = Scope []
 
-zoomOut :: forall a. a -> Scope a -> Scope a
+zoomOut :: Hop -> Scope -> Scope
 zoomOut hop (Scope hops) = Scope (hop `cons` hops)  -- zooming out full is not full
 
 -- kind of intersection? section?
-zoomIn :: forall a. Eq a => a -> Scope a -> Maybe (Scope a)
+zoomIn :: Hop -> Scope -> Maybe Scope
 zoomIn hop s@(Scope hops) = case uncons hops of
   Nothing -> Just s -- zooming in full is full
   Just { head, tail }
     | head == hop -> Just $ Scope tail
     | otherwise -> Nothing -- cannot zoom in
 
-scoped :: forall s i a. Cartesian i => Eq s => i a -> Scoped s i a
+scoped :: forall i a. Cartesian i => i a -> Scoped i a
 scoped ia = wrap (Tuple full (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
 
-scopedOut :: forall i a s. Invariant i => Filtered i => Eq s => s -> Scoped s i a -> Scoped s i a
+scopedOut :: forall i a. Filtered i => Hop -> Scoped i a -> Scoped i a
 scopedOut hop ia =
   let
     Tuple scope i = unwrap ia
@@ -166,10 +171,10 @@ scopedOut hop ia =
 
 -- then we can come up with an optic:
 
-invField :: forall i a s. Filtered i => Cartesian i => String -> (s -> a -> s) -> (s -> a) -> Scoped String i a -> Scoped String i s
+invField :: forall i a s. Filtered i => Cartesian i => String -> (s -> a -> s) -> (s -> a) -> Scoped i a -> Scoped i s
 invField fieldName setter getter = invLens getter setter >>> scopedOut fieldName
 
-invConstructor :: forall i a s. Filtered i => CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> Scoped String i a -> Scoped String i s
+invConstructor :: forall i a s. Filtered i => CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> Scoped i a -> Scoped i s
 invConstructor constructorName construct deconstruct = invPrism construct (\s -> maybe (Right s) Left (deconstruct s)) >>> scopedOut constructorName
 
 ---
@@ -182,5 +187,5 @@ invField'
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
-  -> Scoped String i a -> Scoped String i (Record r1)
+  -> Scoped i a -> Scoped i (Record r1)
 invField' l = invLens (get l) (flip (set l)) >>> scopedOut (reflectSymbol l)
