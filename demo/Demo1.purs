@@ -4,9 +4,9 @@ import Prelude
 
 import Data.Array (reverse)
 import Data.Foldable (intercalate)
-import Data.Invariant (class Cartesian, class Invariant)
+import Data.Invariant (class Cartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers (invField', (#*))
+import Data.Invariant.Transformers (Scoped, invField', scoped, (#*))
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
@@ -35,22 +35,22 @@ type Item =
 
 -- Model (uses data)
 
-id :: forall i a b . Cartesian i => i a -> i { id ∷ a | b }
+id :: forall i a b . Filtered i => Cartesian i => Scoped i a -> Scoped i { id ∷ a | b }
 id = invField' (Proxy :: Proxy "id")
 
-customer :: forall i a b . Cartesian i => i a -> i { customer ∷ a | b }
+customer :: forall i a b . Filtered i => Cartesian i => Scoped i a -> Scoped i { customer ∷ a | b }
 customer = invField' (Proxy :: Proxy "customer")
 
-firstName :: forall i a b . Cartesian i => i a -> i { firstName ∷ a | b }
+firstName :: forall i a b . Filtered i => Cartesian i => Scoped i a -> Scoped i { firstName ∷ a | b }
 firstName = invField' (Proxy :: Proxy "firstName")
 
-lastName :: forall i a b . Cartesian i => i a -> i { lastName ∷ a | b }
+lastName :: forall i a b . Filtered i => Cartesian i => Scoped i a -> Scoped i { lastName ∷ a | b }
 lastName = invField' (Proxy :: Proxy "lastName")
 
-items :: forall i a b . Cartesian i => i a -> i { items ∷ a | b }
+items :: forall i a b . Filtered i => Cartesian i => Scoped i a -> Scoped i { items ∷ a | b }
 items = invField' (Proxy :: Proxy "items")
 
-name :: forall i a b . Cartesian i => i a -> i { name ∷ a | b }
+name :: forall i a b . Filtered i => Cartesian i => Scoped i a -> Scoped i { name ∷ a | b }
 name = invField' (Proxy :: Proxy "name")
 
 upperCase :: forall i . Cartesian i => i String -> i String
@@ -66,7 +66,7 @@ reversed = invAdapter reverseString reverseString
 
 orderComponent ∷ WebUI Order
 orderComponent =
-  customerComponent # inside "div" # customer
+  customerComponent #* inside "div" # customer
   ^
   MDC.list itemComponent # inside "div" # items
   ^
@@ -81,12 +81,12 @@ orderComponent =
 
 customerComponent :: WebUI Customer
 customerComponent =
-  MDC.filledText "First name" # inside "div" # firstName
+  MDC.filledText "First name" # inside "div" # scoped # firstName
   ^
-  MDC.filledText "Last name" # inside "div" # lastName
+  MDC.filledText "Last name" # inside "div" # scoped # lastName
 
 itemComponent :: WebUI Item
-itemComponent = MDC.filledText "Name" # reversed # reversed # name
+itemComponent = MDC.filledText "Name" # scoped # reversed # reversed # name
 
 -- Glue (uses data and view)
 
