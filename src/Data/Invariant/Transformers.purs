@@ -158,9 +158,8 @@ scopedOut :: forall i a s. Invariant i => Filtered i => Eq s => s -> Scoped s i 
 scopedOut hop ia =
   let
     Tuple scope i = unwrap ia
-    i' = invmap (\e -> let (Tuple scope a) = either identity identity e in Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\newScope ->Right (Tuple newScope a)) (zoomIn hop scope)) $ invfright $ unwrap i
-    -- i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple scope a) $ unwrap i
-  in wrap $ Tuple (zoomOut hop scope) i
+    i' = wrap $ invmap (\e -> let (Tuple subScope a) = either identity identity e in Tuple (zoomOut hop subScope) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\subScope -> Right (Tuple subScope a)) (zoomIn hop scope)) $ invfright $ unwrap i
+  in wrap $ Tuple (zoomOut hop scope) i'
 
 -- then we can come up with an optic:
 
