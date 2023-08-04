@@ -15,7 +15,7 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Array (null)
 import Data.Either (Either(..))
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
+import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics.Tagged (class Tagged, Path, UserInput, prefixingPaths, propagatedDown, propagatedUp, userInput, userInputValue)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
@@ -127,6 +127,42 @@ instance CoCartesian Component where
             -- abcallback userInput
             -- I don't know whether it would be right, though
             pure unit
+    , tag: (unwrapC c).tag
+    }
+
+instance Filtered Component where
+  invfleft c = wrapC
+    { builder: \abcallback -> do
+      slot <- newSlot
+      mUpdateRef <- liftEffect $ Ref.new Nothing
+      pure \userInput -> case userInputValue userInput of
+          Left a -> do
+            mUpdate <- liftEffect $ Ref.read mUpdateRef
+            update <- case mUpdate of
+              Just update -> pure update
+              Nothing -> do
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrapC c).builder (abcallback <<< map Left)
+                liftEffect $ Ref.write (Just newUpdate) mUpdateRef
+                pure newUpdate
+            update $ userInput $> a
+          _ -> pure unit
+    , tag: (unwrapC c).tag
+    }
+  invfright c = wrapC
+    { builder: \abcallback -> do
+      slot <- newSlot
+      mUpdateRef <- liftEffect $ Ref.new Nothing
+      pure \userInput -> case userInputValue userInput of
+          Right b -> do
+            mUpdate <- liftEffect $ Ref.read mUpdateRef
+            update <- case mUpdate of
+              Just update -> pure update
+              Nothing -> do
+                newUpdate <- liftEffect $ replaceSlot slot $ (unwrapC c).builder (abcallback <<< map Right)
+                liftEffect $ Ref.write (Just newUpdate) mUpdateRef
+                pure newUpdate
+            update $ userInput $> b
+          _ -> pure unit
     , tag: (unwrapC c).tag
     }
 
