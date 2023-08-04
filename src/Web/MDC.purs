@@ -11,32 +11,27 @@ import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Array (updateAt)
-import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Invariant.Optics (invConst)
-import Data.Invariant.Optics.Tagged (UserInput(..))
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Newtype (unwrap, wrap)
+import Data.Maybe (fromMaybe)
+import Data.Newtype (unwrap)
 import Data.Plus (plus, zero)
-import Data.TraversableWithIndex (forWithIndex)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Ref (modify, modify_, new, read, write)
+import Effect.Ref (modify, new, write)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
-import Specular.Dom.Builder.Class (elAttr, elAttr_, text)
-import Web (unwrapC)
+import Specular.Dom.Builder.Class (elAttr, text)
 import Web as Web
 import Web.HTML as HTML
 
-button :: forall a. Web.Component a -> Web.Component a
+button :: forall a. Web.WebComponent a -> Web.WebComponent a
 button wrapped =
   Web.inside' "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> HTML.onClick) $
     (Web.inside' "div" (const $ "class" := "mdc-button__ripple") mempty zero)
     `plus`
     (Web.inside' "span" (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledText :: String -> Web.Component String
+filledText :: String -> Web.WebComponent String
 filledText hintText =
   Web.inside' "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (Web.inside' "span" (const $ "class" := "mdc-text-field__ripple") mempty zero)
@@ -48,7 +43,7 @@ filledText hintText =
     (Web.inside' "span" (const $ "class" := "mdc-line-ripple") mempty zero)
 
 
-checkbox :: Web.Component Boolean
+checkbox :: Web.WebComponent Boolean
 checkbox =
   Web.inside' "div" (const $ "class" := "mdc-touch-target-wrapper") mempty $
     Web.inside' "div" (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty) $
@@ -63,7 +58,7 @@ checkbox =
       `plus`
       (Web.inside' "div" (const $ "class" := "mdc-checkbox__ripple") mempty zero)
 
-radioButton :: Web.Component Boolean
+radioButton :: Web.WebComponent Boolean
 radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
   (
     (Web.inside' "div" (const $ "class" := "mdc-radio") (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
@@ -81,7 +76,7 @@ radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
     -- (HTML.inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
   )
 
-list :: forall a. Web.Component a -> Web.Component (Array a)
+list :: forall a. Web.WebComponent a -> Web.WebComponent (Array a)
 list c = Web.component \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
   slot <- newSlot
   asRef <- liftEffect $ new []
@@ -93,13 +88,13 @@ list c = Web.component \callbackas -> do -- -> Builder Unit (UserInput a -> Effe
         void $ elAttr "span" ("class" := "mdc-list-item__text") do
           void $ elAttr "span" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
           void $ elAttr "span" ("class" := "mdc-list-item__primary-text") do
-            update <- (unwrapC c).builder \(UserInput { value }) -> do
+            update <- unwrap c \value -> do
               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
               callbackas newas
-            liftEffect $ update (UserInput {path: Nothing, value: a})
+            liftEffect $ update a
 
 foreign import data ComponentClass :: Type
-foreign import data Component :: Type
+foreign import data WebUI :: Type
 
 foreign import material
   :: { textField :: { "MDCTextField" :: ComponentClass }
@@ -116,14 +111,14 @@ foreign import material
      , formField :: { "MDCFormField" :: ComponentClass }
      }
 
-foreign import _new :: EffectFn2 ComponentClass Node Component
+foreign import _new :: EffectFn2 ComponentClass Node WebUI
 
-mdcWith :: ComponentClass -> Node -> (Component -> Node -> Effect Unit) -> Effect Unit
+mdcWith :: ComponentClass -> Node -> (WebUI -> Node -> Effect Unit) -> Effect Unit
 mdcWith class_ node init = do
   component <- new class_ node
   pure unit
   -- Tuple _ cleanup <- (map fst <<< runCleanupT) $ init component node
   -- pushDelayed cleanups cleanup
   where
-    new :: ComponentClass -> Node -> Effect Component
+    new :: ComponentClass -> Node -> Effect WebUI
     new cls node = liftEffect $ runEffectFn2 _new cls node

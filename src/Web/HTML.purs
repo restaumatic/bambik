@@ -17,31 +17,31 @@ import Effect (Effect)
 import Specular.Dom.Browser (Attrs, Node, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (Component, component, inside')
+import Web (WebComponent, WebUI, component, inside')
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
 foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
-staticText :: forall a . String -> Component a
+staticText :: forall a . String -> WebComponent a
 staticText content = component $ const $ S.text content *> mempty
 
-text :: Component String
+text :: WebComponent String
 text = component \_ -> do
   slot <- newSlot
   pure $ replaceSlot slot <<< S.text
 
 
 
-textInput :: Attrs -> Component String
+textInput :: Attrs -> WebComponent String
 textInput attrs = component \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getTextInputValue node >>= callback
   pure $ setTextInputValue node
 
-checkbox :: Attrs -> Component Boolean
+checkbox :: Attrs -> WebComponent Boolean
 checkbox attrs = component \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
@@ -49,7 +49,7 @@ checkbox attrs = component \callback -> do
   pure $ setCheckboxChecked node
 
 -- TODO
-radio :: (Boolean -> Attrs) -> Component Boolean
+radio :: (Boolean -> Attrs) -> WebComponent Boolean
 radio attrs = zero # inside' "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
   mempty
   -- setCheckboxChecked node value

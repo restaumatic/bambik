@@ -1,18 +1,15 @@
 module Data.Invariant.Transformers
-  --
-  ( Tunneled(..)
-  --
-  , Tunneling(..)
-  , (#*)
-  , foo
-  , invlift
-  --
-  , Scoped (..)
+  ( (#*)
   , Scope
-  , scoped
-  , invField
+  , Scoped(..)
+  , Tunneled(..)
+  , Tunneling(..)
+  , foo
   , invConstructor
-  --
+  , invField
+  , invField'
+  , invlift
+  , scoped
   )
   where
 
@@ -21,9 +18,9 @@ import Prelude hiding (zero)
 import Data.Array (cons, mapMaybe, takeWhile, uncons, zipWith)
 import Data.CoApplicative (class CoApply, cozip)
 import Data.Either (Either(..), either)
+import Data.Full (class Full, full)
 import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant, invfirst, invfright, invleft, invmap, invright, invsecond)
 import Data.Invariant.Optics (invLens, invPrism)
-import Data.Invariant.Optics.Tagged (class Tagged, getPath, setPath)
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid, plus, zero)
@@ -87,10 +84,6 @@ instance Plusoid i => Plusoid (Tunneling f i) where
 instance Plus i => Plus (Tunneling f i) where
   zero = wrap zero
 
-instance Tagged i => Tagged (Tunneling f i) where
-  getPath i = getPath $ unwrap i
-  setPath p i = wrap $ setPath p $ unwrap i
-
 -- Notice `Tunneling f i a → Tunneling f i b` parameter is an optic as `i` is an `Invariant` and `f` is a `Functor`.
 -- Lens can be passed if `Tunneling f i` is `Cartesian` thus if `i` is `Cartesian` and `f` is an `Apply`.
 -- Prism can be passed if `Tunneling f i` is `CoCartesian` thus if `i` is `CoCartesian and `f` is a `CoApply`.
@@ -145,10 +138,6 @@ type Hop = String
 instance Semigroup Scope where
   append (Scope a1) (Scope a2) = Scope $ mapMaybe identity $ takeWhile isJust $ zipWith (\e1 e2 -> if e1 == e2 then Just e1 else Nothing) a1 a2
 
--- law: full <> x = full = x <> full
-class Semigroup s <= Full s where
-  full :: s
-
 instance Full Scope where
   full = Scope []
 
@@ -187,7 +176,6 @@ invField'
   :: forall i l r1 r a
   . Filtered i
   => Cartesian i
-  => Tagged i
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
