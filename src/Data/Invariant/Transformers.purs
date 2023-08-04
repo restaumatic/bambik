@@ -1,14 +1,18 @@
 module Data.Invariant.Transformers
-  ( (#*)
-  , Scope
-  , Tunneled(..)
+  --
+  ( Tunneled(..)
+  --
   , Tunneling(..)
+  , (#*)
   , foo
   , invlift
   --
+  , Scoped (..)
+  , Scope
   , scoped
   , invField
   , invConstructor
+  --
   )
   where
 
