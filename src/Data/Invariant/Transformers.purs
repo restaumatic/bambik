@@ -12,10 +12,10 @@ import Prelude hiding (zero)
 import Data.Array (cons, mapMaybe, takeWhile, uncons, zipWith)
 import Data.CoApplicative (class CoApply, cozip)
 import Data.Either (Either(..), either)
-import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant, invfirst, invfleft, invfright, invleft, invmap, invright, invsecond)
 import Data.Invariant.Optics (invLens)
 import Data.Invariant.Optics.Tagged (class Tagged, getPath, setPath)
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid, plus, zero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -154,13 +154,12 @@ zoomIn hop s@(Scope hops) = case uncons hops of
 scoped :: forall s i a. Cartesian i => Eq s => i a -> Scoped s i a
 scoped ia = wrap (Tuple full (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
 
-scopedOut :: forall i a s. Invariant i => s -> Scoped s i a -> Scoped s i a
+scopedOut :: forall i a s. Invariant i => Filtered i => Eq s => s -> Scoped s i a -> Scoped s i a
 scopedOut hop ia =
   let
     Tuple scope i = unwrap ia
-    -- TODO problem: how to conditionally make invariant being indexed not update itself
-    -- i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple (zoomIn hop scope) a) $ unwrap i
-    i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple scope a) $ unwrap i
+    i' = invmap (\e -> let (Tuple scope a) = either identity identity e in Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\newScope ->Right (Tuple newScope a)) (zoomIn hop scope)) $ invfright $ unwrap i
+    -- i' = invmap (\(Tuple scope a) -> Tuple (zoomOut hop scope) a) (\(Tuple scope a) -> Tuple scope a) $ unwrap i
   in wrap $ Tuple (zoomOut hop scope) i
 
 -- then we can come up with an optic:
@@ -168,6 +167,7 @@ scopedOut hop ia =
 invField
   :: forall i l r1 r a
   . Cartesian i
+  => Filtered i
   => Tagged i
   => IsSymbol l
   => Row.Cons l a r r1
