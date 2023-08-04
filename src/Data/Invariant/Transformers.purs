@@ -1,8 +1,11 @@
 module Data.Invariant.Transformers
   ( (#*)
+  , Scope
   , Tunneled(..)
   , Tunneling(..)
   , foo
+  , invConstructor
+  , invField
   , invlift
   )
   where
@@ -12,8 +15,8 @@ import Prelude hiding (zero)
 import Data.Array (cons, mapMaybe, takeWhile, uncons, zipWith)
 import Data.CoApplicative (class CoApply, cozip)
 import Data.Either (Either(..), either)
-import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant, invfirst, invfleft, invfright, invleft, invmap, invright, invsecond)
-import Data.Invariant.Optics (invLens)
+import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant, invfirst, invfright, invleft, invmap, invright, invsecond)
+import Data.Invariant.Optics (invLens, invPrism)
 import Data.Invariant.Optics.Tagged (class Tagged, getPath, setPath)
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -89,7 +92,7 @@ instance Tagged i => Tagged (Tunneling f i) where
 invlift ∷ ∀ i f a b. (Tunneling f i a → Tunneling f i b) → i (f a) → i (f b)
 invlift optic = unwrap <<< optic <<< wrap
 
-foo :: forall i733 f734 a735 b736. Invariant i733 => Functor f734 => i733 (f734 a735) -> (Tunneling f734 i733 a735 -> Tunneling f734 i733 b736) -> i733 (f734 b736)
+foo :: forall i f a b. Invariant i => Functor f => i (f a) -> (Tunneling f i a -> Tunneling f i b) -> i (f b)
 foo inv optic = inv # invlift optic
 
 infixl 1 foo as #*
@@ -163,13 +166,21 @@ scopedOut hop ia =
 
 -- then we can come up with an optic:
 
-invField
+invField :: forall i a s. Filtered i => Cartesian i => String -> (s -> a -> s) -> (s -> a) -> Scoped String i a -> Scoped String i s
+invField fieldName setter getter = invLens getter setter >>> scopedOut fieldName
+
+invConstructor :: forall i a s. Filtered i => CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> Scoped String i a -> Scoped String i s
+invConstructor constructorName construct deconstruct = invPrism construct (\s -> maybe (Right s) Left (deconstruct s)) >>> scopedOut constructorName
+
+---
+
+invField'
   :: forall i l r1 r a
-  . Cartesian i
-  => Filtered i
+  . Filtered i
+  => Cartesian i
   => Tagged i
   => IsSymbol l
   => Row.Cons l a r r1
   => Proxy l
   -> Scoped String i a -> Scoped String i (Record r1)
-invField l = invLens (get l) (flip (set l)) >>> scopedOut (reflectSymbol l)
+invField' l = invLens (get l) (flip (set l)) >>> scopedOut (reflectSymbol l)
