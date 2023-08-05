@@ -14,13 +14,15 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant)
-import Data.Invariant.Transformers (Scoped)
+import Data.Invariant.Transformers (Scope, Scoped)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid)
 import Data.Tuple (Tuple(..), fst, snd)
+import Data.Zero (zero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Effect.Ref as Ref
 import Specular.Dom.Browser (Attrs, Node, TagName)
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
@@ -146,7 +148,7 @@ instance Plusoid WebComponent where
       update2 a
 
 instance Plus WebComponent where
-  zero = wrap mempty
+  pzero = wrap mempty
 
 -- WebUI constructors
 
@@ -169,9 +171,8 @@ inside' tagName attrs event c = wrap \callback -> do
 
 runComponent :: forall a. WebUI a -> Builder Unit (a -> Effect Unit)
 runComponent c = do
-  let (Tuple scope update) = unwrap c
-  pure $ \a -> pure unit
-  -- pure $ \a -> update (Tuple full a)
+  update <- (unwrap $ unwrap c) \(Tuple scope _) -> log $ "change in scope: " <> show scope
+  pure $ \a -> update (Tuple zero a)
 
 runMainComponent :: forall a. WebUI a -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent

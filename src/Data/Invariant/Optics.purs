@@ -18,7 +18,7 @@ import Prelude hiding (zero)
 
 import Data.Either (Either, either)
 import Data.Invariant (class Cartesian, class Closed, class CoCartesian, class Invariant, closed, invfirst, invleft, invmap, invright, invsecond)
-import Data.Plus (class Plus, zero)
+import Data.Plus (class Plus, pzero)
 import Data.Tuple (Tuple(..))
 
 invAdapter :: forall f a b. Invariant f => (a -> b) -> (b -> a) -> f a -> f b
@@ -54,7 +54,7 @@ invAffineTraversal' to pab =
   invmap (\(Tuple b f) -> either identity b f) to (invsecond (invright pab))
 
 invZero :: forall i a s . Invariant i => Plus i => i a -> i s
-invZero = const zero
+invZero = const pzero
 
 invGrate :: forall i a s. Invariant i => Closed i => (((s -> a) -> a) -> s) -> i a -> i s
 invGrate f pab = invmap f (#) (closed pab)

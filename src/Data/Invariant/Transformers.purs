@@ -4,37 +4,44 @@ module Data.Invariant.Transformers
   , Scoped(..)
   , Tunneled(..)
   , Tunneling(..)
+  , class InvTrans
   , foo
   , invConstructor
   , invField
   , invField'
   , invlift
-  , scoped
   )
   where
 
 import Prelude hiding (zero)
 
-import Data.Array (cons, mapMaybe, takeWhile, uncons, zipWith)
-import Data.CoApplicative (class CoApply, cozip)
+import Data.Array (cons, uncons)
+import Data.CoApplicative (class CoApplicative, class CoApply, copure, cozip)
 import Data.Either (Either(..), either)
-import Data.Full (class Full, full)
+import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant, invfirst, invfright, invleft, invmap, invright, invsecond)
 import Data.Invariant.Optics (invLens, invPrism)
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Plus (class Plus, class Plusoid, plus, zero)
+import Data.Plus (class Plus, class Plusoid, plus, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
+import Data.Zero (class Zero, zero)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy)
+
+class InvTrans t where
+  invlift :: forall i a. Invariant i => i a -> t i a
 
 -- Tunneled
 
 newtype Tunneled :: forall k1 k2. (k1 -> Type) -> (k2 -> k1) -> k2 -> Type
 newtype Tunneled f i a = Tunneled (f (i a))
 derive instance Newtype (Tunneled f i a) _
+
+instance Applicative f => InvTrans (Tunneled f) where
+  invlift = wrap <<< pure
 
 -- Tunneled as an invariant using underlying invariant `i a` to tunnel `f (i a)`, where i is transparent to `f`.
 -- Explanation inspired by a nice definition of tunneling from polish wikipedia (translated to english):
@@ -54,13 +61,16 @@ instance (Apply f, Plus i) => Plusoid (Tunneled f i) where
   plus c1 c2 = wrap $ plus <$> unwrap c1 <*> unwrap c2
 
 instance (Applicative f, Plus i) => Plus (Tunneled f i) where
-  zero = wrap $ pure zero
+  pzero = wrap $ pure pzero
 
 -- Tunneling
 
 newtype Tunneling :: forall k1 k2. (k2 -> k1) -> (k1 -> Type) -> k2 -> Type
 newtype Tunneling f i a = Tunneling (i (f a))
 derive instance Newtype (Tunneling f i a) _
+
+instance (Applicative f, CoApplicative f) => InvTrans (Tunneling f) where
+  invlift = wrap <<< invmap pure copure
 
 -- Tunneling as an invariant using underlying invariant `i a` to convey `f a`s instead of `a`s, where f is a functor that is transparent to `i`.
 -- Explanation inspired by a nice definition of tunneling from polish wikipedia (translated to english):
@@ -82,30 +92,31 @@ instance Plusoid i => Plusoid (Tunneling f i) where
   plus c1 c2 = wrap $ plus (unwrap c1) (unwrap c2)
 
 instance Plus i => Plus (Tunneling f i) where
-  zero = wrap zero
+  pzero = wrap pzero
 
 -- Notice `Tunneling f i a → Tunneling f i b` parameter is an optic as `i` is an `Invariant` and `f` is a `Functor`.
 -- Lens can be passed if `Tunneling f i` is `Cartesian` thus if `i` is `Cartesian` and `f` is an `Apply`.
 -- Prism can be passed if `Tunneling f i` is `CoCartesian` thus if `i` is `CoCartesian and `f` is a `CoApply`.
 -- Composed lens(es) and prism(s) can be passed if `i` is both `Cartesian and `CoCartesian` and `f` is both `Apply` and `CoApply` (e.g. `Identity`).
 -- TODO what is really is?
-invlift ∷ ∀ i f a b. (Tunneling f i a → Tunneling f i b) → i (f a) → i (f b)
-invlift optic = unwrap <<< optic <<< wrap
+invlift' ∷ ∀ i f a b. (Tunneling f i a → Tunneling f i b) → i (f a) → i (f b)
+invlift' optic = unwrap <<< optic <<< wrap
 
 foo :: forall i f a b. Invariant i => Functor f => i (f a) -> (Tunneling f i a -> Tunneling f i b) -> i (f b)
-foo inv optic = inv # invlift optic
+foo inv optic = inv # invlift' optic
+
 
 infixl 1 foo as #*
 
 -- allows for e.g.: (private functions just to prove it typechecks)
 liftAdapter :: forall i f a b. Invariant i => Functor f => (forall j. Invariant j => j a -> j b) -> i (f a) -> i (f b)
-liftAdapter adapter = invlift adapter
+liftAdapter adapter = invlift' adapter
 
 liftLens :: forall i f a b. Cartesian i => Apply f => (forall j. Cartesian j => j a -> j b) -> i (f a) -> i (f b)
-liftLens lens = invlift lens
+liftLens lens = invlift' lens
 
 liftPrism :: forall i f a b. CoCartesian i => CoApply f => (forall j. CoCartesian j => j a -> j b) -> i (f a) -> i (f b)
-liftPrism prism = invlift prism
+liftPrism prism = invlift' prism
 
 liftCustom :: forall i f a b c d
   . CoCartesian i
@@ -118,49 +129,49 @@ liftCustom :: forall i f a b c d
   -> (forall j. Cartesian j => j b -> j c)
   -> (forall j. Invariant j => j c -> j d)
   -> i (f a) -> i (f d)
-liftCustom prism lens adapter = invlift (prism >>> lens >>> adapter)
+liftCustom prism lens adapter = invlift' (prism >>> lens >>> adapter)
 
--- Scoped
+-- Scoped: carrying additional info about the scope of a change
+-- `Scope` is a Monoid
+--   => `Tuple Scope` is a Functor, Apply, CoApply
+--     => `Scoped i` preserves Invariant, Cartesian, CoCartesian, Plusoid and Plus instances of of `i`.
+--   => `Tuple Scope` is CoApplicative and Applicative so
+--     => `Scoped i` is InvTransformer.
+type Scoped i a = Tunneling (Tuple Scope) i a
 
--- If the scope of `i` overlaps with the scope of `a` then `i` should be changed according to `a`
---                                 scope of `i`                scope of `a`
---                                   vvvvvvv
---                                                               vvvvvvvv
-type Scoped i a = Tunneled (Tuple Scope) (Tunneling (Tuple Scope) i) a
--- For Eq `a`, `Scope a` is a Semigroup, so `Tuple (Scope a)` is a Functor, Apply and CoApply so `Scoped s i` preserves Invariant, Cartesian, CoCartesian, Plusoid of of `i`.
--- If, additionally, `Scope a` is a Monoid, then `Tuple (Scope a)` instantiates Applicative thus `Scoped s i` does preserve Plus instance of `i`.
-
-newtype Scope = Scope (Array Hop)
+data Scope = Scope (Array Hop) | AnyScope -- this is actually a lattice (bottom, singleton vales, top), TODO find already existing data type for it
 
 type Hop = String
 
+instance Show Scope where
+  show AnyScope = "*"
+  show (Scope hops) = "'" <> intercalate "/" hops <> "'"
+
 -- finds least common scope
 instance Semigroup Scope where
-  append (Scope a1) (Scope a2) = Scope $ mapMaybe identity $ takeWhile isJust $ zipWith (\e1 e2 -> if e1 == e2 then Just e1 else Nothing) a1 a2
+  append AnyScope s = s
+  append s AnyScope = s
+  append _ _ = zero
 
-instance Full Scope where
-  full = Scope []
+instance Monoid Scope where
+  mempty = AnyScope
 
-zoomOut :: Hop -> Scope -> Scope
-zoomOut hop (Scope hops) = Scope (hop `cons` hops)  -- zooming out full is not full
-
--- kind of intersection? section?
-zoomIn :: Hop -> Scope -> Maybe Scope
-zoomIn hop s@(Scope hops) = case uncons hops of
-  Nothing -> Just s -- zooming in full is full
-  Just { head, tail }
-    | head == hop -> Just $ Scope tail
-    | otherwise -> Nothing -- cannot zoom in
-
-scoped :: forall i a. Cartesian i => i a -> Scoped i a
-scoped ia = wrap (Tuple full (wrap (invLens snd (\(Tuple p _) a  -> Tuple p a) ia)))
+instance Zero Scope where
+  zero = Scope []
 
 scopedOut :: forall i a. Filtered i => Hop -> Scoped i a -> Scoped i a
-scopedOut hop ia =
-  let
-    Tuple scope i = unwrap ia
-    i' = wrap $ invmap (\e -> let (Tuple subScope a) = either identity identity e in Tuple (zoomOut hop subScope) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\subScope -> Right (Tuple subScope a)) (zoomIn hop scope)) $ invfright $ unwrap i
-  in wrap $ Tuple (zoomOut hop scope) i'
+scopedOut hop = wrap <<< invmap (\e -> let (Tuple subScope a) = either identity identity e in Tuple (zoomOut subScope) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\subScope -> Right (Tuple subScope a)) (zoomIn scope)) <<< invfright <<< unwrap
+  where
+  zoomOut :: Scope -> Scope
+  zoomOut AnyScope = Scope [hop]
+  zoomOut (Scope hops) = Scope (hop `cons` hops)  -- zooming out zero is not zero
+  zoomIn :: Scope -> Maybe Scope
+  zoomIn AnyScope = Just AnyScope
+  zoomIn s@(Scope hops) = case uncons hops of
+    Nothing -> Just s -- zooming in zero is zero
+    Just { head, tail }
+      | head == hop -> Just $ Scope tail
+      | otherwise -> Nothing -- cannot zoom in
 
 -- then we can come up with an optic:
 

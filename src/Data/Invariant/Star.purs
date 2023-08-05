@@ -36,7 +36,7 @@ instance Monad f => Plusoid (InvStar f) where
   plus p1 p2 = wrap $ unwrap p1 >=> unwrap p2
 
 instance Monad f => Plus (InvStar f) where
-  zero = wrap pure
+  pzero = wrap pure
 
 instance Distributive f => Closed (InvStar f) where
   closed i = wrap \a -> distribute (unwrap i <<< a)

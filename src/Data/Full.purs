@@ -1,10 +1,11 @@
-module Data.Full
-  ( class Full
-  , full
+module Data.Zero
+  ( class Zero
+  , zero
   ) where
 
 import Prelude
 
--- law: full <> x = full = x <> full
-class Semigroup s <= Full s where
-  full :: s
+-- laws: zero <> x = zero = x <> zero
+class Semigroup s <= Zero s where
+  zero :: s
+

@@ -14,7 +14,7 @@ import Data.Array (updateAt)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (fromMaybe)
 import Data.Newtype (unwrap)
-import Data.Plus (plus, zero)
+import Data.Plus (plus, pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref (modify, new, write)
@@ -27,20 +27,20 @@ import Web.HTML as HTML
 button :: forall a. Web.WebComponent a -> Web.WebComponent a
 button wrapped =
   Web.inside' "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> HTML.onClick) $
-    (Web.inside' "div" (const $ "class" := "mdc-button__ripple") mempty zero)
+    (Web.inside' "div" (const $ "class" := "mdc-button__ripple") mempty pzero)
     `plus`
     (Web.inside' "span" (const $ "class" := "mdc-button__label") mempty wrapped)
 
 filledText :: String -> Web.WebComponent String
 filledText hintText =
   Web.inside' "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
-    (Web.inside' "span" (const $ "class" := "mdc-text-field__ripple") mempty zero)
+    (Web.inside' "span" (const $ "class" := "mdc-text-field__ripple") mempty pzero)
     `plus`
     (Web.inside' "span" (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (HTML.staticText hintText))
     `plus`
     (HTML.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
     `plus`
-    (Web.inside' "span" (const $ "class" := "mdc-line-ripple") mempty zero)
+    (Web.inside' "span" (const $ "class" := "mdc-line-ripple") mempty pzero)
 
 
 checkbox :: Web.WebComponent Boolean
@@ -51,12 +51,12 @@ checkbox =
       `plus`
       (Web.inside' "div" (const $ "class":= "mdc-checkbox__background") mempty $
         Web.inside' "svg" (const $ "class" := "mdc-checkbox__checkmark" <> "viewBox" := "0 0 24 24") mempty $
-          (Web.inside' "path" (const $ "class" := "mdc-checkbox__checkmark-path" <> "fill" := "none" <> "d" := "M1.73,12.91 8.1,19.28 22.79,4.59") mempty zero)
+          (Web.inside' "path" (const $ "class" := "mdc-checkbox__checkmark-path" <> "fill" := "none" <> "d" := "M1.73,12.91 8.1,19.28 22.79,4.59") mempty pzero)
           `plus`
-          (Web.inside' "div" (const $ "class" := "mdc-checkbox__mixedmark") mempty zero)
+          (Web.inside' "div" (const $ "class" := "mdc-checkbox__mixedmark") mempty pzero)
       )
       `plus`
-      (Web.inside' "div" (const $ "class" := "mdc-checkbox__ripple") mempty zero)
+      (Web.inside' "div" (const $ "class" := "mdc-checkbox__ripple") mempty pzero)
 
 radioButton :: Web.WebComponent Boolean
 radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
@@ -65,12 +65,12 @@ radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
       (HTML.radio (const $ "class" := "mdc-radio__native-control" <> "id" := "radio-1"))
       `plus`
       (Web.inside' "div" (const $ "class" := "mdc-radio__background") mempty $
-        Web.inside' "div" (const $ "class" := "mdc-radio__outer-circle") mempty zero
+        Web.inside' "div" (const $ "class" := "mdc-radio__outer-circle") mempty pzero
         `plus`
-        Web.inside' "div" (const $ "class" := "mdc-radio__inner-circle") mempty zero
+        Web.inside' "div" (const $ "class" := "mdc-radio__inner-circle") mempty pzero
       )
       `plus`
-      (Web.inside' "div" (const $ "class" := "mdc-radio__ripple") mempty zero)
+      (Web.inside' "div" (const $ "class" := "mdc-radio__ripple") mempty pzero)
     )
     -- <>
     -- (HTML.inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")

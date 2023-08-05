@@ -11,7 +11,7 @@ module Web.HTML
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
-import Data.Plus (zero)
+import Data.Plus (pzero)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Specular.Dom.Browser (Attrs, Node, onDomEvent, (:=))
@@ -50,12 +50,12 @@ checkbox attrs = component \callback -> do
 
 -- TODO
 radio :: (Boolean -> Attrs) -> WebComponent Boolean
-radio attrs = zero # inside' "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
+radio attrs = pzero # inside' "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
   mempty
   -- setCheckboxChecked node value
   -- onDomEvent "change" node (\_ -> getCheckboxChecked node >>= callback)
 -- radio :: forall a b f. Applicative f => (a -> Attrs) -> ComponentWrapper f a b
--- radio attrs = zero # (inside "input" (\enabled -> ("type" := "checkbox") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \_ node -> do
+-- radio attrs = pzero # (inside "input" (\enabled -> ("type" := "checkbox") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \_ node -> do
 --   domEventWithSample (\_ -> getCheckboxChecked node <#> \value -> { path: [], value }) "change" node)
 
 -- TODO
