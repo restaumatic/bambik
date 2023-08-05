@@ -68,12 +68,10 @@ orderComponent ∷ WebUI Order
 orderComponent =
   MDC.filledText "Id" # inside "div" # invlift # id
   ^
-  (
-    MDC.filledText "First name" # inside "div" # invlift # firstName
-    ^
-    MDC.filledText "Last name" # inside "div" # invlift # lastName
-  ) # modify (inside "div") # customer
+  MDC.filledText "First name" # invlift # firstName # customer
   ^
+    -- MDC.filledText "Last name" # inside "div" # invlift # lastName
+  -- ^
   -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
   -- ^
   (

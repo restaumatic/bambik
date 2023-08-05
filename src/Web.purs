@@ -82,22 +82,22 @@ instance CoCartesian WebComponent where
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     pure \aorb -> case aorb of
-        Right b -> do
-          mUpdate <- liftEffect $ Ref.read mUpdateRef
-          update <- case mUpdate of
-            Just update -> pure update
-            Nothing -> do
-              newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Right)
-              liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-              pure newUpdate
-          update $ b
-        _ -> do
-          liftEffect $ destroySlot slot
-          Ref.write Nothing mUpdateRef
-          -- interestingly, theoretically, here we could call:
-          -- abcallback userInput
-          -- I don't know whether it would be right, though
-          pure unit
+      Right b -> do
+        mUpdate <- liftEffect $ Ref.read mUpdateRef
+        update <- case mUpdate of
+          Just update -> pure update
+          Nothing -> do
+            newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Right)
+            liftEffect $ Ref.write (Just newUpdate) mUpdateRef
+            pure newUpdate
+        update $ b
+      _ -> do
+        liftEffect $ destroySlot slot
+        Ref.write Nothing mUpdateRef
+        -- interestingly, theoretically, here we could call:
+        -- abcallback userInput
+        -- I don't know whether it would be right, though
+        pure unit
 
 instance Filtered WebComponent where
   invfleft c = wrap \abcallback -> do
