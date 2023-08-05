@@ -2,10 +2,11 @@ module Demo1 where
 
 import Prelude
 
-import Data.Array (intercalate, reverse)
+import Data.Array (reverse)
 import Data.Invariant (class Cartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers (Scoped, invField', invlift, (#*))
+import Data.Invariant.Transformers (invlift)
+import Data.Invariant.Transformers.Scoped (Scoped, invField')
 import Data.Newtype (modify)
 import Data.Plus ((^))
 import Data.String (toUpper)
