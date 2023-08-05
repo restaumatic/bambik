@@ -43,7 +43,7 @@ instance Cartesian WebComponent where
     bref <- liftEffect $ Ref.new Nothing
     update <- unwrap c \a -> do
       mb <- liftEffect $ Ref.read bref
-      maybe (pure unit) (\b -> abcallback $ Tuple a b) mb
+      maybe mempty (\b -> abcallback $ Tuple a b) mb
     pure $ \ab -> do
       Ref.write (Just (snd ab)) bref
       update $ fst ab
@@ -51,7 +51,7 @@ instance Cartesian WebComponent where
     aref <- liftEffect $ Ref.new Nothing
     update <- unwrap c \b -> do
       ma <- liftEffect $ Ref.read aref
-      maybe (pure unit) (\a -> abcallback (Tuple a b)) ma
+      maybe mempty (\a -> abcallback $ Tuple a b) ma
     pure $ \ab -> do
       Ref.write (Just (fst ab)) aref
       update $ snd ab
@@ -126,7 +126,7 @@ instance Filtered WebComponent where
             newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Right)
             liftEffect $ Ref.write (Just newUpdate) mUpdateRef
             pure newUpdate
-        update $ b
+        update b
       _ -> pure unit
 
 instance Plusoid WebComponent where

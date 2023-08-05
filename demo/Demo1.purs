@@ -66,7 +66,11 @@ reversed = invAdapter reverseString reverseString
 
 orderComponent ∷ WebUI Order
 orderComponent =
-  customerComponent # modify (inside "div") # customer
+  (
+    MDC.filledText "First name" # inside "div" # invlift # firstName
+    ^
+    MDC.filledText "Last name" # inside "div" # invlift # lastName
+  ) # modify (inside "div") # customer
   ^
   -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
   -- ^
@@ -80,12 +84,6 @@ orderComponent =
     ^ HTML.staticText ": " # invlift
   ) # modify (inside "div")
     -- ^ HTML.text # invlift # invProjection (intercalate ", ") #* name # items
-
-customerComponent :: WebUI Customer
-customerComponent =
-  MDC.filledText "First name" # inside "div" # invlift # firstName
-  ^
-  MDC.filledText "Last name" # inside "div" # invlift # lastName
 
 itemComponent :: WebUI Item
 itemComponent = MDC.filledText "Name" # invlift # reversed # reversed # name

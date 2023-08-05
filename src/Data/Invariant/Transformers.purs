@@ -181,7 +181,7 @@ invField fieldName setter getter = invLens getter setter >>> scopedOut fieldName
 invConstructor :: forall i a s. Filtered i => CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> Scoped i a -> Scoped i s
 invConstructor constructorName construct deconstruct = invPrism construct (\s -> maybe (Right s) Left (deconstruct s)) >>> scopedOut constructorName
 
----
+--
 
 invField'
   :: forall i l r1 r a
@@ -191,4 +191,4 @@ invField'
   => Row.Cons l a r r1
   => Proxy l
   -> Scoped i a -> Scoped i (Record r1)
-invField' l = invLens (get l) (flip (set l)) >>> scopedOut (reflectSymbol l)
+invField' l = invField (reflectSymbol l) (flip (set l)) (get l)
