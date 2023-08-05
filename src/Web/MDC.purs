@@ -13,7 +13,7 @@ import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Array (updateAt)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (fromMaybe)
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 import Data.Plus (plus, pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -77,7 +77,7 @@ radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
   )
 
 list :: forall a. Web.WebComponent a -> Web.WebComponent (Array a)
-list c = Web.component \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
+list c = wrap \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
   slot <- newSlot
   asRef <- liftEffect $ new []
   pure $ \as -> replaceSlot slot do

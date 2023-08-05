@@ -1,7 +1,6 @@
 module Web
   ( WebComponent(..)
   , WebUI
-  , component
   , inside
   , inside'
   , runComponent
@@ -14,7 +13,7 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant)
-import Data.Invariant.Transformers (Scope, Scoped)
+import Data.Invariant.Transformers (Scoped)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid)
@@ -149,11 +148,6 @@ instance Plusoid WebComponent where
 
 instance Plus WebComponent where
   pzero = wrap mempty
-
--- WebUI constructors
-
-component :: forall a . ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponent a
-component = wrap
 
 -- WebUI polymorhphic combinators
 

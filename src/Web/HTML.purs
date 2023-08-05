@@ -11,13 +11,14 @@ module Web.HTML
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
+import Data.Newtype (wrap)
 import Data.Plus (pzero)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Specular.Dom.Browser (Attrs, Node, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (WebComponent, WebUI, component, inside')
+import Web (WebComponent, inside')
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
@@ -25,24 +26,24 @@ foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
 staticText :: forall a . String -> WebComponent a
-staticText content = component $ const $ S.text content *> mempty
+staticText content = wrap $ const $ S.text content *> mempty
 
 text :: WebComponent String
-text = component \_ -> do
+text = wrap \_ -> do
   slot <- newSlot
   pure $ replaceSlot slot <<< S.text
 
 
 
 textInput :: Attrs -> WebComponent String
-textInput attrs = component \callback -> do
+textInput attrs = wrap \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getTextInputValue node >>= callback
   pure $ setTextInputValue node
 
 checkbox :: Attrs -> WebComponent Boolean
-checkbox attrs = component \callback -> do
+checkbox attrs = wrap \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getCheckboxChecked node >>= callback

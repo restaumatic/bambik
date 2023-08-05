@@ -3,15 +3,14 @@ module Demo1 where
 import Prelude
 
 import Data.Array (reverse)
-import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers (Scoped, invField', invlift, (#*))
+import Data.Invariant.Transformers (Scoped, invField', invlift)
+import Data.Newtype (modify)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
-import Effect.Exception.Unsafe (unsafeThrow)
 import Type.Proxy (Proxy(..))
 import Web (WebUI, inside, runMainComponent)
 import Web.HTML as HTML
@@ -67,18 +66,20 @@ reversed = invAdapter reverseString reverseString
 
 orderComponent ∷ WebUI Order
 orderComponent =
-  customerComponent # (inside "div" # unsafeThrow "!") # customer
+  customerComponent # modify (inside "div") # customer
   ^
-  MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
-  ^
-  HTML.staticText "Summary: "
-    ^ HTML.text # id
-    ^ HTML.staticText " "
-    ^ HTML.text # firstName # customer
-    ^ HTML.staticText " "
-    ^ HTML.text # upperCase # lastName # customer
-    ^ HTML.staticText ": "
-    ^ HTML.text # invProjection (intercalate ", ") #* name # items
+  -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
+  -- ^
+  (
+  HTML.staticText "Summary: " # invlift
+    ^ HTML.text # invlift # id
+    ^ HTML.staticText " " # invlift
+    ^ HTML.text # invlift # firstName # customer
+    ^ HTML.staticText " " # invlift
+    ^ HTML.text # invlift # upperCase # lastName # customer
+    ^ HTML.staticText ": " # invlift
+  ) # modify (inside "div")
+    -- ^ HTML.text # invlift # invProjection (intercalate ", ") #* name # items
 
 customerComponent :: WebUI Customer
 customerComponent =
