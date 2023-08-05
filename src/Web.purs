@@ -97,6 +97,7 @@ instance CoCartesian WebComponent where
         -- interestingly, theoretically, here we could call:
         -- abcallback userInput
         -- I don't know whether it would be right, though
+        -- is that stil relevant question?
         pure unit
 
 instance Filtered WebComponent where
@@ -166,7 +167,7 @@ inside' tagName attrs event c = wrap \callback -> do
 runComponent :: forall a. WebUI a -> Builder Unit (a -> Effect Unit)
 runComponent c = do
   update <- (unwrap $ unwrap c) \(Tuple scope _) -> log $ "change in scope: " <> show scope
-  pure $ \a -> update (Tuple zero a)
+  pure $ \a -> update (Tuple mempty a)
 
 runMainComponent :: forall a. WebUI a -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent

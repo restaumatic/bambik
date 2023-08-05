@@ -13,9 +13,10 @@ module Data.Invariant.Transformers
   )
   where
 
+import Debug
 import Prelude hiding (zero)
 
-import Data.Array (cons, uncons)
+import Data.Array (cons, null, uncons)
 import Data.CoApplicative (class CoApplicative, class CoApply, copure, cozip)
 import Data.Either (Either(..), either)
 import Data.Foldable (intercalate)
@@ -80,7 +81,7 @@ instance (Functor f, Invariant i) => Invariant (Tunneling f i) where
 
 -- If `i _` can be lifted with lenses, `i (f _)` can be lifted with lenses too as long as `Apply f`
 instance (Apply f, Cartesian i) => Cartesian (Tunneling f i) where
-  invfirst = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invfirst <<< unwrap
+  invfirst = wrap <<< invmap (\(Tuple fa fb) -> spy "tuple" $ Tuple <$> spy "fa" fa <*> spy "fb" fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invfirst <<< unwrap
   invsecond = wrap <<< invmap (\(Tuple fa fb) -> Tuple <$> fa <*> fb) (\fab -> Tuple (fst <$> fab) (snd <$> fab)) <<< invsecond <<< unwrap
 
 -- If `i _` can be lifted with prisms, `i (f _)` can be lifted with prisms too as long as `CoApply f`
@@ -141,6 +142,8 @@ type Scoped i a = Tunneling (Tuple Scope) i a
 
 data Scope = Scope (Array Hop) | AnyScope -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
 
+derive instance Eq Scope
+
 type Hop = String
 
 instance Show Scope where
@@ -151,7 +154,7 @@ instance Show Scope where
 instance Semigroup Scope where
   append AnyScope s = s
   append s AnyScope = s
-  append _ _ = zero
+  append s1 s2 = s1 -- TODO this is hack!
 
 instance Monoid Scope where
   mempty = AnyScope
@@ -160,7 +163,7 @@ instance Zero Scope where
   zero = Scope []
 
 scopedOut :: forall i a. Filtered i => Hop -> Scoped i a -> Scoped i a
-scopedOut hop = wrap <<< invmap (\e -> let (Tuple subScope a) = either identity identity e in Tuple (zoomOut subScope) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\subScope -> Right (Tuple subScope a)) (zoomIn scope)) <<< invfright <<< unwrap
+scopedOut hop = wrap <<< invmap (\e -> let (Tuple subScope a) = either identity identity e in Tuple (spy "zoomed out" (zoomOut (spy "to zoom out" subScope))) a) (\(Tuple scope a) -> maybe (Left (Tuple scope a)) (\subScope -> Right (Tuple subScope a)) (spy "zoomed in" (zoomIn (spy "to zoom in" scope)))) <<< invfright <<< unwrap
   where
   zoomOut :: Scope -> Scope
   zoomOut AnyScope = Scope [hop]
@@ -176,7 +179,7 @@ scopedOut hop = wrap <<< invmap (\e -> let (Tuple subScope a) = either identity 
 -- then we can come up with an optic:
 
 invField :: forall i a s. Filtered i => Cartesian i => String -> (s -> a -> s) -> (s -> a) -> Scoped i a -> Scoped i s
-invField fieldName setter getter = invLens getter setter >>> scopedOut fieldName
+invField fieldName setter getter = scopedOut fieldName >>> invLens getter setter
 
 invConstructor :: forall i a s. Filtered i => CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> Scoped i a -> Scoped i s
 invConstructor constructorName construct deconstruct = invPrism construct (\s -> maybe (Right s) Left (deconstruct s)) >>> scopedOut constructorName

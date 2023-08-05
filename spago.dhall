@@ -15,6 +15,7 @@ to generate this file without the comments in this block.
   [ "aff"
   , "arrays"
   , "console"
+  , "debug"
   , "distributive"
   , "effect"
   , "either"
@@ -23,6 +24,7 @@ to generate this file without the comments in this block.
   , "identity"
   , "maybe"
   , "newtype"
+  , "nonempty"
   , "prelude"
   , "record"
   , "refs"
@@ -30,8 +32,6 @@ to generate this file without the comments in this block.
   , "transformers"
   , "tuples"
   , "unsafe-coerce"
-  , "transformers"
-  , "nonempty"
   ]
 , packages = ./packages.dhall
 , sources =
