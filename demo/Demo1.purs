@@ -11,6 +11,7 @@ import Data.Plus ((^))
 import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
+import Effect.Exception.Unsafe (unsafeThrow)
 import Type.Proxy (Proxy(..))
 import Web (WebUI, inside, runMainComponent)
 import Web.HTML as HTML
@@ -64,34 +65,33 @@ reversed = invAdapter reverseString reverseString
 
 -- View (uses model)
 
--- orderComponent ∷ WebUI Order
--- orderComponent =
---   customerComponent #* inside "div" # customer
---   ^
---   MDC.list itemComponent # inside "div" # items
---   ^
---   HTML.staticText "Summary: "
---     ^ HTML.text # id
---     ^ HTML.staticText " "
---     ^ HTML.text # firstName # customer
---     ^ HTML.staticText " "
---     ^ HTML.text # upperCase # lastName # customer
---     ^ HTML.staticText ": "
---     ^ HTML.text # invProjection (intercalate ", ") #* name # items
+orderComponent ∷ WebUI Order
+orderComponent =
+  customerComponent # (inside "div" # unsafeThrow "!") # customer
+  ^
+  MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
+  ^
+  HTML.staticText "Summary: "
+    ^ HTML.text # id
+    ^ HTML.staticText " "
+    ^ HTML.text # firstName # customer
+    ^ HTML.staticText " "
+    ^ HTML.text # upperCase # lastName # customer
+    ^ HTML.staticText ": "
+    ^ HTML.text # invProjection (intercalate ", ") #* name # items
 
--- customerComponent :: WebUI Customer
--- customerComponent =
---   MDC.filledText "First name" # inside "div" # scoped # firstName
---   ^
---   MDC.filledText "Last name" # inside "div" # scoped # lastName
+customerComponent :: WebUI Customer
+customerComponent =
+  MDC.filledText "First name" # inside "div" # invlift # firstName
+  ^
+  MDC.filledText "Last name" # inside "div" # invlift # lastName
 
--- itemComponent :: WebUI Item
--- itemComponent = MDC.filledText "Name" # scoped # reversed # reversed # name
+itemComponent :: WebUI Item
+itemComponent = MDC.filledText "Name" # invlift # reversed # reversed # name
 
--- -- Glue (uses data and view)
+-- Glue (uses data and view)
 
-main = pure unit
--- main :: Effect Unit
--- main = do
---   updateOrder <- runMainComponent orderComponent
---   updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}]}
+main :: Effect Unit
+main = do
+  updateOrder <- runMainComponent orderComponent
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}]}
