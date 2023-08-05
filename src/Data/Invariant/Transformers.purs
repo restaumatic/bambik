@@ -179,7 +179,7 @@ scopedOut hop = wrap <<< invmap (\e -> let (Tuple subScope a) = either identity 
 -- then we can come up with an optic:
 
 invField :: forall i a s. Filtered i => Cartesian i => String -> (s -> a -> s) -> (s -> a) -> Scoped i a -> Scoped i s
-invField fieldName setter getter = scopedOut fieldName >>> invLens getter setter
+invField fieldName setter getter =  invLens getter setter >>> scopedOut fieldName
 
 invConstructor :: forall i a s. Filtered i => CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> Scoped i a -> Scoped i s
 invConstructor constructorName construct deconstruct = invPrism construct (\s -> maybe (Right s) Left (deconstruct s)) >>> scopedOut constructorName

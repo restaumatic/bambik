@@ -2,10 +2,10 @@ module Demo1 where
 
 import Prelude
 
-import Data.Array (reverse)
+import Data.Array (intercalate, reverse)
 import Data.Invariant (class Cartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers (Scoped, invField', invlift)
+import Data.Invariant.Transformers (Scoped, invField', invlift, (#*))
 import Data.Newtype (modify)
 import Data.Plus ((^))
 import Data.String (toUpper)
@@ -72,9 +72,9 @@ orderComponent =
     MDC.filledText "First name" # inside "div" # invlift # firstName
     ^
     MDC.filledText "Last name" # inside "div" # invlift # lastName
-  ) # customer
-  -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
+  ) # modify (inside "div") # customer
   ^
+  -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
   (
   HTML.staticText "Summary: " # invlift
     ^ HTML.text # invlift # id
