@@ -5,14 +5,14 @@ module Data.Invariant.Transformers.Tunneling
 
 import Prelude
 
-import Debug (spy)
 import Data.CoApplicative (class CoApplicative, class CoApply, copure, cozip)
 import Data.Either (Either(..), either)
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Invariant.Transformers (class InvTrans)
-import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Newtype (class Newtype, modify, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid, plus, pzero)
 import Data.Tuple (Tuple(..), fst, snd)
+import Debug (spy)
 
 newtype Tunneling :: forall k1 k2. (k2 -> k1) -> (k1 -> Type) -> k2 -> Type
 newtype Tunneling f i a = Tunneling (i (f a))
@@ -20,6 +20,7 @@ derive instance Newtype (Tunneling f i a) _
 
 instance (Applicative f, CoApplicative f) => InvTrans (Tunneling f) where
   invlift = wrap <<< invmap pure copure
+  invliftmap f = modify f
 
 -- Tunneling as an invariant using underlying invariant `i a` to convey `f a`s instead of `a`s, where f is a functor that is transparent to `i`.
 -- Explanation inspired by a nice definition of tunneling from polish wikipedia (translated to english):

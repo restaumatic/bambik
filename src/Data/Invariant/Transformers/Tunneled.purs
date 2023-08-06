@@ -7,7 +7,7 @@ import Prelude
 
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
 import Data.Invariant.Transformers (class InvTrans)
-import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Newtype (class Newtype, modify, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid, plus, pzero)
 
 newtype Tunneled :: forall k1 k2. (k1 -> Type) -> (k2 -> k1) -> k2 -> Type
@@ -16,6 +16,7 @@ derive instance Newtype (Tunneled f i a) _
 
 instance Applicative f => InvTrans (Tunneled f) where
   invlift = wrap <<< pure
+  invliftmap = modify <<< map
 
 -- Tunneled as an invariant using underlying invariant `i a` to tunnel `f (i a)`, where i is transparent to `f`.
 -- Explanation inspired by a nice definition of tunneling from polish wikipedia (translated to english):

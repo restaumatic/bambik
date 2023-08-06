@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (reverse)
 import Data.Invariant (class Cartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers (invlift)
+import Data.Invariant.Transformers (invlift, invliftmap)
 import Data.Invariant.Transformers.Scoped (Scoped, invField')
 import Data.Newtype (modify)
 import Data.Plus ((^))
@@ -67,13 +67,13 @@ reversed = invAdapter reverseString reverseString
 
 orderComponent ∷ WebUI Order
 orderComponent =
-  MDC.filledText "Id" # inside "div" # invlift # id
+  MDC.filledText "Id" # invlift # invliftmap (inside "div") # id
   ^
   (
-    MDC.filledText "First name" # inside "div" # invlift # firstName
+    MDC.filledText "First name" # invlift # invliftmap (inside "div") # firstName
     ^
-    MDC.filledText "Last name" # inside "div" # invlift # lastName
-  ) # modify (inside "div") # customer
+    MDC.filledText "Last name" # invlift # invliftmap (inside "div") # lastName
+  ) # invliftmap (inside "div") # customer
   ^
   -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
   (
