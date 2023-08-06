@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (reverse)
 import Data.Invariant (class Cartesian, class Filtered, class Invariant)
 import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers (invlift, invliftmap)
+import Data.Invariant.Transformers (class InvTrans, invlift, invliftmap)
 import Data.Invariant.Transformers.Scoped (Scoped, invField')
 import Data.Newtype (modify)
 import Data.Plus ((^))
@@ -13,7 +13,7 @@ import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Type.Proxy (Proxy(..))
-import Web (WebUI, inside, runMainComponent)
+import Web (WebComponent, inside, runMainComponent)
 import Web.HTML as HTML
 import Web.MDC as MDC
 
@@ -65,7 +65,7 @@ reversed = invAdapter reverseString reverseString
 
 -- View (uses model)
 
-orderComponent ∷ WebUI Order
+orderComponent ∷ Scoped WebComponent Order
 orderComponent =
   MDC.filledText "Id" # invlift # invliftmap (inside "div") # id
   ^
@@ -87,7 +87,7 @@ orderComponent =
   ) # modify (inside "div")
     -- ^ HTML.text # invlift # invProjection (intercalate ", ") #* name # items
 
-itemComponent :: WebUI Item
+itemComponent :: Scoped WebComponent Item
 itemComponent = MDC.filledText "Name" # invlift # reversed # reversed # name
 
 -- Glue (uses data and view)

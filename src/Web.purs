@@ -1,6 +1,5 @@
 module Web
   ( WebComponent(..)
-  , WebUI
   , inside
   , inside'
   , runComponent
@@ -26,7 +25,7 @@ import Specular.Dom.Browser (Attrs, Node, TagName)
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 
-type WebUI a = Scoped WebComponent a
+-- type WebUI a = Scoped WebComponent a
 
 newtype WebComponent a = WebComponent ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit))
 
@@ -163,10 +162,10 @@ inside' tagName attrs event c = wrap \callback -> do
 
 -- WebUI runners
 
-runComponent :: forall a. WebUI a -> Builder Unit (a -> Effect Unit)
+runComponent :: forall a. Scoped WebComponent a -> Builder Unit (a -> Effect Unit)
 runComponent c = do
   update <- (unwrap $ unwrap c) \(Tuple scope _) -> log $ "change in scope: " <> show scope
   pure $ \a -> update (Tuple mempty a)
 
-runMainComponent :: forall a. WebUI a -> Effect (a -> Effect Unit)
+runMainComponent :: forall a. Scoped WebComponent a -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent
