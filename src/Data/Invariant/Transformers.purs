@@ -1,8 +1,8 @@
 module Data.Invariant.Transformers
-  ( InvIdentityTrans(..)
-  , class InvTrans
+  ( class InvTrans
   , invlift
   , invliftmap
+  , InvIdentityTrans(..)
   )
   where
 
