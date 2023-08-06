@@ -35,8 +35,6 @@ type Scoped i a = Tunneling (Tuple Scope) i a
 
 data Scope = Scope (Array Hop) | AnyScope -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
 
-derive instance Eq Scope
-
 type Hop = String
 
 instance Show Scope where
