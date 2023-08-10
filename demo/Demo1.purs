@@ -11,7 +11,7 @@ import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Type.Proxy (Proxy(..))
-import Web (WebComponent, runMainComponent)
+import Web (WebComponentWrapper, runMainComponent)
 import Web.HTML as HTML
 import Web.MDC as MDC
 
@@ -63,7 +63,7 @@ reversed = invAdapter reverseString reverseString
 
 -- View (uses model)
 
-orderComponent ∷ WebComponent (Scoped Order)
+orderComponent ∷ WebComponentWrapper Order
 orderComponent =
   MDC.filledText "Id" # id
   ^
@@ -86,7 +86,7 @@ orderComponent =
   )
     -- ^ HTML.text # invlift # invProjection (intercalate ", ") #* name # items
 
-itemComponent :: WebComponent (Scoped Item)
+itemComponent :: WebComponentWrapper Item
 -- itemComponent = MDC.filledText "Name" # invlift # reversed # reversed # name
 itemComponent = MDC.filledText "Name" # name
 

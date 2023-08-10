@@ -1,5 +1,7 @@
 module Web
-  ( WebComponent(..)
+  ( WebComponent
+  , WebComponentWrapper
+  , wrapWebComponent
   , inside
   , inside'
   , runComponent
@@ -14,7 +16,6 @@ import Data.Either (Either(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
 import Data.Invariant.Transformers.Scoped (Scope(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -25,9 +26,18 @@ import Specular.Dom.Browser (Attrs, Node, TagName)
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 
+type WebComponentWrapper a = WebComponent (Scoped a)
+
 newtype WebComponent a = WebComponent ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit))
 
-derive instance Newtype (WebComponent a) _
+-- derive instance Newtype (WebComponent a) _
+
+wrap :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponent a
+wrap = WebComponent
+
+unwrap :: forall a. WebComponent a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
+unwrap (WebComponent c) = c
+
 
 instance Invariant WebComponent where
   invmap pre post c = wrap \callback -> do
@@ -116,6 +126,15 @@ instance Plusoid WebComponent where
 instance Plus WebComponent where
   pzero = wrap mempty
 
+--
+
+wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponentWrapper (a)
+wrapWebComponent c = wrap \callback -> do
+  update <- c (callback <<< Scoped All)
+  pure case _ of
+    (Scoped None a) -> pure unit
+    (Scoped _ a) -> update a
+
 -- WebUI polymorhphic combinators
 
 inside :: forall a . TagName -> WebComponent a -> WebComponent a
@@ -130,10 +149,10 @@ inside' tagName attrs event c = wrap \callback -> do
 
 -- WebUI runners
 
-runComponent :: forall a. WebComponent (Scoped a) -> Builder Unit (a -> Effect Unit)
+runComponent :: forall a. WebComponentWrapper (a) -> Builder Unit (a -> Effect Unit)
 runComponent c = do
   update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
   pure $ \a -> update (Scoped All a)
 
-runMainComponent :: forall a. WebComponent (Scoped a) -> Effect (a -> Effect Unit)
+runMainComponent :: forall a. WebComponentWrapper (a) -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent

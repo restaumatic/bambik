@@ -2,26 +2,18 @@ module Web.MDC
   ( button
   , checkbox
   , filledText
-  , list
+  -- , list
   , radioButton
   )
   where
 
 import Prelude hiding (zero)
 
-import Control.Monad.Replace (newSlot, replaceSlot)
-import Data.Array (updateAt)
-import Data.FoldableWithIndex (forWithIndex_)
-import Data.Invariant.Transformers.Scoped (Scoped)
-import Data.Maybe (fromMaybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Plus (plus, pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Ref (modify, new, write)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
-import Specular.Dom.Builder.Class (elAttr, text)
 import Web as Web
 import Web.HTML as HTML
 
@@ -32,7 +24,7 @@ button wrapped =
     `plus`
     (Web.inside' "span" (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledText :: String -> Web.WebComponent (Scoped String)
+filledText :: String -> Web.WebComponentWrapper String
 filledText hintText =
   Web.inside' "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (Web.inside' "span" (const $ "class" := "mdc-text-field__ripple") mempty pzero)
@@ -44,7 +36,7 @@ filledText hintText =
     (Web.inside' "span" (const $ "class" := "mdc-line-ripple") mempty pzero)
 
 
-checkbox :: Web.WebComponent Boolean
+checkbox :: Web.WebComponentWrapper Boolean
 checkbox =
   Web.inside' "div" (const $ "class" := "mdc-touch-target-wrapper") mempty $
     Web.inside' "div" (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty) $
@@ -77,22 +69,22 @@ radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
     -- (HTML.inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
   )
 
-list :: forall a. Web.WebComponent a -> Web.WebComponent (Array a)
-list c = wrap \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
-  slot <- newSlot
-  asRef <- liftEffect $ new []
-  pure $ \as -> replaceSlot slot do
-    liftEffect $ write as asRef
-    void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
-      forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
-        void $ elAttr "span" ("class" := "mdc-list-item__ripple") (pure unit)
-        void $ elAttr "span" ("class" := "mdc-list-item__text") do
-          void $ elAttr "span" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
-          void $ elAttr "span" ("class" := "mdc-list-item__primary-text") do
-            update <- unwrap c \value -> do
-              newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
-              callbackas newas
-            liftEffect $ update a
+-- list :: forall a. Web.WebComponentWrapper a -> Web.WebComponentWrapper (Array a)
+-- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
+--   slot <- newSlot
+--   asRef <- liftEffect $ new []
+--   pure $ \as -> replaceSlot slot do
+--     liftEffect $ write as asRef
+--     void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
+--       forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
+--         void $ elAttr "span" ("class" := "mdc-list-item__ripple") (pure unit)
+--         void $ elAttr "span" ("class" := "mdc-list-item__text") do
+--           void $ elAttr "span" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
+--           void $ elAttr "span" ("class" := "mdc-list-item__primary-text") do
+--             update <- unwrap c \value -> do
+--               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
+--               callbackas newas
+--             liftEffect $ update a
 
 foreign import data ComponentClass :: Type
 foreign import data WebUI :: Type

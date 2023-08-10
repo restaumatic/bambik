@@ -11,43 +11,37 @@ module Web.HTML
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
-import Data.Invariant.Transformers.Scoped (Scope(..), Scoped(..))
-import Data.Newtype (wrap)
 import Data.Plus (pzero)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Specular.Dom.Browser (Attrs, Node, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
-import Web (WebComponent, inside')
+import Web (WebComponent, WebComponentWrapper, inside', wrapWebComponent)
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
 foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
-staticText :: forall a . String -> WebComponent (Scoped a)
-staticText content = wrap $ const $ S.text content *> mempty
+staticText :: forall a . String -> WebComponentWrapper a
+staticText content = wrapWebComponent $ const $ S.text content *> mempty
 
-text :: WebComponent (Scoped String)
-text = wrap \_ -> do
+text :: WebComponentWrapper String
+text = wrapWebComponent \_ -> do
   slot <- newSlot
-  pure $ \(Scoped c text) -> case c of
-    None -> pure unit
-    _ -> (replaceSlot slot <<< S.text) text
+  pure $ replaceSlot slot <<< S.text
 
 
-textInput :: Attrs -> WebComponent (Scoped String)
-textInput attrs = wrap \callback -> do
+textInput :: Attrs -> WebComponentWrapper String
+textInput attrs = wrapWebComponent \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
-    getTextInputValue node >>= callback <<< Scoped All
-  pure $ \(Scoped c text) -> case c of
-    None -> pure unit
-    _ -> setTextInputValue node text
+    getTextInputValue node >>= callback
+  pure $ setTextInputValue node
 
-checkbox :: Attrs -> WebComponent Boolean
-checkbox attrs = wrap \callback -> do
+checkbox :: Attrs -> WebComponentWrapper Boolean
+checkbox attrs = wrapWebComponent \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
     getCheckboxChecked node >>= callback
