@@ -11,7 +11,7 @@ module Web.HTML
 import Prelude hiding (zero)
 
 import Control.Monad.Replace (newSlot, replaceSlot)
-import Data.Invariant.Transformers.Scoped (Scoped(..))
+import Data.Invariant.Transformers.Scoped (Scope(..), Scoped(..))
 import Data.Newtype (wrap)
 import Data.Plus (pzero)
 import Data.Tuple (Tuple(..))
@@ -32,16 +32,19 @@ staticText content = wrap $ const $ S.text content *> mempty
 text :: WebComponent (Scoped String)
 text = wrap \_ -> do
   slot <- newSlot
-  pure $ \(Scoped _ text) -> (replaceSlot slot <<< S.text) text
-
+  pure $ \(Scoped c text) -> case c of
+    None -> pure unit
+    _ -> (replaceSlot slot <<< S.text) text
 
 
 textInput :: Attrs -> WebComponent (Scoped String)
 textInput attrs = wrap \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
-    getTextInputValue node >>= callback <<< Scoped mempty -- TODO check!
-  pure $ \(Scoped _ text) -> setTextInputValue node text
+    getTextInputValue node >>= callback <<< Scoped All
+  pure $ \(Scoped c text) -> case c of
+    None -> pure unit
+    _ -> setTextInputValue node text
 
 checkbox :: Attrs -> WebComponent Boolean
 checkbox attrs = wrap \callback -> do

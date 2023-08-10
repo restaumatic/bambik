@@ -12,7 +12,7 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
-import Data.Invariant.Transformers.Scoped (Scoped(..))
+import Data.Invariant.Transformers.Scoped (Scope(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid)
@@ -133,7 +133,7 @@ inside' tagName attrs event c = wrap \callback -> do
 runComponent :: forall a. WebComponent (Scoped a) -> Builder Unit (a -> Effect Unit)
 runComponent c = do
   update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
-  pure $ \a -> update (Scoped mempty a)
+  pure $ \a -> update (Scoped All a)
 
 runMainComponent :: forall a. WebComponent (Scoped a) -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent

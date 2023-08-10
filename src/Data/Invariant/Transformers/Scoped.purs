@@ -1,5 +1,6 @@
 module Data.Invariant.Transformers.Scoped
-  ( Scope
+  ( Scope(..)
+  , Hop
   , Scoped(..)
   , invConstructor
   , invField
@@ -9,7 +10,8 @@ module Data.Invariant.Transformers.Scoped
 
 import Prelude
 
-import Data.Array (cons, uncons)
+import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray, cons, cons', uncons) as NonEmptyArray
 import Data.Either (Either(..), either)
 import Data.Foldable (intercalate)
 import Data.Invariant (class Cartesian, class CoCartesian, invfirst, invleft, invmap)
@@ -26,38 +28,45 @@ data Scoped a = Scoped Scope a
 instance Functor Scoped where
   map f (Scoped c a) = Scoped c (f a)
 
-data Scope = Scope (Array Hop) | AnyScope -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
+data Scope = All | Part (NonEmptyArray.NonEmptyArray Hop) | None -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
 
 type Hop = String
 
 instance Show Scope where
-  show AnyScope = "*"
-  show (Scope hops) = "'" <> intercalate "/" hops <> "'"
+  show All = "*"
+  show None = "-"
+  show (Part hops) = "'" <> intercalate "/" hops <> "'"
 
 -- finds least common scope
 instance Semigroup Scope where
-  append AnyScope s = s
-  append s AnyScope = s
-  append s1 s2 = s1 -- TODO this is hack!
+  append None s = s
+  append s None = s
+  append All _ = All
+  append _ All = All
+  append (Part hops1) (Part hops2)
+    | hops1 == hops2 = (Part hops1) -- TODO optimization: get common hops prefix
+    | otherwise = All
 
 instance Monoid Scope where
-  mempty = AnyScope
+  mempty = None
 
 instance Zero Scope where
-  zero = Scope []
+  zero = All
 
 zoomOut :: Hop -> Scope -> Scope
-zoomOut hop AnyScope = Scope [hop]
-zoomOut hop (Scope hops) = Scope (hop `cons` hops)  -- zooming out zero is not zero
+zoomOut hop All = Part (hop `NonEmptyArray.cons'` [])
+zoomOut hop (Part hops) = Part (hop `NonEmptyArray.cons` hops)
+zoomOut _ None = None
 
 -- TODO CHECK!
 zoomIn :: Hop -> Scope -> Scope
-zoomIn _ AnyScope = AnyScope
-zoomIn hop s@(Scope hops) = case uncons hops of
-  Nothing -> s -- zooming in zero is zero
-  Just { head, tail }
-    | head == hop -> Scope tail
-    | otherwise -> AnyScope -- cannot zoom in
+zoomIn _ All = All
+zoomIn hop (Part hops) = case NonEmptyArray.uncons hops of
+  { head, tail } | head == hop -> case Array.uncons tail of
+    Just { head, tail } -> Part $ NonEmptyArray.cons' head tail
+    Nothing -> All
+  _ -> None
+zoomIn _ None = None
 
 invField :: forall i a s. Cartesian i => Hop -> (s -> a -> s) -> (s -> a) -> i (Scoped a) -> i (Scoped s)
 invField name setter getter = invfirst >>> invmap
