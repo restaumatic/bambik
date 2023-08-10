@@ -13,7 +13,6 @@ module Data.Invariant
   , class Covariant
   , class EffInvariant
   , class Invariant
-  , class Filtered
   , closed
   , conmap
   , covmap
@@ -23,8 +22,6 @@ module Data.Invariant
   , invright
   , invsecond
   , inveff
-  , invfleft
-  , invfright
   )
   where
 
@@ -56,10 +53,6 @@ class Invariant f <= Cartesian f where
 class Invariant f <= CoCartesian f where
     invleft :: forall a b. f a -> f (Either a b)
     invright :: forall a b. f b -> f (Either a b)
-
-class Invariant f <= Filtered f where
-    invfleft :: forall a b. f a -> f (Either a b) -- ignoring Right values, returning only Left values
-    invfright :: forall a b. f b -> f (Either a b) -- ignoring Left values, rerurning only Right values
 
 class Invariant f <= Closed f where
     closed :: forall a x. f a -> f (x -> a)

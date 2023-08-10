@@ -11,8 +11,8 @@ import Prelude hiding (zero)
 
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
-import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, class Invariant)
-import Data.Invariant.Transformers.Scoped (Scoped)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
+import Data.Invariant.Transformers.Scoped (Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Plus (class Plus, class Plusoid)
@@ -24,8 +24,6 @@ import Effect.Ref as Ref
 import Specular.Dom.Browser (Attrs, Node, TagName)
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
-
--- type WebUI a = Scoped WebComponent a
 
 newtype WebComponent a = WebComponent ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit))
 
@@ -98,36 +96,6 @@ instance CoCartesian WebComponent where
         -- is that stil relevant question?
         pure unit
 
-instance Filtered WebComponent where
-  invfleft c = wrap \abcallback -> do
-    slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
-    pure \aorb -> case aorb of
-      Left a -> do
-        mUpdate <- liftEffect $ Ref.read mUpdateRef
-        update <- case mUpdate of
-          Just update -> pure update
-          Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Left)
-            liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-            pure newUpdate
-        update a
-      _ -> pure unit
-  invfright c = wrap \abcallback -> do
-    slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
-    pure \aorb -> case aorb of
-      Right b -> do
-        mUpdate <- liftEffect $ Ref.read mUpdateRef
-        update <- case mUpdate of
-          Just update -> pure update
-          Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Right)
-            liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-            pure newUpdate
-        update b
-      _ -> pure unit
-
 instance Plusoid WebComponent where
   plus c1 c2 = wrap \updateParent -> do
     -- TODO how to get rid of this ref?
@@ -162,10 +130,10 @@ inside' tagName attrs event c = wrap \callback -> do
 
 -- WebUI runners
 
-runComponent :: forall a. Scoped WebComponent a -> Builder Unit (a -> Effect Unit)
+runComponent :: forall a. WebComponent (Scoped a) -> Builder Unit (a -> Effect Unit)
 runComponent c = do
-  update <- (unwrap $ unwrap c) \(Tuple scope _) -> log $ "change in scope: " <> show scope
-  pure $ \a -> update (Tuple mempty a)
+  update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
+  pure $ \a -> update (Scoped mempty a)
 
-runMainComponent :: forall a. Scoped WebComponent a -> Effect (a -> Effect Unit)
+runMainComponent :: forall a. WebComponent (Scoped a) -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent

@@ -12,7 +12,7 @@ import Prelude
 import Data.Array (cons, uncons)
 import Data.Either (Either(..), either)
 import Data.Foldable (intercalate)
-import Data.Invariant (class Cartesian, class CoCartesian, class Filtered, invfirst, invleft, invmap)
+import Data.Invariant (class Cartesian, class CoCartesian, invfirst, invleft, invmap)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -22,6 +22,9 @@ import Record (get, set)
 import Type.Proxy (Proxy)
 
 data Scoped a = Scoped Scope a
+
+instance Functor Scoped where
+  map f (Scoped c a) = Scoped c (f a)
 
 data Scope = Scope (Array Hop) | AnyScope -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
 
@@ -66,5 +69,5 @@ invConstructor name construct deconstruct = invleft >>> invmap
   (\saors -> either (\(Scoped c a) -> Scoped (zoomOut name c) (construct a)) identity saors)
   (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn name c) a)) (deconstruct s))
 
-invField' :: forall i l r1 r a . Filtered i => Cartesian i => IsSymbol l => Row.Cons l a r r1 => Proxy l -> i (Scoped a) -> i (Scoped (Record r1))
+invField' :: forall i l r1 r a . Cartesian i => IsSymbol l => Row.Cons l a r r1 => Proxy l -> i (Scoped a) -> i (Scoped (Record r1))
 invField' l = invField (reflectSymbol l) (flip (set l)) (get l)

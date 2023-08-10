@@ -12,6 +12,7 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Array (updateAt)
 import Data.FoldableWithIndex (forWithIndex_)
+import Data.Invariant.Transformers.Scoped (Scoped)
 import Data.Maybe (fromMaybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Plus (plus, pzero)
@@ -31,7 +32,7 @@ button wrapped =
     `plus`
     (Web.inside' "span" (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledText :: String -> Web.WebComponent String
+filledText :: String -> Web.WebComponent (Scoped String)
 filledText hintText =
   Web.inside' "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (Web.inside' "span" (const $ "class" := "mdc-text-field__ripple") mempty pzero)
