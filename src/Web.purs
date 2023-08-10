@@ -5,8 +5,12 @@ module Web
   , div'
   , inside
   , inside'
+  , label
+  , label'
   , runComponent
   , runMainComponent
+  , span
+  , span'
   , wrapWebComponent
   )
   where
@@ -149,11 +153,24 @@ inside' tagName attrs event c = wrap \callback -> do
     pure \a -> do
       f a
 
-div :: forall a426. WebComponent a426 -> WebComponent a426
+div :: forall a. WebComponent a -> WebComponent a
 div = inside "div"
 
-div' :: forall a424. (Unit -> Attrs) -> (Node -> (a424 -> Effect Unit) -> Effect Unit) -> WebComponent a424 -> WebComponent a424
+div' :: forall a. (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a -> WebComponent a
 div' = inside' "div"
+
+span :: forall a. WebComponent a -> WebComponent a
+span = inside "span"
+
+span' :: forall a. (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a -> WebComponent a
+span' = inside' "span"
+
+label :: forall a. WebComponent a -> WebComponent a
+label = inside "label"
+
+label' :: forall a. (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a -> WebComponent a
+label' = inside' "label"
+
 
 -- WebUI runners
 

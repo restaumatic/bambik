@@ -21,6 +21,7 @@ type Order =
       { id :: String
       , customer :: Customer
       , items :: Array Item
+      , paid :: Boolean
       }
 
 type Customer =
@@ -61,6 +62,9 @@ reversed = invAdapter reverseString reverseString
     reverseString ∷ String → String
     reverseString = toCharArray >>> reverse >>> fromCharArray
 
+paid :: forall i a b . Cartesian i => i (Scoped a) -> i (Scoped { paid ∷ a | b })
+paid = invField' (Proxy :: Proxy "paid")
+
 -- View (uses model)
 
 orderComponent ∷ WebComponentWrapper Order
@@ -74,7 +78,6 @@ orderComponent =
   ) # customer
   ^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
-  (
   div $ staticText "Summary: "
     ^ text # id
     ^ staticText " "
@@ -83,7 +86,8 @@ orderComponent =
     -- ^ text # upperCase # lastName # customer
     ^ text # lastName # customer
     ^ staticText ": "
-  )
+  ^
+  div $ MDC.checkbox # paid
     -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
 
 itemComponent :: WebComponentWrapper Item
@@ -95,4 +99,4 @@ itemComponent = MDC.filledText "Name" # name
 main :: Effect Unit
 main = do
   updateOrder <- runMainComponent orderComponent
-  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}]}
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}], paid: true}

@@ -60,13 +60,13 @@ class Invariant f <= Closed f where
 -- TODO are these below needed?
 
 -- invand :: forall i a b . Cartesian i => Plus i => i a -> i b -> i (Tuple a b)
--- invand a b = invfirst a `plus` invsecond b
+-- invand a b = invfirst a ^ invsecond b
 
 -- invandwith :: forall i a b c . Cartesian i => Plus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
 -- invandwith f g a b = invmap f g $ invand a b
 
 -- invor :: forall i a b . CoCartesian i => Plus i => i a -> i b -> i (Either a b)
--- invor a b = invleft a `plus` invright b
+-- invor a b = invleft a ^ invright b
 
 -- invorwith :: forall i a b c . CoCartesian i => Plus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
 -- invorwith f g a b = invmap f g $ invor a b

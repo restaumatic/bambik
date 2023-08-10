@@ -9,67 +9,74 @@ module Web.MDC
 
 import Prelude hiding (zero)
 
-import Data.Plus (plus, pzero)
+import Data.Plus (pzero, (^))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
-import Web as Web
+import Web
 import Web.HTML as HTML
 
-button :: forall a. Web.WebComponent a -> Web.WebComponent a
+button :: forall a. WebComponent a -> WebComponent a
 button wrapped =
-  Web.inside' "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> HTML.onClick) $
-    (Web.inside' "div" (const $ "class" := "mdc-button__ripple") mempty pzero)
-    `plus`
-    (Web.inside' "span" (const $ "class" := "mdc-button__label") mempty wrapped)
+  inside' "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> HTML.onClick) $
+    (div' (const $ "class" := "mdc-button__ripple") mempty pzero)
+    ^
+    (span' (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledText :: String -> Web.WebComponentWrapper String
+filledText :: String -> WebComponentWrapper String
 filledText hintText =
-  Web.inside' "label" (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
-    (Web.inside' "span" (const $ "class" := "mdc-text-field__ripple") mempty pzero)
-    `plus`
-    (Web.inside' "span" (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (HTML.staticText hintText))
-    `plus`
+  label' (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
+    (span' (const $ "class" := "mdc-text-field__ripple") mempty pzero)
+    ^
+    (span' (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (HTML.staticText hintText))
+    ^
     (HTML.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
-    `plus`
-    (Web.inside' "span" (const $ "class" := "mdc-line-ripple") mempty pzero)
+    ^
+    (span' (const $ "class" := "mdc-line-ripple") mempty pzero)
 
 
-checkbox :: Web.WebComponentWrapper Boolean
+checkbox :: WebComponentWrapper Boolean
 checkbox =
-  Web.inside' "div" (const $ "class" := "mdc-touch-target-wrapper") mempty $
-    Web.inside' "div" (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty) $
-      (HTML.checkbox ("class" := "mdc-checkbox__native-control"))
-      `plus`
-      (Web.inside' "div" (const $ "class":= "mdc-checkbox__background") mempty $
-        Web.inside' "svg" (const $ "class" := "mdc-checkbox__checkmark" <> "viewBox" := "0 0 24 24") mempty $
-          (Web.inside' "path" (const $ "class" := "mdc-checkbox__checkmark-path" <> "fill" := "none" <> "d" := "M1.73,12.91 8.1,19.28 22.79,4.59") mempty pzero)
-          `plus`
-          (Web.inside' "div" (const $ "class" := "mdc-checkbox__mixedmark") mempty pzero)
+  div' (const $ "class" := "mdc-touch-target-wrapper") mempty
+    (
+    div' (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
+      (
+      HTML.checkbox ("class" := "mdc-checkbox__native-control")
+      ^
+      div' (const $ "class":= "mdc-checkbox__background") mempty
+        (
+        inside' "svg" (const $ "class" := "mdc-checkbox__checkmark" <> "viewBox" := "0 0 24 24") mempty
+          (
+          inside' "path" (const $ "class" := "mdc-checkbox__checkmark-path" <> "fill" := "none" <> "d" := "M1.73,12.91 8.1,19.28 22.79,4.59") mempty pzero
+          )
+        ^
+        div' (const $ "class" := "mdc-checkbox__mixedmark") mempty pzero
+        )
+      ^
+      div' (const $ "class" := "mdc-checkbox__ripple") mempty pzero
       )
-      `plus`
-      (Web.inside' "div" (const $ "class" := "mdc-checkbox__ripple") mempty pzero)
+    )
 
-radioButton :: Web.WebComponent Boolean
-radioButton = Web.inside' "div" (const $ "class" := "mdc-form-field") mempty
+radioButton :: WebComponent Boolean
+radioButton = div' (const $ "class" := "mdc-form-field") mempty
   (
-    (Web.inside' "div" (const $ "class" := "mdc-radio") (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
+    (div' (const $ "class" := "mdc-radio") (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
       (HTML.radio (const $ "class" := "mdc-radio__native-control" <> "id" := "radio-1"))
-      `plus`
-      (Web.inside' "div" (const $ "class" := "mdc-radio__background") mempty $
-        Web.inside' "div" (const $ "class" := "mdc-radio__outer-circle") mempty pzero
-        `plus`
-        Web.inside' "div" (const $ "class" := "mdc-radio__inner-circle") mempty pzero
+      ^
+      (div' (const $ "class" := "mdc-radio__background") mempty $
+        div' (const $ "class" := "mdc-radio__outer-circle") mempty pzero
+        ^
+        div' (const $ "class" := "mdc-radio__inner-circle") mempty pzero
       )
-      `plus`
-      (Web.inside' "div" (const $ "class" := "mdc-radio__ripple") mempty pzero)
+      ^
+      (div' (const $ "class" := "mdc-radio__ripple") mempty pzero)
     )
     -- <>
     -- (HTML.inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
   )
 
--- list :: forall a. Web.WebComponentWrapper a -> Web.WebComponentWrapper (Array a)
+-- list :: forall a. WebComponentWrapper a -> WebComponentWrapper (Array a)
 -- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
 --   slot <- newSlot
 --   asRef <- liftEffect $ new []
