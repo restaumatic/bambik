@@ -11,8 +11,8 @@ import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Type.Proxy (Proxy(..))
-import Web (WebComponentWrapper, runMainComponent)
-import Web.HTML as HTML
+import Web (WebComponentWrapper, div, runMainComponent)
+import Web.HTML (staticText, text)
 import Web.MDC as MDC
 
 -- data
@@ -65,26 +65,26 @@ reversed = invAdapter reverseString reverseString
 
 orderComponent ∷ WebComponentWrapper Order
 orderComponent =
-  MDC.filledText "Id" # id
+  div $ MDC.filledText "Id" # id
   ^
-  (
+  div (
     MDC.filledText "First name" # firstName
     ^
     MDC.filledText "Last name" # lastName
   ) # customer
   ^
-  -- MDC.list itemComponent # (inside "div" # unsafeThrow "!") # items
+  -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   (
-  HTML.staticText "Summary: "
-    ^ HTML.text # id
-    ^ HTML.staticText " "
-    ^ HTML.text # firstName # customer
-    ^ HTML.staticText " "
-    -- ^ HTML.text # invlift # upperCase # lastName # customer
-    ^ HTML.text # lastName # customer
-    ^ HTML.staticText ": "
+  div $ staticText "Summary: "
+    ^ text # id
+    ^ staticText " "
+    ^ text # firstName # customer
+    ^ staticText " "
+    -- ^ text # upperCase # lastName # customer
+    ^ text # lastName # customer
+    ^ staticText ": "
   )
-    -- ^ HTML.text # invlift # invProjection (intercalate ", ") #* name # items
+    -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
 
 itemComponent :: WebComponentWrapper Item
 -- itemComponent = MDC.filledText "Name" # invlift # reversed # reversed # name

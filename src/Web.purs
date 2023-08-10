@@ -1,11 +1,13 @@
 module Web
   ( WebComponent
   , WebComponentWrapper
-  , wrapWebComponent
+  , div
+  , div'
   , inside
   , inside'
   , runComponent
   , runMainComponent
+  , wrapWebComponent
   )
   where
 
@@ -128,7 +130,7 @@ instance Plus WebComponent where
 
 --
 
-wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponentWrapper (a)
+wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponentWrapper a
 wrapWebComponent c = wrap \callback -> do
   update <- c (callback <<< Scoped All)
   pure case _ of
@@ -146,6 +148,12 @@ inside' tagName attrs event c = wrap \callback -> do
     liftEffect $ event node callback
     pure \a -> do
       f a
+
+div :: forall a426. WebComponent a426 -> WebComponent a426
+div = inside "div"
+
+div' :: forall a424. (Unit -> Attrs) -> (Node -> (a424 -> Effect Unit) -> Effect Unit) -> WebComponent a424 -> WebComponent a424
+div' = inside' "div"
 
 -- WebUI runners
 
