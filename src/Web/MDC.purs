@@ -29,7 +29,7 @@ filledText hintText =
   label' (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span' (const $ "class" := "mdc-text-field__ripple") mempty pzero)
     ^
-    (span' (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (HTML.staticText hintText))
+    (span' (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (HTML.text # static hintText))
     ^
     (HTML.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
     ^

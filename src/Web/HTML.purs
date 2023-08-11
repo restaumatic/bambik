@@ -1,7 +1,6 @@
 module Web.HTML
   ( checkbox
   , radio
-  , staticText
   , text
   , textInput
   , onClick
@@ -23,9 +22,6 @@ foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
 foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
-
-staticText :: forall a . String -> WebComponentWrapper a
-staticText content = wrapWebComponent $ const $ S.text content *> mempty
 
 text :: WebComponentWrapper String
 text = wrapWebComponent \_ -> do

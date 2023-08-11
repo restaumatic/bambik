@@ -11,6 +11,7 @@ module Web
   , runMainComponent
   , span
   , span'
+  , static
   , wrapWebComponent
   )
   where
@@ -44,6 +45,11 @@ wrap = WebComponent
 unwrap :: forall a. WebComponent a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
 unwrap (WebComponent c) = c
 
+static :: forall a b. a -> WebComponentWrapper a -> WebComponentWrapper b
+static a c = wrap \_ -> do
+    update <- unwrap c mempty
+    liftEffect $ update (Scoped All a)
+    pure $ mempty
 
 instance Invariant WebComponent where
   invmap pre post c = wrap \callback -> do
