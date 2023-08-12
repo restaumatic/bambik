@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, (:=))
-import Web
+import Web (WebComponent, WebComponentWrapper, div', inside', label', span', text)
 import Web.HTML as HTML
 
 button :: forall a. WebComponent a -> WebComponent a
@@ -29,7 +29,7 @@ filledText hintText =
   label' (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span' (const $ "class" := "mdc-text-field__ripple") mempty pzero)
     ^
-    (span' (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (HTML.text # static hintText))
+    (span' (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (text hintText))
     ^
     (HTML.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
     ^

@@ -3,6 +3,7 @@ module Web
   , WebComponentWrapper
   , div
   , div'
+  , dynamic
   , inside
   , inside'
   , label
@@ -11,7 +12,7 @@ module Web
   , runMainComponent
   , span
   , span'
-  , static
+  , text
   , wrapWebComponent
   )
   where
@@ -32,6 +33,7 @@ import Effect.Ref as Ref
 import Specular.Dom.Browser (Attrs, Node, TagName)
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
+import Specular.Dom.Builder.Class as S
 
 type WebComponentWrapper a = WebComponent (Scoped a)
 
@@ -45,11 +47,11 @@ wrap = WebComponent
 unwrap :: forall a. WebComponent a -> (a -> Effect Unit) -> Builder Unit (a -> Effect Unit)
 unwrap (WebComponent c) = c
 
-static :: forall a b. a -> WebComponentWrapper a -> WebComponentWrapper b
-static a c = wrap \_ -> do
-    update <- unwrap c mempty
-    liftEffect $ update (Scoped All a)
-    pure $ mempty
+dynamic :: forall a b. (a -> WebComponent b) -> WebComponentWrapper a -- WebComponentWrapper == DynamicWebComponent (with scope?)
+dynamic f = wrapWebComponent \_ -> do
+  slot <- newSlot
+  pure $ \a -> replaceSlot slot $ void $ unwrap (f a) mempty
+
 
 instance Invariant WebComponent where
   invmap pre post c = wrap \callback -> do
@@ -158,6 +160,11 @@ inside' tagName attrs event c = wrap \callback -> do
     liftEffect $ event node callback
     pure \a -> do
       f a
+
+text :: forall a. String -> WebComponent a
+text s = wrap \_ -> do
+  S.text s
+  pure $ mempty
 
 div :: forall a. WebComponent a -> WebComponent a
 div = inside "div"

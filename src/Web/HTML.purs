@@ -1,7 +1,6 @@
 module Web.HTML
   ( checkbox
   , radio
-  , text
   , textInput
   , onClick
   )
@@ -9,25 +8,17 @@ module Web.HTML
 
 import Prelude hiding (zero)
 
-import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Plus (pzero)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Specular.Dom.Browser (Attrs, Node, onDomEvent, (:=))
 import Specular.Dom.Builder.Class (elAttr)
-import Specular.Dom.Builder.Class as S
 import Web (WebComponent, WebComponentWrapper, inside', wrapWebComponent)
 
 foreign import getTextInputValue :: Node -> Effect String
 foreign import setTextInputValue :: Node -> String -> Effect Unit
 foreign import getCheckboxChecked :: Node -> Effect Boolean
 foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
-
-text :: WebComponentWrapper String
-text = wrapWebComponent \_ -> do
-  slot <- newSlot
-  pure $ replaceSlot slot <<< S.text
-
 
 textInput :: Attrs -> WebComponentWrapper String
 textInput attrs = wrapWebComponent \callback -> do

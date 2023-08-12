@@ -11,8 +11,7 @@ import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Type.Proxy (Proxy(..))
-import Web (WebComponentWrapper, div, runMainComponent, static)
-import Web.HTML (text)
+import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
 import Web.MDC as MDC
 
 -- data
@@ -78,14 +77,14 @@ orderComponent =
   ) # customer
   ^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
-  div $ text # static "Summary: "
-    ^ text # id
-    ^ text # static " "
-    ^ text # firstName # customer
-    ^ text # static " "
+  div $ text "Summary: "
+    ^ text # dynamic # id
+    ^ text " "
+    ^ text # dynamic # firstName # customer
+    ^ text " "
     -- ^ text # upperCase # lastName # customer
-    ^ text # lastName # customer
-    ^ text # static ": "
+    ^ text # dynamic # lastName # customer
+    ^ text ": "
   ^
   div $ MDC.checkbox # paid
     -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
