@@ -72,7 +72,7 @@ orderComponent ∷ WebComponentWrapper Order
 orderComponent =
   div $ MDC.filledTextField "Id" # id
   ^
-  customerComponent # customer
+  div $ customerComponent # customer
   ^
   div $ MDC.checkbox # paid
   -- ^
@@ -83,14 +83,14 @@ orderComponent =
     ^ text " "
     ^ text # dynamic # firstName # customer
     ^ text " "
-    ^ text # dynamic # upperCase # lastName # customer
+    ^ text # dynamic # invProjection toUpper # lastName # customer
     ^ text " "
     ^ text # dynamic # paymentStatus # paid
-    -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
+  -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
 
 customerComponent :: WebComponentWrapper Customer
 customerComponent =
-  div (
+  (
     MDC.filledTextField "First name" # firstName
     ^
     MDC.filledTextField "Last name" # lastName
