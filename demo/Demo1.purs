@@ -55,7 +55,7 @@ upperCase :: forall i . Cartesian i => i (Scoped String) -> i (Scoped String)
 upperCase = invProjection toUpper
 
 paymentStatus ∷ forall i . Cartesian i ⇒ i (Scoped String) → i (Scoped Boolean)
-paymentStatus = invProjection (if _ then "paid" else "not paid")
+paymentStatus = invProjection $ if _ then "paid" else "not paid"
 
 reversed ∷ forall i. Invariant i ⇒ i (Scoped String) → i (Scoped String)
 reversed = invAdapter reverseString reverseString
@@ -72,14 +72,11 @@ orderComponent ∷ WebComponentWrapper Order
 orderComponent =
   div $ MDC.filledTextField "Id" # id
   ^
-  div (
-    MDC.filledTextField "First name" # firstName
-    ^
-    MDC.filledTextField "Last name" # lastName
-  ) # customer
+  customerComponent # customer
   ^
-  -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   div $ MDC.checkbox # paid
+  -- ^
+  -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   ^
   div $ text "Summary: "
     ^ text # dynamic # id
@@ -90,6 +87,14 @@ orderComponent =
     ^ text " "
     ^ text # dynamic # paymentStatus # paid
     -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
+
+customerComponent :: WebComponentWrapper Customer
+customerComponent =
+  div (
+    MDC.filledTextField "First name" # firstName
+    ^
+    MDC.filledTextField "Last name" # lastName
+  )
 
 itemComponent :: WebComponentWrapper Item
 itemComponent = MDC.filledTextField "Name" # reversed # reversed # name
