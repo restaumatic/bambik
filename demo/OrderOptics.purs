@@ -47,10 +47,9 @@ import Data.Array (length)
 import Data.Either (Either(..))
 import Data.Invariant (inveff)
 import Data.Invariant.Optics (invAffineTraversal, invLens, invProjection)
-import Data.Invariant.Transformers.Scoped (invConstructor, invField')
+import Data.Invariant.Transformers.Scoped (invConstructor, invField)
 import Data.Maybe (Maybe(..), isJust)
 import Effect.Aff (Aff, launchAff_)
-import Type.Proxy (Proxy(..))
 
 type Order =
   { id :: Maybe String
@@ -104,10 +103,10 @@ type Addition = String
 
 -- optics
 -- id :: forall a r . InvLens a { id ∷ a | r }
-id = invField' (Proxy :: Proxy "id")
+id = invField @"id"
 
 -- items :: forall a r . InvLens a { items ∷ a | r }
-items = invField' (Proxy :: Proxy "items")
+items = invField @"items"
 
 -- delivery :: InvPrism { at ∷ String , to ∷ Place } Fulfillment
 delivery = invConstructor "Delivery" Delivery $ case _ of
@@ -135,38 +134,38 @@ address = invConstructor "Address" Address $ case _ of
   _ -> Nothing
 
 -- long :: forall a r . InvLens a { long ∷ a | r }
-long = invField' (Proxy :: Proxy "long")
+long = invField @"long"
 
 -- lat :: forall a r . InvLens a { lat ∷ a | r }
-lat = invField' (Proxy :: Proxy "lat")
+lat = invField @"lat"
 
 -- city :: forall a r . InvLens a { city ∷ a | r }
-city = invField' (Proxy :: Proxy "city")
+city = invField @"city"
 
 -- street :: forall a r . InvLens a { street ∷ a | r }
-street = invField' (Proxy :: Proxy "street")
+street = invField @"street"
 
 -- streetNumber :: forall a r . InvLens a { streetNumber ∷ a | r }
-streetNumber = invField' (Proxy :: Proxy "streetNumber")
+streetNumber = invField @"streetNumber"
 
 -- at :: forall a r . InvLens a { at ∷ a | r }
-at = invField' (Proxy :: Proxy "at")
+at = invField @"at"
 
 -- to :: forall a r . InvLens a { to ∷ a | r }
-to = invField' (Proxy :: Proxy "to")
+to = invField @"to"
 
 -- product :: forall a r . InvLens a { product ∷ a | r }
-product = invField' (Proxy :: Proxy "product")
+product = invField @"product"
 
 -- qty :: forall a r . InvLens a { qty ∷ a | r }
-qty = invField' (Proxy :: Proxy "qty")
+qty = invField @"qty"
 
 
 -- fulfillment :: forall a r . InvLens a { fulfillment ∷ a | r }
-fulfillment = invField' (Proxy :: Proxy "fulfillment")
+fulfillment = invField @"fulfillment"
 
 -- paymentMethod :: forall a r . InvLens a { paymentMethod ∷ a | r }
-paymentMethod = invField' (Proxy :: Proxy "paymentMethod")
+paymentMethod = invField @"paymentMethod"
 
 -- hasNote :: forall r . InvLens Boolean { note ∷ Maybe String | r }
 hasNote = invLens (\order -> isJust order.note) (\order -> case _ of
@@ -174,13 +173,13 @@ hasNote = invLens (\order -> isJust order.note) (\order -> case _ of
   false -> order { note = Nothing })
 
 -- note :: forall a r . InvLens a { note ∷ a | r }
-note = invField' (Proxy :: Proxy "note")
+note = invField @"note"
 
 -- paymentMethod' :: forall a r . InvLens a { paymentMethod :: a | r }
-paymentMethod' = invField' (Proxy :: Proxy "paymentMethod")
+paymentMethod' = invField @"paymentMethod"
 
 -- customer :: forall a r . InvLens a { customer ∷ a | r }
-customer = invField' (Proxy :: Proxy "customer")
+customer = invField @"customer"
 
 -- card :: forall i r . Cartesian i => CoCartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
 card = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of

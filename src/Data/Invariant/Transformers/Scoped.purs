@@ -3,9 +3,8 @@ module Data.Invariant.Transformers.Scoped
   , Scope(..)
   , Scoped(..)
   , invAdapter
-  , invConstructor
   , invField
-  , invField'
+  , invConstructor
   , invProjection
   )
   where
@@ -23,7 +22,7 @@ import Data.Tuple (Tuple(..))
 import Data.Zero (class Zero)
 import Prim.Row as Row
 import Record (get, set)
-import Type.Proxy (Proxy)
+import Type.Proxy (Proxy(..))
 
 data Scoped a = Scoped Scope a
 
@@ -70,10 +69,13 @@ zoomIn hop (Part hops) = case NonEmptyArray.uncons hops of
   _ -> None
 zoomIn _ None = None
 
-invField :: forall i a s. Cartesian i => Hop -> (s -> a -> s) -> (s -> a) -> i (Scoped a) -> i (Scoped s)
-invField name setter getter = invfirst >>> invmap
-  (\(Tuple (Scoped c a) s) -> Scoped (zoomOut name c) (setter s a))
-  (\(Scoped c s) -> Tuple (Scoped (zoomIn name c) (getter s)) s)
+invField :: forall @l i r1 r a . Cartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) -> i (Scoped (Record r1))
+invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
+  where
+    invField' :: forall i a s. Cartesian i => Hop -> (s -> a -> s) -> (s -> a) -> i (Scoped a) -> i (Scoped s)
+    invField' name setter getter = invfirst >>> invmap
+      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut name c) (setter s a))
+      (\(Scoped c s) -> Tuple (Scoped (zoomIn name c) (getter s)) s)
 
 invConstructor :: forall i a s. CoCartesian i => Hop -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) -> i (Scoped s)
 invConstructor name construct deconstruct = invleft >>> invmap
@@ -91,6 +93,4 @@ invAdapter f g = invmap
   (\(Scoped _ b) -> Scoped All (g b))
 
 
-invField' :: forall i l r1 r a . Cartesian i => IsSymbol l => Row.Cons l a r r1 => Proxy l -> i (Scoped a) -> i (Scoped (Record r1))
-invField' l = invField (reflectSymbol l) (flip (set l)) (get l)
 
