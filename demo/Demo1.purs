@@ -2,7 +2,7 @@ module Demo1 where
 
 import Prelude hiding (div)
 
-import Data.Array (reverse)
+import Data.Array (length, reverse)
 import Data.Invariant.Transformers.Scoped (invAdapter, invField, invProjection)
 import Data.Plus ((^))
 import Data.String (toUpper)
@@ -29,9 +29,6 @@ type Item =
   { name :: String
   }
 
-paymentStatus ∷ Boolean -> String
-paymentStatus = if _ then "paid" else "not paid"
-
 reverseString ∷ String -> String
 reverseString = toCharArray >>> reverse >>> fromCharArray
 
@@ -53,9 +50,10 @@ orderComponent =
     ^ text # dynamic # invField @"firstName" # invField @"customer"
     ^ text " "
     ^ text # dynamic # invProjection toUpper # invField @"lastName" # invField @"customer"
-    ^ text " "
-    ^ text # dynamic # invProjection paymentStatus # invField @"paid"
-  -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
+    ^ text ", paid: "
+    ^ text # dynamic # invProjection show # invField @"paid"
+    ^ text ", no of items: "
+    ^ text # dynamic # invProjection (show <<< length) # invField @"items"
 
 customerComponent :: WebComponentWrapper Customer
 customerComponent =
