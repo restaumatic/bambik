@@ -1,10 +1,12 @@
 module Data.Invariant.Transformers.Scoped
-  ( Scope(..)
-  , Hop
+  ( Hop
+  , Scope(..)
   , Scoped(..)
+  , invAdapter
   , invConstructor
   , invField
   , invField'
+  , invProjection
   )
   where
 
@@ -14,7 +16,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, cons, cons', uncons) as NonEmptyArray
 import Data.Either (Either(..), either)
 import Data.Foldable (intercalate)
-import Data.Invariant (class Cartesian, class CoCartesian, invfirst, invleft, invmap)
+import Data.Invariant (class Cartesian, class CoCartesian, class Invariant, invfirst, invleft, invmap)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -78,5 +80,17 @@ invConstructor name construct deconstruct = invleft >>> invmap
   (\saors -> either (\(Scoped c a) -> Scoped (zoomOut name c) (construct a)) identity saors)
   (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn name c) a)) (deconstruct s))
 
+invProjection :: forall i a s . Cartesian i => (s -> a) -> i (Scoped a) -> i (Scoped s)
+invProjection f = invfirst >>> invmap
+  (\(Tuple (Scoped c a) s) -> Scoped c s)
+  (\(Scoped c s) -> Tuple (Scoped All (f s)) s)
+
+invAdapter :: forall i a b. Invariant i => (a -> b) -> (b -> a) -> i (Scoped a) -> i (Scoped b)
+invAdapter f g = invmap
+  (\(Scoped _ a) -> Scoped All (f a))
+  (\(Scoped _ b) -> Scoped All (g b))
+
+
 invField' :: forall i l r1 r a . Cartesian i => IsSymbol l => Row.Cons l a r r1 => Proxy l -> i (Scoped a) -> i (Scoped (Record r1))
 invField' l = invField (reflectSymbol l) (flip (set l)) (get l)
+

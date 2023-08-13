@@ -1,7 +1,7 @@
 module Web.MDC
   ( button
   , checkbox
-  , filledText
+  , filledTextField
   -- , list
   , radioButton
   )
@@ -24,8 +24,8 @@ button wrapped =
     ^
     (span' (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledText :: String -> WebComponentWrapper String
-filledText hintText =
+filledTextField :: String -> WebComponentWrapper String
+filledTextField hintText =
   label' (const $ "class" := "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span' (const $ "class" := "mdc-text-field__ripple") mempty pzero)
     ^
@@ -35,14 +35,13 @@ filledText hintText =
     ^
     (span' (const $ "class" := "mdc-line-ripple") mempty pzero)
 
-
 checkbox :: WebComponentWrapper Boolean
 checkbox =
-  div' (const $ "class" := "mdc-touch-target-wrapper") mempty
+  div' (const $ "class" := "mdc-form-field") mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
     (
-    div' (const $ "class" := "mdc-checkbox mdc-checkbox--touch") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
+    div' (const $ "class" := "mdc-checkbox") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
       (
-      HTML.checkbox ("class" := "mdc-checkbox__native-control")
+      HTML.checkbox ("class" := "mdc-checkbox__native-control" <> "type" := "checkbox")
       ^
       div' (const $ "class":= "mdc-checkbox__background") mempty
         (

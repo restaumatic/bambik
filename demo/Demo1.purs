@@ -4,8 +4,7 @@ import Prelude
 
 import Data.Array (reverse)
 import Data.Invariant (class Cartesian, class Invariant)
-import Data.Invariant.Optics (invAdapter, invProjection)
-import Data.Invariant.Transformers.Scoped (Scoped, invField')
+import Data.Invariant.Transformers.Scoped (Scoped, invField', invProjection, invAdapter)
 import Data.Plus ((^))
 import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
@@ -52,10 +51,13 @@ items = invField' (Proxy :: Proxy "items")
 name :: forall i a b . Cartesian i => i (Scoped a) -> i (Scoped { name ∷ a | b })
 name = invField' (Proxy :: Proxy "name")
 
-upperCase :: forall i . Cartesian i => i String -> i String
+upperCase :: forall i . Cartesian i => i (Scoped String) -> i (Scoped String)
 upperCase = invProjection toUpper
 
-reversed ∷ forall i. Invariant i ⇒ i String → i String
+paymentStatus ∷ forall i . Cartesian i ⇒ i (Scoped String) → i (Scoped Boolean)
+paymentStatus = invProjection (if _ then "paid" else "not paid")
+
+reversed ∷ forall i. Invariant i ⇒ i (Scoped String) → i (Scoped String)
 reversed = invAdapter reverseString reverseString
   where
     reverseString ∷ String → String
@@ -68,30 +70,29 @@ paid = invField' (Proxy :: Proxy "paid")
 
 orderComponent ∷ WebComponentWrapper Order
 orderComponent =
-  div $ MDC.filledText "Id" # id
+  div $ MDC.filledTextField "Id" # id
   ^
   div (
-    MDC.filledText "First name" # firstName
+    MDC.filledTextField "First name" # firstName
     ^
-    MDC.filledText "Last name" # lastName
+    MDC.filledTextField "Last name" # lastName
   ) # customer
   ^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
+  div $ MDC.checkbox # paid
+  ^
   div $ text "Summary: "
     ^ text # dynamic # id
     ^ text " "
     ^ text # dynamic # firstName # customer
     ^ text " "
-    -- ^ text # upperCase # lastName # customer
-    ^ text # dynamic # lastName # customer
-    ^ text ": "
-  ^
-  div $ MDC.checkbox # paid
+    ^ text # dynamic # upperCase # lastName # customer
+    ^ text " "
+    ^ text # dynamic # paymentStatus # paid
     -- ^ text # invlift # invProjection (intercalate ", ") #* name # items
 
 itemComponent :: WebComponentWrapper Item
--- itemComponent = MDC.filledText "Name" # invlift # reversed # reversed # name
-itemComponent = MDC.filledText "Name" # name
+itemComponent = MDC.filledTextField "Name" # reversed # reversed # name
 
 -- Glue (uses data and view)
 
