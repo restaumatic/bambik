@@ -16,16 +16,16 @@ import Web.MDC as MDC
 -- data
 
 type Order =
-      { id :: String
-      , customer :: Customer
-      , items :: Array Item
-      , paid :: Boolean
-      }
+  { id :: String
+  , customer :: Customer
+  , items :: Array Item
+  , paid :: Boolean
+  }
 
 type Customer =
-      { firstName :: String
-      , lastName :: String
-      }
+  { firstName :: String
+  , lastName :: String
+  }
 
 type Item =
   { name :: String
