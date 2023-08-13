@@ -32,6 +32,7 @@ type Item =
   }
 
 -- Model (uses data)
+-- TODO: make model free of Scoped notion
 
 id :: forall i a b . Cartesian i => i (Scoped a) -> i (Scoped { id ∷ a | b })
 id = invField' (Proxy :: Proxy "id")
