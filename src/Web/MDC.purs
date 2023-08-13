@@ -26,10 +26,10 @@ button wrapped =
 
 filledText :: String -> WebComponentWrapper String
 filledText hintText =
-  label' (const $ "class" := "mdc-text-field mdc-text-field--filled") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
+  label' (const $ "class" := "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span' (const $ "class" := "mdc-text-field__ripple") mempty pzero)
     ^
-    (span' (const $ "class" := "mdc-floating-label" <> "id" := "my-label-id") mempty (text hintText))
+    (span' (const $ "class" := "mdc-floating-label mdc-floating-label--float-above" <> "id" := "my-label-id") mempty (text hintText))
     ^
     (HTML.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
     ^
