@@ -53,7 +53,7 @@ orderComponent =
     ^ text ", paid: "
     ^ text # dynamic # invProjection "show" show # invField @"paid"
     ^ text ", no of items: "
-    ^ text # dynamic # invProjection "show" show # invProjection "length"length # invField @"items"
+    ^ text # dynamic # invProjection "show" show # invProjection "length" length # invField @"items"
 
 customerComponent :: WebComponentWrapper Customer
 customerComponent =
