@@ -25,7 +25,7 @@ import Prelude hiding (zero)
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant (class Cartesian, class CoCartesian, class Invariant)
-import Data.Invariant.Transformers.Scoped (Scope(..), Scoped(..))
+import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Plus (class Plus, class Plusoid, pzero)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -147,9 +147,9 @@ instance Plus WebComponent where
 
 wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponentWrapper a
 wrapWebComponent c = wrap \callback -> do
-  update <- c (callback <<< Scoped All)
+  update <- c (callback <<< Scoped MoreThanOnePart)
   pure case _ of
-    (Scoped None a) -> pure unit
+    (Scoped NoPart a) -> pure unit
     (Scoped _ a) -> update a
 
 -- WebUI polymorhphic combinators
@@ -224,7 +224,7 @@ onClick node callback = mempty -- void $ DOM.addEventListener "click" (\_ -> cal
 runComponent :: forall a. WebComponentWrapper (a) -> Builder Unit (a -> Effect Unit)
 runComponent c = do
   update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
-  pure $ \a -> update (Scoped All a)
+  pure $ \a -> update (Scoped MoreThanOnePart a)
 
 runMainComponent :: forall a. WebComponentWrapper (a) -> Effect (a -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent
