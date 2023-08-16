@@ -147,12 +147,8 @@ instance Plus WebComponent where
 
 wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponentWrapper a
 wrapWebComponent c = wrap \callback -> do
-  update <- c \a -> do
-    let scope = MoreThanOnePart
-    log $ "calling back scope" <> show scope
-    callback (Scoped scope a)
+  update <- c \a -> callback (Scoped MoreThanOnePart a)
   pure \(Scoped scope a) -> do
-    log $ "updating scope" <> show scope
     case scope of
       NoPart -> do
         pure unit

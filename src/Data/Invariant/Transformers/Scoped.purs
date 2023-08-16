@@ -27,12 +27,18 @@ data Scoped a = Scoped Part a
 
 data Part = MoreThanOnePart | OnePart (NonEmptyArray.NonEmptyArray PartName) | NoPart -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
 
-type PartName = String
+data PartName = PartName String | TwistName String
+
+instance Show PartName where
+  show (PartName s) = "." <> s
+  show (TwistName s) = "@" <> s
+
+derive instance Eq PartName
 
 instance Show Part where
   show MoreThanOnePart = "+"
   show NoPart = "-"
-  show (OnePart hops) = intercalate "." hops
+  show (OnePart hops) = intercalate "" (show <$> hops)
 
 -- finds least common scope
 instance Semigroup Part where
@@ -59,38 +65,49 @@ zoomOut partName MoreThanOnePart = OnePart (partName `NonEmptyArray.cons'` [])
 zoomOut partName (OnePart hops) = OnePart (partName `NonEmptyArray.cons` hops)
 zoomOut _ NoPart = NoPart
 
--- TODO CHECK!
 zoomIn :: PartName -> Part -> Part
 zoomIn _ MoreThanOnePart = MoreThanOnePart
 zoomIn partName (OnePart hops) = case NonEmptyArray.uncons hops of
   { head, tail } | head == partName -> case uncons tail of -- matching head
     Just { head, tail } -> OnePart $ NonEmptyArray.cons' head tail -- non empty tail
     Nothing -> MoreThanOnePart -- empty tail
-  _ -> NoPart -- not matching head
+  { head: TwistName twistName, tail } -> MoreThanOnePart -- not matching head but head is twist
+  _ -> case partName of
+    TwistName _ -> MoreThanOnePart -- not matching head but partName is twist
+    _ -> NoPart -- otherwise
 zoomIn _ NoPart = NoPart
+
+-- zoomInOrSkip :: PartName -> Part -> Part
+-- zoomInOrSkip _ MoreThanOnePart = MoreThanOnePart
+-- zoomInOrSkip partName (OnePart hops) = case NonEmptyArray.uncons hops of
+--   { head, tail } -> case uncons tail of -- matching head
+--     Just { head, tail } -> OnePart $ NonEmptyArray.cons' head tail -- non empty tail
+--     Nothing -> MoreThanOnePart -- empty tail
+-- zoomInOrSkip _ NoPart = NoPart
+
 
 invField :: forall @l i r1 r a . Cartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) -> i (Scoped (Record r1))
 invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    invField' :: forall i a s. Cartesian i => PartName -> (s -> a -> s) -> (s -> a) -> i (Scoped a) -> i (Scoped s)
+    invField' :: forall i a s. Cartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Scoped a) -> i (Scoped s)
     invField' partName setter getter = invfirst >>> invmap
-      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut partName c) (setter s a))
-      (\(Scoped c s) -> Tuple (Scoped (zoomIn partName c) (getter s)) s)
+      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
+      (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
 
-invConstructor :: forall i a s. CoCartesian i => PartName -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) -> i (Scoped s)
-invConstructor partName construct deconstruct = invleft >>> invmap
-  (\saors -> either (\(Scoped c a) -> Scoped (zoomOut partName c) (construct a)) identity saors)
-  (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn partName c) a)) (deconstruct s))
+invConstructor :: forall i a s. CoCartesian i => String -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) -> i (Scoped s)
+invConstructor name construct deconstruct = invleft >>> invmap
+  (\saors -> either (\(Scoped c a) -> Scoped (zoomOut (PartName name) c) (construct a)) identity saors)
+  (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn (PartName name) c) a)) (deconstruct s))
 
-invProjection :: forall i a s . Cartesian i => PartName -> (s -> a) -> i (Scoped a) -> i (Scoped s)
-invProjection partName f = invfirst >>> invmap
-  (\(Tuple (Scoped c _) s) -> Scoped (zoomOut partName c) s)
-  (\(Scoped c s) -> Tuple (Scoped (zoomIn partName c) (f s)) s)
+invProjection :: forall i a s . Cartesian i => String -> (s -> a) -> i (Scoped a) -> i (Scoped s)
+invProjection name f = invfirst >>> invmap
+  (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
+  (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
 
-invAdapter :: forall i a b. Invariant i => PartName -> (a -> b) -> (b -> a) -> i (Scoped a) -> i (Scoped b)
-invAdapter partName f g = invmap
-  (\(Scoped c a) -> Scoped (zoomOut partName c) (f a))
-  (\(Scoped c b) -> Scoped (zoomIn partName c) (g b))
+invAdapter :: forall i a b. Invariant i => String -> (a -> b) -> (b -> a) -> i (Scoped a) -> i (Scoped b)
+invAdapter name f g = invmap
+  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (f a))
+  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (g b))
 
 
 

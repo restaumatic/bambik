@@ -3,9 +3,9 @@ module Demo1 where
 import Prelude hiding (div)
 
 import Data.Array (length, reverse)
-import Data.Invariant.Transformers.Scoped (invAdapter, invField, invProjection)
+import Data.Invariant (class Invariant)
+import Data.Invariant.Transformers.Scoped (Scoped, invAdapter, invField, invProjection)
 import Data.Plus ((^))
-import Data.String (toUpper)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
@@ -15,12 +15,12 @@ import Web.MDC as MDC
 
 type Order =
   { id :: String
-  , customer :: Customer
+  , customer :: CustomerInformal
   , items :: Array Item
   , paid :: Boolean
   }
 
-type Customer =
+type CustomerInformal =
   { firstName :: String
   , lastName :: String
   }
@@ -28,6 +28,19 @@ type Customer =
 type Item =
   { name :: String
   }
+
+type CustomerFormal =
+  { forename :: String
+  , surname :: String
+  }
+
+formal :: forall i. Invariant i => i (Scoped CustomerFormal) -> i (Scoped CustomerInformal)
+formal = invAdapter "formal" toInformal toFormal
+  where
+    toFormal :: CustomerInformal -> CustomerFormal
+    toFormal { firstName: forename, lastName: surname } = { forename, surname }
+    toInformal :: CustomerFormal -> CustomerInformal
+    toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
 reverseString ∷ String -> String
 reverseString = toCharArray >>> reverse >>> fromCharArray
@@ -47,20 +60,43 @@ orderComponent =
   div $ text "Summary: "
     ^ text # dynamic # invField @"id"
     ^ text " "
-    ^ text # dynamic # invField @"firstName" # invField @"customer"
-    ^ text " "
-    ^ text # dynamic # invProjection "toUpper" toUpper # invField @"lastName" # invField @"customer"
+    ^
+    (
+      text # dynamic # invField @"firstName"
+      ^ text " "
+      ^ text # dynamic # invField @"lastName"
+      ^
+      (
+        text " ("
+        ^ text # dynamic # invField @"forename"
+        ^ text " "
+        ^ text # dynamic # invField @"surname"
+        ^ text ") "
+      ) # formal
+    ) # invField @"customer"
     ^ text ", paid: "
     ^ text # dynamic # invProjection "show" show # invField @"paid"
     ^ text ", no of items: "
     ^ text # dynamic # invProjection "show" show # invProjection "length" length # invField @"items"
 
-customerComponent :: WebComponentWrapper Customer
+customerComponent :: WebComponentWrapper CustomerInformal
 customerComponent =
   (
-    MDC.filledTextField "First name" # invField @"firstName"
+    div
+      (
+      MDC.filledTextField "First name" # invField @"firstName"
+      ^
+      MDC.filledTextField "Last name" # invField @"lastName"
+      )
     ^
-    MDC.filledTextField "Last name" # invField @"lastName"
+    text "or more formally"
+    ^
+    div
+      (
+      MDC.filledTextField "Forename" # invField @"forename"
+      ^
+      MDC.filledTextField "Surename" # invField @"surname"
+      ) # formal
   )
 
 itemComponent :: WebComponentWrapper Item
