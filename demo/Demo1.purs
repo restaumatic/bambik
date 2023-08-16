@@ -3,7 +3,6 @@ module Demo1 where
 import Prelude hiding (div)
 
 import Data.Array (length, reverse)
-import Data.Invariant (class Invariant)
 import Data.Invariant.Transformers.Scoped (Scoped, proAdapter, proField, proProjection)
 import Data.Plus ((^^))
 import Data.Profunctor (class Profunctor)

@@ -24,10 +24,9 @@ import Prelude hiding (zero)
 
 import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
-import Data.Invariant (class InvCartesian, class InvCocartesian, class Invariant)
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Plus (class InvPlus, class InvPlusoid, class ProPlus, class ProPlusoid, invzero, prozero)
+import Data.Plus (class ProPlus, class ProPlusoid, prozero)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -158,37 +157,37 @@ wrapWebComponent c = wrap \callback -> do
 
 -- WebUI polymorhphic combinators
 
-inside :: forall a . TagName -> WebComponent a a -> WebComponent a a
+inside :: forall a b. TagName -> WebComponent a b -> WebComponent a b
 inside tagName = inside' tagName mempty mempty
 
-inside' :: forall a . TagName -> (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a a -> WebComponent a a
+inside' :: forall a b. TagName -> (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
 inside' tagName attrs event c = wrap \callback -> do
     Tuple node f <- elAttr tagName (attrs unit) $ unwrap c callback
     liftEffect $ event node callback
     pure \a -> do
       f a
 
-text :: forall a. String -> WebComponent a a
+text :: forall a b. String -> WebComponent a b
 text s = wrap \_ -> do
   S.text s
   pure $ mempty
 
-div :: forall a. WebComponent a a -> WebComponent a a
+div :: forall a b. WebComponent a b -> WebComponent a b
 div = inside "div"
 
-div' :: forall a. (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a a -> WebComponent a a
+div' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
 div' = inside' "div"
 
-span :: forall a. WebComponent a a -> WebComponent a a
+span :: forall a b. WebComponent a b -> WebComponent a b
 span = inside "span"
 
-span' :: forall a. (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a a -> WebComponent a a
+span' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
 span' = inside' "span"
 
-label :: forall a. WebComponent a a -> WebComponent a a
+label :: forall a b. WebComponent a b -> WebComponent a b
 label = inside "label"
 
-label' :: forall a. (Unit -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> WebComponent a a -> WebComponent a a
+label' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
 label' = inside' "label"
 
 foreign import getTextInputValue :: Node -> Effect String
