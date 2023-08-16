@@ -22,10 +22,11 @@ Before trying this, let's make one observation.
 
 # 4. Invariants - subclass of profunctors
 
-When describing the structure of data, profunctors we use are specific class of profunctors where input and output types are the same...
-Invariant optics seems more handy yet equally expressive (in our case) than profuncor optics.
+When describing the structure of data, profunctors we use are specific class of profunctors where input and output types are the same.
+Invariant optics seems more handy at the cost of expressivity.
+Still, in our case, invariant optics represent reasonable trade-off.
 
-Let's pick invariant optics and use them instead of data representation.
+Let's pick then invariant optics and use them instead of data representation.
 
 # 5. Representation independence
 
@@ -36,7 +37,7 @@ module Business (Person, name) where
 -- data
 data Person = Person { name :: String }
 -- optics
-name :: Cartesian i => i String -> i Person -- notice no name conflict with name field
+name :: InvCartesian i => i String -> i Person -- notice no name conflict with name field
 ```
 
 and using this module we want to implement function:
@@ -70,7 +71,7 @@ import Business (Person, name)
 
 data ConsolePrint a = ...
 instance Invariant ConsolePrint where ...
-instance Cartesian ConsolePrint where ...
+instance InvCartesian ConsolePrint where ...
 
 consoleStringPrint :: ConsolePrint String
 consoleStringPrint = ... -- using String as usual (2)
@@ -99,3 +100,28 @@ Does it mean that invariant represents data in a given application?
 Does it mean that optics represents binding between data and its applications?
 
 # 6. Invariant UI
+
+
+InvPlusoid and InvPlus.
+
+# 7. Back to profunctors
+
+As we observed before, invariant optics are less expressive than profunctor optics.
+A component that doesn't produce any output but still consumes input can
+trigger effects on input but no output is made available to other components.
+
+That is not expressible with invariants so let's get back to profunctors.
+
+All invariant optics have their counterparts in profunctor optics (not surprisingly as invariants are special case of profunctors).
+Underlying concepts of InvCartesian, InvCocartesian work in the same way as in invariants (they were in fact ported from profunctors to invariants in the first place).
+
+Is this still the case for InvPlusoid and InvPlus? They were not derived from profunctor world so do they have profunctor counterparts?
+If they don't then we are not able to build anything beyond single component UIs.
+
+Profunctor can only be combinable if their input and output are of the same type.  
+
+
+
+
+
+

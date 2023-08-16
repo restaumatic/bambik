@@ -1,23 +1,44 @@
 module Data.Plus
   ( (^)
-  , class Plusoid
-  , class Plus
-  , plus
-  , pzero
+  , (^^)
+  , class InvPlus
+  , class InvPlusoid
+  , class ProPlus
+  , class ProPlusoid
+  , invplus
+  , invzero
+  , proplus
+  , prozero
   )
   where
 
-class Plusoid :: forall k. (k -> Type) -> Constraint
-class Plusoid i where
-    plus :: forall a . i a -> i a -> i a
+class InvPlusoid :: forall k. (k -> Type) -> Constraint
+class InvPlusoid i where
+    invplus :: forall a . i a -> i a -> i a
+    -- laws:
+    -- invplus a (invplus b c) = invplus (invplus a b) c
 
 -- Similar to `Alt` but without `Functor` constraint
-class Plus :: forall k. (k -> Type) -> Constraint
-class Plusoid i <= Plus i where
-    pzero :: forall a . i a
+class InvPlus :: forall k. (k -> Type) -> Constraint
+class InvPlusoid i <= InvPlus i where
+    invzero :: forall a . i a
     -- laws:
-    --  plus a pzero == a = plus pzero a
-    --  plus a (plus b c) == plus (plus a b) c
+    --  invplus a invzero == a = invplus invzero a
 
 -- lower precedence than `#`` which is 0
-infixr 0 plus as ^
+infixr 0 invplus as ^
+
+class ProPlusoid :: forall k. (k -> k -> Type) -> Constraint
+class ProPlusoid p where
+    proplus :: forall a . p a a -> p a a -> p a a
+    -- laws:
+    -- proplus a (proplus b c) = proplus (proplus a b) c
+
+class ProPlus :: forall k. (k -> k -> Type) -> Constraint
+class ProPlusoid p <= ProPlus p where
+    prozero :: forall a . p a a
+    -- laws:
+    --  proplus a prozero == a = proplus invzero a
+
+-- lower precedence than `#`` which is 0
+infixr 0 proplus as ^^

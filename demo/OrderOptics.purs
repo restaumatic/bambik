@@ -28,10 +28,8 @@ module Test.OrderOptics
   , lat
   , long
   , note
-  , numberOfItems
   , paymentMethod
   , paymentMethod'
-  , placeOrder
   , product
   , qty
   , street
@@ -43,13 +41,10 @@ module Test.OrderOptics
 
 import Prelude
 
-import Data.Array (length)
 import Data.Either (Either(..))
-import Data.Invariant (inveff)
-import Data.Invariant.Optics (invAffineTraversal, invLens, invProjection)
+import Data.Invariant.Optics (invAffineTraversal, invLens)
 import Data.Invariant.Transformers.Scoped (invConstructor, invField)
 import Data.Maybe (Maybe(..), isJust)
-import Effect.Aff (Aff, launchAff_)
 
 type Order =
   { id :: Maybe String
@@ -181,13 +176,13 @@ paymentMethod' = invField @"paymentMethod"
 -- customer :: forall a r . InvLens a { customer ∷ a | r }
 customer = invField @"customer"
 
--- card :: forall i r . Cartesian i => CoCartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
+-- card :: forall i r . InvCartesian i => InvCocartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
 card = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Card } else order) (\order -> case order.fulfillment of
   Delivery _ -> Left $ order
   _ -> Right $ order.paymentMethod == Card
  )
 
--- cash :: forall i r . Cartesian i => CoCartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
+-- cash :: forall i r . InvCartesian i => InvCocartesian i => i Boolean → i { fulfillment ∷ Fulfillment , paymentMethod ∷ PaymentMethod | r }
 cash = invAffineTraversal (\order bool -> if bool then order { paymentMethod = Cash } else order) (\order -> case order.fulfillment of
   _ -> Right $ order.paymentMethod == Cash
  )
@@ -210,11 +205,3 @@ isTakeaway = flip invLens (\ff bool -> if bool then Takeaway { at: "12:15" } els
   _ -> false
  )
 
--- placeOrder :: forall i . EffInvariant i => i Order -> i Order
-placeOrder = inveff (\order -> launchAff_ $ doPlaceOrder order)
-  where
-    doPlaceOrder :: Order -> Aff Unit
-    doPlaceOrder = mempty
-
--- numberOfItems :: forall i . Cartesian i => i Int -> i Order
-numberOfItems = invProjection (\order -> length order.items)

@@ -4,8 +4,9 @@ import Prelude hiding (div)
 
 import Data.Array (length, reverse)
 import Data.Invariant (class Invariant)
-import Data.Invariant.Transformers.Scoped (Scoped, invAdapter, invField, invProjection)
-import Data.Plus ((^))
+import Data.Invariant.Transformers.Scoped (Scoped, proAdapter, proField, proProjection)
+import Data.Plus ((^^))
+import Data.Profunctor (class Profunctor)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
 import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
@@ -34,8 +35,8 @@ type CustomerFormal =
   , surname :: String
   }
 
-formal :: forall i. Invariant i => i (Scoped CustomerFormal) -> i (Scoped CustomerInformal)
-formal = invAdapter "formal" toInformal toFormal
+formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
+formal = proAdapter "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }
@@ -47,60 +48,60 @@ reverseString = toCharArray >>> reverse >>> fromCharArray
 
 -- View (uses business)
 
-orderComponent ∷ WebComponentWrapper Order
+orderComponent ∷ WebComponentWrapper Order Order
 orderComponent =
-  div $ MDC.filledTextField "Id" # invField @"id"
-  ^
-  div $ customerComponent # invField @"customer"
-  ^
-  div $ MDC.checkbox # invField @"paid"
-  -- ^
+  div $ MDC.filledTextField "Id" # proField @"id"
+  ^^
+  div $ customerComponent # proField @"customer"
+  ^^
+  div $ MDC.checkbox # proField @"paid"
+  -- ^^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
-  ^
+  ^^
   div $ text "Summary: "
-    ^ text # dynamic # invField @"id"
-    ^ text " "
-    ^
+    ^^ text # dynamic # proField @"id"
+    ^^ text " "
+    ^^
     (
-      text # dynamic # invField @"firstName"
-      ^ text " "
-      ^ text # dynamic # invField @"lastName"
-      ^
+      text # dynamic # proField @"firstName"
+      ^^ text " "
+      ^^ text # dynamic # proField @"lastName"
+      ^^
       (
         text " ("
-        ^ text # dynamic # invField @"forename"
-        ^ text " "
-        ^ text # dynamic # invField @"surname"
-        ^ text ") "
+        ^^ text # dynamic # proField @"forename"
+        ^^ text " "
+        ^^ text # dynamic # proField @"surname"
+        ^^ text ") "
       ) # formal
-    ) # invField @"customer"
-    ^ text ", paid: "
-    ^ text # dynamic # invProjection "show" show # invField @"paid"
-    ^ text ", no of items: "
-    ^ text # dynamic # invProjection "show" show # invProjection "length" length # invField @"items"
+    ) # proField @"customer"
+    ^^ text ", paid: "
+    ^^ text # dynamic # proProjection "show" show # proField @"paid"
+    ^^ text ", no of items: "
+    ^^ text # dynamic # proProjection "show" show # proProjection "length" length # proField @"items"
 
-customerComponent :: WebComponentWrapper CustomerInformal
+customerComponent :: WebComponentWrapper CustomerInformal CustomerInformal
 customerComponent =
   (
     div
       (
-      MDC.filledTextField "First name" # invField @"firstName"
-      ^
-      MDC.filledTextField "Last name" # invField @"lastName"
+      MDC.filledTextField "First name" # proField @"firstName"
+      ^^
+      MDC.filledTextField "Last name" # proField @"lastName"
       )
-    ^
+    ^^
     text "or more formally"
-    ^
+    ^^
     div
       (
-      MDC.filledTextField "Forename" # invField @"forename"
-      ^
-      MDC.filledTextField "Surename" # invField @"surname"
+      MDC.filledTextField "Forename" # proField @"forename"
+      ^^
+      MDC.filledTextField "Surename" # proField @"surname"
       ) # formal
   )
 
-itemComponent :: WebComponentWrapper Item
-itemComponent = MDC.filledTextField "Name" # invAdapter "reverse" reverseString reverseString # invAdapter "reverse" reverseString reverseString # invField @"name"
+itemComponent :: WebComponentWrapper Item Item
+itemComponent = MDC.filledTextField "Name" # proAdapter "reverse" reverseString reverseString # proAdapter "reverse" reverseString reverseString # proField @"name"
 
 -- Glue (business + view)
 
