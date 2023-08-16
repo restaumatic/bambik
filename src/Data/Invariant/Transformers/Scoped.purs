@@ -55,15 +55,15 @@ instance Monoid Part where
   mempty = NoPart
 
 zoomOut :: PartName -> Part -> Part
-zoomOut hop MoreThanOnePart = OnePart (hop `NonEmptyArray.cons'` [])
-zoomOut hop (OnePart hops) = OnePart (hop `NonEmptyArray.cons` hops)
+zoomOut partName MoreThanOnePart = OnePart (partName `NonEmptyArray.cons'` [])
+zoomOut partName (OnePart hops) = OnePart (partName `NonEmptyArray.cons` hops)
 zoomOut _ NoPart = NoPart
 
 -- TODO CHECK!
 zoomIn :: PartName -> Part -> Part
 zoomIn _ MoreThanOnePart = MoreThanOnePart
-zoomIn hop (OnePart hops) = case NonEmptyArray.uncons hops of
-  { head, tail } | head == hop -> case uncons tail of -- matching head
+zoomIn partName (OnePart hops) = case NonEmptyArray.uncons hops of
+  { head, tail } | head == partName -> case uncons tail of -- matching head
     Just { head, tail } -> OnePart $ NonEmptyArray.cons' head tail -- non empty tail
     Nothing -> MoreThanOnePart -- empty tail
   _ -> NoPart -- not matching head
@@ -73,24 +73,24 @@ invField :: forall @l i r1 r a . Cartesian i => IsSymbol l => Row.Cons l a r r1 
 invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
     invField' :: forall i a s. Cartesian i => PartName -> (s -> a -> s) -> (s -> a) -> i (Scoped a) -> i (Scoped s)
-    invField' name setter getter = invfirst >>> invmap
-      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut name c) (setter s a))
-      (\(Scoped c s) -> Tuple (Scoped (zoomIn name c) (getter s)) s)
+    invField' partName setter getter = invfirst >>> invmap
+      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut partName c) (setter s a))
+      (\(Scoped c s) -> Tuple (Scoped (zoomIn partName c) (getter s)) s)
 
 invConstructor :: forall i a s. CoCartesian i => PartName -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) -> i (Scoped s)
-invConstructor name construct deconstruct = invleft >>> invmap
-  (\saors -> either (\(Scoped c a) -> Scoped (zoomOut name c) (construct a)) identity saors)
-  (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn name c) a)) (deconstruct s))
+invConstructor partName construct deconstruct = invleft >>> invmap
+  (\saors -> either (\(Scoped c a) -> Scoped (zoomOut partName c) (construct a)) identity saors)
+  (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn partName c) a)) (deconstruct s))
 
-invProjection :: forall i a s . Cartesian i => (s -> a) -> i (Scoped a) -> i (Scoped s)
-invProjection f = invfirst >>> invmap
-  (\(Tuple (Scoped c a) s) -> Scoped c s)
-  (\(Scoped c s) -> Tuple (Scoped MoreThanOnePart (f s)) s)
+invProjection :: forall i a s . Cartesian i => PartName -> (s -> a) -> i (Scoped a) -> i (Scoped s)
+invProjection partName f = invfirst >>> invmap
+  (\(Tuple (Scoped c _) s) -> Scoped (zoomOut partName c) s)
+  (\(Scoped c s) -> Tuple (Scoped (zoomIn partName c) (f s)) s)
 
-invAdapter :: forall i a b. Invariant i => (a -> b) -> (b -> a) -> i (Scoped a) -> i (Scoped b)
-invAdapter f g = invmap
-  (\(Scoped _ a) -> Scoped MoreThanOnePart (f a))
-  (\(Scoped _ b) -> Scoped MoreThanOnePart (g b))
+invAdapter :: forall i a b. Invariant i => PartName -> (a -> b) -> (b -> a) -> i (Scoped a) -> i (Scoped b)
+invAdapter partName f g = invmap
+  (\(Scoped c a) -> Scoped (zoomOut partName c) (f a))
+  (\(Scoped c b) -> Scoped (zoomIn partName c) (g b))
 
 
 

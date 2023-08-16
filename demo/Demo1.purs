@@ -49,11 +49,11 @@ orderComponent =
     ^ text " "
     ^ text # dynamic # invField @"firstName" # invField @"customer"
     ^ text " "
-    ^ text # dynamic # invProjection toUpper # invField @"lastName" # invField @"customer"
+    ^ text # dynamic # invProjection "toUpper" toUpper # invField @"lastName" # invField @"customer"
     ^ text ", paid: "
-    ^ text # dynamic # invProjection show # invField @"paid"
+    ^ text # dynamic # invProjection "show" show # invField @"paid"
     ^ text ", no of items: "
-    ^ text # dynamic # invProjection (show <<< length) # invField @"items"
+    ^ text # dynamic # invProjection "show" show # invProjection "length"length # invField @"items"
 
 customerComponent :: WebComponentWrapper Customer
 customerComponent =
@@ -64,7 +64,7 @@ customerComponent =
   )
 
 itemComponent :: WebComponentWrapper Item
-itemComponent = MDC.filledTextField "Name" # invAdapter reverseString reverseString # invAdapter reverseString reverseString # invField @"name"
+itemComponent = MDC.filledTextField "Name" # invAdapter "reverse" reverseString reverseString # invAdapter "reverse" reverseString reverseString # invField @"name"
 
 -- Glue (business + view)
 

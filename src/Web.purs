@@ -147,10 +147,16 @@ instance Plus WebComponent where
 
 wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> WebComponentWrapper a
 wrapWebComponent c = wrap \callback -> do
-  update <- c (callback <<< Scoped MoreThanOnePart)
-  pure case _ of
-    (Scoped NoPart a) -> pure unit
-    (Scoped _ a) -> update a
+  update <- c \a -> do
+    let scope = MoreThanOnePart
+    log $ "calling back scope" <> show scope
+    callback (Scoped scope a)
+  pure \(Scoped scope a) -> do
+    log $ "updating scope" <> show scope
+    case scope of
+      NoPart -> do
+        pure unit
+      _ -> update a
 
 -- WebUI polymorhphic combinators
 
