@@ -1,4 +1,50 @@
-module Specular.Dom.Browser where
+module Specular.Dom.Browser
+  ( (:=)
+  , AttrValue(..)
+  , Attrs
+  , Event
+  , EventType
+  , Namespace
+  , Node
+  , TagName
+  , _setAttributes
+  , addEventListener
+  , addEventListenerImpl
+  , appendChild
+  , appendChildImpl
+  , appendRawHtml
+  , appendRawHtmlImpl
+  , attr
+  , classes
+  , createCommentNode
+  , createCommentNodeImpl
+  , createDocumentFragment
+  , createDocumentFragmentImpl
+  , createElement
+  , createElementImpl
+  , createElementNS
+  , createElementNSImpl
+  , createTextNode
+  , createTextNodeImpl
+  , innerHTML
+  , insertBefore
+  , insertBeforeImpl
+  , moveAllBetweenInclusive
+  , moveAllBetweenInclusiveImpl
+  , onDomEvent
+  , parentNode
+  , parentNodeImpl
+  , preventDefault
+  , removeAllBetween
+  , removeAllBetweenImpl
+  , removeAttributes
+  , removeAttributesImpl
+  , removeNode
+  , setAttributes
+  , setText
+  , setTextImpl
+  )
+  where
 
 import Prelude
 
@@ -12,6 +58,12 @@ import Foreign.Object as Object
 type Attrs = Object AttrValue
 
 data AttrValue = ClassNames String | AttrValue String
+
+classes :: String -> Attrs
+classes spaceSeparatedClassNames = "class" := ClassNames spaceSeparatedClassNames
+
+attr ∷ String → String → Attrs
+attr attrName attrValue =  attrName := AttrValue attrValue
 
 instance Semigroup AttrValue where
   append (ClassNames classNames1) (ClassNames classNames2) = ClassNames $ classNames1 <> " " <> classNames2

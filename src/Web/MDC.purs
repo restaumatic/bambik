@@ -15,63 +15,63 @@ import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Specular.Dom.Browser (AttrValue(..), Node, (:=))
-import Web (Widget, Component, div', inside', label', radio, span', text)
+import Specular.Dom.Browser (Node, attr, classes)
+import Web (Component, Widget, div', inside', label', radio, span', text)
 import Web as Web
 
 button :: forall a. Widget a a -> Widget a a
 button wrapped =
-  inside' "button" ("class" := ClassNames "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick) $
-    (div' ("class" := ClassNames "mdc-button__ripple") mempty mempty prozero)
+  inside' "button" (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick) $
+    (div' (classes "mdc-button__ripple") mempty mempty prozero)
     ^
-    (span' ("class" := ClassNames "mdc-button__label") mempty mempty wrapped)
+    (span' (classes "mdc-button__label") mempty mempty wrapped)
 
 filledText :: String -> Component String String
 filledText hintText =
-  label' ("class" := ClassNames "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
-    (span' ("class" := ClassNames "mdc-text-field__ripple") mempty mempty prozero)
+  label' (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
+    (span' (classes "mdc-text-field__ripple") mempty mempty prozero)
     ^
-    (span' ("class" := ClassNames "mdc-floating-label" <> "id" := AttrValue "my-label-id") (\(Scoped _ value) -> if not (null value) then "class" := ClassNames "mdc-floating-label--float-above" else mempty)) mempty (text hintText)
+    (span' (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Scoped _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty (text hintText)
     ^
-    (Web.textInput ("class" := ClassNames "mdc-text-field__input" <> "type" := AttrValue "text" <> "aria-labelledby" := AttrValue "my-label-id"))
+    (Web.textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))
     ^
-    (span' ("class" := ClassNames "mdc-line-ripple") mempty mempty prozero)
+    (span' (classes "mdc-line-ripple") mempty mempty prozero)
 
 checkbox :: Component Boolean Boolean
 checkbox =
-  div' ("class" := ClassNames "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
+  div' (classes "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
     (
-    div' ("class" := ClassNames "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
+    div' (classes "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
       (
-      Web.checkbox ("class" := ClassNames "mdc-checkbox__native-control")
+      Web.checkbox (classes "mdc-checkbox__native-control")
       ^
-      div' ("class":= ClassNames "mdc-checkbox__background") mempty mempty
+      div' (classes "mdc-checkbox__background") mempty mempty
         (
-        inside' "svg" ("class" := ClassNames "mdc-checkbox__checkmark" <> "viewBox" := AttrValue "0 0 24 24") mempty mempty
+        inside' "svg" (classes "mdc-checkbox__checkmark" <> attr "viewBox" "0 0 24 24") mempty mempty
           (
-          inside' "path" ("class" := ClassNames "mdc-checkbox__checkmark-path" <> "fill" := AttrValue "none" <> "d" := AttrValue "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty prozero
+          inside' "path" (classes "mdc-checkbox__checkmark-path" <> attr "fill" "none" <> attr "d" "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty prozero
           )
         ^
-        div' ("class" := ClassNames "mdc-checkbox__mixedmark") mempty mempty prozero
+        div' (classes "mdc-checkbox__mixedmark") mempty mempty prozero
         )
       ^
-      div' ("class" := ClassNames "mdc-checkbox__ripple") mempty mempty prozero
+      div' (classes "mdc-checkbox__ripple") mempty mempty prozero
       )
     )
 
 radioButton :: Component Boolean Unit -- TODO
-radioButton = div' ("class" := ClassNames "mdc-form-field") mempty mempty
+radioButton = div' (classes "mdc-form-field") mempty mempty
   (
-    (div' ("class" := ClassNames "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
-      (radio ("class" := ClassNames "mdc-radio__native-control" <> "id" := AttrValue "radio-1" ))
+    (div' (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
+      (radio (classes "mdc-radio__native-control" <> attr "id" "radio-1" ))
       <^
-      (div' ("class" := ClassNames "mdc-radio__background") mempty mempty $
-        div' ("class" := ClassNames "mdc-radio__outer-circle") mempty mempty prozero
+      (div' (classes "mdc-radio__background") mempty mempty $
+        div' (classes "mdc-radio__outer-circle") mempty mempty prozero
         ^
-        div' ("class" := ClassNames "mdc-radio__inner-circle") mempty mempty prozero
+        div' (classes "mdc-radio__inner-circle") mempty mempty prozero
       )
       ^
-      (div' ("class" := ClassNames "mdc-radio__ripple") mempty mempty prozero)
+      (div' (classes "mdc-radio__ripple") mempty mempty prozero)
     )
     -- <>
     -- (Web.inside "label" ("for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
@@ -96,8 +96,8 @@ radioButton = div' ("class" := ClassNames "mdc-form-field") mempty mempty
 
 
 mdcWith :: ComponentClass -> Node -> (WebUI -> Node -> Effect Unit) -> Effect Unit
-mdcWith class_ node init = do
-  component <- new class_ node
+mdcWith classes node init = do
+  component <- new classes node
   pure unit
   -- Tuple _ cleanup <- (map fst <<< runCleanupT) $ init component node
   -- pushDelayed cleanups cleanup

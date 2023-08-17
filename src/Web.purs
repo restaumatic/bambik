@@ -1,10 +1,9 @@
 module Web
-  ( Widget
-  , Component
+  ( Component
+  , Widget
   , checkbox
   , div
   , div'
-  , value
   , inside
   , inside'
   , label
@@ -17,6 +16,7 @@ module Web
   , span'
   , text
   , textInput
+  , value
   )
   where
 
@@ -36,7 +36,7 @@ import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
-import Specular.Dom.Browser (AttrValue(..), Attrs, Node, TagName, onDomEvent, (:=))
+import Specular.Dom.Browser (Attrs, Node, TagName, attr, onDomEvent)
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
@@ -211,13 +211,13 @@ textInput attrs = wrapWebComponent \callback -> do
 
 checkbox :: Attrs -> Component Boolean Boolean
 checkbox attrs = wrapWebComponent \callback -> do
-  Tuple node _ <- elAttr "input" ("type" := AttrValue "checkbox" <> attrs) (pure unit)
+  Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   onDomEvent "input" node $ const $ getChecked node >>= callback
   pure $ setChecked node
 
 radio :: Attrs -> Component Boolean Unit
 radio attrs = wrapWebComponent \callback -> do
-  Tuple node _ <- elAttr "input" ("type" := AttrValue "radio" <> attrs) (pure unit)
+  Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   onDomEvent "change" node $ const $ callback unit
   pure $ setChecked node
 
