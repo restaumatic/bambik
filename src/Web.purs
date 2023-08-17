@@ -229,8 +229,10 @@ runComponent c = do
   update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
   pure $ \a -> update (Scoped MoreThanOnePart a)
 
-runMainComponent :: forall i o. WebComponentWrapper i o -> Effect (i -> Effect Unit)
-runMainComponent = runMainBuilderInBody <<< runComponent
+runMainComponent :: forall i o. WebComponentWrapper i o -> i -> Effect Unit
+runMainComponent c i = do
+  update <- runMainBuilderInBody $ runComponent c
+  update i
 
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
