@@ -1,7 +1,7 @@
 module Web.MDC
   ( button
   , checkbox
-  , filledTextField
+  , filledText
   -- , list
   , radioButton
   )
@@ -24,8 +24,8 @@ button wrapped =
     ^^
     (span' (const $ "class" := "mdc-button__label") mempty wrapped)
 
-filledTextField :: String -> WebComponentWrapper String String
-filledTextField hintText =
+filledText :: String -> WebComponentWrapper String String
+filledText hintText =
   label' (const $ "class" := "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span' (const $ "class" := "mdc-text-field__ripple") mempty prozero)
     ^^

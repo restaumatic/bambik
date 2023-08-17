@@ -6,10 +6,10 @@ module Data.Invariant.Transformers.Scoped
   , invConstructor
   , invField
   , invProjection
-  , proField
-  , proAdapter
+  , field
+  , adapter
   , proConstructor
-  , proProjection
+  , projection
   )
   where
 
@@ -110,11 +110,11 @@ invAdapter name f g = invmap
 
 ---
 
-proField :: forall @l i r1 r a . ProCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
-proField = proField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
+field :: forall @l i r1 r a . ProCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
+field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    proField' :: forall i a s. ProCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Scoped a) (Scoped a)-> i (Scoped s) (Scoped s)
-    proField' partName setter getter = profirst >>> promap
+    field' :: forall i a s. ProCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Scoped a) (Scoped a)-> i (Scoped s) (Scoped s)
+    field' partName setter getter = profirst >>> promap
       (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
       (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
 
@@ -123,13 +123,13 @@ proConstructor name construct deconstruct = proleft >>> promap
   (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn (PartName name) c) a)) (deconstruct s))
   (\saors -> either (\(Scoped c a) -> Scoped (zoomOut (PartName name) c) (construct a)) identity saors)
 
-proProjection :: forall i a s . ProCartesian i => String -> (s -> a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
-proProjection name f = profirst >>> promap
+projection :: forall i a s . ProCartesian i => String -> (s -> a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
+projection name f = profirst >>> promap
   (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
   (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
 
-proAdapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
-proAdapter name outside inside = promap
+adapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
+adapter name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 

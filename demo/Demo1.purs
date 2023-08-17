@@ -3,7 +3,7 @@ module Demo1 where
 import Prelude hiding (div)
 
 import Data.Array (length, reverse)
-import Data.Invariant.Transformers.Scoped (Scoped, proAdapter, proField, proProjection)
+import Data.Invariant.Transformers.Scoped (Scoped, adapter, field, projection)
 import Data.Plus ((<^), (^^))
 import Data.Profunctor (class Profunctor)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
@@ -44,7 +44,7 @@ instance Show Fulfillment where
 
 
 formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
-formal = proAdapter "formal" toInformal toFormal
+formal = adapter "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }
@@ -58,82 +58,82 @@ reverseString = toCharArray >>> reverse >>> fromCharArray
 
 orderComponent ∷ WebComponentWrapper Order Order
 orderComponent =
-  div $ MDC.filledTextField "Id" # proField @"id"
+  div $ MDC.filledText "Id" # field @"id"
   ^^
-  div $ customerComponent # proField @"customer"
+  div $ customerComponent # field @"customer"
   ^^
-  div $ MDC.checkbox # proField @"paid"
+  div $ MDC.checkbox # field @"paid"
   ^^
   div
     ( MDC.radioButton
     <^ text "Dine in"
-    ) # proAdapter "dine-in" (const DineIn) (case _ of
+    ) # adapter "dine-in" (const DineIn) (case _ of
         DineIn -> true
-        _ -> false)  # proField @"fulfillment"
+        _ -> false) # field @"fulfillment"
   ^^
   div
     ( MDC.radioButton
     <^ text "Takeaway"
-    ) # proAdapter "takeaway" (const Takeaway) (case _ of
+    ) # adapter "takeaway" (const Takeaway) (case _ of
         Takeaway -> true
         _ -> false
-        ) # proField @"fulfillment"
+        ) # field @"fulfillment"
   ^^
   div
     ( MDC.radioButton
     <^ text "Delivery"
-    ) # proAdapter "delivery" (const Delivery) (case _ of
+    ) # adapter "delivery" (const Delivery) (case _ of
         Delivery -> true
-        _ -> false) # proField @"fulfillment"
+        _ -> false) # field @"fulfillment"
   -- ^^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   ^^
   div $ text "Summary: "
-    ^^ text # dynamic # proField @"id"
+    ^^ text # dynamic # field @"id"
     ^^ text " "
     ^^
     (
-      text # dynamic # proField @"firstName"
+      text # dynamic # field @"firstName"
       ^^ text " "
-      ^^ text # dynamic # proField @"lastName"
+      ^^ text # dynamic # field @"lastName"
       ^^
       (
         text " ("
-        ^^ text # dynamic # proField @"forename"
+        ^^ text # dynamic # field @"forename"
         ^^ text " "
-        ^^ text # dynamic # proField @"surname"
+        ^^ text # dynamic # field @"surname"
         ^^ text ") "
       ) # formal
-    ) # proField @"customer"
+    ) # field @"customer"
     ^^ text ", paid: "
-    ^^ text # dynamic # proProjection "show" show # proField @"paid"
+    ^^ text # dynamic # projection "show" show # field @"paid"
     ^^ text ", fulfillment: "
-    ^^ text # dynamic # proProjection "show" show # proField @"fulfillment"
+    ^^ text # dynamic # projection "show" show # field @"fulfillment"
     ^^ text ", no of items: "
-    ^^ text # dynamic # proProjection "show" show # proProjection "length" length # proField @"items"
+    ^^ text # dynamic # projection "show" show # projection "length" length # field @"items"
 
 customerComponent :: WebComponentWrapper CustomerInformal CustomerInformal
 customerComponent =
   (
     div
       (
-      MDC.filledTextField "First name" # proField @"firstName"
+      MDC.filledText "First name" # field @"firstName"
       ^^
-      MDC.filledTextField "Last name" # proField @"lastName"
+      MDC.filledText "Last name" # field @"lastName"
       )
     ^^
-    text "or more formally"
+    text "or more formally:"
     ^^
     div
       (
-      MDC.filledTextField "Forename" # proField @"forename"
+      MDC.filledText "Forename" # field @"forename"
       ^^
-      MDC.filledTextField "Surename" # proField @"surname"
+      MDC.filledText "Surename" # field @"surname"
       ) # formal
   )
 
 itemComponent :: WebComponentWrapper Item Item
-itemComponent = MDC.filledTextField "Name" # proAdapter "reverse" reverseString reverseString # proAdapter "reverse" reverseString reverseString # proField @"name"
+itemComponent = MDC.filledText "Name" # adapter "reverse" reverseString reverseString # adapter "reverse" reverseString reverseString # field @"name"
 
 -- Glue (business + view)
 
