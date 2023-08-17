@@ -90,9 +90,6 @@ orderComponent =
         _ -> false) # field @"fulfillment"
   ^^
   div (
-    MDC.filledText "Foo") # nothing
-  ^^
-  div (
     div (
       text "Delivery details")
     ^^
