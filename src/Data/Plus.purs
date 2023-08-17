@@ -36,7 +36,7 @@ class ProPlusoid p where
 
 class ProPlus :: forall k. (k -> k -> Type) -> Constraint
 class ProPlusoid p <= ProPlus p where
-    prozero :: forall a . p a a
+    prozero :: forall a b. p a b
     -- laws:
     --  proplus a prozero == a = proplus invzero a
 

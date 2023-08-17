@@ -202,7 +202,7 @@ textInput attrs = wrapWebComponent \callback -> do
     getTextInputValue node >>= callback
   pure $ setTextInputValue node
 
-checkbox :: Attrs -> WebComponentWrapper Boolean Boolean -- TODOs
+checkbox :: Attrs -> WebComponentWrapper Boolean Boolean
 checkbox attrs = wrapWebComponent \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node \event -> do
