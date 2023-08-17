@@ -3,12 +3,12 @@ module Demo1 where
 import Prelude hiding (div)
 
 import Data.Array (length)
-import Data.Invariant.Transformers.Scoped (Scoped, adapterGeneric, constructor, field, iso, projection)
+import Data.Invariant.Transformers.Scoped (Scoped, constructor, field, adapter, projection)
 import Data.Maybe (Maybe(..))
 import Data.Plus ((<^), (^^))
 import Data.Profunctor (class Profunctor)
 import Effect (Effect)
-import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
+import Web (WebComponentWrapper, div, value, runMainComponent, text)
 import Web.MDC as MDC
 
 -- Business
@@ -45,7 +45,7 @@ instance Show Fulfillment where
   show (Delivery { address }) = "Delivery to " <> address
 
 formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
-formal = iso "formal" toInformal toFormal
+formal = adapter "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }
@@ -68,14 +68,14 @@ order =
   div (
     MDC.radioButton
     <^
-    text "Dine in") # adapterGeneric "dine-in" (const DineIn) (case _ of
+    text "Dine in") # adapter "dine-in" (const DineIn) (case _ of
         DineIn -> true
         _ -> false) # field @"fulfillment"
   ^^
   div (
     MDC.radioButton
     <^
-    text "Takeaway") # adapterGeneric "takeaway" (const Takeaway) (case _ of
+    text "Takeaway") # adapter "takeaway" (const Takeaway) (case _ of
         Takeaway -> true
         _ -> false) # field @"fulfillment"
   ^^
@@ -83,7 +83,7 @@ order =
     MDC.radioButton
     <^
     text "Delivery"
-    ) # adapterGeneric "delivery" (const (Delivery { address: "" })) (case _ of
+    ) # adapter "delivery" (const (Delivery { address: "" })) (case _ of
         Delivery _ -> true
         _ -> false) # field @"fulfillment"
   ^^
@@ -99,31 +99,31 @@ order =
   div (
     text "Summary: "
     ^^
-    text # dynamic # field @"id"
+    text # value # field @"id"
     ^^
     text " "
     ^^ (
-      text # dynamic # field @"firstName"
+      text # value # field @"firstName"
       ^^ text " "
-      ^^ text # dynamic # field @"lastName"
+      ^^ text # value # field @"lastName"
       ^^ (
         text " ("
-        ^^ text # dynamic # field @"forename"
+        ^^ text # value # field @"forename"
         ^^ text " "
-        ^^ text # dynamic # field @"surname"
+        ^^ text # value # field @"surname"
         ^^ text ") ") # formal) # field @"customer"
     ^^
     text ", paid: "
     ^^
-    text # dynamic # projection "show" show # field @"paid"
+    text # value # projection "show" show # field @"paid"
     ^^
     text ", fulfillment: "
     ^^
-    text # dynamic # projection "show" show # field @"fulfillment"
+    text # value # projection "show" show # field @"fulfillment"
     ^^
     text ", no of items: "
     ^^
-    text # dynamic # projection "show" show # projection "length" length # field @"items"
+    text # value # projection "show" show # projection "length" length # field @"items"
   )
 
 customer :: WebComponentWrapper CustomerInformal CustomerInformal

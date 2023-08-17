@@ -4,7 +4,7 @@ module Web
   , checkbox
   , div
   , div'
-  , dynamic
+  , value
   , inside
   , inside'
   , label
@@ -51,8 +51,8 @@ wrap = WebComponent
 unwrap :: forall i o. WebComponent i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
 unwrap (WebComponent c) = c
 
-dynamic :: forall a b. (a -> WebComponent b b) -> WebComponentWrapper a b -- WebComponentWrapper == DynamicWebComponent (with scope?)
-dynamic f = wrapWebComponent \_ -> do
+value :: forall a b. (a -> WebComponent b b) -> WebComponentWrapper a b -- WebComponentWrapper == DynamicWebComponent (with scope?)
+value f = wrapWebComponent \_ -> do
   slot <- newSlot
   pure $ \a -> replaceSlot slot $ void $ unwrap (f a) mempty
 

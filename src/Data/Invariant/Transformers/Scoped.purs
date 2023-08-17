@@ -2,8 +2,7 @@ module Data.Invariant.Transformers.Scoped
   ( Part(..)
   , PartName
   , Scoped(..)
-  , iso
-  , adapterGeneric
+  , adapter
   , constructor
   , field
   , invAdapter
@@ -132,12 +131,7 @@ projection name f = profirst >>> promap
   (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
   (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
 
-adapterGeneric :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
-adapterGeneric name outside inside = promap
-  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
-  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
-
-iso :: forall i a s. Profunctor i => String -> (a -> s) -> (s -> a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
-iso name outside inside = promap
+adapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
+adapter name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
