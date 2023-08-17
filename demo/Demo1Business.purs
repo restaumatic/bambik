@@ -5,8 +5,6 @@ import Prelude hiding (div)
 import Data.Invariant.Transformers.Scoped (Scoped, adapter)
 import Data.Profunctor (class Profunctor)
 
--- Business
-
 type Order =
   { id :: String
   , customer :: CustomerInformal
