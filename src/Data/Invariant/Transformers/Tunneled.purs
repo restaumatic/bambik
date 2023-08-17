@@ -6,9 +6,9 @@ module Data.Invariant.Transformers.Tunneled
 import Prelude
 
 import Data.Invariant (class InvCartesian, class InvCocartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant.Plus (class InvPlus, class InvPlusoid, invplus, invzero)
 import Data.Invariant.Transformers (class InvTrans)
 import Data.Newtype (class Newtype, modify, unwrap, wrap)
-import Data.Plus (class InvPlus, class InvPlusoid, invplus, invzero)
 
 newtype Tunneled :: forall k1 k2. (k1 -> Type) -> (k2 -> k1) -> k2 -> Type
 newtype Tunneled f i a = Tunneled (f (i a))

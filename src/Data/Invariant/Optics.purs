@@ -18,7 +18,7 @@ import Prelude hiding (zero)
 
 import Data.Either (Either, either)
 import Data.Invariant (class InvCartesian, class Closed, class InvCocartesian, class Invariant, closed, invfirst, invleft, invmap, invright, invsecond)
-import Data.Plus (class InvPlus, invzero)
+import Data.Invariant.Plus (class InvPlus, invzero)
 import Data.Tuple (Tuple(..))
 
 invAdapter :: forall f a b. Invariant f => (a -> b) -> (b -> a) -> f a -> f b

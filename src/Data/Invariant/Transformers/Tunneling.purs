@@ -8,9 +8,9 @@ import Prelude
 import Data.CoApplicative (class CoApplicative, class CoApply, copure, cozip)
 import Data.Either (Either(..), either)
 import Data.Invariant (class InvCartesian, class InvCocartesian, class Invariant, invfirst, invleft, invmap, invright, invsecond)
+import Data.Invariant.Plus (class InvPlus, class InvPlusoid, invplus, invzero)
 import Data.Invariant.Transformers (class InvTrans)
 import Data.Newtype (class Newtype, modify, unwrap, wrap)
-import Data.Plus (class InvPlus, class InvPlusoid, invplus, invzero)
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (spy)
 

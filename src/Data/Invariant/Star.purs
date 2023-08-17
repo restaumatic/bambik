@@ -10,8 +10,8 @@ import Data.Distributive (class Distributive, distribute)
 import Data.Either (Either(..), either)
 import Data.Identity (Identity)
 import Data.Invariant (class InvCartesian, class Closed, class InvCocartesian, class Invariant)
+import Data.Invariant.Plus (class InvPlus, class InvPlusoid)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Plus (class InvPlus, class InvPlusoid)
 import Data.Tuple (Tuple(..))
 
 -- InvStar turns functors into invariants.

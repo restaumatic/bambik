@@ -15,8 +15,8 @@ module Data.Profunctor.Optics
 import Prelude
 
 import Data.Either (Either)
-import Data.Plus (class ProPlus, prozero)
 import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor.Plus (class ProPlus, prozero)
 import Data.Tuple (Tuple)
 
 -- Functor class hierarchy

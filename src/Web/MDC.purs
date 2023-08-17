@@ -9,7 +9,7 @@ module Web.MDC
 
 import Prelude hiding (zero)
 
-import Data.Plus (prozero, (<^), (^^))
+import Data.Profunctor.Plus (prozero, (<^), (^))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
@@ -21,18 +21,18 @@ button :: forall a. Widget a a -> Widget a a
 button wrapped =
   inside' "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick) $
     (div' (const $ "class" := "mdc-button__ripple") mempty prozero)
-    ^^
+    ^
     (span' (const $ "class" := "mdc-button__label") mempty wrapped)
 
 filledText :: String -> Component String String
 filledText hintText =
   label' (const $ "class" := "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span' (const $ "class" := "mdc-text-field__ripple") mempty prozero)
-    ^^
+    ^
     (span' (const $ "class" := "mdc-floating-label mdc-floating-label--float-above" <> "id" := "my-label-id") mempty (text hintText))
-    ^^
+    ^
     (Web.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
-    ^^
+    ^
     (span' (const $ "class" := "mdc-line-ripple") mempty prozero)
 
 checkbox :: Component Boolean Boolean
@@ -42,17 +42,17 @@ checkbox =
     div' (const $ "class" := "mdc-checkbox") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
       (
       Web.checkbox ("class" := "mdc-checkbox__native-control")
-      ^^
+      ^
       div' (const $ "class":= "mdc-checkbox__background") mempty
         (
         inside' "svg" (const $ "class" := "mdc-checkbox__checkmark" <> "viewBox" := "0 0 24 24") mempty
           (
           inside' "path" (const $ "class" := "mdc-checkbox__checkmark-path" <> "fill" := "none" <> "d" := "M1.73,12.91 8.1,19.28 22.79,4.59") mempty prozero
           )
-        ^^
+        ^
         div' (const $ "class" := "mdc-checkbox__mixedmark") mempty prozero
         )
-      ^^
+      ^
       div' (const $ "class" := "mdc-checkbox__ripple") mempty prozero
       )
     )
@@ -65,10 +65,10 @@ radioButton = div' (const $ "class" := "mdc-form-field") mempty
       <^
       (div' (const $ "class" := "mdc-radio__background") mempty $
         div' (const $ "class" := "mdc-radio__outer-circle") mempty prozero
-        ^^
+        ^
         div' (const $ "class" := "mdc-radio__inner-circle") mempty prozero
       )
-      ^^
+      ^
       (div' (const $ "class" := "mdc-radio__ripple") mempty prozero)
     )
     -- <>
