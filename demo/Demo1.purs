@@ -152,4 +152,19 @@ itemComponent =
 main :: Effect Unit
 main = do
   updateOrder <- runMainComponent orderComponent
-  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}], paid: true, fulfillment: Delivery { address: ""}}
+  updateOrder
+    { id: "61710"
+    , customer:
+      { firstName: "John"
+      , lastName: "Doe"
+      }
+    , items:
+      [ {name : "a"}
+      , {name : "b"}
+      , {name : "c"}
+      ]
+    , paid: true
+    , fulfillment: Delivery
+      { address: ""
+      }
+    }
