@@ -3,6 +3,7 @@ module Data.Profunctor.Optics
   , class ProClosed
   , class ProCocartesian
   , closed
+  , nothing
   , profirst
   , proleft
   , promap
@@ -14,6 +15,7 @@ module Data.Profunctor.Optics
 import Prelude
 
 import Data.Either (Either)
+import Data.Plus (class ProPlus, prozero)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Tuple (Tuple)
 
@@ -32,6 +34,9 @@ class Profunctor f <= ProCocartesian f where
 
 class Profunctor f <= ProClosed f where
     closed :: forall i o a . f i o -> f (a -> i) (a -> o)
+
+nothing :: forall p a b s t. Profunctor p => ProPlus p => p a b -> p s t
+nothing = const prozero
 
 -- TODO are these below needed?
 -- invand a b = profirst a ^ prosecond b

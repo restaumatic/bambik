@@ -7,8 +7,9 @@ import Data.Invariant.Transformers.Scoped (Scoped, adapterGeneric, constructor, 
 import Data.Maybe (Maybe(..))
 import Data.Plus ((<^), (^^))
 import Data.Profunctor (class Profunctor)
+import Data.Profunctor.Optics (nothing)
 import Effect (Effect)
-import Web (WebComponentWrapper, div, dynamic, nothing, runMainComponent, text)
+import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
 import Web.MDC as MDC
 
 -- Business

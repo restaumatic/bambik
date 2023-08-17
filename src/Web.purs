@@ -9,7 +9,6 @@ module Web
   , inside'
   , label
   , label'
-  , nothing
   , onClick
   , radio
   , runComponent
@@ -169,10 +168,6 @@ wrapWebComponent c = wrap \callback -> do
       _ -> update a
 
 -- WebUI polymorhphic combinators
-
--- effectlively hides given compoment
-nothing :: forall a b s t. WebComponent a b -> WebComponent s t
-nothing = const prozero
 
 inside :: forall a b. TagName -> WebComponent a b -> WebComponent a b
 inside tagName = inside' tagName mempty mempty
