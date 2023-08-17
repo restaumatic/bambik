@@ -7,7 +7,6 @@ import Data.Invariant.Transformers.Scoped (Scoped, adapterGeneric, constructor, 
 import Data.Maybe (Maybe(..))
 import Data.Plus ((<^), (^^))
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Optics (nothing)
 import Effect (Effect)
 import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
 import Web.MDC as MDC
@@ -45,7 +44,6 @@ instance Show Fulfillment where
   show Takeaway = "Takeaway"
   show (Delivery { address }) = "Delivery to " <> address
 
-
 formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
 formal = iso "formal" toInformal toFormal
   where
@@ -56,13 +54,13 @@ formal = iso "formal" toInformal toFormal
 
 -- View (uses business)
 
-orderComponent ∷ WebComponentWrapper Order Order
-orderComponent =
+order ∷ WebComponentWrapper Order Order
+order =
   div (
     MDC.filledText "Id" # field @"id")
   ^^
   div (
-    customerComponent # field @"customer")
+    customer # field @"customer")
   ^^
   div (
     MDC.checkbox # field @"paid")
@@ -128,8 +126,8 @@ orderComponent =
     text # dynamic # projection "show" show # projection "length" length # field @"items"
   )
 
-customerComponent :: WebComponentWrapper CustomerInformal CustomerInformal
-customerComponent =
+customer :: WebComponentWrapper CustomerInformal CustomerInformal
+customer =
   div (
     MDC.filledText "First name" # field @"firstName"
     ^^
@@ -143,14 +141,14 @@ customerComponent =
     MDC.filledText "Surename" # field @"surname"
     ) # formal
 
-itemComponent :: WebComponentWrapper Item Item
-itemComponent =
+item :: WebComponentWrapper Item Item
+item =
   MDC.filledText "Name" # field @"name"
 
 -- Glue (business + view)
 
 main :: Effect Unit
-main = runMainComponent orderComponent
+main = runMainComponent order
   { id: "61710"
   , customer:
     { firstName: "John"
