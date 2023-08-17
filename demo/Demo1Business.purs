@@ -1,6 +1,6 @@
 module Demo1Business where
 
-import Prelude hiding (div)
+import Prelude
 
 import Data.Invariant.Transformers.Scoped (Scoped, adapter)
 import Data.Profunctor (class Profunctor)
