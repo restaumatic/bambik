@@ -1,6 +1,6 @@
 module Web
-  ( WebComponent
-  , WebComponentWrapper
+  ( Widget
+  , Component
   , checkbox
   , div
   , div'
@@ -39,30 +39,30 @@ import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
 
-type WebComponentWrapper i o = WebComponent (Scoped i) (Scoped o)
+type Component i o = Widget (Scoped i) (Scoped o)
 
-newtype WebComponent i o = WebComponent ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
+newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
 
--- derive instance Newtype (WebComponent a) _
+-- derive instance Newtype (Widget a) _
 
-wrap :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> WebComponent i o
-wrap = WebComponent
+wrap :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Widget i o
+wrap = Widget
 
-unwrap :: forall i o. WebComponent i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
-unwrap (WebComponent c) = c
+unwrap :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+unwrap (Widget c) = c
 
-value :: forall a b. (a -> WebComponent b b) -> WebComponentWrapper a b -- WebComponentWrapper == DynamicWebComponent (with scope?)
+value :: forall a b. (a -> Widget b b) -> Component a b -- Component == DynamicWebComponent (with scope?)
 value f = wrapWebComponent \_ -> do
   slot <- newSlot
   pure $ \a -> replaceSlot slot $ void $ unwrap (f a) mempty
 
 
-instance Profunctor WebComponent where
+instance Profunctor Widget where
   dimap post pre c = wrap \callback -> do
     f <- unwrap c $ callback <<< pre
     pure $ f <<< post
 
-instance ProCartesian WebComponent where
+instance ProCartesian Widget where
   profirst c = wrap \abcallback -> do
     bref <- liftEffect $ Ref.new Nothing
     update <- unwrap c \a -> do
@@ -80,7 +80,7 @@ instance ProCartesian WebComponent where
       Ref.write (Just (fst ab)) aref
       update $ snd ab
 
-instance ProCocartesian WebComponent where
+instance ProCocartesian Widget where
   proleft c = wrap \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
@@ -122,7 +122,7 @@ instance ProCocartesian WebComponent where
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
 
-instance ProPlusoid WebComponent where
+instance ProPlusoid Widget where
   proplus c1 c2 = wrap \updateParent -> do
     -- TODO how to get rid of this ref?
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
@@ -151,12 +151,12 @@ instance ProPlusoid WebComponent where
       update1 a
       update2 a
 
-instance ProPlus WebComponent where
+instance ProPlus Widget where
   prozero = wrap mempty
 
 --
 
-wrapWebComponent :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> WebComponentWrapper i o
+wrapWebComponent :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Component i o
 wrapWebComponent c = wrap \callback -> do
   update <- c \a -> callback (Scoped MoreThanOnePart a)
   pure \(Scoped scope a) -> do
@@ -167,53 +167,53 @@ wrapWebComponent c = wrap \callback -> do
 
 -- WebUI polymorhphic combinators
 
-inside :: forall a b. TagName -> WebComponent a b -> WebComponent a b
+inside :: forall a b. TagName -> Widget a b -> Widget a b
 inside tagName = inside' tagName mempty mempty
 
-inside' :: forall a b. TagName -> (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
+inside' :: forall a b. TagName -> (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 inside' tagName attrs event c = wrap \callback -> do
     Tuple node f <- elAttr tagName (attrs unit) $ unwrap c callback
     liftEffect $ event node callback
     pure \a -> do
       f a
 
-text :: forall a b. String -> WebComponent a b
+text :: forall a b. String -> Widget a b
 text s = wrap \_ -> do
   S.text s
   pure $ mempty
 
-div :: forall a b. WebComponent a b -> WebComponent a b
+div :: forall a b. Widget a b -> Widget a b
 div = inside "div"
 
-div' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
+div' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 div' = inside' "div"
 
-span :: forall a b. WebComponent a b -> WebComponent a b
+span :: forall a b. Widget a b -> Widget a b
 span = inside "span"
 
-span' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
+span' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 span' = inside' "span"
 
-label :: forall a b. WebComponent a b -> WebComponent a b
+label :: forall a b. Widget a b -> Widget a b
 label = inside "label"
 
-label' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
+label' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 label' = inside' "label"
 
 
-textInput :: Attrs -> WebComponentWrapper String String
+textInput :: Attrs -> Component String String
 textInput attrs = wrapWebComponent \callback -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node $ const $ getValue node >>= callback
   pure $ setValue node
 
-checkbox :: Attrs -> WebComponentWrapper Boolean Boolean
+checkbox :: Attrs -> Component Boolean Boolean
 checkbox attrs = wrapWebComponent \callback -> do
   Tuple node _ <- elAttr "input" ("type" := "checkbox" <> attrs) (pure unit)
   onDomEvent "input" node $ const $ getChecked node >>= callback
   pure $ setChecked node
 
-radio :: Attrs -> WebComponentWrapper Boolean Unit
+radio :: Attrs -> Component Boolean Unit
 radio attrs = wrapWebComponent \callback -> do
   Tuple node _ <- elAttr "input" ("type" := "radio" <> attrs) (pure unit)
   onDomEvent "change" node $ const $ callback unit
@@ -224,12 +224,12 @@ onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
 onClick _ _ = mempty -- void $ DOM.addEventListener "click" (\_ -> callback a) node
 -- WebUI runners
 
-runComponent :: forall i o. WebComponentWrapper i o -> Builder Unit (i -> Effect Unit)
+runComponent :: forall i o. Component i o -> Builder Unit (i -> Effect Unit)
 runComponent c = do
   update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
   pure $ \a -> update (Scoped MoreThanOnePart a)
 
-runMainComponent :: forall i o. WebComponentWrapper i o -> i -> Effect Unit
+runMainComponent :: forall i o. Component i o -> i -> Effect Unit
 runMainComponent c i = do
   update <- runMainBuilderInBody $ runComponent c
   update i

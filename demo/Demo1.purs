@@ -1,60 +1,27 @@
-module Demo1 where
+module Demo1 (main) where
 
 import Prelude hiding (div)
 
-import Data.Array (length)
-import Data.Invariant.Transformers.Scoped (Scoped, constructor, field, adapter, projection)
+import Data.Invariant.Transformers.Scoped (adapter, constructor, field, projection)
 import Data.Maybe (Maybe(..))
 import Data.Plus ((<^), (^^))
-import Data.Profunctor (class Profunctor)
+import Demo1Business (CustomerInformal, Fulfillment(..), Order, formal)
 import Effect (Effect)
-import Web (WebComponentWrapper, div, value, runMainComponent, text)
+import Web (Component, div, value, runMainComponent, text)
 import Web.MDC as MDC
 
--- Business
-
-type Order =
-  { id :: String
-  , customer :: CustomerInformal
-  , items :: Array Item
-  , paid :: Boolean
-  , fulfillment :: Fulfillment
+main :: Effect Unit
+main = runMainComponent order
+  { id: "61710"
+  , customer:
+    { firstName: "John"
+    , lastName: "Doe"
+    }
+  , paid: true
+  , fulfillment: DineIn
   }
 
-type CustomerInformal =
-  { firstName :: String
-  , lastName :: String
-  }
-
-type Item =
-  { name :: String
-  }
-
-type CustomerFormal =
-  { forename :: String
-  , surname :: String
-  }
-
-data Fulfillment = DineIn | Takeaway | Delivery { address :: Address }
-
-type Address = String
-
-instance Show Fulfillment where
-  show DineIn = "Dine in"
-  show Takeaway = "Takeaway"
-  show (Delivery { address }) = "Delivery to " <> address
-
-formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
-formal = adapter "formal" toInformal toFormal
-  where
-    toFormal :: CustomerInformal -> CustomerFormal
-    toFormal { firstName: forename, lastName: surname } = { forename, surname }
-    toInformal :: CustomerFormal -> CustomerInformal
-    toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
-
--- View (uses business)
-
-order ∷ WebComponentWrapper Order Order
+order ∷ Component Order Order
 order =
   div (
     MDC.filledText "Id" # field @"id")
@@ -120,13 +87,9 @@ order =
     text ", fulfillment: "
     ^^
     text # value # projection "show" show # field @"fulfillment"
-    ^^
-    text ", no of items: "
-    ^^
-    text # value # projection "show" show # projection "length" length # field @"items"
   )
 
-customer :: WebComponentWrapper CustomerInformal CustomerInformal
+customer :: Component CustomerInformal CustomerInformal
 customer =
   div (
     MDC.filledText "First name" # field @"firstName"
@@ -140,28 +103,3 @@ customer =
     ^^
     MDC.filledText "Surename" # field @"surname"
     ) # formal
-
-item :: WebComponentWrapper Item Item
-item =
-  MDC.filledText "Name" # field @"name"
-
--- Glue (business + view)
-
-main :: Effect Unit
-main = runMainComponent order
-  { id: "61710"
-  , customer:
-    { firstName: "John"
-    , lastName: "Doe"
-    }
-  , items:
-    [ { name : "a"
-      }
-    , { name : "b"
-      }
-    , { name : "c"
-      }
-    ]
-  , paid: true
-  , fulfillment: DineIn
-  }
