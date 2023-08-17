@@ -4,10 +4,10 @@ module Web
   , checkbox
   , div
   , div'
-  , inside
-  , inside'
-  , label
+  , element'
+  , element
   , label'
+  , label
   , onClick
   , radio
   , runComponent
@@ -169,11 +169,11 @@ wrapWebComponent c = wrap \callback -> do
 
 -- WebUI polymorhphic combinators
 
-inside :: forall a b. TagName -> Widget a b -> Widget a b
-inside tagName = inside' tagName mempty mempty mempty
+element' :: forall a b. TagName -> Widget a b -> Widget a b
+element' tagName = element tagName mempty mempty mempty
 
-inside' :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-inside' tagName attrs dynAttrs event c = wrap \callback -> do
+element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+element tagName attrs dynAttrs event c = wrap \callback -> do
     Tuple node update <- elAttr tagName attrs $ unwrap c callback
     pure \a -> do
       liftEffect $ runEffectFn2 setAttributes node (show <$> attrs <> dynAttrs a)
@@ -185,23 +185,22 @@ text s = wrap \_ -> do
   pure $ mempty
 
 div :: forall a b. Widget a b -> Widget a b
-div = inside "div"
+div = element' "div"
 
 div' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-div' = inside' "div"
+div' = element "div"
 
 span :: forall a b. Widget a b -> Widget a b
-span = inside "span"
+span = element' "span"
 
 span' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-span' = inside' "span"
+span' = element "span"
 
-label :: forall a b. Widget a b -> Widget a b
-label = inside "label"
+label' :: forall a b. Widget a b -> Widget a b
+label' = element' "label"
 
-label' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-label' = inside' "label"
-
+label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+label = element "label"
 
 textInput :: Attrs -> Component String String
 textInput attrs = wrapWebComponent \callback -> do
