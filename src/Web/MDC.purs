@@ -10,6 +10,7 @@ module Web.MDC
 import Prelude hiding (zero)
 
 import Data.Profunctor.Plus (prozero, (<^), (^))
+import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
@@ -30,6 +31,8 @@ filledText hintText =
     (span' (const $ "class" := "mdc-text-field__ripple") mempty prozero)
     ^
     (span' (const $ "class" := "mdc-floating-label mdc-floating-label--float-above" <> "id" := "my-label-id") mempty (text hintText))
+    -- TODO: set mdc-floating-label--float-above only if value not null
+    -- (span' (\value -> ("class" := "mdc-floating-label" <> if not (null value) then " mdc-floating-label--float-above" else "") <> "id" := "my-label-id") mempty (text hintText))
     ^
     (Web.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
     ^

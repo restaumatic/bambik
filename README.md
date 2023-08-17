@@ -4,6 +4,9 @@
 
 > npm install && npm run demo1
 
+## Best practices
+
+- In component body, each line should start with component (e.g. `div`), `^`, `<^` or `^>`. This is for highlighting visual aspect.
 
 ## Abstract
 
