@@ -104,20 +104,16 @@ orderComponent =
     text # dynamic # field @"id"
     ^^
     text " "
-    ^^
-    (
+    ^^ (
       text # dynamic # field @"firstName"
       ^^ text " "
       ^^ text # dynamic # field @"lastName"
-      ^^
-      (
+      ^^ (
         text " ("
         ^^ text # dynamic # field @"forename"
         ^^ text " "
         ^^ text # dynamic # field @"surname"
-        ^^ text ") "
-      ) # formal
-    ) # field @"customer"
+        ^^ text ") ") # formal) # field @"customer"
     ^^
     text ", paid: "
     ^^
