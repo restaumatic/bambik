@@ -26,6 +26,7 @@ import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian, profirst, proleft, promap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Debug (spy)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -83,6 +84,8 @@ zoomIn partName (OnePart hops) = case NonEmptyArray.uncons hops of
     TwistName _ -> MoreThanOnePart -- not matching head but partName is twist
     _ -> NoPart -- otherwise
 zoomIn _ NoPart = NoPart
+
+zoomIn' partName part = let result = zoomIn partName part in spy ("\nzoomin:\npartName: " <> show partName <> " part: " <> show part <> " result: " <> show result) result
 
 invField :: forall @l i r1 r a . InvCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) -> i (Scoped (Record r1))
 invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))

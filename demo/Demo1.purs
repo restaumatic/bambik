@@ -58,11 +58,18 @@ formal = iso "formal" toInformal toFormal
 
 orderComponent ∷ WebComponentWrapper Order Order
 orderComponent =
-  div $ MDC.filledText "Id" # field @"id"
+  div
+    (
+      MDC.filledText "Id" # field @"id"
+    )
   ^^
-  div $ customerComponent # field @"customer"
+  div
+    (customerComponent # field @"customer"
+    )
   ^^
-  div $ MDC.checkbox # field @"paid"
+  div
+    (MDC.checkbox # field @"paid"
+    )
   ^^
   div
     ( MDC.radioButton
@@ -86,37 +93,42 @@ orderComponent =
         Delivery _ -> true
         _ -> false) # field @"fulfillment"
   ^^
-  div $ MDC.filledText "Foo" # nothing
+  div
+    ( MDC.filledText "Foo"
+    ) # nothing
   ^^
-  div $ MDC.filledText "Address" # field @"address" # constructor "delivery" Delivery (case _ of
+  div
+    ( div $ text "Delivery details"
+    ^^ div $ MDC.filledText "Address" # field @"address"
+    ) # constructor "delivery" Delivery (case _ of
         Delivery c -> Just c
         _ -> Nothing) # field @"fulfillment"
-  -- ^^
-  -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   ^^
-  div $ text "Summary: "
-    ^^ text # dynamic # field @"id"
-    ^^ text " "
-    ^^
-    (
-      text # dynamic # field @"firstName"
+  div
+    ( text "Summary: "
+      ^^ text # dynamic # field @"id"
       ^^ text " "
-      ^^ text # dynamic # field @"lastName"
       ^^
       (
-        text " ("
-        ^^ text # dynamic # field @"forename"
+        text # dynamic # field @"firstName"
         ^^ text " "
-        ^^ text # dynamic # field @"surname"
-        ^^ text ") "
-      ) # formal
-    ) # field @"customer"
-    ^^ text ", paid: "
-    ^^ text # dynamic # projection "show" show # field @"paid"
-    ^^ text ", fulfillment: "
-    ^^ text # dynamic # projection "show" show # field @"fulfillment"
-    ^^ text ", no of items: "
-    ^^ text # dynamic # projection "show" show # projection "length" length # field @"items"
+        ^^ text # dynamic # field @"lastName"
+        ^^
+        (
+          text " ("
+          ^^ text # dynamic # field @"forename"
+          ^^ text " "
+          ^^ text # dynamic # field @"surname"
+          ^^ text ") "
+        ) # formal
+      ) # field @"customer"
+      ^^ text ", paid: "
+      ^^ text # dynamic # projection "show" show # field @"paid"
+      ^^ text ", fulfillment: "
+      ^^ text # dynamic # projection "show" show # field @"fulfillment"
+      ^^ text ", no of items: "
+      ^^ text # dynamic # projection "show" show # projection "length" length # field @"items"
+    )
 
 customerComponent :: WebComponentWrapper CustomerInformal CustomerInformal
 customerComponent =

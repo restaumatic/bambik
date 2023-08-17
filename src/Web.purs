@@ -26,7 +26,7 @@ import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Plus (class ProPlus, class ProPlusoid, prozero)
+import Data.Plus (class ProPlus, class ProPlusoid)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -95,13 +95,12 @@ instance ProCocartesian WebComponent where
             pure newUpdate
         update $ a
       _ -> do
-        liftEffect $ destroySlot slot
+        void $ liftEffect $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
         -- interestingly, theoretically, here we could call:
         -- abcallback userInput
-        -- I don't know whether it would be right, though
-        -- is that stil relevant question?
-        pure unit
+        -- I don't know whether it would be right, though.
+        -- Is that stil relevant question?
   proright c = wrap \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
@@ -116,13 +115,12 @@ instance ProCocartesian WebComponent where
             pure newUpdate
         update $ b
       _ -> do
-        liftEffect $ destroySlot slot
+        void $ liftEffect $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
         -- interestingly, theoretically, here we could call:
         -- abcallback userInput
-        -- I don't know whether it would be right, though
-        -- is that stil relevant question?
-        pure unit
+        -- I don't know whether it would be right, though.
+        -- Is that stil relevant question?
 
 instance ProPlusoid WebComponent where
   proplus c1 c2 = wrap \updateParent -> do
@@ -205,7 +203,7 @@ label' = inside' "label"
 
 textInput :: Attrs -> WebComponentWrapper String String
 textInput attrs = wrapWebComponent \callback -> do
-  Tuple node a <- elAttr "input" attrs (pure unit)
+  Tuple node _ <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node $ const $ getValue node >>= callback
   pure $ setValue node
 
@@ -223,7 +221,7 @@ radio attrs = wrapWebComponent \callback -> do
 
 -- TODO
 onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
-onClick node callback = mempty -- void $ DOM.addEventListener "click" (\_ -> callback a) node
+onClick _ _ = mempty -- void $ DOM.addEventListener "click" (\_ -> callback a) node
 -- WebUI runners
 
 runComponent :: forall i o. WebComponentWrapper i o -> Builder Unit (i -> Effect Unit)
