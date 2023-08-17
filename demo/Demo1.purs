@@ -130,23 +130,18 @@ orderComponent =
 
 customerComponent :: WebComponentWrapper CustomerInformal CustomerInformal
 customerComponent =
-  (
-    div
-      (
-      MDC.filledText "First name" # field @"firstName"
-      ^^
-      MDC.filledText "Last name" # field @"lastName"
-      )
+  div (
+    MDC.filledText "First name" # field @"firstName"
     ^^
-    text "or more formally:"
+    MDC.filledText "Last name" # field @"lastName")
+  ^^
+  text "or more formally:"
+  ^^
+  div (
+    MDC.filledText "Forename" # field @"forename"
     ^^
-    div
-      (
-      MDC.filledText "Forename" # field @"forename"
-      ^^
-      MDC.filledText "Surename" # field @"surname"
-      ) # formal
-  )
+    MDC.filledText "Surename" # field @"surname"
+    ) # formal
 
 itemComponent :: WebComponentWrapper Item Item
 itemComponent = MDC.filledText "Name" # field @"name"
