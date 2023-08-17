@@ -94,12 +94,12 @@ orderComponent =
   ^^
   div (
     div (
-      text "Delivery details"
-      ^^
-      div (
-        MDC.filledText "Address") # field @"address")) # constructor "delivery" Delivery (case _ of
-        Delivery c -> Just c
-        _ -> Nothing) # field @"fulfillment"
+      text "Delivery details")
+    ^^
+    div (
+      MDC.filledText "Address") # field @"address") # constructor "delivery" Delivery (case _ of
+      Delivery c -> Just c
+      _ -> Nothing) # field @"fulfillment"
   ^^
   div (
     text "Summary: "
