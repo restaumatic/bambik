@@ -163,7 +163,5 @@ main = runMainComponent order
       }
     ]
   , paid: true
-  , fulfillment: Delivery
-    { address: ""
-    }
+  , fulfillment: DineIn
   }
