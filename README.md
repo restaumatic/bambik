@@ -6,7 +6,8 @@
 
 ## Best practices
 
-- In component body, each line should start with component (e.g. `div`), `^`, `<^` or `^>`. This is for highlighting visual aspect.
+  * In component body, each line should start with sub component (e.g. `div`). In particular place `^`, `<^` or `^>` at the end of line. This is for highlighting visual aspect.
+  * In component body read `#` as *of*, so `text # value # field @"firstName"` can be read as *text of value of field "firstName"*.
 
 ## Abstract
 

@@ -24,81 +24,58 @@ main = runMainComponent order
 order ∷ Component Order Order
 order =
   div' (
-    MDC.filledText "Id" # field @"id")
-  ^
+    MDC.filledText "Id" # field @"id") ^
   div' (
-    customer # field @"customer")
-  ^
+    customer # field @"customer") ^
   div' (
-    MDC.checkbox # field @"paid")
-  ^
+    MDC.checkbox # field @"paid") ^
   div' (
-    MDC.radioButton
-    <^
+    MDC.radioButton <^
     text "Dine in") # adapter "dine-in" (const DineIn) (case _ of
         DineIn -> true
-        _ -> false) # field @"fulfillment"
-  ^
+        _ -> false) # field @"fulfillment" ^
   div' (
-    MDC.radioButton
-    <^
+    MDC.radioButton <^
     text "Takeaway") # adapter "takeaway" (const Takeaway) (case _ of
         Takeaway -> true
-        _ -> false) # field @"fulfillment"
-  ^
+        _ -> false) # field @"fulfillment" ^
   div' (
-    MDC.radioButton
-    <^
+    MDC.radioButton <^
     text "Delivery"
     ) # adapter "delivery" (const (Delivery { address: "" })) (case _ of
         Delivery _ -> true
-        _ -> false) # field @"fulfillment"
-  ^
+        _ -> false) # field @"fulfillment" ^
   div' (
     div' (
-      text "Delivery details")
-    ^
+      text "Delivery details") ^
     div' (
       MDC.filledText "Address") # field @"address") # constructor "delivery" Delivery (case _ of
       Delivery c -> Just c
-      _ -> Nothing) # field @"fulfillment"
-  ^
+      _ -> Nothing) # field @"fulfillment" ^
   div' (
-    text "Summary: "
-    ^
-    text # value # field @"id"
-    ^
-    text " "
-    ^ (
-      text # value # field @"firstName"
-      ^ text " "
-      ^ text # value # field @"lastName"
-      ^ (
-        text " ("
-        ^ text # value # field @"forename"
-        ^ text " "
-        ^ text # value # field @"surname"
-        ^ text ") ") # formal) # field @"customer"
-    ^
-    text ", paid: "
-    ^
-    text # value # projection "show" show # field @"paid"
-    ^
-    text ", fulfillment: "
-    ^
+    text "Summary: " ^
+    text # value # field @"id" ^
+    text " " ^ (
+      text # value # field @"firstName" ^
+      text " " ^
+      text # value # field @"lastName" ^ (
+        text " (" ^
+        text # value # field @"forename" ^
+        text " " ^
+        text # value # field @"surname" ^
+        text ") ") # formal) # field @"customer" ^
+    text ", paid: " ^
+    text # value # projection "show" show # field @"paid" ^
+    text ", fulfillment: " ^
     text # value # projection "show" show # field @"fulfillment"
   )
 
 customer :: Component CustomerInformal CustomerInformal
 customer =
   div' (
-    MDC.filledText "First name" # field @"firstName"
-    ^
-    MDC.filledText "Last name" # field @"lastName")
-  ^
-  text "or more formally:"
-  ^
+    MDC.filledText "First name" # field @"firstName" ^
+    MDC.filledText "Last name" # field @"lastName") ^
+  text "or more formally:" ^
   div' (
-    MDC.filledText "Forename" # field @"forename"
-    ^
+    MDC.filledText "Forename" # field @"forename" ^
     MDC.filledText "Surename" # field @"surname") # formal
