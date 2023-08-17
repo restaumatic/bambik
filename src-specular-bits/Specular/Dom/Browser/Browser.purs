@@ -9,7 +9,17 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 
-type Attrs = Object String
+type Attrs = Object AttrValue
+
+data AttrValue = ClassNames String | AttrValue String
+
+instance Semigroup AttrValue where
+  append (ClassNames classNames1) (ClassNames classNames2) = ClassNames $ classNames1 <> " " <> classNames2
+  append _ second = second
+
+instance Show AttrValue where
+  show (ClassNames s) = s
+  show (AttrValue s) = s
 
 -- | Convenient syntax for building Attrs
 infix 8 Object.singleton as :=
@@ -50,7 +60,7 @@ createElement :: TagName -> Effect Node
 createElement = createElementNS Nothing
 
 setAttributes :: Node -> Attrs -> Effect Unit
-setAttributes node attrs = runEffectFn2 _setAttributes node attrs
+setAttributes node attrs = runEffectFn2 _setAttributes node (show <$> attrs)
 
 removeAttributes :: Node -> Array String -> Effect Unit
 removeAttributes = removeAttributesImpl
@@ -101,7 +111,7 @@ foreign import setTextImpl :: Node -> String -> Effect Unit
 foreign import createDocumentFragmentImpl :: Effect Node
 foreign import createElementNSImpl :: Namespace -> TagName -> Effect Node
 foreign import createElementImpl :: TagName -> Effect Node
-foreign import _setAttributes :: EffectFn2 Node Attrs Unit
+foreign import _setAttributes :: EffectFn2 Node (Object String) Unit
 foreign import removeAttributesImpl :: Node -> Array String -> Effect Unit
 foreign import parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> Effect (Maybe Node)
 foreign import insertBeforeImpl :: Node -> Node -> Node -> Effect Unit

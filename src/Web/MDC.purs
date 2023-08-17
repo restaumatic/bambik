@@ -9,73 +9,72 @@ module Web.MDC
 
 import Prelude hiding (zero)
 
+import Data.Invariant.Transformers.Scoped (Scoped(..))
 import Data.Profunctor.Plus (prozero, (<^), (^))
 import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Specular.Dom.Browser (Node, (:=))
+import Specular.Dom.Browser (AttrValue(..), Node, (:=))
 import Web (Widget, Component, div', inside', label', radio, span', text)
 import Web as Web
 
 button :: forall a. Widget a a -> Widget a a
 button wrapped =
-  inside' "button" (const $ "class" := "mdc-button mdc-button--raised foo-button") ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick) $
-    (div' (const $ "class" := "mdc-button__ripple") mempty prozero)
+  inside' "button" ("class" := ClassNames "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick) $
+    (div' ("class" := ClassNames "mdc-button__ripple") mempty mempty prozero)
     ^
-    (span' (const $ "class" := "mdc-button__label") mempty wrapped)
+    (span' ("class" := ClassNames "mdc-button__label") mempty mempty wrapped)
 
 filledText :: String -> Component String String
 filledText hintText =
-  label' (const $ "class" := "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
-    (span' (const $ "class" := "mdc-text-field__ripple") mempty prozero)
+  label' ("class" := ClassNames "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
+    (span' ("class" := ClassNames "mdc-text-field__ripple") mempty mempty prozero)
     ^
-    (span' (const $ "class" := "mdc-floating-label mdc-floating-label--float-above" <> "id" := "my-label-id") mempty (text hintText))
-    -- TODO: set mdc-floating-label--float-above only if value not null
-    -- (span' (\value -> ("class" := "mdc-floating-label" <> if not (null value) then " mdc-floating-label--float-above" else "") <> "id" := "my-label-id") mempty (text hintText))
+    (span' ("class" := ClassNames "mdc-floating-label" <> "id" := AttrValue "my-label-id") (\(Scoped _ value) -> if not (null value) then "class" := ClassNames "mdc-floating-label--float-above" else mempty)) mempty (text hintText)
     ^
-    (Web.textInput ("class" := "mdc-text-field__input" <> "type" := "text" <> "aria-labelledby" := "my-label-id"))
+    (Web.textInput ("class" := ClassNames "mdc-text-field__input" <> "type" := AttrValue "text" <> "aria-labelledby" := AttrValue "my-label-id"))
     ^
-    (span' (const $ "class" := "mdc-line-ripple") mempty prozero)
+    (span' ("class" := ClassNames "mdc-line-ripple") mempty mempty prozero)
 
 checkbox :: Component Boolean Boolean
 checkbox =
-  div' (const $ "class" := "mdc-form-field") mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
+  div' ("class" := ClassNames "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
     (
-    div' (const $ "class" := "mdc-checkbox") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
+    div' ("class" := ClassNames "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
       (
-      Web.checkbox ("class" := "mdc-checkbox__native-control")
+      Web.checkbox ("class" := ClassNames "mdc-checkbox__native-control")
       ^
-      div' (const $ "class":= "mdc-checkbox__background") mempty
+      div' ("class":= ClassNames "mdc-checkbox__background") mempty mempty
         (
-        inside' "svg" (const $ "class" := "mdc-checkbox__checkmark" <> "viewBox" := "0 0 24 24") mempty
+        inside' "svg" ("class" := ClassNames "mdc-checkbox__checkmark" <> "viewBox" := AttrValue "0 0 24 24") mempty mempty
           (
-          inside' "path" (const $ "class" := "mdc-checkbox__checkmark-path" <> "fill" := "none" <> "d" := "M1.73,12.91 8.1,19.28 22.79,4.59") mempty prozero
+          inside' "path" ("class" := ClassNames "mdc-checkbox__checkmark-path" <> "fill" := AttrValue "none" <> "d" := AttrValue "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty prozero
           )
         ^
-        div' (const $ "class" := "mdc-checkbox__mixedmark") mempty prozero
+        div' ("class" := ClassNames "mdc-checkbox__mixedmark") mempty mempty prozero
         )
       ^
-      div' (const $ "class" := "mdc-checkbox__ripple") mempty prozero
+      div' ("class" := ClassNames "mdc-checkbox__ripple") mempty mempty prozero
       )
     )
 
 radioButton :: Component Boolean Unit -- TODO
-radioButton = div' (const $ "class" := "mdc-form-field") mempty
+radioButton = div' ("class" := ClassNames "mdc-form-field") mempty mempty
   (
-    (div' (const $ "class" := "mdc-radio") (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
-      (radio ("class" := "mdc-radio__native-control" <> "id" := "radio-1" ))
+    (div' ("class" := ClassNames "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
+      (radio ("class" := ClassNames "mdc-radio__native-control" <> "id" := AttrValue "radio-1" ))
       <^
-      (div' (const $ "class" := "mdc-radio__background") mempty $
-        div' (const $ "class" := "mdc-radio__outer-circle") mempty prozero
+      (div' ("class" := ClassNames "mdc-radio__background") mempty mempty $
+        div' ("class" := ClassNames "mdc-radio__outer-circle") mempty mempty prozero
         ^
-        div' (const $ "class" := "mdc-radio__inner-circle") mempty prozero
+        div' ("class" := ClassNames "mdc-radio__inner-circle") mempty mempty prozero
       )
       ^
-      (div' (const $ "class" := "mdc-radio__ripple") mempty prozero)
+      (div' ("class" := ClassNames "mdc-radio__ripple") mempty mempty prozero)
     )
     -- <>
-    -- (Web.inside "label" (const $ "for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
+    -- (Web.inside "label" ("for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")
   )
 
 -- list :: forall a. Component a -> Component (Array a)

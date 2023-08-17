@@ -14,8 +14,8 @@ main :: Effect Unit
 main = runMainComponent order
   { id: "61710"
   , customer:
-    { firstName: "John"
-    , lastName: "Doe"
+    { firstName: ""
+    , lastName: ""
     }
   , paid: true
   , fulfillment: DineIn

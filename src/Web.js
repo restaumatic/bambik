@@ -29,3 +29,13 @@ export function setChecked(node) {
     };
   };
 }
+
+// setAttributes :: EffectFn2 Node (Object String) Unit
+export function setAttributes(node, attrs) {
+  for (var k in attrs) {
+    if (attrs.hasOwnProperty(k)) {
+      node.setAttribute(k, attrs[k]);
+    }
+  }
+}
+

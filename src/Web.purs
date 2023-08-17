@@ -22,19 +22,21 @@ module Web
 
 import Prelude hiding (zero)
 
-import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
+import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Plus (class ProPlus, class ProPlusoid)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
+import Data.Profunctor.Plus (class ProPlus, class ProPlusoid)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
-import Specular.Dom.Browser (Attrs, Node, TagName, onDomEvent, (:=))
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Foreign.Object (Object)
+import Specular.Dom.Browser (AttrValue(..), Attrs, Node, TagName, onDomEvent, (:=))
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
@@ -168,14 +170,14 @@ wrapWebComponent c = wrap \callback -> do
 -- WebUI polymorhphic combinators
 
 inside :: forall a b. TagName -> Widget a b -> Widget a b
-inside tagName = inside' tagName mempty mempty
+inside tagName = inside' tagName mempty mempty mempty
 
-inside' :: forall a b. TagName -> (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-inside' tagName attrs event c = wrap \callback -> do
-    Tuple node f <- elAttr tagName (attrs unit) $ unwrap c callback
-    liftEffect $ event node callback
+inside' :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+inside' tagName attrs dynAttrs event c = wrap \callback -> do
+    Tuple node update <- elAttr tagName attrs $ unwrap c callback
     pure \a -> do
-      f a
+      liftEffect $ runEffectFn2 setAttributes node (show <$> attrs <> dynAttrs a)
+      update a
 
 text :: forall a b. String -> Widget a b
 text s = wrap \_ -> do
@@ -185,19 +187,19 @@ text s = wrap \_ -> do
 div :: forall a b. Widget a b -> Widget a b
 div = inside "div"
 
-div' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+div' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 div' = inside' "div"
 
 span :: forall a b. Widget a b -> Widget a b
 span = inside "span"
 
-span' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+span' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 span' = inside' "span"
 
 label :: forall a b. Widget a b -> Widget a b
 label = inside "label"
 
-label' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+label' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
 label' = inside' "label"
 
 
@@ -209,13 +211,13 @@ textInput attrs = wrapWebComponent \callback -> do
 
 checkbox :: Attrs -> Component Boolean Boolean
 checkbox attrs = wrapWebComponent \callback -> do
-  Tuple node _ <- elAttr "input" ("type" := "checkbox" <> attrs) (pure unit)
+  Tuple node _ <- elAttr "input" ("type" := AttrValue "checkbox" <> attrs) (pure unit)
   onDomEvent "input" node $ const $ getChecked node >>= callback
   pure $ setChecked node
 
 radio :: Attrs -> Component Boolean Unit
 radio attrs = wrapWebComponent \callback -> do
-  Tuple node _ <- elAttr "input" ("type" := "radio" <> attrs) (pure unit)
+  Tuple node _ <- elAttr "input" ("type" := AttrValue "radio" <> attrs) (pure unit)
   onDomEvent "change" node $ const $ callback unit
   pure $ setChecked node
 
@@ -238,3 +240,4 @@ foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
 foreign import setChecked :: Node -> Boolean -> Effect Unit
+foreign import setAttributes :: EffectFn2 Node (Object String) Unit
