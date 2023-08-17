@@ -4,7 +4,7 @@ import Prelude hiding (div)
 
 import Data.Array (length, reverse)
 import Data.Invariant.Transformers.Scoped (Scoped, proAdapter, proField, proProjection)
-import Data.Plus ((^^))
+import Data.Plus ((<^), (^^))
 import Data.Profunctor (class Profunctor)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
@@ -18,6 +18,7 @@ type Order =
   , customer :: CustomerInformal
   , items :: Array Item
   , paid :: Boolean
+  , fulfillment :: Fulfillment
   }
 
 type CustomerInformal =
@@ -33,6 +34,14 @@ type CustomerFormal =
   { forename :: String
   , surname :: String
   }
+
+data Fulfillment = DineIn | Takeaway | Delivery
+
+instance Show Fulfillment where
+  show DineIn = "Dine in"
+  show Takeaway = "Takeaway"
+  show Delivery = "Delivery"
+
 
 formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
 formal = proAdapter "formal" toInformal toFormal
@@ -54,6 +63,28 @@ orderComponent =
   div $ customerComponent # proField @"customer"
   ^^
   div $ MDC.checkbox # proField @"paid"
+  ^^
+  div
+    ( MDC.radioButton
+    <^ text "Dine in"
+    ) # proAdapter "dine-in" (const DineIn) (case _ of
+        DineIn -> true
+        _ -> false)  # proField @"fulfillment"
+  ^^
+  div
+    ( MDC.radioButton
+    <^ text "Takeaway"
+    ) # proAdapter "takeaway" (const Takeaway) (case _ of
+        Takeaway -> true
+        _ -> false
+        ) # proField @"fulfillment"
+  ^^
+  div
+    ( MDC.radioButton
+    <^ text "Delivery"
+    ) # proAdapter "delivery" (const Delivery) (case _ of
+        Delivery -> true
+        _ -> false) # proField @"fulfillment"
   -- ^^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   ^^
@@ -76,6 +107,8 @@ orderComponent =
     ) # proField @"customer"
     ^^ text ", paid: "
     ^^ text # dynamic # proProjection "show" show # proField @"paid"
+    ^^ text ", fulfillment: "
+    ^^ text # dynamic # proProjection "show" show # proField @"fulfillment"
     ^^ text ", no of items: "
     ^^ text # dynamic # proProjection "show" show # proProjection "length" length # proField @"items"
 
@@ -107,4 +140,4 @@ itemComponent = MDC.filledTextField "Name" # proAdapter "reverse" reverseString 
 main :: Effect Unit
 main = do
   updateOrder <- runMainComponent orderComponent
-  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}], paid: true}
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}], paid: true, fulfillment: Delivery}

@@ -26,7 +26,7 @@ import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Plus (class ProPlus, class ProPlusoid, prozero)
+import Data.Plus (class ProPlus, class ProPlusoid)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -140,6 +140,18 @@ instance ProPlusoid WebComponent where
     pure \a -> do
       update1 a
       update2 a
+  proplusfirst c1 c2 = wrap \updateParent -> do
+    update1 <- unwrap c1 updateParent
+    update2 <- unwrap c2 mempty
+    pure \a -> do
+      update1 a
+      update2 a
+  proplussecond c1 c2 = wrap \updateParent -> do
+    update1 <- unwrap c1 mempty
+    update2 <- unwrap c2 updateParent
+    pure \a -> do
+      update1 a
+      update2 a
 
 instance ProPlus WebComponent where
   prozero = wrap mempty
@@ -190,34 +202,24 @@ label = inside "label"
 label' :: forall a b. (Unit -> Attrs) -> (Node -> (b -> Effect Unit) -> Effect Unit) -> WebComponent a b -> WebComponent a b
 label' = inside' "label"
 
-foreign import getTextInputValue :: Node -> Effect String
-foreign import setTextInputValue :: Node -> String -> Effect Unit
-foreign import getCheckboxChecked :: Node -> Effect Boolean
-foreign import setCheckboxChecked :: Node -> Boolean -> Effect Unit
 
 textInput :: Attrs -> WebComponentWrapper String String
 textInput attrs = wrapWebComponent \callback -> do
   Tuple node a <- elAttr "input" attrs (pure unit)
-  onDomEvent "input" node \event -> do
-    getTextInputValue node >>= callback
-  pure $ setTextInputValue node
+  onDomEvent "input" node $ const $ getValue node >>= callback
+  pure $ setValue node
 
 checkbox :: Attrs -> WebComponentWrapper Boolean Boolean
 checkbox attrs = wrapWebComponent \callback -> do
-  Tuple node a <- elAttr "input" attrs (pure unit)
-  onDomEvent "input" node \event -> do
-    getCheckboxChecked node >>= callback
-  pure $ setCheckboxChecked node
+  Tuple node _ <- elAttr "input" ("type" := "checkbox" <> attrs) (pure unit)
+  onDomEvent "input" node $ const $ getChecked node >>= callback
+  pure $ setChecked node
 
--- TODO
-radio :: (Boolean -> Attrs) -> WebComponent Boolean Boolean -- TODO
-radio attrs = prozero # inside' "input" (\_ -> let enabled = false in ("type" := "radio") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \node callback -> do
-  mempty
-  -- setCheckboxChecked node value
-  -- onDomEvent "change" node (\_ -> getCheckboxChecked node >>= callback)
--- radio :: forall a b f. Applicative f => (a -> Attrs) -> ComponentWrapper f a b
--- radio attrs = invzero # (inside "input" (\enabled -> ("type" := "checkbox") <> (if enabled then "checked" := "checked" else mempty) <> attrs enabled) \_ node -> do
---   domEventWithSample (\_ -> getCheckboxChecked node <#> \value -> { path: [], value }) "change" node)
+radio :: Attrs -> WebComponentWrapper Boolean Unit
+radio attrs = wrapWebComponent \callback -> do
+  Tuple node _ <- elAttr "input" ("type" := "radio" <> attrs) (pure unit)
+  onDomEvent "change" node $ const $ callback unit
+  pure $ setChecked node
 
 -- TODO
 onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
@@ -231,3 +233,8 @@ runComponent c = do
 
 runMainComponent :: forall i o. WebComponentWrapper i o -> Effect (i -> Effect Unit)
 runMainComponent = runMainBuilderInBody <<< runComponent
+
+foreign import getValue :: Node -> Effect String
+foreign import setValue :: Node -> String -> Effect Unit
+foreign import getChecked :: Node -> Effect Boolean
+foreign import setChecked :: Node -> Boolean -> Effect Unit

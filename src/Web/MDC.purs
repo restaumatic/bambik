@@ -9,7 +9,7 @@ module Web.MDC
 
 import Prelude hiding (zero)
 
-import Data.Plus (prozero, (^^))
+import Data.Plus (prozero, (<^), (^^))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
@@ -41,7 +41,7 @@ checkbox =
     (
     div' (const $ "class" := "mdc-checkbox") (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
       (
-      Web.checkbox ("class" := "mdc-checkbox__native-control" <> "type" := "checkbox")
+      Web.checkbox ("class" := "mdc-checkbox__native-control")
       ^^
       div' (const $ "class":= "mdc-checkbox__background") mempty
         (
@@ -57,12 +57,12 @@ checkbox =
       )
     )
 
-radioButton :: WebComponent Boolean Boolean -- TODO
+radioButton :: WebComponentWrapper Boolean Unit -- TODO
 radioButton = div' (const $ "class" := "mdc-form-field") mempty
   (
     (div' (const $ "class" := "mdc-radio") (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
-      (radio (const $ "class" := "mdc-radio__native-control" <> "id" := "radio-1"))
-      ^^
+      (radio ("class" := "mdc-radio__native-control" <> "id" := "radio-1" ))
+      <^
       (div' (const $ "class" := "mdc-radio__background") mempty $
         div' (const $ "class" := "mdc-radio__outer-circle") mempty prozero
         ^^
@@ -92,9 +92,20 @@ radioButton = div' (const $ "class" := "mdc-form-field") mempty
 --               callbackas newas
 --             liftEffect $ update a
 
+
+mdcWith :: ComponentClass -> Node -> (WebUI -> Node -> Effect Unit) -> Effect Unit
+mdcWith class_ node init = do
+  component <- new class_ node
+  pure unit
+  -- Tuple _ cleanup <- (map fst <<< runCleanupT) $ init component node
+  -- pushDelayed cleanups cleanup
+  where
+    new :: ComponentClass -> Node -> Effect WebUI
+    new cls node = liftEffect $ runEffectFn2 _new cls node
+
 foreign import data ComponentClass :: Type
 foreign import data WebUI :: Type
-
+foreign import _new :: EffectFn2 ComponentClass Node WebUI
 foreign import material
   :: { textField :: { "MDCTextField" :: ComponentClass }
      , ripple :: { "MDCRipple" :: ComponentClass }
@@ -110,14 +121,3 @@ foreign import material
      , formField :: { "MDCFormField" :: ComponentClass }
      }
 
-foreign import _new :: EffectFn2 ComponentClass Node WebUI
-
-mdcWith :: ComponentClass -> Node -> (WebUI -> Node -> Effect Unit) -> Effect Unit
-mdcWith class_ node init = do
-  component <- new class_ node
-  pure unit
-  -- Tuple _ cleanup <- (map fst <<< runCleanupT) $ init component node
-  -- pushDelayed cleanups cleanup
-  where
-    new :: ComponentClass -> Node -> Effect WebUI
-    new cls node = liftEffect $ runEffectFn2 _new cls node

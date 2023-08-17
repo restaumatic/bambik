@@ -129,7 +129,7 @@ proProjection name f = profirst >>> promap
   (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
 
 proAdapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
-proAdapter name inside outside = promap
-  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (outside b))
-  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (inside a))
+proAdapter name outside inside = promap
+  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
+  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
