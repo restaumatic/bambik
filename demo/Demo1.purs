@@ -144,7 +144,8 @@ customerComponent =
     ) # formal
 
 itemComponent :: WebComponentWrapper Item Item
-itemComponent = MDC.filledText "Name" # field @"name"
+itemComponent =
+  MDC.filledText "Name" # field @"name"
 
 -- Glue (business + view)
 
