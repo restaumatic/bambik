@@ -7,15 +7,15 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Plus ((<^), (^))
 import Demo1Business (CustomerInformal, Fulfillment(..), Order, formal)
 import Effect (Effect)
-import Web (Component, div, value, runMainComponent, text)
+import Web (Component, div', value, runMainComponent, text)
 import Web.MDC as MDC
 
 main :: Effect Unit
 main = runMainComponent order
   { id: "61710"
   , customer:
-    { firstName: ""
-    , lastName: ""
+    { firstName: "John"
+    , lastName: "Doe"
     }
   , paid: true
   , fulfillment: DineIn
@@ -23,30 +23,30 @@ main = runMainComponent order
 
 order ∷ Component Order Order
 order =
-  div (
+  div' (
     MDC.filledText "Id" # field @"id")
   ^
-  div (
+  div' (
     customer # field @"customer")
   ^
-  div (
+  div' (
     MDC.checkbox # field @"paid")
   ^
-  div (
+  div' (
     MDC.radioButton
     <^
     text "Dine in") # adapter "dine-in" (const DineIn) (case _ of
         DineIn -> true
         _ -> false) # field @"fulfillment"
   ^
-  div (
+  div' (
     MDC.radioButton
     <^
     text "Takeaway") # adapter "takeaway" (const Takeaway) (case _ of
         Takeaway -> true
         _ -> false) # field @"fulfillment"
   ^
-  div (
+  div' (
     MDC.radioButton
     <^
     text "Delivery"
@@ -54,16 +54,16 @@ order =
         Delivery _ -> true
         _ -> false) # field @"fulfillment"
   ^
-  div (
-    div (
+  div' (
+    div' (
       text "Delivery details")
     ^
-    div (
+    div' (
       MDC.filledText "Address") # field @"address") # constructor "delivery" Delivery (case _ of
       Delivery c -> Just c
       _ -> Nothing) # field @"fulfillment"
   ^
-  div (
+  div' (
     text "Summary: "
     ^
     text # value # field @"id"
@@ -91,14 +91,14 @@ order =
 
 customer :: Component CustomerInformal CustomerInformal
 customer =
-  div (
+  div' (
     MDC.filledText "First name" # field @"firstName"
     ^
     MDC.filledText "Last name" # field @"lastName")
   ^
   text "or more formally:"
   ^
-  div (
+  div' (
     MDC.filledText "Forename" # field @"forename"
     ^
     MDC.filledText "Surename" # field @"surname") # formal

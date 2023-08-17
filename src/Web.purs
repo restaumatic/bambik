@@ -2,8 +2,8 @@ module Web
   ( Component
   , Widget
   , checkbox
-  , div
   , div'
+  , div
   , element'
   , element
   , label'
@@ -12,8 +12,8 @@ module Web
   , radio
   , runComponent
   , runMainComponent
-  , span
   , span'
+  , span
   , text
   , textInput
   , value
@@ -184,17 +184,17 @@ text s = wrap \_ -> do
   S.text s
   pure $ mempty
 
-div :: forall a b. Widget a b -> Widget a b
-div = element' "div"
+div' :: forall a b. Widget a b -> Widget a b
+div' = element' "div"
 
-div' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-div' = element "div"
+div :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+div = element "div"
 
-span :: forall a b. Widget a b -> Widget a b
-span = element' "span"
+span' :: forall a b. Widget a b -> Widget a b
+span' = element' "span"
 
-span' :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-span' = element "span"
+span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+span = element "span"
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = element' "label"
@@ -223,7 +223,6 @@ radio attrs = wrapWebComponent \callback -> do
 -- TODO
 onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
 onClick _ _ = mempty -- void $ DOM.addEventListener "click" (\_ -> callback a) node
--- WebUI runners
 
 runComponent :: forall i o. Component i o -> Builder Unit (i -> Effect Unit)
 runComponent c = do
