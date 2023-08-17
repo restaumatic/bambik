@@ -2,16 +2,16 @@ module Demo1 where
 
 import Prelude hiding (div)
 
-import Data.Array (length, reverse)
-import Data.Invariant.Transformers.Scoped (Scoped, adapter, field, projection)
+import Data.Array (length)
+import Data.Invariant.Transformers.Scoped (Scoped, adapterGeneric, constructor, field, iso, projection)
+import Data.Maybe (Maybe(..))
 import Data.Plus ((<^), (^^))
 import Data.Profunctor (class Profunctor)
-import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Effect (Effect)
-import Web (WebComponentWrapper, div, dynamic, runMainComponent, text)
+import Web (WebComponentWrapper, div, dynamic, nothing, runMainComponent, text)
 import Web.MDC as MDC
 
--- business
+-- Business
 
 type Order =
   { id :: String
@@ -35,24 +35,23 @@ type CustomerFormal =
   , surname :: String
   }
 
-data Fulfillment = DineIn | Takeaway | Delivery
+data Fulfillment = DineIn | Takeaway | Delivery { address :: Address }
+
+type Address = String
 
 instance Show Fulfillment where
   show DineIn = "Dine in"
   show Takeaway = "Takeaway"
-  show Delivery = "Delivery"
+  show (Delivery { address }) = "Delivery to " <> address
 
 
 formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
-formal = adapter "formal" toInformal toFormal
+formal = iso "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }
     toInformal :: CustomerFormal -> CustomerInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
-
-reverseString ∷ String -> String
-reverseString = toCharArray >>> reverse >>> fromCharArray
 
 -- View (uses business)
 
@@ -67,14 +66,14 @@ orderComponent =
   div
     ( MDC.radioButton
     <^ text "Dine in"
-    ) # adapter "dine-in" (const DineIn) (case _ of
+    ) # adapterGeneric "dine-in" (const DineIn) (case _ of
         DineIn -> true
         _ -> false) # field @"fulfillment"
   ^^
   div
     ( MDC.radioButton
     <^ text "Takeaway"
-    ) # adapter "takeaway" (const Takeaway) (case _ of
+    ) # adapterGeneric "takeaway" (const Takeaway) (case _ of
         Takeaway -> true
         _ -> false
         ) # field @"fulfillment"
@@ -82,9 +81,15 @@ orderComponent =
   div
     ( MDC.radioButton
     <^ text "Delivery"
-    ) # adapter "delivery" (const Delivery) (case _ of
-        Delivery -> true
+    ) # adapterGeneric "delivery" (const (Delivery { address: "" })) (case _ of
+        Delivery _ -> true
         _ -> false) # field @"fulfillment"
+  ^^
+  div $ MDC.filledText "Foo" # nothing
+  ^^
+  div $ MDC.filledText "Address" # field @"address" # constructor "delivery" Delivery (case _ of
+        Delivery c -> Just c
+        _ -> Nothing) # field @"fulfillment"
   -- ^^
   -- MDC.list itemComponent # (div # unsafeThrow "!") # items
   ^^
@@ -133,11 +138,11 @@ customerComponent =
   )
 
 itemComponent :: WebComponentWrapper Item Item
-itemComponent = MDC.filledText "Name" # adapter "reverse" reverseString reverseString # adapter "reverse" reverseString reverseString # field @"name"
+itemComponent = MDC.filledText "Name" # field @"name"
 
 -- Glue (business + view)
 
 main :: Effect Unit
 main = do
   updateOrder <- runMainComponent orderComponent
-  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}], paid: true, fulfillment: Delivery}
+  updateOrder { id: "61710", customer: { firstName: "John", lastName: "Doe"}, items: [ {name : "a"}, {name : "b"}, {name : "c"}], paid: true, fulfillment: Delivery { address: ""}}

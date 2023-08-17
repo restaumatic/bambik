@@ -9,6 +9,7 @@ module Web
   , inside'
   , label
   , label'
+  , nothing
   , onClick
   , radio
   , runComponent
@@ -26,7 +27,7 @@ import Control.Monad.Replace (destroySlot, newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Plus (class ProPlus, class ProPlusoid)
+import Data.Plus (class ProPlus, class ProPlusoid, prozero)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -168,6 +169,10 @@ wrapWebComponent c = wrap \callback -> do
       _ -> update a
 
 -- WebUI polymorhphic combinators
+
+-- effectlively hides given compoment
+nothing :: forall a b s t. WebComponent a b -> WebComponent s t
+nothing = const prozero
 
 inside :: forall a b. TagName -> WebComponent a b -> WebComponent a b
 inside tagName = inside' tagName mempty mempty

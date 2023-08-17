@@ -2,13 +2,14 @@ module Data.Invariant.Transformers.Scoped
   ( Part(..)
   , PartName
   , Scoped(..)
+  , iso
+  , adapterGeneric
+  , constructor
+  , field
   , invAdapter
   , invConstructor
   , invField
   , invProjection
-  , field
-  , adapter
-  , proConstructor
   , projection
   )
   where
@@ -77,7 +78,7 @@ zoomIn partName (OnePart hops) = case NonEmptyArray.uncons hops of
   { head, tail } | head == partName -> case uncons tail of -- matching head
     Just { head, tail } -> OnePart $ NonEmptyArray.cons' head tail -- non empty tail
     Nothing -> MoreThanOnePart -- empty tail
-  { head: TwistName twistName, tail } -> MoreThanOnePart -- not matching head but head is twist
+  { head: TwistName twistName } -> MoreThanOnePart -- not matching head but head is twist
   _ -> case partName of
     TwistName _ -> MoreThanOnePart -- not matching head but partName is twist
     _ -> NoPart -- otherwise
@@ -118,8 +119,8 @@ field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l
       (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
       (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
 
-proConstructor :: forall i a s. ProCocartesian i => String -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
-proConstructor name construct deconstruct = proleft >>> promap
+constructor :: forall i a s. ProCocartesian i => String -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
+constructor name construct deconstruct = proleft >>> promap
   (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn (PartName name) c) a)) (deconstruct s))
   (\saors -> either (\(Scoped c a) -> Scoped (zoomOut (PartName name) c) (construct a)) identity saors)
 
@@ -128,8 +129,12 @@ projection name f = profirst >>> promap
   (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
   (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
 
-adapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
-adapter name outside inside = promap
+adapterGeneric :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
+adapterGeneric name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
+iso :: forall i a s. Profunctor i => String -> (a -> s) -> (s -> a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
+iso name outside inside = promap
+  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
+  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))

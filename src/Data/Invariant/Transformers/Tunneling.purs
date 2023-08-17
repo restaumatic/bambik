@@ -60,7 +60,7 @@ infixl 1 foo as #*
 
 -- allows for e.g.: (private functions just to prove it typechecks)
 liftAdapter :: forall i f a b. Invariant i => Functor f => (forall j. Invariant j => j a -> j b) -> i (f a) -> i (f b)
-liftAdapter adapter = invlift' adapter
+liftAdapter iso = invlift' iso
 
 liftLens :: forall i f a b. InvCartesian i => Apply f => (forall j. InvCartesian j => j a -> j b) -> i (f a) -> i (f b)
 liftLens lens = invlift' lens
@@ -79,4 +79,4 @@ liftCustom :: forall i f a b c d
   -> (forall j. InvCartesian j => j b -> j c)
   -> (forall j. Invariant j => j c -> j d)
   -> i (f a) -> i (f d)
-liftCustom prism lens adapter = invlift' (prism >>> lens >>> adapter)
+liftCustom prism lens iso = invlift' (prism >>> lens >>> iso)
