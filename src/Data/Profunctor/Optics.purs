@@ -1,9 +1,7 @@
 module Data.Profunctor.Optics
-  ( Adapter
-  , Constructor
+  ( Constructor
   , Iso
   , Projection
-  , adapter
   , class ProCartesian
   , class ProClosed
   , class ProCocartesian
@@ -55,7 +53,6 @@ type Field a s = Unit -- TODO
 type Constructor a s = forall p. ProCocartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
 type Projection a s = forall p. ProCartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
 type Iso a s = forall p. Profunctor p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
-type Adapter a b s t = forall p. Profunctor p => p (Scoped a) (Scoped b) -> p (Scoped s) (Scoped t)
 
 nothing :: forall p a b s t. Profunctor p => ProPlus p => p a b -> p s t
 nothing = const prozero
@@ -63,7 +60,6 @@ nothing = const prozero
 field :: forall @l i r1 r a . ProCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    -- field' :: forall i a s. ProCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Scoped a) (Scoped a)-> i (Scoped s) (Scoped s)
     field' partName setter getter = profirst >>> promap
       (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
       (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
@@ -83,10 +79,10 @@ iso name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
-adapter :: forall a b s t. String -> (b -> t) -> (s -> a) -> Adapter a b s t
-adapter name outside inside = promap
-  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
-  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
+-- adapter :: forall a b s t. String -> (b -> t) -> (s -> a) -> Adapter a b s t
+-- adapter name outside inside = promap
+--   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
+--   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
 -- common projections
 
