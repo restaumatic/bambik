@@ -16,12 +16,12 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, attr, classes)
-import Web (Component, div, element, label, radio, span, text)
+import Web (Component, Listener, div, element, label, radio, span, text)
 import Web as Web
 
-button :: forall a. (Maybe (Scoped a) -> Effect Unit) -> Component a a -> Component a a
-button action wrapped =
-  element "button" (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick action) $
+button :: forall a. Listener (Scoped a) -> Component a a -> Component a a
+button listener wrapped =
+  element "button" (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> listener) $
     (div (classes "mdc-button__ripple") mempty mempty prozero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)

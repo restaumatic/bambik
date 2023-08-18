@@ -91,8 +91,8 @@ foreign import data Event :: Type
 type EventType = String
 
 -- | Register an event listener. Returns unregister action.
-addEventListener :: EventType -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
-addEventListener = addEventListenerImpl
+addEventListener :: Node -> EventType -> (Event -> Effect Unit) -> Effect (Effect Unit)
+addEventListener node etype callback = addEventListenerImpl etype callback node
 
 createTextNode :: String -> Effect Node
 createTextNode = createTextNodeImpl
@@ -183,7 +183,7 @@ foreign import innerHTML :: Node -> Effect String
 
 onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
 onDomEvent eventType node handler = do
-  void $ liftEffect $ addEventListener eventType handler node
+  void $ liftEffect $ addEventListener node eventType handler
   -- onCleanup unsub
 
 foreign import createCommentNodeImpl :: String -> Effect Node

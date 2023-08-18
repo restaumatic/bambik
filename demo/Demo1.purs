@@ -5,11 +5,7 @@ import Prelude hiding (show)
 import Demo1Business
 import Web
 
-import Data.Invariant.Transformers.Scoped (Scoped(..))
-import Data.Maybe (maybe)
-import Data.Show as S
 import Effect (Effect)
-import Effect.Console (log)
 import Web.MDC as MDC
 
 main :: Effect Unit
@@ -22,7 +18,8 @@ order =
   div' (
     customer # orderedBy) ^
   div' (
-    MDC.checkbox # paid) ^
+    MDC.checkbox # paid ^
+    text "Paid") ^
   (div' (
       MDC.radioButton # isDineIn ^
       text "Dine in") ^
@@ -54,9 +51,10 @@ order =
     text ", fulfillment: " ^
     text # value # show # fulfillment) ^
   div' (
-    MDC.button (maybe (pure unit) (\(Scoped _ a )-> log $ S.show a)) (
-      text "Submit"
-    ))
+    MDC.button (onClick submit) (
+      text "Submit order "
+    )
+  )
 
 customer :: Component CustomerInformal CustomerInformal
 customer =

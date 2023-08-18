@@ -122,20 +122,8 @@ defaultOrder =
   , fulfillment: DineIn
   }
 
-type Action o o' = forall i. Component i o -> Component i o'
+type Action a = Scoped a -> Effect Unit
 
--- action todo
-
-
-submit :: Action Order Order
-submit = action \order -> do
+submit :: Action Order
+submit (Scoped _ order) = do
   log $ Prelude.show order
-  pure order
-
-action :: forall i o. (i -> Effect o) -> Action i o
-action a c = wrap \callbacko -> do
-  update <- unwrap c \(Scoped _ i) -> do
-    o <- a i
-    callbacko (Scoped MoreThanOnePart o)
-  pure \i -> do
-    update i

@@ -1,5 +1,6 @@
 module Web
-  ( Component(..)
+  ( Listener
+  , Component(..)
   , Widget(..)
   , checkbox
   , div
@@ -170,20 +171,22 @@ wrapWebComponent c = wrap \callback -> do
 element' :: forall a b. TagName -> Widget a b -> Widget a b
 element' tagName = element tagName mempty mempty mempty
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
-element tagName attrs dynAttrs event c = wrap \callback -> do
+element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
+element tagName attrs dynAttrs listener c = wrap \callback -> do
     maRef <- liftEffect $ Ref.new Nothing
     Tuple node update <- elAttr tagName attrs $ unwrap c callback
-    liftEffect $ event node (Ref.read maRef)
+    liftEffect $ listener node (Ref.read maRef)
     pure \a -> do
       Ref.write (Just a) maRef
       liftEffect $ runEffectFn2 setAttributes node (show <$> attrs <> dynAttrs a)
       update a
 
-onClick ∷ forall a. (Maybe a -> Effect Unit) -> Node → Effect (Maybe a) -> Effect Unit
-onClick callback node ema = void $ DOM.addEventListener "click" (\_ -> do
+type Listener a = Node -> Effect (Maybe a) -> Effect Unit
+
+onClick ∷ forall a. (a -> Effect Unit) -> Listener a
+onClick callback node ema = void $ DOM.addEventListener node "click" $ const do
   ma <- ema
-  callback ma) node
+  maybe (pure unit) callback ma
 
 
 text :: forall a b. String -> Widget a b
