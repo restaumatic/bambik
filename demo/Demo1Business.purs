@@ -79,7 +79,7 @@ delivery = constructor "isDelivery" Delivery (case _ of
 
 isDineIn :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
 isDineIn = adapter "dine-in" (fromMaybe DineIn) (case _ of
-        DineIn -> Just DineIn
+        d@DineIn -> Just d
         _ -> Nothing)
 
 isTakeaway :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
