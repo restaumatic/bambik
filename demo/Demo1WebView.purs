@@ -3,14 +3,16 @@ module Demo1WebView
   , customer
   ) where
 
-import Prelude
-
 import Demo1Business
+import Prelude
 import Web
+
 import Web.MDC as MDC
 
 order ∷ Component Order
 order =
+  div' (
+    MDC.filledTextField "ID" # id) ^
   div' (
     customer # orderedBy) ^
   div' (
@@ -47,8 +49,8 @@ order =
     text ", fulfillment: " ^
     text # value # print # fulfillment) ^
   div' (
-    MDC.containedButton submit (
-      text "Submit order"
+    MDC.containedButton writeOrderToConsole (
+      text "Write order to console"
     )
   )
 

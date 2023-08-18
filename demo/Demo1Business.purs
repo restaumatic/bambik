@@ -19,7 +19,7 @@ module Demo1Business
   , isDelivery
   , formal
   , print
-  , submit
+  , writeOrderToConsole
   , defaultOrder
   ) where
   
@@ -105,8 +105,8 @@ formal = adapter "formal" toInformal toFormal
 print :: forall a. Show a => Projection String a -- TODO this should be moved to more general module
 print = projection "print" show
 
-submit :: Order -> Effect Unit
-submit order = log $ show order
+writeOrderToConsole :: Order -> Effect Unit
+writeOrderToConsole order = log $ show order
 
 defaultOrder :: Order
 defaultOrder =
