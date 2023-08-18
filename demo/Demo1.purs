@@ -46,9 +46,9 @@ order =
         text # value # surname ^
         text ") ") # formal) # orderedBy ^
     text ", paid: " ^
-    text # value # shown # paid ^
+    text # value # show # paid ^
     text ", fulfillment: " ^
-    text # value # shown # fulfillment
+    text # value # show # fulfillment
   )
 
 customer :: Component CustomerInformal CustomerInformal

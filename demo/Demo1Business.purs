@@ -18,15 +18,15 @@ module Demo1Business
   , isTakeaway
   , isDelivery
   , formal
-  , shown
+  , show
   , defaultOrder
   ) where
   
+import Data.Profunctor.Optics
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe)
-
-import Data.Profunctor.Optics
+import Data.Show as Prelude
 
 
 type Order =
@@ -102,8 +102,8 @@ formal = adapter "formal" toInformal toFormal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
 -- TODO move to more general module?
-shown :: forall s. Show s => Projection String s
-shown = projection "show" show
+show :: forall s. Show s => Projection String s
+show = projection "show" Prelude.show
 
 defaultOrder :: Order
 defaultOrder =
