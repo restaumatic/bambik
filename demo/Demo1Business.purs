@@ -1,4 +1,26 @@
-module Demo1Business where
+module Demo1Business
+  ( Order
+  , CustomerInformal
+  , CustomerFormal
+  , Fulfillment
+  , Address
+  , id
+  , orderedBy
+  , paid
+  , firstName
+  , lastName
+  , forename
+  , surname
+  , fulfillment
+  , address
+  , delivery
+  , isDineIn
+  , isTakeaway
+  , isDelivery
+  , formal
+  , shown
+  , defaultOrder
+  ) where
 
 import Prelude
 
@@ -80,3 +102,14 @@ formal = adapter "formal" toInformal toFormal
 -- TODO move to more general module?
 shown :: forall s. Show s => Projection String s
 shown = projection "show" show
+
+defaultOrder :: Order
+defaultOrder =
+  { id: "61710"
+  , orderedBy:
+    { firstName: "John"
+    , lastName: "Doe"
+    }
+  , paid: true
+  , fulfillment: DineIn
+  }

@@ -9,15 +9,7 @@ import Web
 import Web.MDC as MDC
 
 main :: Effect Unit
-main = runMainComponent order
-  { id: "61710"
-  , orderedBy:
-    { firstName: "John"
-    , lastName: "Doe"
-    }
-  , paid: true
-  , fulfillment: DineIn
-  }
+main = runMainComponent order defaultOrder
 
 order ∷ Component Order Order
 order =

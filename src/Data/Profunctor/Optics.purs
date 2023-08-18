@@ -16,6 +16,7 @@ module Data.Profunctor.Optics
   , promap
   , proright
   , prosecond
+  , module Data.Profunctor
   )
   where
 
