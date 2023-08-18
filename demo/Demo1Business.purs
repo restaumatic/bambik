@@ -30,7 +30,6 @@ import Data.Profunctor.Optics
 import Effect (Effect)
 import Effect.Console (log)
 
-
 type Order =
   { id :: String
   , orderedBy :: CustomerInformal
