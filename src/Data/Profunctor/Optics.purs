@@ -1,6 +1,6 @@
 module Data.Profunctor.Optics
   ( Constructor
-  , Iso
+  , Adapter
   , Projection
   , class ProCartesian
   , class ProClosed
@@ -8,7 +8,7 @@ module Data.Profunctor.Optics
   , closed
   , constructor
   , field
-  , iso
+  , adapter
   , module Data.Profunctor
   , nothing
   , profirst
@@ -51,8 +51,8 @@ class Profunctor f <= ProClosed f where
 
 type Field a s = Unit -- TODO
 type Constructor a s = forall p. ProCocartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
-type Projection a s = forall p. ProCartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
-type Iso a s = forall p. Profunctor p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Projection a s = forall p. ProCartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s) -- TODO is ProCartesian contraint here really needed?
+type Adapter a s = forall p. Profunctor p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
 
 nothing :: forall p a b s t. Profunctor p => ProPlus p => p a b -> p s t
 nothing = const prozero
@@ -74,8 +74,8 @@ projection name f = profirst >>> promap
   (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
   (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
 
-iso :: forall a s. String -> (a -> s) -> (s -> a) -> Iso a s
-iso name outside inside = promap
+adapter :: forall a s. String -> (a -> s) -> (s -> a) -> Adapter a s
+adapter name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 

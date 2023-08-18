@@ -79,23 +79,23 @@ delivery = constructor "delivery" Delivery (case _ of
   Delivery c -> Just c
   _ -> Nothing)
 
-isDineIn :: Iso (Maybe Fulfillment) Fulfillment
-isDineIn = iso "isDineIn" (fromMaybe DineIn) (case _ of
+isDineIn :: Adapter (Maybe Fulfillment) Fulfillment
+isDineIn = adapter "isDineIn" (fromMaybe DineIn) (case _ of
   d@DineIn -> Just d
   _ -> Nothing)
 
-isTakeaway :: Iso (Maybe Fulfillment) Fulfillment
-isTakeaway = iso "isTakeaway" (fromMaybe Takeaway) (case _ of
+isTakeaway :: Adapter (Maybe Fulfillment) Fulfillment
+isTakeaway = adapter "isTakeaway" (fromMaybe Takeaway) (case _ of
   t@Takeaway -> Just t
   _ -> Nothing)
 
-isDelivery :: Iso (Maybe Fulfillment) Fulfillment
-isDelivery = iso "isDelivery" (fromMaybe (Delivery { address: "" })) (case _ of
+isDelivery :: Adapter (Maybe Fulfillment) Fulfillment
+isDelivery = adapter "isDelivery" (fromMaybe (Delivery { address: "" })) (case _ of
   d@(Delivery _) -> Just d
   _ -> Nothing)
 
-formal :: Iso CustomerFormal CustomerInformal
-formal = iso "formal" toInformal toFormal
+formal :: Adapter CustomerFormal CustomerInformal
+formal = adapter "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }
