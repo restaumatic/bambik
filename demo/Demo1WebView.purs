@@ -9,7 +9,7 @@ import Demo1Business
 import Web
 import Web.MDC as MDC
 
-order ∷ Component Order Order
+order ∷ Component Order
 order =
   div' (
     customer # orderedBy) ^
@@ -52,7 +52,7 @@ order =
     )
   )
 
-customer :: Component CustomerInformal CustomerInformal
+customer :: Component CustomerInformal
 customer =
   div' (
     MDC.filledTextField "First name" # firstName ^

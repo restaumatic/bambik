@@ -19,14 +19,14 @@ import Specular.Dom.Browser (Node, attr, classes)
 import Web (Component, button, div, element, label, onClick, radio, span, text, textInput)
 import Web as Web
 
-containedButton :: forall a. (a -> Effect Unit) -> Component a a -> Component a a
+containedButton :: forall a. (a -> Effect Unit) -> Component a -> Component a
 containedButton action wrapped =
   button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty prozero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
 
-filledTextField :: String -> Component String String
+filledTextField :: String -> Component String
 filledTextField hintText =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span (classes "mdc-text-field__ripple") mempty mempty prozero)
@@ -37,7 +37,7 @@ filledTextField hintText =
     ^
     (span (classes "mdc-line-ripple") mempty mempty prozero)
 
-checkbox :: Component Boolean Boolean
+checkbox :: Component Boolean
 checkbox =
   div (classes "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
     (
@@ -59,7 +59,7 @@ checkbox =
       )
     )
 
-radioButton :: forall a. Component (Maybe a) (Maybe a) -- TODO
+radioButton :: forall a. Component (Maybe a)
 radioButton = div (classes "mdc-form-field") mempty mempty
   (
     (div (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $

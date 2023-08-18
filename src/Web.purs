@@ -47,18 +47,11 @@ import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
 
-type Component i o = Widget (Scoped i) (Scoped o)
+type Component a = Widget (Scoped a) (Scoped a)
 
 newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
 
 derive instance Newtype (Widget i o) _
-
-
-value :: forall a b. (a -> Widget b b) -> Component a b -- Component == DynamicWebComponent (with scope?)
-value f = wrapWebComponent \_ -> do
-  slot <- newSlot
-  pure $ \a -> replaceSlot slot $ void $ unwrap (f a) mempty
-
 
 instance Profunctor Widget where
   dimap post pre c = wrap \callback -> do
@@ -157,21 +150,12 @@ instance ProPlusoid Widget where
 instance ProPlus Widget where
   prozero = wrap mempty
 
---
+-- Widgets
 
-wrapWebComponent :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Component i o
-wrapWebComponent c = wrap \callback -> do
-  update <- c \a -> callback (Scoped MoreThanOnePart a)
-  pure \(Scoped scope a) -> do
-    case scope of
-      NoPart -> do
-        pure unit
-      _ -> update a
-
--- WebUI polymorhphic combinators
-
-element' :: forall a b. TagName -> Widget a b -> Widget a b
-element' tagName = element tagName mempty mempty mempty
+text :: forall a b. String -> Widget a b
+text s = wrap \_ -> do
+  S.text s
+  pure $ mempty
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener c = wrap \callback -> do
@@ -183,18 +167,8 @@ element tagName attrs dynAttrs listener c = wrap \callback -> do
       liftEffect $ runEffectFn2 setAttributes node (show <$> attrs <> dynAttrs a)
       update a
 
-type Listener a = Node -> Effect (Maybe a) -> Effect Unit
-
-onClick ∷ forall a. (a -> Effect Unit) -> Listener (Scoped a)
-onClick callback node emsa = void $ DOM.addEventListener node "click" $ const do
-  msa <- emsa
-  maybe (pure unit) (\(Scoped _ a) -> callback a) msa
-
-
-text :: forall a b. String -> Widget a b
-text s = wrap \_ -> do
-  S.text s
-  pure $ mempty
+element' :: forall a b. TagName -> Widget a b -> Widget a b
+element' tagName = element tagName mempty mempty mempty
 
 div' :: forall a b. Widget a b -> Widget a b
 div' = element' "div"
@@ -220,13 +194,20 @@ button = element "button"
 button' :: forall a b. Widget a b → Widget a b
 button' = element' "button"
 
-textInput :: Attrs -> Component String String
+-- Components
+
+value :: forall a b. (a -> Widget b b) -> Component a
+value f = wrapWebComponent \_ -> do
+  slot <- newSlot
+  pure $ \a -> replaceSlot slot $ void $ unwrap (f a) mempty
+
+textInput :: Attrs -> Component String
 textInput attrs = wrapWebComponent \callback -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node $ const $ getValue node >>= callback
   pure $ setValue node
 
-checkbox :: Attrs -> Component Boolean Boolean
+checkbox :: Attrs -> Component Boolean
 checkbox attrs = wrapWebComponent \callback -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   onDomEvent "input" node $ const $ getChecked node >>= callback
@@ -238,7 +219,7 @@ checkbox attrs = wrapWebComponent \callback -> do
 -- output:
 -- Nothing -> button was clicked but button doesn't remember any a
 -- Just a -> button was clicked and button does remember an a
-radio :: forall a. Attrs -> Component (Maybe a) (Maybe a)
+radio :: forall a. Attrs -> Component (Maybe a)
 radio attrs = wrapWebComponent \callbacka -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
@@ -251,15 +232,37 @@ radio attrs = wrapWebComponent \callbacka -> do
       Ref.write (Just a) maRef
       setChecked node true
 
-runComponent :: forall i o. Component i o -> Builder Unit (i -> Effect Unit)
+-- Listeners
+
+type Listener a = Node -> Effect (Maybe a) -> Effect Unit
+
+onClick ∷ forall a. (a -> Effect Unit) -> Listener (Scoped a)
+onClick callback node emsa = void $ DOM.addEventListener node "click" $ const do
+  msa <- emsa
+  maybe (pure unit) (\(Scoped _ a) -> callback a) msa
+
+-- Running
+
+runComponent :: forall a. Component a -> Builder Unit (a -> Effect Unit)
 runComponent c = do
   update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
   pure $ \a -> update (Scoped MoreThanOnePart a)
 
-runMainComponent :: forall i o. Component i o -> i -> Effect Unit
+runMainComponent :: forall a. Component a -> a -> Effect Unit
 runMainComponent c i = do
   update <- runMainBuilderInBody $ runComponent c
   update i
+
+-- Private
+
+wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
+wrapWebComponent c = wrap \callback -> do
+  update <- c \a -> callback (Scoped MoreThanOnePart a)
+  pure \(Scoped scope a) -> do
+    case scope of
+      NoPart -> do
+        pure unit
+      _ -> update a
 
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
