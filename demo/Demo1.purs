@@ -1,10 +1,10 @@
 module Demo1 (main) where
 
-import Prelude
-
 import Demo1Business
-import Effect (Effect)
+import Prelude
 import Web
+
+import Effect (Effect)
 import Web.MDC as MDC
 
 main :: Effect Unit
@@ -13,7 +13,7 @@ main = runMainComponent order defaultOrder
 order ∷ Component Order Order
 order =
   div' (
-    MDC.filledText "Id" # id) ^
+    MDC.filledTextField "Id" # id) ^
   div' (
     customer # orderedBy) ^
   div' (
@@ -32,7 +32,7 @@ order =
     div' (
       text "Delivery details") ^
     div' (
-      MDC.filledText "Address") # address) # delivery # fulfillment ^
+      MDC.filledTextField "Address") # address) # delivery # fulfillment ^
   div' (
     text "Summary: " ^
     text # value # id ^
@@ -50,7 +50,7 @@ order =
     text ", fulfillment: " ^
     text # value # print # fulfillment) ^
   div' (
-    MDC.button submit (
+    MDC.containedButton submit (
       text "Submit order"
     )
   )
@@ -58,9 +58,9 @@ order =
 customer :: Component CustomerInformal CustomerInformal
 customer =
   div' (
-    MDC.filledText "First name" # firstName ^
-    MDC.filledText "Last name" # lastName) ^
+    MDC.filledTextField "First name" # firstName ^
+    MDC.filledTextField "Last name" # lastName) ^
   text "or more formally:" ^
   div' (
-    MDC.filledText "Forename" # forename ^
-    MDC.filledText "Surename" # surname) # formal
+    MDC.filledTextField "Forename" # forename ^
+    MDC.filledTextField "Surename" # surname) # formal

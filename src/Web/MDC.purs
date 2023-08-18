@@ -1,7 +1,7 @@
 module Web.MDC
-  ( button
+  ( containedButton
   , checkbox
-  , filledText
+  , filledTextField
   , radioButton
   )
   where
@@ -16,18 +16,18 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, attr, classes)
-import Web (Component, div, element, label, onClick, radio, span, text, textInput)
+import Web (Component, button, div, element, label, onClick, radio, span, text, textInput)
 import Web as Web
 
-button :: forall a. (a -> Effect Unit) -> Component a a -> Component a a
-button action wrapped =
-  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
+containedButton :: forall a. (a -> Effect Unit) -> Component a a -> Component a a
+containedButton action wrapped =
+  button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty prozero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
 
-filledText :: String -> Component String String
-filledText hintText =
+filledTextField :: String -> Component String String
+filledTextField hintText =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span (classes "mdc-text-field__ripple") mempty mempty prozero)
     ^
