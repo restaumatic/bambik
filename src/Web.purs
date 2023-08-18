@@ -1,6 +1,6 @@
 module Web
-  ( Component
-  , Widget
+  ( Component(..)
+  , Widget(..)
   , checkbox
   , div'
   , div
@@ -27,6 +27,7 @@ import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
 import Data.Profunctor.Plus (class ProPlus, class ProPlusoid, proplus, proplusfirst, proplussecond, prozero, (<^), (^), (^>))
@@ -46,13 +47,8 @@ type Component i o = Widget (Scoped i) (Scoped o)
 
 newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
 
--- derive instance Newtype (Widget a) _
+derive instance Newtype (Widget i o) _
 
-wrap :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Widget i o
-wrap = Widget
-
-unwrap :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
-unwrap (Widget c) = c
 
 value :: forall a b. (a -> Widget b b) -> Component a b -- Component == DynamicWebComponent (with scope?)
 value f = wrapWebComponent \_ -> do
