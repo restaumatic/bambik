@@ -48,8 +48,11 @@ order =
     text ", paid: " ^
     text # value # show # paid ^
     text ", fulfillment: " ^
-    text # value # show # fulfillment
-  )
+    text # value # show # fulfillment) ^
+  div' (
+    MDC.button (
+      text "Submit"
+    ))
 
 customer :: Component CustomerInformal CustomerInformal
 customer =
