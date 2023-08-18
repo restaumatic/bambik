@@ -45,9 +45,9 @@ order =
         text # value # surname ^
         text ") ") # formal) # orderedBy ^
     text ", paid: " ^
-    text # value # print # paid ^
+    text # value # paymentStatus ^
     text ", fulfillment: " ^
-    text # value # print # fulfillment) ^
+    text # value # fulfillmentData) ^
   div' (
     MDC.containedButton writeOrderToConsole (
       text "Write order to console"

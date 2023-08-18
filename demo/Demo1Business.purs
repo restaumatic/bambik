@@ -18,7 +18,8 @@ module Demo1Business
   , isTakeaway
   , isDelivery
   , formal
-  , print
+  , paymentStatus
+  , fulfillmentData
   , writeOrderToConsole
   , defaultOrder
   ) where
@@ -102,8 +103,11 @@ formal = adapter "formal" toInformal toFormal
     toInformal :: CustomerFormal -> CustomerInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
-print :: forall a. Show a => Projection String a -- TODO this should be moved to more general module
-print = projection "print" show
+paymentStatus :: Projection String Order
+paymentStatus = projection "paymentStatus" \order -> if order.paid then "Paid" else "NOT PAID"
+
+fulfillmentData :: Projection String Order
+fulfillmentData = projection "fulfillmentData" \order -> show order.fulfillment
 
 writeOrderToConsole :: Order -> Effect Unit
 writeOrderToConsole order = log $ show order
