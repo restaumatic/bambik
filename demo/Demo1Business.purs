@@ -21,6 +21,7 @@ module Demo1Business
   , shown
   , defaultOrder
   ) where
+  
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe)
