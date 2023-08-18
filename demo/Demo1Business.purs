@@ -73,24 +73,24 @@ fulfillment =  field @"fulfillment"
 address =  field @"address"
 
 delivery :: Constructor { address :: String } Fulfillment
-delivery = constructor "isDelivery" Delivery (case _ of
-      Delivery c -> Just c
-      _ -> Nothing)
+delivery = constructor "delivery" Delivery (case _ of
+  Delivery c -> Just c
+  _ -> Nothing)
 
 isDineIn :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
-isDineIn = adapter "dine-in" (fromMaybe DineIn) (case _ of
-        d@DineIn -> Just d
-        _ -> Nothing)
+isDineIn = adapter "isDineIn" (fromMaybe DineIn) (case _ of
+  d@DineIn -> Just d
+  _ -> Nothing)
 
 isTakeaway :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
 isTakeaway = adapter "isTakeaway" (fromMaybe Takeaway) (case _ of
-        t@Takeaway -> Just t
-        _ -> Nothing)
+  t@Takeaway -> Just t
+  _ -> Nothing)
 
 isDelivery :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
 isDelivery = adapter "isDelivery" (fromMaybe (Delivery { address: "" })) (case _ of
-        d@(Delivery _) -> Just d
-        _ -> Nothing)
+  d@(Delivery _) -> Just d
+  _ -> Nothing)
 
 formal :: Adapter CustomerFormal CustomerFormal CustomerInformal CustomerInformal
 formal = adapter "formal" toInformal toFormal
