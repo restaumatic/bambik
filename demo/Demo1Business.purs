@@ -31,16 +31,6 @@ instance Show Fulfillment where
   show Takeaway = "Takeaway"
   show (Delivery { address }) = "Delivery to " <> address
 
--- formal :: forall i. Profunctor i => i (Scoped CustomerFormal) (Scoped CustomerFormal) -> i (Scoped CustomerInformal) (Scoped CustomerInformal)
-formal = adapter "formal" toInformal toFormal
-  where
-    toFormal :: CustomerInformal -> CustomerFormal
-    toFormal { firstName: forename, lastName: surname } = { forename, surname }
-    toInformal :: CustomerFormal -> CustomerInformal
-    toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
-
---
-
 id = field @"id"
 
 orderedBy = field @"orderedBy"
@@ -59,24 +49,34 @@ fulfillment =  field @"fulfillment"
 
 address =  field @"address"
 
--- isDineIn :: forall p a. Profunctor p => p (Scoped Boolean) (Scoped a) → p (Scoped Fulfillment) (Scoped Fulfillment)
-isDineIn = adapter "dine-in" (const DineIn) (case _ of
-        DineIn -> true
-        _ -> false)
-
--- isTakeaway :: forall p a. Profunctor p => p (Scoped Boolean) (Scoped a) → p (Scoped Fulfillment) (Scoped Fulfillment)
-isTakeaway = adapter "isTakeaway" (const Takeaway) (case _ of
-        Takeaway -> true
-        _ -> false)
-
--- isDelivery :: forall p a. Profunctor p => p (Scoped Boolean) (Scoped a) → p (Scoped Fulfillment) (Scoped Fulfillment)
-isDelivery = adapter "isDelivery" (const (Delivery { address: "" })) (case _ of
-        Delivery _ -> true
-        _ -> false)
-
--- delivery :: forall p. ProCocartesian p =>p (Scoped { address :: String } ) (Scoped { address :: String } ) → p (Scoped Fulfillment) (Scoped Fulfillment)
+delivery :: Constructor { address :: String } Fulfillment
 delivery = constructor "isDelivery" Delivery (case _ of
       Delivery c -> Just c
       _ -> Nothing)
 
+isDineIn :: forall a. Adapter Boolean a Fulfillment Fulfillment
+isDineIn = adapter "dine-in" (const DineIn) (case _ of
+        DineIn -> true
+        _ -> false)
+
+isTakeaway :: forall a. Adapter Boolean a Fulfillment Fulfillment
+isTakeaway = adapter "isTakeaway" (const Takeaway) (case _ of
+        Takeaway -> true
+        _ -> false)
+
+isDelivery :: forall a. Adapter Boolean a Fulfillment Fulfillment
+isDelivery = adapter "isDelivery" (const (Delivery { address: "" })) (case _ of
+        Delivery _ -> true
+        _ -> false)
+
+formal :: Adapter CustomerFormal CustomerFormal CustomerInformal CustomerInformal
+formal = adapter "formal" toInformal toFormal
+  where
+    toFormal :: CustomerInformal -> CustomerFormal
+    toFormal { firstName: forename, lastName: surname } = { forename, surname }
+    toInformal :: CustomerFormal -> CustomerInformal
+    toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
+
+-- TODO move to more general module?
+shown :: forall s. Show s => Projection String s
 shown = projection "show" show
