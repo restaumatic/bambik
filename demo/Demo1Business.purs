@@ -94,8 +94,8 @@ isDelivery = adapter "isDelivery" (fromMaybe (Delivery { address: "" })) (case _
   d@(Delivery _) -> Just d
   _ -> Nothing)
 
-formal :: Adapter CustomerFormal CustomerFormal CustomerInformal CustomerInformal
-formal = adapter "formal" toInformal toFormal
+formal :: Iso CustomerFormal CustomerInformal
+formal = iso "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }

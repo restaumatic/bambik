@@ -232,6 +232,12 @@ checkbox attrs = wrapWebComponent \callback -> do
   onDomEvent "input" node $ const $ getChecked node >>= callback
   pure $ setChecked node
 
+-- input:
+-- Nothing -> turn off button
+-- Just a -> turn on (if turned off) button and remember a
+-- output:
+-- Nothing -> button was clicked but button doesn't remember any a
+-- Just a -> button was clicked and button does remember an a
 radio :: forall a. Attrs -> Component (Maybe a) (Maybe a)
 radio attrs = wrapWebComponent \callbacka -> do
   maRef <- liftEffect $ Ref.new Nothing
@@ -244,8 +250,6 @@ radio attrs = wrapWebComponent \callbacka -> do
     Just a -> do
       Ref.write (Just a) maRef
       setChecked node true
-
--- TODO
 
 runComponent :: forall i o. Component i o -> Builder Unit (i -> Effect Unit)
 runComponent c = do

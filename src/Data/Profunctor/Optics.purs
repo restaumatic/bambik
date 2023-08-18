@@ -1,6 +1,7 @@
 module Data.Profunctor.Optics
   ( Adapter
   , Constructor
+  , Iso
   , Projection
   , adapter
   , class ProCartesian
@@ -9,6 +10,7 @@ module Data.Profunctor.Optics
   , closed
   , constructor
   , field
+  , iso
   , module Data.Profunctor
   , nothing
   , profirst
@@ -49,6 +51,12 @@ class Profunctor f <= ProCocartesian f where
 class Profunctor f <= ProClosed f where
     closed :: forall i o a . f i o -> f (a -> i) (a -> o)
 
+type Field a s = Unit -- TODO
+type Constructor a s = forall p. ProCocartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Projection a s = forall p. ProCartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Iso a s = forall p. Profunctor p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Adapter a b s t = forall p. Profunctor p => p (Scoped a) (Scoped b) -> p (Scoped s) (Scoped t)
+
 nothing :: forall p a b s t. Profunctor p => ProPlus p => p a b -> p s t
 nothing = const prozero
 
@@ -60,23 +68,20 @@ field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l
       (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
       (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
 
-type Constructor a s = forall p. ProCocartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
-
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
 constructor name construct deconstruct = proleft >>> promap
   (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn (PartName name) c) a)) (deconstruct s))
   (\saors -> either (\(Scoped c a) -> Scoped (zoomOut (PartName name) c) (construct a)) identity saors)
-
-
-type Projection a s = forall p. ProCartesian p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
 
 projection :: forall a s . String -> (s -> a) -> Projection a s
 projection name f = profirst >>> promap
   (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
   (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
 
-
-type Adapter a b s t = forall p. Profunctor p => p (Scoped a) (Scoped b) -> p (Scoped s) (Scoped t)
+iso :: forall a s. String -> (a -> s) -> (s -> a) -> Iso a s
+iso name outside inside = promap
+  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
+  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
 adapter :: forall a b s t. String -> (b -> t) -> (s -> a) -> Adapter a b s t
 adapter name outside inside = promap
