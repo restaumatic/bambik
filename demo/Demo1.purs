@@ -3,7 +3,6 @@ module Demo1 (main) where
 import Demo1Business
 import Prelude
 import Web
-
 import Effect (Effect)
 import Web.MDC as MDC
 
