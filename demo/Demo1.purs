@@ -1,11 +1,15 @@
 module Demo1 (main) where
 
-import Prelude (Unit, (#))
-import Effect (Effect)
+import Prelude hiding (show)
 
 import Demo1Business
-
 import Web
+
+import Data.Invariant.Transformers.Scoped (Scoped(..))
+import Data.Maybe (maybe)
+import Data.Show as S
+import Effect (Effect)
+import Effect.Console (log)
 import Web.MDC as MDC
 
 main :: Effect Unit
@@ -50,7 +54,7 @@ order =
     text ", fulfillment: " ^
     text # value # show # fulfillment) ^
   div' (
-    MDC.button (
+    MDC.button (maybe (pure unit) (\(Scoped _ a )-> log $ S.show a)) (
       text "Submit"
     ))
 

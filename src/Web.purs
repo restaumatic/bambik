@@ -2,22 +2,22 @@ module Web
   ( Component(..)
   , Widget(..)
   , checkbox
-  , div'
   , div
-  , element'
+  , div'
   , element
-  , label'
+  , element'
   , label
+  , label'
+  , module Data.Profunctor.Plus
   , onClick
   , radio
   , runComponent
   , runMainComponent
-  , span'
   , span
+  , span'
   , text
   , textInput
   , value
-  , module Data.Profunctor.Plus
   )
   where
 
@@ -39,6 +39,7 @@ import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Specular.Dom.Browser (Attrs, Node, TagName, attr, onDomEvent)
+import Specular.Dom.Browser as DOM
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
@@ -169,12 +170,21 @@ wrapWebComponent c = wrap \callback -> do
 element' :: forall a b. TagName -> Widget a b -> Widget a b
 element' tagName = element tagName mempty mempty mempty
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs event c = wrap \callback -> do
+    maRef <- liftEffect $ Ref.new Nothing
     Tuple node update <- elAttr tagName attrs $ unwrap c callback
+    liftEffect $ event node (Ref.read maRef)
     pure \a -> do
+      Ref.write (Just a) maRef
       liftEffect $ runEffectFn2 setAttributes node (show <$> attrs <> dynAttrs a)
       update a
+
+onClick ∷ forall a. (Maybe a -> Effect Unit) -> Node → Effect (Maybe a) -> Effect Unit
+onClick callback node ema = void $ DOM.addEventListener "click" (\_ -> do
+  ma <- ema
+  callback ma) node
+
 
 text :: forall a b. String -> Widget a b
 text s = wrap \_ -> do
@@ -184,19 +194,19 @@ text s = wrap \_ -> do
 div' :: forall a b. Widget a b -> Widget a b
 div' = element' "div"
 
-div :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+div :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 div = element "div"
 
 span' :: forall a b. Widget a b -> Widget a b
 span' = element' "span"
 
-span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 span = element "span"
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = element' "label"
 
-label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> (a -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
 textInput :: Attrs -> Component String String
@@ -225,8 +235,6 @@ radio attrs = wrapWebComponent \callbacka -> do
       setChecked node true
 
 -- TODO
-onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
-onClick _ _ = mempty -- void $ DOM.addEventListener "click" (\_ -> callback a) node
 
 runComponent :: forall i o. Component i o -> Builder Unit (i -> Effect Unit)
 runComponent c = do

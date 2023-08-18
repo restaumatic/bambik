@@ -20,13 +20,19 @@ module Demo1Business
   , formal
   , show
   , defaultOrder
+  , submit
   ) where
   
-import Data.Profunctor.Optics
 import Prelude
 
+import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap, wrap)
+import Data.Profunctor.Optics
 import Data.Show as Prelude
+import Effect (Effect)
+import Effect.Console (log)
+import Web (Component)
 
 
 type Order =
@@ -115,3 +121,21 @@ defaultOrder =
   , paid: true
   , fulfillment: DineIn
   }
+
+type Action o o' = forall i. Component i o -> Component i o'
+
+-- action todo
+
+
+submit :: Action Order Order
+submit = action \order -> do
+  log $ Prelude.show order
+  pure order
+
+action :: forall i o. (i -> Effect o) -> Action i o
+action a c = wrap \callbacko -> do
+  update <- unwrap c \(Scoped _ i) -> do
+    o <- a i
+    callbacko (Scoped MoreThanOnePart o)
+  pure \i -> do
+    update i

@@ -29,6 +29,7 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Plus (class ProPlus, prozero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Effect (Effect)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -83,7 +84,6 @@ adapter name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
--- TODO are these below needed?
 -- invand a b = profirst a ^ prosecond b
 
 -- invandwith :: forall i a b c . ProCartesian i => InvPlus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c

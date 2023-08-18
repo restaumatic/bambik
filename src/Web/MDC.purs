@@ -19,9 +19,9 @@ import Specular.Dom.Browser (Node, attr, classes)
 import Web (Component, div, element, label, radio, span, text)
 import Web as Web
 
-button :: forall a. Component a a -> Component a a
-button wrapped =
-  element "button" (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick) $
+button :: forall a. (Maybe (Scoped a) -> Effect Unit) -> Component a a -> Component a a
+button action wrapped =
+  element "button" (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> Web.onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty prozero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
