@@ -21,11 +21,12 @@ module Demo1Business
   , shown
   , defaultOrder
   ) where
-
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
+
 import Data.Profunctor.Optics
+
 
 type Order =
   { id :: String
@@ -76,20 +77,20 @@ delivery = constructor "isDelivery" Delivery (case _ of
       Delivery c -> Just c
       _ -> Nothing)
 
-isDineIn :: forall a. Adapter Boolean a Fulfillment Fulfillment
-isDineIn = adapter "dine-in" (const DineIn) (case _ of
-        DineIn -> true
-        _ -> false)
+isDineIn :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
+isDineIn = adapter "dine-in" (fromMaybe DineIn) (case _ of
+        DineIn -> Just DineIn
+        _ -> Nothing)
 
-isTakeaway :: forall a. Adapter Boolean a Fulfillment Fulfillment
-isTakeaway = adapter "isTakeaway" (const Takeaway) (case _ of
-        Takeaway -> true
-        _ -> false)
+isTakeaway :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
+isTakeaway = adapter "isTakeaway" (fromMaybe Takeaway) (case _ of
+        t@Takeaway -> Just t
+        _ -> Nothing)
 
-isDelivery :: forall a. Adapter Boolean a Fulfillment Fulfillment
-isDelivery = adapter "isDelivery" (const (Delivery { address: "" })) (case _ of
-        Delivery _ -> true
-        _ -> false)
+isDelivery :: Adapter (Maybe Fulfillment) (Maybe Fulfillment) Fulfillment Fulfillment
+isDelivery = adapter "isDelivery" (fromMaybe (Delivery { address: "" })) (case _ of
+        d@(Delivery _) -> Just d
+        _ -> Nothing)
 
 formal :: Adapter CustomerFormal CustomerFormal CustomerInformal CustomerInformal
 formal = adapter "formal" toInformal toFormal

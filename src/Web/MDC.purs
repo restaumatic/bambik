@@ -9,6 +9,7 @@ module Web.MDC
 import Prelude hiding (div)
 
 import Data.Invariant.Transformers.Scoped (Scoped(..))
+import Data.Maybe (Maybe)
 import Data.Profunctor.Plus (prozero, (<^), (^))
 import Data.String (null)
 import Effect (Effect)
@@ -58,7 +59,7 @@ checkbox =
       )
     )
 
-radioButton :: Component Boolean Unit -- TODO
+radioButton :: forall a. Component (Maybe a) (Maybe a) -- TODO
 radioButton = div (classes "mdc-form-field") mempty mempty
   (
     (div (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $

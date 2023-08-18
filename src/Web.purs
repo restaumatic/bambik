@@ -211,11 +211,18 @@ checkbox attrs = wrapWebComponent \callback -> do
   onDomEvent "input" node $ const $ getChecked node >>= callback
   pure $ setChecked node
 
-radio :: Attrs -> Component Boolean Unit
-radio attrs = wrapWebComponent \callback -> do
+radio :: forall a. Attrs -> Component (Maybe a) (Maybe a)
+radio attrs = wrapWebComponent \callbacka -> do
+  maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  onDomEvent "change" node $ const $ callback unit
-  pure $ setChecked node
+  onDomEvent "change" node $ const do
+    ma <- Ref.read maRef
+    callbacka ma
+  pure case _ of
+    Nothing -> setChecked node false
+    Just a -> do
+      Ref.write (Just a) maRef
+      setChecked node true
 
 -- TODO
 onClick ∷ forall a. Node → (a -> Effect Unit) -> Effect Unit
