@@ -16,12 +16,12 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Browser (Node, attr, classes)
-import Web (Component, div, element, label, onClick, radio, span, text)
+import Web (Component, div, element, label, onClick, radio, span, text, textInput)
 import Web as Web
 
 button :: forall a. (a -> Effect Unit) -> Component a a -> Component a a
 button action wrapped =
-  element "button" (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
+  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty prozero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
@@ -33,7 +33,7 @@ filledText hintText =
     ^
     (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Scoped _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty (text hintText)
     ^
-    (Web.textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))
+    (textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))
     ^
     (span (classes "mdc-line-ripple") mempty mempty prozero)
 

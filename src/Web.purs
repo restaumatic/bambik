@@ -1,7 +1,9 @@
 module Web
-  ( Listener
-  , Component(..)
+  ( Component(..)
+  , Listener
   , Widget(..)
+  , button
+  , button'
   , checkbox
   , div
   , div'
@@ -39,7 +41,7 @@ import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
-import Specular.Dom.Browser (Attrs, Node, TagName, attr, onDomEvent)
+import Specular.Dom.Browser (Node, TagName, Attrs, attr, onDomEvent)
 import Specular.Dom.Browser as DOM
 import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
@@ -211,6 +213,12 @@ label' = element' "label"
 
 label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
+
+button :: forall a b. Attrs → (a → Attrs) → (Node → Effect (Maybe a) → Effect Unit) → Widget a b → Widget a b
+button = element "button"
+
+button' :: forall a b. Widget a b → Widget a b
+button' = element' "button"
 
 textInput :: Attrs -> Component String String
 textInput attrs = wrapWebComponent \callback -> do
