@@ -17,6 +17,7 @@ module Web
   , text
   , textInput
   , value
+  , module Data.Profunctor.Plus
   )
   where
 
@@ -28,7 +29,7 @@ import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
-import Data.Profunctor.Plus (class ProPlus, class ProPlusoid)
+import Data.Profunctor.Plus (class ProPlus, class ProPlusoid, proplus, proplusfirst, proplussecond, prozero, (<^), (^), (^>))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
