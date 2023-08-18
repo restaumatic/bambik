@@ -125,5 +125,4 @@ defaultOrder =
 type Action a = Scoped a -> Effect Unit
 
 submit :: Action Order
-submit (Scoped _ order) = do
-  log $ Prelude.show order
+submit (Scoped _ order) = log $ Prelude.show order

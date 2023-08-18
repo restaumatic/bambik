@@ -52,7 +52,7 @@ order =
     text # value # show # fulfillment) ^
   div' (
     MDC.button (onClick submit) (
-      text "Submit order "
+      text "Submit order"
     )
   )
 
