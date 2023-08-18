@@ -1,15 +1,13 @@
 module Data.Invariant.Transformers.Scoped
   ( Part(..)
-  , PartName
+  , PartName(..)
   , Scoped(..)
-  , adapter
-  , constructor
-  , field
   , invAdapter
   , invConstructor
   , invField
   , invProjection
-  , projection
+  , zoomIn
+  , zoomOut
   )
   where
 
@@ -21,8 +19,6 @@ import Data.Either (Either(..), either)
 import Data.Foldable (intercalate)
 import Data.Invariant (class InvCartesian, class InvCocartesian, class Invariant, invfirst, invleft, invmap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian, profirst, proleft, promap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Debug (spy)
@@ -33,7 +29,7 @@ import Type.Proxy (Proxy(..))
 data Scoped a = Scoped Part a
 
 data Part = MoreThanOnePart | OnePart (NonEmptyArray.NonEmptyArray PartName) | NoPart -- this is actually a lattice (bottom, singleton vales, top), TODO: find already existing data type for it
-
+-- TODO MoreThanOnePart -> Some (zero od more...), OnePart -> Single (one) NoPart -> None (zero)
 data PartName = PartName String | TwistName String
 
 instance Show PartName where
@@ -84,6 +80,7 @@ zoomIn partName (OnePart hops) = case NonEmptyArray.uncons hops of
     _ -> NoPart -- otherwise
 zoomIn _ NoPart = NoPart
 
+zoomIn' :: PartName -> Part -> Part
 zoomIn' partName part = let result = zoomIn partName part in spy ("\nzoomin:\npartName: " <> show partName <> " part: " <> show part <> " result: " <> show result) result
 
 invField :: forall @l i r1 r a . InvCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) -> i (Scoped (Record r1))
@@ -108,30 +105,3 @@ invAdapter :: forall i a b. Invariant i => String -> (a -> b) -> (b -> a) -> i (
 invAdapter name f g = invmap
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (f a))
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (g b))
-
-
-
----
-
-field :: forall @l i r1 r a . ProCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
-field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
-  where
-    field' :: forall i a s. ProCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Scoped a) (Scoped a)-> i (Scoped s) (Scoped s)
-    field' partName setter getter = profirst >>> promap
-      (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
-      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
-
-constructor :: forall i a s. ProCocartesian i => String -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
-constructor name construct deconstruct = proleft >>> promap
-  (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn (PartName name) c) a)) (deconstruct s))
-  (\saors -> either (\(Scoped c a) -> Scoped (zoomOut (PartName name) c) (construct a)) identity saors)
-
-projection :: forall i a s . ProCartesian i => String -> (s -> a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
-projection name f = profirst >>> promap
-  (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
-  (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
-
-adapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
-adapter name outside inside = promap
-  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
-  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))

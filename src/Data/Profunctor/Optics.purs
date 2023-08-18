@@ -1,23 +1,33 @@
 module Data.Profunctor.Optics
-  ( class ProCartesian
+  ( adapter
+  , class ProCartesian
   , class ProClosed
   , class ProCocartesian
   , closed
+  , constructor
   , nothing
   , profirst
+  , projection
   , proleft
   , promap
   , proright
   , prosecond
+  , field
   )
   where
 
 import Prelude
 
-import Data.Either (Either)
+import Data.Either (Either(..), either)
+import Data.Invariant.Transformers.Scoped (PartName(..), Scoped(..), zoomIn, zoomOut)
+import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Plus (class ProPlus, prozero)
-import Data.Tuple (Tuple)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple (Tuple(..))
+import Prim.Row as Row
+import Record (get, set)
+import Type.Proxy (Proxy(..))
 
 -- Functor class hierarchy
 
@@ -37,6 +47,29 @@ class Profunctor f <= ProClosed f where
 
 nothing :: forall p a b s t. Profunctor p => ProPlus p => p a b -> p s t
 nothing = const prozero
+
+field :: forall @l i r1 r a . ProCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
+field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
+  where
+    field' :: forall i a s. ProCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Scoped a) (Scoped a)-> i (Scoped s) (Scoped s)
+    field' partName setter getter = profirst >>> promap
+      (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName partName) c) (getter s)) s)
+      (\(Tuple (Scoped c a) s) -> Scoped (zoomOut (PartName partName) c) (setter s a))
+
+constructor :: forall i a s. ProCocartesian i => String -> (a -> s) -> (s -> Maybe a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
+constructor name construct deconstruct = proleft >>> promap
+  (\(Scoped c s) -> maybe (Right (Scoped c s)) (\a -> Left (Scoped (zoomIn (PartName name) c) a)) (deconstruct s))
+  (\saors -> either (\(Scoped c a) -> Scoped (zoomOut (PartName name) c) (construct a)) identity saors)
+
+projection :: forall i a s . ProCartesian i => String -> (s -> a) -> i (Scoped a) (Scoped a) -> i (Scoped s) (Scoped s)
+projection name f = profirst >>> promap
+  (\(Scoped c s) -> Tuple (Scoped (zoomIn (PartName name) c) (f s)) s)
+  (\(Tuple (Scoped c _) s) -> Scoped (zoomOut (PartName name) c) s)
+
+adapter :: forall i a b s t. Profunctor i => String -> (b -> t) -> (s -> a) -> i (Scoped a) (Scoped b) -> i (Scoped s) (Scoped t)
+adapter name outside inside = promap
+  (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
+  (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
 
 -- TODO are these below needed?
 -- invand a b = profirst a ^ prosecond b
