@@ -183,10 +183,10 @@ element tagName attrs dynAttrs listener c = wrap \callback -> do
 
 type Listener a = Node -> Effect (Maybe a) -> Effect Unit
 
-onClick ∷ forall a. (a -> Effect Unit) -> Listener a
-onClick callback node ema = void $ DOM.addEventListener node "click" $ const do
-  ma <- ema
-  maybe (pure unit) callback ma
+onClick ∷ forall a. (a -> Effect Unit) -> Listener (Scoped a)
+onClick callback node emsa = void $ DOM.addEventListener node "click" $ const do
+  msa <- emsa
+  maybe (pure unit) (\(Scoped _ a) -> callback a) msa
 
 
 text :: forall a b. String -> Widget a b

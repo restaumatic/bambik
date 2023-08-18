@@ -18,21 +18,17 @@ module Demo1Business
   , isTakeaway
   , isDelivery
   , formal
-  , show
-  , defaultOrder
+  , print
   , submit
+  , defaultOrder
   ) where
   
 import Prelude
 
-import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Optics
-import Data.Show as Prelude
 import Effect (Effect)
 import Effect.Console (log)
-import Web (Component)
 
 
 type Order =
@@ -107,10 +103,13 @@ formal = adapter "formal" toInformal toFormal
     toInformal :: CustomerFormal -> CustomerInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
--- TODO move to more general module?
-show :: forall s. Show s => Projection String s
-show = projection "show" Prelude.show
+print :: forall a. Show a => Projection String a
+print = projection "print" show
 
+submit :: Order -> Effect Unit
+submit order = log $ show order
+
+-- TODO move to more general module?
 defaultOrder :: Order
 defaultOrder =
   { id: "61710"
@@ -122,7 +121,3 @@ defaultOrder =
   , fulfillment: DineIn
   }
 
-type Action a = Scoped a -> Effect Unit
-
-submit :: Action Order
-submit (Scoped _ order) = log $ Prelude.show order

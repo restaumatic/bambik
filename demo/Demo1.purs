@@ -1,6 +1,6 @@
 module Demo1 (main) where
 
-import Prelude hiding (show)
+import Prelude
 
 import Demo1Business
 import Web
@@ -47,9 +47,9 @@ order =
         text # value # surname ^
         text ") ") # formal) # orderedBy ^
     text ", paid: " ^
-    text # value # show # paid ^
+    text # value # print # paid ^
     text ", fulfillment: " ^
-    text # value # show # fulfillment) ^
+    text # value # print # fulfillment) ^
   div' (
     MDC.button (onClick submit) (
       text "Submit order"

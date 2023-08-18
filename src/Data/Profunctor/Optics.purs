@@ -9,6 +9,7 @@ module Data.Profunctor.Optics
   , closed
   , constructor
   , field
+  , module Data.Profunctor
   , nothing
   , profirst
   , projection
@@ -16,7 +17,6 @@ module Data.Profunctor.Optics
   , promap
   , proright
   , prosecond
-  , module Data.Profunctor
   )
   where
 
@@ -29,7 +29,6 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Plus (class ProPlus, prozero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
-import Effect (Effect)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -83,6 +82,8 @@ adapter :: forall a b s t. String -> (b -> t) -> (s -> a) -> Adapter a b s t
 adapter name outside inside = promap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
+
+-- common projections
 
 -- invand a b = profirst a ^ prosecond b
 
