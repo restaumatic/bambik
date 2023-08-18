@@ -102,7 +102,7 @@ formal = adapter "formal" toInformal toFormal
     toInformal :: CustomerFormal -> CustomerInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
-print :: forall a. Show a => Projection String a
+print :: forall a. Show a => Projection String a -- TODO this should be moved to more general module
 print = projection "print" show
 
 submit :: Order -> Effect Unit
