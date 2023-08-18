@@ -109,10 +109,9 @@ print = projection "print" show
 submit :: Order -> Effect Unit
 submit order = log $ show order
 
--- TODO move to more general module?
 defaultOrder :: Order
 defaultOrder =
-  { id: "61710"
+  { id: "13"
   , orderedBy:
     { firstName: "John"
     , lastName: "Doe"
