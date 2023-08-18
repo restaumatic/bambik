@@ -3,9 +3,8 @@ module Demo1 (main) where
 import Prelude
 
 import Demo1Business
-import Web
-
 import Effect (Effect)
+import Web
 import Web.MDC as MDC
 
 main :: Effect Unit
@@ -51,7 +50,7 @@ order =
     text ", fulfillment: " ^
     text # value # print # fulfillment) ^
   div' (
-    MDC.button (onClick submit) (
+    MDC.button submit (
       text "Submit order"
     )
   )
