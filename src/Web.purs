@@ -1,7 +1,7 @@
 module Web
-  ( Component(..)
+  ( Component
   , Listener
-  , Widget(..)
+  , Widget
   , button
   , button'
   , checkbox
@@ -30,7 +30,6 @@ import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
 import Data.Profunctor.Plus (class ProPlus, class ProPlusoid, proplus, proplusfirst, proplussecond, prozero, (<^), (^), (^>))
@@ -47,29 +46,25 @@ import Specular.Dom.Builder (Builder, runMainBuilderInBody)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
 
-type Component a = Widget (Scoped a) (Scoped a)
-
 newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
 
-derive instance Newtype (Widget i o) _
-
 instance Profunctor Widget where
-  dimap post pre c = wrap \callback -> do
-    f <- unwrap c $ callback <<< pre
+  dimap post pre c = Widget \callback -> do
+    f <- unwrapWidget c $ callback <<< pre
     pure $ f <<< post
 
 instance ProCartesian Widget where
-  profirst c = wrap \abcallback -> do
+  profirst c = Widget \abcallback -> do
     bref <- liftEffect $ Ref.new Nothing
-    update <- unwrap c \a -> do
+    update <- unwrapWidget c \a -> do
       mb <- liftEffect $ Ref.read bref
       maybe mempty (\b -> abcallback $ Tuple a b) mb
     pure $ \ab -> do
       Ref.write (Just (snd ab)) bref
       update $ fst ab
-  prosecond c = wrap \abcallback -> do
+  prosecond c = Widget \abcallback -> do
     aref <- liftEffect $ Ref.new Nothing
-    update <- unwrap c \b -> do
+    update <- unwrapWidget c \b -> do
       ma <- liftEffect $ Ref.read aref
       maybe mempty (\a -> abcallback $ Tuple a b) ma
     pure $ \ab -> do
@@ -77,7 +72,7 @@ instance ProCartesian Widget where
       update $ snd ab
 
 instance ProCocartesian Widget where
-  proleft c = wrap \abcallback -> do
+  proleft c = Widget \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     pure \aorb -> case aorb of
@@ -86,7 +81,7 @@ instance ProCocartesian Widget where
         update <- case mUpdate of
           Just update -> pure update
           Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Left)
+            newUpdate <- liftEffect $ replaceSlot slot $ unwrapWidget c (abcallback <<< Left)
             liftEffect $ Ref.write (Just newUpdate) mUpdateRef
             pure newUpdate
         update $ a
@@ -97,7 +92,7 @@ instance ProCocartesian Widget where
         -- abcallback userInput
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
-  proright c = wrap \abcallback -> do
+  proright c = Widget \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     pure \aorb -> case aorb of
@@ -106,7 +101,7 @@ instance ProCocartesian Widget where
         update <- case mUpdate of
           Just update -> pure update
           Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrap c (abcallback <<< Right)
+            newUpdate <- liftEffect $ replaceSlot slot $ unwrapWidget c (abcallback <<< Right)
             liftEffect $ Ref.write (Just newUpdate) mUpdateRef
             pure newUpdate
         update $ b
@@ -119,48 +114,48 @@ instance ProCocartesian Widget where
         -- Is that stil relevant question?
 
 instance ProPlusoid Widget where
-  proplus c1 c2 = wrap \updateParent -> do
+  proplus c1 c2 = Widget \updateParent -> do
     -- TODO how to get rid of this ref?
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    update1 <- unwrap c1 \a -> do
+    update1 <- unwrapWidget c1 \a -> do
       mUpdate2 <- Ref.read mUpdate2Ref
       let update2 = maybe mempty identity mUpdate2
       update2 a
       updateParent a
-    update2 <- unwrap c2 \a -> do
+    update2 <- unwrapWidget c2 \a -> do
       update1 a
       updateParent a
     liftEffect $ Ref.write (Just update2) mUpdate2Ref
     pure \a -> do
       update1 a
       update2 a
-  proplusfirst c1 c2 = wrap \updateParent -> do
-    update1 <- unwrap c1 updateParent
-    update2 <- unwrap c2 mempty
+  proplusfirst c1 c2 = Widget \updateParent -> do
+    update1 <- unwrapWidget c1 updateParent
+    update2 <- unwrapWidget c2 mempty
     pure \a -> do
       update1 a
       update2 a
-  proplussecond c1 c2 = wrap \updateParent -> do
-    update1 <- unwrap c1 mempty
-    update2 <- unwrap c2 updateParent
+  proplussecond c1 c2 = Widget \updateParent -> do
+    update1 <- unwrapWidget c1 mempty
+    update2 <- unwrapWidget c2 updateParent
     pure \a -> do
       update1 a
       update2 a
 
 instance ProPlus Widget where
-  prozero = wrap mempty
+  prozero = Widget mempty
 
 -- Widgets
 
 text :: forall a b. String -> Widget a b
-text s = wrap \_ -> do
+text s = Widget \_ -> do
   S.text s
   pure $ mempty
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
-element tagName attrs dynAttrs listener c = wrap \callback -> do
+element tagName attrs dynAttrs listener c = Widget \callback -> do
     maRef <- liftEffect $ Ref.new Nothing
-    Tuple node update <- elAttr tagName attrs $ unwrap c callback
+    Tuple node update <- elAttr tagName attrs $ unwrapWidget c callback
     liftEffect $ listener node (Ref.read maRef)
     pure \a -> do
       Ref.write (Just a) maRef
@@ -188,27 +183,32 @@ label' = element' "label"
 label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a b. Attrs → (a → Attrs) → (Node → Effect (Maybe a) → Effect Unit) → Widget a b → Widget a b
+button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 button = element "button"
 
-button' :: forall a b. Widget a b → Widget a b
+button' :: forall a b. Widget a b -> Widget a b
 button' = element' "button"
 
 -- Components
+-- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
+-- Components preserve Profunctor, ProCartesian, ProCocartesian, ProPlusoid and ProPlus instances of Widget.
 
+type Component a = Widget (Scoped a) (Scoped a)
+
+-- creates input-only Component from static Widget
 value :: forall a b. (a -> Widget b b) -> Component a
-value f = wrapWebComponent \_ -> do
+value f = component $ widget \_ -> do
   slot <- newSlot
-  pure $ \a -> replaceSlot slot $ void $ unwrap (f a) mempty
+  pure $ \a -> replaceSlot slot $ void $ unwrapWidget (f a) mempty
 
 textInput :: Attrs -> Component String
-textInput attrs = wrapWebComponent \callback -> do
+textInput attrs = component $ widget \callback -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   onDomEvent "input" node $ const $ getValue node >>= callback
   pure $ setValue node
 
 checkbox :: Attrs -> Component Boolean
-checkbox attrs = wrapWebComponent \callback -> do
+checkbox attrs = component $ widget \callback -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   onDomEvent "input" node $ const $ getChecked node >>= callback
   pure $ setChecked node
@@ -220,7 +220,7 @@ checkbox attrs = wrapWebComponent \callback -> do
 -- Nothing -> button was clicked but button doesn't remember any a
 -- Just a -> button was clicked and button does remember an a
 radio :: forall a. Attrs -> Component (Maybe a)
-radio attrs = wrapWebComponent \callbacka -> do
+radio attrs = component $ widget \callbacka -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   onDomEvent "change" node $ const do
@@ -245,7 +245,7 @@ onClick callback node emsa = void $ DOM.addEventListener node "click" $ const do
 
 runComponent :: forall a. Component a -> Builder Unit (a -> Effect Unit)
 runComponent c = do
-  update <- (unwrap c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
+  update <- (unwrapWidget c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
   pure $ \a -> update (Scoped MoreThanOnePart a)
 
 runMainComponent :: forall a. Component a -> a -> Effect Unit
@@ -255,9 +255,15 @@ runMainComponent c i = do
 
 -- Private
 
-wrapWebComponent :: forall a. ((a -> Effect Unit) -> Builder Unit (a -> Effect Unit)) -> Component a
-wrapWebComponent c = wrap \callback -> do
-  update <- c \a -> callback (Scoped MoreThanOnePart a)
+widget :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Widget i o
+widget = Widget
+
+unwrapWidget :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+unwrapWidget (Widget w) = w
+
+component :: forall a. Widget a a -> Component a
+component w = widget \callback -> do
+  update <- unwrapWidget w \a -> callback (Scoped MoreThanOnePart a)
   pure \(Scoped scope a) -> do
     case scope of
       NoPart -> do
