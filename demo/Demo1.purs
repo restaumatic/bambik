@@ -1,7 +1,8 @@
 module Demo1 (main) where
 
-import Demo1Business
 import Prelude
+
+import Demo1Business
 import Web
 import Effect (Effect)
 import Web.MDC as MDC
@@ -12,7 +13,6 @@ main = runMainComponent order defaultOrder
 order ∷ Component Order Order
 order =
   div' (
-    MDC.filledTextField "Id" # id) ^
   div' (
     customer # orderedBy) ^
   div' (
