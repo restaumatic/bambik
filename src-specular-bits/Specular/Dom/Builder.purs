@@ -26,6 +26,7 @@ module Specular.Dom.Builder
   , runBuilder
   , runBuilder'
   , runMainBuilderInBody
+  , runMainWidgetInNode
   , text
   , unBuilder
   )
@@ -46,10 +47,6 @@ import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequ
 import Specular.Internal.RIO (RIO(..), rio, runRIO)
 import Specular.Internal.RIO as RIO
 import Specular.Profiling as Profiling
-import Data.Maybe (Maybe(..))
-import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 
@@ -129,71 +126,71 @@ appendSlot (Slot _ _ append) = append
 
 newSlot :: forall env. Builder env (Slot ((Builder env)))
 newSlot = do
-    env <- getEnv
+  env <- getEnv
 
-    placeholderBefore <- liftEffect $ createTextNode ""
-    placeholderAfter <- liftEffect $ createTextNode ""
-    liftEffect $ appendChild placeholderBefore env.parent
-    liftEffect $ appendChild placeholderAfter env.parent
+  placeholderBefore <- liftEffect $ createTextNode ""
+  placeholderAfter <- liftEffect $ createTextNode ""
+  liftEffect $ appendChild placeholderBefore env.parent
+  liftEffect $ appendChild placeholderAfter env.parent
 
-    cleanupRef <- liftEffect $ new (mempty :: Effect Unit)
+  cleanupRef <- liftEffect $ new (mempty :: Effect Unit)
 
-    let
-      replace :: forall a. Builder env a -> Effect a
-      replace inner = Profiling.measure "slot replace" do
-        Profiling.measure "slot remove DOM" do
-          removeAllBetween placeholderBefore placeholderAfter
-
-        fragment <- createDocumentFragment
-        Tuple result cleanup <- Profiling.measure "slot init" do
-          runBuilderWithUserEnv env.userEnv fragment inner
-        join $ read cleanupRef
-
-        m_parent <- parentNode placeholderAfter
-
-        case m_parent of
-          Just parent -> do
-            insertBefore fragment placeholderAfter parent
-
-            write
-              ( Profiling.measure "slot cleanup" do
-                  cleanup
-                  write mempty cleanupRef -- TODO: explain this
-              )
-              cleanupRef
-
-          Nothing ->
-            -- we've been removed from the DOM
-            write cleanup cleanupRef
-
-        pure result
-
-      destroy :: Effect Unit
-      destroy = do
+  let
+    replace :: forall a. Builder env a -> Effect a
+    replace inner = Profiling.measure "slot replace" do
+      Profiling.measure "slot remove DOM" do
         removeAllBetween placeholderBefore placeholderAfter
-        removeNode placeholderBefore
-        removeNode placeholderAfter
-        join $ read cleanupRef
 
-      append :: Effect (Slot (Builder env))
-      append = do
-        fragment <- createDocumentFragment
-        Tuple slot cleanup <- runBuilderWithUserEnv env.userEnv fragment newSlot
-        modify_ (_ *> cleanup) cleanupRef -- FIXME: memory leak if the inner slot is destroyed
+      fragment <- createDocumentFragment
+      Tuple result cleanup <- Profiling.measure "slot init" do
+        runBuilderWithUserEnv env.userEnv fragment inner
+      join $ read cleanupRef
 
-        m_parent <- parentNode placeholderAfter
+      m_parent <- parentNode placeholderAfter
 
-        case m_parent of
-          Just parent -> do
-            insertBefore fragment placeholderAfter parent
-          Nothing ->
-            pure unit -- FIXME
+      case m_parent of
+        Just parent -> do
+          insertBefore fragment placeholderAfter parent
 
-        pure slot
+          write
+            ( Profiling.measure "slot cleanup" do
+                cleanup
+                write mempty cleanupRef -- TODO: explain this
+            )
+            cleanupRef
 
-    onCleanup $ join $ read cleanupRef
+        Nothing ->
+          -- we've been removed from the DOM
+          write cleanup cleanupRef
 
-    pure $ Slot replace destroy append
+      pure result
+
+    destroy :: Effect Unit
+    destroy = do
+      removeAllBetween placeholderBefore placeholderAfter
+      removeNode placeholderBefore
+      removeNode placeholderAfter
+      join $ read cleanupRef
+
+    append :: Effect (Slot (Builder env))
+    append = do
+      fragment <- createDocumentFragment
+      Tuple slot cleanup <- runBuilderWithUserEnv env.userEnv fragment newSlot
+      modify_ (_ *> cleanup) cleanupRef -- FIXME: memory leak if the inner slot is destroyed
+
+      m_parent <- parentNode placeholderAfter
+
+      case m_parent of
+        Just parent -> do
+          insertBefore fragment placeholderAfter parent
+        Nothing ->
+          pure unit -- FIXME
+
+      pure slot
+
+  onCleanup $ join $ read cleanupRef
+
+  pure $ Slot replace destroy append
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
@@ -234,12 +231,6 @@ runWidgetInNode parent widget = runBuilder parent do
 
 foreign import documentBody :: Effect Node
 
--- | Runs a widget `document.body`. Returns the result and cleanup action.
-runWidgetInBody :: forall a. Builder Unit a -> Effect (Tuple a (Effect Unit))
-runWidgetInBody widget = do
-  body <- documentBody
-  runWidgetInNode body widget
-
 -- | Runs a widget in the specified parent element and discards cleanup action.
 runMainWidgetInNode :: forall a. Node -> Builder Unit a -> Effect a
 runMainWidgetInNode parent widget = fst <$> runWidgetInNode parent widget
@@ -249,7 +240,6 @@ runMainBuilderInBody :: forall a. Builder Unit a -> Effect a
 runMainBuilderInBody widget = do
   body <- documentBody
   runMainWidgetInNode body widget
-
 
 -- copied from Browser.proplus
 
@@ -353,9 +343,16 @@ removeAllBetween = removeAllBetweenImpl
 moveAllBetweenInclusive :: Node -> Node -> Node -> Effect Unit
 moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
 
+
+onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
+onDomEvent eventType node handler = do
+  void $ liftEffect $ addEventListener node eventType handler
+  -- onCleanup unsub
+createCommentNode ∷ String → Effect Node
+createCommentNode = createCommentNodeImpl
+
 -- | Remove node from its parent node. No-op when the node has no parent.
 foreign import removeNode :: Node -> Effect Unit
-
 foreign import createTextNodeImpl :: String -> Effect Node
 foreign import setTextImpl :: Node -> String -> Effect Unit
 foreign import createDocumentFragmentImpl :: Effect Node
@@ -369,22 +366,9 @@ foreign import appendChildImpl :: Node -> Node -> Effect Unit
 foreign import removeAllBetweenImpl :: Node -> Node -> Effect Unit
 foreign import appendRawHtmlImpl :: String -> Node -> Effect Unit
 foreign import moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> Effect Unit
-
 foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
-
 -- | JS `Event.preventDefault()`.
 foreign import preventDefault :: Event -> Effect Unit
-
 -- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
-
-
-onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
-onDomEvent eventType node handler = do
-  void $ liftEffect $ addEventListener node eventType handler
-  -- onCleanup unsub
-
 foreign import createCommentNodeImpl :: String -> Effect Node
-
-createCommentNode ∷ String → Effect Node
-createCommentNode = createCommentNodeImpl
