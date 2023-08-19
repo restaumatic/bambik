@@ -19,7 +19,6 @@ module Specular.Dom.Builder
 import Prelude
 
 import Control.Apply (lift2)
-import Control.Monad.Cleanup (class MonadCleanup, onCleanup)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
 import Data.Maybe (Maybe(..))
@@ -50,8 +49,8 @@ derive newtype instance bindBuilder :: Bind (Builder env)
 derive newtype instance monadBuilder :: Monad (Builder env)
 derive newtype instance monadEffectBuilder :: MonadEffect (Builder env)
 
-instance monadCleanupBuilder :: MonadCleanup (Builder env) where
-  onCleanup action = mkBuilder $ \env -> pushDelayed env.cleanup action
+onCleanup :: forall env. Effect Unit -> Builder env Unit
+onCleanup action = mkBuilder $ \env -> pushDelayed env.cleanup action
 
 instance monadAskBuilder :: MonadAsk env (Builder env) where
   ask = _.userEnv <$> getEnv
