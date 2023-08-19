@@ -30,8 +30,9 @@ import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Optics (class ProCartesian, class ProCocartesian)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Plus (class ProPlus, class ProPlusoid, proplus, proplusfirst, proplussecond, prozero, (<^), (^), (^>))
+import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -39,7 +40,7 @@ import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributes, setAttributesImpl, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
@@ -49,8 +50,8 @@ instance Profunctor Widget where
     f <- unwrapWidget c $ callback <<< pre
     pure $ f <<< post
 
-instance ProCartesian Widget where
-  profirst c = Widget \abcallback -> do
+instance Strong Widget where
+  first c = Widget \abcallback -> do
     bref <- liftEffect $ Ref.new Nothing
     update <- unwrapWidget c \a -> do
       mb <- liftEffect $ Ref.read bref
@@ -58,7 +59,7 @@ instance ProCartesian Widget where
     pure $ \ab -> do
       Ref.write (Just (snd ab)) bref
       update $ fst ab
-  prosecond c = Widget \abcallback -> do
+  second c = Widget \abcallback -> do
     aref <- liftEffect $ Ref.new Nothing
     update <- unwrapWidget c \b -> do
       ma <- liftEffect $ Ref.read aref
@@ -67,8 +68,8 @@ instance ProCartesian Widget where
       Ref.write (Just (fst ab)) aref
       update $ snd ab
 
-instance ProCocartesian Widget where
-  proleft c = Widget \abcallback -> do
+instance Choice Widget where
+  left c = Widget \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     pure \aorb -> case aorb of
@@ -88,7 +89,7 @@ instance ProCocartesian Widget where
         -- abcallback userInput
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
-  proright c = Widget \abcallback -> do
+  right c = Widget \abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     pure \aorb -> case aorb of
@@ -155,7 +156,7 @@ element tagName attrs dynAttrs listener c = Widget \callback -> do
     liftEffect $ listener node (Ref.read maRef)
     pure \a -> do
       Ref.write (Just a) maRef
-      liftEffect $ runEffectFn2 setAttributes node (show <$> attrs <> dynAttrs a)
+      liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
       update a
 
 element' :: forall a b. TagName -> Widget a b -> Widget a b
@@ -187,7 +188,7 @@ button' = element' "button"
 
 -- Components
 -- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
--- Components preserve Profunctor, ProCartesian, ProCocartesian, ProPlusoid and ProPlus instances of Widget.
+-- Components preserve Profunctor, Strong, Choice, ProPlusoid and ProPlus instances of Widget.
 
 type Component a = Widget (Scoped a) (Scoped a)
 
@@ -266,8 +267,4 @@ component w = widget \callback -> do
         pure unit
       _ -> update a
 
-foreign import getValue :: Node -> Effect String
-foreign import setValue :: Node -> String -> Effect Unit
-foreign import getChecked :: Node -> Effect Boolean
-foreign import setChecked :: Node -> Boolean -> Effect Unit
-foreign import setAttributes :: EffectFn2 Node (Object String) Unit
+

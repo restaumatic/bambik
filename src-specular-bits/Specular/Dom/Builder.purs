@@ -13,10 +13,13 @@ module Specular.Dom.Builder
   , attr
   , classes
   , comment
+  , createCommentNodeImpl
   , destroySlot
   , elAttr
+  , getChecked
   , getEnv
   , getParentNode
+  , getValue
   , local
   , mkBuilder'
   , newSlot
@@ -27,6 +30,10 @@ module Specular.Dom.Builder
   , runBuilder'
   , runMainBuilderInBody
   , runMainWidgetInNode
+  , setAttributes
+  , setAttributesImpl
+  , setChecked
+  , setValue
   , text
   , unBuilder
   )
@@ -300,7 +307,7 @@ createElement :: TagName -> Effect Node
 createElement = createElementNS Nothing
 
 setAttributes :: Node -> Attrs -> Effect Unit
-setAttributes node attrs = runEffectFn2 _setAttributes node (show <$> attrs)
+setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
 
 removeAttributes :: Node -> Array String -> Effect Unit
 removeAttributes = removeAttributesImpl
@@ -358,7 +365,6 @@ foreign import setTextImpl :: Node -> String -> Effect Unit
 foreign import createDocumentFragmentImpl :: Effect Node
 foreign import createElementNSImpl :: Namespace -> TagName -> Effect Node
 foreign import createElementImpl :: TagName -> Effect Node
-foreign import _setAttributes :: EffectFn2 Node (Object String) Unit
 foreign import removeAttributesImpl :: Node -> Array String -> Effect Unit
 foreign import parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> Effect (Maybe Node)
 foreign import insertBeforeImpl :: Node -> Node -> Node -> Effect Unit
@@ -372,3 +378,11 @@ foreign import preventDefault :: Event -> Effect Unit
 -- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
 foreign import createCommentNodeImpl :: String -> Effect Node
+
+-- copied from Web.purs
+
+foreign import getValue :: Node -> Effect String
+foreign import setValue :: Node -> String -> Effect Unit
+foreign import getChecked :: Node -> Effect Boolean
+foreign import setChecked :: Node -> Boolean -> Effect Unit
+foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
