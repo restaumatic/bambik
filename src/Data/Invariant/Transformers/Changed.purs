@@ -39,9 +39,9 @@ instance Show Scope where
 derive instance Eq Scope
 
 instance Show Change where
-  show Some = "+"
+  show Some = "*"
   show None = "-"
-  show (Scoped hops) = intercalate "" (show <$> hops)
+  show (Scoped scopes) = intercalate "" (show <$> scopes)
 
 -- finds least common scope
 instance Semigroup Change where
@@ -64,32 +64,32 @@ instance Monoid Change where
   mempty = None
 
 zoomOut :: Scope -> Change -> Change
-zoomOut partName Some = Scoped (partName `NonEmptyArray.cons'` [])
-zoomOut partName (Scoped hops) = Scoped (partName `NonEmptyArray.cons` hops)
+zoomOut scope Some = Scoped (scope `NonEmptyArray.cons'` [])
+zoomOut scope (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
 zoomOut _ None = None
 
 zoomIn :: Scope -> Change -> Change
 zoomIn _ Some = Some
-zoomIn partName (Scoped hops) = case NonEmptyArray.uncons hops of
-  { head, tail } | head == partName -> case uncons tail of -- matching head
+zoomIn scope (Scoped scopes) = case NonEmptyArray.uncons scopes of
+  { head, tail } | head == scope -> case uncons tail of -- matching head
     Just { head, tail } -> Scoped $ NonEmptyArray.cons' head tail -- non empty tail
     Nothing -> Some -- empty tail
   { head: Variant twistName } -> Some -- not matching head but head is twist
-  _ -> case partName of
-    Variant _ -> Some -- not matching head but partName is twist
+  _ -> case scope of
+    Variant _ -> Some -- not matching head but scope is twist
     _ -> None -- otherwise
 zoomIn _ None = None
 
 zoomIn' :: Scope -> Change -> Change
-zoomIn' partName part = let result = zoomIn partName part in spy ("\nzoomin:\npartName: " <> show partName <> " part: " <> show part <> " result: " <> show result) result
+zoomIn' scope change = let result = zoomIn scope change in spy ("\nzoomin:\npartName: " <> show scope <> " change: " <> show change <> " result: " <> show result) result
 
 invField :: forall @l i r1 r a . InvCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Changed a) -> i (Changed (Record r1))
 invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
     invField' :: forall i a s. InvCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Changed a) -> i (Changed s)
-    invField' partName setter getter = invfirst >>> invmap
-      (\(Tuple (Changed c a) s) -> Changed (zoomOut (Part partName) c) (setter s a))
-      (\(Changed c s) -> Tuple (Changed (zoomIn (Part partName) c) (getter s)) s)
+    invField' scope setter getter = invfirst >>> invmap
+      (\(Tuple (Changed c a) s) -> Changed (zoomOut (Part scope) c) (setter s a))
+      (\(Changed c s) -> Tuple (Changed (zoomIn (Part scope) c) (getter s)) s)
 
 invConstructor :: forall i a s. InvCocartesian i => String -> (a -> s) -> (s -> Maybe a) -> i (Changed a) -> i (Changed s)
 invConstructor name construct deconstruct = invleft >>> invmap
