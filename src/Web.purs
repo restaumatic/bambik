@@ -39,11 +39,8 @@ import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
-import Specular.Dom.Browser (Node, TagName, Attrs, attr, onDomEvent)
-import Specular.Dom.Browser as DOM
-import Specular.Dom.Builder (Builder, runMainBuilderInBody, newSlot, replaceSlot)
-import Specular.Dom.Builder.Class (elAttr)
-import Specular.Dom.Builder.Class as S
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody)
+import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
 
@@ -148,7 +145,7 @@ instance ProPlus Widget where
 
 text :: forall a b. String -> Widget a b
 text s = Widget \_ -> do
-  S.text s
+  Builder.text s
   pure $ mempty
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
@@ -236,7 +233,7 @@ radio attrs = component $ widget \callbacka -> do
 type Listener a = Node -> Effect (Maybe a) -> Effect Unit
 
 onClick ∷ forall a. (a -> Effect Unit) -> Listener (Scoped a)
-onClick callback node emsa = void $ DOM.addEventListener node "click" $ const do
+onClick callback node emsa = void $ addEventListener node "click" $ const do
   msa <- emsa
   maybe (pure unit) (\(Scoped _ a) -> callback a) msa
 

@@ -1,17 +1,32 @@
 module Specular.Dom.Builder
-  ( Builder
+  ( AttrValue(..)
+  , Attrs
+  , Builder
+  , Event
+  , EventType
+  , Namespace
+  , Node
   , Slot
+  , TagName
+  , addEventListener
   , appendSlot
-  , replaceSlot
+  , attr
+  , classes
+  , comment
   , destroySlot
+  , elAttr
   , getEnv
   , getParentNode
   , local
   , mkBuilder'
   , newSlot
+  , onDomEvent
+  , rawHtml
+  , replaceSlot
   , runBuilder
   , runBuilder'
   , runMainBuilderInBody
+  , text
   , unBuilder
   )
   where
@@ -27,12 +42,17 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (modify_, new, read, write)
 import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
-import Specular.Dom.Browser (Node, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElementNS, createTextNode, insertBefore, parentNode, removeAllBetween, removeNode, setAttributes)
-import Specular.Dom.Builder.Class (class MonadDomBuilder)
 import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
 import Specular.Internal.RIO (RIO(..), rio, runRIO)
 import Specular.Internal.RIO as RIO
 import Specular.Profiling as Profiling
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Foreign.Object (Object)
+import Foreign.Object as Object
+
 
 newtype Builder env a = Builder (RIO (BuilderEnv env) a)
 
@@ -175,59 +195,28 @@ newSlot = do
 
     pure $ Slot replace destroy append
 
-instance monadDomBuilderBuilder :: MonadDomBuilder (Builder env) where
+text :: forall env. String -> Builder env Unit
+text str = mkBuilder \env -> do
+  node <- createTextNode str
+  appendChild node env.parent
 
-  text str = mkBuilder \env -> do
-    node <- createTextNode str
-    appendChild node env.parent
+rawHtml :: forall env. String -> Builder env Unit
+rawHtml html = mkBuilder \env ->
+  appendRawHtml html env.parent
 
-  -- dynText dstr = do
-  --   node <- mkBuilder \env -> do
-  --     node <- createTextNode ""
-  --     appendChild node env.parent
-  --     pure node
-  --   subscribeWeakDyn_ (setText node) dstr
+elAttr :: forall a env. TagName -> Attrs -> Builder env a -> Builder env (Tuple Node a)
+elAttr tagName attrs inner = do
+  env <- getEnv
+  node <- liftEffect $ createElementNS Nothing tagName
+  liftEffect $ setAttributes node attrs
+  result <- Builder $ RIO.local (setParent node) $ unBuilder inner
+  liftEffect $ appendChild node env.parent
+  pure $ Tuple node result
 
-  rawHtml html = mkBuilder \env ->
-    appendRawHtml html env.parent
-
-  -- elDynAttrNS' namespace tagName dynAttrs inner = do
-  --   env <- getEnv
-  --   node <- liftEffect $ createElementNS namespace tagName
-
-  --   attrsRef <- liftEffect $ new mempty
-  --   let
-  --     resetAttributes newAttrs = do
-  --       oldAttrs <- read attrsRef
-  --       write newAttrs attrsRef
-  --       let
-  --         changed = SM.filterWithKey (\k v -> SM.lookup k oldAttrs /= Just v) newAttrs
-  --         removed = A.filter (\k -> not (k `SM.member` newAttrs)) $ SM.keys oldAttrs
-
-  --       removeAttributes node removed
-  --       setAttributes node changed
-
-  --   subscribeWeakDyn_ resetAttributes dynAttrs
-  --   result <- Builder $ RIO.local (setParent node) $ unBuilder inner
-  --   liftEffect $ appendChild node env.parent
-  --   pure (Tuple node result)
-
-  elAttr tagName attrs inner = do
-    env <- getEnv
-    node <- liftEffect $ createElementNS Nothing tagName
-    liftEffect $ setAttributes node attrs
-    result <- Builder $ RIO.local (setParent node) $ unBuilder inner
-    liftEffect $ appendChild node env.parent
-    pure $ Tuple node result
-
-  liftBuilder fn = Builder (RIO fn)
-  liftBuilderWithRun fn =
-    Builder $ rio \env ->
-      runEffectFn2 fn env (mkEffectFn2 \env' (Builder (RIO m)) -> runEffectFn1 m env')
-
-  comment str = mkBuilder \env -> do
-    node <- createCommentNode str
-    appendChild node env.parent
+comment :: forall env. String -> Builder env Unit
+comment str = mkBuilder \env -> do
+  node <- createCommentNode str
+  appendChild node env.parent
 
 instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
   append = lift2 append
@@ -260,3 +249,142 @@ runMainBuilderInBody :: forall a. Builder Unit a -> Effect a
 runMainBuilderInBody widget = do
   body <- documentBody
   runMainWidgetInNode body widget
+
+
+-- copied from Browser.proplus
+
+type Attrs = Object AttrValue
+
+data AttrValue = ClassNames String | AttrValue String
+
+classes :: String -> Attrs
+classes spaceSeparatedClassNames = "class" := ClassNames spaceSeparatedClassNames
+
+attr ∷ String → String → Attrs
+attr attrName attrValue =  attrName := AttrValue attrValue
+
+instance Semigroup AttrValue where
+  append (ClassNames classNames1) (ClassNames classNames2) = ClassNames $ classNames1 <> " " <> classNames2
+  append _ second = second
+
+instance Show AttrValue where
+  show (ClassNames s) = s
+  show (AttrValue s) = s
+
+-- | Convenient syntax for building Attrs
+infix 8 Object.singleton as :=
+
+type TagName = String
+
+-- | XML namespace URI.
+type Namespace = String
+
+-- | DOM node.
+foreign import data Node :: Type
+
+-- | DOM event.
+foreign import data Event :: Type
+
+-- | HTML event type, e.g. "click".
+type EventType = String
+
+-- | Register an event listener. Returns unregister action.
+addEventListener :: Node -> EventType -> (Event -> Effect Unit) -> Effect (Effect Unit)
+addEventListener node etype callback = addEventListenerImpl etype callback node
+
+createTextNode :: String -> Effect Node
+createTextNode = createTextNodeImpl
+
+setText :: Node -> String -> Effect Unit
+setText = setTextImpl
+
+createDocumentFragment :: Effect Node
+createDocumentFragment = createDocumentFragmentImpl
+
+-- | Create an element, optionally with namespace.
+createElementNS :: Maybe Namespace -> TagName -> Effect Node
+createElementNS (Just namespace) = createElementNSImpl namespace
+createElementNS Nothing = createElementImpl
+
+createElement :: TagName -> Effect Node
+createElement = createElementNS Nothing
+
+setAttributes :: Node -> Attrs -> Effect Unit
+setAttributes node attrs = runEffectFn2 _setAttributes node (show <$> attrs)
+
+removeAttributes :: Node -> Array String -> Effect Unit
+removeAttributes = removeAttributesImpl
+
+-- | Return parent node of the node,
+-- | or Nothing if it has been detached.
+parentNode :: Node -> Effect (Maybe Node)
+parentNode = parentNodeImpl Just Nothing
+
+-- | `insertBefore newNode nodeAfter parent`
+-- | Insert `newNode` before `nodeAfter` in `parent`
+insertBefore :: Node -> Node -> Node -> Effect Unit
+insertBefore = insertBeforeImpl
+
+-- | `appendChild newNode parent`
+appendChild :: Node -> Node -> Effect Unit
+appendChild = appendChildImpl
+
+-- | Append a chunk of raw HTML to the end of the node.
+appendRawHtml :: String -> Node -> Effect Unit
+appendRawHtml = appendRawHtmlImpl
+
+-- | `removeAllBetween from to`
+-- |
+-- | Remove all nodes after `from` and before `to` from their
+-- | parent. `from` and `to` are not removed.
+-- |
+-- | Assumes that `from` and `to` have the same parent,
+-- | and `from` is before `to`.
+removeAllBetween :: Node -> Node -> Effect Unit
+removeAllBetween = removeAllBetweenImpl
+
+-- | `moveAllBetweenInclusive from to parent`
+-- |
+-- | Moves `from`, all nodes after `from` and before `to` and `to` to
+-- | `parent`.
+-- |
+-- | Assumes that `from` and `to` have the same parent,
+-- | and `from` is before `to`.
+moveAllBetweenInclusive :: Node -> Node -> Node -> Effect Unit
+moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
+
+-- | Remove node from its parent node. No-op when the node has no parent.
+foreign import removeNode :: Node -> Effect Unit
+
+foreign import createTextNodeImpl :: String -> Effect Node
+foreign import setTextImpl :: Node -> String -> Effect Unit
+foreign import createDocumentFragmentImpl :: Effect Node
+foreign import createElementNSImpl :: Namespace -> TagName -> Effect Node
+foreign import createElementImpl :: TagName -> Effect Node
+foreign import _setAttributes :: EffectFn2 Node (Object String) Unit
+foreign import removeAttributesImpl :: Node -> Array String -> Effect Unit
+foreign import parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> Effect (Maybe Node)
+foreign import insertBeforeImpl :: Node -> Node -> Node -> Effect Unit
+foreign import appendChildImpl :: Node -> Node -> Effect Unit
+foreign import removeAllBetweenImpl :: Node -> Node -> Effect Unit
+foreign import appendRawHtmlImpl :: String -> Node -> Effect Unit
+foreign import moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> Effect Unit
+
+foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
+
+-- | JS `Event.preventDefault()`.
+foreign import preventDefault :: Event -> Effect Unit
+
+-- | Get `innerHTML` of a node.
+foreign import innerHTML :: Node -> Effect String
+
+
+onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
+onDomEvent eventType node handler = do
+  void $ liftEffect $ addEventListener node eventType handler
+  -- onCleanup unsub
+
+foreign import createCommentNodeImpl :: String -> Effect Node
+
+createCommentNode ∷ String → Effect Node
+createCommentNode = createCommentNodeImpl

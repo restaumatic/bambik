@@ -15,7 +15,7 @@ import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Specular.Dom.Browser (Node, attr, classes)
+import Specular.Dom.Builder (Node, attr, classes)
 import Web (Component, button, div, element, label, onClick, radio, span, text, textInput)
 import Web as Web
 
