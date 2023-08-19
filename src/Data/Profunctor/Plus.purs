@@ -25,7 +25,7 @@ class ProfunctorPlus p <= ProfunctorZero p where
     -- laws:
     --  proplus a pzero == a = proplus invzero a
 
--- lower precedence than `#`` which is 0
+-- lower precedence than `#` which is 0
 infixr 0 proplus as ^
 infixr 0 proplusfirst as <^
 infixr 0 proplussecond as ^>
