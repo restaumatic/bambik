@@ -11,7 +11,6 @@
 
 ## TODO
 
-  1. Propagation through data constructors - bug
   1. First-order MDC components
   1. Higher-order components (including MDC)
   1. Inputless components
