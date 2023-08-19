@@ -27,7 +27,7 @@ module Web
 import Prelude hiding (zero)
 
 import Data.Either (Either(..))
-import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
+import Data.Invariant.Transformers.Changed (Change(..), Changed(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
@@ -190,7 +190,7 @@ button' = element' "button"
 -- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
 -- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
 
-type Component a = Widget (Scoped a) (Scoped a)
+type Component a = Widget (Changed a) (Changed a)
 
 -- creates input-only Component from static Widget
 value :: forall a b. (a -> Widget b b) -> Component a
@@ -233,17 +233,17 @@ radio attrs = component $ widget \callbacka -> do
 
 type Listener a = Node -> Effect (Maybe a) -> Effect Unit
 
-onClick ∷ forall a. (a -> Effect Unit) -> Listener (Scoped a)
+onClick ∷ forall a. (a -> Effect Unit) -> Listener (Changed a)
 onClick callback node emsa = void $ addEventListener node "click" $ const do
   msa <- emsa
-  maybe (pure unit) (\(Scoped _ a) -> callback a) msa
+  maybe (pure unit) (\(Changed _ a) -> callback a) msa
 
 -- Running
 
 runComponent :: forall a. Component a -> Builder Unit (a -> Effect Unit)
 runComponent c = do
-  update <- (unwrapWidget c) \(Scoped scope _) -> log $ "change in scope: " <> show scope
-  pure $ \a -> update (Scoped MoreThanOnePart a)
+  update <- (unwrapWidget c) \(Changed scope _) -> log $ "change in scope: " <> show scope
+  pure $ \a -> update (Changed Some a)
 
 runMainComponent :: forall a. Component a -> a -> Effect Unit
 runMainComponent c i = do
@@ -260,10 +260,10 @@ unwrapWidget (Widget w) = w
 
 component :: forall a. Widget a a -> Component a
 component w = widget \callback -> do
-  update <- unwrapWidget w \a -> callback (Scoped MoreThanOnePart a)
-  pure \(Scoped scope a) -> do
+  update <- unwrapWidget w \a -> callback (Changed Some a)
+  pure \(Changed scope a) -> do
     case scope of
-      NoPart -> do
+      None -> do
         pure unit
       _ -> update a
 
