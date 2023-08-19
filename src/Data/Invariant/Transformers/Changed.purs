@@ -64,24 +64,27 @@ instance Monoid Change where
   mempty = None
 
 zoomOut :: Scope -> Change -> Change
-zoomOut scope Some = Scoped (scope `NonEmptyArray.cons'` [])
-zoomOut scope (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
-zoomOut _ None = None
+zoomOut scope change = let result = zoomOut' scope change in spy ("change: " <> show result <> " < " <> show scope <> " < " <> show change) result
+  where
+    zoomOut' :: Scope -> Change -> Change
+    zoomOut' scope Some = Scoped (scope `NonEmptyArray.cons'` [])
+    zoomOut' scope (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+    zoomOut' _ None = None
 
 zoomIn :: Scope -> Change -> Change
-zoomIn _ Some = Some
-zoomIn scope (Scoped scopes) = case NonEmptyArray.uncons scopes of
-  { head, tail } | head == scope -> case uncons tail of -- matching head
-    Just { head, tail } -> Scoped $ NonEmptyArray.cons' head tail -- non empty tail
-    Nothing -> Some -- empty tail
-  { head: Variant twistName } -> Some -- not matching head but head is twist
-  _ -> case scope of
-    Variant _ -> Some -- not matching head but scope is twist
-    _ -> None -- otherwise
-zoomIn _ None = None
-
-zoomIn' :: Scope -> Change -> Change
-zoomIn' scope change = let result = zoomIn scope change in spy ("\nzoomin:\npartName: " <> show scope <> " change: " <> show change <> " result: " <> show result) result
+zoomIn scope change = let result = zoomIn' scope change in spy ("change: " <> show change <> " > " <> show scope <> " > " <> show result) result
+  where
+    zoomIn' :: Scope -> Change -> Change
+    zoomIn' _ Some = Some
+    zoomIn' scope (Scoped scopes) = case NonEmptyArray.uncons scopes of
+      { head, tail } | head == scope -> case uncons tail of -- matching head
+        Just { head, tail } -> Scoped $ NonEmptyArray.cons' head tail -- non empty tail
+        Nothing -> Some -- empty tail
+      { head: Variant twistName } -> Some -- not matching head but head is twist
+      _ -> case scope of
+        Variant _ -> Some -- not matching head but scope is twist
+        _ -> None -- otherwise
+    zoomIn' _ None = None
 
 invField :: forall @l i r1 r a . InvCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Changed a) -> i (Changed (Record r1))
 invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))

@@ -18,7 +18,7 @@ order =
   div' (
     MDC.checkbox # paid ^
     text "Paid") ^
-  (div' (
+  ( div' (
       MDC.radioButton # isDineIn ^
       text "Dine in") ^
     div' (
@@ -27,11 +27,12 @@ order =
     div' (
       MDC.radioButton # isDelivery ^
       text "Delivery")) # fulfillment ^
-  div' (
-    div' (
-      text "Delivery details") ^
-    div' (
-      MDC.filledTextField "Address") # address) # delivery # fulfillment ^
+  ( div'
+      ( MDC.filledTextField "Table" # table) # dineIn ^
+    div'
+      ( MDC.filledTextField "Time" # time) # takeaway ^
+    div'
+      ( MDC.filledTextField "Address" # address) # delivery) # fulfillment ^
   div' (
     text "Summary: " ^
     text # value # id ^

@@ -49,10 +49,10 @@ constructor name construct deconstruct = left >>> dimap
   (\(Changed c s) -> maybe (Right (Changed c s)) (\a -> Left (Changed (zoomIn (Part name) c) a)) (deconstruct s))
   (\saors -> either (\(Changed c a) -> Changed (zoomOut (Part name) c) (construct a)) identity saors)
 
-projection :: forall a s . String -> (s -> a) -> Projection a s
-projection name f = first >>> dimap
-  (\(Changed c s) -> Tuple (Changed (zoomIn (Part name) c) (f s)) s)
-  (\(Tuple (Changed c _) s) -> Changed (zoomOut (Part name) c) s)
+projection :: forall a s . (s -> a) -> Projection a s
+projection f = first >>> dimap
+  (\(Changed c s) -> Tuple (Changed c (f s)) s)
+  (\(Tuple (Changed c _) s) -> Changed c s)
 
 adapter :: forall a s. String -> (a -> s) -> (s -> a) -> Adapter a s
 adapter name outside inside = dimap

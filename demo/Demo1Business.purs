@@ -12,7 +12,11 @@ module Demo1Business
   , forename
   , surname
   , fulfillment
+  , table
+  , time
   , address
+  , dineIn
+  , takeaway
   , delivery
   , isDineIn
   , isTakeaway
@@ -24,10 +28,10 @@ module Demo1Business
   , defaultOrder
   ) where
   
+import Data.Profunctor.Optics
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Profunctor.Optics
 import Effect (Effect)
 import Effect.Console (log)
 
@@ -48,13 +52,17 @@ type CustomerFormal =
   , surname :: String
   }
 
-data Fulfillment = DineIn | Takeaway | Delivery { address :: Address }
+data Fulfillment = DineIn { table :: Table } | Takeaway { time :: Time } | Delivery { address :: Address }
+
+type Table = String
+
+type Time = String
 
 type Address = String
 
 instance Show Fulfillment where
-  show DineIn = "Dine in"
-  show Takeaway = "Takeaway"
+  show (DineIn { table }) = "Dine in at table " <> table
+  show (Takeaway { time }) = "Takeaway at " <> time
   show (Delivery { address }) = "Delivery to " <> address
 
 id = field @"id"
@@ -73,21 +81,35 @@ surname =  field @"surname"
 
 fulfillment =  field @"fulfillment"
 
+table =  field @"table"
+
+time =  field @"time"
+
 address =  field @"address"
 
-delivery :: Constructor { address :: String } Fulfillment
+dineIn :: Constructor { table :: Table } Fulfillment
+dineIn = constructor "dineIn" DineIn (case _ of
+  DineIn c -> Just c
+  _ -> Nothing)
+
+takeaway :: Constructor { time :: String } Fulfillment
+takeaway = constructor "takeaway" Takeaway (case _ of
+  Takeaway c -> Just c
+  _ -> Nothing)
+
+delivery :: Constructor { address :: Address } Fulfillment
 delivery = constructor "delivery" Delivery (case _ of
   Delivery c -> Just c
   _ -> Nothing)
 
 isDineIn :: Adapter (Maybe Fulfillment) Fulfillment
-isDineIn = adapter "isDineIn" (fromMaybe DineIn) (case _ of
-  d@DineIn -> Just d
+isDineIn = adapter "isDineIn" (fromMaybe ( DineIn { table: ""})) (case _ of
+  d@(DineIn _) -> Just d
   _ -> Nothing)
 
 isTakeaway :: Adapter (Maybe Fulfillment) Fulfillment
-isTakeaway = adapter "isTakeaway" (fromMaybe Takeaway) (case _ of
-  t@Takeaway -> Just t
+isTakeaway = adapter "isTakeaway" (fromMaybe (Takeaway { time: ""})) (case _ of
+  t@(Takeaway _) -> Just t
   _ -> Nothing)
 
 isDelivery :: Adapter (Maybe Fulfillment) Fulfillment
@@ -104,22 +126,22 @@ formal = adapter "formal" toInformal toFormal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
 paymentStatus :: Projection String Order
-paymentStatus = projection "paymentStatus" \order -> if order.paid then "Paid" else "NOT PAID"
+paymentStatus = projection \order -> if order.paid then "Paid" else "NOT PAID"
 
 fulfillmentData :: Projection String Order
-fulfillmentData = projection "fulfillmentData" \order -> show order.fulfillment
+fulfillmentData = projection \order -> show order.fulfillment
 
 writeOrderToConsole :: Order -> Effect Unit
 writeOrderToConsole order = log $ show order
 
 defaultOrder :: Order
 defaultOrder =
-  { id: "61710"
+  { id: "7"
   , orderedBy:
     { firstName: "John"
     , lastName: "Doe"
     }
   , paid: true
-  , fulfillment: DineIn
+  , fulfillment: DineIn { table: "" }
   }
 
