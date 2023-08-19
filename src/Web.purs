@@ -26,7 +26,6 @@ module Web
 
 import Prelude hiding (zero)
 
-import Control.Monad.Replace (newSlot, replaceSlot)
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
@@ -42,7 +41,7 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Specular.Dom.Browser (Node, TagName, Attrs, attr, onDomEvent)
 import Specular.Dom.Browser as DOM
-import Specular.Dom.Builder (Builder, runMainBuilderInBody)
+import Specular.Dom.Builder (Builder, runMainBuilderInBody, newSlot, replaceSlot)
 import Specular.Dom.Builder.Class (elAttr)
 import Specular.Dom.Builder.Class as S
 

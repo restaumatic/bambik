@@ -1,9 +1,14 @@
 module Specular.Dom.Builder
   ( Builder
+  , Slot
+  , appendSlot
+  , replaceSlot
+  , destroySlot
   , getEnv
   , getParentNode
   , local
   , mkBuilder'
+  , newSlot
   , runBuilder
   , runBuilder'
   , runMainBuilderInBody
@@ -17,7 +22,6 @@ import Control.Apply (lift2)
 import Control.Monad.Cleanup (class MonadCleanup, onCleanup)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
-import Control.Monad.Replace (class MonadReplace, Slot(Slot), destroySlot, newSlot, replaceSlot)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(Tuple), fst)
 import Effect (Effect)
@@ -90,9 +94,22 @@ setParent parent env = env { parent = parent }
 getParentNode :: forall env. Builder env Node
 getParentNode = Builder (asks _.parent)
 
-instance monadReplaceBuilder :: MonadReplace (Builder env) where
+data Slot m = Slot
+  (forall a. m a -> Effect a) -- ^ run inner widget, replace contents
+  (Effect Unit) -- ^ destroy
+  (Effect (Slot m)) -- ^ Create a new slot after this one
 
-  newSlot = do
+replaceSlot :: forall m a. Slot m -> m a -> Effect a
+replaceSlot (Slot replace _ _) = replace
+
+destroySlot :: forall m. Slot m -> Effect Unit
+destroySlot (Slot _ destroy _) = destroy
+
+appendSlot :: forall m. Slot m -> Effect (Slot m)
+appendSlot (Slot _ _ append) = append
+
+newSlot :: forall env. Builder env (Slot ((Builder env)))
+newSlot = do
     env <- getEnv
 
     placeholderBefore <- liftEffect $ createTextNode ""
