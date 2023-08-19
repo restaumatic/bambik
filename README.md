@@ -18,7 +18,7 @@
   1. I18n support
   1. Nice type synonym for fields
   1. Virtual fields
-  1. Get rid of Scoped in Data.Profunctor.Optics 
+  1. Get rid of Scoped in Data.Profunctor.Optics
 
 ## Abstract
 
