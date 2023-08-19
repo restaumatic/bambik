@@ -9,6 +9,16 @@
   * In component body, each line should start with sub component (e.g. `div`). In particular place `^`, `<^` or `^>` at the end of line. This is for highlighting visual aspect.
   * In component body read `#` as *of*, so `text # value # field @"firstName"` can be read as *text of value of field "firstName"*.
 
+## TODO
+
+  1. Propagation through data constructors - bug
+  1. First-order MDC components
+  1. Higher-order components (including MDC)
+  1. Inputless components
+  1. I18n support
+  1. Nice type synonym for fields
+  1.  
+
 ## Abstract
 
 In this work we'll start with presenting profunctor optics encoding where an optic is encoded as a polymorphic profunctor transformer. 
