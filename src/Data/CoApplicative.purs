@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty, head, tail, (:|))
 import Data.Tuple (Tuple(..))
 
-class Functor f <= CoApply f where -- TODO maybe Covariant?
+class Functor f <= CoApply f where
   cozip :: forall a b. f (Either a b) -> Either (f a) (f b)
 
 class CoApply f <= CoApplicative f where
