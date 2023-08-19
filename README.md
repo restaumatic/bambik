@@ -17,7 +17,7 @@
   1. Inputless components
   1. I18n support
   1. Nice type synonym for fields
-  1.  
+  1. Virtual fields
 
 ## Abstract
 

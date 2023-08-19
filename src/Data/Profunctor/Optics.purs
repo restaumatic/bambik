@@ -1,14 +1,15 @@
 module Data.Profunctor.Optics
-  ( module Data.Profunctor
-  , Field
+  ( Adapter
   , Constructor
-  , Adapter
+  , Field
+  , Null
   , Projection
+  , adapter
   , constructor
   , field
-  , adapter
+  , module Data.Profunctor
+  , null
   , projection
-  , nothing
   )
   where
 
@@ -27,14 +28,14 @@ import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 
-type Field :: forall k1 k2. k1 -> k2 -> Type
-type Field a s = Unit -- TODO
-type Constructor a s = forall p. Choice p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
-type Projection a s = forall p. Strong p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s) -- TODO is Strong contraint here really needed?
 type Adapter a s = forall p. Profunctor p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Field a s = Unit -- TODO
+type Projection a s = forall p. Strong p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Constructor a s = forall p. Choice p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
+type Null = forall p a b s t. ProPlus p => p a b -> p s t
 
-nothing :: forall p a b s t. Profunctor p => ProPlus p => p a b -> p s t
-nothing = const prozero
+null :: Null
+null = const prozero
 
 field :: forall @l i r1 r a . Strong i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
