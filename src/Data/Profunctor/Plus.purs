@@ -2,30 +2,28 @@ module Data.Profunctor.Plus
   ( (<^)
   , (^)
   , (^>)
-  , class ProPlus
-  , class ProPlusoid
+  , class ProfunctorZero
+  , class ProfunctorPlus
   , proplus
   , proplusfirst
   , proplussecond
-  , prozero
+  , pzero
   )
   where
 
 import Data.Profunctor (class Profunctor)
 
--- class ProPlusoid :: forall k. (k -> k -> Type) -> Constraint
-class Profunctor p <= ProPlusoid p where
+class Profunctor p <= ProfunctorPlus p where
     proplus :: forall a . p a a -> p a a -> p a a
     proplusfirst :: forall a b c. p a b -> p a c -> p a b
     proplussecond :: forall a b c. p a c -> p a b -> p a b
     -- laws:
     -- proplus a (proplus b c) = proplus (proplus a b) c
 
--- class ProPlus :: forall k. (k -> k -> Type) -> Constraint
-class ProPlusoid p <= ProPlus p where
-    prozero :: forall a b. p a b
+class ProfunctorPlus p <= ProfunctorZero p where
+    pzero :: forall a b. p a b
     -- laws:
-    --  proplus a prozero == a = proplus invzero a
+    --  proplus a pzero == a = proplus invzero a
 
 -- lower precedence than `#`` which is 0
 infixr 0 proplus as ^

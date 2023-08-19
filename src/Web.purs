@@ -31,7 +31,7 @@ import Data.Invariant.Transformers.Scoped (Part(..), Scoped(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProPlus, class ProPlusoid, proplus, proplusfirst, proplussecond, prozero, (<^), (^), (^>))
+import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, proplusfirst, proplussecond, pzero, (<^), (^), (^>))
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -110,7 +110,7 @@ instance Choice Widget where
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
 
-instance ProPlusoid Widget where
+instance ProfunctorPlus Widget where
   proplus c1 c2 = Widget \updateParent -> do
     -- TODO how to get rid of this ref?
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
@@ -139,8 +139,8 @@ instance ProPlusoid Widget where
       update1 a
       update2 a
 
-instance ProPlus Widget where
-  prozero = Widget mempty
+instance ProfunctorZero Widget where
+  pzero = Widget mempty
 
 -- Widgets
 
@@ -188,7 +188,7 @@ button' = element' "button"
 
 -- Components
 -- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
--- Components preserve Profunctor, Strong, Choice, ProPlusoid and ProPlus instances of Widget.
+-- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
 
 type Component a = Widget (Scoped a) (Scoped a)
 

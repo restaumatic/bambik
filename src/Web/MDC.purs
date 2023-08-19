@@ -10,7 +10,7 @@ import Prelude hiding (div)
 
 import Data.Invariant.Transformers.Scoped (Scoped(..))
 import Data.Maybe (Maybe)
-import Data.Profunctor.Plus (prozero, (<^), (^))
+import Data.Profunctor.Plus (pzero, (<^), (^))
 import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -22,20 +22,20 @@ import Web as Web
 containedButton :: forall a. (a -> Effect Unit) -> Component a -> Component a
 containedButton action wrapped =
   button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
-    (div (classes "mdc-button__ripple") mempty mempty prozero)
+    (div (classes "mdc-button__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
 
 filledTextField :: String -> Component String
 filledTextField hintText =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
-    (span (classes "mdc-text-field__ripple") mempty mempty prozero)
+    (span (classes "mdc-text-field__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Scoped _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty (text hintText)
     ^
     (textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))
     ^
-    (span (classes "mdc-line-ripple") mempty mempty prozero)
+    (span (classes "mdc-line-ripple") mempty mempty pzero)
 
 checkbox :: Component Boolean
 checkbox =
@@ -49,13 +49,13 @@ checkbox =
         (
         element "svg" (classes "mdc-checkbox__checkmark" <> attr "viewBox" "0 0 24 24") mempty mempty
           (
-          element "path" (classes "mdc-checkbox__checkmark-path" <> attr "fill" "none" <> attr "d" "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty prozero
+          element "path" (classes "mdc-checkbox__checkmark-path" <> attr "fill" "none" <> attr "d" "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty pzero
           )
         ^
-        div (classes "mdc-checkbox__mixedmark") mempty mempty prozero
+        div (classes "mdc-checkbox__mixedmark") mempty mempty pzero
         )
       ^
-      div (classes "mdc-checkbox__ripple") mempty mempty prozero
+      div (classes "mdc-checkbox__ripple") mempty mempty pzero
       )
     )
 
@@ -66,12 +66,12 @@ radioButton = div (classes "mdc-form-field") mempty mempty
       (radio (classes "mdc-radio__native-control" <> attr "id" "radio-1" ))
       <^
       (div (classes "mdc-radio__background") mempty mempty $
-        div (classes "mdc-radio__outer-circle") mempty mempty prozero
+        div (classes "mdc-radio__outer-circle") mempty mempty pzero
         ^
-        div (classes "mdc-radio__inner-circle") mempty mempty prozero
+        div (classes "mdc-radio__inner-circle") mempty mempty pzero
       )
       ^
-      (div (classes "mdc-radio__ripple") mempty mempty prozero)
+      (div (classes "mdc-radio__ripple") mempty mempty pzero)
     )
     -- <>
     -- (Web.element' "label'" ("for" := "radio-1") (\_ node -> (liftEffect $ mdcWith material.formField."MDCFormField" node mempty) *> pure never) $ text # static "Radio 1")

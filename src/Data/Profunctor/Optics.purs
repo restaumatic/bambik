@@ -20,7 +20,7 @@ import Data.Invariant.Transformers.Scoped (PartName(..), Scoped(..), zoomIn, zoo
 import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
-import Data.Profunctor.Plus (class ProPlus, prozero)
+import Data.Profunctor.Plus (class ProfunctorZero, pzero)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -32,10 +32,10 @@ type Adapter a s = forall p. Profunctor p => p (Scoped a) (Scoped a) -> p (Scope
 type Field a s = Unit -- TODO
 type Projection a s = forall p. Strong p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
 type Constructor a s = forall p. Choice p => p (Scoped a) (Scoped a) -> p (Scoped s) (Scoped s)
-type Null = forall p a b s t. ProPlus p => p a b -> p s t
+type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
 null :: Null
-null = const prozero
+null = const pzero
 
 field :: forall @l i r1 r a . Strong i => IsSymbol l => Row.Cons l a r r1 => i (Scoped a) (Scoped a)-> i (Scoped (Record r1)) (Scoped (Record r1))
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
