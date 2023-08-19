@@ -58,21 +58,3 @@ adapter :: forall a s. String -> (a -> s) -> (s -> a) -> Adapter a s
 adapter name outside inside = dimap
   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
-
--- adapter :: forall a b s t. String -> (b -> t) -> (s -> a) -> Adapter a b s t
--- adapter name outside inside = dimap
---   (\(Scoped c b) -> Scoped (zoomIn (TwistName name) c) (inside b))
---   (\(Scoped c a) -> Scoped (zoomOut (TwistName name) c) (outside a))
-
--- common projections
-
--- invand a b = first a ^ second b
-
--- invandwith :: forall i a b c . Strong i => InvPlus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
--- invandwith f g a b = dimap f g $ invand a b
-
--- invor :: forall i a b . Choice i => InvPlus i => i a -> i b -> i (Either a b)
--- invor a b = left a ^ right b
-
--- invorwith :: forall i a b c . Choice i => InvPlus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
--- invorwith f g a b = dimap f g $ invor a b
