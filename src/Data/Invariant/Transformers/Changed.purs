@@ -57,7 +57,7 @@ instance Semigroup Change where
       commonPrefix a1 a2 = let
         {head: h1, tail: t1} = NonEmptyArray.uncons a1
         {head: h2, tail: t2} = NonEmptyArray.uncons a2
-        in if h1 == h2 then h1:(fromMaybe [] $ commonPrefix <$> NonEmptyArray.fromArray t1 <*> NonEmptyArray.fromArray t2)
+        in if h1 == h2 then h1:fromMaybe [] (commonPrefix <$> NonEmptyArray.fromArray t1 <*> NonEmptyArray.fromArray t2)
         else []
 
 instance Monoid Change where
