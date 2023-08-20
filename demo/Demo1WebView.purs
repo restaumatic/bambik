@@ -3,8 +3,9 @@ module Demo1WebView
   , customer
   ) where
 
-import Demo1Business
 import Prelude
+
+import Demo1Business
 import Web
 
 import Web.MDC as MDC
