@@ -60,8 +60,7 @@ order =
     text # fulfillmentData) ^
   div' (
     MDC.containedButton (
-      text # writeOrderToConsoleCaption
-    ) writeOrderToConsole
+      text # writeOrderToConsoleCaption) writeOrderToConsole
   )
 
 customer :: Component CustomerInformal
