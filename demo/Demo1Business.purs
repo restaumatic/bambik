@@ -174,7 +174,7 @@ takeawayCaption :: Constant String
 takeawayCaption = constant "Takeaway"
 
 deliveryCaption :: Constant String
-deliveryCaption = constant "Takeaway"
+deliveryCaption = constant "Delivery"
 
 tableCaption :: Constant String
 tableCaption = constant "Table"

@@ -21,14 +21,14 @@ import Web as Web
 
 containedButton :: forall a. (a -> Effect Unit) -> Component a -> Component a
 containedButton action wrapped =
-  button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node mempty) <> onClick action) $
+  button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
 
 filledTextField :: Component String -> Component String
 filledTextField hint =
-  label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
+  label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Changed _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty
@@ -42,7 +42,7 @@ checkbox :: Component Boolean
 checkbox =
   div (classes "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
     (
-    div (classes "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node mempty)
+    div (classes "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node)
       (
       Web.checkbox (classes "mdc-checkbox__native-control")
       ^
@@ -63,7 +63,7 @@ checkbox =
 radioButton :: forall a. Component (Maybe a)
 radioButton = div (classes "mdc-form-field") mempty mempty
   (
-    (div (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node mempty) $
+    (div (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node) $
       (radio (classes "mdc-radio__native-control" <> attr "id" "radio-1" ))
       <^
       (div (classes "mdc-radio__background") mempty mempty $
@@ -96,15 +96,8 @@ radioButton = div (classes "mdc-form-field") mempty mempty
 --             liftEffect $ update a
 
 
-mdcWith :: ComponentClass -> Node -> (WebUI -> Node -> Effect Unit) -> Effect Unit
-mdcWith classes node init = do
-  component <- new classes node
-  pure unit
-  -- Tuple _ cleanup <- (map fst <<< runCleanupT) $ init component node
-  -- pushDelayed cleanups cleanup
-  where
-    new :: ComponentClass -> Node -> Effect WebUI
-    new cls node = liftEffect $ runEffectFn2 _new cls node
+mdcWith :: ComponentClass -> Node -> Effect Unit
+mdcWith classes node = void $ liftEffect $ runEffectFn2 _new classes node
 
 foreign import data ComponentClass :: Type
 foreign import data WebUI :: Type
