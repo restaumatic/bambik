@@ -59,9 +59,9 @@ order =
     chars ": " ^
     text # fulfillmentData) ^
   div' (
-    MDC.containedButton writeOrderToConsole (
+    MDC.containedButton (
       text # writeOrderToConsoleCaption
-    )
+    ) writeOrderToConsole
   )
 
 customer :: Component CustomerInformal

@@ -19,12 +19,12 @@ import Specular.Dom.Builder (Node, attr, classes)
 import Web (Component, button, div, element, label, onClick, radio, span, textInput)
 import Web as Web
 
-containedButton :: forall a. (a -> Effect Unit) -> Component a -> Component a
-containedButton action wrapped =
+containedButton :: forall a. Component a -> (a -> Effect Unit) -> Component a
+containedButton c action =
   button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty pzero)
     ^
-    (span (classes "mdc-button__label") mempty mempty wrapped)
+    (span (classes "mdc-button__label") mempty mempty c)
 
 filledTextField :: Component String -> Component String
 filledTextField hint =
