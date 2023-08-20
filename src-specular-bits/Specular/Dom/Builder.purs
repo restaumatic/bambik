@@ -118,7 +118,7 @@ getParentNode :: forall env. Builder env Node
 getParentNode = Builder (asks _.parent)
 
 data Slot m = Slot
-  (forall a. m a -> Effect a) -- ^ run inner widget, replace contents
+  (forall a. m a -> Builder Unit a) -- ^ run inner widget, replace contents
   (Effect Unit) -- ^ destroy
   (Effect (Slot m)) -- ^ Create a new slot after this one
 

@@ -38,53 +38,76 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
-import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Foreign.Object (Object)
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributes, setAttributesImpl, setChecked, setValue)
+import Effect.Uncurried (runEffectFn2)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributesImpl, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
-newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
+class Monad m <= MonadBuilder m where
+  mempty :: forall a . Monoid a => m a
 
-instance Profunctor Widget where
+class MonadRef m where
+  new :: forall a. a -> m (Ref.Ref a)
+  read :: forall a. Ref.Ref a -> m a
+  write :: forall a. a -> Ref.Ref a -> m Unit
+
+class MonadSlot m where
+  newSlot :: m (Slot m)
+  replaceSlot :: forall m a. Slot m -> m a -> Effect a
+
+instance MonadBuilder (Builder env) where
+  mempty = pure mempty
+
+instance MonadRef (Builder env) where
+  new = liftEffect <<< Ref.new
+  read = liftEffect <<< Ref.read
+  write a ref = liftEffect $ Ref.write a ref
+
+
+-- instance Monoid a => Monoid (Builder node a) where
+--   mempty = pure mempty
+
+newtype Widget m i o = Widget ((o -> Effect Unit) -> m (i -> m Unit))
+
+instance Monad m => Profunctor (Widget m) where
   dimap post pre c = Widget \callback -> do
     f <- unwrapWidget c $ callback <<< pre
     pure $ f <<< post
 
-instance Strong Widget where
+instance MonadRef m => Strong (Widget m) where
   first c = Widget \abcallback -> do
-    bref <- liftEffect $ Ref.new Nothing
+    bref <- new Nothing
     update <- unwrapWidget c \a -> do
-      mb <- liftEffect $ Ref.read bref
+      mb <- read bref
       maybe mempty (\b -> abcallback $ Tuple a b) mb
     pure $ \ab -> do
-      Ref.write (Just (snd ab)) bref
+      write (Just (snd ab)) bref
       update $ fst ab
   second c = Widget \abcallback -> do
-    aref <- liftEffect $ Ref.new Nothing
+    aref <- new Nothing
     update <- unwrapWidget c \b -> do
-      ma <- liftEffect $ Ref.read aref
+      ma <- read aref
       maybe mempty (\a -> abcallback $ Tuple a b) ma
     pure $ \ab -> do
-      Ref.write (Just (fst ab)) aref
+      write (Just (fst ab)) aref
       update $ snd ab
 
-instance Choice Widget where
+instance MonadSlot m => Choice (Widget m) where
   left c = Widget \abcallback -> do
     slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
+    mUpdateRef <- new Nothing
     pure \aorb -> case aorb of
       Left a -> do
-        mUpdate <- liftEffect $ Ref.read mUpdateRef
+        mUpdate <- read mUpdateRef
         update <- case mUpdate of
           Just update -> pure update
           Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrapWidget c (abcallback <<< Left)
-            liftEffect $ Ref.write (Just newUpdate) mUpdateRef
+            newUpdate <- replaceSlot slot $ unwrapWidget c (abcallback <<< Left)
+            write (Just newUpdate) mUpdateRef
             pure newUpdate
-        update $ a
+        update a
       _ -> do
-        void $ liftEffect $ replaceSlot slot $ pure unit
-        Ref.write Nothing mUpdateRef
+        void $ replaceSlot slot $ pure unit
+        write Nothing mUpdateRef
         -- interestingly, theoretically, here we could call:
         -- abcallback userInput
         -- I don't know whether it would be right, though.
@@ -110,19 +133,19 @@ instance Choice Widget where
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
 
-instance ProfunctorPlus Widget where
+instance MonadRef m => ProfunctorPlus (Widget m) where
   proplus c1 c2 = Widget \updateParent -> do
     -- TODO how to get rid of this ref?
-    mUpdate2Ref <- liftEffect $ Ref.new Nothing
+    mUpdate2Ref <- new Nothing
     update1 <- unwrapWidget c1 \a -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
+      mUpdate2 <- read mUpdate2Ref
       let update2 = maybe mempty identity mUpdate2
       update2 a
       updateParent a
     update2 <- unwrapWidget c2 \a -> do
       update1 a
       updateParent a
-    liftEffect $ Ref.write (Just update2) mUpdate2Ref
+    liftEffect $ write (Just update2) mUpdate2Ref
     pure \a -> do
       update1 a
       update2 a
@@ -139,7 +162,7 @@ instance ProfunctorPlus Widget where
       update1 a
       update2 a
 
-instance ProfunctorZero Widget where
+instance MonadBuilder m => ProfunctorZero (Widget m) where
   pzero = Widget mempty
 
 -- Widgets
@@ -190,9 +213,9 @@ button' = element' "button"
 -- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
 -- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
 
-type Component a = Widget (Changed a) (Changed a)
+type Component m a = Widget m (Changed a) (Changed a)
 
--- creates input-only Component from static Widget
+-- turn parameterized static Widget into input-only Component
 value :: forall a b. (a -> Widget b b) -> Component a
 value f = component $ widget \_ -> do
   slot <- newSlot
@@ -240,22 +263,22 @@ onClick callback node emsa = void $ addEventListener node "click" $ const do
 
 -- Running
 
-runComponent :: forall a. Component a -> Builder Unit (a -> Effect Unit)
-runComponent c = do
+-- Generic
+runComponent :: forall m a. MonadBuilder m => Component m a -> a -> m Unit
+runComponent c a = do
   update <- (unwrapWidget c) \(Changed scope _) -> log $ "change in scope: " <> show scope
-  pure $ \a -> update (Changed Some a)
+  update (Changed Some a)
 
-runMainComponent :: forall a. Component a -> a -> Effect Unit
-runMainComponent c i = do
-  update <- runMainBuilderInBody $ runComponent c
-  update i
+-- Web-specific
+runMainComponent :: forall a. Component (Builder Unit) a -> a -> Effect Unit
+runMainComponent c a = runMainBuilderInBody $ runComponent c a
 
 -- Private
 
-widget :: forall i o. ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Widget i o
+widget :: forall m i o. ((o -> Effect Unit) -> m (i -> m Unit)) -> Widget m i o
 widget = Widget
 
-unwrapWidget :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+unwrapWidget :: forall m i o. Widget m i o -> (o -> Effect Unit) -> m (i -> m Unit)
 unwrapWidget (Widget w) = w
 
 component :: forall a. Widget a a -> Component a
