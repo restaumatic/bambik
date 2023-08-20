@@ -7,61 +7,72 @@ import Prelude
 
 import Demo1Business
 import Web
-
 import Web.MDC as MDC
 
 order ∷ Component Order
 order =
   div' (
-    MDC.filledTextField "ID" # id) ^
+    MDC.filledTextField
+      (text # idCaption) # id) ^
   div' (
     customer # orderedBy) ^
   div' (
     MDC.checkbox # paid ^
-    text "Paid") ^
+    text # paidCaption) ^
   ( div' (
       MDC.radioButton # isDineIn ^
-      text "Dine in") ^
+      text # dineInCaption) ^
     div' (
       MDC.radioButton # isTakeaway ^
-      text "Takeaway") ^
+      text # takeawayCaption) ^
     div' (
       MDC.radioButton # isDelivery ^
-      text "Delivery")) # fulfillment ^
+      text # deliveryCaption)) # fulfillment ^
   ( div'
-      ( MDC.filledTextField "Table" # table) # dineIn ^
+      ( MDC.filledTextField
+        (text # tableCaption) # table) # dineIn ^
     div'
-      ( MDC.filledTextField "Time" # time) # takeaway ^
+      ( MDC.filledTextField
+        (text # timeCaption) # time) # takeaway ^
     div'
-      ( MDC.filledTextField "Address" # address) # delivery) # fulfillment ^
+      ( MDC.filledTextField
+        (text # addressCaption) # address) # delivery) # fulfillment ^
   div' (
-    text "Summary: " ^
-    text # value # id ^
-    text " " ^ (
-      text # value # firstName ^
-      text " " ^
-      text # value # lastName ^ (
-        text " (" ^
-        text # value # forename ^
-        text " " ^
-        text # value # surname ^
-        text ") ") # formal) # orderedBy ^
-    text ", paid: " ^
-    text # value # paymentStatus ^
-    text ", fulfillment: " ^
-    text # value # fulfillmentData) ^
+    text # orderCaption ^
+    chars ": " ^
+    text # id ^
+    chars " " ^ (
+      text # firstName ^
+      chars " " ^
+      text # lastName ^ (
+        chars " (" ^
+        text # forename ^
+        chars " " ^
+        text # surname ^
+        chars ") ") # formal) # orderedBy ^
+    chars ", " ^
+    text # paidCaption ^
+    chars ": " ^
+    text # paymentStatus ^
+    chars ", " ^
+    text # fullfilmentCaption ^
+    chars ": " ^
+    text # fulfillmentData) ^
   div' (
     MDC.containedButton writeOrderToConsole (
-      text "Write order to console"
+      text # writeOrderToConsoleCaption
     )
   )
 
 customer :: Component CustomerInformal
 customer =
   div' (
-    MDC.filledTextField "First name" # firstName ^
-    MDC.filledTextField "Last name" # lastName) ^
-  text "or more formally:" ^
+    MDC.filledTextField
+      (text # firstNameCaption) # firstName ^
+    MDC.filledTextField
+      (text # lastNameCaption) # lastName) ^
   div' (
-    MDC.filledTextField "Forename" # forename ^
-    MDC.filledTextField "Surename" # surname) # formal
+    MDC.filledTextField
+      (text # forenameCaption) # forename ^
+    MDC.filledTextField
+      (text # surnameCaption) # surname) # formal

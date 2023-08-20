@@ -16,7 +16,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Builder (Node, attr, classes)
-import Web (Component, button, div, element, label, onClick, radio, span, text, textInput)
+import Web (Component, button, div, element, label, onClick, radio, span, textInput)
 import Web as Web
 
 containedButton :: forall a. (a -> Effect Unit) -> Component a -> Component a
@@ -26,12 +26,13 @@ containedButton action wrapped =
     ^
     (span (classes "mdc-button__label") mempty mempty wrapped)
 
-filledTextField :: String -> Component String
-filledTextField hintText =
+filledTextField :: Component String -> Component String
+filledTextField hint =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node mempty) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
     ^
-    (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Changed _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty (text hintText)
+    (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Changed _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty
+      hint
     ^
     (textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))
     ^

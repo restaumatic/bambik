@@ -4,6 +4,7 @@ module Web
   , Widget
   , button
   , button'
+  , chars
   , checkbox
   , div
   , div'
@@ -20,7 +21,6 @@ module Web
   , span'
   , text
   , textInput
-  , value
   )
   where
 
@@ -38,9 +38,8 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
-import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Foreign.Object (Object)
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributes, setAttributesImpl, setChecked, setValue)
+import Effect.Uncurried (runEffectFn2)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributesImpl, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
@@ -144,8 +143,15 @@ instance ProfunctorZero Widget where
 
 -- Widgets
 
-text :: forall a b. String -> Widget a b
-text s = Widget \_ -> do
+text :: forall a. Widget (Changed String) (Changed a)
+text = Widget \_ -> do
+  slot <- newSlot
+  pure $ case _ of
+    Changed None _ -> pure unit
+    Changed _ s -> replaceSlot slot $ Builder.text s
+
+chars :: forall a b. String -> Widget a b
+chars s = Widget \_ -> do
   Builder.text s
   pure $ mempty
 
@@ -191,12 +197,6 @@ button' = element' "button"
 -- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
 
 type Component a = Widget (Changed a) (Changed a)
-
--- creates input-only Component from static Widget
-value :: forall a b. (a -> Widget b b) -> Component a
-value f = component $ widget \_ -> do
-  slot <- newSlot
-  pure $ \a -> replaceSlot slot $ void $ unwrapWidget (f a) mempty
 
 textInput :: Attrs -> Component String
 textInput attrs = component $ widget \callback -> do

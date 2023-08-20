@@ -25,12 +25,27 @@ module Demo1Business
   , paymentStatus
   , fulfillmentData
   , writeOrderToConsole
+  , firstNameCaption
+  , lastNameCaption
+  , forenameCaption
+  , surnameCaption
+  , idCaption
+  , paidCaption
+  , dineInCaption
+  , takeawayCaption
+  , deliveryCaption
+  , tableCaption
+  , timeCaption
+  , addressCaption
+  , fullfilmentCaption
+  , orderCaption
+  , writeOrderToConsoleCaption
   , defaultOrder
   ) where
   
-import Data.Profunctor.Optics
 import Prelude
 
+import Data.Profunctor.Optics
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
@@ -133,6 +148,51 @@ fulfillmentData = projection \order -> show order.fulfillment
 
 writeOrderToConsole :: Order -> Effect Unit
 writeOrderToConsole order = log $ show order
+
+firstNameCaption :: Constant String
+firstNameCaption = constant "First name"
+
+lastNameCaption :: Constant String
+lastNameCaption = constant "Last name"
+
+forenameCaption :: Constant String
+forenameCaption = constant "Forename"
+
+surnameCaption :: Constant String
+surnameCaption = constant "Surname"
+
+idCaption :: Constant String
+idCaption = constant "ID"
+
+paidCaption :: Constant String
+paidCaption = constant "Paid"
+
+dineInCaption :: Constant String
+dineInCaption = constant "Dine in"
+
+takeawayCaption :: Constant String
+takeawayCaption = constant "Takeaway"
+
+deliveryCaption :: Constant String
+deliveryCaption = constant "Takeaway"
+
+tableCaption :: Constant String
+tableCaption = constant "Table"
+
+timeCaption :: Constant String
+timeCaption = constant "Time"
+
+addressCaption :: Constant String
+addressCaption = constant "Address"
+
+fullfilmentCaption :: Constant String
+fullfilmentCaption = constant "Fullfilment"
+
+orderCaption :: Constant String
+orderCaption = constant "Order"
+
+writeOrderToConsoleCaption :: Constant String
+writeOrderToConsoleCaption = constant "Write order to console"
 
 defaultOrder :: Order
 defaultOrder =
