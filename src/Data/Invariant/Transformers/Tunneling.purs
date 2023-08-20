@@ -48,7 +48,7 @@ instance InvPlus i => InvPlus (Tunneling f i) where
 -- Lens can be passed if `Tunneling f i` is `InvCartesian` thus if `i` is `InvCartesian` and `f` is an `Apply`.
 -- Prism can be passed if `Tunneling f i` is `InvCocartesian` thus if `i` is `InvCocartesian and `f` is a `CoApply`.
 -- Composed lens(es) and prism(s) can be passed if `i` is both `InvCartesian and `InvCocartesian` and `f` is both `Apply` and `CoApply` (e.g. `Identity`).
--- TODO what is really is?
+-- TODO EC what is really is?
 invlift' ∷ ∀ i f a b. (Tunneling f i a → Tunneling f i b) → i (f a) → i (f b)
 invlift' optic = unwrap <<< optic <<< wrap
 

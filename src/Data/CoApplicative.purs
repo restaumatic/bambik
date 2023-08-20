@@ -37,7 +37,7 @@ instance CoApplicative (Tuple s) where
 
 instance CoApply Maybe where
   cozip :: forall a b. Maybe (Either a b) -> Either (Maybe a) (Maybe b)
-  cozip Nothing = Left Nothing -- TODO or Right Nothing?
+  cozip Nothing = Left Nothing -- TODO EC or Right Nothing?
   cozip (Just (Left a)) = Left (Just a)
   cozip (Just (Right b)) = Right (Just b)
 

@@ -33,7 +33,7 @@ import Type.Proxy (Proxy(..))
 type Adapter a s = forall p. Profunctor p => p (Changed a) (Changed a) -> p (Changed s) (Changed s)
 type Projection a s = forall p. Profunctor p => p (Changed a) (Changed Void) -> p (Changed s) (Changed s)
 type Constant a = forall p s. Profunctor p => p (Changed a) (Changed Void) -> p (Changed s) (Changed s)
-type Field a s = Unit -- TODO
+type Field a s = Unit -- TODO EC
 type Constructor a s = forall p. Choice p => p (Changed a) (Changed a) -> p (Changed s) (Changed s)
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
