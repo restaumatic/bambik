@@ -4,6 +4,7 @@ module Web
   , Widget
   , button
   , button'
+  , chars
   , checkbox
   , div
   , div'
@@ -20,7 +21,6 @@ module Web
   , span'
   , text
   , textInput
-  , value
   )
   where
 
@@ -167,8 +167,15 @@ instance MonadBuilder m => ProfunctorZero (Widget m) where
 
 -- Widgets
 
-text :: forall a b. String -> Widget a b
-text s = Widget \_ -> do
+text :: forall a. Widget (Changed String) (Changed a)
+text = Widget \_ -> do
+  slot <- newSlot
+  pure $ case _ of
+    Changed None _ -> pure unit
+    Changed _ s -> replaceSlot slot $ Builder.text s
+
+chars :: forall a b. String -> Widget a b
+chars s = Widget \_ -> do
   Builder.text s
   pure $ mempty
 
@@ -214,12 +221,6 @@ button' = element' "button"
 -- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
 
 type Component m a = Widget m (Changed a) (Changed a)
-
--- turn parameterized static Widget into input-only Component
-value :: forall a b. (a -> Widget b b) -> Component a
-value f = component $ widget \_ -> do
-  slot <- newSlot
-  pure $ \a -> replaceSlot slot $ void $ unwrapWidget (f a) mempty
 
 textInput :: Attrs -> Component String
 textInput attrs = component $ widget \callback -> do
