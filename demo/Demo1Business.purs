@@ -46,7 +46,6 @@ module Demo1Business
 import Prelude
 
 import Data.Profunctor.Optics
-
 import Data.Array (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
