@@ -3,13 +3,13 @@ module Data.Profunctor.Optics
   , Constant
   , Constructor
   , Field
-  , Isomorphism
+  , Iso
   , Lens
   , Lens'
   , Null
   , Prism
   , Projection
-  , adapter
+  , iso
   , constant
   , constructor
   , field
@@ -38,7 +38,7 @@ import Type.Proxy (Proxy(..))
 
 -- identation to emphasize hierarchy
 type Adapter a b s t = forall p. Profunctor p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
-type   Isomorphism a s = Adapter a a s s
+type   Iso a s = Adapter a a s s
 type   Projection a s = Adapter a  Void s s
 type     Constant a = forall s. Projection a s
 type Lens a b s t = forall p. Strong p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
@@ -48,8 +48,8 @@ type Prism a b s t = forall p. Choice p => p (Changed a) (Changed b) -> p (Chang
 type   Constructor a s = Prism a a s s
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
-adapter :: forall a s. String -> (a -> s) -> (s -> a) -> Isomorphism a s
-adapter name outside inside = dimap
+iso :: forall a s. String -> (a -> s) -> (s -> a) -> Iso a s
+iso name outside inside = dimap
   (\(Changed c b) -> Changed (zoomIn (Variant name) c) (inside b))
   (\(Changed c a) -> Changed (zoomOut (Variant name) c) (outside a))
 
