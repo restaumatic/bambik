@@ -46,6 +46,8 @@ module Demo1Business
 import Prelude
 
 import Data.Profunctor.Optics
+
+import Data.Array (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
@@ -75,10 +77,6 @@ type Time = String
 
 type Address = String
 
-instance Show Fulfillment where
-  show (DineIn { table }) = "Dine in at table " <> table
-  show (Takeaway { time }) = "Takeaway at " <> time
-  show (Delivery { address }) = "Delivery to " <> address
 
 id = field @"id"
 
@@ -144,10 +142,18 @@ paymentStatus :: Projection String Boolean
 paymentStatus = projection if _ then "Paid" else "NOT PAID"
 
 fulfillmentData :: Projection String Fulfillment
-fulfillmentData = projection show
+fulfillmentData = projection case _ of
+  (DineIn { table }) -> "Dine in at table " <> table
+  (Takeaway { time }) -> "Takeaway at " <> time
+  (Delivery { address }) -> "Delivery to " <> address
 
 writeOrderToConsole :: Order -> Effect Unit
-writeOrderToConsole order = log $ show order
+writeOrderToConsole = log <<< case _ of
+  { id, orderedBy, paid, fulfillment } -> intercalate ", " [id, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
+    (DineIn { table }) -> "Dine in at table " <> table
+    (Takeaway { time }) -> "Takeaway at " <> time
+    (Delivery { address }) -> "Delivery to " <> address
+  ]
 
 firstNameCaption :: Constant String
 firstNameCaption = constant "First name"
