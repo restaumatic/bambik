@@ -1,18 +1,26 @@
-# 1. Lenses generalized to optics
+# 1. From lenses to optics
 
-Lenses, prisms etc are useful for navigation through data structures.
+Lenses, prisms, traversals etc, under common name of optics, provide a convenient way for navigating through data structures.
 
-But they are heteregenous and not composable.
+Problem: Concrete (explicit) encoding of optics is heteregenous hence not composable.
 
 # 2. Profunctor optics
 
-Profunctor optics encodes optics in homogenous and composable way.
+Profunctor optics encodes optics in homogenous thus composable way.
 
-But how powerful profunctor optics really is in navigating through data structures?
+Question: Are profunctor optics expressive enough in navigating through data structures?
 
 # 3. The power of optics
 
-Products, Co-products, isomorphisms, functions...
+  1. Isomorphism (Profunctor) and its sub classes:
+    1. Isomorphism
+    1. Projection and its sub classes:
+      1. Constant
+  1. Lens (Strong) and its sub classes:
+    1. Field
+  1. Prism (Choice) and its sub classes:
+    1. Constructor
+  1. Null (ProfunctorZero)
 
 Optics describes the structure of data without releaving its representation (data constructors, functions etc)
 

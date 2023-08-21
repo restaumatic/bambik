@@ -1,10 +1,13 @@
 module Data.Profunctor.Optics
   ( Adapter
+  , Isomorphism
+  , Projection
   , Constant
+  , Prism
+  , Lens
   , Constructor
   , Field
   , Null
-  , Projection
   , adapter
   , constant
   , constructor
@@ -30,14 +33,18 @@ import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 
-type Adapter a s = forall p. Profunctor p => p (Changed a) (Changed a) -> p (Changed s) (Changed s)
-type Projection a s = forall p. Profunctor p => p (Changed a) (Changed Void) -> p (Changed s) (Changed s)
-type Constant a = forall p s. Profunctor p => p (Changed a) (Changed Void) -> p (Changed s) (Changed s)
-type Field a s = Unit -- TODO EC
-type Constructor a s = forall p. Choice p => p (Changed a) (Changed a) -> p (Changed s) (Changed s)
+-- identation to emphasise hierachty
+type Adapter a b s t = forall p. Profunctor p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
+type   Isomorphism a s = Adapter a a s s
+type   Projection a s = Adapter a  Void s s
+type     Constant a = forall s. Projection a s
+type Lens a b s t = forall p. Strong p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
+type   Field a s = Unit -- TODO EC
+type Prism a b s t = forall p. Choice p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
+type   Constructor a s = Prism a a s s
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
-adapter :: forall a s. String -> (a -> s) -> (s -> a) -> Adapter a s
+adapter :: forall a s. String -> (a -> s) -> (s -> a) -> Isomorphism a s
 adapter name outside inside = dimap
   (\(Changed c b) -> Changed (zoomIn (Variant name) c) (inside b))
   (\(Changed c a) -> Changed (zoomOut (Variant name) c) (outside a))

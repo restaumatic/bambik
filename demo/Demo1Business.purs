@@ -117,22 +117,22 @@ delivery = constructor "delivery" Delivery (case _ of
   Delivery c -> Just c
   _ -> Nothing)
 
-isDineIn :: Adapter (Maybe Fulfillment) Fulfillment
+isDineIn :: Isomorphism (Maybe Fulfillment) Fulfillment
 isDineIn = adapter "isDineIn" (fromMaybe ( DineIn { table: ""})) (case _ of
   d@(DineIn _) -> Just d
   _ -> Nothing)
 
-isTakeaway :: Adapter (Maybe Fulfillment) Fulfillment
+isTakeaway :: Isomorphism (Maybe Fulfillment) Fulfillment
 isTakeaway = adapter "isTakeaway" (fromMaybe (Takeaway { time: ""})) (case _ of
   t@(Takeaway _) -> Just t
   _ -> Nothing)
 
-isDelivery :: Adapter (Maybe Fulfillment) Fulfillment
+isDelivery :: Isomorphism (Maybe Fulfillment) Fulfillment
 isDelivery = adapter "isDelivery" (fromMaybe (Delivery { address: "" })) (case _ of
   d@(Delivery _) -> Just d
   _ -> Nothing)
 
-formal :: Adapter CustomerFormal CustomerInformal
+formal :: Isomorphism CustomerFormal CustomerInformal
 formal = adapter "formal" toInformal toFormal
   where
     toFormal :: CustomerInformal -> CustomerFormal
