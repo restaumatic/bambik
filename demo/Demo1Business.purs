@@ -140,11 +140,11 @@ formal = adapter "formal" toInformal toFormal
     toInformal :: CustomerFormal -> CustomerInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
-paymentStatus :: Projection String Order
-paymentStatus = projection \order -> if order.paid then "Paid" else "NOT PAID"
+paymentStatus :: Projection String Boolean
+paymentStatus = projection if _ then "Paid" else "NOT PAID"
 
-fulfillmentData :: Projection String Order
-fulfillmentData = projection \order -> show order.fulfillment
+fulfillmentData :: Projection String Fulfillment
+fulfillmentData = projection show
 
 writeOrderToConsole :: Order -> Effect Unit
 writeOrderToConsole order = log $ show order

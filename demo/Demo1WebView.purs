@@ -53,11 +53,11 @@ order =
     chars ", " ^
     text # paidCaption ^
     chars ": " ^
-    text # paymentStatus ^
+    text # paymentStatus # paid ^
     chars ", " ^
     text # fullfilmentCaption ^
     chars ": " ^
-    text # fulfillmentData) ^
+    text # fulfillmentData # fulfillment) ^
   div' (
     MDC.containedButton (
       text # writeOrderToConsoleCaption) writeOrderToConsole
