@@ -71,43 +71,53 @@ instance Choice Widget where
   left c = Widget \ab abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
+    case ab of
+      Left a -> void $ liftEffect $ makeUpdate slot abcallback mUpdateRef a
+      Right _ -> pure unit
     pure \aorb -> case aorb of
       Left a -> do
-        mUpdate <- liftEffect $ Ref.read mUpdateRef
+        mUpdate <- Ref.read mUpdateRef
         update <- case mUpdate of
           Just update -> pure update
-          Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrapWidget c a (abcallback <<< Left)
-            liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-            pure newUpdate
+          Nothing -> makeUpdate slot abcallback mUpdateRef a
         update a
       _ -> do
-        void $ liftEffect $ replaceSlot slot $ pure unit
+        void $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
         -- interestingly, theoretically, here we could call:
-        -- abcallback userInput
+        -- abcallback b
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
+      where
+        makeUpdate slot abcallback mUpdateRef a = do
+          newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< Left)
+          Ref.write (Just newUpdate) mUpdateRef
+          pure newUpdate
   right c = Widget \ab abcallback -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
+    case ab of
+      Left _ -> pure unit
+      Right b -> void $ liftEffect $ makeUpdate slot abcallback mUpdateRef b
     pure \aorb -> case aorb of
       Right b -> do
-        mUpdate <- liftEffect $ Ref.read mUpdateRef
+        mUpdate <- Ref.read mUpdateRef
         update <- case mUpdate of
           Just update -> pure update
-          Nothing -> do
-            newUpdate <- liftEffect $ replaceSlot slot $ unwrapWidget c b (abcallback <<< Right)
-            liftEffect $ Ref.write (Just newUpdate) mUpdateRef
-            pure newUpdate
+          Nothing -> makeUpdate slot abcallback mUpdateRef b
         update b
       _ -> do
-        void $ liftEffect $ replaceSlot slot $ pure unit
+        void $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
         -- interestingly, theoretically, here we could call:
-        -- abcallback userInput
+        -- abcallback a
         -- I don't know whether it would be right, though.
         -- Is that stil relevant question?
+      where
+        makeUpdate slot abcallback mUpdateRef a = do
+          newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< Right)
+          Ref.write (Just newUpdate) mUpdateRef
+          pure newUpdate
 
 instance ProfunctorPlus Widget where
   proplus c1 c2 = Widget \initial updateParent -> do
