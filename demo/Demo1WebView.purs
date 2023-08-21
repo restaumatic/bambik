@@ -13,7 +13,9 @@ order ∷ Component Order
 order =
   div' (
     MDC.filledTextField
-      (text # shortIdCaption) # shortId) ^
+      (text # shortIdCaption) # short ^
+    MDC.filledTextField
+      (text # uniqueIdCaption) # unique) # orderId ^
   div' (
     customer # orderedBy) ^
   div' (
@@ -42,8 +44,11 @@ order =
     chars ": " ^
     text # orderIdCaption ^
     chars " " ^
-    text # orderIdText # orderId ^
-    chars " " ^ (
+    text # short # orderId ^
+    chars " (" ^
+    text # unique # orderId ^
+    chars ") " ^
+    (
       text # firstName ^
       chars " " ^
       text # lastName ^ (

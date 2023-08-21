@@ -8,6 +8,8 @@ module Demo1Business
   , shortId
   , orderedBy
   , paid
+  , short
+  , unique
   , firstName
   , lastName
   , forename
@@ -31,6 +33,7 @@ module Demo1Business
   , forenameCaption
   , surnameCaption
   , shortIdCaption
+  , uniqueIdCaption
   , paidCaption
   , dineInCaption
   , takeawayCaption
@@ -106,6 +109,10 @@ time =  field @"time"
 
 address =  field @"address"
 
+unique = field @"unique"
+
+short = field @"short"
+
 dineIn :: Constructor { table :: Table } Fulfillment
 dineIn = constructor "dineIn" DineIn (case _ of
   DineIn c -> Just c
@@ -175,6 +182,9 @@ surnameCaption = constant "Surname"
 
 shortIdCaption :: Constant String
 shortIdCaption = constant "Short ID"
+
+uniqueIdCaption :: Constant String
+uniqueIdCaption = constant "Unique ID"
 
 paidCaption :: Constant String
 paidCaption = constant "Paid"
