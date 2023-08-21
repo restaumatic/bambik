@@ -15,7 +15,6 @@
   1. Higher-order components (including MDC)
   1. Inputless components
   1. I18n support
-  1. Nice type synonym for fields
   1. Virtual fields
   1. Get rid of Changed in Data.Profunctor.Optics
   1. Short circuiting of none change - optimization of propagation

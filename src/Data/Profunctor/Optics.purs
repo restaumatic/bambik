@@ -39,7 +39,7 @@ type   Isomorphism a s = Adapter a a s s
 type   Projection a s = Adapter a  Void s s
 type     Constant a = forall s. Projection a s
 type Lens a b s t = forall p. Strong p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
-type   Field a s = Unit -- TODO EC
+type   Field a s = Lens a a (Record s) (Record s)
 type Prism a b s t = forall p. Choice p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
 type   Constructor a s = Prism a a s s
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
@@ -59,7 +59,7 @@ constant a = dimap
   (\(Changed c s) -> Changed c a)
   (\(Changed c s) -> Changed c (absurd s))
 
-field :: forall @l i r1 r a . Strong i => IsSymbol l => Row.Cons l a r r1 => i (Changed a) (Changed a)-> i (Changed (Record r1)) (Changed (Record r1))
+field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
     field' partName setter getter = first >>> dimap
