@@ -246,7 +246,7 @@ checkbox attrs = component $ widget \a callback -> do
 -- Just a -> button was clicked and button does remember an a
 radio :: forall a. Attrs -> Component (Maybe a)
 radio attrs = component $ widget \ma callbackma -> do
-  maRef <- liftEffect $ Ref.new Nothing -- TODO EC - Just a?
+  maRef <- liftEffect $ Ref.new ma
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ setChecked node (isJust ma)
   onDomEvent "change" node $ const $ Ref.read maRef >>= callbackma
