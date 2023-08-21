@@ -10,6 +10,10 @@ module Web
   , div'
   , element
   , element'
+  , h3
+  , h3'
+  , h4
+  , h4'
   , label
   , label'
   , module Data.Profunctor.Plus
@@ -217,6 +221,19 @@ button = element "button"
 
 button' :: forall a b. Widget a b -> Widget a b
 button' = element' "button"
+
+h3 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
+h3 = element "h3"
+
+h3' :: forall a b. Widget a b -> Widget a b
+h3' = element' "h3"
+
+h4 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
+h4 = element "h4"
+
+h4' :: forall a b. Widget a b -> Widget a b
+h4' = element' "h4"
+
 
 -- Components
 -- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.

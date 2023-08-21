@@ -32,6 +32,8 @@ module Demo1Business
   , lastNameCaption
   , forenameCaption
   , surnameCaption
+  , shortCaption
+  , uniqueCaption
   , shortIdCaption
   , uniqueIdCaption
   , paidCaption
@@ -179,6 +181,12 @@ forenameCaption = constant "Forename"
 
 surnameCaption :: Constant String
 surnameCaption = constant "Surname"
+
+shortCaption :: Constant String
+shortCaption = constant "Short"
+
+uniqueCaption :: Constant String
+uniqueCaption = constant "Unique"
 
 shortIdCaption :: Constant String
 shortIdCaption = constant "Short ID"

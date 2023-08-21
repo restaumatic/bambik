@@ -13,22 +13,27 @@ order ∷ Component Order
 order =
   div' (
     MDC.filledTextField
-      (text # shortIdCaption) # short ^
-    MDC.filledTextField
-      (text # uniqueIdCaption) # unique) # orderId ^
+      (text # uniqueIdCaption)) # uniqueId ^
   div' (
+    MDC.filledTextField
+      (text # shortIdCaption)) # shortId ^
+  div' (
+    h3' (chars "Order Id") ^
+    MDC.filledTextField
+      (text # shortCaption) # short ^
+    MDC.filledTextField
+      (text # uniqueCaption) # unique) # orderId ^
+  div' (
+    h3' (chars "Ordered by") ^
     customer # orderedBy) ^
   div' (
     MDC.checkbox # paid ^
     text # paidCaption) ^
-  ( div' (
-      MDC.radioButton # isDineIn ^
+  ( ( MDC.radioButton # isDineIn ^
       text # dineInCaption) ^
-    div' (
-      MDC.radioButton # isTakeaway ^
+    ( MDC.radioButton # isTakeaway ^
       text # takeawayCaption) ^
-    div' (
-      MDC.radioButton # isDelivery ^
+    ( MDC.radioButton # isDelivery ^
       text # deliveryCaption)) # fulfillment ^
   ( div'
       ( MDC.filledTextField
@@ -73,11 +78,13 @@ order =
 customer :: Component CustomerInformal
 customer =
   div' (
+    h4' (chars "First/last name") ^
     MDC.filledTextField
       (text # firstNameCaption) # firstName ^
     MDC.filledTextField
       (text # lastNameCaption) # lastName) ^
   div' (
+    h4' (chars "Fore/surname") ^
     MDC.filledTextField
       (text # forenameCaption) # forename ^
     MDC.filledTextField
