@@ -7,7 +7,8 @@
 ## Best practices
 
   * In component body, each line should start with sub component (e.g. `div`) or widget (e.g. `text`) possibly preceded by opening brackets (`(`). `^`, `<^` or `^>` should be placed at the end of line.
-  * In component body, read `#` as *of*, so `text # value # field @"firstName"` can be read as *text of value of field "firstName"*.
+  * In component body, read `#` as *of*, so `text # unique # orderId` can be read as *text of unique of order id*.
+  * General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
 
 ## TODO
 
@@ -15,10 +16,9 @@
   1. Higher-order components (including MDC)
   1. Inputless components
   1. I18n support
-  1. Virtual fields
   1. Get rid of Changed in Data.Profunctor.Optics
   1. Short circuiting of none change - optimization of propagation
-  1. Make Arrow instance of Widget not representable e.g. `newtype Widget i o = Widget ((o -> Effect Unit) -> Builder Unit (i -> Builder env Unit))`
+  1. Make Arrow instance of Widget not representable e.g. `newtype Widget i o = Widget (i -> (o -> Effect Unit) -> Builder Unit (i -> Builder env Unit))`
 
 ## Abstract
 

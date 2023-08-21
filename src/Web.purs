@@ -84,10 +84,13 @@ instance Choice Widget where
       _ -> do
         void $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
-        -- interestingly, theoretically, here we could call:
-        -- abcallback b
-        -- I don't know whether it would be right, though.
-        -- Is that stil relevant question?
+      -- doing here instead:
+      -- Right b -> do
+      --   void $ replaceSlot slot $ pure unit
+      --   Ref.write Nothing mUpdateRef
+      --   abcallback (Right b)
+      -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
+      -- TODO EC make it not type check
       where
         makeUpdate slot abcallback mUpdateRef a = do
           newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< Left)
@@ -109,10 +112,13 @@ instance Choice Widget where
       _ -> do
         void $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
-        -- interestingly, theoretically, here we could call:
-        -- abcallback a
-        -- I don't know whether it would be right, though.
-        -- Is that stil relevant question?
+      -- doing here instead:
+      -- Left a -> do
+      --   void $ replaceSlot slot $ pure unit
+      --   Ref.write Nothing mUpdateRef
+      --   abcallback (Left a)
+      -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
+      -- TODO EC make it not type check
       where
         makeUpdate slot abcallback mUpdateRef a = do
           newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< Right)
