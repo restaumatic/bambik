@@ -33,7 +33,7 @@ import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 
--- identation to emphasise hierachty
+-- identation to emphasize hierarchy
 type Adapter a b s t = forall p. Profunctor p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
 type   Isomorphism a s = Adapter a a s s
 type   Projection a s = Adapter a  Void s s
