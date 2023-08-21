@@ -43,7 +43,7 @@ type   Projection a s = Adapter a  Void s s
 type     Constant a = forall s. Projection a s
 type Lens a b s t = forall p. Strong p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
 type   Lens' a s = Lens a a s s
-type   Field a s = Lens' a (Record s)
+type     Field a s = Lens' a (Record s)
 type Prism a b s t = forall p. Choice p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
 type   Constructor a s = Prism a a s s
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
