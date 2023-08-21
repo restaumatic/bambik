@@ -151,6 +151,13 @@ text = Widget \str _ -> do
   pure $ case _ of
     Changed None _ -> pure unit
     Changed _ s -> replaceSlot slot $ Builder.text s
+-- TODO: Why this in below causes that no static text is displayed
+  -- liftEffect $ update slot str
+  -- pure $ update slot
+  --   where
+  --     update slot = case _ of
+  --       Changed None _ -> pure unit
+  --       Changed _ s -> replaceSlot slot $ Builder.text s
 
 chars :: forall a b. String -> Widget a b
 chars s = Widget \_ _ -> do
@@ -159,12 +166,13 @@ chars s = Widget \_ _ -> do
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener c = Widget \a callback -> do
-    maRef <- liftEffect $ Ref.new Nothing
+    aRef <- liftEffect $ Ref.new a
     Tuple node update <- elAttr tagName attrs $ unwrapWidget c a callback
-    liftEffect $ listener node (Ref.read maRef)
+    liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
+    liftEffect $ listener node (Ref.read aRef)
     pure \a -> do
-      Ref.write (Just a) maRef
-      liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
+      Ref.write a aRef
+      runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
       update a
 
 element' :: forall a b. TagName -> Widget a b -> Widget a b
@@ -173,22 +181,22 @@ element' tagName = element tagName mempty mempty mempty
 div' :: forall a b. Widget a b -> Widget a b
 div' = element' "div"
 
-div :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
+div :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 div = element "div"
 
 span' :: forall a b. Widget a b -> Widget a b
 span' = element' "span"
 
-span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
+span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 span = element "span"
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = element' "label"
 
-label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
+label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
+button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 button = element "button"
 
 button' :: forall a b. Widget a b -> Widget a b
@@ -235,12 +243,12 @@ radio attrs = component $ widget \a callbacka -> do
 
 -- Listeners
 
-type Listener a = Node -> Effect (Maybe a) -> Effect Unit
+type Listener a = Node -> Effect a -> Effect Unit
 
 onClick ∷ forall a. (a -> Effect Unit) -> Listener (Changed a)
-onClick callback node emsa = void $ addEventListener node "click" $ const do
-  msa <- emsa
-  maybe (pure unit) (\(Changed _ a) -> callback a) msa
+onClick callback node eca = void $ addEventListener node "click" $ const do
+  (Changed _ a) <- eca
+  callback a
 
 -- Running
 
