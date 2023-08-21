@@ -217,7 +217,7 @@ writeOrderToConsoleCaption :: Constant String
 writeOrderToConsoleCaption = constant "Write order to console"
 
 orderId :: Lens' OrderId Order
-orderId = lens' (case _ of
+orderId = lens' "orderId" (case _ of
   { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
 

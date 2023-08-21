@@ -63,20 +63,20 @@ constant a = dimap
   (\_ -> Changed None a)
   (\(Changed c a) -> Changed c (absurd a))
 
-lens :: forall a b s t. (s -> a) -> (s -> b -> t) -> Lens a b s t
-lens getter setter = first >>> dimap
-  (\(Changed c s) -> Tuple (Changed c (getter s)) s)
-  (\(Tuple (Changed c b) s) -> Changed c (setter s b))
+lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> Lens a b s t
+lens name getter setter = first >>> dimap
+  (\(Changed c s) -> Tuple (Changed (zoomIn (Variant name) c) (getter s)) s)
+  (\(Tuple (Changed c b) s) -> Changed (zoomOut (Variant name) c) (setter s b))
 
-lens' :: forall a s. (s -> a) -> (s -> a -> s) -> Lens' a s
+lens' :: forall a s. String -> (s -> a) -> (s -> a -> s) -> Lens' a s
 lens' = lens
 
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    field' partName setter getter = first >>> dimap
-      (\(Changed c s) -> Tuple (Changed (zoomIn (Part partName) c) (getter s)) s)
-      (\(Tuple (Changed c a) s) -> Changed (zoomOut (Part partName) c) (setter s a))
+    field' name setter getter = first >>> dimap
+      (\(Changed c s) -> Tuple (Changed (zoomIn (Part name) c) (getter s)) s)
+      (\(Tuple (Changed c a) s) -> Changed (zoomOut (Part name) c) (setter s a))
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
 constructor name construct deconstruct = left >>> dimap
