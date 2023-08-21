@@ -28,7 +28,7 @@ import Prelude hiding (zero)
 
 import Data.Either (Either(..))
 import Data.Invariant.Transformers.Changed (Change(..), Changed(..))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, proplusfirst, proplussecond, pzero, (<^), (^), (^>))
@@ -229,9 +229,10 @@ checkbox attrs = component $ widget \a callback -> do
 -- Nothing -> button was clicked but button doesn't remember any a
 -- Just a -> button was clicked and button does remember an a
 radio :: forall a. Attrs -> Component (Maybe a)
-radio attrs = component $ widget \a callbacka -> do
+radio attrs = component $ widget \ma callbacka -> do
   maRef <- liftEffect $ Ref.new Nothing -- TODO EC - Just a?
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
+  liftEffect $ setChecked node (isJust ma)
   onDomEvent "change" node $ const do
     ma <- Ref.read maRef
     callbacka ma
