@@ -4,7 +4,8 @@ module Demo1Business
   , CustomerFormal
   , Fulfillment
   , Address
-  , id
+  , uniqueId
+  , shortId
   , orderedBy
   , paid
   , firstName
@@ -29,7 +30,7 @@ module Demo1Business
   , lastNameCaption
   , forenameCaption
   , surnameCaption
-  , idCaption
+  , shortIdCaption
   , paidCaption
   , dineInCaption
   , takeawayCaption
@@ -39,6 +40,9 @@ module Demo1Business
   , addressCaption
   , fullfilmentCaption
   , orderCaption
+  , orderId
+  , orderIdCaption
+  , orderIdText
   , writeOrderToConsoleCaption
   , defaultOrder
   ) where
@@ -52,12 +56,12 @@ import Effect (Effect)
 import Effect.Console (log)
 
 type Order =
-  { id :: String
+  { uniqueId :: String
+  , shortId :: String
   , orderedBy :: CustomerInformal
   , paid :: Boolean
   , fulfillment :: Fulfillment
   }
-
 type CustomerInformal =
   { firstName :: String
   , lastName :: String
@@ -76,8 +80,11 @@ type Time = String
 
 type Address = String
 
+type OrderId = { short :: String, unique :: String}
 
-id = field @"id"
+uniqueId = field @"uniqueId"
+
+shortId = field @"shortId"
 
 orderedBy = field @"orderedBy"
 
@@ -148,7 +155,7 @@ fulfillmentData = projection case _ of
 
 writeOrderToConsole :: Order -> Effect Unit
 writeOrderToConsole = log <<< case _ of
-  { id, orderedBy, paid, fulfillment } -> intercalate ", " [id, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
+  { uniqueId, orderedBy, paid, fulfillment } -> intercalate ", " [uniqueId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
     (DineIn { table }) -> "Dine in at table " <> table
     (Takeaway { time }) -> "Takeaway at " <> time
     (Delivery { address }) -> "Delivery to " <> address
@@ -166,8 +173,8 @@ forenameCaption = constant "Forename"
 surnameCaption :: Constant String
 surnameCaption = constant "Surname"
 
-idCaption :: Constant String
-idCaption = constant "ID"
+shortIdCaption :: Constant String
+shortIdCaption = constant "Short ID"
 
 paidCaption :: Constant String
 paidCaption = constant "Paid"
@@ -199,9 +206,22 @@ orderCaption = constant "Order"
 writeOrderToConsoleCaption :: Constant String
 writeOrderToConsoleCaption = constant "Write order to console"
 
+orderId :: Lens' OrderId Order
+orderId = lens' (case _ of
+  { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
+    { short, unique } -> id { shortId = short, uniqueId = unique })
+
+orderIdCaption :: Constant String
+orderIdCaption = constant "Order ID"
+
+orderIdText :: Projection String OrderId
+orderIdText = projection case _ of
+  { short, unique } -> short <> " (" <> unique <> ")"
+
 defaultOrder :: Order
 defaultOrder =
-  { id: "7"
+  { uniqueId: "71287"
+  , shortId: "7"
   , orderedBy:
     { firstName: "John"
     , lastName: "Doe"

@@ -1,17 +1,20 @@
 module Data.Profunctor.Optics
   ( Adapter
-  , Isomorphism
-  , Projection
   , Constant
-  , Prism
-  , Lens
   , Constructor
   , Field
+  , Isomorphism
+  , Lens
+  , Lens'
   , Null
+  , Prism
+  , Projection
   , adapter
   , constant
   , constructor
   , field
+  , lens
+  , lens'
   , module Data.Profunctor
   , null
   , projection
@@ -39,7 +42,8 @@ type   Isomorphism a s = Adapter a a s s
 type   Projection a s = Adapter a  Void s s
 type     Constant a = forall s. Projection a s
 type Lens a b s t = forall p. Strong p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
-type   Field a s = Lens a a (Record s) (Record s)
+type   Lens' a s = Lens a a s s
+type   Field a s = Lens' a (Record s)
 type Prism a b s t = forall p. Choice p => p (Changed a) (Changed b) -> p (Changed s) (Changed t)
 type   Constructor a s = Prism a a s s
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
@@ -58,6 +62,14 @@ constant :: forall a. a -> Constant a
 constant a = dimap
   (\_ -> Changed None a)
   (\(Changed c a) -> Changed c (absurd a))
+
+lens :: forall a b s t. (s -> a) -> (s -> b -> t) -> Lens a b s t
+lens getter setter = first >>> dimap
+  (\(Changed c s) -> Tuple (Changed c (getter s)) s)
+  (\(Tuple (Changed c b) s) -> Changed c (setter s b))
+
+lens' :: forall a s. (s -> a) -> (s -> a -> s) -> Lens' a s
+lens' = lens
 
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))

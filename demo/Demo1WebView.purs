@@ -13,7 +13,7 @@ order ∷ Component Order
 order =
   div' (
     MDC.filledTextField
-      (text # idCaption) # id) ^
+      (text # shortIdCaption) # shortId) ^
   div' (
     customer # orderedBy) ^
   div' (
@@ -40,7 +40,9 @@ order =
   div' (
     text # orderCaption ^
     chars ": " ^
-    text # id ^
+    text # orderIdCaption ^
+    chars " " ^
+    text # orderIdText # orderId ^
     chars " " ^ (
       text # firstName ^
       chars " " ^
