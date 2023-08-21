@@ -45,26 +45,26 @@ import Specular.Dom.Builder as Builder
 newtype Widget i o = Widget (i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
 
 instance Profunctor Widget where
-  dimap post pre c = Widget \a callback -> do
-    f <- unwrapWidget c (post a) $ callback <<< pre
-    pure $ f <<< post
+  dimap pre post c = Widget \a callback -> do
+    f <- unwrapWidget c (pre a) $ callback <<< post
+    pure $ f <<< pre
 
 instance Strong Widget where
   first c = Widget \ab abcallback -> do
-    bref <- liftEffect $ Ref.new Nothing
+    bref <- liftEffect $ Ref.new (snd ab)
     update <- unwrapWidget c (fst ab) \a -> do
-      mb <- liftEffect $ Ref.read bref
-      maybe mempty (\b -> abcallback $ Tuple a b) mb
+      b <- liftEffect $ Ref.read bref
+      abcallback $ Tuple a b
     pure $ \ab -> do
-      Ref.write (Just (snd ab)) bref
+      Ref.write (snd ab) bref
       update $ fst ab
   second c = Widget \ab abcallback -> do
-    aref <- liftEffect $ Ref.new Nothing
+    aref <- liftEffect $ Ref.new (fst ab)
     update <- unwrapWidget c (snd ab) \b -> do
-      ma <- liftEffect $ Ref.read aref
-      maybe mempty (\a -> abcallback $ Tuple a b) ma
+      a <- liftEffect $ Ref.read aref
+      abcallback $ Tuple a b
     pure $ \ab -> do
-      Ref.write (Just (fst ab)) aref
+      Ref.write (fst ab) aref
       update $ snd ab
 
 instance Choice Widget where
@@ -110,30 +110,30 @@ instance Choice Widget where
         -- Is that stil relevant question?
 
 instance ProfunctorPlus Widget where
-  proplus c1 c2 = Widget \a updateParent -> do
+  proplus c1 c2 = Widget \initial updateParent -> do
     -- TODO how to get rid of this ref?
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    update1 <- unwrapWidget c1 a \a -> do
+    update1 <- unwrapWidget c1 initial \a -> do
       mUpdate2 <- Ref.read mUpdate2Ref
       let update2 = maybe mempty identity mUpdate2
       update2 a
       updateParent a
-    update2 <- unwrapWidget c2 a \a -> do
+    update2 <- unwrapWidget c2 initial \a -> do
       update1 a
       updateParent a
     liftEffect $ Ref.write (Just update2) mUpdate2Ref
     pure \a -> do
       update1 a
       update2 a
-  proplusfirst c1 c2 = Widget \a updateParent -> do
-    update1 <- unwrapWidget c1 a updateParent
-    update2 <- unwrapWidget c2 a mempty
+  proplusfirst c1 c2 = Widget \initial updateParent -> do
+    update1 <- unwrapWidget c1 initial updateParent
+    update2 <- unwrapWidget c2 initial mempty
     pure \a -> do
       update1 a
       update2 a
-  proplussecond c1 c2 = Widget \a updateParent -> do
-    update1 <- unwrapWidget c1 a mempty
-    update2 <- unwrapWidget c2 a updateParent
+  proplussecond c1 c2 = Widget \initial updateParent -> do
+    update1 <- unwrapWidget c1 initial mempty
+    update2 <- unwrapWidget c2 initial updateParent
     pure \a -> do
       update1 a
       update2 a

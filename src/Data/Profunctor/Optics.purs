@@ -21,7 +21,7 @@ module Data.Profunctor.Optics
 import Prelude
 
 import Data.Either (Either(..), either)
-import Data.Invariant.Transformers.Changed (Scope(..), Changed(..), zoomIn, zoomOut)
+import Data.Invariant.Transformers.Changed (Change(..), Changed(..), Scope(..), zoomIn, zoomOut)
 import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
@@ -56,8 +56,8 @@ projection f = dimap
 
 constant :: forall a. a -> Constant a
 constant a = dimap
-  (\(Changed c s) -> Changed c a)
-  (\(Changed c s) -> Changed c (absurd s))
+  (\_ -> Changed None a)
+  (\(Changed c a) -> Changed c (absurd a))
 
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
