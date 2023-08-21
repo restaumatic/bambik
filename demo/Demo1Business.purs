@@ -237,6 +237,6 @@ defaultOrder =
     , lastName: "Doe"
     }
   , paid: true
-  , fulfillment: DineIn { table: "" }
+  , fulfillment: DineIn { table: "1" }
   }
 
