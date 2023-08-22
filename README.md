@@ -4,12 +4,11 @@
 
 > npm install && npm run demo1
 
-## Best practices
+Best practices
 
-  * In component body, each line should start with sub component (e.g. `div`) or widget (e.g. `text`) possibly preceded by opening brackets (`(`). `^`, `<^` or `^>` should be placed at the end of line.
-  * In component body, read `#` as *of*, so `text # unique # orderId` can be read as *text of unique of order id*.
-  * General lenses (`Lens`, `Lens'`) are less performant than specialized `Field`
-
+  * In widget definition each line should start with sub widget (e.g. `div`) possibly preceded by opening brackets (`(`), while `^`, `<^` and `^>`operators should be placed at the end of line.
+  * In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
+  * General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
 ## TODO
 
   1. First-order MDC components
