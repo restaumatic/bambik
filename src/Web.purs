@@ -54,29 +54,29 @@ instance Profunctor Widget where
     pure $ f <<< map pre
 
 instance Strong Widget where
-  first c = Widget \ab callbackchab -> do
+  first w = Widget \ab callbackchab -> do
     bref <- liftEffect $ Ref.new (snd ab)
-    update <- unwrapWidget c (fst ab) \(Changed ch a) -> do
+    update <- unwrapWidget w (fst ab) \(Changed ch a) -> do
       b <- liftEffect $ Ref.read bref
       callbackchab $ Changed ch $ Tuple a b
     pure case _ of
-      Changed None ab -> Ref.write (snd ab) bref
-      Changed c ab -> do
-        Ref.write (snd ab) bref
+      Changed None newab -> Ref.write (snd newab) bref
+      Changed c newab -> do
+        Ref.write (snd newab) bref
         update $ Changed c $ fst ab
-  second c = Widget \ab callbackchab -> do
+  second w = Widget \ab callbackchab -> do
     aref <- liftEffect $ Ref.new (fst ab)
-    update <- unwrapWidget c (snd ab) \(Changed ch b) -> do
+    update <- unwrapWidget w (snd ab) \(Changed ch b) -> do
       a <- liftEffect $ Ref.read aref
       callbackchab $ Changed ch $ Tuple a b
     pure case _ of
-      Changed None ab -> Ref.write (fst ab) aref
-      Changed ch ab -> do
-        Ref.write (fst ab) aref
+      Changed None newab -> Ref.write (fst newab) aref
+      Changed ch newab -> do
+        Ref.write (fst newab) aref
         update $ Changed ch $ snd ab
 
 instance Choice Widget where
-  left c = Widget \aorb callbackchaorb -> do
+  left w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     case aorb of
@@ -102,10 +102,10 @@ instance Choice Widget where
       -- TODO EC make it not type check
       where
         makeUpdate slot callbackchaorb mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget c a (callbackchaorb <<< map Left)
+          newUpdate <- replaceSlot slot $ unwrapWidget w a (callbackchaorb <<< map Left)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
-  right c = Widget \aorb callbackchaorb -> do
+  right w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
     case aorb of
@@ -131,7 +131,7 @@ instance Choice Widget where
       -- TODO EC make it not type check
       where
         makeUpdate slot abcallback mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< map Right)
+          newUpdate <- replaceSlot slot $ unwrapWidget w a (abcallback <<< map Right)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
 
@@ -201,10 +201,10 @@ element tagName attrs dynAttrs listener c = Widget \a callbackcha -> do
   Tuple node update <- elAttr tagName attrs $ unwrapWidget c a callbackcha
   liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
   liftEffect $ listener node (Ref.read aRef)
-  pure \(Changed ch a) -> do
-    Ref.write a aRef
-    runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
-    update $ Changed ch a
+  pure \(Changed ch newa) -> do
+    Ref.write newa aRef
+    runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs newa)
+    update $ Changed ch newa
 
 element' :: forall a b. TagName -> Widget a b -> Widget a b
 element' tagName = element tagName mempty mempty mempty
@@ -256,19 +256,19 @@ textInput :: Attrs -> Component String
 textInput attrs = component $ widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ setValue node a
-  onDomEvent "input" node $ const $ getValue node >>= \a -> callbackcha (Changed Some a)
+  onDomEvent "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
   pure case _ of
     Changed None _ -> mempty
-    Changed _ a -> setValue node a
+    Changed _ newa -> setValue node newa
 
 checkbox :: Attrs -> Component Boolean
 checkbox attrs = component $ widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   liftEffect $ setChecked node a
-  onDomEvent "input" node $ const $ getChecked node >>= \a -> callbackcha (Changed Some a)
+  onDomEvent "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
   pure case _ of
     Changed None _ -> mempty
-    Changed _ a -> setChecked node a
+    Changed _ newa -> setChecked node newa
 
 -- input:
 -- Nothing -> turn off button
@@ -281,12 +281,12 @@ radio attrs = component $ widget \ma callbackchma -> do
   maRef <- liftEffect $ Ref.new ma
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ setChecked node (isJust ma)
-  onDomEvent "change" node $ const $ Ref.read maRef >>= \ma -> callbackchma (Changed Some ma)
+  onDomEvent "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
   pure case _ of
     Changed None _ -> mempty
     Changed _ Nothing -> setChecked node false
-    Changed c (Just a) -> do
-      Ref.write (Just a) maRef
+    Changed _ newma@(Just _) -> do
+      Ref.write newma maRef
       setChecked node true
 
 -- Listeners

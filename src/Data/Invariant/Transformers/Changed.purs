@@ -21,7 +21,6 @@ import Type.Proxy (Proxy(..))
 invField :: forall @l i r1 r a . InvCartesian i => IsSymbol l => Row.Cons l a r r1 => i (Changed a) -> i (Changed (Record r1))
 invField = invField' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    invField' :: forall i a s. InvCartesian i => String -> (s -> a -> s) -> (s -> a) -> i (Changed a) -> i (Changed s)
     invField' scope setter getter = invfirst >>> invmap
       (\(Tuple (Changed c a) s) -> Changed (zoomOut (Part scope) c) (setter s a))
       (\(Changed c s) -> Tuple (Changed (zoomIn (Part scope) c) (getter s)) s)

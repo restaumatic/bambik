@@ -52,24 +52,24 @@ instance Monoid Change where
   mempty = None
 
 zoomOut :: Scope -> Change -> Change
-zoomOut scope change = let result = zoomOut' scope change in spy ("change: " <> show result <> " < " <> show scope <> " < " <> show change) result
+zoomOut scope change = let result = zoomOut' change in spy ("change: " <> show result <> " < " <> show scope <> " < " <> show change) result
   where
-    zoomOut' :: Scope -> Change -> Change
-    zoomOut' scope Some = Scoped (scope `NonEmptyArray.cons'` [])
-    zoomOut' scope (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
-    zoomOut' _ None = None
+    zoomOut' :: Change -> Change
+    zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
+    zoomOut' (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+    zoomOut' None = None
 
 zoomIn :: Scope -> Change -> Change
-zoomIn scope change = let result = zoomIn' scope change in spy ("change: " <> show change <> " > " <> show scope <> " > " <> show result) result
+zoomIn scope change = let result = zoomIn' change in spy ("change: " <> show change <> " > " <> show scope <> " > " <> show result) result
   where
-    zoomIn' :: Scope -> Change -> Change
-    zoomIn' _ Some = Some
-    zoomIn' scope (Scoped scopes) = case NonEmptyArray.uncons scopes of
+    zoomIn' :: Change -> Change
+    zoomIn' Some = Some
+    zoomIn' (Scoped scopes) = case NonEmptyArray.uncons scopes of
       { head, tail } | head == scope -> case uncons tail of -- matching head
-        Just { head, tail } -> Scoped $ NonEmptyArray.cons' head tail -- non empty tail
+        Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
         Nothing -> Some -- empty tail
-      { head: Variant twistName } -> Some -- not matching head but head is twist
+      { head: Variant _ } -> Some -- not matching head but head is twist
       _ -> case scope of
         Variant _ -> Some -- not matching head but scope is twist
         _ -> None -- otherwise
-    zoomIn' _ None = None
+    zoomIn' None = None
