@@ -60,7 +60,7 @@ instance Strong Widget where
       b <- liftEffect $ Ref.read bref
       callbackchab $ Changed ch $ Tuple a b
     pure case _ of
-      Changed None _ -> mempty
+      Changed None ab -> Ref.write (snd ab) bref
       Changed c ab -> do
         Ref.write (snd ab) bref
         update $ Changed c $ fst ab
@@ -70,7 +70,7 @@ instance Strong Widget where
       a <- liftEffect $ Ref.read aref
       callbackchab $ Changed ch $ Tuple a b
     pure case _ of
-      Changed None _ -> mempty
+      Changed None ab -> Ref.write (fst ab) aref
       Changed ch ab -> do
         Ref.write (fst ab) aref
         update $ Changed ch $ snd ab
