@@ -307,7 +307,7 @@ onClick callback node ea = void $ addEventListener node "click" $ const $ ea >>=
 -- Running
 
 runComponent :: forall a. Widget a a -> a -> Builder Unit Unit
-runComponent w a = void $ unwrapWidget w a \(Changed scope _) -> log $ "change in scope: " <> show scope
+runComponent w a = void $ unwrapWidget w a mempty
 
 runMainComponent :: forall a. Widget a a -> a -> Effect Unit
 runMainComponent c a = runMainBuilderInBody $ runComponent c a

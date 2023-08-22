@@ -44,18 +44,22 @@ import Prelude
 import Control.Apply (lift2)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
+import Data.DateTime.Instant (unInstant)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(Tuple), fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (info)
+import Effect.Now (now)
 import Effect.Ref (modify_, new, read, write)
 import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
+import Foreign.Object (Object)
+import Foreign.Object as Object
 import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
 import Specular.Internal.RIO (RIO(..), rio, runRIO)
 import Specular.Internal.RIO as RIO
 import Specular.Profiling as Profiling
-import Foreign.Object (Object)
-import Foreign.Object as Object
 
 
 newtype Builder env a = Builder (RIO (BuilderEnv env) a)
@@ -353,8 +357,13 @@ moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
 
 onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
 onDomEvent eventType node handler = do
-  void $ liftEffect $ addEventListener node eventType handler
+  void $ liftEffect $ addEventListener node eventType \event -> do
+    start <- now
+    handler event
+    stop <- now
+    info $ "handling event " <> eventType <> " took " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> "ms"
   -- onCleanup unsub
+
 createCommentNode ∷ String → Effect Node
 createCommentNode = createCommentNodeImpl
 

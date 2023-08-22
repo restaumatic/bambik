@@ -14,6 +14,7 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "arrays"
   , "console"
+  , "datetime"
   , "debug"
   , "distributive"
   , "effect"
@@ -24,6 +25,7 @@ to generate this file without the comments in this block.
   , "maybe"
   , "newtype"
   , "nonempty"
+  , "now"
   , "prelude"
   , "profunctor"
   , "record"

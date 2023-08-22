@@ -15,7 +15,12 @@ import Data.Array.NonEmpty (intercalate)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (class Profunctor)
-import Debug (spy)
+
+-- for debugging uncomment:
+-- import Debug (spy)
+-- and comment out:
+spy :: forall a. String -> a -> a
+spy _ = identity
 
 scopemap :: forall p a b. ChProfunctor p => Scope -> p a b -> p a b
 scopemap scope = chmap zoomIn zoomOut
