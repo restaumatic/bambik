@@ -237,9 +237,13 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 -- | Runs a widget in the specified parent element. Returns the result and cleanup action.
 runWidgetInNode :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
 runWidgetInNode parent widget = runBuilder parent do
+  start <- liftEffect now
   slot <- newSlot
   onCleanup (destroySlot slot)
-  widget
+  result <- widget
+  stop <- liftEffect now
+  info $ "[Specular.DOM.Builder] widget run in node in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  pure result
 
 foreign import documentBody :: Effect Node
 
