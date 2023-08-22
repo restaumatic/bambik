@@ -131,22 +131,22 @@ delivery = constructor "delivery" Delivery (case _ of
   _ -> Nothing)
 
 isDineIn :: Iso (Maybe Fulfillment) Fulfillment
-isDineIn = iso "isDineIn" (fromMaybe ( DineIn { table: ""})) (case _ of
+isDineIn = iso "isDineIn" (case _ of
   d@(DineIn _) -> Just d
-  _ -> Nothing)
+  _ -> Nothing) (fromMaybe ( DineIn { table: ""}))
 
 isTakeaway :: Iso (Maybe Fulfillment) Fulfillment
-isTakeaway = iso "isTakeaway" (fromMaybe (Takeaway { time: ""})) (case _ of
+isTakeaway = iso "isTakeaway" (case _ of
   t@(Takeaway _) -> Just t
-  _ -> Nothing)
+  _ -> Nothing) (fromMaybe (Takeaway { time: ""}))
 
 isDelivery :: Iso (Maybe Fulfillment) Fulfillment
-isDelivery = iso "isDelivery" (fromMaybe (Delivery { address: "" })) (case _ of
+isDelivery = iso "isDelivery" (case _ of
   d@(Delivery _) -> Just d
-  _ -> Nothing)
+  _ -> Nothing) (fromMaybe (Delivery { address: "" }))
 
 formal :: Iso CustomerFormal CustomerInformal
-formal = iso "formal" toInformal toFormal
+formal = iso "formal" toFormal toInformal
   where
     toFormal :: CustomerInformal -> CustomerFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }

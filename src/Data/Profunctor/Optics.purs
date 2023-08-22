@@ -29,7 +29,7 @@ import Prelude
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Change (class ChProfunctor, Change(..), Scope(..), chmap, zoomIn, zoomOut)
+import Data.Profunctor.Change (class ChProfunctor, Change(..), Scope(..), chmap, scopemap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Plus (class ProfunctorZero, pzero)
 import Data.Profunctor.Strong (class Strong, first)
@@ -52,8 +52,8 @@ type   Prism' a s = Prism a a s s
 type     Constructor a s = Prism' a s -- TODO find better signature
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
-iso :: forall a s. String -> (a -> s) -> (s -> a) -> Iso a s
-iso name outside inside = dimap inside outside >>> chmap (zoomIn (Variant name)) (zoomOut (Variant name))
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> Iso a s
+iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
 projection :: forall a s. (s -> a) -> Projection a s
 projection f = dimap f absurd
@@ -62,7 +62,7 @@ constant :: forall a. a -> Constant a
 constant a = dimap (const a) absurd >>> chmap (const None) identity
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> Lens a b s t
-lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> chmap (zoomIn (Variant name)) (zoomOut (Variant name))
+lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> scopemap (Variant name)
 
 lens' :: forall a s. String -> (s -> a) -> (s -> a -> s) -> Lens' a s
 lens' = lens
@@ -70,17 +70,17 @@ lens' = lens
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    field' name setter getter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a) >>> chmap (zoomIn (Part name)) (zoomOut (Part name))
+    field' name setter getter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a) >>> scopemap (Part name)
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> Prism a b s t
 prism name construct deconstruct = left >>> dimap deconstruct (either construct identity)
-  >>> chmap (zoomIn (Variant name)) (zoomOut (Variant name)) -- TODO not sure about it
+  >>> scopemap (Variant name) -- TODO not sure about it
 
 prism' :: forall a s. String -> (a -> s) -> (s -> Either a s) -> Prism' a s
 prism' = prism
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
-constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either (\a -> construct a) identity aors) >>> chmap (zoomIn (Part name)) (zoomOut (Part name))
+constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either (\a -> construct a) identity aors) >>> scopemap (Part name)
 
 null :: Null
 null = const pzero

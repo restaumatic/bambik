@@ -1,4 +1,12 @@
-module Data.Profunctor.Change where
+module Data.Profunctor.Change
+  ( Change(..)
+  , Changed(..)
+  , Scope(..)
+  , class ChProfunctor
+  , scopemap
+  , chmap
+  )
+  where
 
 import Prelude
 
@@ -8,6 +16,32 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (class Profunctor)
 import Debug (spy)
+
+scopemap :: forall p a b. ChProfunctor p => Scope -> p a b -> p a b
+scopemap scope = chmap zoomIn zoomOut
+  where
+    zoomOut :: Change -> Change
+    zoomOut change = let result = zoomOut' change in spy ("change: " <> show result <> " < " <> show scope <> " < " <> show change) result
+      where
+        zoomOut' :: Change -> Change
+        zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
+        zoomOut' (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+        zoomOut' None = None
+
+    zoomIn :: Change -> Change
+    zoomIn change = let result = zoomIn' change in spy ("change: " <> show change <> " > " <> show scope <> " > " <> show result) result
+      where
+        zoomIn' :: Change -> Change
+        zoomIn' Some = Some
+        zoomIn' (Scoped scopes) = case NonEmptyArray.uncons scopes of
+          { head, tail } | head == scope -> case uncons tail of -- matching head
+            Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
+            Nothing -> Some -- empty tail
+          { head: Variant _ } -> Some -- not matching head but head is twist
+          _ -> case scope of
+            Variant _ -> Some -- not matching head but scope is twist
+            _ -> None -- otherwise
+        zoomIn' None = None
 
 class Profunctor p <= ChProfunctor p where
   chmap :: forall a b. (Change -> Change) -> (Change -> Change) -> p a b -> p a b
@@ -51,25 +85,3 @@ instance Semigroup Change where
 instance Monoid Change where
   mempty = None
 
-zoomOut :: Scope -> Change -> Change
-zoomOut scope change = let result = zoomOut' change in spy ("change: " <> show result <> " < " <> show scope <> " < " <> show change) result
-  where
-    zoomOut' :: Change -> Change
-    zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
-    zoomOut' (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
-    zoomOut' None = None
-
-zoomIn :: Scope -> Change -> Change
-zoomIn scope change = let result = zoomIn' change in spy ("change: " <> show change <> " > " <> show scope <> " > " <> show result) result
-  where
-    zoomIn' :: Change -> Change
-    zoomIn' Some = Some
-    zoomIn' (Scoped scopes) = case NonEmptyArray.uncons scopes of
-      { head, tail } | head == scope -> case uncons tail of -- matching head
-        Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
-        Nothing -> Some -- empty tail
-      { head: Variant _ } -> Some -- not matching head but head is twist
-      _ -> case scope of
-        Variant _ -> Some -- not matching head but scope is twist
-        _ -> None -- otherwise
-    zoomIn' None = None
