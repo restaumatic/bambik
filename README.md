@@ -13,12 +13,12 @@
 ## TODO
 
   1. First-order MDC components
-  1. Higher-order components (including MDC)
+  1. Higher-order components (including MDC) / traversals
   1. Inputless components
   1. I18n support
   1. Make Arrow instance of Widget not representable e.g. `newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Builder env Unit))`
   1. Generalize `Widget` for other types of UI
-  1. Use mapin mapout names throughout profunctor code
+  1. Validation
 
 
 ## Abstract
