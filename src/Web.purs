@@ -247,8 +247,7 @@ h4' = element' "h4"
 
 
 -- Components
--- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
--- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
+-- Widgets that have same input and output type.
 
 type Component a = Widget a a
 
