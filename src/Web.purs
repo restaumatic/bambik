@@ -55,24 +55,24 @@ instance Profunctor Widget where
 
 instance Strong Widget where
   first w = Widget \ab callbackchab -> do
-    bref <- liftEffect $ Ref.new (snd ab)
+    abref <- liftEffect $ Ref.new ab
     update <- unwrapWidget w (fst ab) \(Changed ch a) -> do
-      b <- liftEffect $ Ref.read bref
-      callbackchab $ Changed ch $ Tuple a b
+      currentab <- liftEffect $ Ref.read abref
+      callbackchab $ Changed ch $ Tuple a (snd currentab)
     pure case _ of
-      Changed None newab -> Ref.write (snd newab) bref
+      Changed None newab -> Ref.write newab abref
       Changed c newab -> do
-        Ref.write (snd newab) bref
+        Ref.write newab abref
         update $ Changed c $ fst newab
   second w = Widget \ab callbackchab -> do
-    aref <- liftEffect $ Ref.new (fst ab)
+    abref <- liftEffect $ Ref.new ab
     update <- unwrapWidget w (snd ab) \(Changed ch b) -> do
-      a <- liftEffect $ Ref.read aref
-      callbackchab $ Changed ch $ Tuple a b
+      currentab <- liftEffect $ Ref.read abref
+      callbackchab $ Changed ch $ Tuple (fst currentab) b
     pure case _ of
-      Changed None newab -> Ref.write (fst newab) aref
+      Changed None newab -> Ref.write newab abref
       Changed ch newab -> do
-        Ref.write (fst newab) aref
+        Ref.write newab abref
         update $ Changed ch $ snd newab
 
 instance Choice Widget where
