@@ -18,6 +18,8 @@ module Data.Profunctor.Optics
   , lens'
   , module Data.Profunctor
   , null
+  , prism
+  , prism'
   , projection
   )
   where
@@ -69,6 +71,13 @@ field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
     field' name setter getter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a) >>> chmap (zoomIn (Part name)) (zoomOut (Part name))
+
+prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> Prism a b s t
+prism name construct deconstruct = left >>> dimap deconstruct (either construct identity)
+  >>> chmap (zoomIn (Variant name)) (zoomOut (Variant name)) -- TODO not sure about it
+
+prism' :: forall a s. String -> (a -> s) -> (s -> Either a s) -> Prism' a s
+prism' = prism
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either (\a -> construct a) identity aors) >>> chmap (zoomIn (Part name)) (zoomOut (Part name))
