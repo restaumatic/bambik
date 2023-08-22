@@ -8,7 +8,6 @@ module Web.MDC
 
 import Prelude hiding (div)
 
-import Data.Invariant.Transformers.Changed (Changed(..))
 import Data.Maybe (Maybe)
 import Data.Profunctor.Plus (pzero, (<^), (^))
 import Data.String (null)
@@ -31,7 +30,7 @@ filledTextField hint =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
     ^
-    (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\(Changed _ value) -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty
+    (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty
       hint
     ^
     (textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))

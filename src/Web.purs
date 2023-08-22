@@ -31,9 +31,9 @@ module Web
 import Prelude hiding (zero)
 
 import Data.Either (Either(..))
-import Data.Invariant.Transformers.Changed (Change(..), Changed(..))
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Profunctor (class Profunctor)
+import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, proplusfirst, proplussecond, pzero, (<^), (^), (^>))
 import Data.Profunctor.Strong (class Strong)
@@ -46,45 +46,50 @@ import Effect.Uncurried (runEffectFn2)
 import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributesImpl, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
-newtype Widget i o = Widget (i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit))
+newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
 instance Profunctor Widget where
   dimap pre post c = Widget \a callback -> do
-    f <- unwrapWidget c (pre a) $ callback <<< post
-    pure $ f <<< pre
+    f <- unwrapWidget c (pre a) $ callback <<< map post
+    pure $ f <<< map pre
 
 instance Strong Widget where
-  first c = Widget \ab abcallback -> do
+  first c = Widget \ab callbackchab -> do
     bref <- liftEffect $ Ref.new (snd ab)
-    update <- unwrapWidget c (fst ab) \a -> do
+    update <- unwrapWidget c (fst ab) \(Changed ch a) -> do
       b <- liftEffect $ Ref.read bref
-      abcallback $ Tuple a b
-    pure $ \ab -> do
-      Ref.write (snd ab) bref
-      update $ fst ab
-  second c = Widget \ab abcallback -> do
+      callbackchab $ Changed ch $ Tuple a b
+    pure case _ of
+      Changed None _ -> mempty
+      Changed c ab -> do
+        Ref.write (snd ab) bref
+        update $ Changed c $ fst ab
+  second c = Widget \ab callbackchab -> do
     aref <- liftEffect $ Ref.new (fst ab)
-    update <- unwrapWidget c (snd ab) \b -> do
+    update <- unwrapWidget c (snd ab) \(Changed ch b) -> do
       a <- liftEffect $ Ref.read aref
-      abcallback $ Tuple a b
-    pure $ \ab -> do
-      Ref.write (fst ab) aref
-      update $ snd ab
+      callbackchab $ Changed ch $ Tuple a b
+    pure case _ of
+      Changed None _ -> mempty
+      Changed ch ab -> do
+        Ref.write (fst ab) aref
+        update $ Changed ch $ snd ab
 
 instance Choice Widget where
-  left c = Widget \ab abcallback -> do
+  left c = Widget \aorb callbackchaorb -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
-    case ab of
-      Left a -> void $ liftEffect $ makeUpdate slot abcallback mUpdateRef a
+    case aorb of
+      Left a -> void $ liftEffect $ makeUpdate slot callbackchaorb mUpdateRef a
       Right _ -> pure unit
-    pure \aorb -> case aorb of
-      Left a -> do
+    pure \chaorb -> case chaorb of
+      Changed None _ -> pure unit
+      Changed ch (Left a) -> do
         mUpdate <- Ref.read mUpdateRef
         update <- case mUpdate of
           Just update -> pure update
-          Nothing -> makeUpdate slot abcallback mUpdateRef a
-        update a
+          Nothing -> makeUpdate slot callbackchaorb mUpdateRef a
+        update $ Changed ch a
       _ -> do
         void $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
@@ -96,23 +101,24 @@ instance Choice Widget where
       -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
       -- TODO EC make it not type check
       where
-        makeUpdate slot abcallback mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< Left)
+        makeUpdate slot callbackchaorb mUpdateRef a = do
+          newUpdate <- replaceSlot slot $ unwrapWidget c a (callbackchaorb <<< map Left)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
-  right c = Widget \ab abcallback -> do
+  right c = Widget \aorb callbackchaorb -> do
     slot <- newSlot
     mUpdateRef <- liftEffect $ Ref.new Nothing
-    case ab of
+    case aorb of
       Left _ -> pure unit
-      Right b -> void $ liftEffect $ makeUpdate slot abcallback mUpdateRef b
-    pure \aorb -> case aorb of
-      Right b -> do
+      Right b -> void $ liftEffect $ makeUpdate slot callbackchaorb mUpdateRef b
+    pure \chaorb -> case chaorb of
+      Changed None _ -> pure unit
+      Changed c (Right b) -> do
         mUpdate <- Ref.read mUpdateRef
         update <- case mUpdate of
           Just update -> pure update
-          Nothing -> makeUpdate slot abcallback mUpdateRef b
-        update b
+          Nothing -> makeUpdate slot callbackchaorb mUpdateRef b
+        update $ Changed c b
       _ -> do
         void $ replaceSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
@@ -125,7 +131,7 @@ instance Choice Widget where
       -- TODO EC make it not type check
       where
         makeUpdate slot abcallback mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< Right)
+          newUpdate <- replaceSlot slot $ unwrapWidget c a (abcallback <<< map Right)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
 
@@ -161,13 +167,18 @@ instance ProfunctorPlus Widget where
 instance ProfunctorZero Widget where
   pzero = Widget mempty
 
+instance ChProfunctor Widget where
+  chmap mapin mapout w = Widget \initial callback -> do
+    update <- unwrapWidget w initial \(Changed c a) -> do
+      callback $ Changed (mapout c) a
+    pure \(Changed c a) -> update $ Changed (mapin c) a
+
 -- Widgets
 
-text :: forall a. Widget (Changed String) (Changed a)
+text :: forall a. Widget String a
 text = Widget \str _ -> do
   slot <- newSlot
-  let (Changed _ str') = str
-  liftEffect $ replaceSlot slot $ Builder.text str'
+  liftEffect $ replaceSlot slot $ Builder.text str
   pure $ case _ of
     Changed None _ -> pure unit
     Changed _ s -> replaceSlot slot $ Builder.text s
@@ -185,15 +196,15 @@ chars s = Widget \_ _ -> do
   pure $ mempty
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
-element tagName attrs dynAttrs listener c = Widget \a callback -> do
-    aRef <- liftEffect $ Ref.new a
-    Tuple node update <- elAttr tagName attrs $ unwrapWidget c a callback
-    liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
-    liftEffect $ listener node (Ref.read aRef)
-    pure \a -> do
-      Ref.write a aRef
-      runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
-      update a
+element tagName attrs dynAttrs listener c = Widget \a callbackcha -> do
+  aRef <- liftEffect $ Ref.new a
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget c a callbackcha
+  liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
+  liftEffect $ listener node (Ref.read aRef)
+  pure \(Changed ch a) -> do
+    Ref.write a aRef
+    runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
+    update $ Changed ch a
 
 element' :: forall a b. TagName -> Widget a b -> Widget a b
 element' tagName = element tagName mempty mempty mempty
@@ -239,21 +250,25 @@ h4' = element' "h4"
 -- ... are Widgets that have same input and output type and carry metadata about the scope of a change in input and output.
 -- Components preserve Profunctor, Strong, Choice, ProfunctorPlus and ProfunctorZero instances of Widget.
 
-type Component a = Widget (Changed a) (Changed a)
+type Component a = Widget a a
 
 textInput :: Attrs -> Component String
-textInput attrs = component $ widget \a callback -> do
+textInput attrs = component $ widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ setValue node a
-  onDomEvent "input" node $ const $ getValue node >>= callback
-  pure $ setValue node
+  onDomEvent "input" node $ const $ getValue node >>= \a -> callbackcha (Changed Some a)
+  pure case _ of
+    Changed None _ -> mempty
+    Changed _ a -> setValue node a
 
 checkbox :: Attrs -> Component Boolean
-checkbox attrs = component $ widget \a callback -> do
+checkbox attrs = component $ widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   liftEffect $ setChecked node a
-  onDomEvent "input" node $ const $ getChecked node >>= callback
-  pure $ setChecked node
+  onDomEvent "input" node $ const $ getChecked node >>= \a -> callbackcha (Changed Some a)
+  pure case _ of
+    Changed None _ -> mempty
+    Changed _ a -> setChecked node a
 
 -- input:
 -- Nothing -> turn off button
@@ -262,14 +277,15 @@ checkbox attrs = component $ widget \a callback -> do
 -- Nothing -> button was clicked but button doesn't remember any a
 -- Just a -> button was clicked and button does remember an a
 radio :: forall a. Attrs -> Component (Maybe a)
-radio attrs = component $ widget \ma callbackma -> do
+radio attrs = component $ widget \ma callbackchma -> do
   maRef <- liftEffect $ Ref.new ma
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ setChecked node (isJust ma)
-  onDomEvent "change" node $ const $ Ref.read maRef >>= callbackma
+  onDomEvent "change" node $ const $ Ref.read maRef >>= \ma -> callbackchma (Changed Some ma)
   pure case _ of
-    Nothing -> setChecked node false
-    Just a -> do
+    Changed None _ -> mempty
+    Changed _ Nothing -> setChecked node false
+    Changed c (Just a) -> do
       Ref.write (Just a) maRef
       setChecked node true
 
@@ -277,34 +293,26 @@ radio attrs = component $ widget \ma callbackma -> do
 
 type Listener a = Node -> Effect a -> Effect Unit
 
-onClick ∷ forall a. (a -> Effect Unit) -> Listener (Changed a)
-onClick callback node eca = void $ addEventListener node "click" $ const do
-  (Changed _ a) <- eca
-  callback a
+onClick ∷ forall a. (a -> Effect Unit) -> Listener a
+onClick callback node ea = void $ addEventListener node "click" $ const $ ea >>= callback
 
 -- Running
 
 runComponent :: forall a. Component a -> a -> Builder Unit Unit
-runComponent c a = void $ unwrapWidget c (Changed Some a) \(Changed scope _) -> log $ "change in scope: " <> show scope
+runComponent c a = void $ unwrapWidget c a \(Changed scope _) -> log $ "change in scope: " <> show scope
 
 runMainComponent :: forall a. Component a -> a -> Effect Unit
 runMainComponent c a = runMainBuilderInBody $ runComponent c a
 
 -- Private
 
-widget :: forall i o. (i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)) -> Widget i o
+widget :: forall i o. (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)) -> Widget i o
 widget = Widget
 
-unwrapWidget :: forall i o. Widget i o -> i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+unwrapWidget :: forall i o. Widget i o -> i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w
 
 component :: forall a. Widget a a -> Component a
-component w = widget \(Changed _ a) callback -> do
-  update <- unwrapWidget w a \a -> callback (Changed Some a)
-  pure \(Changed scope a) -> do
-    case scope of
-      None -> do
-        pure unit
-      _ -> update a
+component w = w
 
 
