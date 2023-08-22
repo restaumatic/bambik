@@ -21,7 +21,9 @@ scopemap :: forall p a b. ChProfunctor p => Scope -> p a b -> p a b
 scopemap scope = chmap zoomIn zoomOut
   where
     zoomOut :: Change -> Change
-    zoomOut change = let result = zoomOut' change in spy ("change: " <> show result <> " < " <> show scope <> " < " <> show change) result
+    zoomOut change = case zoomOut' change of
+      ch@None -> ch
+      ch -> spy ("change: " <> show ch <> " < " <> show scope <> " < " <> show change) ch
       where
         zoomOut' :: Change -> Change
         zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
@@ -29,7 +31,9 @@ scopemap scope = chmap zoomIn zoomOut
         zoomOut' None = None
 
     zoomIn :: Change -> Change
-    zoomIn change = let result = zoomIn' change in spy ("change: " <> show change <> " > " <> show scope <> " > " <> show result) result
+    zoomIn change = case zoomIn' change of
+      ch@None -> ch
+      ch -> spy ("change: " <> show change <> " > " <> show scope <> " > " <> show ch) ch
       where
         zoomIn' :: Change -> Change
         zoomIn' Some = Some
