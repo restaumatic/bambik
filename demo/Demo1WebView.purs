@@ -11,6 +11,10 @@ import Web.MDC as MDC
 
 order ∷ Component Order
 order =
+  h1' (
+    text # orderCaption ^
+    chars " " ^
+    text # shortId ) ^
   div' (
     MDC.filledTextField
       (text # uniqueIdCaption)) # uniqueId ^

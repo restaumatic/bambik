@@ -10,6 +10,10 @@ module Web
   , div'
   , element
   , element'
+  , h1
+  , h1'
+  , h2
+  , h2'
   , h3
   , h3'
   , h4
@@ -232,6 +236,18 @@ button = element "button"
 
 button' :: forall a b. Widget a b -> Widget a b
 button' = element' "button"
+
+h1 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
+h1 = element "h1"
+
+h1' :: forall a b. Widget a b -> Widget a b
+h1' = element' "h2"
+
+h2 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
+h2 = element "h2"
+
+h2' :: forall a b. Widget a b -> Widget a b
+h2' = element' "h2"
 
 h3 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 h3 = element "h3"
