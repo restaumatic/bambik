@@ -240,7 +240,7 @@ runWidgetInNode parent widget = runBuilder parent do
   start <- liftEffect now
   slot <- newSlot
   onCleanup (destroySlot slot)
-  result <- widget
+  result <- liftEffect $ replaceSlot slot widget
   stop <- liftEffect now
   info $ "[Specular.DOM.Builder] widget run in node in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
   pure result

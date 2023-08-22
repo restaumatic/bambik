@@ -43,6 +43,7 @@ import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Uncurried (runEffectFn2)
 import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributesImpl, setChecked, setValue)
@@ -80,12 +81,10 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
-    mUpdate <- case aorb of
-      Left a ->  do
-          newUpdate <- unwrapWidget w a (callbackchaorb <<< map Left)
-          pure $ Just newUpdate
-      Right _ -> pure Nothing
-    mUpdateRef <- liftEffect $ Ref.new mUpdate
+    mUpdateRef <- liftEffect $ Ref.new Nothing
+    case aorb of
+      Left a -> void $ liftEffect $ makeUpdate slot callbackchaorb mUpdateRef a
+      Right _ -> pure unit
     pure \chaorb -> case chaorb of
       Changed None _ -> pure unit
       Changed ch (Left a) -> do
@@ -111,12 +110,10 @@ instance Choice Widget where
           pure newUpdate
   right w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
-    mUpdate <- case aorb of
-      Left _ -> pure Nothing
-      Right a ->  do
-          newUpdate <- unwrapWidget w a (callbackchaorb <<< map Right)
-          pure $ Just newUpdate
-    mUpdateRef <- liftEffect $ Ref.new mUpdate
+    mUpdateRef <- liftEffect $ Ref.new Nothing
+    case aorb of
+      Left _ -> pure unit
+      Right b -> void $ liftEffect $ makeUpdate slot callbackchaorb mUpdateRef b
     pure \chaorb -> case chaorb of
       Changed None _ -> pure unit
       Changed c (Right b) -> do
@@ -184,7 +181,7 @@ instance ChProfunctor Widget where
 text :: forall a. Widget String a
 text = Widget \str _ -> do
   slot <- newSlot
-  Builder.text str
+  liftEffect $ replaceSlot slot $ Builder.text str
   pure $ case _ of
     Changed None _ -> pure unit
     Changed _ s -> replaceSlot slot $ Builder.text s
