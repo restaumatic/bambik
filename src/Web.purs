@@ -63,7 +63,7 @@ instance Strong Widget where
       Changed None newab -> Ref.write (snd newab) bref
       Changed c newab -> do
         Ref.write (snd newab) bref
-        update $ Changed c $ fst ab
+        update $ Changed c $ fst newab
   second w = Widget \ab callbackchab -> do
     aref <- liftEffect $ Ref.new (fst ab)
     update <- unwrapWidget w (snd ab) \(Changed ch b) -> do
@@ -73,7 +73,7 @@ instance Strong Widget where
       Changed None newab -> Ref.write (fst newab) aref
       Changed ch newab -> do
         Ref.write (fst newab) aref
-        update $ Changed ch $ snd ab
+        update $ Changed ch $ snd newab
 
 instance Choice Widget where
   left w = Widget \aorb callbackchaorb -> do
