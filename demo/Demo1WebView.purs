@@ -82,13 +82,13 @@ order =
 customer :: Widget CustomerInformal CustomerInformal
 customer =
   div' (
-    h4' (chars "First/last name") ^
+    h4' (chars "Informal") ^
     MDC.filledTextField
       (text # firstNameCaption) # firstName ^
     MDC.filledTextField
       (text # lastNameCaption) # lastName) ^
   div' (
-    h4' (chars "Fore/surname") ^
+    h4' (chars "Formal") ^
     MDC.filledTextField
       (text # forenameCaption) # forename ^
     MDC.filledTextField
