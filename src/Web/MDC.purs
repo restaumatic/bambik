@@ -15,17 +15,17 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Builder (Node, attr, classes)
-import Web (Component, button, div, element, label, onClick, radio, span, textInput)
+import Web (Widget, button, div, element, label, onClick, radio, span, textInput)
 import Web as Web
 
-containedButton :: forall a. Component a -> (a -> Effect Unit) -> Component a
+containedButton :: forall a. Widget a a -> (a -> Effect Unit) -> Widget a a
 containedButton c action =
   button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action) $
     (div (classes "mdc-button__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-button__label") mempty mempty c)
 
-filledTextField :: Component String -> Component String
+filledTextField :: Widget String String -> Widget String String
 filledTextField hint =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
@@ -37,7 +37,7 @@ filledTextField hint =
     ^
     (span (classes "mdc-line-ripple") mempty mempty pzero)
 
-checkbox :: Component Boolean
+checkbox :: Widget Boolean Boolean
 checkbox =
   div (classes "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
     (
@@ -59,7 +59,7 @@ checkbox =
       )
     )
 
-radioButton :: forall a. Component (Maybe a)
+radioButton :: forall a. Widget (Maybe a) (Maybe a)
 radioButton = div (classes "mdc-form-field") mempty mempty
   (
     (div (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node) $

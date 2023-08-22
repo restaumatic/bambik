@@ -1,6 +1,5 @@
 module Web
-  ( Component
-  , Listener
+  ( Listener
   , Widget
   , button
   , button'
@@ -261,13 +260,7 @@ h4 = element "h4"
 h4' :: forall a b. Widget a b -> Widget a b
 h4' = element' "h4"
 
-
--- Components
--- Widgets that have same input and output type.
-
-type Component a = Widget a a
-
-textInput :: Attrs -> Component String -- TODO EC incorporate validation here? The id would be plain Widget?
+textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ setValue node a
@@ -276,7 +269,7 @@ textInput attrs = Widget \a callbackcha -> do
     Changed None _ -> mempty
     Changed _ newa -> setValue node newa
 
-checkbox :: Attrs -> Component Boolean
+checkbox :: Attrs -> Widget Boolean Boolean
 checkbox attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   liftEffect $ setChecked node a
@@ -291,7 +284,7 @@ checkbox attrs = Widget \a callbackcha -> do
 -- output:
 -- Nothing -> button was clicked but button doesn't remember any a
 -- Just a -> button was clicked and button does remember an a
-radio :: forall a. Attrs -> Component (Maybe a)
+radio :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
 radio attrs = Widget \ma callbackchma -> do
   maRef <- liftEffect $ Ref.new ma
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
@@ -313,10 +306,10 @@ onClick callback node ea = void $ addEventListener node "click" $ const $ ea >>=
 
 -- Running
 
-runComponent :: forall a. Component a -> a -> Builder Unit Unit
+runComponent :: forall a. Widget a a -> a -> Builder Unit Unit
 runComponent w a = void $ unwrapWidget w a \(Changed scope _) -> log $ "change in scope: " <> show scope
 
-runMainComponent :: forall a. Component a -> a -> Effect Unit
+runMainComponent :: forall a. Widget a a -> a -> Effect Unit
 runMainComponent c a = runMainBuilderInBody $ runComponent c a
 
 -- Private

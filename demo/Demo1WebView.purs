@@ -9,7 +9,7 @@ import Demo1Business
 import Web
 import Web.MDC as MDC
 
-order ∷ Component Order
+order ∷ Widget Order Order
 order =
   h1' (
     text # orderCaption ^
@@ -79,7 +79,7 @@ order =
       text # writeOrderToConsoleCaption) writeOrderToConsole
   )
 
-customer :: Component CustomerInformal
+customer :: Widget CustomerInformal CustomerInformal
 customer =
   div' (
     h4' (chars "First/last name") ^
