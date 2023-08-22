@@ -174,6 +174,7 @@ newSlot = do
           -- we've been removed from the DOM
           write cleanup cleanupRef
 
+      info "[Specular.DOM.Builder] replaced slot"
       pure result
 
     destroy :: Effect Unit
@@ -297,7 +298,7 @@ addEventListener node etype callback = addEventListenerImpl etype callback' node
       start <- now
       callback event
       stop <- now
-      info $ "[event listener] handled " <> etype <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+      info $ "[Specular.DOM.Builder] handled " <> etype <> " event in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
 
 createTextNode :: String -> Effect Node
 createTextNode = createTextNodeImpl
