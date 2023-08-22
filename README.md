@@ -8,7 +8,7 @@
 
   * In component body, each line should start with sub component (e.g. `div`) or widget (e.g. `text`) possibly preceded by opening brackets (`(`). `^`, `<^` or `^>` should be placed at the end of line.
   * In component body, read `#` as *of*, so `text # unique # orderId` can be read as *text of unique of order id*.
-  * General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
+  * General lenses (`Lens`, `Lens'`) are less performant than specialized `Field`
 
 ## TODO
 
