@@ -8,6 +8,7 @@ module Data.Profunctor.Optics
   , Lens'
   , Null
   , Prism
+  , Prism'
   , Projection
   , constant
   , constructor
@@ -39,13 +40,14 @@ import Type.Proxy (Proxy(..))
 -- identation to emphasize hierarchy
 type Adapter a b s t = forall p. ChProfunctor p => p a b -> p s t
 type   Iso a s = Adapter a a s s
-type   Projection a s = Adapter a  Void s s
+type   Projection a s = Adapter a Void s s
 type     Constant a = forall s. Projection a s
 type Lens a b s t = forall p. ChProfunctor p => Strong p => p a b -> p s t
 type   Lens' a s = Lens a a s s
 type     Field a s = Lens' a (Record s)
 type Prism a b s t = forall p. ChProfunctor p => Choice p => p a b -> p s t
-type   Constructor a s = Prism a a s s
+type   Prism' a s = Prism a a s s
+type     Constructor a s = Prism' a s -- TODO find better signature
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
 iso :: forall a s. String -> (a -> s) -> (s -> a) -> Iso a s

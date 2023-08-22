@@ -12,14 +12,16 @@ Question: Are profunctor optics expressive enough in navigating through data str
 
 # 3. The power of optics
 
-  1. Isomorphism (Profunctor) and its sub classes:
-    1. Isomorphism
+  1. Adapter (ChProfunctor) and its sub classes:
+    1. Iso
     1. Projection and its sub classes:
       1. Constant
-  1. Lens (Strong) and its sub classes:
-    1. Field
-  1. Prism (Choice) and its sub classes:
-    1. Constructor
+  1. Lens (ChProfunctor+Strong) and its sub classes:
+    1. Lens' and its sub classes:
+      1. Field
+  1. Prism (ChProfunctor+Choice) and its sub classes:
+    1. Prism' and its sub classes:
+      1. Constructor
   1. Null (ProfunctorZero)
 
 Optics describes the structure of data without releaving its representation (data constructors, functions etc)
