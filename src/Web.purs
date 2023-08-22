@@ -49,8 +49,8 @@ import Specular.Dom.Builder as Builder
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
 instance Profunctor Widget where
-  dimap pre post c = Widget \a callback -> do
-    f <- unwrapWidget c (pre a) $ callback <<< map post
+  dimap pre post w = Widget \a callback -> do
+    f <- unwrapWidget w (pre a) $ callback <<< map post
     pure $ f <<< map pre
 
 instance Strong Widget where
@@ -196,9 +196,9 @@ chars s = Widget \_ _ -> do
   pure $ mempty
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
-element tagName attrs dynAttrs listener c = Widget \a callbackcha -> do
+element tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
   aRef <- liftEffect $ Ref.new a
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget c a callbackcha
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackcha
   liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
   liftEffect $ listener node (Ref.read aRef)
   pure \(Changed ch newa) -> do
@@ -251,8 +251,8 @@ h4' = element' "h4"
 
 type Component a = Widget a a
 
-textInput :: Attrs -> Component String
-textInput attrs = component $ widget \a callbackcha -> do
+textInput :: Attrs -> Component String -- TODO EC incorporate validation here?
+textInput attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ setValue node a
   onDomEvent "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
@@ -261,7 +261,7 @@ textInput attrs = component $ widget \a callbackcha -> do
     Changed _ newa -> setValue node newa
 
 checkbox :: Attrs -> Component Boolean
-checkbox attrs = component $ widget \a callbackcha -> do
+checkbox attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   liftEffect $ setChecked node a
   onDomEvent "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
@@ -276,7 +276,7 @@ checkbox attrs = component $ widget \a callbackcha -> do
 -- Nothing -> button was clicked but button doesn't remember any a
 -- Just a -> button was clicked and button does remember an a
 radio :: forall a. Attrs -> Component (Maybe a)
-radio attrs = component $ widget \ma callbackchma -> do
+radio attrs = Widget \ma callbackchma -> do
   maRef <- liftEffect $ Ref.new ma
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ setChecked node (isJust ma)
@@ -298,20 +298,14 @@ onClick callback node ea = void $ addEventListener node "click" $ const $ ea >>=
 -- Running
 
 runComponent :: forall a. Component a -> a -> Builder Unit Unit
-runComponent c a = void $ unwrapWidget c a \(Changed scope _) -> log $ "change in scope: " <> show scope
+runComponent w a = void $ unwrapWidget w a \(Changed scope _) -> log $ "change in scope: " <> show scope
 
 runMainComponent :: forall a. Component a -> a -> Effect Unit
 runMainComponent c a = runMainBuilderInBody $ runComponent c a
 
 -- Private
 
-widget :: forall i o. (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)) -> Widget i o
-widget = Widget
-
 unwrapWidget :: forall i o. Widget i o -> i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w
-
-component :: forall a. Widget a a -> Component a
-component w = w
 
 
