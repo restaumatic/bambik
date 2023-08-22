@@ -239,7 +239,7 @@ runWidgetInNode :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect U
 runWidgetInNode parent widget = runBuilder parent do
   slot <- newSlot
   onCleanup (destroySlot slot)
-  liftEffect $ replaceSlot slot widget
+  widget
 
 foreign import documentBody :: Effect Node
 
