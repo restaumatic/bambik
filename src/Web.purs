@@ -251,7 +251,7 @@ h4' = element' "h4"
 
 type Component a = Widget a a
 
-textInput :: Attrs -> Component String -- TODO EC incorporate validation here?
+textInput :: Attrs -> Component String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ setValue node a
