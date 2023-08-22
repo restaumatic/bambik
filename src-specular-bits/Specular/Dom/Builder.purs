@@ -291,7 +291,13 @@ type EventType = String
 
 -- | Register an event listener. Returns unregister action.
 addEventListener :: Node -> EventType -> (Event -> Effect Unit) -> Effect (Effect Unit)
-addEventListener node etype callback = addEventListenerImpl etype callback node
+addEventListener node etype callback = addEventListenerImpl etype callback' node
+  where
+    callback' event = do
+      start <- now
+      callback event
+      stop <- now
+      info $ "[event listener] handled " <> etype <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
 
 createTextNode :: String -> Effect Node
 createTextNode = createTextNodeImpl
@@ -357,11 +363,7 @@ moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
 
 onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
 onDomEvent eventType node handler = do
-  void $ liftEffect $ addEventListener node eventType \event -> do
-    start <- now
-    handler event
-    stop <- now
-    info $ "handling event " <> eventType <> " took " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> "ms"
+  void $ liftEffect $ addEventListener node eventType handler
   -- onCleanup unsub
 
 createCommentNode ∷ String → Effect Node
