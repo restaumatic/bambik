@@ -11,20 +11,17 @@ import Web.MDC as MDC
 order ∷ Widget Order Order
 order =
   MDC.elevation9
-  ( MDC.headline4
-      ( text # orderTitle # shortId) ^
+  ( MDC.headline4 orderTitle # shortId ^
     div'
       ( MDC.filledTextField uniqueIdCaption) # uniqueId ^
     div'
       ( MDC.filledTextField shortIdCaption) # shortId ^
     div'
-      ( MDC.subtitle1
-        ( text # orderIdCaption) ^
+      ( MDC.subtitle1 orderIdCaption ^
         MDC.filledTextField shortCaption # short ^
         MDC.filledTextField uniqueCaption # unique) # orderId ^
     div'
-      ( MDC.subtitle1
-        ( text # orderedByCaption) ^
+      ( MDC.subtitle1 orderedByCaption ^
         customer # orderedBy) ^
     div'
       ( MDC.checkbox paidCaption # paid) ^
@@ -62,12 +59,10 @@ order =
 customer :: Widget CustomerInformal CustomerInformal
 customer =
   div'
-    ( MDC.subtitle2
-      ( text # informalCaption) ^
+    ( MDC.subtitle2 informalCaption ^
       MDC.filledTextField firstNameCaption # firstName ^
       MDC.filledTextField lastNameCaption # lastName) ^
   div'
-    ( MDC.subtitle2
-      ( text # formalCaption) ^
+    ( MDC.subtitle2 formalCaption ^
       MDC.filledTextField forenameCaption # forename ^
       MDC.filledTextField surnameCaption # surname) # formal

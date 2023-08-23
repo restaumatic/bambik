@@ -99,29 +99,37 @@ radioButton label =
 
 -- Optics
 
-headline1 :: forall a b. Widget a b -> Widget a b
-headline1 = element "h1" (classes "mdc-typography--headline1") mempty mempty
+headline1 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline1 label = element "h1" (classes "mdc-typography--headline1") mempty mempty
+ ( text # label )
 
-headline2 :: forall a b. Widget a b -> Widget a b
-headline2 = element "h2" (classes "mdc-typography--headline2") mempty mempty
+headline2 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline2 label = element "h2" (classes "mdc-typography--headline2") mempty mempty
+ ( text # label )
 
-headline3 :: forall a b. Widget a b -> Widget a b
-headline3 = element "h3" (classes "mdc-typography--headline3") mempty mempty
+headline3 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline3 label = element "h3" (classes "mdc-typography--headline3") mempty mempty
+ ( text # label )
 
-headline4 :: forall a b. Widget a b -> Widget a b
-headline4 = element "h4" (classes "mdc-typography--headline4") mempty mempty
+headline4 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline4 label = element "h4" (classes "mdc-typography--headline4") mempty mempty
+ ( text # label )
 
-headline5 :: forall a b. Widget a b -> Widget a b
-headline5 = element "h5" (classes "mdc-typography--headline5") mempty mempty
+headline5 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline5 label = element "h5" (classes "mdc-typography--headline5") mempty mempty
+ ( text # label )
 
-headline6 :: forall a b. Widget a b -> Widget a b
-headline6 = element "h6" (classes "mdc-typography--headline6") mempty mempty
+headline6 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline6 label = element "h6" (classes "mdc-typography--headline6") mempty mempty
+ ( text # label )
 
-subtitle1 :: forall a b. Widget a b -> Widget a b
-subtitle1 = element "h6" (classes "mdc-typography--subtitle1") mempty mempty
+subtitle1 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+subtitle1 label = element "h6" (classes "mdc-typography--subtitle1") mempty mempty
+  ( text # label )
 
-subtitle2 :: forall a b. Widget a b -> Widget a b
-subtitle2 = element "h6" (classes "mdc-typography--subtitle2") mempty mempty
+subtitle2 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+subtitle2 label = element "h6" (classes "mdc-typography--subtitle2") mempty mempty
+  ( text # label )
 
 body1 :: forall a b. Widget a b -> Widget a b
 body1 = element "p" (classes "mdc-typography--body1") mempty mempty
@@ -129,14 +137,17 @@ body1 = element "p" (classes "mdc-typography--body1") mempty mempty
 body2 :: forall a b. Widget a b -> Widget a b
 body2 = element "p" (classes "mdc-typography--body2") mempty mempty
 
-button :: forall a b. Widget a b -> Widget a b
-button = span (classes "mdc-typography--button") mempty mempty
+button :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+button label = span (classes "mdc-typography--button") mempty mempty
+  ( text # label )
 
-caption :: forall a b. Widget a b -> Widget a b
-caption = span (classes "mdc-typography--caption") mempty mempty
+caption :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+caption label = span (classes "mdc-typography--caption") mempty mempty
+  ( text # label )
 
-overline :: forall a b. Widget a b -> Widget a b
-overline = span (classes "mdc-typography--overline") mempty mempty
+overline :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+overline label = span (classes "mdc-typography--overline") mempty mempty
+  ( text # label )
 
 elevation1 :: forall a b. Widget a b -> Widget a b
 elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty mempty
