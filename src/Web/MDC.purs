@@ -9,13 +9,13 @@ module Web.MDC
 import Prelude hiding (div)
 
 import Data.Maybe (Maybe)
-import Data.Profunctor.Plus (pzero, (<^), (^))
+import Data.Profunctor.Plus (pzero, (<^), (^), (^>))
 import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Builder (Node, attr, classes)
-import Web (Widget, button, div, element, label, onClick, radio, span, textInput)
+import Web (Widget, button, div, element, label, onClick, radio, span, text, textInput)
 import Web as Web
 
 containedButton :: forall a. Widget a a -> (a -> Effect Unit) -> Widget a a
@@ -25,14 +25,14 @@ containedButton c action =
     ^
     (span (classes "mdc-button__label") mempty mempty c)
 
-filledTextField :: Widget String String -> Widget String String
-filledTextField hint =
+filledTextField :: forall a. (Widget String Void -> Widget String a) -> Widget String String
+filledTextField floatingLabel =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> mdcWith material.textField."MDCTextField" node) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty
-      hint
-    ^
+      (text # floatingLabel)
+    ^>
     (textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id"))
     ^
     (span (classes "mdc-line-ripple") mempty mempty pzero)

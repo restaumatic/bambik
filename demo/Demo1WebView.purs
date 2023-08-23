@@ -16,17 +16,13 @@ order =
     chars " " ^
     text # shortId ) ^
   div' (
-    MDC.filledTextField
-      (text # uniqueIdCaption)) # uniqueId ^
+    MDC.filledTextField uniqueIdCaption) # uniqueId ^
   div' (
-    MDC.filledTextField
-      (text # shortIdCaption)) # shortId ^
+    MDC.filledTextField shortIdCaption) # shortId ^
   div' (
     h3' (chars "Order Id") ^
-    MDC.filledTextField
-      (text # shortCaption) # short ^
-    MDC.filledTextField
-      (text # uniqueCaption) # unique) # orderId ^
+    MDC.filledTextField shortCaption # short ^
+    MDC.filledTextField uniqueCaption # unique) # orderId ^
   div' (
     h3' (chars "Ordered by") ^
     customer # orderedBy) ^
@@ -40,14 +36,11 @@ order =
     ( MDC.radioButton # isDelivery ^
       text # deliveryCaption)) # fulfillment ^
   ( div'
-      ( MDC.filledTextField
-        (text # tableCaption) # table) # dineIn ^
+      ( MDC.filledTextField tableCaption # table) # dineIn ^
     div'
-      ( MDC.filledTextField
-        (text # timeCaption) # time) # takeaway ^
+      ( MDC.filledTextField timeCaption # time) # takeaway ^
     div'
-      ( MDC.filledTextField
-        (text # addressCaption) # address) # delivery) # fulfillment ^
+      ( MDC.filledTextField addressCaption # address) # delivery) # fulfillment ^
   div' (
     text # orderCaption ^
     chars ": " ^
@@ -83,13 +76,9 @@ customer :: Widget CustomerInformal CustomerInformal
 customer =
   div' (
     h4' (chars "Informal") ^
-    MDC.filledTextField
-      (text # firstNameCaption) # firstName ^
-    MDC.filledTextField
-      (text # lastNameCaption) # lastName) ^
+    MDC.filledTextField firstNameCaption # firstName ^
+    MDC.filledTextField lastNameCaption # lastName) ^
   div' (
     h4' (chars "Formal") ^
-    MDC.filledTextField
-      (text # forenameCaption) # forename ^
-    MDC.filledTextField
-      (text # surnameCaption) # surname) # formal
+    MDC.filledTextField forenameCaption # forename ^
+    MDC.filledTextField surnameCaption # surname) # formal
