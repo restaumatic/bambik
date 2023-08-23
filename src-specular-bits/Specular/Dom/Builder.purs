@@ -58,7 +58,6 @@ import Foreign.Object as Object
 import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
 import Specular.Internal.RIO (RIO(..), rio, runRIO)
 import Specular.Internal.RIO as RIO
-import Specular.Profiling as Profiling
 
 
 newtype Builder env a = Builder (RIO (BuilderEnv env) a)
@@ -147,12 +146,11 @@ newSlot = do
 
   let
     replace :: forall a. Builder env a -> Effect a
-    replace inner = Profiling.measure "slot replace" do
-      Profiling.measure "slot remove DOM" do
-        removeAllBetween placeholderBefore placeholderAfter
+    replace inner = do
+      removeAllBetween placeholderBefore placeholderAfter
 
       fragment <- createDocumentFragment
-      Tuple result cleanup <- Profiling.measure "slot init" do
+      Tuple result cleanup <- do
         runBuilderWithUserEnv env.userEnv fragment inner
       join $ read cleanupRef
 
@@ -163,7 +161,7 @@ newSlot = do
           insertBefore fragment placeholderAfter parent
 
           write
-            ( Profiling.measure "slot cleanup" do
+            ( do
                 cleanup
                 write mempty cleanupRef -- TODO: explain this
             )
