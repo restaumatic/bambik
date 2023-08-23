@@ -3,11 +3,10 @@ module Demo1WebView
   , customer
   ) where
 
-import Demo1Business
 import Prelude
-import Web
 
-import Web.MDC (subtitle2)
+import Demo1Business
+import Web
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
