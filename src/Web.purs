@@ -1,6 +1,5 @@
 module Web
-  ( Listener
-  , Widget
+  ( Widget
   , button
   , button'
   , chars
@@ -20,8 +19,7 @@ module Web
   , label
   , label'
   , module Data.Profunctor.Plus
-  , onClick
-  , radio
+  , radioButton
   , runWidget
   , runWidgetInBody
   , span
@@ -44,11 +42,12 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Effect.Uncurried (runEffectFn2)
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, alterBody, setAttributesImpl, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, alterBody, attr, elAttr, getChecked, getValue, newSlot, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
+
+-- Capabilites of Widget
 
 instance Profunctor Widget where
   dimap pre post w = Widget \a callback -> do
@@ -175,37 +174,32 @@ instance ChProfunctor Widget where
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
 
--- Widgets
+-- Creating Widgets
 
 text :: forall a. Widget String a
 text = Widget \str _ -> do
   slot <- newSlot
-  liftEffect $ replaceSlot slot $ Builder.text str
-  pure $ case _ of
-    Changed None _ -> pure unit
-    Changed _ s -> replaceSlot slot $ Builder.text s
--- TODO: Why this in below causes that no static text is displayed
-  -- liftEffect $ update slot str
-  -- pure $ update slot
-  --   where
-  --     update slot = case _ of
-  --       Changed None _ -> pure unit
-  --       Changed _ s -> replaceSlot slot $ Builder.text s
+  liftEffect $ update slot (Changed Some str)
+  pure $ update slot
+    where
+      update slot = case _ of
+        Changed None _ -> pure unit
+        Changed _ s -> replaceSlot slot $ Builder.text s
 
 chars :: forall a b. String -> Widget a b
 chars s = Widget \_ _ -> do
   Builder.text s
   pure $ mempty
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Listener a -> Widget a b -> Widget a b
+element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
   aRef <- liftEffect $ Ref.new a
   Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackcha
-  liftEffect $ runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs a)
+  liftEffect $ setAttributes node (attrs <> dynAttrs a)
   liftEffect $ listener node (Ref.read aRef)
   pure \(Changed ch newa) -> do
     Ref.write newa aRef
-    runEffectFn2 setAttributesImpl node (show <$> attrs <> dynAttrs newa)
+    setAttributes node (attrs <> dynAttrs newa)
     update $ Changed ch newa
 
 element' :: forall a b. TagName -> Widget a b -> Widget a b
@@ -263,7 +257,7 @@ textInput :: Attrs -> Widget String String -- TODO EC incorporate validation her
 textInput attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ setValue node a
-  onDomEvent "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
+  liftEffect $ addEventListener "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
   pure case _ of
     Changed None _ -> mempty
     Changed _ newa -> setValue node newa
@@ -272,23 +266,23 @@ checkbox :: Attrs -> Widget Boolean Boolean
 checkbox attrs = Widget \a callbackcha -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   liftEffect $ setChecked node a
-  onDomEvent "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
+  liftEffect $ addEventListener "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
   pure case _ of
     Changed None _ -> mempty
     Changed _ newa -> setChecked node newa
 
 -- input:
--- Nothing -> turn off button
--- Just a -> turn on (if turned off) button and remember a
+-- Nothing -> turns off button
+-- Just a -> turns on (if turned off) button and remembers `a`
 -- output:
--- Nothing -> button was clicked but button doesn't remember any a
--- Just a -> button was clicked and button does remember an a
-radio :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
-radio attrs = Widget \ma callbackchma -> do
+-- Nothing -> on button clicked when button doesn't remember any `a`
+-- Just a -> on button clicked when button does remember an `a`
+radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
+radioButton attrs = Widget \ma callbackchma -> do
   maRef <- liftEffect $ Ref.new ma
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ setChecked node (isJust ma)
-  onDomEvent "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
+  liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
   pure case _ of
     Changed None _ -> mempty
     Changed _ Nothing -> setChecked node false
@@ -296,14 +290,7 @@ radio attrs = Widget \ma callbackchma -> do
       Ref.write newma maRef
       setChecked node true
 
--- Listeners
-
-type Listener a = Node -> Effect a -> Effect Unit
-
-onClick ∷ forall a. (a -> Effect Unit) -> Listener a
-onClick callback node ea = void $ addEventListener node "click" $ const $ ea >>= callback
-
--- Running
+-- Running Widgets
 
 runWidget :: forall a. Widget a a -> a -> Builder Unit (Changed a -> Effect Unit)
 runWidget w a = unwrapWidget w a mempty

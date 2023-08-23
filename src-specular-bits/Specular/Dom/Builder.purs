@@ -9,11 +9,11 @@ module Specular.Dom.Builder
   , Slot
   , TagName
   , addEventListener
+  , alterBody
   , appendSlot
   , attr
   , classes
   , comment
-  , createCommentNodeImpl
   , destroySlot
   , elAttr
   , getChecked
@@ -21,20 +21,14 @@ module Specular.Dom.Builder
   , getParentNode
   , getValue
   , local
-  , mkBuilder'
   , newSlot
-  , onDomEvent
   , rawHtml
   , replaceSlot
   , runBuilder
-  , runBuilder'
-  , alterBody
   , setAttributes
-  , setAttributesImpl
   , setChecked
   , setValue
   , text
-  , unBuilder
   )
   where
 
@@ -46,17 +40,17 @@ import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
 import Data.DateTime.Instant (unInstant)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Data.Tuple (Tuple(Tuple), fst)
+import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
 import Effect.Now (now)
 import Effect.Ref (modify_, new, read, write)
-import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
+import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
-import Specular.Internal.RIO (RIO(..), rio, runRIO)
+import Specular.Internal.RIO (RIO, rio, runRIO)
 import Specular.Internal.RIO as RIO
 
 
@@ -87,17 +81,11 @@ instance monadReaderBuilder :: MonadReader env (Builder env) where
 local :: forall e r a. (e -> r) -> Builder r a -> Builder e a
 local fn (Builder x) = Builder $ RIO.local (\env -> env { userEnv = fn env.userEnv }) x
 
-mkBuilder' :: forall env a. (EffectFn1 (BuilderEnv env) a) -> Builder env a
-mkBuilder' = Builder <<< RIO
-
 mkBuilder :: forall env a. (BuilderEnv env -> Effect a) -> Builder env a
 mkBuilder = Builder <<< rio
 
 unBuilder :: forall env a. Builder env a -> RIO (BuilderEnv env) a
 unBuilder (Builder f) = f
-
-runBuilder' :: forall env a. EffectFn2 (BuilderEnv env) (Builder env a) a
-runBuilder' = mkEffectFn2 \env (Builder (RIO f)) -> runEffectFn1 f env
 
 runBuilder :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
 runBuilder = runBuilderWithUserEnv unit
@@ -171,7 +159,7 @@ newSlot = do
           -- we've been removed from the DOM
           write cleanup cleanupRef
 
-      info "[Specular.DOM.Builder] altered placeholder"
+      info "[Specular.DOM.Builder] altered slot"
       pure result
 
     destroy :: Effect Unit
@@ -286,8 +274,8 @@ foreign import data Event :: Type
 type EventType = String
 
 -- | Register an event listener. Returns unregister action.
-addEventListener :: Node -> EventType -> (Event -> Effect Unit) -> Effect (Effect Unit)
-addEventListener node etype callback = addEventListenerImpl etype callback' node
+addEventListener :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
+addEventListener etype node callback = void $ addEventListenerImpl etype callback' node
   where
     callback' event = do
       info $ "[Specular.DOM.Builder] handling " <> etype <> " event"
@@ -357,12 +345,6 @@ removeAllBetween = removeAllBetweenImpl
 moveAllBetweenInclusive :: Node -> Node -> Node -> Effect Unit
 moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
 
-
-onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
-onDomEvent eventType node handler = do
-  void $ liftEffect $ addEventListener node eventType handler
-  -- onCleanup unsub
-
 createCommentNode ∷ String → Effect Node
 createCommentNode = createCommentNodeImpl
 
@@ -386,9 +368,6 @@ foreign import preventDefault :: Event -> Effect Unit
 -- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
 foreign import createCommentNodeImpl :: String -> Effect Node
-
--- copied from Web.purs
-
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean

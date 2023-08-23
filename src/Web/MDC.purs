@@ -29,13 +29,13 @@ import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Specular.Dom.Builder (Node, attr, classes)
-import Web (Widget, div, element, label, label', onClick, radio, span, text, textInput)
+import Specular.Dom.Builder (Node, addEventListener, attr, classes)
+import Web (Widget, div, element, label, label', span, text, textInput)
 import Web as Web
 
 containedButton :: forall a b c. (Widget String Void -> Widget a b) -> (a -> Effect Unit) -> Widget a c
 containedButton label action =
-  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action)
+  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> (\node ea -> addEventListener "click" node $ const $ ea >>= action))
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
@@ -69,10 +69,10 @@ radioButton :: forall a b. (Widget String Void -> Widget (Maybe a) b) -> Widget 
 radioButton label =
   div (classes "mdc-form-field") mempty mempty
   ((div (classes "mdc-radio") mempty (\node _ -> mdcWith material.radio."MDCRadio" node) $
-      radio (classes "mdc-radio__native-control" <> attr "id" "radio-1" ) <^
-      div (classes "mdc-radio__background") mempty mempty $
-        (div (classes "mdc-radio__outer-circle") mempty mempty pzero ^
-        div (classes "mdc-radio__inner-circle") mempty mempty pzero) ^
+      Web.radioButton (classes "mdc-radio__native-control" <> attr "id" "radio-1" ) <^
+      div (classes "mdc-radio__background") mempty mempty
+        ( div (classes "mdc-radio__outer-circle") mempty mempty pzero ^
+          div (classes "mdc-radio__inner-circle") mempty mempty pzero) ^
       (div (classes "mdc-radio__ripple") mempty mempty pzero)
     ) <^
     label'
