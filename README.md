@@ -1,7 +1,12 @@
 # Short story
-To run demo locally:
 
-> npm install && npm run demo1
+See [**live demo**](http://erykciepiela.xyz/bambik/demo/1/).
+
+To run the demo locally:
+
+```bash
+$ npm install && npm run demo1
+```
 
 ## Best practices
 
@@ -21,6 +26,8 @@ To run demo locally:
   1. Validation
 
 # Long story
+
+> (!) Notice: this section is still work in progress.
 
 ## 1. From lenses to optics
 
