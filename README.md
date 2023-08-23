@@ -1,15 +1,14 @@
-# Quick jump
-
+# Short story
 To run demo locally:
 
 > npm install && npm run demo1
 
 ## Best practices
 
-  * In widget definition each line should start with sub widget (e.g. `div`) possibly preceded by opening brackets (`(`), while `^`, `<^` and `^>`operators should be placed at the end of line.
-  * In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
-  * General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
-  * Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resistant to changes in `show` implementation, 2) provide tailor-made textualizations
+  1. In widget definition each line should start with sub widget (e.g. `div`) possibly preceded by opening brackets (`(`), while `^`, `<^` and `^>`operators should be placed at the end of line.
+  1. In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
+  1. General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
+  1. Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resistant to changes in `Show` instance implementation, 2) provide tailor-made textualizations
 
 ## TODOs
 
@@ -21,7 +20,7 @@ To run demo locally:
   1. Generalize `Widget` for other types of UI
   1. Validation
 
-# Long jump
+# Long story
 
 ## 1. From lenses to optics
 
