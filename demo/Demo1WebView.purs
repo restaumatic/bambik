@@ -13,27 +13,27 @@ order =
   MDC.elevation9
   ( MDC.headline4 orderTitle # shortId ^
     div'
-      ( MDC.filledTextField uniqueIdCaption) # uniqueId ^
+      ( MDC.filledTextField shortIdCaption # shortId ) ^
     div'
-      ( MDC.filledTextField shortIdCaption) # shortId ^
+      ( MDC.filledTextField uniqueIdCaption # uniqueId ) ^
     div'
       ( MDC.subtitle1 orderIdCaption ^
         MDC.filledTextField shortCaption # short ^
-        MDC.filledTextField uniqueCaption # unique) # orderId ^
+        MDC.filledTextField uniqueCaption # unique ) # orderId ^
     div'
       ( MDC.subtitle1 orderedByCaption ^
-        customer # orderedBy) ^
+        customer # orderedBy ) ^
     div'
-      ( MDC.checkbox paidCaption # paid) ^
+      ( MDC.checkbox paidCaption # paid ) ^
     ( MDC.radioButton dineInCaption # isDineIn ^
       MDC.radioButton takeawayCaption # isTakeaway ^
       MDC.radioButton deliveryCaption # isDelivery) # fulfillment ^
     ( div'
-        ( MDC.filledTextField tableCaption # table) # dineIn ^
+        ( MDC.filledTextField tableCaption # table # dineIn ) ^
       div'
-        ( MDC.filledTextField timeCaption # time) # takeaway ^
+        ( MDC.filledTextField timeCaption # time # takeaway ) ^
       div'
-        ( MDC.filledTextField addressCaption # address) # delivery) # fulfillment ^
+        ( MDC.filledTextField addressCaption # address # delivery ) ) # fulfillment ^
     MDC.body1
       ( text # orderIdCaption ^
         chars " " ^
@@ -48,13 +48,13 @@ order =
               text # surname ^
               chars " " ^
               text # forename ^
-              chars ")") # formal) # orderedBy ^
+              chars ")" ) # formal ) # orderedBy ^
       chars ", " ^
       text # paymentStatus # paid ^
       chars ", " ^
-      text # fulfillmentData # fulfillment) ^
+      text # fulfillmentData # fulfillment ) ^
     div'
-      ( MDC.containedButton (submitOrderCaption >>> shortId) submitOrder ))
+      ( MDC.containedButton (submitOrderCaption >>> shortId) submitOrder ) )
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =
