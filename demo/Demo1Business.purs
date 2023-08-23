@@ -4,6 +4,8 @@ module Demo1Business
   , CustomerFormal
   , Fulfillment
   , Address
+  , ShortId
+  , UniqueId
   , uniqueId
   , shortId
   , orderedBy
@@ -61,12 +63,17 @@ import Effect (Effect)
 import Effect.Console (log)
 
 type Order =
-  { uniqueId :: String
-  , shortId :: String
+  { uniqueId :: UniqueId
+  , shortId :: ShortId
   , orderedBy :: CustomerInformal
   , paid :: Boolean
   , fulfillment :: Fulfillment
   }
+
+type ShortId = String
+
+type UniqueId = String
+
 type CustomerInformal =
   { firstName :: String
   , lastName :: String
@@ -221,8 +228,8 @@ fullfilmentCaption = constant "Fullfilment"
 orderCaption :: Constant String
 orderCaption = constant "Order"
 
-writeOrderToConsoleCaption :: Constant String
-writeOrderToConsoleCaption = constant "Write order to console"
+writeOrderToConsoleCaption :: Projection String ShortId
+writeOrderToConsoleCaption = projection \sid -> "Write order " <> sid <> " to console"
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of

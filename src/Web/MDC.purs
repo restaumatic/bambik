@@ -18,12 +18,12 @@ import Specular.Dom.Builder (Node, attr, classes)
 import Web (Widget, button, div, element, label, onClick, radio, span, text, textInput)
 import Web as Web
 
-containedButton :: forall a. Widget a a -> (a -> Effect Unit) -> Widget a a
-containedButton c action =
-  button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action) $
-    (div (classes "mdc-button__ripple") mempty mempty pzero)
-    ^
-    (span (classes "mdc-button__label") mempty mempty c)
+containedButton :: forall a b c. (Widget String Void -> Widget a b) -> (a -> Effect Unit) -> Widget a c
+containedButton label action =
+  button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action)
+    ( div (classes "mdc-button__ripple") mempty mempty pzero <^
+      span (classes "mdc-button__label") mempty mempty
+        (text # label))
 
 filledTextField :: forall a. (Widget String Void -> Widget String a) -> Widget String String
 filledTextField floatingLabel =

@@ -68,8 +68,7 @@ order =
     chars ": " ^
     text # fulfillmentData # fulfillment) ^
   div' (
-    MDC.containedButton (
-      text # writeOrderToConsoleCaption) writeOrderToConsole
+    MDC.containedButton (writeOrderToConsoleCaption >>> shortId) writeOrderToConsole
   )
 
 customer :: Widget CustomerInformal CustomerInformal
