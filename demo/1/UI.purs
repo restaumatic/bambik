@@ -1,10 +1,10 @@
-module Demo1UI
+module UI
   ( order
   ) where
 
 import Prelude
 
-import Demo1Business
+import Business
 import Web
 import Web.MDC as MDC
 

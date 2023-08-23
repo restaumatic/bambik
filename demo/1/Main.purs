@@ -1,9 +1,9 @@
-module Demo1 (main) where
+module Main (main) where
 
 import Prelude
 
-import Demo1Business
-import Demo1UI
+import Business
+import UI
 import Effect (Effect)
 import Web (runWidgetInBody)
 

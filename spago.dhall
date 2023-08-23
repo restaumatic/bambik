@@ -39,6 +39,6 @@ to generate this file without the comments in this block.
   [ "src/**/*.purs"
   , "src-specular-bits/**/*.purs"
   , "test/**/*.purs"
-  , "demo/**/*.purs"
+  , "demo/1/*.purs"
   ]
 }

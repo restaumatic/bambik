@@ -1,4 +1,4 @@
-module Demo1Business
+module Business
   ( Order
   , CustomerInformal
   , CustomerFormal
