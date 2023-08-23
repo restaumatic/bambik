@@ -56,24 +56,24 @@ instance Profunctor Widget where
 
 instance Strong Widget where
   first w = Widget \ab callbackchab -> do
-    abref <- liftEffect $ Ref.new ab
+    sndRef <- liftEffect $ Ref.new (snd ab)
     update <- unwrapWidget w (fst ab) \(Changed ch a) -> do
-      currentab <- liftEffect $ Ref.read abref
-      callbackchab $ Changed ch $ Tuple a (snd currentab)
+      snd <- liftEffect $ Ref.read sndRef
+      callbackchab $ Changed ch $ Tuple a snd
     pure case _ of
-      Changed None newab -> Ref.write newab abref
-      Changed c newab -> do
-        Ref.write newab abref
-        update $ Changed c $ fst newab
-  second w = Widget \ab callbackchab -> do
-    abref <- liftEffect $ Ref.new ab
-    update <- unwrapWidget w (snd ab) \(Changed ch b) -> do
-      currentab <- liftEffect $ Ref.read abref
-      callbackchab $ Changed ch $ Tuple (fst currentab) b
-    pure case _ of
-      Changed None newab -> Ref.write newab abref
+      Changed None newab -> Ref.write (snd newab) sndRef
       Changed ch newab -> do
-        Ref.write newab abref
+        Ref.write (snd newab) sndRef
+        update $ Changed ch $ fst newab
+  second w = Widget \ab callbackchab -> do
+    fstRef <- liftEffect $ Ref.new (fst ab)
+    update <- unwrapWidget w (snd ab) \(Changed ch b) -> do
+      fst <- liftEffect $ Ref.read fstRef
+      callbackchab $ Changed ch $ Tuple fst b
+    pure case _ of
+      Changed None newab -> Ref.write (fst newab) fstRef
+      Changed ch newab -> do
+        Ref.write (fst newab) fstRef
         update $ Changed ch $ snd newab
 
 instance Choice Widget where
@@ -138,32 +138,34 @@ instance Choice Widget where
 
 instance ProfunctorPlus Widget where
   proplus c1 c2 = Widget \initial updateParent -> do
-    -- TODO how to get rid of this ref?
+    -- TODO how to get rid of thess refs?
+    mUpdate1Ref <- liftEffect $ Ref.new Nothing
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    update1 <- unwrapWidget c1 initial \a -> do
+    update1 <- unwrapWidget c1 initial \cha@(Changed _ a) -> do
       mUpdate2 <- Ref.read mUpdate2Ref
       let update2 = maybe mempty identity mUpdate2
-      update2 a
-      updateParent a
-    update2 <- unwrapWidget c2 initial \a -> do
-      update1 a
-      updateParent a
+      mUpdate1 <- Ref.read mUpdate1Ref
+      let update1 = maybe mempty identity mUpdate1
+      update1 (Changed None a)
+      update2 cha
+      updateParent cha
+    liftEffect $ Ref.write (Just update1) mUpdate1Ref
+    update2 <- unwrapWidget c2 initial \cha@(Changed _ a) -> do
+      mUpdate2 <- Ref.read mUpdate2Ref
+      let update2 = maybe mempty identity mUpdate2
+      update2 (Changed None a)
+      update1 cha
+      updateParent cha
     liftEffect $ Ref.write (Just update2) mUpdate2Ref
-    pure \a -> do
-      update1 a
-      update2 a
+    pure $ update1 <> update2
   proplusfirst c1 c2 = Widget \initial updateParent -> do
     update1 <- unwrapWidget c1 initial updateParent
     update2 <- unwrapWidget c2 initial mempty
-    pure \a -> do
-      update1 a
-      update2 a
+    pure $ update1 <> update2
   proplussecond c1 c2 = Widget \initial updateParent -> do
     update1 <- unwrapWidget c1 initial mempty
     update2 <- unwrapWidget c2 initial updateParent
-    pure \a -> do
-      update1 a
-      update2 a
+    pure $ update1 <> update2
 
 instance ProfunctorZero Widget where
   pzero = Widget mempty
