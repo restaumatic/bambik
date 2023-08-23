@@ -304,5 +304,3 @@ runWidgetInBody c a = void $ alterBody $ runWidget c a
 
 unwrapWidget :: forall i o. Widget i o -> i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w
-
-

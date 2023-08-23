@@ -3,6 +3,7 @@ module Web.MDC
   , body2
   , button
   , caption
+  , card
   , checkbox
   , containedButton
   , elevation1
@@ -137,6 +138,9 @@ elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty mem
 
 elevation9 :: forall a b. Widget a b -> Widget a b
 elevation9 = div (classes "elevation-demo-surface mdc-elevation--z9" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+
+card :: forall a b. Widget a b -> Widget a b
+card = div (classes "mdc-card" <> attr "style" "padding: 25px; margin: 15px 0 15px 0; text-align: justify;") mempty mempty -- TODO padding added ad-hoc, to remove
 
 -- Private
 

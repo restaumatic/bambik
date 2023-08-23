@@ -34,27 +34,28 @@ order =
         ( MDC.filledTextField timeCaption # time # takeaway ) ^
       div'
         ( MDC.filledTextField addressCaption # address # delivery ) ) # fulfillment ^
-    MDC.body1
-      ( text # orderIdCaption ^
-        chars " " ^
-        text # short # orderId ^
-        chars " (" ^
-        text # unique # orderId ^
-        chars "), " ^
-        ( text # firstName ^
+    MDC.card
+      ( MDC.body1
+        ( text # orderCaption ^
           chars " " ^
-          text # lastName ^
-            ( chars " (" ^
-              text # surname ^
-              chars " " ^
-              text # forename ^
-              chars ")" ) # formal ) # orderedBy ^
-      chars ", " ^
-      text # paymentStatus # paid ^
-      chars ", " ^
-      text # fulfillmentData # fulfillment ) ^
-    div'
-      ( MDC.containedButton (submitOrderCaption >>> shortId) submitOrder ) )
+          text # short # orderId ^
+          chars " (uniquely " ^
+          text # unique # orderId ^
+          chars ") for " ^
+          ( text # firstName ^
+            chars " " ^
+            text # lastName ^
+              ( chars " (formally " ^
+                text # surname ^
+                chars " " ^
+                text # forename ^
+                chars ")" ) # formal ) # orderedBy ^
+        chars ", " ^
+        text # paymentStatus # paid ^
+        chars ", fulfilled as " ^
+        text # fulfillmentData # fulfillment ) ^
+        div'
+          ( MDC.containedButton (submitOrderCaption >>> shortId) submitOrder ) ) )
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =
