@@ -59,7 +59,7 @@ order =
       chars ", " ^
       text # fulfillmentData # fulfillment) ^
     div'
-      ( MDC.containedButton (submitOrderCaption >>> shortId) writeOrderToConsole ))
+      ( MDC.containedButton (submitOrderCaption >>> shortId) submitOrder ))
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =

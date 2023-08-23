@@ -29,7 +29,7 @@ module Demo1Business
   , formal
   , paymentStatus
   , fulfillmentData
-  , writeOrderToConsole
+  , submitOrder
   , firstNameCaption
   , lastNameCaption
   , forenameCaption
@@ -173,8 +173,8 @@ fulfillmentData = projection case _ of
   (Takeaway { time }) -> "Takeaway at " <> time
   (Delivery { address }) -> "Delivery to " <> address
 
-writeOrderToConsole :: Order -> Effect Unit
-writeOrderToConsole = log <<< case _ of
+submitOrder :: Order -> Effect Unit
+submitOrder = log <<< case _ of
   { uniqueId, orderedBy, paid, fulfillment } -> intercalate ", " [uniqueId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
     (DineIn { table }) -> "Dine in at table " <> table
     (Takeaway { time }) -> "Takeaway at " <> time
