@@ -29,12 +29,9 @@ order =
   div' (
     MDC.checkbox # paid ^
     text # paidCaption) ^
-  ( ( MDC.radioButton # isDineIn ^
-      text # dineInCaption) ^
-    ( MDC.radioButton # isTakeaway ^
-      text # takeawayCaption) ^
-    ( MDC.radioButton # isDelivery ^
-      text # deliveryCaption)) # fulfillment ^
+  ( MDC.radioButton dineInCaption # isDineIn ^
+    MDC.radioButton takeawayCaption # isTakeaway ^
+    MDC.radioButton deliveryCaption # isDelivery) # fulfillment ^
   ( div'
       ( MDC.filledTextField tableCaption # table) # dineIn ^
     div'
