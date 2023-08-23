@@ -154,7 +154,7 @@ isTakeaway = iso "isTakeaway" (case _ of
 isDelivery :: Iso (Maybe Fulfillment) Fulfillment
 isDelivery = iso "isDelivery" (case _ of
   d@(Delivery _) -> Just d
-  _ -> Nothing) (fromMaybe (Delivery { address: "Wolności 345, Zabrze" }))
+  _ -> Nothing) (fromMaybe (Delivery { address: "Mulholland Drive 2001, Los Angeles" }))
 
 formal :: Iso CustomerFormal CustomerInformal
 formal = iso "formal" toFormal toInformal
@@ -165,20 +165,20 @@ formal = iso "formal" toFormal toInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
 paymentStatus :: Projection String Boolean
-paymentStatus = projection if _ then "Paid" else "NOT PAID"
+paymentStatus = projection if _ then "paid" else "NOT PAID"
 
 fulfillmentData :: Projection String Fulfillment
 fulfillmentData = projection case _ of
-  (DineIn { table }) -> "Dine in at table " <> table
-  (Takeaway { time }) -> "Takeaway at " <> time
-  (Delivery { address }) -> "Delivery to " <> address
+  (DineIn { table }) -> "dine in at table " <> table
+  (Takeaway { time }) -> "takeaway at " <> time
+  (Delivery { address }) -> "delivery to " <> address
 
 submitOrder :: Order -> Effect Unit
 submitOrder = log <<< case _ of
-  { uniqueId, orderedBy, paid, fulfillment } -> intercalate ", " [uniqueId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
-    (DineIn { table }) -> "Dine in at table " <> table
-    (Takeaway { time }) -> "Takeaway at " <> time
-    (Delivery { address }) -> "Delivery to " <> address
+  { uniqueId, shortId, orderedBy, paid, fulfillment } -> intercalate "|" [uniqueId, shortId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
+    (DineIn { table }) -> "dinein|" <> table
+    (Takeaway { time }) -> "takeaway|" <> time
+    (Delivery { address }) -> "delivery|\"" <> address <> "\""
   ]
 
 firstNameCaption :: Constant String
@@ -264,8 +264,8 @@ defaultOrder =
   { uniqueId: "71287"
   , shortId: "7"
   , orderedBy:
-    { firstName: "John"
-    , lastName: "Doe"
+    { firstName: "David"
+    , lastName: "Lynch"
     }
   , paid: true
   , fulfillment: DineIn { table: "1" }
