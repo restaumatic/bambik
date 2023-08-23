@@ -237,12 +237,13 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 -- | Runs a widget in the specified parent element. Returns the result and cleanup action.
 runWidgetInNode :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
 runWidgetInNode parent widget = runBuilder parent do
+  info $ "[Specular.DOM.Builder] running widget in node"
   start <- liftEffect now
   slot <- newSlot
   onCleanup (destroySlot slot)
   result <- liftEffect $ replaceSlot slot widget
   stop <- liftEffect now
-  info $ "[Specular.DOM.Builder] widget run in node in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  info $ "[Specular.DOM.Builder] run widget in node in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
   pure result
 
 foreign import documentBody :: Effect Node
@@ -299,6 +300,7 @@ addEventListener :: Node -> EventType -> (Event -> Effect Unit) -> Effect (Effec
 addEventListener node etype callback = addEventListenerImpl etype callback' node
   where
     callback' event = do
+      info $ "[Specular.DOM.Builder] handling " <> etype <> " event"
       start <- now
       callback event
       stop <- now

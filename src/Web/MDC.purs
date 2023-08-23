@@ -1,8 +1,23 @@
 module Web.MDC
-  ( containedButton
+  ( body1
+  , body2
+  , button
+  , caption
   , checkbox
+  , containedButton
+  , elevation1
+  , elevation9
   , filledTextField
+  , headline1
+  , headline2
+  , headline3
+  , headline4
+  , headline5
+  , headline6
+  , overline
   , radioButton
+  , subtitle1
+  , subtitle2
   )
   where
 
@@ -15,12 +30,12 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Builder (Node, attr, classes)
-import Web (Widget, button, div, element, label, label', onClick, radio, span, text, textInput)
+import Web (Widget, div, element, label, label', onClick, radio, span, text, textInput)
 import Web as Web
 
 containedButton :: forall a b c. (Widget String Void -> Widget a b) -> (a -> Effect Unit) -> Widget a c
 containedButton label action =
-  button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action)
+  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> onClick action)
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
@@ -80,6 +95,52 @@ radioButton label =
 --               callbackas newas
 --             liftEffect $ update a
 
+headline1 :: forall a b. Widget a b -> Widget a b
+headline1 = element "h1" (classes "mdc-typography--headline1") mempty mempty
+
+headline2 :: forall a b. Widget a b -> Widget a b
+headline2 = element "h2" (classes "mdc-typography--headline2") mempty mempty
+
+headline3 :: forall a b. Widget a b -> Widget a b
+headline3 = element "h3" (classes "mdc-typography--headline3") mempty mempty
+
+headline4 :: forall a b. Widget a b -> Widget a b
+headline4 = element "h4" (classes "mdc-typography--headline4") mempty mempty
+
+headline5 :: forall a b. Widget a b -> Widget a b
+headline5 = element "h5" (classes "mdc-typography--headline5") mempty mempty
+
+headline6 :: forall a b. Widget a b -> Widget a b
+headline6 = element "h6" (classes "mdc-typography--headline6") mempty mempty
+
+subtitle1 :: forall a b. Widget a b -> Widget a b
+subtitle1 = element "h6" (classes "mdc-typography--subtitle1") mempty mempty
+
+subtitle2 :: forall a b. Widget a b -> Widget a b
+subtitle2 = element "h6" (classes "mdc-typography--subtitle2") mempty mempty
+
+body1 :: forall a b. Widget a b -> Widget a b
+body1 = element "p" (classes "mdc-typography--body1") mempty mempty
+
+body2 :: forall a b. Widget a b -> Widget a b
+body2 = element "p" (classes "mdc-typography--body2") mempty mempty
+
+button :: forall a b. Widget a b -> Widget a b
+button = span (classes "mdc-typography--button") mempty mempty
+
+caption :: forall a b. Widget a b -> Widget a b
+caption = span (classes "mdc-typography--caption") mempty mempty
+
+overline :: forall a b. Widget a b -> Widget a b
+overline = span (classes "mdc-typography--overline") mempty mempty
+
+elevation1 :: forall a b. Widget a b -> Widget a b
+elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty mempty
+
+elevation9 :: forall a b. Widget a b -> Widget a b
+elevation9 = div (classes "elevation-demo-surface mdc-elevation--z9" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+
+-- Private
 
 mdcWith :: ComponentClass -> Node -> Effect Unit
 mdcWith classes node = void $ liftEffect $ runEffectFn2 _new classes node

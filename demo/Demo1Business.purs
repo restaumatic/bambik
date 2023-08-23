@@ -51,7 +51,7 @@ module Demo1Business
   , orderIdCaption
   , orderIdText
   , orderedByCaption
-  , writeOrderToConsoleCaption
+  , submitOrderCaption
   , informalCaption
   , formalCaption
   , orderTitle
@@ -144,17 +144,17 @@ delivery = constructor "delivery" Delivery (case _ of
 isDineIn :: Iso (Maybe Fulfillment) Fulfillment
 isDineIn = iso "isDineIn" (case _ of
   d@(DineIn _) -> Just d
-  _ -> Nothing) (fromMaybe ( DineIn { table: ""}))
+  _ -> Nothing) (fromMaybe ( DineIn { table: "1"}))
 
 isTakeaway :: Iso (Maybe Fulfillment) Fulfillment
 isTakeaway = iso "isTakeaway" (case _ of
   t@(Takeaway _) -> Just t
-  _ -> Nothing) (fromMaybe (Takeaway { time: ""}))
+  _ -> Nothing) (fromMaybe (Takeaway { time: "15:30"}))
 
 isDelivery :: Iso (Maybe Fulfillment) Fulfillment
 isDelivery = iso "isDelivery" (case _ of
   d@(Delivery _) -> Just d
-  _ -> Nothing) (fromMaybe (Delivery { address: "" }))
+  _ -> Nothing) (fromMaybe (Delivery { address: "Wolności 345, Zabrze" }))
 
 formal :: Iso CustomerFormal CustomerInformal
 formal = iso "formal" toFormal toInformal
@@ -232,8 +232,8 @@ fullfilmentCaption = constant "Fullfilment"
 orderCaption :: Constant String
 orderCaption = constant "Order"
 
-writeOrderToConsoleCaption :: Projection String ShortId
-writeOrderToConsoleCaption = projection \sid -> "Write order " <> sid <> " to console"
+submitOrderCaption :: Projection String ShortId
+submitOrderCaption = projection \sid -> "Submit order " <> sid
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
