@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "description": "Invariant optics UI framework",
   "scripts": {
-    "demo1": "parcel demo/Demo.html & spago bundle-app -y --main Demo1 --to output/Demo.js -w"
+    "demo1": "parcel demo/Demo1.html & spago bundle-app -y --main Demo1 --to output/Demo1.js -w"
   },
   "author": "Restaumatic.com",
   "dependencies": {
