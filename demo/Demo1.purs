@@ -5,7 +5,7 @@ import Prelude
 import Demo1Business
 import Demo1WebView
 import Effect (Effect)
-import Web (runMainComponent)
+import Web (runWidgetInBody)
 
 main :: Effect Unit
-main = runMainComponent order defaultOrder
+main = runWidgetInBody order defaultOrder

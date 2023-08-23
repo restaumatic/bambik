@@ -22,8 +22,8 @@ module Web
   , module Data.Profunctor.Plus
   , onClick
   , radio
-  , runComponent
-  , runMainComponent
+  , runWidget
+  , runWidgetInBody
   , span
   , span'
   , text
@@ -43,10 +43,9 @@ import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Uncurried (runEffectFn2)
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, runMainBuilderInBody, setAttributesImpl, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attr, elAttr, getChecked, getValue, newSlot, onDomEvent, replaceSlot, alterBody, setAttributesImpl, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -306,11 +305,11 @@ onClick callback node ea = void $ addEventListener node "click" $ const $ ea >>=
 
 -- Running
 
-runComponent :: forall a. Widget a a -> a -> Builder Unit Unit
-runComponent w a = void $ unwrapWidget w a mempty
+runWidget :: forall a. Widget a a -> a -> Builder Unit (Changed a -> Effect Unit)
+runWidget w a = unwrapWidget w a mempty
 
-runMainComponent :: forall a. Widget a a -> a -> Effect Unit
-runMainComponent c a = runMainBuilderInBody $ runComponent c a
+runWidgetInBody :: forall a. Widget a a -> a -> Effect Unit
+runWidgetInBody c a = void $ alterBody $ runWidget c a
 
 -- Private
 

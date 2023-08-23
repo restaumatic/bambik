@@ -28,8 +28,7 @@ module Specular.Dom.Builder
   , replaceSlot
   , runBuilder
   , runBuilder'
-  , runMainBuilderInBody
-  , runMainWidgetInNode
+  , alterBody
   , setAttributes
   , setAttributesImpl
   , setChecked
@@ -174,7 +173,7 @@ newSlot = do
           -- we've been removed from the DOM
           write cleanup cleanupRef
 
-      info "[Specular.DOM.Builder] replaced slot"
+      info "[Specular.DOM.Builder] altered placeholder"
       pure result
 
     destroy :: Effect Unit
@@ -235,30 +234,23 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 
 
 -- | Runs a widget in the specified parent element. Returns the result and cleanup action.
-runWidgetInNode :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
-runWidgetInNode parent widget = runBuilder parent do
-  info $ "[Specular.DOM.Builder] running widget in node"
-  start <- liftEffect now
-  slot <- newSlot
-  onCleanup (destroySlot slot)
-  result <- liftEffect $ replaceSlot slot widget
-  stop <- liftEffect now
-  info $ "[Specular.DOM.Builder] run widget in node in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
-  pure result
+
 
 foreign import documentBody :: Effect Node
 
--- | Runs a widget in the specified parent element and discards cleanup action.
-runMainWidgetInNode :: forall a. Node -> Builder Unit a -> Effect a
-runMainWidgetInNode parent widget = fst <$> runWidgetInNode parent widget
-
 -- | Runs a builder in `document.body` and discards cleanup action.
-runMainBuilderInBody :: forall a. Builder Unit a -> Effect a
-runMainBuilderInBody widget = do
+alterBody :: forall a. Builder Unit a -> Effect a
+alterBody widget = do
+  info $ "[Specular.DOM.Builder] altering body"
+  start <- liftEffect now
   body <- documentBody
-  runMainWidgetInNode body widget
-
--- copied from Browser.proplus
+  Tuple a _  <- runBuilder body do
+    slot <- newSlot
+    onCleanup (destroySlot slot)
+    liftEffect $ replaceSlot slot widget
+  stop <- liftEffect now
+  info $ "[Specular.DOM.Builder] altered body in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  pure a
 
 type Attrs = Object AttrValue
 
