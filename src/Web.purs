@@ -240,7 +240,7 @@ h1 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> 
 h1 = element "h1"
 
 h1' :: forall a b. Widget a b -> Widget a b
-h1' = element' "h2"
+h1' = element' "h1"
 
 h2 :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 h2 = element "h2"

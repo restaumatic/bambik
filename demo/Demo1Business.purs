@@ -50,7 +50,11 @@ module Demo1Business
   , orderId
   , orderIdCaption
   , orderIdText
+  , orderedByCaption
   , writeOrderToConsoleCaption
+  , informalCaption
+  , formalCaption
+  , orderTitle
   , defaultOrder
   ) where
   
@@ -239,9 +243,21 @@ orderId = lens' "orderId" (case _ of
 orderIdCaption :: Constant String
 orderIdCaption = constant "Order ID"
 
+orderedByCaption :: Constant String
+orderedByCaption = constant "Ordered by"
+
+informalCaption :: Constant String
+informalCaption = constant "Informal"
+
+formalCaption :: Constant String
+formalCaption = constant "Formal"
+
 orderIdText :: Projection String OrderId
 orderIdText = projection case _ of
   { short, unique } -> short <> " (" <> unique <> ")"
+
+orderTitle :: Projection String ShortId
+orderTitle = projection \sid -> "Order " <> sid
 
 defaultOrder :: Order
 defaultOrder =

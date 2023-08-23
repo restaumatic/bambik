@@ -11,23 +11,23 @@ import Web.MDC as MDC
 
 order ∷ Widget Order Order
 order =
-  h1' (
-    text # orderCaption ^
-    chars " " ^
-    text # shortId ) ^
-  div' (
-    MDC.filledTextField uniqueIdCaption) # uniqueId ^
-  div' (
-    MDC.filledTextField shortIdCaption) # shortId ^
-  div' (
-    h3' (chars "Order Id") ^
-    MDC.filledTextField shortCaption # short ^
-    MDC.filledTextField uniqueCaption # unique) # orderId ^
-  div' (
-    h3' (chars "Ordered by") ^
-    customer # orderedBy) ^
-  div' (
-    MDC.checkbox paidCaption # paid) ^
+  h1'
+    ( text # orderTitle # shortId) ^
+  div'
+    ( MDC.filledTextField uniqueIdCaption) # uniqueId ^
+  div'
+    ( MDC.filledTextField shortIdCaption) # shortId ^
+  div'
+    ( h2'
+      ( text # orderIdCaption) ^
+      MDC.filledTextField shortCaption # short ^
+      MDC.filledTextField uniqueCaption # unique) # orderId ^
+  div'
+    ( h2'
+      ( text # orderedByCaption) ^
+      customer # orderedBy) ^
+  div'
+    ( MDC.checkbox paidCaption # paid) ^
   ( MDC.radioButton dineInCaption # isDineIn ^
     MDC.radioButton takeawayCaption # isTakeaway ^
     MDC.radioButton deliveryCaption # isDelivery) # fulfillment ^
@@ -37,24 +37,23 @@ order =
       ( MDC.filledTextField timeCaption # time) # takeaway ^
     div'
       ( MDC.filledTextField addressCaption # address) # delivery) # fulfillment ^
-  div' (
-    text # orderCaption ^
-    chars ": " ^
-    text # orderIdCaption ^
-    chars " " ^
-    text # short # orderId ^
-    chars " (" ^
-    text # unique # orderId ^
-    chars ") " ^
-    (
-      text # firstName ^
+  div'
+    ( text # orderCaption ^
+      chars ": " ^
+      text # orderIdCaption ^
       chars " " ^
-      text # lastName ^ (
-        chars " (" ^
-        text # forename ^
+      text # short # orderId ^
+      chars " (" ^
+      text # unique # orderId ^
+      chars ") " ^
+      ( text # firstName ^
         chars " " ^
-        text # surname ^
-        chars ") ") # formal) # orderedBy ^
+        text # lastName ^
+          ( chars " (" ^
+            text # forename ^
+            chars " " ^
+            text # surname ^
+            chars ") ") # formal) # orderedBy ^
     chars ", " ^
     text # paidCaption ^
     chars ": " ^
@@ -63,17 +62,17 @@ order =
     text # fullfilmentCaption ^
     chars ": " ^
     text # fulfillmentData # fulfillment) ^
-  div' (
-    MDC.containedButton (writeOrderToConsoleCaption >>> shortId) writeOrderToConsole
-  )
+  div'
+    ( MDC.containedButton (writeOrderToConsoleCaption >>> shortId) writeOrderToConsole )
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =
-  div' (
-    h4' (chars "Informal") ^
-    MDC.filledTextField firstNameCaption # firstName ^
-    MDC.filledTextField lastNameCaption # lastName) ^
-  div' (
-    h4' (chars "Formal") ^
-    MDC.filledTextField forenameCaption # forename ^
-    MDC.filledTextField surnameCaption # surname) # formal
+  div'
+    ( h3'
+      ( text # informalCaption) ^
+      MDC.filledTextField firstNameCaption # firstName ^
+      MDC.filledTextField lastNameCaption # lastName) ^
+  div'
+    ( h3' (text # formalCaption) ^
+      MDC.filledTextField forenameCaption # forename ^
+      MDC.filledTextField surnameCaption # surname) # formal
