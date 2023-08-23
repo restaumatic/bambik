@@ -175,7 +175,7 @@ fulfillmentData = projection case _ of
 
 submitOrder :: Order -> Effect Unit
 submitOrder = log <<< case _ of
-  { uniqueId, shortId, orderedBy, paid, fulfillment } -> intercalate "|" [uniqueId, shortId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
+  { uniqueId, shortId, orderedBy, paid, fulfillment } -> "submitted order: " <> intercalate "|" [uniqueId, shortId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
     (DineIn { table }) -> "dinein|" <> table
     (Takeaway { time }) -> "takeaway|" <> time
     (Delivery { address }) -> "delivery|\"" <> address <> "\""

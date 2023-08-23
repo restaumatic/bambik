@@ -9,6 +9,7 @@ Best practices
   * In widget definition each line should start with sub widget (e.g. `div`) possibly preceded by opening brackets (`(`), while `^`, `<^` and `^>`operators should be placed at the end of line.
   * In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
   * General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
+  * Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resistant to changes in `show` implementation, 2) provide tailor-made textualizations
 ## TODO
 
   1. First-order MDC components
