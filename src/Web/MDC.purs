@@ -80,25 +80,6 @@ radioButton label =
     label'
       ( text # label ))
 
--- list :: forall a. Component a -> Component (Array a)
--- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
---   slot <- newSlot
---   asRef <- liftEffect $ new []
---   pure $ \as -> replaceSlot slot do
---     liftEffect $ write as asRef
---     void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
---       forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
---         void $ elAttr "span'" ("class" := "mdc-list-item__ripple") (pure unit)
---         void $ elAttr "span'" ("class" := "mdc-list-item__text") do
---           void $ elAttr "span'" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
---           void $ elAttr "span'" ("class" := "mdc-list-item__primary-text") do
---             update <- unwrap c \value -> do
---               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
---               callbackas newas
---             liftEffect $ update a
-
--- Optics
-
 headline1 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
 headline1 label = element "h1" (classes "mdc-typography--headline1") mempty mempty
  ( text # label )
@@ -131,12 +112,6 @@ subtitle2 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
 subtitle2 label = element "h6" (classes "mdc-typography--subtitle2") mempty mempty
   ( text # label )
 
-body1 :: forall a b. Widget a b -> Widget a b
-body1 = element "p" (classes "mdc-typography--body1") mempty mempty
-
-body2 :: forall a b. Widget a b -> Widget a b
-body2 = element "p" (classes "mdc-typography--body2") mempty mempty
-
 button :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
 button label = span (classes "mdc-typography--button") mempty mempty
   ( text # label )
@@ -148,6 +123,14 @@ caption label = span (classes "mdc-typography--caption") mempty mempty
 overline :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
 overline label = span (classes "mdc-typography--overline") mempty mempty
   ( text # label )
+
+-- Optics
+
+body1 :: forall a b. Widget a b -> Widget a b
+body1 = element "p" (classes "mdc-typography--body1") mempty mempty
+
+body2 :: forall a b. Widget a b -> Widget a b
+body2 = element "p" (classes "mdc-typography--body2") mempty mempty
 
 elevation1 :: forall a b. Widget a b -> Widget a b
 elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty mempty
@@ -177,4 +160,25 @@ foreign import material
      , checkbox :: { "MDCCheckbox" :: ComponentClass }
      , formField :: { "MDCFormField" :: ComponentClass }
      }
+
+
+-- TODO
+
+-- list :: forall a. Component a -> Component (Array a)
+-- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
+--   slot <- newSlot
+--   asRef <- liftEffect $ new []
+--   pure $ \as -> replaceSlot slot do
+--     liftEffect $ write as asRef
+--     void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
+--       forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
+--         void $ elAttr "span'" ("class" := "mdc-list-item__ripple") (pure unit)
+--         void $ elAttr "span'" ("class" := "mdc-list-item__text") do
+--           void $ elAttr "span'" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
+--           void $ elAttr "span'" ("class" := "mdc-list-item__primary-text") do
+--             update <- unwrap c \value -> do
+--               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
+--               callbackas newas
+--             liftEffect $ update a
+
 
