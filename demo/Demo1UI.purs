@@ -1,4 +1,4 @@
-module Demo1WebView
+module Demo1UI
   ( order
   ) where
 
