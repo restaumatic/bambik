@@ -67,7 +67,7 @@ Let's pick then invariant optics and use them instead of data representation.
 
 Suppose we're given with:
 
-```
+```purescript
 module Business (Person, name) where
 -- data
 data Person = Person { name :: String }
@@ -78,7 +78,7 @@ name :: InvCartesian i => i String -> i Person -- notice no name conflict with n
 and using this module we want to implement function:
 
 
-```
+```purescript
 printPersonToConsole :: Person -> Effect Unit
 ```
 
@@ -88,7 +88,7 @@ Since only `Person` (data type without data constructor) and optics are exported
 
 Attempt 1:
 
-```
+```purescript
 import Business (Person, name)
 
 printPersonToConsole = Console.log <<< personString
@@ -99,7 +99,7 @@ personString = impossible
 
 Attempt 2:
 
-```
+```purescript
 import Business (Person, name)
 
 -- introducing invariant:
