@@ -37,27 +37,18 @@ filledTextField floatingLabel =
     ^
     (span (classes "mdc-line-ripple") mempty mempty pzero)
 
-checkbox :: Widget Boolean Boolean
-checkbox =
+checkbox :: forall a. (Widget String Void -> Widget Boolean a) -> Widget Boolean Boolean
+checkbox label =
   div (classes "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
-    (
-    div (classes "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node)
-      (
-      Web.checkbox (classes "mdc-checkbox__native-control")
-      ^
-      div (classes "mdc-checkbox__background") mempty mempty
-        (
-        element "svg" (classes "mdc-checkbox__checkmark" <> attr "viewBox" "0 0 24 24") mempty mempty
-          (
-          element "path" (classes "mdc-checkbox__checkmark-path" <> attr "fill" "none" <> attr "d" "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty pzero
-          )
-        ^
-        div (classes "mdc-checkbox__mixedmark") mempty mempty pzero
-        )
-      ^
-      div (classes "mdc-checkbox__ripple") mempty mempty pzero
-      )
-    )
+    ( div (classes "mdc-checkbox") mempty (\node _ -> mdcWith material.checkbox."MDCCheckbox" node)
+      ( Web.checkbox (classes "mdc-checkbox__native-control") ^
+        div (classes "mdc-checkbox__background") mempty mempty
+        ( element "svg" (classes "mdc-checkbox__checkmark" <> attr "viewBox" "0 0 24 24") mempty mempty
+          ( element "path" (classes "mdc-checkbox__checkmark-path" <> attr "fill" "none" <> attr "d" "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty pzero) ^
+        div (classes "mdc-checkbox__mixedmark") mempty mempty pzero) ^
+      div (classes "mdc-checkbox__ripple") mempty mempty pzero) <^
+      label'
+        ( text # label ))
 
 radioButton :: forall a b. (Widget String Void -> Widget (Maybe a) b) -> Widget (Maybe a) (Maybe a)
 radioButton label =
@@ -70,8 +61,7 @@ radioButton label =
       (div (classes "mdc-radio__ripple") mempty mempty pzero)
     ) <^
     label'
-      ( text # label )
-  )
+      ( text # label ))
 
 -- list :: forall a. Component a -> Component (Array a)
 -- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)

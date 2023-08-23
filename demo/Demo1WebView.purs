@@ -27,8 +27,7 @@ order =
     h3' (chars "Ordered by") ^
     customer # orderedBy) ^
   div' (
-    MDC.checkbox # paid ^
-    text # paidCaption) ^
+    MDC.checkbox paidCaption # paid) ^
   ( MDC.radioButton dineInCaption # isDineIn ^
     MDC.radioButton takeawayCaption # isTakeaway ^
     MDC.radioButton deliveryCaption # isDelivery) # fulfillment ^
