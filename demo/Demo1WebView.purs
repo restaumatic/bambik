@@ -1,6 +1,5 @@
 module Demo1WebView
   ( order
-  , customer
   ) where
 
 import Prelude
