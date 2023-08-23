@@ -142,17 +142,17 @@ delivery = constructor "delivery" Delivery (case _ of
   _ -> Nothing)
 
 isDineIn :: Iso (Maybe Fulfillment) Fulfillment
-isDineIn = iso "isDineIn" (case _ of
+isDineIn = iso' (case _ of
   d@(DineIn _) -> Just d
   _ -> Nothing) (fromMaybe ( DineIn { table: "1"}))
 
 isTakeaway :: Iso (Maybe Fulfillment) Fulfillment
-isTakeaway = iso "isTakeaway" (case _ of
+isTakeaway = iso' (case _ of
   t@(Takeaway _) -> Just t
   _ -> Nothing) (fromMaybe (Takeaway { time: "15:30"}))
 
 isDelivery :: Iso (Maybe Fulfillment) Fulfillment
-isDelivery = iso "isDelivery" (case _ of
+isDelivery = iso' (case _ of
   d@(Delivery _) -> Just d
   _ -> Nothing) (fromMaybe (Delivery { address: "Mulholland Drive 2001, Los Angeles" }))
 

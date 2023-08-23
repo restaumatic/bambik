@@ -14,6 +14,7 @@ module Data.Profunctor.Optics
   , constructor
   , field
   , iso
+  , iso'
   , lens
   , lens'
   , module Data.Profunctor
@@ -54,6 +55,10 @@ type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> Iso a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
+
+iso' :: forall a s. (s -> Maybe a) -> (Maybe a -> s) -> Iso (Maybe a) s
+iso' mapin mapout = dimap mapin mapout
+
 
 projection :: forall a s. (s -> a) -> Projection a s
 projection f = dimap f absurd
