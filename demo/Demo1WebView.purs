@@ -69,7 +69,8 @@ customer =
       MDC.filledTextField firstNameCaption # firstName ^
       MDC.filledTextField lastNameCaption # lastName) ^
   div'
-    ( MDC.subtitle2 (text # formalCaption) ^
+    ( MDC.subtitle2
+      ( text # formalCaption) ^
       MDC.filledTextField forenameCaption # forename ^
       MDC.filledTextField surnameCaption # surname
       ) # formal
