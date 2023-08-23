@@ -47,7 +47,7 @@ import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
--- Capabilites of Widget
+-- Capabilites
 
 instance Profunctor Widget where
   dimap pre post w = Widget \a callback -> do
@@ -174,7 +174,7 @@ instance ChProfunctor Widget where
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
 
--- Creating Widgets
+-- Primitives
 
 text :: forall a. Widget String a
 text = Widget \str _ -> do
@@ -190,6 +190,45 @@ chars :: forall a b. String -> Widget a b
 chars s = Widget \_ _ -> do
   Builder.text s
   pure $ mempty
+
+textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
+textInput attrs = Widget \a callbackcha -> do
+  Tuple node _ <- elAttr "input" attrs (pure unit)
+  liftEffect $ setValue node a
+  liftEffect $ addEventListener "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
+  pure case _ of
+    Changed None _ -> mempty
+    Changed _ newa -> setValue node newa
+
+checkbox :: Attrs -> Widget Boolean Boolean
+checkbox attrs = Widget \a callbackcha -> do
+  Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
+  liftEffect $ setChecked node a
+  liftEffect $ addEventListener "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
+  pure case _ of
+    Changed None _ -> mempty
+    Changed _ newa -> setChecked node newa
+
+-- input:
+-- Nothing -> turns off button
+-- Just a -> turns on (if turned off) button and remembers `a`
+-- output:
+-- Nothing -> on button clicked when button doesn't remember any `a`
+-- Just a -> on button clicked when button does remember an `a`
+radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
+radioButton attrs = Widget \ma callbackchma -> do
+  maRef <- liftEffect $ Ref.new ma
+  Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
+  liftEffect $ setChecked node (isJust ma)
+  liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
+  pure case _ of
+    Changed None _ -> mempty
+    Changed _ Nothing -> setChecked node false
+    Changed _ newma@(Just _) -> do
+      Ref.write newma maRef
+      setChecked node true
+
+-- Optics
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
@@ -253,44 +292,7 @@ h4 = element "h4"
 h4' :: forall a b. Widget a b -> Widget a b
 h4' = element' "h4"
 
-textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
-textInput attrs = Widget \a callbackcha -> do
-  Tuple node _ <- elAttr "input" attrs (pure unit)
-  liftEffect $ setValue node a
-  liftEffect $ addEventListener "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
-  pure case _ of
-    Changed None _ -> mempty
-    Changed _ newa -> setValue node newa
-
-checkbox :: Attrs -> Widget Boolean Boolean
-checkbox attrs = Widget \a callbackcha -> do
-  Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ setChecked node a
-  liftEffect $ addEventListener "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
-  pure case _ of
-    Changed None _ -> mempty
-    Changed _ newa -> setChecked node newa
-
--- input:
--- Nothing -> turns off button
--- Just a -> turns on (if turned off) button and remembers `a`
--- output:
--- Nothing -> on button clicked when button doesn't remember any `a`
--- Just a -> on button clicked when button does remember an `a`
-radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
-radioButton attrs = Widget \ma callbackchma -> do
-  maRef <- liftEffect $ Ref.new ma
-  Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  liftEffect $ setChecked node (isJust ma)
-  liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
-  pure case _ of
-    Changed None _ -> mempty
-    Changed _ Nothing -> setChecked node false
-    Changed _ newma@(Just _) -> do
-      Ref.write newma maRef
-      setChecked node true
-
--- Running Widgets
+-- Entry point
 
 runWidget :: forall a. Widget a a -> a -> Builder Unit (Changed a -> Effect Unit)
 runWidget w a = unwrapWidget w a mempty

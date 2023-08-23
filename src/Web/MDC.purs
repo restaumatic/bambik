@@ -33,6 +33,8 @@ import Specular.Dom.Builder (Node, addEventListener, attr, classes)
 import Web (Widget, div, element, label, label', span, text, textInput)
 import Web as Web
 
+-- Primitives
+
 containedButton :: forall a b c. (Widget String Void -> Widget a b) -> (a -> Effect Unit) -> Widget a c
 containedButton label action =
   Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ -> mdcWith material.ripple."MDCRipple" node) <> (\node ea -> addEventListener "click" node $ const $ ea >>= action))
@@ -94,6 +96,8 @@ radioButton label =
 --               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
 --               callbackas newas
 --             liftEffect $ update a
+
+-- Optics
 
 headline1 :: forall a b. Widget a b -> Widget a b
 headline1 = element "h1" (classes "mdc-typography--headline1") mempty mempty
