@@ -52,6 +52,7 @@ module ViewModel
   , orderIdText
   , orderedByCaption
   , submitOrderCaption
+  , orderSubmittedCaption
   , informalCaption
   , formalCaption
   , orderTitle
@@ -234,6 +235,9 @@ orderCaption = constant "Order"
 
 submitOrderCaption :: Projection String ShortId
 submitOrderCaption = projection \sid -> "Submit order " <> sid
+
+orderSubmittedCaption :: Constant String
+orderSubmittedCaption = constant "Order submitted"
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of

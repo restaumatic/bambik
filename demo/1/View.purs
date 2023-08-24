@@ -59,7 +59,8 @@ order =
             ( MDC.dialog (submitOrderCaption >>> shortId)
               ( div'
                 ( chars "Are you sure?" ) ^
-                MDC.containedButton (submitOrderCaption >>> shortId) ) ) ) ) )
+                MDC.containedButton (submitOrderCaption >>> shortId) ) ) >>>
+                  ( MDC.snackbar orderSubmittedCaption )) ) )
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =

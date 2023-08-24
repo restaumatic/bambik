@@ -18,6 +18,7 @@ module Web.MDC
   , headline6
   , overline
   , radioButton
+  , snackbar
   , subtitle1
   , subtitle2
   )
@@ -161,6 +162,32 @@ dialog title w =
         comp <- newComponent material.dialog."MDCDialog" node
         open comp
         pure $ close comp
+
+snackbar :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+snackbar label =
+  aside (classes "mdc-snackbar") mempty initAside
+    ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty mempty
+      ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty mempty
+        (text # label )))
+    where
+      initAside node _ _ = do
+        comp <- newComponent material.snackbar."MDCSnackbar" node
+        open comp
+        pure $ close comp
+
+-- <aside class="mdc-snackbar">
+--   <div class="mdc-snackbar__surface" role="status" aria-relevant="additions">
+--     <div class="mdc-snackbar__label" aria-atomic="false">
+--       Can't send photo. Retry in 5 seconds.
+--     </div>
+--     <div class="mdc-snackbar__actions" aria-atomic="true">
+--       <button type="button" class="mdc-button mdc-snackbar__action">
+--         <div class="mdc-button__ripple"></div>
+--         <span class="mdc-button__label">Retry</span>
+--       </button>
+--     </div>
+--   </div>
+-- </aside>
 
 -- Private
 
