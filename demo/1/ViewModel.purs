@@ -236,8 +236,8 @@ orderCaption = constant "Order"
 submitOrderCaption :: Projection String ShortId
 submitOrderCaption = projection \sid -> "Submit order " <> sid
 
-orderSubmittedCaption :: Constant String
-orderSubmittedCaption = constant "Order submitted"
+orderSubmittedCaption :: Projection String ShortId
+orderSubmittedCaption = projection \sid -> "Order " <> sid <> " submitted"
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
