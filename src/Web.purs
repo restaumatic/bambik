@@ -1,5 +1,7 @@
 module Web
   ( Widget
+  , aside
+  , aside'
   , button
   , button'
   , chars
@@ -279,6 +281,12 @@ span' = element' "span"
 
 span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 span = element "span"
+
+aside' :: forall a b. Widget a b -> Widget a b
+aside' = element' "aside"
+
+aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
+aside = element "aside"
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = element' "label"

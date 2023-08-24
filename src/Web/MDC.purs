@@ -32,21 +32,21 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Specular.Dom.Builder (Node, addEventListener, attr, classes)
-import Web (Widget, chars, div, element, h2, label, label', span, text, textInput)
+import Web (Widget, aside, div, element, h2, label, label', span, text, textInput)
 import Web as Web
 
 -- Primitives
 
 containedButton :: forall a b. (Widget String Void -> Widget a b) -> Widget a a
 containedButton label =
-  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ _ -> void $ mdcWith material.ripple."MDCRipple" node) <> (\node ea action-> addEventListener "click" node $ const $ ea >>= action))
+  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ _ -> void $ newComponent material.ripple."MDCRipple" node) <> (\node ea action-> addEventListener "click" node $ const $ ea >>= action))
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
 
 filledTextField :: forall a. (Widget String Void -> Widget String a) -> Widget String String
 filledTextField floatingLabel =
-  label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> void $ mdcWith material.textField."MDCTextField" node) $
+  label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> void $ newComponent material.textField."MDCTextField" node) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
     ^
     (span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)) mempty
@@ -58,8 +58,8 @@ filledTextField floatingLabel =
 
 checkbox :: forall a. (Widget String Void -> Widget Boolean a) -> Widget Boolean Boolean
 checkbox label =
-  div (classes "mdc-form-field") mempty mempty -- (\node _ -> mdcWith material.formField."MDCFormField" node mempty)
-    ( div (classes "mdc-checkbox") mempty (\node _ -> void $ mdcWith material.checkbox."MDCCheckbox" node)
+  div (classes "mdc-form-field") mempty (\node _ -> void $ newComponent material.formField."MDCFormField" node)
+    ( div (classes "mdc-checkbox") mempty (\node _ -> void $ newComponent material.checkbox."MDCCheckbox" node)
       ( Web.checkbox (classes "mdc-checkbox__native-control") ^
         div (classes "mdc-checkbox__background") mempty mempty
         ( element "svg" (classes "mdc-checkbox__checkmark" <> attr "viewBox" "0 0 24 24") mempty mempty
@@ -72,7 +72,7 @@ checkbox label =
 radioButton :: forall a b. (Widget String Void -> Widget (Maybe a) b) -> Widget (Maybe a) (Maybe a)
 radioButton label =
   div (classes "mdc-form-field") mempty mempty
-  ((div (classes "mdc-radio") mempty (\node _ -> void $ mdcWith material.radio."MDCRadio" node) $
+  ((div (classes "mdc-radio") mempty (\node _ -> void $ newComponent material.radio."MDCRadio" node) $
       Web.radioButton (classes "mdc-radio__native-control" <> attr "id" "radio-1" ) <^
       div (classes "mdc-radio__background") mempty mempty
         ( div (classes "mdc-radio__outer-circle") mempty mempty pzero ^
@@ -143,16 +143,14 @@ elevation9 = div (classes "elevation-demo-surface mdc-elevation--z9" <> attr "st
 card :: forall a b. Widget a b -> Widget a b
 card = div (classes "mdc-card" <> attr "style" "padding: 25px; margin: 15px 0 15px 0; text-align: justify;") mempty mempty -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a b. Widget a b -> Widget a b
-dialog w =
-  element "aside" (classes "mdc-dialog") mempty (\node _ -> do
-    comp <- mdcWith material.dialog."MDCDialog" node
-    openDialog comp)
+dialog :: forall a b c. (Widget String Void -> Widget a c) -> Widget a b -> Widget a b
+dialog title w =
+  aside (classes "mdc-dialog") mempty (\node _ -> newComponent material.dialog."MDCDialog" node >>= openDialog)
     ( div (classes "mdc-dialog__container") mempty mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty mempty
         ( h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty mempty
-          ( chars "$$$" ) ) ^>
-          div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty mempty w) <^
+          ( text # title ) ^>
+          div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty mempty w) ) <^
       div (classes "mdc-dialog__scrim") mempty mempty pzero )
 
 -- <aside class="mdc-dialog">
@@ -172,8 +170,9 @@ dialog w =
 
 -- Private
 
-mdcWith :: ComponentClass -> Node -> Effect Component
-mdcWith classes node = liftEffect $ runEffectFn2 _new classes node
+newComponent :: ComponentClass -> Node -> Effect Component
+newComponent classes node = liftEffect $ runEffectFn2 _new classes node
+
 foreign import data Component :: Type
 foreign import data ComponentClass :: Type
 foreign import data WebUI :: Type

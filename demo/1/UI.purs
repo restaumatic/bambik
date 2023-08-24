@@ -1,6 +1,7 @@
 module UI
   ( order
   ) where
+
 import Prelude
 
 import Business
@@ -55,9 +56,10 @@ order =
         text # fulfillmentData # fulfillment ) ^
         div'
           ( MDC.containedButton (submitOrderCaption >>> shortId) >>>
-            ( MDC.dialog
+            ( MDC.dialog (submitOrderCaption >>> shortId)
               ( div'
-               ( chars "sadhkfashdf") ) ) ) ) )
+                ( chars "Are you sure?" ) ^
+                MDC.containedButton (submitOrderCaption >>> shortId) ) ) ) ) )
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =
