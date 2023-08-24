@@ -6,13 +6,17 @@ export function _new(cls, node) {
   return new cls(node);
 }
 
-// openDialog :: Component -> IOSync Unit
-export function openDialog(mdcDialog) {
+// open :: Component -> IOSync Unit
+export function open(mdcDialog) {
   return function () {
     mdcDialog.open();
-    mdcDialog.listen('MDCDialog:cancel', () => {
-      console.log('closed')
-    });
   }
+}
+
+// close :: Component -> Effect Unit
+export function close(component) {
+  return function () {
+    component.close();
+  };
 }
 

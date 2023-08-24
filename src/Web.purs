@@ -35,7 +35,7 @@ module Web
 import Prelude hiding (zero)
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
@@ -181,13 +181,11 @@ instance ChProfunctor Widget where
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
-    unwrapWidget w1 inita \chb@(Changed ch b) -> do
+    unwrapWidget w1 inita \(Changed _ b) -> do
       asideFragment <- createDocumentFragment
-      Tuple update cleanup <- do -- w2 will never be updated
-        runBuilder asideFragment $ unwrapWidget w2 b mempty
+      void $ runBuilder asideFragment $ unwrapWidget w2 b callbackc
       body <- documentBody
       appendChild asideFragment body
-      pure unit
 
 -- Primitives
 
@@ -246,9 +244,9 @@ radioButton attrs = Widget \ma callbackchma -> do
 -- Optics
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
-element tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
+element tagName attrs dynAttrs listener w = Widget \a callbackb -> do
   aRef <- liftEffect $ Ref.new a
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackcha
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackb
   liftEffect $ setAttributes node (attrs <> dynAttrs a)
   liftEffect $ listener node (Ref.read aRef)
   pure \(Changed ch newa) -> do
@@ -256,12 +254,17 @@ element tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
     setAttributes node (attrs <> dynAttrs newa)
     update $ Changed ch newa
 
-element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
-element_ tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
+element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
+element_ tagName attrs dynAttrs listener w = Widget \a callbackb -> do
   aRef <- liftEffect $ Ref.new a
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackcha
+  cleanupRef <- liftEffect $ Ref.new Nothing
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a \chb@(Changed _ b) -> do
+    mCleanup <- Ref.read cleanupRef
+    fromMaybe mempty mCleanup
+    callbackb chb
   liftEffect $ setAttributes node (attrs <> dynAttrs a)
-  liftEffect $ listener node (Ref.read aRef) (callbackcha <<< Changed Some)
+  cleanup <- liftEffect $ listener node (Ref.read aRef) (callbackb <<< Changed Some)
+  liftEffect $ Ref.write (Just cleanup) cleanupRef
   pure \(Changed ch newa) -> do
     Ref.write newa aRef
     setAttributes node (attrs <> dynAttrs newa)
@@ -285,8 +288,8 @@ span = element "span"
 aside' :: forall a b. Widget a b -> Widget a b
 aside' = element' "aside"
 
-aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
-aside = element "aside"
+aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
+aside = element_ "aside"
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = element' "label"
@@ -294,7 +297,7 @@ label' = element' "label"
 label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
 button = element_ "button"
 
 button' :: forall a b. Widget a b -> Widget a b

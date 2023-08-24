@@ -39,7 +39,11 @@ import Web as Web
 
 containedButton :: forall a b. (Widget String Void -> Widget a b) -> Widget a a
 containedButton label =
-  Web.button (classes "mdc-button mdc-button--raised foo-button") mempty ((\node _ _ -> void $ newComponent material.ripple."MDCRipple" node) <> (\node ea action-> addEventListener "click" node $ const $ ea >>= action))
+  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
+    void $ newComponent material.ripple."MDCRipple" node
+    pure mempty) <> (\node ea action-> do
+    addEventListener "click" node $ const $ ea >>= action
+    pure mempty))
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
@@ -145,28 +149,18 @@ card = div (classes "mdc-card" <> attr "style" "padding: 25px; margin: 15px 0 15
 
 dialog :: forall a b c. (Widget String Void -> Widget a c) -> Widget a b -> Widget a b
 dialog title w =
-  aside (classes "mdc-dialog") mempty (\node _ -> newComponent material.dialog."MDCDialog" node >>= openDialog)
+  aside (classes "mdc-dialog") mempty initAside
     ( div (classes "mdc-dialog__container") mempty mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty mempty
         ( h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty mempty
           ( text # title ) ^>
           div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty mempty w) ) <^
       div (classes "mdc-dialog__scrim") mempty mempty pzero )
-
--- <aside class="mdc-dialog">
---   <div class="mdc-dialog__container">
---     <div class="mdc-dialog__surface"
---       role="alertdialog"
---       aria-modal="true"
---       aria-labelledby="my-dialog-title"
---       aria-describedby="my-dialog-content">
---       <h2 class="mdc-dialog__title" id="my-dialog-title">$$$</h2>
---       <div class="mdc-dialog__content" id="my-dialog-content">
---       </div>
---     </div>
---   </div>
---   <div class="mdc-dialog__scrim"></div>
--- </aside>
+    where
+      initAside node _ _ = do
+        comp <- newComponent material.dialog."MDCDialog" node
+        open comp
+        pure $ close comp
 
 -- Private
 
@@ -193,8 +187,8 @@ foreign import material
      , formField :: { "MDCFormField" :: ComponentClass }
      }
 
-foreign import openDialog :: Component -> Effect Unit
-
+foreign import open :: Component -> Effect Unit
+foreign import close :: Component -> Effect Unit
 
 -- TODO
 
