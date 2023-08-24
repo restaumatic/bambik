@@ -258,7 +258,7 @@ element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a ->
 element_ tagName attrs dynAttrs listener w = Widget \a callbackb -> do
   aRef <- liftEffect $ Ref.new a
   cleanupRef <- liftEffect $ Ref.new Nothing
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a \chb@(Changed _ b) -> do
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a \chb -> do
     mCleanup <- Ref.read cleanupRef
     fromMaybe mempty mCleanup
     callbackb chb
