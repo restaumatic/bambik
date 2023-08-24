@@ -2,8 +2,8 @@ module Main (main) where
 
 import Prelude
 
-import Business
-import UI
+import View
+import ViewModel
 import Effect (Effect)
 import Web (runWidgetInBody)
 

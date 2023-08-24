@@ -1,4 +1,4 @@
-module Business
+module ViewModel
   ( Order
   , CustomerInformal
   , CustomerFormal

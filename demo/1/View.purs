@@ -1,10 +1,10 @@
-module UI
+module View
   ( order
   ) where
 
 import Prelude
 
-import Business
+import ViewModel
 import Web
 import Web.MDC as MDC
 
