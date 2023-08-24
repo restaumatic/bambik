@@ -8,4 +8,4 @@ import Effect (Effect)
 import Web (runWidgetInBody)
 
 main :: Effect Unit
-main = runWidgetInBody order defaultOrder
+main = void $ runWidgetInBody order defaultOrder

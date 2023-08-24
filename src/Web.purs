@@ -8,6 +8,7 @@ module Web
   , div'
   , element
   , element'
+  , element_
   , h1
   , h1'
   , h2
@@ -20,8 +21,8 @@ module Web
   , label'
   , module Data.Profunctor.Plus
   , radioButton
-  , runWidget
   , runWidgetInBody
+  , runWidgetInNode
   , span
   , span'
   , text
@@ -42,7 +43,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, alterBody, attr, elAttr, getChecked, getValue, newSlot, replaceSlot, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendChild, attr, buildNode, createDocumentFragment, documentBody, elAttr, getChecked, getValue, newSlot, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -176,6 +177,16 @@ instance ChProfunctor Widget where
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
 
+instance Semigroupoid Widget where
+  compose w2 w1 = Widget \inita callbackc -> do
+    unwrapWidget w1 inita \chb@(Changed ch b) -> do
+      asideFragment <- createDocumentFragment
+      Tuple update cleanup <- do -- w2 will never be updated
+        runBuilder asideFragment $ unwrapWidget w2 b mempty
+      body <- documentBody
+      appendChild asideFragment body
+      pure unit
+
 -- Primitives
 
 text :: forall a. Widget String a
@@ -243,6 +254,17 @@ element tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
     setAttributes node (attrs <> dynAttrs newa)
     update $ Changed ch newa
 
+element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+element_ tagName attrs dynAttrs listener w = Widget \a callbackcha -> do
+  aRef <- liftEffect $ Ref.new a
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackcha
+  liftEffect $ setAttributes node (attrs <> dynAttrs a)
+  liftEffect $ listener node (Ref.read aRef) (callbackcha <<< Changed Some)
+  pure \(Changed ch newa) -> do
+    Ref.write newa aRef
+    setAttributes node (attrs <> dynAttrs newa)
+    update $ Changed ch newa
+
 element' :: forall a b. TagName -> Widget a b -> Widget a b
 element' tagName = element tagName mempty mempty mempty
 
@@ -264,8 +286,8 @@ label' = element' "label"
 label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
-button = element "button"
+button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect Unit) -> Widget a b -> Widget a b
+button = element_ "button"
 
 button' :: forall a b. Widget a b -> Widget a b
 button' = element' "button"
@@ -296,11 +318,13 @@ h4' = element' "h4"
 
 -- Entry point
 
-runWidget :: forall a. Widget a a -> a -> Builder Unit (Changed a -> Effect Unit)
-runWidget w a = unwrapWidget w a mempty
+runWidgetInNode ∷ forall i o. Node -> Widget i o -> i -> Effect (Changed i → Effect Unit)
+runWidgetInNode node w a = buildNode node $ unwrapWidget w a mempty
 
-runWidgetInBody :: forall a. Widget a a -> a -> Effect Unit
-runWidgetInBody c a = void $ alterBody $ runWidget c a
+runWidgetInBody :: forall i o. Widget i o -> i -> Effect (Changed i → Effect Unit)
+runWidgetInBody w a = do
+  body <- documentBody
+  runWidgetInNode body w a
 
 -- Private
 

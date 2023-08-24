@@ -9,12 +9,15 @@ module Specular.Dom.Builder
   , Slot
   , TagName
   , addEventListener
-  , alterBody
+  , appendChild
   , appendSlot
   , attr
+  , buildNode
   , classes
   , comment
+  , createDocumentFragment
   , destroySlot
+  , documentBody
   , elAttr
   , getChecked
   , getEnv
@@ -225,18 +228,18 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 foreign import documentBody :: Effect Node
 
 -- | Runs a builder in `document.body` and discards cleanup action.
-alterBody :: forall a. Builder Unit a -> Effect a
-alterBody widget = do
-  info $ "[Specular.DOM.Builder] altering body"
+buildNode :: forall a. Node -> Builder Unit a -> Effect a
+buildNode node builder = do
+  info $ "[Specular.DOM.Builder] building node"
   start <- liftEffect now
-  body <- documentBody
-  Tuple a _  <- runBuilder body do
+  Tuple a _  <- runBuilder node do
     slot <- newSlot
     onCleanup (destroySlot slot)
-    liftEffect $ replaceSlot slot widget
+    liftEffect $ replaceSlot slot builder
   stop <- liftEffect now
-  info $ "[Specular.DOM.Builder] altered body in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  info $ "[Specular.DOM.Builder] node built in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
   pure a
+
 
 type Attrs = Object AttrValue
 
