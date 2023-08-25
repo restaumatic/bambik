@@ -46,7 +46,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, elAttr, getChecked, getValue, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -189,7 +189,7 @@ instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
     unwrapWidget w1 inita \(Changed _ b) -> do
       asideFragment <- createDocumentFragment
-      void $ runBuilder asideFragment $ unwrapWidget w2 b callbackc
+      void $ runBuilder unit asideFragment $ unwrapWidget w2 b callbackc
       appendChildToBody asideFragment
 
 -- Primitives
@@ -334,10 +334,29 @@ h4' = element' "h4"
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidgetInNode :: forall i o. Node -> Widget i o -> i -> Effect (Tuple (i -> Effect Unit) (Slot (Builder Unit)))
-runWidgetInNode node w a = populateNode node $ do
-  update <- unwrapWidget w a mempty
-  pure $ update <<< Changed Some
+runWidgetInNode ::
+  forall inViewModel outViewModel env.
+  { parentNode :: Node
+  , widget :: Widget inViewModel outViewModel
+  , initialInViewModel :: inViewModel
+  , outViewModelCallback :: outViewModel -> Effect Unit
+  } ->
+  Builder env (
+    { updateInViewModel :: inViewModel -> Effect Unit
+    , slot :: Slot (Builder env)
+    })
+runWidgetInNode
+  { parentNode
+  , widget
+  , initialInViewModel
+  , outViewModelCallback
+  } = do
+  Tuple updateInViewModel slot <- do
+    env <- getEnv
+    liftEffect $ populateNode env.userEnv parentNode $ local (const unit) do
+      update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
+      pure $ update <<< Changed Some
+  pure { updateInViewModel, slot }
 
 -- Private
 

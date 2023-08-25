@@ -87,8 +87,8 @@ mkBuilder = Builder <<< rio
 unBuilder :: forall env a. Builder env a -> RIO (BuilderEnv env) a
 unBuilder (Builder f) = f
 
-runBuilder :: forall a. Node -> Builder Unit a -> Effect a
-runBuilder = runBuilderWithUserEnv unit
+runBuilder :: forall a env. env -> Node -> Builder env a -> Effect a
+runBuilder = runBuilderWithUserEnv
 
 runBuilderWithUserEnv :: forall env a. env -> Node -> Builder env a -> Effect a
 runBuilderWithUserEnv userEnv parent (Builder f) = do
@@ -188,13 +188,13 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
 instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
   mempty = pure mempty
 
-populateNode :: forall a. Node -> Builder Unit a → Effect (Tuple a (Slot (Builder Unit)))
-populateNode node builder = runBuilder node $ newSlot builder
+populateNode :: forall a env. env -> Node -> Builder env a → Effect (Tuple a (Slot (Builder env)))
+populateNode env node builder = runBuilder env node $ newSlot builder
 
 populateBody :: Builder Unit Unit → Effect Unit
 populateBody builder = do
   body <- documentBody
-  void $ populateNode body builder
+  void $ populateNode unit body builder
 
 type Attrs = Object AttrValue
 
