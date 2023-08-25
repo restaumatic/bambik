@@ -28,8 +28,8 @@ module Web
   , textInput
   , span
   -- Running
-  , runMainWidget
-  , runWidget
+  , runWidgetInBody
+  , runWidgetInNode
   )
   where
 
@@ -331,11 +331,11 @@ h4' = element' "h4"
 
 -- Entry point
 
-runMainWidget :: forall i o. Widget i o -> i -> Effect Unit
-runMainWidget w a = populateBody $ void $ unwrapWidget w a mempty
+runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
+runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidget :: forall i o. Node -> Widget i o -> i -> Effect (Tuple (i -> Effect Unit) (Slot (Builder Unit)))
-runWidget node w a = populateNode node $ do
+runWidgetInNode :: forall i o. Node -> Widget i o -> i -> Effect (Tuple (i -> Effect Unit) (Slot (Builder Unit)))
+runWidgetInNode node w a = populateNode node $ do
   update <- unwrapWidget w a mempty
   pure $ update <<< Changed Some
 
