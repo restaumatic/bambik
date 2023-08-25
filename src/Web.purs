@@ -45,7 +45,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendChild, attr, buildNode, createDocumentFragment, documentBody, elAttr, getChecked, getValue, newSlot, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChild, attr, buildNode, createDocumentFragment, documentBody, elAttr, getChecked, getValue, newSlot, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -81,11 +81,12 @@ instance Strong Widget where
 
 instance Choice Widget where
   left w = Widget \aorb callbackchaorb -> do
-    slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
-    case aorb of
-      Left a -> void $ liftEffect $ makeUpdate slot callbackchaorb mUpdateRef a
-      Right _ -> pure unit
+    Tuple mUpdate slot <- newSlot $ case aorb of
+      Left a -> do
+        update <- unwrapWidget w a (callbackchaorb <<< map Left)
+        pure $ Just update
+      Right _ -> pure Nothing
+    mUpdateRef <- liftEffect $ Ref.new mUpdate
     pure \chaorb -> case chaorb of
       Changed None _ -> pure unit
       Changed ch (Left a) -> do
@@ -110,8 +111,12 @@ instance Choice Widget where
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
   right w = Widget \aorb callbackchaorb -> do
-    slot <- newSlot
-    mUpdateRef <- liftEffect $ Ref.new Nothing
+    Tuple mUpdate slot <- newSlot $ case aorb of
+      Right a -> do
+        update <- unwrapWidget w a (callbackchaorb <<< map Right)
+        pure $ Just update
+      Left _ -> pure Nothing
+    mUpdateRef <- liftEffect $ Ref.new mUpdate
     case aorb of
       Left _ -> pure unit
       Right b -> void $ liftEffect $ makeUpdate slot callbackchaorb mUpdateRef b
@@ -191,13 +196,10 @@ instance Semigroupoid Widget where
 
 text :: forall a. Widget String a
 text = Widget \str _ -> do
-  slot <- newSlot
-  liftEffect $ update slot (Changed Some str)
-  pure $ update slot
-    where
-      update slot = case _ of
-        Changed None _ -> pure unit
-        Changed _ s -> replaceSlot slot $ Builder.text s
+  Tuple _ slot <- newSlot $ Builder.text str -- update slot (Changed Some str)
+  pure case _ of
+    Changed None _ -> pure unit
+    Changed _ s -> replaceSlot slot $ Builder.text s
 
 chars :: forall a b. String -> Widget a b
 chars s = Widget \_ _ -> do
@@ -329,10 +331,10 @@ h4' = element' "h4"
 
 -- Entry point
 
-runWidgetInNode ∷ forall i o. Node -> Widget i o -> i -> Effect (Changed i → Effect Unit)
+runWidgetInNode :: forall i o. Node → Widget i o → i → Effect (Tuple (Changed i → Effect Unit) (Slot (Builder Unit)))
 runWidgetInNode node w a = buildNode node $ unwrapWidget w a mempty
 
-runWidgetInBody :: forall i o. Widget i o -> i -> Effect (Changed i → Effect Unit)
+runWidgetInBody :: forall i o. Widget i o -> i -> Effect (Tuple (Changed i -> Effect Unit) (Slot (Builder Unit)))
 runWidgetInBody w a = do
   body <- documentBody
   runWidgetInNode body w a

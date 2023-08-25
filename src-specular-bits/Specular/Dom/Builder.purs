@@ -48,8 +48,9 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
 import Effect.Now (now)
-import Effect.Ref (modify_, new, read, write)
+import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Specular.Internal.RIO (RIO, rio, runRIO)
@@ -116,37 +117,31 @@ destroySlot (Slot _ destroy _) = destroy
 appendSlot :: forall m. Slot m -> Effect (Slot m)
 appendSlot (Slot _ _ append) = append
 
-newSlot :: forall env. Builder env (Slot ((Builder env)))
-newSlot = do
+newSlot :: forall env a. Builder env a -> Builder env (Tuple a (Slot ((Builder env))))
+newSlot initialContent = do
   env <- getEnv
+  let parent = env.parent
 
   placeholderBefore <- liftEffect $ createTextNode ""
   placeholderAfter <- liftEffect $ createTextNode ""
+
+  let
+    populate :: forall a. Builder env a -> Effect a
+    populate builder = do
+      fragment <- createDocumentFragment
+      result <- runBuilderWithUserEnv env.userEnv fragment builder
+      insertBefore fragment placeholderAfter parent
+      pure result
+
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
+  result <- liftEffect $ measured "slot created" $ populate initialContent
 
   let
     replace :: forall a. Builder env a -> Effect a
-    replace inner = do
+    replace inner = measured "slot updated" do
       removeAllBetween placeholderBefore placeholderAfter
-
-      fragment <- createDocumentFragment
-      result <- do
-        runBuilderWithUserEnv env.userEnv fragment inner
-
-      m_parent <- parentNode placeholderAfter
-
-      case m_parent of
-        Just parent -> do
-          insertBefore fragment placeholderAfter parent
-
-        Nothing ->
-          -- we've been removed from the DOM
-          -- write cleanup cleanupRef
-          mempty
-
-      info "[Specular.DOM.Builder] altered slot"
-      pure result
+      populate inner
 
     destroy :: Effect Unit
     destroy = do
@@ -157,19 +152,14 @@ newSlot = do
     append :: Effect (Slot (Builder env))
     append = do
       fragment <- createDocumentFragment
-      slot <- runBuilderWithUserEnv env.userEnv fragment newSlot
-
+      Tuple _ slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot $ pure unit
       m_parent <- parentNode placeholderAfter
-
       case m_parent of
-        Just parent -> do
-          insertBefore fragment placeholderAfter parent
-        Nothing ->
-          pure unit -- FIXME
-
+        Just parent -> insertBefore fragment placeholderAfter parent
+        Nothing -> pure unit
       pure slot
 
-  pure $ Slot replace destroy append
+  pure $ Tuple result $ Slot replace destroy append
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
@@ -207,16 +197,9 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 foreign import documentBody :: Effect Node
 
 -- | Runs a builder in `document.body` and discards cleanup action.
-buildNode :: forall a. Node -> Builder Unit a -> Effect a
-buildNode node builder = do
-  info $ "[Specular.DOM.Builder] building node"
-  start <- liftEffect now
-  a  <- runBuilder node do
-    slot <- newSlot
-    liftEffect $ replaceSlot slot builder
-  stop <- liftEffect now
-  info $ "[Specular.DOM.Builder] node built in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
-  pure a
+-- buildNode :: forall a. Node -> Builder Unit Unit -> Effect Unit
+buildNode :: forall a. Node → Builder Unit a → Effect (Tuple a (Slot (Builder Unit)))
+buildNode node builder = runBuilder node $ newSlot builder
 
 
 type Attrs = Object AttrValue
@@ -256,14 +239,7 @@ type EventType = String
 
 -- | Register an event listener. Returns unregister action.
 addEventListener :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
-addEventListener etype node callback = void $ addEventListenerImpl etype callback' node
-  where
-    callback' event = do
-      info $ "[Specular.DOM.Builder] handling " <> etype <> " event"
-      start <- now
-      callback event
-      stop <- now
-      info $ "[Specular.DOM.Builder] handled " <> etype <> " event in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+addEventListener etype node callback = void $ addEventListenerImpl etype (measured (etype <> " event handled") <<< callback) node
 
 createTextNode :: String -> Effect Node
 createTextNode = createTextNodeImpl
@@ -328,6 +304,24 @@ moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
 
 createCommentNode ∷ String → Effect Node
 createCommentNode = createCommentNodeImpl
+
+
+indent :: Ref.Ref Int
+indent = unsafePerformEffect $ Ref.new 0
+
+measured :: forall a m. Bind m ⇒ MonadEffect m ⇒ String → m a → m a
+measured actionName action = do
+  start <- liftEffect now
+  _ <- liftEffect $ Ref.modify (_ + 1) indent
+  a <- action
+  currentIndent <- liftEffect $ Ref.modify (_ - 1) indent
+  stop <- liftEffect now
+  info $ "[DOM] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  pure a
+    where
+      repeatStr i s
+        | i <= 0 = ""
+        | otherwise = s <> repeatStr (i - 1) s
 
 -- | Remove node from its parent node. No-op when the node has no parent.
 foreign import removeNode :: Node -> Effect Unit
