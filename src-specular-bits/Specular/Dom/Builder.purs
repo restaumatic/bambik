@@ -106,7 +106,7 @@ getParentNode = Builder (asks _.parent)
 data Slot m = Slot
   (forall a. m a -> Effect a) -- ^ run inner widget, replace contents
   (Effect Unit) -- ^ destroy
-  (Effect (Slot m)) -- ^ Create a new slot after this one
+  (forall a. m a -> Effect (Slot m)) -- ^ Create a new slot after this one
 
 replaceSlot :: forall m a. Slot m -> m a -> Effect a
 replaceSlot (Slot replace _ _) = replace
@@ -114,7 +114,7 @@ replaceSlot (Slot replace _ _) = replace
 destroySlot :: forall m. Slot m -> Effect Unit
 destroySlot (Slot _ destroy _) = destroy
 
-appendSlot :: forall m. Slot m -> Effect (Slot m)
+appendSlot :: forall a m. Slot m -> m a -> Effect (Slot m)
 appendSlot (Slot _ _ append) = append
 
 newSlot :: forall env a. Builder env a -> Builder env (Tuple a (Slot ((Builder env))))
@@ -139,9 +139,9 @@ newSlot initialContent = do
 
   let
     replace :: forall a. Builder env a -> Effect a
-    replace inner = measured "slot updated" do
+    replace builder = measured "slot updated" do
       removeAllBetween placeholderBefore placeholderAfter
-      populate inner
+      populate builder
 
     destroy :: Effect Unit
     destroy = do
@@ -149,14 +149,11 @@ newSlot initialContent = do
       removeNode placeholderBefore
       removeNode placeholderAfter
 
-    append :: Effect (Slot (Builder env))
-    append = do
+    append :: forall a. Builder env a -> Effect (Slot (Builder env))
+    append builder = do
       fragment <- createDocumentFragment
-      Tuple _ slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot $ pure unit
-      m_parent <- parentNode placeholderAfter
-      case m_parent of
-        Just parent -> insertBefore fragment placeholderAfter parent
-        Nothing -> pure unit
+      Tuple _ slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot builder
+      insertBefore fragment placeholderAfter parent
       pure slot
 
   pure $ Tuple result $ Slot replace destroy append
