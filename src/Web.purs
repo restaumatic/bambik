@@ -23,12 +23,13 @@ module Web
   , label'
   , module Data.Profunctor.Plus
   , radioButton
-  , runWidgetInBody
-  , runWidgetInNode
-  , span
   , span'
   , text
   , textInput
+  , span
+  -- Running
+  , runMainWidget
+  , runWidget
   )
   where
 
@@ -45,7 +46,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChild, attr, buildNode, createDocumentFragment, documentBody, elAttr, getChecked, getValue, newSlot, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, elAttr, getChecked, getValue, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -189,8 +190,7 @@ instance Semigroupoid Widget where
     unwrapWidget w1 inita \(Changed _ b) -> do
       asideFragment <- createDocumentFragment
       void $ runBuilder asideFragment $ unwrapWidget w2 b callbackc
-      body <- documentBody
-      appendChild asideFragment body
+      appendChildToBody asideFragment
 
 -- Primitives
 
@@ -331,13 +331,13 @@ h4' = element' "h4"
 
 -- Entry point
 
-runWidgetInNode :: forall i o. Node → Widget i o → i → Effect (Tuple (Changed i → Effect Unit) (Slot (Builder Unit)))
-runWidgetInNode node w a = buildNode node $ unwrapWidget w a mempty
+runMainWidget :: forall i o. Widget i o -> i -> Effect Unit
+runMainWidget w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidgetInBody :: forall i o. Widget i o -> i -> Effect (Tuple (Changed i -> Effect Unit) (Slot (Builder Unit)))
-runWidgetInBody w a = do
-  body <- documentBody
-  runWidgetInNode body w a
+runWidget :: forall i o. Node -> Widget i o -> i -> Effect (Tuple (i -> Effect Unit) (Slot (Builder Unit)))
+runWidget node w a = populateNode node $ do
+  update <- unwrapWidget w a mempty
+  pure $ update <<< Changed Some
 
 -- Private
 

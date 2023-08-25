@@ -10,14 +10,13 @@ module Specular.Dom.Builder
   , TagName
   , addEventListener
   , appendChild
+  , appendChildToBody
   , appendSlot
   , attr
-  , buildNode
   , classes
   , comment
   , createDocumentFragment
   , destroySlot
-  , documentBody
   , elAttr
   , getChecked
   , getEnv
@@ -25,6 +24,8 @@ module Specular.Dom.Builder
   , getValue
   , local
   , newSlot
+  , populateBody
+  , populateNode
   , rawHtml
   , replaceSlot
   , runBuilder
@@ -122,11 +123,11 @@ newSlot initialContent = do
   env <- getEnv
   let parent = env.parent
 
-  placeholderBefore <- liftEffect $ createTextNode ""
-  placeholderAfter <- liftEffect $ createTextNode ""
+  placeholderBefore <- liftEffect $ createTextNodeImpl ""
+  placeholderAfter <- liftEffect $ createTextNodeImpl ""
 
   let
-    populate :: forall a. Builder env a -> Effect a
+    populate :: forall x. Builder env x -> Effect x
     populate builder = do
       fragment <- createDocumentFragment
       result <- runBuilderWithUserEnv env.userEnv fragment builder
@@ -138,7 +139,7 @@ newSlot initialContent = do
   result <- liftEffect $ measured "slot created" $ populate initialContent
 
   let
-    replace :: forall a. Builder env a -> Effect a
+    replace :: forall x. Builder env x -> Effect x
     replace builder = measured "slot updated" do
       removeAllBetween placeholderBefore placeholderAfter
       populate builder
@@ -149,7 +150,7 @@ newSlot initialContent = do
       removeNode placeholderBefore
       removeNode placeholderAfter
 
-    append :: forall a. Builder env a -> Effect (Slot (Builder env))
+    append :: forall x. Builder env x -> Effect (Slot (Builder env))
     append builder = do
       fragment <- createDocumentFragment
       Tuple _ slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot builder
@@ -160,7 +161,7 @@ newSlot initialContent = do
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
-  node <- createTextNode str
+  node <- createTextNodeImpl str
   appendChild node env.parent
 
 rawHtml :: forall env. String -> Builder env Unit
@@ -187,17 +188,13 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
 instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
   mempty = pure mempty
 
+populateNode :: forall a. Node -> Builder Unit a → Effect (Tuple a (Slot (Builder Unit)))
+populateNode node builder = runBuilder node $ newSlot builder
 
--- | Runs a widget in the specified parent element. Returns the result and cleanup action.
-
-
-foreign import documentBody :: Effect Node
-
--- | Runs a builder in `document.body` and discards cleanup action.
--- buildNode :: forall a. Node -> Builder Unit Unit -> Effect Unit
-buildNode :: forall a. Node → Builder Unit a → Effect (Tuple a (Slot (Builder Unit)))
-buildNode node builder = runBuilder node $ newSlot builder
-
+populateBody :: Builder Unit Unit → Effect Unit
+populateBody builder = do
+  body <- documentBody
+  void $ populateNode body builder
 
 type Attrs = Object AttrValue
 
@@ -238,12 +235,6 @@ type EventType = String
 addEventListener :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
 addEventListener etype node callback = void $ addEventListenerImpl etype (measured (etype <> " event handled") <<< callback) node
 
-createTextNode :: String -> Effect Node
-createTextNode = createTextNodeImpl
-
-setText :: Node -> String -> Effect Unit
-setText = setTextImpl
-
 createDocumentFragment :: Effect Node
 createDocumentFragment = createDocumentFragmentImpl
 
@@ -252,19 +243,8 @@ createElementNS :: Maybe Namespace -> TagName -> Effect Node
 createElementNS (Just namespace) = createElementNSImpl namespace
 createElementNS Nothing = createElementImpl
 
-createElement :: TagName -> Effect Node
-createElement = createElementNS Nothing
-
 setAttributes :: Node -> Attrs -> Effect Unit
 setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
-
-removeAttributes :: Node -> Array String -> Effect Unit
-removeAttributes = removeAttributesImpl
-
--- | Return parent node of the node,
--- | or Nothing if it has been detached.
-parentNode :: Node -> Effect (Maybe Node)
-parentNode = parentNodeImpl Just Nothing
 
 -- | `insertBefore newNode nodeAfter parent`
 -- | Insert `newNode` before `nodeAfter` in `parent`
@@ -274,6 +254,11 @@ insertBefore = insertBeforeImpl
 -- | `appendChild newNode parent`
 appendChild :: Node -> Node -> Effect Unit
 appendChild = appendChildImpl
+
+appendChildToBody ::Node -> Effect Unit
+appendChildToBody child = do
+  body <- documentBody
+  appendChildImpl child body
 
 -- | Append a chunk of raw HTML to the end of the node.
 appendRawHtml :: String -> Node -> Effect Unit
@@ -289,22 +274,8 @@ appendRawHtml = appendRawHtmlImpl
 removeAllBetween :: Node -> Node -> Effect Unit
 removeAllBetween = removeAllBetweenImpl
 
--- | `moveAllBetweenInclusive from to parent`
--- |
--- | Moves `from`, all nodes after `from` and before `to` and `to` to
--- | `parent`.
--- |
--- | Assumes that `from` and `to` have the same parent,
--- | and `from` is before `to`.
-moveAllBetweenInclusive :: Node -> Node -> Node -> Effect Unit
-moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
-
 createCommentNode ∷ String → Effect Node
 createCommentNode = createCommentNodeImpl
-
-
-indent :: Ref.Ref Int
-indent = unsafePerformEffect $ Ref.new 0
 
 measured :: forall a m. Bind m ⇒ MonadEffect m ⇒ String → m a → m a
 measured actionName action = do
@@ -316,11 +287,13 @@ measured actionName action = do
   info $ "[DOM] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
   pure a
     where
+      indent :: Ref.Ref Int
+      indent = unsafePerformEffect $ Ref.new 0
       repeatStr i s
         | i <= 0 = ""
         | otherwise = s <> repeatStr (i - 1) s
 
--- | Remove node from its parent node. No-op when the node has no parent.
+foreign import documentBody :: Effect Node
 foreign import removeNode :: Node -> Effect Unit
 foreign import createTextNodeImpl :: String -> Effect Node
 foreign import setTextImpl :: Node -> String -> Effect Unit
@@ -335,9 +308,7 @@ foreign import removeAllBetweenImpl :: Node -> Node -> Effect Unit
 foreign import appendRawHtmlImpl :: String -> Node -> Effect Unit
 foreign import moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> Effect Unit
 foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
--- | JS `Event.preventDefault()`.
 foreign import preventDefault :: Event -> Effect Unit
--- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
 foreign import createCommentNodeImpl :: String -> Effect Node
 foreign import getValue :: Node -> Effect String

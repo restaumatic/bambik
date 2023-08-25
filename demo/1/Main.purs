@@ -2,10 +2,10 @@ module Main (main) where
 
 import Prelude
 
-import View
-import ViewModel
+import View (order)
+import ViewModel (defaultOrder)
 import Effect (Effect)
-import Web (runWidgetInBody)
+import Web (runMainWidget)
 
 main :: Effect Unit
-main = void $ runWidgetInBody order defaultOrder
+main = runMainWidget order defaultOrder
