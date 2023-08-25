@@ -29,7 +29,7 @@ module Web
   , span
   -- Running
   , runWidgetInBody
-  , runWidgetInNode
+  , runWidgetInBuilder
   )
   where
 
@@ -334,7 +334,7 @@ h4' = element' "h4"
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidgetInNode ::
+runWidgetInBuilder ::
   forall inViewModel outViewModel env.
   { widget :: Widget inViewModel outViewModel
   , initialInViewModel :: inViewModel
@@ -344,7 +344,7 @@ runWidgetInNode ::
     { updateInViewModel :: inViewModel -> Effect Unit
     , slot :: Slot (Builder env)
     })
-runWidgetInNode
+runWidgetInBuilder
   { widget
   , initialInViewModel
   , outViewModelCallback
