@@ -52,7 +52,6 @@ import Effect.Ref (modify_, new, read, write)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
 import Specular.Internal.RIO (RIO, rio, runRIO)
 import Specular.Internal.RIO as RIO
 
@@ -61,7 +60,6 @@ newtype Builder env a = Builder (RIO (BuilderEnv env) a)
 
 type BuilderEnv env =
   { parent :: Node
-  , cleanup :: DelayedEffects
   , userEnv :: env
   }
 
@@ -71,9 +69,6 @@ derive newtype instance applicativeBuilder :: Applicative (Builder env)
 derive newtype instance bindBuilder :: Bind (Builder env)
 derive newtype instance monadBuilder :: Monad (Builder env)
 derive newtype instance monadEffectBuilder :: MonadEffect (Builder env)
-
-onCleanup :: forall env. Effect Unit -> Builder env Unit
-onCleanup action = mkBuilder $ \env -> pushDelayed env.cleanup action
 
 instance monadAskBuilder :: MonadAsk env (Builder env) where
   ask = _.userEnv <$> getEnv
@@ -90,16 +85,13 @@ mkBuilder = Builder <<< rio
 unBuilder :: forall env a. Builder env a -> RIO (BuilderEnv env) a
 unBuilder (Builder f) = f
 
-runBuilder :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
+runBuilder :: forall a. Node -> Builder Unit a -> Effect a
 runBuilder = runBuilderWithUserEnv unit
 
-runBuilderWithUserEnv :: forall env a. env -> Node -> Builder env a -> Effect (Tuple a (Effect Unit))
+runBuilderWithUserEnv :: forall env a. env -> Node -> Builder env a -> Effect a
 runBuilderWithUserEnv userEnv parent (Builder f) = do
-  actionsMutable <- emptyDelayed
-  let env = { parent, cleanup: actionsMutable, userEnv }
-  result <- runRIO env f
-  actions <- unsafeFreezeDelayed actionsMutable
-  pure (Tuple result (sequenceEffects actions))
+  let env = { parent, userEnv }
+  runRIO env f
 
 getEnv :: forall env. Builder env (BuilderEnv env)
 getEnv = Builder ask
@@ -133,17 +125,14 @@ newSlot = do
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
 
-  cleanupRef <- liftEffect $ new (mempty :: Effect Unit)
-
   let
     replace :: forall a. Builder env a -> Effect a
     replace inner = do
       removeAllBetween placeholderBefore placeholderAfter
 
       fragment <- createDocumentFragment
-      Tuple result cleanup <- do
+      result <- do
         runBuilderWithUserEnv env.userEnv fragment inner
-      join $ read cleanupRef
 
       m_parent <- parentNode placeholderAfter
 
@@ -151,16 +140,10 @@ newSlot = do
         Just parent -> do
           insertBefore fragment placeholderAfter parent
 
-          write
-            ( do
-                cleanup
-                write mempty cleanupRef -- TODO: explain this
-            )
-            cleanupRef
-
         Nothing ->
           -- we've been removed from the DOM
-          write cleanup cleanupRef
+          -- write cleanup cleanupRef
+          mempty
 
       info "[Specular.DOM.Builder] altered slot"
       pure result
@@ -170,13 +153,11 @@ newSlot = do
       removeAllBetween placeholderBefore placeholderAfter
       removeNode placeholderBefore
       removeNode placeholderAfter
-      join $ read cleanupRef
 
     append :: Effect (Slot (Builder env))
     append = do
       fragment <- createDocumentFragment
-      Tuple slot cleanup <- runBuilderWithUserEnv env.userEnv fragment newSlot
-      modify_ (_ *> cleanup) cleanupRef -- FIXME: memory leak if the inner slot is destroyed
+      slot <- runBuilderWithUserEnv env.userEnv fragment newSlot
 
       m_parent <- parentNode placeholderAfter
 
@@ -187,8 +168,6 @@ newSlot = do
           pure unit -- FIXME
 
       pure slot
-
-  onCleanup $ join $ read cleanupRef
 
   pure $ Slot replace destroy append
 
@@ -232,9 +211,8 @@ buildNode :: forall a. Node -> Builder Unit a -> Effect a
 buildNode node builder = do
   info $ "[Specular.DOM.Builder] building node"
   start <- liftEffect now
-  Tuple a _  <- runBuilder node do
+  a  <- runBuilder node do
     slot <- newSlot
-    onCleanup (destroySlot slot)
     liftEffect $ replaceSlot slot builder
   stop <- liftEffect now
   info $ "[Specular.DOM.Builder] node built in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
