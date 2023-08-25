@@ -277,18 +277,19 @@ removeAllBetween = removeAllBetweenImpl
 createCommentNode ∷ String → Effect Node
 createCommentNode = createCommentNodeImpl
 
+logIndent :: Ref.Ref Int
+logIndent = unsafePerformEffect $ Ref.new 0
+
 measured :: forall a m. Bind m ⇒ MonadEffect m ⇒ String → m a → m a
 measured actionName action = do
   start <- liftEffect now
-  _ <- liftEffect $ Ref.modify (_ + 1) indent
+  _ <- liftEffect $ Ref.modify (_ + 1) logIndent
   a <- action
-  currentIndent <- liftEffect $ Ref.modify (_ - 1) indent
+  currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
   stop <- liftEffect now
   info $ "[DOM] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
   pure a
     where
-      indent :: Ref.Ref Int
-      indent = unsafePerformEffect $ Ref.new 0
       repeatStr i s
         | i <= 0 = ""
         | otherwise = s <> repeatStr (i - 1) s
