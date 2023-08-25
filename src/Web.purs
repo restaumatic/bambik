@@ -336,8 +336,7 @@ runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
 runWidgetInNode ::
   forall inViewModel outViewModel env.
-  { parentNode :: Node
-  , widget :: Widget inViewModel outViewModel
+  { widget :: Widget inViewModel outViewModel
   , initialInViewModel :: inViewModel
   , outViewModelCallback :: outViewModel -> Effect Unit
   } ->
@@ -346,14 +345,13 @@ runWidgetInNode ::
     , slot :: Slot (Builder env)
     })
 runWidgetInNode
-  { parentNode
-  , widget
+  { widget
   , initialInViewModel
   , outViewModelCallback
   } = do
   Tuple updateInViewModel slot <- do
     env <- getEnv
-    liftEffect $ populateNode env.userEnv parentNode $ local (const unit) do
+    liftEffect $ populateNode env.userEnv env.parent $ local (const unit) do
       update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
       pure $ update <<< Changed Some
   pure { updateInViewModel, slot }
