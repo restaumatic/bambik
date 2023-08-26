@@ -45,8 +45,10 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
+
+-- type Context = { slot :: Slot (Builder Context)}
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
@@ -192,7 +194,7 @@ instance Semigroupoid Widget where
     liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
       spawnedSlot <- appendSlot slot
       void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
-      -- note: w2 cannot be updated not destroyed externally, w2 hould  itself take care of self-destroy
+      -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of self-destroy
 
 -- Primitives
 
