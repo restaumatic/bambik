@@ -23,13 +23,12 @@ module Web
   , label'
   , module Data.Profunctor.Plus
   , radioButton
+  , runWidgetInBody
+  , runWidgetInBuilder
+  , span
   , span'
   , text
   , textInput
-  , span
-  -- Running
-  , runWidgetInBody
-  , runWidgetInBuilder
   )
   where
 
@@ -46,7 +45,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -189,10 +188,10 @@ instance ChProfunctor Widget where
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
-    unwrapWidget w1 inita \(Changed _ b) -> do
-      asideFragment <- createDocumentFragment
-      void $ runBuilder unit asideFragment $ unwrapWidget w2 b callbackc
-      appendChildToBody asideFragment
+    slot <- newSlot
+    liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
+      spawnedSlot <- appendSlot slot
+      void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
 
 -- Primitives
 
@@ -259,6 +258,7 @@ element tagName attrs dynAttrs listener w = Widget \a callbackb -> do
     setAttributes node (attrs <> dynAttrs newa)
     update $ Changed ch newa
 
+-- Element that cleans up after first output emitted, TODO EC: clean it up
 element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
 element_ tagName attrs dynAttrs listener w = Widget \a callbackb -> do
   aRef <- liftEffect $ Ref.new a

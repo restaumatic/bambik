@@ -30,9 +30,10 @@ import Data.Maybe (Maybe)
 import Data.Profunctor.Plus (pzero, (<^), (^), (^>))
 import Data.String (null)
 import Effect (Effect)
+import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Specular.Dom.Builder (Node, addEventListener, attr, classes)
+import Specular.Dom.Builder (Node, addEventListener, attr, classes, removeNode)
 import Web (Widget, aside, div, element, h2, label, label', span, text, textInput)
 import Web as Web
 
@@ -161,10 +162,12 @@ dialog title w =
       initAside node _ _ = do
         comp <- newComponent material.dialog."MDCDialog" node
         open comp
-        pure $ close comp
+        pure $ do
+          close comp
+          removeNode node
 
-snackbar :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
-snackbar label =
+snackbar :: forall a. Number -> (Widget String Void -> Widget a a) -> Widget a a
+snackbar ms label =
   aside (classes "mdc-snackbar") mempty initAside
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty mempty
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty mempty
@@ -173,21 +176,12 @@ snackbar label =
       initAside node _ _ = do
         comp <- newComponent material.snackbar."MDCSnackbar" node
         open comp
-        pure $ close comp
-
--- <aside class="mdc-snackbar">
---   <div class="mdc-snackbar__surface" role="status" aria-relevant="additions">
---     <div class="mdc-snackbar__label" aria-atomic="false">
---       Can't send photo. Retry in 5 seconds.
---     </div>
---     <div class="mdc-snackbar__actions" aria-atomic="true">
---       <button type="button" class="mdc-button mdc-snackbar__action">
---         <div class="mdc-button__ripple"></div>
---         <span class="mdc-button__label">Retry</span>
---       </button>
---     </div>
---   </div>
--- </aside>
+        launchAff_ do
+          delay $ Milliseconds ms
+          liftEffect $ do
+            close comp
+            removeNode node
+        pure mempty
 
 -- Private
 

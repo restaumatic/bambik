@@ -27,6 +27,7 @@ module Specular.Dom.Builder
   , populateBody
   , populateNode
   , rawHtml
+  , removeNode
   , replaceSlot
   , runBuilder
   , setAttributes
@@ -115,10 +116,10 @@ replaceSlot (Slot replace _ _) = replace
 destroySlot :: forall m. Slot m -> Effect Unit
 destroySlot (Slot _ destroy _) = destroy
 
-appendSlot :: forall a m. Slot m -> Effect (Slot m)
+appendSlot :: forall m. Slot m -> Effect (Slot m)
 appendSlot (Slot _ _ append) = append
 
-newSlot :: forall env a. Builder env (Slot ((Builder env)))
+newSlot :: forall env. Builder env (Slot ((Builder env)))
 newSlot = do
   env <- getEnv
   let parent = env.parent
@@ -131,12 +132,16 @@ newSlot = do
     populate builder = do
       fragment <- createDocumentFragment
       result <- runBuilderWithUserEnv env.userEnv fragment builder
-      insertBefore fragment placeholderAfter parent
+      m_parent <- parentNodeImpl Just Nothing placeholderAfter
+      case m_parent of
+        Just parent -> do
+          insertBefore fragment placeholderAfter parent
+        Nothing ->
+          pure unit -- FIXME
       pure result
 
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
-  -- result <- liftEffect $ measured "slot created" $ populate initialContent
 
   let
     replace :: forall x. Builder env x -> Effect x
@@ -153,8 +158,16 @@ newSlot = do
     append :: Effect (Slot (Builder env))
     append = do
       fragment <- createDocumentFragment
-      slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot
-      insertBefore fragment placeholderAfter parent
+      slot <- runBuilderWithUserEnv env.userEnv fragment newSlot
+
+      m_parent <- parentNodeImpl Just Nothing placeholderAfter
+
+      case m_parent of
+        Just parent -> do
+          insertBefore fragment placeholderAfter parent
+        Nothing ->
+          pure unit -- FIXME
+
       pure slot
 
   pure $ Slot replace destroy append
