@@ -23,13 +23,12 @@ module Web
   , label'
   , module Data.Profunctor.Plus
   , radioButton
+  , runWidgetInBody
+  , runWidgetInBuilder
+  , span
   , span'
   , text
   , textInput
-  , span
-  -- Running
-  , runWidgetInBody
-  , runWidgetInBuilder
   )
   where
 
@@ -47,6 +46,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, destroySlot, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -85,10 +85,22 @@ instance Choice Widget where
   -- 1) at most one ref (to right value or either value)
   -- 2) no replacing slot on initialization
   left w = Widget \initaorb callbackchaorb -> do
-    Tuple update slot <- newSlot $ case initaorb of
+    slot <- newSlot
+    update <- liftEffect $ replaceSlot slot $ case initaorb of
       Left inita -> unwrapWidget w inita \(Changed ch a) -> callbackchaorb $ Changed ch (Left a)
       Right b -> pure mempty -- update when there is not widget to update! How would reference to lastaorb help?
     pure case _ of
+-- =======
+--   left w = Widget \aorb callbackchaorb -> do
+--     slot <- newSlot
+--     mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
+--       Left a -> do
+--         update <- unwrapWidget w a (callbackchaorb <<< map Left)
+--         pure $ Just update
+--       Right _ -> pure Nothing
+--     mUpdateRef <- liftEffect $ Ref.new mUpdate
+--     pure \chaorb -> case chaorb of
+-- >>>>>>> main
       Changed None _ -> pure unit
       -- Changed ch (Left a) -> pure unit
       Changed ch (Left a) -> do
@@ -97,7 +109,8 @@ instance Choice Widget where
       Changed ch (Right b) -> callbackchaorb $ Changed ch $ Right b
 
   right w = Widget \aorb callbackchaorb -> do
-    Tuple mUpdate slot <- newSlot $ case aorb of
+    slot <- newSlot
+    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
       Right a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Right)
         pure $ Just update
@@ -172,16 +185,18 @@ instance ChProfunctor Widget where
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
-    unwrapWidget w1 inita \(Changed _ b) -> do
-      asideFragment <- createDocumentFragment
-      void $ runBuilder unit asideFragment $ unwrapWidget w2 b callbackc
-      appendChildToBody asideFragment
+    slot <- newSlot
+    liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
+      spawnedSlot <- appendSlot slot
+      void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
+      -- note: w2 cannot be updated not destroyed externally, w2 hould  itself take care of self-destroy
 
 -- Primitives
 
 text :: forall a. Widget String a
 text = Widget \str _ -> do
-  Tuple _ slot <- newSlot $ Builder.text str -- update slot (Changed Some str)
+  slot <- newSlot
+  _ <- liftEffect $ replaceSlot slot $ Builder.text str -- update slot (Changed Some str)
   pure case _ of
     Changed None _ -> pure unit
     Changed _ s -> replaceSlot slot $ Builder.text s
@@ -241,6 +256,7 @@ element tagName attrs dynAttrs listener w = Widget \a callbackb -> do
     setAttributes node (attrs <> dynAttrs newa)
     update $ Changed ch newa
 
+-- Element that cleans up after first output emitted, TODO EC: clean it up
 element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
 element_ tagName attrs dynAttrs listener w = Widget \a callbackb -> do
   aRef <- liftEffect $ Ref.new a
@@ -319,27 +335,10 @@ h4' = element' "h4"
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidgetInBuilder ::
-  forall inViewModel outViewModel env.
-  { widget :: Widget inViewModel outViewModel
-  , initialInViewModel :: inViewModel
-  , outViewModelCallback :: outViewModel -> Effect Unit
-  } ->
-  Builder env (
-    { updateInViewModel :: inViewModel -> Effect Unit
-    , slot :: Slot (Builder env)
-    })
-runWidgetInBuilder
-  { widget
-  , initialInViewModel
-  , outViewModelCallback
-  } = do
-  Tuple updateInViewModel slot <- do
-    env <- getEnv
-    liftEffect $ populateNode env.userEnv env.parent $ local (const unit) do
-      update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
-      pure $ update <<< Changed Some
-  pure { updateInViewModel, slot }
+runWidgetInBuilder :: forall i o. Widget i o -> i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+runWidgetInBuilder widget initialInViewModel outViewModelCallback = do
+  update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
+  pure $ update <<< Changed Some
 
 -- Private
 
