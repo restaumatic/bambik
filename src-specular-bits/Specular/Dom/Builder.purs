@@ -107,7 +107,7 @@ getParentNode = Builder (asks _.parent)
 data Slot m = Slot
   (forall a. m a -> Effect a) -- ^ run inner widget, replace contents
   (Effect Unit) -- ^ destroy
-  (forall a. m a -> Effect (Slot m)) -- ^ Create a new slot after this one
+  (Effect (Slot m)) -- ^ Create a new slot after this one
 
 replaceSlot :: forall m a. Slot m -> m a -> Effect a
 replaceSlot (Slot replace _ _) = replace
@@ -115,11 +115,11 @@ replaceSlot (Slot replace _ _) = replace
 destroySlot :: forall m. Slot m -> Effect Unit
 destroySlot (Slot _ destroy _) = destroy
 
-appendSlot :: forall a m. Slot m -> m a -> Effect (Slot m)
+appendSlot :: forall a m. Slot m -> Effect (Slot m)
 appendSlot (Slot _ _ append) = append
 
-newSlot :: forall env a. Builder env a -> Builder env (Tuple a (Slot ((Builder env))))
-newSlot initialContent = do
+newSlot :: forall env a. Builder env (Slot ((Builder env)))
+newSlot = do
   env <- getEnv
   let parent = env.parent
 
@@ -136,11 +136,11 @@ newSlot initialContent = do
 
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
-  result <- liftEffect $ measured "slot created" $ populate initialContent
+  -- result <- liftEffect $ measured "slot created" $ populate initialContent
 
   let
     replace :: forall x. Builder env x -> Effect x
-    replace builder = measured "slot updated" do
+    replace builder = measured "slot populated" do
       removeAllBetween placeholderBefore placeholderAfter
       populate builder
 
@@ -150,14 +150,14 @@ newSlot initialContent = do
       removeNode placeholderBefore
       removeNode placeholderAfter
 
-    append :: forall x. Builder env x -> Effect (Slot (Builder env))
-    append builder = do
+    append :: Effect (Slot (Builder env))
+    append = do
       fragment <- createDocumentFragment
-      Tuple _ slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot builder
+      slot <- runBuilderWithUserEnv env.userEnv fragment $ newSlot
       insertBefore fragment placeholderAfter parent
       pure slot
 
-  pure $ Tuple result $ Slot replace destroy append
+  pure $ Slot replace destroy append
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
@@ -188,8 +188,11 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
 instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
   mempty = pure mempty
 
-populateNode :: forall a env. env -> Node -> Builder env a → Effect (Tuple a (Slot (Builder env)))
-populateNode env node builder = runBuilder env node $ newSlot builder
+populateNode :: forall a env. env -> Node -> Builder env a → Effect (Slot (Builder env))
+populateNode env node builder = runBuilder env node do
+  slot <- newSlot
+  void $ liftEffect $ replaceSlot slot builder
+  pure slot
 
 populateBody :: Builder Unit Unit → Effect Unit
 populateBody builder = do

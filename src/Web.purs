@@ -82,7 +82,8 @@ instance Strong Widget where
 
 instance Choice Widget where
   left w = Widget \aorb callbackchaorb -> do
-    Tuple mUpdate slot <- newSlot $ case aorb of
+    slot <- newSlot
+    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
       Left a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Left)
         pure $ Just update
@@ -112,7 +113,8 @@ instance Choice Widget where
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
   right w = Widget \aorb callbackchaorb -> do
-    Tuple mUpdate slot <- newSlot $ case aorb of
+    slot <- newSlot
+    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
       Right a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Right)
         pure $ Just update
@@ -196,7 +198,8 @@ instance Semigroupoid Widget where
 
 text :: forall a. Widget String a
 text = Widget \str _ -> do
-  Tuple _ slot <- newSlot $ Builder.text str -- update slot (Changed Some str)
+  slot <- newSlot
+  _ <- liftEffect $ replaceSlot slot $ Builder.text str -- update slot (Changed Some str)
   pure case _ of
     Changed None _ -> pure unit
     Changed _ s -> replaceSlot slot $ Builder.text s
@@ -335,25 +338,23 @@ runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
 runWidgetInBuilder ::
-  forall inViewModel outViewModel env.
+  forall inViewModel outViewModel.
   { widget :: Widget inViewModel outViewModel
   , initialInViewModel :: inViewModel
   , outViewModelCallback :: outViewModel -> Effect Unit
   } ->
-  Builder env (
+  Builder Unit (
     { updateInViewModel :: inViewModel -> Effect Unit
-    , slot :: Slot (Builder env)
+    , slot :: Slot (Builder Unit)
     })
 runWidgetInBuilder
   { widget
   , initialInViewModel
   , outViewModelCallback
   } = do
-  Tuple updateInViewModel slot <- do
-    env <- getEnv
-    liftEffect $ populateNode env.userEnv env.parent $ local (const unit) do
-      update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
-      pure $ update <<< Changed Some
+  slot <- newSlot
+  update <- liftEffect $ replaceSlot slot $ unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
+  let updateInViewModel = update <<< Changed Some
   pure { updateInViewModel, slot }
 
 -- Private
