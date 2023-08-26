@@ -33,7 +33,7 @@ import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Specular.Dom.Builder (Node, addEventListener, attr, classes, removeNode)
+import Specular.Dom.Builder (Node, addEventListener, attr, classes)
 import Web (Widget, aside, div, element, h2, label, label', span, text, textInput)
 import Web as Web
 
@@ -41,14 +41,15 @@ import Web as Web
 
 containedButton :: forall a b. (Widget String Void -> Widget a b) -> Widget a a
 containedButton label =
-  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
-    void $ newComponent material.ripple."MDCRipple" node
-    pure mempty) <> (\node ea action-> do
-    addEventListener "click" node $ const $ ea >>= action
-    pure mempty))
+  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty init
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
+    where
+      init node ea action _ = do
+        void $ newComponent material.ripple."MDCRipple" node
+        addEventListener "click" node $ const $ ea >>= action
+        pure mempty
 
 filledTextField :: forall a. (Widget String Void -> Widget String a) -> Widget String String
 filledTextField floatingLabel =
@@ -159,12 +160,12 @@ dialog title w =
           div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty mempty w) ) <^
       div (classes "mdc-dialog__scrim") mempty mempty pzero )
     where
-      initAside node _ _ = do
+      initAside node _ _ ctx = do
         comp <- newComponent material.dialog."MDCDialog" node
         open comp
         pure $ do
           close comp
-          removeNode node
+          ctx.destroy
 
 snackbar :: forall a. Number -> (Widget String Void -> Widget a a) -> Widget a a
 snackbar ms label =
@@ -173,14 +174,14 @@ snackbar ms label =
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty mempty
         (text # label )))
     where
-      initAside node _ _ = do
+      initAside node _ _ context = do
         comp <- newComponent material.snackbar."MDCSnackbar" node
         open comp
         launchAff_ do
           delay $ Milliseconds ms
           liftEffect $ do
             close comp
-            removeNode node
+            context.destroy
         pure mempty
 
 -- Private
@@ -217,7 +218,7 @@ foreign import close :: Component -> Effect Unit
 -- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
 --   slot <- newSlot
 --   asRef <- liftEffect $ new []
---   pure $ \as -> replaceSlot slot do
+--   pure $ \as -> populateSlot slot do
 --     liftEffect $ write as asRef
 --     void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
 --       forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do

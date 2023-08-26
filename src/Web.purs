@@ -45,12 +45,10 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Context, Node, TagName, addEventListener, appendSlot, attr, destroySlot, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
--- type Context = { slot :: Slot (Builder Context)}
-
-newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
+newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Context (Changed i -> Effect Unit))
 
 -- Capabilites
 
@@ -84,7 +82,7 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
-    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
+    mUpdate <- liftEffect $ populateSlot slot $ case aorb of
       Left a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Left)
         pure $ Just update
@@ -99,23 +97,23 @@ instance Choice Widget where
           Nothing -> makeUpdate slot callbackchaorb mUpdateRef a
         update $ Changed ch a
       _ -> do
-        void $ replaceSlot slot $ pure unit
+        void $ populateSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
       -- doing here instead:
       -- Right b -> do
-      --   void $ replaceSlot slot $ pure unit
+      --   void $ populateSlot slot $ pure unit
       --   Ref.write Nothing mUpdateRef
       --   abcallback (Right b)
       -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
       -- TODO EC make it not type check
       where
         makeUpdate slot callbackchaorb mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget w a (callbackchaorb <<< map Left)
+          newUpdate <- populateSlot slot $ unwrapWidget w a (callbackchaorb <<< map Left)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
   right w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
-    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
+    mUpdate <- liftEffect $ populateSlot slot $ case aorb of
       Right a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Right)
         pure $ Just update
@@ -133,18 +131,18 @@ instance Choice Widget where
           Nothing -> makeUpdate slot callbackchaorb mUpdateRef b
         update $ Changed c b
       _ -> do
-        void $ replaceSlot slot $ pure unit
+        void $ populateSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
       -- doing here instead:
       -- Left a -> do
-      --   void $ replaceSlot slot $ pure unit
+      --   void $ populateSlot slot $ pure unit
       --   Ref.write Nothing mUpdateRef
       --   abcallback (Left a)
       -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
       -- TODO EC make it not type check
       where
         makeUpdate slot abcallback mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget w a (abcallback <<< map Right)
+          newUpdate <- populateSlot slot $ unwrapWidget w a (abcallback <<< map Right)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
 
@@ -190,10 +188,14 @@ instance ChProfunctor Widget where
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
+    nextSlotRef <- liftEffect $ Ref.new Nothing
+    update <- unwrapWidget w1 inita \(Changed _ b) -> do
+      mNextSlot <- Ref.read nextSlotRef
+      maybe mempty (\slot -> void $ populateSlot slot $ local (const { destroy: destroySlot slot }) $ unwrapWidget w2 b callbackc) mNextSlot
     slot <- newSlot
-    liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
-      spawnedSlot <- appendSlot slot
-      void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
+    liftEffect $ Ref.write (Just slot) nextSlotRef
+    pure update
+
       -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
 -- Primitives
@@ -201,10 +203,10 @@ instance Semigroupoid Widget where
 text :: forall a. Widget String a
 text = Widget \str _ -> do
   slot <- newSlot
-  _ <- liftEffect $ replaceSlot slot $ Builder.text str -- update slot (Changed Some str)
+  _ <- liftEffect $ populateSlot slot $ Builder.text str -- update slot (Changed Some str)
   pure case _ of
     Changed None _ -> pure unit
-    Changed _ s -> replaceSlot slot $ Builder.text s
+    Changed _ s -> populateSlot slot $ Builder.text s
 
 chars :: forall a b. String -> Widget a b
 chars s = Widget \_ _ -> do
@@ -237,7 +239,7 @@ checkbox attrs = Widget \a callbackcha -> do
 -- Just a -> on button clicked when button does remember an `a`
 radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
 radioButton attrs = Widget \ma callbackchma -> do
-  maRef <- liftEffect $ Ref.new ma
+  maRef <- liftEffect $ Ref.new ma -- TODO EC Do we need this Ref?
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ setChecked node (isJust ma)
   liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
@@ -252,7 +254,7 @@ radioButton attrs = Widget \ma callbackchma -> do
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener w = Widget \a callbackb -> do
-  aRef <- liftEffect $ Ref.new a
+  aRef <- liftEffect $ Ref.new a -- TODO EC Do we need this ref?
   Tuple node update <- elAttr tagName attrs $ unwrapWidget w a callbackb
   liftEffect $ setAttributes node (attrs <> dynAttrs a)
   liftEffect $ listener node (Ref.read aRef)
@@ -262,16 +264,17 @@ element tagName attrs dynAttrs listener w = Widget \a callbackb -> do
     update $ Changed ch newa
 
 -- Element that cleans up after first output emitted, TODO EC: clean it up
-element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
+element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Context -> Effect (Effect Unit)) -> Widget a b -> Widget a b
 element_ tagName attrs dynAttrs listener w = Widget \a callbackb -> do
-  aRef <- liftEffect $ Ref.new a
-  cleanupRef <- liftEffect $ Ref.new Nothing
+  env <- getEnv
+  aRef <- liftEffect $ Ref.new a -- TODO EC Do we need this ref?
+  cleanupRef <- liftEffect $ Ref.new Nothing -- TODO EC Do we need this ref?
   Tuple node update <- elAttr tagName attrs $ unwrapWidget w a \chb -> do
     mCleanup <- Ref.read cleanupRef
     fromMaybe mempty mCleanup
     callbackb chb
   liftEffect $ setAttributes node (attrs <> dynAttrs a)
-  cleanup <- liftEffect $ listener node (Ref.read aRef) (callbackb <<< Changed Some)
+  cleanup <- liftEffect $ listener node (Ref.read aRef) (callbackb <<< Changed Some) env.userEnv
   liftEffect $ Ref.write (Just cleanup) cleanupRef
   pure \(Changed ch newa) -> do
     Ref.write newa aRef
@@ -296,7 +299,7 @@ span = element "span"
 aside' :: forall a b. Widget a b -> Widget a b
 aside' = element' "aside"
 
-aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
+aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Context -> Effect (Effect Unit)) -> Widget a b -> Widget a b
 aside = element_ "aside"
 
 label' :: forall a b. Widget a b -> Widget a b
@@ -305,7 +308,7 @@ label' = element' "label"
 label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
+button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect a -> (b -> Effect Unit) -> Context -> Effect (Effect Unit)) -> Widget a b -> Widget a b
 button = element_ "button"
 
 button' :: forall a b. Widget a b -> Widget a b
@@ -340,12 +343,12 @@ h4' = element' "h4"
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidgetInBuilder :: forall i o. Widget i o -> i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+runWidgetInBuilder :: forall i o. Widget i o -> i -> (o -> Effect Unit) -> Builder Context (i -> Effect Unit)
 runWidgetInBuilder widget initialInViewModel outViewModelCallback = do
   update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
   pure $ update <<< Changed Some
 
 -- Private
 
-unwrapWidget :: forall i o. Widget i o -> i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)
+unwrapWidget :: forall i o. Widget i o -> i -> (Changed o -> Effect Unit) -> Builder Context (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w

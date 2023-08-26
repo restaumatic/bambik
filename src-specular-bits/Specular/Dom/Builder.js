@@ -78,13 +78,20 @@ export function parentNodeImpl(Just) {
   };
 }
 
-// insertBeforeImpl :: Node -> Node -> Node -> IOSync Unit
-export function insertBeforeImpl(newNode) {
+// insertBefore :: Node -> Node -> Effect Unit
+export function insertBefore(nodeBefore) {
   return function (nodeAfter) {
-    return function (parent) {
-      return function () {
-        parent.insertBefore(newNode, nodeAfter);
-      };
+    return function () {
+      nodeAfter.before(nodeBefore);
+    };
+  };
+}
+
+// insertAfter :: Node -> Node -> Effect Unit
+export function insertAfter(nodeBefore) {
+  return function (nodeAfter) {
+    return function () {
+      nodeAfter.after(nodeBefore);
     };
   };
 }
