@@ -127,8 +127,8 @@ newSlot initialContent = do
   placeholderAfter <- liftEffect $ createTextNodeImpl ""
 
   let
-    populate :: forall x. Builder env x -> Effect x
-    populate builder = do
+    create :: forall x. Builder env x -> Effect x
+    create builder = do
       fragment <- createDocumentFragment
       result <- runBuilderWithUserEnv env.userEnv fragment builder
       insertBefore fragment placeholderAfter parent
@@ -136,13 +136,13 @@ newSlot initialContent = do
 
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
-  result <- liftEffect $ measured "slot created" $ populate initialContent
+  result <- liftEffect $ measured "slot created" $ create initialContent
 
   let
     replace :: forall x. Builder env x -> Effect x
     replace builder = measured "slot updated" do
       removeAllBetween placeholderBefore placeholderAfter
-      populate builder
+      create builder
 
     destroy :: Effect Unit
     destroy = do

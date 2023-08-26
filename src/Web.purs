@@ -46,7 +46,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, Slot, TagName, addEventListener, appendChildToBody, attr, createDocumentFragment, destroySlot, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateNode, replaceSlot, runBuilder, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -81,36 +81,21 @@ instance Strong Widget where
         update $ Changed ch $ snd newab
 
 instance Choice Widget where
-  left w = Widget \aorb callbackchaorb -> do
-    Tuple mUpdate slot <- newSlot $ case aorb of
-      Left a -> do
-        update <- unwrapWidget w a (callbackchaorb <<< map Left)
-        pure $ Just update
-      Right _ -> pure Nothing
-    mUpdateRef <- liftEffect $ Ref.new mUpdate
-    pure \chaorb -> case chaorb of
+  -- Goal:
+  -- 1) at most one ref (to right value or either value)
+  -- 2) no replacing slot on initialization
+  left w = Widget \initaorb callbackchaorb -> do
+    Tuple update slot <- newSlot $ case initaorb of
+      Left inita -> unwrapWidget w inita \(Changed ch a) -> callbackchaorb $ Changed ch (Left a)
+      Right b -> pure mempty -- update when there is not widget to update! How would reference to lastaorb help?
+    pure case _ of
       Changed None _ -> pure unit
+      -- Changed ch (Left a) -> pure unit
       Changed ch (Left a) -> do
-        mUpdate <- Ref.read mUpdateRef
-        update <- case mUpdate of
-          Just update -> pure update
-          Nothing -> makeUpdate slot callbackchaorb mUpdateRef a
-        update $ Changed ch a
-      _ -> do
-        void $ replaceSlot slot $ pure unit
-        Ref.write Nothing mUpdateRef
-      -- doing here instead:
-      -- Right b -> do
-      --   void $ replaceSlot slot $ pure unit
-      --   Ref.write Nothing mUpdateRef
-      --   abcallback (Right b)
-      -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
-      -- TODO EC make it not type check
-      where
-        makeUpdate slot callbackchaorb mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget w a (callbackchaorb <<< map Left)
-          Ref.write (Just newUpdate) mUpdateRef
-          pure newUpdate
+        update <- replaceSlot slot $ unwrapWidget w a \(Changed ch a) -> callbackchaorb $ Changed ch (Left a)
+        pure unit
+      Changed ch (Right b) -> callbackchaorb $ Changed ch $ Right b
+
   right w = Widget \aorb callbackchaorb -> do
     Tuple mUpdate slot <- newSlot $ case aorb of
       Right a -> do
