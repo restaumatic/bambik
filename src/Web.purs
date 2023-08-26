@@ -192,6 +192,7 @@ instance Semigroupoid Widget where
     liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
       spawnedSlot <- appendSlot slot
       void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
+      -- note: w2 cannot be updated not destroyed externally, w2 hould  itself take care of self-destroy
 
 -- Primitives
 
@@ -337,25 +338,10 @@ h4' = element' "h4"
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w a = populateBody $ void $ unwrapWidget w a mempty
 
-runWidgetInBuilder ::
-  forall inViewModel outViewModel.
-  { widget :: Widget inViewModel outViewModel
-  , initialInViewModel :: inViewModel
-  , outViewModelCallback :: outViewModel -> Effect Unit
-  } ->
-  Builder Unit (
-    { updateInViewModel :: inViewModel -> Effect Unit
-    , slot :: Slot (Builder Unit)
-    })
-runWidgetInBuilder
-  { widget
-  , initialInViewModel
-  , outViewModelCallback
-  } = do
-  slot <- newSlot
-  update <- liftEffect $ replaceSlot slot $ unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
-  let updateInViewModel = update <<< Changed Some
-  pure { updateInViewModel, slot }
+runWidgetInBuilder :: forall i o. Widget i o -> i -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+runWidgetInBuilder widget initialInViewModel outViewModelCallback = do
+  update <- unwrapWidget widget initialInViewModel \(Changed _ o) -> outViewModelCallback o
+  pure $ update <<< Changed Some
 
 -- Private
 
