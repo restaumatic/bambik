@@ -194,7 +194,7 @@ instance Semigroupoid Widget where
     liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
       spawnedSlot <- appendSlot slot
       void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
-      -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of self-destroy
+      -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
 -- Primitives
 
