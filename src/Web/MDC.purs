@@ -100,9 +100,8 @@ headline3 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
 headline3 label = element "h3" (classes "mdc-typography--headline3") mempty mempty
  ( text # label )
 
-headline4 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
-headline4 label = element "h4" (classes "mdc-typography--headline4") mempty mempty
- ( text # label )
+headline4 :: forall a b c. (Widget a b) -> Widget a b
+headline4 label = element "h4" (classes "mdc-typography--headline4") mempty mempty label
 
 headline5 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
 headline5 label = element "h5" (classes "mdc-typography--headline5") mempty mempty

@@ -4,7 +4,6 @@ module Web
   , aside'
   , button
   , button'
-  , chars
   , checkbox
   , div
   , div'
@@ -210,11 +209,6 @@ text = Widget \s _ -> do
     Changed _ news -> update slot news
     where
       update slot s = replaceSlot slot $ Builder.text s
-
-chars :: forall a b. String -> Widget a b
-chars s = Widget \_ _ -> do
-  Builder.text s
-  pure $ mempty
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do

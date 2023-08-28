@@ -11,7 +11,7 @@ import Web.MDC as MDC
 order ∷ Widget Order Order
 order =
   MDC.elevation9
-  ( MDC.headline4 orderTitle # shortId ^
+  ( MDC.headline4 (orderTitle text) ^
     div'
       ( MDC.filledTextField shortIdCaption # shortId ) ^
     div'
@@ -41,9 +41,9 @@ order =
           ( MDC.containedButton (submitOrderCaption >>> shortId) >>>
             ( MDC.dialog (submitOrderCaption >>> shortId)
               ( div'
-                ( chars "Are you sure?" ) ^
+                ( text # areYouSureText ) ^
                 MDC.containedButton (submitOrderCaption >>> shortId) ) ) >>>
-                  ( MDC.snackbar 2000.0 (orderSubmittedCaption >>> shortId))) ) )
+                  ( MDC.snackbar 2000.0 (orderSubmittedCaption >>> shortId ) ) ) ) )
 
 customer :: Widget CustomerInformal CustomerInformal
 customer =
