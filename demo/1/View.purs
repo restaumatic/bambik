@@ -6,7 +6,6 @@ import Prelude
 
 import ViewModel
 import Web
-
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
