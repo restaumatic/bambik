@@ -19,8 +19,8 @@ module Data.Profunctor.Optics
   , lens
   , lens'
   , module Data.Profunctor
-  , module Data.Profunctor.Choice
   , module Data.Profunctor.Change
+  , module Data.Profunctor.Choice
   , module Data.Profunctor.Plus
   , module Data.Profunctor.Strong
   , null
@@ -49,7 +49,7 @@ import Type.Proxy (Proxy(..))
 type ChOptic a b s t = forall p. ChProfunctor p => p a b -> p s t
 type   Adapter a b s t = ChOptic a b s t -- TODO rename to ChOptic?
 type     Iso a s = Adapter a a s s
-type     Projection a s = Adapter a Void s s
+type     Projection a s = forall b. Adapter a b s b
 type       Constant a = forall s. Projection a s
 type   Lens a b s t = forall p. ChProfunctor p => Strong p => p a b -> p s t
 type     Lens' a s = Lens a a s s
@@ -67,10 +67,10 @@ iso' mapin mapout = dimap mapin mapout
 
 
 projection :: forall a s. (s -> a) -> Projection a s
-projection f = dimap f absurd
+projection f = dimap f identity
 
-constant :: forall a. a -> Constant a
-constant a = dimap (const a) absurd >>> chmap (const None) identity
+constant :: forall a b s. a -> ChOptic a b s b -- Constant a
+constant a = dimap (const a) identity >>> chmap (const None) identity
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> Lens a b s t
 lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> scopemap (Variant name)

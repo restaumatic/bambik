@@ -64,8 +64,8 @@ module ViewModel
 import Prelude
 
 import Data.Array (intercalate)
-import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor.Optics
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
 
@@ -174,11 +174,11 @@ formal = iso "formal" toFormal toInformal
 paymentStatus :: Projection String Boolean
 paymentStatus = projection if _ then "paid" else "NOT PAID"
 
-fulfillmentData :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p Fulfillment Fulfillment
+fulfillmentData :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => p String String -> p Fulfillment Fulfillment
 fulfillmentData text =
-  (text # static "dine in at table " ^ text # table # dineIn) ^
-  (text # static "takeaway at " ^ text # time # takeaway) ^
-  (text # static "delivery to " ^ text # address # delivery)
+  ( text # static "dine in at table " ^ text # table # dineIn
+  ^ text # static "takeaway at " ^ text # time # takeaway
+  ^ text # static "delivery to " ^ text # address # delivery )
 
 submitOrder :: Order -> Effect Unit
 submitOrder = log <<< case _ of
@@ -212,8 +212,8 @@ shortIdCaption = constant "Short ID"
 uniqueIdCaption :: Constant String
 uniqueIdCaption = constant "Unique ID"
 
-paidCaption :: Constant String
-paidCaption = constant "Paid"
+paidCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+paidCaption text = text # static "Paid"
 
 dineInCaption :: Constant String
 dineInCaption = constant "Dine in"
@@ -236,17 +236,19 @@ addressCaption = constant "Address"
 fullfilmentCaption :: Constant String
 fullfilmentCaption = constant "Fullfilment"
 
-orderCaption :: Constant String
-orderCaption = constant "Order"
+orderCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+orderCaption text = text # static "Order"
 
-areYouSureText :: Constant ShortId
-areYouSureText = constant "Are you sure?"
+submitOrderCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
+submitOrderCaption text =
+  ( text # static "Submit order "
+  ^ text # shortId )
 
-submitOrderCaption :: Projection String ShortId
-submitOrderCaption = projection \sid -> "Submit order " <> sid
-
-orderSubmittedCaption :: Projection String ShortId
-orderSubmittedCaption = projection \sid -> "Order " <> sid <> " submitted"
+orderSubmittedCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
+orderSubmittedCaption text =
+  ( text # static "Order "
+  ^ text # shortId
+  ^ text # static " submitted" )
 
 --
 
@@ -255,47 +257,48 @@ orderId = lens' "orderId" (case _ of
   { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
 
-orderIdCaption :: Constant String
-orderIdCaption = constant "Order ID"
+orderIdCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+orderIdCaption text = text # static "Order ID"
 
-orderedByCaption :: Constant String
-orderedByCaption = constant "Ordered by"
+orderedByCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+orderedByCaption text = text # static "Ordered by"
 
-informalCaption :: Constant String
-informalCaption = constant "Informal"
+informalCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+informalCaption text = text # static "Informal"
 
-formalCaption :: Constant String
-formalCaption = constant "Formal"
+formalCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+formalCaption text = text # static "Formal"
 
--- n-ary optics
 orderIdText :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p OrderId OrderId
 orderIdText text = text # short ^ text # static " (" ^ text # unique ^ text # static ")"
 
--- n-ary optics
-orderTitle :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p Order Order
+orderTitle :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
 orderTitle text = text # static "Order " ^ text # shortId
 
-orderSummary :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p Order Order
+areYouSureText :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+areYouSureText text = text # static "Are you sure?"
+
+orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
 orderSummary text =
-  text # firstName # orderedBy ^
-  text # orderCaption ^
-  text # static " " ^
-  text # short # orderId ^
-  text # static " (uniquely " ^
-  text # unique # orderId ^
-  text # static ") for " ^
-  ( text # firstName ^
-    text # static " " ^
-    text # lastName ^
-      ( text # static " (formally " ^
-        text # surname ^
-        text # static " " ^
-        text # forename ^
-        text # static ")" ) # formal ) # orderedBy ^
-  text # static ", " ^
-  text # paymentStatus # paid ^
-  text # static ", fulfilled as " ^
-  (fulfillmentData text) # fulfillment
+  ( text # firstName # orderedBy
+  ^ text # orderCaption
+  ^ text # static " "
+  ^ text # short # orderId
+  ^ text # static " (uniquely "
+  ^ text # unique # orderId
+  ^ text # static ") for "
+  ^ ( text # firstName
+    ^ text # static " "
+    ^ text # lastName
+      ^ ( text # static " (formally "
+        ^ text # surname
+        ^ text # static " "
+        ^ text # forename
+        ^ text # static ")" ) # formal ) # orderedBy
+  ^ text # static ", "
+  -- ^ -- text # paymentStatus # paid -- TODO EC handle projection
+  ^ text # static ", fulfilled as "
+  ^ fulfillmentData text # fulfillment )
 
 --
 
