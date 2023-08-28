@@ -39,10 +39,10 @@ order =
 customer :: Widget CustomerInformal CustomerInformal
 customer =
   div'
-  ( MDC.subtitle2 informalCaption
-  ^ MDC.filledTextField firstNameCaption # firstName
-  ^ MDC.filledTextField lastNameCaption # lastName )
+    ( MDC.subtitle2 informalCaption
+    ^ MDC.filledTextField firstNameCaption # firstName
+    ^ MDC.filledTextField lastNameCaption # lastName )
   ^ div'
-  ( MDC.subtitle2 formalCaption
-  ^ MDC.filledTextField surnameCaption # surname
-  ^ MDC.filledTextField forenameCaption # forename ) # formal
+    ( MDC.subtitle2 formalCaption
+    ^ MDC.filledTextField surnameCaption # surname
+    ^ MDC.filledTextField forenameCaption # forename ) # formal
