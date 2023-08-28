@@ -4,6 +4,7 @@ module Data.Profunctor.Change
   , Scope(..)
   , class ChProfunctor
   , static
+  , staticText
   , scopemap
   , chmap
   )
@@ -56,6 +57,7 @@ scopemap scope = chmap zoomIn zoomOut
 class Profunctor p <= ChProfunctor p where
   chmap :: forall a b. (Change -> Change) -> (Change -> Change) -> p a b -> p a b
   static :: forall a b s. a -> p a b -> p s s -- TODO EC change name to "not changing" or similar?
+  staticText :: forall a b. String -> p a b
 
 data Changed a = Changed Change a
 

@@ -189,6 +189,7 @@ instance ChProfunctor Widget where
   static a w = Widget \_ _ -> do
     _ <- unwrapWidget w a mempty
     pure mempty
+  staticText = staticText' -- TODO EC support static text in nicer way
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
@@ -209,6 +210,11 @@ text = Widget \s _ -> do
     Changed _ news -> update slot news
     where
       update slot s = replaceSlot slot $ Builder.text s
+
+staticText' :: forall a b. String -> Widget a b
+staticText' s = Widget \_ _ -> do
+  Builder.text s
+  pure mempty
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do

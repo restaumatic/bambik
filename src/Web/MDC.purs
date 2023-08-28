@@ -8,7 +8,8 @@ module Web.MDC
   , containedButton
   , dialog
   , elevation1
-  , elevation9
+  , elevation10
+  , elevation20
   , filledTextField
   , headline1
   , headline2
@@ -113,11 +114,11 @@ headline6 label = element "h6" (classes "mdc-typography--headline6") mempty memp
  ( text # label )
 
 subtitle1 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-subtitle1 label = element "h6" (classes "mdc-typography--subtitle1") mempty mempty
+subtitle1 label = element "p" (classes "mdc-typography--subtitle1") mempty mempty
   ( text # label )
 
 subtitle2 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-subtitle2 label = element "h6" (classes "mdc-typography--subtitle2") mempty mempty
+subtitle2 label = element "p" (classes "mdc-typography--subtitle2") mempty mempty
   ( text # label )
 
 button :: forall a b. (Widget String String -> Widget a b) -> Widget a b
@@ -144,11 +145,15 @@ body2 = element "p" (classes "mdc-typography--body2") mempty mempty
 elevation1 :: forall a b. Widget a b -> Widget a b
 elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty mempty
 
-elevation9 :: forall a b. Widget a b -> Widget a b
-elevation9 = div (classes "elevation-demo-surface mdc-elevation--z9" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+elevation10 :: forall a b. Widget a b -> Widget a b
+elevation10 = div (classes "elevation-demo-surface mdc-elevation--z10" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+
+elevation20 :: forall a b. Widget a b -> Widget a b
+elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+
 
 card :: forall a b. Widget a b -> Widget a b
-card = div (classes "mdc-card" <> attr "style" "padding: 25px; margin: 15px 0 15px 0; text-align: justify;") mempty mempty -- TODO padding added ad-hoc, to remove
+card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty mempty -- TODO padding added ad-hoc, to remove
 
 dialog :: forall a b. (Widget String String -> Widget a b) -> Widget a b -> Widget a b
 dialog title w =
@@ -212,23 +217,5 @@ foreign import material
 foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
 
--- TODO
-
--- list :: forall a. Component a -> Component (Array a)
--- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
---   slot <- newSlot
---   asRef <- liftEffect $ new []
---   pure $ \as -> replaceSlot slot do
---     liftEffect $ write as asRef
---     void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
---       forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
---         void $ elAttr "span'" ("class" := "mdc-list-item__ripple") (pure unit)
---         void $ elAttr "span'" ("class" := "mdc-list-item__text") do
---           void $ elAttr "span'" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
---           void $ elAttr "span'" ("class" := "mdc-list-item__primary-text") do
---             update <- unwrap c \value -> do
---               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
---               callbackas newas
---             liftEffect $ update a
 
 

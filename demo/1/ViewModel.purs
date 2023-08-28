@@ -1,14 +1,14 @@
 module ViewModel
   ( Order
-  , CustomerInformal
-  , CustomerFormal
+  , NameInformal
+  , NameFormal
   , Fulfillment
   , Address
   , ShortId
   , UniqueId
   , uniqueId
   , shortId
-  , orderedBy
+  , customer
   , paid
   , short
   , unique
@@ -50,11 +50,12 @@ module ViewModel
   , orderId
   , orderIdCaption
   , orderIdText
-  , orderedByCaption
+  , customerCaption
   , submitOrderCaption
   , orderSubmittedCaption
   , informalCaption
   , formalCaption
+  , idCaption
   , orderTitle
   , areYouSureText
   , orderSummary
@@ -72,7 +73,7 @@ import Effect.Console (log)
 type Order =
   { uniqueId :: UniqueId
   , shortId :: ShortId
-  , orderedBy :: CustomerInformal
+  , customer :: NameInformal
   , paid :: Boolean
   , fulfillment :: Fulfillment
   }
@@ -81,17 +82,20 @@ type ShortId = String
 
 type UniqueId = String
 
-type CustomerInformal =
+type NameInformal =
   { firstName :: String
   , lastName :: String
   }
 
-type CustomerFormal =
+type NameFormal =
   { forename :: String
   , surname :: String
   }
 
-data Fulfillment = DineIn { table :: Table } | Takeaway { time :: Time } | Delivery { address :: Address }
+data Fulfillment
+  = DineIn { table :: Table }
+  | Takeaway { time :: Time }
+  | Delivery { address :: Address }
 
 type Table = String
 
@@ -107,7 +111,7 @@ uniqueId = field @"uniqueId"
 
 shortId = field @"shortId"
 
-orderedBy = field @"orderedBy"
+customer = field @"customer"
 
 paid = field @"paid"
 
@@ -163,12 +167,12 @@ isDelivery = iso' (case _ of
   d@(Delivery _) -> Just d
   _ -> Nothing) (fromMaybe (Delivery { address: "Mulholland Drive 2001, Los Angeles" }))
 
-formal :: Iso CustomerFormal CustomerInformal
+formal :: Iso NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
-    toFormal :: CustomerInformal -> CustomerFormal
+    toFormal :: NameInformal -> NameFormal
     toFormal { firstName: forename, lastName: surname } = { forename, surname }
-    toInformal :: CustomerFormal -> CustomerInformal
+    toInformal :: NameFormal -> NameInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
 paymentStatus :: Projection String Boolean
@@ -176,13 +180,13 @@ paymentStatus = projection if _ then "paid" else "NOT PAID"
 
 fulfillmentData :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => p String String -> p Fulfillment Fulfillment
 fulfillmentData text =
-  ( text # static "dine in at table " ^ text # table # dineIn
-  ^ text # static "takeaway at " ^ text # time # takeaway
-  ^ text # static "delivery to " ^ text # address # delivery )
+  ( (staticText "dine in at table " ^ text) # table # dineIn
+  ^ (staticText "takeaway at " ^ text) # time # takeaway
+  ^ (staticText "delivery to " ^ text) # address # delivery )
 
 submitOrder :: Order -> Effect Unit
 submitOrder = log <<< case _ of
-  { uniqueId, shortId, orderedBy, paid, fulfillment } -> "submitted order: " <> intercalate "|" [uniqueId, shortId, orderedBy.firstName, orderedBy.lastName, if paid then "paid" else "not paid", case fulfillment of
+  { uniqueId, shortId, customer, paid, fulfillment } -> "submitted order: " <> intercalate "|" [uniqueId, shortId, customer.firstName, customer.lastName, if paid then "paid" else "not paid", case fulfillment of
     (DineIn { table }) -> "dinein|" <> table
     (Takeaway { time }) -> "takeaway|" <> time
     (Delivery { address }) -> "delivery|\"" <> address <> "\""
@@ -206,6 +210,9 @@ shortCaption = constant "Short"
 uniqueCaption :: Constant String
 uniqueCaption = constant "Unique"
 
+idCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+idCaption text = staticText "Identifier"
+
 shortIdCaption :: Constant String
 shortIdCaption = constant "Short ID"
 
@@ -213,16 +220,16 @@ uniqueIdCaption :: Constant String
 uniqueIdCaption = constant "Unique ID"
 
 paidCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-paidCaption text = text # static "Paid"
+paidCaption text = staticText "Paid"
 
 dineInCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-dineInCaption text = text # static "Dine in"
+dineInCaption text = staticText "Dine in"
 
 takeawayCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-takeawayCaption text = text # static "Takeaway"
+takeawayCaption text = staticText "Takeaway"
 
 deliveryCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-deliveryCaption text = text # static "Delivery"
+deliveryCaption text = staticText "Delivery"
 
 tableCaption :: Constant String
 tableCaption = constant "Table"
@@ -237,18 +244,18 @@ fullfilmentCaption :: Constant String
 fullfilmentCaption = constant "Fullfilment"
 
 orderCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-orderCaption text = text # static "Order"
+orderCaption text = staticText "Order"
 
 submitOrderCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
 submitOrderCaption text =
-  ( text # static "Submit order "
+  ( staticText "Submit order "
   ^ text # shortId )
 
 orderSubmittedCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
 orderSubmittedCaption text =
-  ( text # static "Order "
+  ( staticText "Order "
   ^ text # shortId
-  ^ text # static " submitted" )
+  ^ staticText " submitted" )
 
 --
 
@@ -258,45 +265,42 @@ orderId = lens' "orderId" (case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
 
 orderIdCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-orderIdCaption text = text # static "Order ID"
+orderIdCaption text = staticText "Order ID"
 
-orderedByCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-orderedByCaption text = text # static "Ordered by"
+customerCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+customerCaption text = staticText "Customer"
 
 informalCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-informalCaption text = text # static "Informal"
+informalCaption text = staticText "Informal"
 
 formalCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-formalCaption text = text # static "Formal"
+formalCaption text = staticText "Formal"
 
 orderIdText :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p OrderId OrderId
-orderIdText text = text # short ^ text # static " (" ^ text # unique ^ text # static ")"
+orderIdText text = text # short ^ staticText " (" ^ text # unique ^ staticText ")"
 
 orderTitle :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
-orderTitle text = text # static "Order " ^ text # shortId
+orderTitle text = staticText "Order " ^ text # shortId
 
 areYouSureText :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
-areYouSureText text = text # static "Are you sure?"
+areYouSureText text = staticText "Are you sure?"
 
 orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
 orderSummary text =
-  ( text # orderCaption
-  ^ text # static " "
-  ^ text # short # orderId
-  ^ text # static " (uniquely "
-  ^ text # unique # orderId
-  ^ text # static ") for "
+  ( staticText "Summary: Order "
+  ^ text # shortId
+  ^ staticText " (uniquely "
+  ^ text # uniqueId
+  ^ staticText ") for "
   ^ ( text # firstName
-    ^ text # static " "
+    ^ staticText " "
     ^ text # lastName
-      ^ ( text # static " (formally "
+      ^ ( staticText " (formally "
         ^ text # surname
-        ^ text # static " "
+        ^ staticText " "
         ^ text # forename
-        ^ text # static ")" ) # formal ) # orderedBy
-  ^ text # static ", "
-  -- ^ text # paymentStatus # paid -- TODO EC handle projection
-  ^ text # static ", fulfilled as "
+        ^ staticText ")" ) # formal ) # customer
+  ^ staticText ", fulfilled as "
   ^ fulfillmentData text # fulfillment )
 
 --
@@ -305,7 +309,7 @@ defaultOrder :: Order
 defaultOrder =
   { uniqueId: "71287"
   , shortId: "7"
-  , orderedBy:
+  , customer:
     { firstName: "David"
     , lastName: "Lynch"
     }
