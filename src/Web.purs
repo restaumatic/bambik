@@ -187,6 +187,9 @@ instance ChProfunctor Widget where
     update <- unwrapWidget w initial \(Changed c a) -> do
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
+  static a w = Widget \_ _ -> do
+    _ <- unwrapWidget w a mempty
+    pure mempty
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
@@ -199,12 +202,14 @@ instance Semigroupoid Widget where
 -- Primitives
 
 text :: forall a. Widget String a
-text = Widget \str _ -> do
+text = Widget \s _ -> do
   slot <- newSlot
-  _ <- liftEffect $ replaceSlot slot $ Builder.text str -- update slot (Changed Some str)
+  _ <- liftEffect $ update slot s
   pure case _ of
     Changed None _ -> pure unit
-    Changed _ s -> replaceSlot slot $ Builder.text s
+    Changed _ news -> update slot news
+    where
+      update slot s = replaceSlot slot $ Builder.text s
 
 chars :: forall a b. String -> Widget a b
 chars s = Widget \_ _ -> do

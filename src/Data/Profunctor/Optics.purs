@@ -1,5 +1,6 @@
 module Data.Profunctor.Optics
   ( Adapter
+  , ChOptic
   , Constant
   , Constructor
   , Field
@@ -18,6 +19,10 @@ module Data.Profunctor.Optics
   , lens
   , lens'
   , module Data.Profunctor
+  , module Data.Profunctor.Choice
+  , module Data.Profunctor.Change
+  , module Data.Profunctor.Plus
+  , module Data.Profunctor.Strong
   , null
   , prism
   , prism'
@@ -29,11 +34,11 @@ import Prelude
 
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe, maybe)
-import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Change (class ChProfunctor, Change(..), Scope(..), chmap, scopemap)
-import Data.Profunctor.Choice (class Choice, left)
-import Data.Profunctor.Plus (class ProfunctorZero, pzero)
-import Data.Profunctor.Strong (class Strong, first)
+import Data.Profunctor
+import Data.Profunctor.Change
+import Data.Profunctor.Choice
+import Data.Profunctor.Plus
+import Data.Profunctor.Strong
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Prim.Row as Row
@@ -41,16 +46,17 @@ import Record (get, set)
 import Type.Proxy (Proxy(..))
 
 -- identation to emphasize hierarchy
-type Adapter a b s t = forall p. ChProfunctor p => p a b -> p s t
-type   Iso a s = Adapter a a s s
-type   Projection a s = Adapter a Void s s
-type     Constant a = forall s. Projection a s
-type Lens a b s t = forall p. ChProfunctor p => Strong p => p a b -> p s t
-type   Lens' a s = Lens a a s s
-type     Field a s = Lens' a (Record s)
-type Prism a b s t = forall p. ChProfunctor p => Choice p => p a b -> p s t
-type   Prism' a s = Prism a a s s
-type     Constructor a s = Prism' a s -- TODO find better signature
+type ChOptic a b s t = forall p. ChProfunctor p => p a b -> p s t
+type   Adapter a b s t = ChOptic a b s t -- TODO rename to ChOptic?
+type     Iso a s = Adapter a a s s
+type     Projection a s = Adapter a Void s s
+type       Constant a = forall s. Projection a s
+type   Lens a b s t = forall p. ChProfunctor p => Strong p => p a b -> p s t
+type     Lens' a s = Lens a a s s
+type       Field a s = Lens' a (Record s)
+type   Prism a b s t = forall p. ChProfunctor p => Choice p => p a b -> p s t
+type     Prism' a s = Prism a a s s
+type       Constructor a s = Prism' a s -- TODO find better signature
 type Null = forall p a b s t. ProfunctorZero p => p a b -> p s t
 
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> Iso a s

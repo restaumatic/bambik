@@ -56,14 +56,15 @@ module ViewModel
   , informalCaption
   , formalCaption
   , orderTitle
+  , orderSummary
   , defaultOrder
   ) where
   
 import Prelude
 
-import Data.Profunctor.Optics
 import Data.Array (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Profunctor.Optics
 import Effect (Effect)
 import Effect.Console (log)
 
@@ -262,6 +263,28 @@ orderIdText = projection case _ of
 
 orderTitle :: Projection String ShortId
 orderTitle = projection \sid -> "Order " <> sid
+
+orderSummary :: forall p. ChProfunctor p => Strong p => ProfunctorPlus p => (forall a. p String a) -> p Order Order
+orderSummary text =
+  text # firstName # orderedBy ^
+  text # orderCaption ^
+  text # static " " ^
+  text # short # orderId ^
+  text # static " (uniquely " ^
+  text # unique # orderId ^
+  text # static ") for " ^
+  ( text # firstName ^
+    text # static " " ^
+    text # lastName ^
+      ( text # static " (formally " ^
+        text # surname ^
+        text # static " " ^
+        text # forename ^
+        text # static ")" ) # formal ) # orderedBy ^
+  text # static ", " ^
+  text # paymentStatus # paid ^
+  text # static ", fulfilled as " ^
+  text # fulfillmentData # fulfillment
 
 defaultOrder :: Order
 defaultOrder =

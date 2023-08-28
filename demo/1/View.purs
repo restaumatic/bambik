@@ -36,24 +36,7 @@ order =
         ( MDC.filledTextField addressCaption # address # delivery ) ) # fulfillment ^
     MDC.card
       ( MDC.body1
-        ( text # orderCaption ^
-          chars " " ^
-          text # short # orderId ^
-          chars " (uniquely " ^
-          text # unique # orderId ^
-          chars ") for " ^
-          ( text # firstName ^
-            chars " " ^
-            text # lastName ^
-              ( chars " (formally " ^
-                text # surname ^
-                chars " " ^
-                text # forename ^
-                chars ")" ) # formal ) # orderedBy ^
-        chars ", " ^
-        text # paymentStatus # paid ^
-        chars ", fulfilled as " ^
-        text # fulfillmentData # fulfillment ) ^
+        (orderSummary text) ^
         div'
           ( MDC.containedButton (submitOrderCaption >>> shortId) >>>
             ( MDC.dialog (submitOrderCaption >>> shortId)
