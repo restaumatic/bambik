@@ -215,14 +215,14 @@ uniqueIdCaption = constant "Unique ID"
 paidCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
 paidCaption text = text # static "Paid"
 
-dineInCaption :: Constant String
-dineInCaption = constant "Dine in"
+dineInCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+dineInCaption text = text # static "Dine in"
 
-takeawayCaption :: Constant String
-takeawayCaption = constant "Takeaway"
+takeawayCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+takeawayCaption text = text # static "Takeaway"
 
-deliveryCaption :: Constant String
-deliveryCaption = constant "Delivery"
+deliveryCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+deliveryCaption text = text # static "Delivery"
 
 tableCaption :: Constant String
 tableCaption = constant "Table"
@@ -280,8 +280,7 @@ areYouSureText text = text # static "Are you sure?"
 
 orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
 orderSummary text =
-  ( text # firstName # orderedBy
-  ^ text # orderCaption
+  ( text # orderCaption
   ^ text # static " "
   ^ text # short # orderId
   ^ text # static " (uniquely "
@@ -296,7 +295,7 @@ orderSummary text =
         ^ text # forename
         ^ text # static ")" ) # formal ) # orderedBy
   ^ text # static ", "
-  -- ^ -- text # paymentStatus # paid -- TODO EC handle projection
+  -- ^ text # paymentStatus # paid -- TODO EC handle projection
   ^ text # static ", fulfilled as "
   ^ fulfillmentData text # fulfillment )
 
