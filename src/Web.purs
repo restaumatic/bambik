@@ -46,6 +46,8 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
+import Specular.Dom.Builder as S
+import Unsafe.Coerce (unsafeCoerce)
 
 -- type Context = { slot :: Slot (Builder Context)}
 
@@ -187,9 +189,8 @@ instance ChProfunctor Widget where
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
   static a w = Widget \_ _ -> do
-    _ <- unwrapWidget w a mempty
+    void $ unwrapWidget w a mempty
     pure mempty
-  staticText = staticText' -- TODO EC support static text in nicer way
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
@@ -204,17 +205,12 @@ instance Semigroupoid Widget where
 text :: forall a. Widget String a
 text = Widget \s _ -> do
   slot <- newSlot
-  _ <- liftEffect $ update slot s
+  liftEffect $ update slot s
   pure case _ of
     Changed None _ -> pure unit
     Changed _ news -> update slot news
     where
       update slot s = replaceSlot slot $ Builder.text s
-
-staticText' :: forall a b. String -> Widget a b
-staticText' s = Widget \_ _ -> do
-  Builder.text s
-  pure mempty
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do
