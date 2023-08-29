@@ -44,7 +44,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, populateSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 -- type Context = { slot :: Slot (Builder Context)}
@@ -83,7 +83,7 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
-    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
+    mUpdate <- liftEffect $ populateSlot slot $ case aorb of
       Left a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Left)
         pure $ Just update
@@ -98,23 +98,23 @@ instance Choice Widget where
           Nothing -> makeUpdate slot callbackchaorb mUpdateRef a
         update $ Changed ch a
       _ -> do
-        void $ replaceSlot slot $ pure unit
+        void $ populateSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
       -- doing here instead:
       -- Right b -> do
-      --   void $ replaceSlot slot $ pure unit
+      --   void $ populateSlot slot $ pure unit
       --   Ref.write Nothing mUpdateRef
       --   abcallback (Right b)
       -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
       -- TODO EC make it not type check
       where
         makeUpdate slot callbackchaorb mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget w a (callbackchaorb <<< map Left)
+          newUpdate <- populateSlot slot $ unwrapWidget w a (callbackchaorb <<< map Left)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
   right w = Widget \aorb callbackchaorb -> do
     slot <- newSlot
-    mUpdate <- liftEffect $ replaceSlot slot $ case aorb of
+    mUpdate <- liftEffect $ populateSlot slot $ case aorb of
       Right a -> do
         update <- unwrapWidget w a (callbackchaorb <<< map Right)
         pure $ Just update
@@ -132,18 +132,18 @@ instance Choice Widget where
           Nothing -> makeUpdate slot callbackchaorb mUpdateRef b
         update $ Changed c b
       _ -> do
-        void $ replaceSlot slot $ pure unit
+        void $ populateSlot slot $ pure unit
         Ref.write Nothing mUpdateRef
       -- doing here instead:
       -- Left a -> do
-      --   void $ replaceSlot slot $ pure unit
+      --   void $ populateSlot slot $ pure unit
       --   Ref.write Nothing mUpdateRef
       --   abcallback (Left a)
       -- would type check, yet it would be wrong as we don't allow a component to pass intput though to output
       -- TODO EC make it not type check
       where
         makeUpdate slot abcallback mUpdateRef a = do
-          newUpdate <- replaceSlot slot $ unwrapWidget w a (abcallback <<< map Right)
+          newUpdate <- populateSlot slot $ unwrapWidget w a (abcallback <<< map Right)
           Ref.write (Just newUpdate) mUpdateRef
           pure newUpdate
 
@@ -193,9 +193,9 @@ instance ChProfunctor Widget where
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
     slot <- newSlot
-    liftEffect $ replaceSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
+    liftEffect $ populateSlot slot $ unwrapWidget w1 inita \(Changed _ b) -> do
       spawnedSlot <- appendSlot slot
-      void $ replaceSlot spawnedSlot $ unwrapWidget w2 b callbackc
+      void $ populateSlot spawnedSlot $ unwrapWidget w2 b callbackc
       -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
 -- Primitives
@@ -208,7 +208,7 @@ text = Widget \s _ -> do
     Changed None _ -> pure unit
     Changed _ news -> update slot news
     where
-      update slot s = replaceSlot slot $ Builder.text s
+      update slot s = populateSlot slot $ Builder.text s
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do
