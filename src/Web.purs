@@ -4,7 +4,6 @@ module Web
   , aside'
   , button
   , button'
-  , chars
   , checkbox
   , div
   , div'
@@ -45,7 +44,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Context, Node, TagName, addEventListener, appendSlot, attr, destroySlot, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateSlot, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Context, Node, TagName, addEventListener, attr, destroySlot, elAttr, getChecked, getEnv, getValue, local, newSlot, populateBody, populateSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Context (Changed i -> Effect Unit))
@@ -185,6 +184,9 @@ instance ChProfunctor Widget where
     update <- unwrapWidget w initial \(Changed c a) -> do
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
+  fixed a w = Widget \_ _ -> do
+    void $ unwrapWidget w a mempty
+    pure mempty
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \inita callbackc -> do
@@ -196,22 +198,17 @@ instance Semigroupoid Widget where
     liftEffect $ Ref.write (Just slot) nextSlotRef
     pure update
 
-      -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
-
 -- Primitives
 
 text :: forall a. Widget String a
-text = Widget \str _ -> do
+text = Widget \s _ -> do
   slot <- newSlot
-  _ <- liftEffect $ populateSlot slot $ Builder.text str -- update slot (Changed Some str)
+  liftEffect $ update slot s
   pure case _ of
     Changed None _ -> pure unit
-    Changed _ s -> populateSlot slot $ Builder.text s
-
-chars :: forall a b. String -> Widget a b
-chars s = Widget \_ _ -> do
-  Builder.text s
-  pure $ mempty
+    Changed _ news -> update slot news
+    where
+      update slot s = populateSlot slot $ Builder.text s
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \a callbackcha -> do

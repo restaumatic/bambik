@@ -14,6 +14,7 @@ $ npm install && npm run demo1
   1. In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
   1. General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
   1. Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resistant to changes in `Show` instance implementation, 2) provide tailor-made textualizations
+  1. View modules should not import any `Data.Profunctor.*` modules as they should not create or transform profuctors - it is view model modules job
 
 ## TODOs
 

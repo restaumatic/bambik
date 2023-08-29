@@ -27,9 +27,9 @@ module Specular.Dom.Builder
   , newSlot
   , populateBody
   , populateNode
-  , populateSlot
   , rawHtml
   , removeNode
+  , populateSlot
   , runBuilder
   , setAttributes
   , setChecked
@@ -135,6 +135,9 @@ newSlot = do
     appendChild placeholderBefore env.parent
     appendChild placeholderAfter env.parent
     pure { placeholderBefore, placeholderAfter }
+
+  liftEffect $ appendChild placeholderBefore env.parent
+  liftEffect $ appendChild placeholderAfter env.parent
 
   let
     populate :: forall x. Builder env x -> Effect x
