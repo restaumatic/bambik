@@ -46,8 +46,6 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
-import Specular.Dom.Builder as S
-import Unsafe.Coerce (unsafeCoerce)
 
 -- type Context = { slot :: Slot (Builder Context)}
 
@@ -188,7 +186,7 @@ instance ChProfunctor Widget where
     update <- unwrapWidget w initial \(Changed c a) -> do
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
-  static a w = Widget \_ _ -> do
+  fixed a w = Widget \_ _ -> do
     void $ unwrapWidget w a mempty
     pure mempty
 
