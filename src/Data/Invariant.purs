@@ -51,17 +51,3 @@ class Invariant f <= InvCocartesian f where
 
 class Invariant f <= Closed f where
     closed :: forall a x. f a -> f (x -> a)
-
--- TODO are these below needed?
-
--- invand :: forall i a b . InvCartesian i => InvPlus i => i a -> i b -> i (Tuple a b)
--- invand a b = invfirst a ^ invsecond b
-
--- invandwith :: forall i a b c . InvCartesian i => InvPlus i => (Tuple a b -> c) -> (c -> Tuple a b) -> i a -> i b -> i c
--- invandwith f g a b = invmap f g $ invand a b
-
--- invor :: forall i a b . InvCocartesian i => InvPlus i => i a -> i b -> i (Either a b)
--- invor a b = invleft a ^ invright b
-
--- invorwith :: forall i a b c . InvCocartesian i => InvPlus i => (Either a b -> c) -> (c -> Either a b) -> i a -> i b -> i c
--- invorwith f g a b = invmap f g $ invor a b

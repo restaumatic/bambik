@@ -9,11 +9,13 @@ module Specular.Dom.Builder
   , Slot
   , TagName
   , addEventListener
+  , appendChild
+  , appendChildToBody
   , appendSlot
   , attr
   , classes
   , comment
-  , createCommentNodeImpl
+  , createDocumentFragment
   , destroySlot
   , elAttr
   , getChecked
@@ -21,21 +23,17 @@ module Specular.Dom.Builder
   , getParentNode
   , getValue
   , local
-  , mkBuilder'
   , newSlot
-  , onDomEvent
+  , populateBody
+  , populateNode
   , rawHtml
-  , replaceSlot
+  , removeNode
+  , populateSlot
   , runBuilder
-  , runBuilder'
-  , runMainBuilderInBody
-  , runMainWidgetInNode
   , setAttributes
-  , setAttributesImpl
   , setChecked
   , setValue
   , text
-  , unBuilder
   )
   where
 
@@ -44,25 +42,27 @@ import Prelude
 import Control.Apply (lift2)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
+import Data.DateTime.Instant (unInstant)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(Tuple), fst)
+import Data.Newtype (unwrap)
+import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Ref (modify_, new, read, write)
-import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn2, runEffectFn1, runEffectFn2)
-import Specular.Internal.Effect (DelayedEffects, emptyDelayed, pushDelayed, sequenceEffects, unsafeFreezeDelayed)
-import Specular.Internal.RIO (RIO(..), rio, runRIO)
-import Specular.Internal.RIO as RIO
-import Specular.Profiling as Profiling
+import Effect.Class.Console (info)
+import Effect.Now (now)
+import Effect.Ref as Ref
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Specular.Internal.RIO (RIO, rio, runRIO)
+import Specular.Internal.RIO as RIO
 
 
 newtype Builder env a = Builder (RIO (BuilderEnv env) a)
 
 type BuilderEnv env =
   { parent :: Node
-  , cleanup :: DelayedEffects
   , userEnv :: env
   }
 
@@ -73,9 +73,6 @@ derive newtype instance bindBuilder :: Bind (Builder env)
 derive newtype instance monadBuilder :: Monad (Builder env)
 derive newtype instance monadEffectBuilder :: MonadEffect (Builder env)
 
-onCleanup :: forall env. Effect Unit -> Builder env Unit
-onCleanup action = mkBuilder $ \env -> pushDelayed env.cleanup action
-
 instance monadAskBuilder :: MonadAsk env (Builder env) where
   ask = _.userEnv <$> getEnv
 
@@ -85,28 +82,19 @@ instance monadReaderBuilder :: MonadReader env (Builder env) where
 local :: forall e r a. (e -> r) -> Builder r a -> Builder e a
 local fn (Builder x) = Builder $ RIO.local (\env -> env { userEnv = fn env.userEnv }) x
 
-mkBuilder' :: forall env a. (EffectFn1 (BuilderEnv env) a) -> Builder env a
-mkBuilder' = Builder <<< RIO
-
 mkBuilder :: forall env a. (BuilderEnv env -> Effect a) -> Builder env a
 mkBuilder = Builder <<< rio
 
 unBuilder :: forall env a. Builder env a -> RIO (BuilderEnv env) a
 unBuilder (Builder f) = f
 
-runBuilder' :: forall env a. EffectFn2 (BuilderEnv env) (Builder env a) a
-runBuilder' = mkEffectFn2 \env (Builder (RIO f)) -> runEffectFn1 f env
+runBuilder :: forall a env. env -> Node -> Builder env a -> Effect a
+runBuilder = runBuilderWithUserEnv
 
-runBuilder :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
-runBuilder = runBuilderWithUserEnv unit
-
-runBuilderWithUserEnv :: forall env a. env -> Node -> Builder env a -> Effect (Tuple a (Effect Unit))
+runBuilderWithUserEnv :: forall env a. env -> Node -> Builder env a -> Effect a
 runBuilderWithUserEnv userEnv parent (Builder f) = do
-  actionsMutable <- emptyDelayed
-  let env = { parent, cleanup: actionsMutable, userEnv }
-  result <- runRIO env f
-  actions <- unsafeFreezeDelayed actionsMutable
-  pure (Tuple result (sequenceEffects actions))
+  let env = { parent, userEnv }
+  runRIO env f
 
 getEnv :: forall env. Builder env (BuilderEnv env)
 getEnv = Builder ask
@@ -122,8 +110,8 @@ data Slot m = Slot
   (Effect Unit) -- ^ destroy
   (Effect (Slot m)) -- ^ Create a new slot after this one
 
-replaceSlot :: forall m a. Slot m -> m a -> Effect a
-replaceSlot (Slot replace _ _) = replace
+populateSlot :: forall m a. Slot m -> m a -> Effect a
+populateSlot (Slot replace _ _) = replace
 
 destroySlot :: forall m. Slot m -> Effect Unit
 destroySlot (Slot _ destroy _) = destroy
@@ -135,41 +123,24 @@ newSlot :: forall env. Builder env (Slot ((Builder env)))
 newSlot = do
   env <- getEnv
 
-  placeholderBefore <- liftEffect $ createTextNode ""
-  placeholderAfter <- liftEffect $ createTextNode ""
+  placeholderBefore <- liftEffect $ createTextNodeImpl ""
+  placeholderAfter <- liftEffect $ createTextNodeImpl ""
+
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
 
-  cleanupRef <- liftEffect $ new (mempty :: Effect Unit)
-
   let
-    replace :: forall a. Builder env a -> Effect a
-    replace inner = Profiling.measure "slot replace" do
-      Profiling.measure "slot remove DOM" do
-        removeAllBetween placeholderBefore placeholderAfter
-
+    populate :: forall x. Builder env x -> Effect x
+    populate builder = measured "slot populated" do
+      removeAllBetween placeholderBefore placeholderAfter
       fragment <- createDocumentFragment
-      Tuple result cleanup <- Profiling.measure "slot init" do
-        runBuilderWithUserEnv env.userEnv fragment inner
-      join $ read cleanupRef
-
-      m_parent <- parentNode placeholderAfter
-
+      result <- runBuilderWithUserEnv env.userEnv fragment builder
+      m_parent <- parentNodeImpl Just Nothing placeholderAfter
       case m_parent of
         Just parent -> do
           insertBefore fragment placeholderAfter parent
-
-          write
-            ( Profiling.measure "slot cleanup" do
-                cleanup
-                write mempty cleanupRef -- TODO: explain this
-            )
-            cleanupRef
-
         Nothing ->
-          -- we've been removed from the DOM
-          write cleanup cleanupRef
-
+          pure unit -- FIXME
       pure result
 
     destroy :: Effect Unit
@@ -177,15 +148,13 @@ newSlot = do
       removeAllBetween placeholderBefore placeholderAfter
       removeNode placeholderBefore
       removeNode placeholderAfter
-      join $ read cleanupRef
 
     append :: Effect (Slot (Builder env))
     append = do
       fragment <- createDocumentFragment
-      Tuple slot cleanup <- runBuilderWithUserEnv env.userEnv fragment newSlot
-      modify_ (_ *> cleanup) cleanupRef -- FIXME: memory leak if the inner slot is destroyed
+      slot <- runBuilderWithUserEnv env.userEnv fragment newSlot
 
-      m_parent <- parentNode placeholderAfter
+      m_parent <- parentNodeImpl Just Nothing placeholderAfter
 
       case m_parent of
         Just parent -> do
@@ -195,13 +164,11 @@ newSlot = do
 
       pure slot
 
-  onCleanup $ join $ read cleanupRef
-
-  pure $ Slot replace destroy append
+  pure $ Slot populate destroy append
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
-  node <- createTextNode str
+  node <- createTextNodeImpl str
   appendChild node env.parent
 
 rawHtml :: forall env. String -> Builder env Unit
@@ -228,27 +195,16 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
 instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
   mempty = pure mempty
 
-
--- | Runs a widget in the specified parent element. Returns the result and cleanup action.
-runWidgetInNode :: forall a. Node -> Builder Unit a -> Effect (Tuple a (Effect Unit))
-runWidgetInNode parent widget = runBuilder parent do
+populateNode :: forall a env. env -> Node -> Builder env a → Effect (Slot (Builder env))
+populateNode env node builder = runBuilder env node do
   slot <- newSlot
-  onCleanup (destroySlot slot)
-  liftEffect $ replaceSlot slot widget
+  void $ liftEffect $ populateSlot slot builder
+  pure slot
 
-foreign import documentBody :: Effect Node
-
--- | Runs a widget in the specified parent element and discards cleanup action.
-runMainWidgetInNode :: forall a. Node -> Builder Unit a -> Effect a
-runMainWidgetInNode parent widget = fst <$> runWidgetInNode parent widget
-
--- | Runs a builder in `document.body` and discards cleanup action.
-runMainBuilderInBody :: forall a. Builder Unit a -> Effect a
-runMainBuilderInBody widget = do
+populateBody :: Builder Unit Unit → Effect Unit
+populateBody builder = do
   body <- documentBody
-  runMainWidgetInNode body widget
-
--- copied from Browser.proplus
+  void $ populateNode unit body builder
 
 type Attrs = Object AttrValue
 
@@ -286,14 +242,8 @@ foreign import data Event :: Type
 type EventType = String
 
 -- | Register an event listener. Returns unregister action.
-addEventListener :: Node -> EventType -> (Event -> Effect Unit) -> Effect (Effect Unit)
-addEventListener node etype callback = addEventListenerImpl etype callback node
-
-createTextNode :: String -> Effect Node
-createTextNode = createTextNodeImpl
-
-setText :: Node -> String -> Effect Unit
-setText = setTextImpl
+addEventListener :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
+addEventListener etype node callback = void $ addEventListenerImpl etype (measured (etype <> " event handled") <<< callback) node
 
 createDocumentFragment :: Effect Node
 createDocumentFragment = createDocumentFragmentImpl
@@ -303,19 +253,8 @@ createElementNS :: Maybe Namespace -> TagName -> Effect Node
 createElementNS (Just namespace) = createElementNSImpl namespace
 createElementNS Nothing = createElementImpl
 
-createElement :: TagName -> Effect Node
-createElement = createElementNS Nothing
-
 setAttributes :: Node -> Attrs -> Effect Unit
 setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
-
-removeAttributes :: Node -> Array String -> Effect Unit
-removeAttributes = removeAttributesImpl
-
--- | Return parent node of the node,
--- | or Nothing if it has been detached.
-parentNode :: Node -> Effect (Maybe Node)
-parentNode = parentNodeImpl Just Nothing
 
 -- | `insertBefore newNode nodeAfter parent`
 -- | Insert `newNode` before `nodeAfter` in `parent`
@@ -325,6 +264,11 @@ insertBefore = insertBeforeImpl
 -- | `appendChild newNode parent`
 appendChild :: Node -> Node -> Effect Unit
 appendChild = appendChildImpl
+
+appendChildToBody ::Node -> Effect Unit
+appendChildToBody child = do
+  body <- documentBody
+  appendChildImpl child body
 
 -- | Append a chunk of raw HTML to the end of the node.
 appendRawHtml :: String -> Node -> Effect Unit
@@ -340,25 +284,27 @@ appendRawHtml = appendRawHtmlImpl
 removeAllBetween :: Node -> Node -> Effect Unit
 removeAllBetween = removeAllBetweenImpl
 
--- | `moveAllBetweenInclusive from to parent`
--- |
--- | Moves `from`, all nodes after `from` and before `to` and `to` to
--- | `parent`.
--- |
--- | Assumes that `from` and `to` have the same parent,
--- | and `from` is before `to`.
-moveAllBetweenInclusive :: Node -> Node -> Node -> Effect Unit
-moveAllBetweenInclusive = moveAllBetweenInclusiveImpl
-
-
-onDomEvent :: forall m. MonadEffect m => EventType -> Node -> (Event -> Effect Unit) -> m Unit
-onDomEvent eventType node handler = do
-  void $ liftEffect $ addEventListener node eventType handler
-  -- onCleanup unsub
 createCommentNode ∷ String → Effect Node
 createCommentNode = createCommentNodeImpl
 
--- | Remove node from its parent node. No-op when the node has no parent.
+logIndent :: Ref.Ref Int
+logIndent = unsafePerformEffect $ Ref.new 0
+
+measured :: forall a m. Bind m ⇒ MonadEffect m ⇒ String → m a → m a
+measured actionName action = do
+  start <- liftEffect now
+  _ <- liftEffect $ Ref.modify (_ + 1) logIndent
+  a <- action
+  currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
+  stop <- liftEffect now
+  info $ "[DOM] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  pure a
+    where
+      repeatStr i s
+        | i <= 0 = ""
+        | otherwise = s <> repeatStr (i - 1) s
+
+foreign import documentBody :: Effect Node
 foreign import removeNode :: Node -> Effect Unit
 foreign import createTextNodeImpl :: String -> Effect Node
 foreign import setTextImpl :: Node -> String -> Effect Unit
@@ -373,14 +319,9 @@ foreign import removeAllBetweenImpl :: Node -> Node -> Effect Unit
 foreign import appendRawHtmlImpl :: String -> Node -> Effect Unit
 foreign import moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> Effect Unit
 foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
--- | JS `Event.preventDefault()`.
 foreign import preventDefault :: Event -> Effect Unit
--- | Get `innerHTML` of a node.
 foreign import innerHTML :: Node -> Effect String
 foreign import createCommentNodeImpl :: String -> Effect Node
-
--- copied from Web.purs
-
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean

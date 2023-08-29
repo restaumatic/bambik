@@ -12,18 +12,21 @@ to generate this file without the comments in this block.
 -}
 { name = "my-project"
 , dependencies =
-  [ "arrays"
+  [ "aff"
+  , "arrays"
   , "console"
+  , "datetime"
   , "debug"
   , "distributive"
   , "effect"
   , "either"
-  , "foldable-traversable"
+  , "exceptions"
   , "foreign-object"
   , "identity"
   , "maybe"
   , "newtype"
   , "nonempty"
+  , "now"
   , "prelude"
   , "profunctor"
   , "record"
@@ -38,6 +41,6 @@ to generate this file without the comments in this block.
   [ "src/**/*.purs"
   , "src-specular-bits/**/*.purs"
   , "test/**/*.purs"
-  , "demo/**/*.purs"
+  , "demo/1/*.purs"
   ]
 }
