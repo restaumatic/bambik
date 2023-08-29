@@ -130,8 +130,10 @@ newSlot = do
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
 
   { placeholderBefore, placeholderAfter } <- liftEffect do
-    placeholderBefore <- createTextNodeImpl $ "[" <> show slotNo <> " "
-    placeholderAfter <- createTextNodeImpl $ " " <> show slotNo <> "]"
+    -- placeholderBefore <- createTextNodeImpl $ "[" <> show slotNo <> " "
+    -- placeholderAfter <- createTextNodeImpl $ " " <> show slotNo <> "]"
+    placeholderBefore <- createTextNodeImpl ""
+    placeholderAfter <- createTextNodeImpl ""
     appendChild placeholderBefore env.parent
     appendChild placeholderAfter env.parent
     pure { placeholderBefore, placeholderAfter }
