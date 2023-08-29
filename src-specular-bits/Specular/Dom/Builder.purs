@@ -28,7 +28,7 @@ module Specular.Dom.Builder
   , populateNode
   , rawHtml
   , removeNode
-  , replaceSlot
+  , populateSlot
   , runBuilder
   , setAttributes
   , setChecked
@@ -110,8 +110,8 @@ data Slot m = Slot
   (Effect Unit) -- ^ destroy
   (Effect (Slot m)) -- ^ Create a new slot after this one
 
-replaceSlot :: forall m a. Slot m -> m a -> Effect a
-replaceSlot (Slot replace _ _) = replace
+populateSlot :: forall m a. Slot m -> m a -> Effect a
+populateSlot (Slot replace _ _) = replace
 
 destroySlot :: forall m. Slot m -> Effect Unit
 destroySlot (Slot _ destroy _) = destroy
@@ -122,14 +122,17 @@ appendSlot (Slot _ _ append) = append
 newSlot :: forall env. Builder env (Slot ((Builder env)))
 newSlot = do
   env <- getEnv
-  let parent = env.parent
 
   placeholderBefore <- liftEffect $ createTextNodeImpl ""
   placeholderAfter <- liftEffect $ createTextNodeImpl ""
 
+  liftEffect $ appendChild placeholderBefore env.parent
+  liftEffect $ appendChild placeholderAfter env.parent
+
   let
-    create :: forall x. Builder env x -> Effect x
-    create builder = do
+    populate :: forall x. Builder env x -> Effect x
+    populate builder = measured "slot populated" do
+      removeAllBetween placeholderBefore placeholderAfter
       fragment <- createDocumentFragment
       result <- runBuilderWithUserEnv env.userEnv fragment builder
       m_parent <- parentNodeImpl Just Nothing placeholderAfter
@@ -139,15 +142,6 @@ newSlot = do
         Nothing ->
           pure unit -- FIXME
       pure result
-
-  liftEffect $ appendChild placeholderBefore env.parent
-  liftEffect $ appendChild placeholderAfter env.parent
-
-  let
-    replace :: forall x. Builder env x -> Effect x
-    replace builder = measured "slot populated" do
-      removeAllBetween placeholderBefore placeholderAfter
-      create builder
 
     destroy :: Effect Unit
     destroy = do
@@ -170,7 +164,7 @@ newSlot = do
 
       pure slot
 
-  pure $ Slot replace destroy append
+  pure $ Slot populate destroy append
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
@@ -204,7 +198,7 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 populateNode :: forall a env. env -> Node -> Builder env a → Effect (Slot (Builder env))
 populateNode env node builder = runBuilder env node do
   slot <- newSlot
-  void $ liftEffect $ replaceSlot slot builder
+  void $ liftEffect $ populateSlot slot builder
   pure slot
 
 populateBody :: Builder Unit Unit → Effect Unit

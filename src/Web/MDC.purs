@@ -8,7 +8,8 @@ module Web.MDC
   , containedButton
   , dialog
   , elevation1
-  , elevation9
+  , elevation10
+  , elevation20
   , filledTextField
   , headline1
   , headline2
@@ -39,7 +40,7 @@ import Web as Web
 
 -- Primitives
 
-containedButton :: forall a b. (Widget String Void -> Widget a b) -> Widget a a
+containedButton :: forall a. (Widget String String -> Widget a a) -> Widget a a
 containedButton label =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
     void $ newComponent material.ripple."MDCRipple" node
@@ -50,7 +51,7 @@ containedButton label =
       span (classes "mdc-button__label") mempty mempty
         (text # label))
 
-filledTextField :: forall a. (Widget String Void -> Widget String a) -> Widget String String
+filledTextField :: (Widget String String -> Widget String String) -> Widget String String
 filledTextField floatingLabel =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (\node _ -> void $ newComponent material.textField."MDCTextField" node) $
     (span (classes "mdc-text-field__ripple") mempty mempty pzero)
@@ -62,7 +63,7 @@ filledTextField floatingLabel =
     ^
     (span (classes "mdc-line-ripple") mempty mempty pzero)
 
-checkbox :: forall a. (Widget String Void -> Widget Boolean a) -> Widget Boolean Boolean
+checkbox :: (Widget String String -> Widget Boolean Boolean) -> Widget Boolean Boolean
 checkbox label =
   div (classes "mdc-form-field") mempty (\node _ -> void $ newComponent material.formField."MDCFormField" node)
     ( div (classes "mdc-checkbox") mempty (\node _ -> void $ newComponent material.checkbox."MDCCheckbox" node)
@@ -75,7 +76,7 @@ checkbox label =
       label'
         ( text # label ))
 
-radioButton :: forall a b. (Widget String Void -> Widget (Maybe a) b) -> Widget (Maybe a) (Maybe a)
+radioButton :: forall a. (Widget String String -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 radioButton label =
   div (classes "mdc-form-field") mempty mempty
   ((div (classes "mdc-radio") mempty (\node _ -> void $ newComponent material.radio."MDCRadio" node) $
@@ -88,54 +89,55 @@ radioButton label =
     label'
       ( text # label ))
 
-headline1 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline1 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 headline1 label = element "h1" (classes "mdc-typography--headline1") mempty mempty
  ( text # label )
 
-headline2 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline2 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 headline2 label = element "h2" (classes "mdc-typography--headline2") mempty mempty
  ( text # label )
 
-headline3 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline3 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 headline3 label = element "h3" (classes "mdc-typography--headline3") mempty mempty
  ( text # label )
 
-headline4 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
-headline4 label = element "h4" (classes "mdc-typography--headline4") mempty mempty
+headline4 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+headline4 label = element "h5" (classes "mdc-typography--headline4") mempty mempty
  ( text # label )
 
-headline5 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline5 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 headline5 label = element "h5" (classes "mdc-typography--headline5") mempty mempty
  ( text # label )
 
-headline6 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+headline6 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 headline6 label = element "h6" (classes "mdc-typography--headline6") mempty mempty
  ( text # label )
 
-subtitle1 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
-subtitle1 label = element "h6" (classes "mdc-typography--subtitle1") mempty mempty
+subtitle1 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+subtitle1 label = element "p" (classes "mdc-typography--subtitle1") mempty mempty
   ( text # label )
 
-subtitle2 :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
-subtitle2 label = element "h6" (classes "mdc-typography--subtitle2") mempty mempty
+subtitle2 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+subtitle2 label = element "p" (classes "mdc-typography--subtitle2") mempty mempty
   ( text # label )
 
-button :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+button :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 button label = span (classes "mdc-typography--button") mempty mempty
   ( text # label )
 
-caption :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+caption :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 caption label = span (classes "mdc-typography--caption") mempty mempty
   ( text # label )
 
-overline :: forall a b. (Widget String Void -> Widget a b) -> Widget a b
+overline :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 overline label = span (classes "mdc-typography--overline") mempty mempty
   ( text # label )
 
 -- Optics
 
-body1 :: forall a b. Widget a b -> Widget a b
-body1 = element "p" (classes "mdc-typography--body1") mempty mempty
+body1 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+body1 content = element "p" (classes "mdc-typography--body1") mempty mempty
+  ( text # content )
 
 body2 :: forall a b. Widget a b -> Widget a b
 body2 = element "p" (classes "mdc-typography--body2") mempty mempty
@@ -143,13 +145,17 @@ body2 = element "p" (classes "mdc-typography--body2") mempty mempty
 elevation1 :: forall a b. Widget a b -> Widget a b
 elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty mempty
 
-elevation9 :: forall a b. Widget a b -> Widget a b
-elevation9 = div (classes "elevation-demo-surface mdc-elevation--z9" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+elevation10 :: forall a b. Widget a b -> Widget a b
+elevation10 = div (classes "elevation-demo-surface mdc-elevation--z10" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+
+elevation20 :: forall a b. Widget a b -> Widget a b
+elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "style" "padding: 25px") mempty mempty -- TODO padding added ad-hoc, to remove
+
 
 card :: forall a b. Widget a b -> Widget a b
-card = div (classes "mdc-card" <> attr "style" "padding: 25px; margin: 15px 0 15px 0; text-align: justify;") mempty mempty -- TODO padding added ad-hoc, to remove
+card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty mempty -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a b c. (Widget String Void -> Widget a c) -> Widget a b -> Widget a b
+dialog :: forall a b. (Widget String String -> Widget a b) -> Widget a b -> Widget a b
 dialog title w =
   aside (classes "mdc-dialog") mempty initAside
     ( div (classes "mdc-dialog__container") mempty mempty
@@ -166,7 +172,7 @@ dialog title w =
           close comp
           removeNode node
 
-snackbar :: forall a. Number -> (Widget String Void -> Widget a a) -> Widget a a
+snackbar :: forall a. Number -> (Widget String String -> Widget a a) -> Widget a a
 snackbar ms label =
   aside (classes "mdc-snackbar") mempty initAside
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty mempty
@@ -211,23 +217,5 @@ foreign import material
 foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
 
--- TODO
-
--- list :: forall a. Component a -> Component (Array a)
--- list c = wrapWebComponent \callbackas -> do -- -> Builder Unit (UserInput a -> Effect Unit)
---   slot <- newSlot
---   asRef <- liftEffect $ new []
---   pure $ \as -> replaceSlot slot do
---     liftEffect $ write as asRef
---     void $ elAttr "ul" ("class" := "mdc-list mdc-list--two-line") $
---       forWithIndex_ as \i a -> elAttr "li" ("class" := "mdc-list-item") do
---         void $ elAttr "span'" ("class" := "mdc-list-item__ripple") (pure unit)
---         void $ elAttr "span'" ("class" := "mdc-list-item__text") do
---           void $ elAttr "span'" ("class" := "mdc-list-item__secondary-text") $ text $ "Item " <> show i
---           void $ elAttr "span'" ("class" := "mdc-list-item__primary-text") do
---             update <- unwrap c \value -> do
---               newas <- modify (\currentAs -> fromMaybe currentAs (updateAt i value currentAs)) asRef
---               callbackas newas
---             liftEffect $ update a
 
 

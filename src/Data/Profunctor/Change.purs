@@ -3,6 +3,7 @@ module Data.Profunctor.Change
   , Changed(..)
   , Scope(..)
   , class ChProfunctor
+  , fixed
   , scopemap
   , chmap
   )
@@ -54,6 +55,8 @@ scopemap scope = chmap zoomIn zoomOut
 
 class Profunctor p <= ChProfunctor p where
   chmap :: forall a b. (Change -> Change) -> (Change -> Change) -> p a b -> p a b
+  -- Makes `p a b` fixed on `a` no matter what `s` from the context of `p s t` would be, so the `s`s are not listened to at all
+  fixed :: forall a b s t. a -> p a b -> p s t
 
 data Changed a = Changed Change a
 
