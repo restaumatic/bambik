@@ -47,8 +47,6 @@ import Effect.Ref as Ref
 import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, populateSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
--- type Context = { slot :: Slot (Builder Context)}
-
 newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
 -- Capabilites
