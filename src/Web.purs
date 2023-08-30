@@ -34,6 +34,7 @@ module Web
 import Prelude hiding (zero)
 
 import Data.Either (Either(..))
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
@@ -58,24 +59,20 @@ instance Profunctor Widget where
 
 instance Strong Widget where
   first w = Widget \callback -> do
-    aandbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \cha@(Changed _ a) -> do
-      aandb <- Ref.read aandbRef
-      case aandb of
-        Just (Tuple _ b) -> callback $ (\a -> Tuple a b) <$> cha
-        _ -> mempty
+    maandbRef <- liftEffect $ Ref.new Nothing
+    update <- unwrapWidget w \cha -> do
+      maandb <- Ref.read maandbRef
+      for_ maandb \(Tuple _ b) -> callback $ (\a -> Tuple a b) <$> cha
     pure \chab@(Changed _ aandb) -> do
-      Ref.write (Just aandb) aandbRef
+      Ref.write (Just aandb) maandbRef
       case chab of
         Changed None _ -> mempty
         Changed _ _ -> update $ fst <$> chab
   second w = Widget \callback -> do
     maandbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \chb@(Changed _ b) -> do
+    update <- unwrapWidget w \chb -> do
       maandb <- Ref.read maandbRef
-      case maandb of
-        Just (Tuple a _) -> callback $ (\b -> Tuple a b) <$> chb
-        _ -> mempty
+      for_ maandb \(Tuple a _) -> callback $ (\b -> Tuple a b) <$> chb
     pure \chab@(Changed _ aandb) -> do
       Ref.write (Just aandb) maandbRef
       case chab of
@@ -85,7 +82,7 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \cha@(Changed _ a) -> do
+    update <- unwrapWidget w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> callback $ Left <$> cha
@@ -98,7 +95,7 @@ instance Choice Widget where
         _ -> mempty
   right w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \chb@(Changed _ b) -> do
+    update <- unwrapWidget w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> callback $ Right <$> chb
@@ -155,11 +152,11 @@ instance ChProfunctor Widget where
     pure mempty
 
 instance Semigroupoid Widget where
-  compose w2 w1 = Widget \callbackc -> do
+  compose w2 w1 = Widget \callback -> do
     slot <- newSlot
-    liftEffect $ populateSlot slot $ unwrapWidget w1 \chb@(Changed _ b) -> do
+    liftEffect $ populateSlot slot $ unwrapWidget w1 \chb -> do
       spawnedSlot <- appendSlot slot
-      update <- populateSlot spawnedSlot $ unwrapWidget w2 callbackc
+      update <- populateSlot spawnedSlot $ unwrapWidget w2 callback
       update chb
       -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
