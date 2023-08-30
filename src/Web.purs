@@ -34,7 +34,7 @@ module Web
 import Prelude hiding (zero)
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
