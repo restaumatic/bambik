@@ -27,7 +27,7 @@ module Web.MDC
 
 import Prelude hiding (div)
 
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe, maybe)
 import Data.Profunctor.Plus (pzero, (<^), (^), (^>))
 import Data.String (null)
 import Effect (Effect)
@@ -44,8 +44,8 @@ containedButton :: forall a. (Widget String String -> Widget a a) -> Widget a a
 containedButton label =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
     void $ newComponent material.ripple."MDCRipple" node
-    pure mempty) <> (\node ea action-> do
-    addEventListener "click" node $ const $ ea >>= action
+    pure mempty) <> (\node ema action-> do
+    addEventListener "click" node $ const $ ema >>= maybe mempty action
     pure mempty))
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty

@@ -25,10 +25,9 @@ module Specular.Dom.Builder
   , local
   , newSlot
   , populateBody
-  , populateNode
+  , populateSlot
   , rawHtml
   , removeNode
-  , populateSlot
   , runBuilder
   , setAttributes
   , setChecked
@@ -195,16 +194,10 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder node a) where
 instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
   mempty = pure mempty
 
-populateNode :: forall a env. env -> Node -> Builder env a → Effect (Slot (Builder env))
-populateNode env node builder = runBuilder env node do
-  slot <- newSlot
-  void $ liftEffect $ populateSlot slot builder
-  pure slot
-
-populateBody :: Builder Unit Unit → Effect Unit
+populateBody :: forall a. Builder Unit a → Effect a
 populateBody builder = do
   body <- documentBody
-  void $ populateNode unit body builder
+  runBuilder unit body builder
 
 type Attrs = Object AttrValue
 
