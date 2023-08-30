@@ -190,7 +190,7 @@ instance Semigroupoid Widget where
 
 text :: forall a. Widget String a
 text = Widget \_ -> do
-  Tuple slot _ <- newSlot $ Builder.text ""
+  Tuple slot _ <- newSlot $ pure unit
   pure case _ of
     Changed None _ -> pure unit
     Changed _ news -> update slot news

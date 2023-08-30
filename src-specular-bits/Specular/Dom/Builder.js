@@ -201,6 +201,24 @@ export function removeNode(node) {
   };
 }
 
+// removeNode :: Node -> Effect Unit
+// assuming node has parent
+export function removeParentfulNode(node) {
+  return function () {
+    node.parentNode.removeChild(node);
+  };
+}
+
+// removeChildOfParent :: Node -> Node -> Effect Unit
+// assuming node has parent
+export function removeChildOfParent(node) {
+  return function (parent) {
+    return function () {
+      parent.removeChild(node);
+    };
+  };
+}
+
 // copied from Web.js
 
 // getValue :: Node -> IOSync String

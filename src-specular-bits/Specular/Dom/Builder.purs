@@ -144,7 +144,7 @@ newSlot builder = do
 
   let
     attach :: Effect Unit
-    attach = do
+    attach = measured "slot attached" do
       m_parent <- parentNodeImpl Just Nothing placeholderAfter
       case m_parent of
         Just parent -> do
@@ -153,18 +153,16 @@ newSlot builder = do
           pure unit -- FIXME
 
     detach :: Effect Unit
-    detach = do
-      pure unit
-      -- m_parent <- parentNodeImpl Just Nothing placeholderAfter
-      -- case m_parent of
-      --   Just parent -> do
-      --     remove fragment placeholderAfter parent
-      --   Nothing ->
-      --     pure unit -- FIXME
+    detach = measured "slot detached" do
+      m_parent <- parentNodeImpl Just Nothing fragment
+      case m_parent of
+        Just parent -> do
+          removeChildOfParent fragment parent
+        Nothing ->
+          pure unit -- FIXME
 
-
-    populate :: forall x. Builder env x -> Effect x
-    populate builder = measured "slot populated" do
+    replace :: forall x. Builder env x -> Effect x
+    replace builder = measured "slot replaced" do
       removeAllBetween placeholderBefore placeholderAfter
       fragment <- createDocumentFragment
       result <- runBuilderWithUserEnv env.userEnv fragment builder
@@ -197,7 +195,7 @@ newSlot builder = do
 
       pure result
 
-  pure $ Tuple (Slot populate destroy append attach detach) result
+  pure $ Tuple (Slot replace destroy append attach detach) result
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
@@ -354,3 +352,5 @@ foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
 foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
+foreign import removeParentfulNode :: Node -> Effect Unit
+foreign import removeChildOfParent :: Node -> Node -> Effect Unit
