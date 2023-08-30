@@ -91,7 +91,7 @@ instance Choice Widget where
         Just (Left _) -> callback $ Left <$> cha
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
-      Ref.write Nothing maorbRef
+      Ref.write (Just aorb) maorbRef
       case chaorb of
         Changed None _ -> mempty
         Changed _ (Left a) -> update $ a <$ chaorb
@@ -104,7 +104,7 @@ instance Choice Widget where
         Just (Right _) -> callback $ Right <$> chb
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
-      Ref.write Nothing maorbRef
+      Ref.write (Just aorb) maorbRef
       case chaorb of
         Changed None _ -> mempty
         Changed _ (Right b) -> update $ b <$ chaorb
