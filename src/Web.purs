@@ -39,7 +39,7 @@ module Web
   )
   where
 
-import Prelude hiding (zero)
+import Prelude hiding (zero, div)
 
 import Data.Either (Either(..))
 import Data.Foldable (for_)
@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, appendSlot, attr, elAttr, getChecked, getValue, newSlot, populateBody, populateSlot, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachSlot, attr, detachSlot, elAttr, getChecked, getValue, newSlot, populateBody, replaceSlot, setAttributes, setChecked, setValue)
 import Specular.Dom.Builder as Builder
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
@@ -93,30 +93,44 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \cha -> do
+    Tuple slot update <- newSlot $ unwrapWidget w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> callback $ Left <$> cha
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
-      Ref.write (Just aorb) maorbRef
+      moldaorb <- Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
       case chaorb of
         Changed None _ -> mempty
-        Changed _ (Left a) -> update $ a <$ chaorb
-        _ -> mempty
+        Changed _ (Left a) -> do
+          update $ a <$ chaorb
+          case moldaorb of
+            (Just (Left _)) -> mempty
+            _ -> attachSlot slot
+        Changed _ (Right _) -> do
+          case moldaorb of
+            (Just (Left _)) -> detachSlot slot
+            _ -> mempty
   right w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \chb -> do
+    Tuple slot update <- newSlot $ unwrapWidget w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> callback $ Right <$> chb
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
-      Ref.write (Just aorb) maorbRef
+      moldaorb <- Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
       case chaorb of
         Changed None _ -> mempty
-        Changed _ (Right b) -> update $ b <$ chaorb
-        _ -> mempty
+        Changed _ (Right b) -> do
+          update $ b <$ chaorb
+          case moldaorb of
+            (Just (Right _)) -> mempty
+            _ -> attachSlot slot
+        Changed _ (Left _) -> do
+          case moldaorb of
+            (Just (Right _)) -> detachSlot slot
+            _ -> mempty
 
 instance ProfunctorPlus Widget where
   proplus c1 c2 = Widget \updateParent -> do
@@ -164,23 +178,24 @@ instance ChProfunctor Widget where
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \callback -> do
-    slot <- newSlot
-    liftEffect $ populateSlot slot $ unwrapWidget w1 \chb -> do
-      spawnedSlot <- appendSlot slot
-      update <- populateSlot spawnedSlot $ unwrapWidget w2 callback
-      update chb
+    Tuple slot update <- newSlot $ unwrapWidget w1 \chb -> do
+      -- spawnedSlot <- appendSlot slot $ unwrapWidget w2 callback
+      -- update chb
+      pure mempty
+    liftEffect $ attachSlot slot
+    pure mempty
       -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
 -- Primitive widgets
 
 text :: forall a. Widget String a
 text = Widget \_ -> do
-  slot <- newSlot
+  Tuple slot _ <- newSlot $ Builder.text ""
   pure case _ of
     Changed None _ -> pure unit
     Changed _ news -> update slot news
     where
-      update slot s = populateSlot slot $ Builder.text s
+      update slot s = replaceSlot slot $ Builder.text s
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \callbackcha -> do

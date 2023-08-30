@@ -12,11 +12,13 @@ module Specular.Dom.Builder
   , appendChild
   , appendChildToBody
   , appendSlot
+  , attachSlot
   , attr
   , classes
   , comment
   , createDocumentFragment
   , destroySlot
+  , detachSlot
   , elAttr
   , getChecked
   , getEnv
@@ -25,9 +27,9 @@ module Specular.Dom.Builder
   , local
   , newSlot
   , populateBody
-  , populateSlot
   , rawHtml
   , removeNode
+  , replaceSlot
   , runBuilder
   , setAttributes
   , setChecked
@@ -107,19 +109,28 @@ getParentNode = Builder (asks _.parent)
 data Slot m = Slot
   (forall a. m a -> Effect a) -- ^ run inner widget, replace contents
   (Effect Unit) -- ^ destroy
-  (Effect (Slot m)) -- ^ Create a new slot after this one
+  (forall a. m a -> Effect (Tuple (Slot m) a)) -- ^ Create a new slot after this one
+  (Effect Unit) -- ^ attach
+  (Effect Unit) -- ^ detach
 
-populateSlot :: forall m a. Slot m -> m a -> Effect a
-populateSlot (Slot replace _ _) = replace
+replaceSlot :: forall m a. Slot m -> m a -> Effect a
+replaceSlot (Slot replace _ _ _ _) = replace
 
 destroySlot :: forall m. Slot m -> Effect Unit
-destroySlot (Slot _ destroy _) = destroy
+destroySlot (Slot _ destroy _ _ _) = destroy
 
-appendSlot :: forall m. Slot m -> Effect (Slot m)
-appendSlot (Slot _ _ append) = append
+appendSlot :: forall m a. Slot m -> m a -> Effect (Tuple (Slot m) a)
+appendSlot (Slot _ _ append _ _) = append
 
-newSlot :: forall env. Builder env (Slot ((Builder env)))
-newSlot = do
+attachSlot :: forall m. Slot m -> Effect Unit
+attachSlot (Slot _ _ _ attach _) = attach
+
+detachSlot :: forall m. Slot m -> Effect Unit
+detachSlot (Slot _ _ _ _ detach) = detach
+
+
+newSlot :: forall env a. Builder env a -> Builder env (Tuple (Slot ((Builder env))) a)
+newSlot builder = do
   env <- getEnv
 
   placeholderBefore <- liftEffect $ createTextNodeImpl ""
@@ -128,7 +139,30 @@ newSlot = do
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
 
+  fragment <- liftEffect $ createDocumentFragment
+  result <- liftEffect $ runBuilderWithUserEnv env.userEnv fragment builder
+
   let
+    attach :: Effect Unit
+    attach = do
+      m_parent <- parentNodeImpl Just Nothing placeholderAfter
+      case m_parent of
+        Just parent -> do
+          insertBefore fragment placeholderAfter parent
+        Nothing ->
+          pure unit -- FIXME
+
+    detach :: Effect Unit
+    detach = do
+      pure unit
+      -- m_parent <- parentNodeImpl Just Nothing placeholderAfter
+      -- case m_parent of
+      --   Just parent -> do
+      --     remove fragment placeholderAfter parent
+      --   Nothing ->
+      --     pure unit -- FIXME
+
+
     populate :: forall x. Builder env x -> Effect x
     populate builder = measured "slot populated" do
       removeAllBetween placeholderBefore placeholderAfter
@@ -148,10 +182,10 @@ newSlot = do
       removeNode placeholderBefore
       removeNode placeholderAfter
 
-    append :: Effect (Slot (Builder env))
-    append = do
+    append :: forall a. Builder env a -> Effect (Tuple (Slot (Builder env)) a)
+    append builder = do
       fragment <- createDocumentFragment
-      slot <- runBuilderWithUserEnv env.userEnv fragment newSlot
+      result <- runBuilderWithUserEnv env.userEnv fragment $ newSlot builder
 
       m_parent <- parentNodeImpl Just Nothing placeholderAfter
 
@@ -161,9 +195,9 @@ newSlot = do
         Nothing ->
           pure unit -- FIXME
 
-      pure slot
+      pure result
 
-  pure $ Slot populate destroy append
+  pure $ Tuple (Slot populate destroy append attach detach) result
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
