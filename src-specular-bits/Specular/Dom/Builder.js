@@ -262,4 +262,10 @@ export function setAttributesImpl(node, attrs) {
   }
 }
 
+// childNodes :: Node -> Effect (Array Node)
+export function childNodes(parent) {
+  return function () {
+    return Array.from(parent.childNodes);
+  };
+};
 

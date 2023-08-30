@@ -44,6 +44,7 @@ import Control.Apply (lift2)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
 import Data.DateTime.Instant (unInstant)
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(Tuple))
@@ -139,27 +140,26 @@ newSlot builder = do
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
 
-  fragment <- liftEffect $ createDocumentFragment
-  result <- liftEffect $ runBuilderWithUserEnv env.userEnv fragment builder
+  fragment' <- liftEffect $ createDocumentFragment
+  result <- liftEffect $ runBuilderWithUserEnv env.userEnv fragment' builder
+  fragmentChildNodes <- liftEffect $ childNodes fragment'
 
   let
     attach :: Effect Unit
     attach = measured "slot attached" do
+      newFragment <- createDocumentFragment
+      -- for_ fragmentChildNodes \childNode -> appendChild newFragment childNode
       m_parent <- parentNodeImpl Just Nothing placeholderAfter
       case m_parent of
         Just parent -> do
-          insertBefore fragment placeholderAfter parent
+          insertBefore newFragment placeholderAfter parent
+          for_ fragmentChildNodes \childNode -> insertBefore childNode placeholderAfter parent
         Nothing ->
           pure unit -- FIXME
 
     detach :: Effect Unit
     detach = measured "slot detached" do
-      m_parent <- parentNodeImpl Just Nothing fragment
-      case m_parent of
-        Just parent -> do
-          removeChildOfParent fragment parent
-        Nothing ->
-          pure unit -- FIXME
+      removeAllBetween placeholderBefore placeholderAfter
 
     replace :: forall x. Builder env x -> Effect x
     replace builder = measured "slot replaced" do
@@ -354,3 +354,5 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
 foreign import removeParentfulNode :: Node -> Effect Unit
 foreign import removeChildOfParent :: Node -> Node -> Effect Unit
+foreign import childNodes :: Node -> Effect (Array Node)
+
