@@ -4,16 +4,13 @@ module Specular.Dom.Builder
   , Builder
   , DetachableDocumentFragment
   , Event
-  , EventType
-  , Namespace
   , Node
   , TagName
   , WritableTextNode(..)
   , addEventListener
-  , appendChildToBody
   , attachDocumentFragment
   , attr
-  , buildBody
+  , buildInDocumentBody
   , classes
   , createDetachableDocumentFragment
   , createElementNS
@@ -24,7 +21,7 @@ module Specular.Dom.Builder
   , getValue
   , rawHtml
   , removeNode
-  , runBuilderWithUserEnv
+  , buildInNode
   , setAttributes
   , setChecked
   , setValue
@@ -57,7 +54,7 @@ import Unsafe.Coerce (unsafeCoerce)
 newtype Builder a = Builder (RIO (BuilderEnv Unit) a)
 
 type BuilderEnv env =
-  { parent :: Node
+  { node :: Node
   , userEnv :: env
   }
 
@@ -74,22 +71,22 @@ mkBuilder = Builder <<< rio
 unBuilder :: forall a. Builder a -> RIO (BuilderEnv Unit) a
 unBuilder (Builder f) = f
 
-runBuilderWithUserEnv :: forall a. Node -> Builder a -> Effect a
-runBuilderWithUserEnv parent (Builder f) = do
-  let env = { parent, userEnv: unit }
+buildInNode :: forall a. Node -> Builder a -> Effect a
+buildInNode node (Builder f) = do
+  let env = { node, userEnv: unit }
   runRIO env f
 
 data WritableTextNode = WritableTextNode (String -> Effect Unit)
 
 createWritableTextNode :: Builder WritableTextNode
 createWritableTextNode = do
-  parent <- getParentNode
+  node <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
     placeholderBefore <- newPlaceholderBefore slotNo
     placeholderAfter <- newPlaceholderAfter slotNo
-    appendChild placeholderBefore parent
-    appendChild placeholderAfter parent
+    appendChild placeholderBefore node
+    appendChild placeholderAfter node
     pure $ WritableTextNode \str -> measured' slotNo "written" do
       newNode <- createTextNode str
       removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
@@ -120,19 +117,19 @@ detachDocumentFragment (DetachableDocumentFragment { detach }) = detach
 
 rawHtml :: String -> Builder Unit
 rawHtml html = mkBuilder \env ->
-  appendRawHtml html env.parent
+  appendRawHtml html env.node
 
 elAttr :: forall a. TagName -> Attrs -> Builder a -> Builder (Tuple Node a)
 elAttr tagName attrs inner = do
-  parent <- getParentNode
+  node <- getParentNode
   node <- liftEffect $ createElementNS Nothing tagName
   liftEffect $ setAttributes node attrs
   result <- Builder $ RIO.local (setParent node) $ unBuilder inner
-  liftEffect $ appendChild node parent
+  liftEffect $ appendChild node node
   pure $ Tuple node result
     where
       setParent :: Node -> BuilderEnv Unit -> BuilderEnv Unit
-      setParent parent env = env { parent = parent }
+      setParent node env = env { node = node }
 
 instance semigroupBuilder :: Semigroup a => Semigroup (Builder a) where
   append = lift2 append
@@ -140,10 +137,10 @@ instance semigroupBuilder :: Semigroup a => Semigroup (Builder a) where
 instance monoidBuilder :: Monoid a => Monoid (Builder a) where
   mempty = pure mempty
 
-buildBody :: forall a. Builder a → (a -> Effect Unit) -> Effect Unit
-buildBody builder initializer =  measured "initialized" do
+buildInDocumentBody :: forall a. Builder a → (a -> Effect Unit) -> Effect Unit
+buildInDocumentBody builder initializer =  measured "initialized" do
   body <- documentBody
-  runBuilderWithUserEnv body do
+  buildInNode body do
     Tuple fragment built <- createDetachableDocumentFragment' true builder
     liftEffect $ do
       initializer built
@@ -210,11 +207,11 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 -- private
 
 getParentNode :: Builder Node
-getParentNode = Builder (asks _.parent)
+getParentNode = Builder (asks _.node)
 
 createDetachableDocumentFragment' :: forall a. Boolean -> Builder a -> Builder (Tuple DetachableDocumentFragment a)
 createDetachableDocumentFragment' isRoot builder = do
-  parent <- getParentNode
+  node <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
 
@@ -222,14 +219,14 @@ createDetachableDocumentFragment' isRoot builder = do
     placeholderAfter <- newPlaceholderAfter slotNo
 
     if isRoot
-      then insertAsFirstChild placeholderBefore parent
-      else appendChild placeholderBefore parent
+      then insertAsFirstChild placeholderBefore node
+      else appendChild placeholderBefore node
     if isRoot
-      then insertAsLastChild placeholderAfter parent
-      else appendChild placeholderAfter parent
+      then insertAsLastChild placeholderAfter node
+      else appendChild placeholderAfter node
 
     initialDocumentFragment <- createDocumentFragment
-    built <- runBuilderWithUserEnv initialDocumentFragment builder
+    built <- buildInNode initialDocumentFragment builder
 
     documentFragmentRef <- Ref.new initialDocumentFragment
 
