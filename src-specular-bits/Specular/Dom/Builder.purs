@@ -2,39 +2,38 @@ module Specular.Dom.Builder
   ( AttrValue(..)
   , Attrs
   , Builder
-  , DynNode(..)
   , Event
   , EventType
+  , DetachableDocumentFragment
   , Namespace
   , Node
-  , Fragment
   , TagName
+  , WritableTextNode(..)
   , addEventListener
   , appendChild
   , appendChildToBody
-  , attachFragment
+  , attachDocumentFragment
   , attr
   , classes
   , comment
   , createDocumentFragment
-  , detachFragment
+  , detachDocumentFragment
   , elAttr
   , getChecked
   , getEnv
   , getParentNode
   , getValue
   , local
-  , newDynNode
-  , newFragment
+  , createDetachableDocumentFragment
+  , createWritableTextNode
   , populateBody
   , rawHtml
   , removeNode
-  , replaceNode
   , runBuilderWithUserEnv
   , setAttributes
   , setChecked
   , setValue
-  , text
+  , writeToTextNode
   )
   where
 
@@ -44,7 +43,6 @@ import Control.Apply (lift2)
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader)
 import Data.DateTime.Instant (unInstant)
-import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(Tuple))
@@ -104,97 +102,76 @@ setParent parent env = env { parent = parent }
 getParentNode :: forall env. Builder env Node
 getParentNode = Builder (asks _.parent)
 
-data DynNode = DynNode (String -> Effect Unit)
+--
 
-newDynNode :: forall env. Builder env DynNode
-newDynNode = do
+data WritableTextNode = WritableTextNode (String -> Effect Unit)
+
+createWritableTextNode :: forall env. Builder env WritableTextNode
+createWritableTextNode = do
   env <- getEnv
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
-  placeholderBefore <- liftEffect $ createTextNodeImpl $ "<" <> show slotNo <> ">"
-  placeholderAfter <- liftEffect $ createTextNodeImpl $ "</" <> show slotNo <> ">"
-  liftEffect $ appendChild placeholderBefore env.parent
-  liftEffect $ appendChild placeholderAfter env.parent
+  liftEffect $ measured' slotNo "created" do
+    placeholderBefore <- newPlaceholderBefore slotNo
+    placeholderAfter <- newPlaceholderAfter slotNo
+    appendChild placeholderBefore env.parent
+    appendChild placeholderAfter env.parent
+    pure $ WritableTextNode \str -> measured' slotNo "written" do
+      newNode <- createTextNodeImpl str
+      removeAllBetween placeholderBefore placeholderAfter
+      newNode `insertBefore` placeholderAfter
+      where
+        measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
+        measured' slotNo actionName = measured $ "writable text node " <> show slotNo <> " " <> actionName
 
-  pure $ DynNode \str -> measured' slotNo do
-    newNode <- createTextNodeImpl str
-    removeAllBetween placeholderBefore placeholderAfter
-    newNode `insertBefore` placeholderAfter
-    where
-      measured' slotNo = measured $ "text " <> show slotNo <> " set"
+writeToTextNode :: WritableTextNode -> String -> Effect Unit
+writeToTextNode (WritableTextNode write) = write
 
-replaceNode :: DynNode -> String -> Effect Unit
-replaceNode (DynNode replace) = replace
-
-data Fragment = Fragment
+data DetachableDocumentFragment = DetachableDocumentFragment
   (Effect Unit) -- ^ attach
   (Effect Unit) -- ^ detach
 
-attachFragment :: Fragment -> Effect Unit
-attachFragment (Fragment attach _) = attach
-
-detachFragment :: Fragment -> Effect Unit
-detachFragment (Fragment _ detach) = detach
-
-slotCounter :: Ref.Ref Int
-slotCounter = unsafePerformEffect $ Ref.new 0
-
-newFragment :: forall env a. Builder env a -> Builder env (Tuple Fragment a)
-newFragment builder = do
+createDetachableDocumentFragment :: forall env a. Builder env a -> Builder env (Tuple DetachableDocumentFragment a)
+createDetachableDocumentFragment builder = do
   env <- getEnv
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+  liftEffect $ measured' slotNo "created" do
 
-  placeholderBefore <- liftEffect $ createTextNodeImpl $ "<" <> show slotNo <> ">"
-  placeholderAfter <- liftEffect $ createTextNodeImpl $ "</" <> show slotNo <> ">"
+    placeholderBefore <- newPlaceholderBefore slotNo
+    placeholderAfter <- newPlaceholderAfter slotNo
 
-  liftEffect $ appendChild placeholderBefore env.parent
-  liftEffect $ appendChild placeholderAfter env.parent
+    appendChild placeholderBefore env.parent
+    appendChild placeholderAfter env.parent
 
-  documentFragmentRef <- liftEffect $ Ref.new Nothing
+    initialDocumentFragment <- createDocumentFragment
+    built <- runBuilderWithUserEnv env.userEnv initialDocumentFragment builder
 
-  let
-    build :: forall x. Builder env x -> Effect x
-    build builder = measured' slotNo "set" do
-      documentFragment <- createDocumentFragment
-      built <- runBuilderWithUserEnv env.userEnv documentFragment builder
-      Ref.write (Just documentFragment) documentFragmentRef
-      pure built
+    documentFragmentRef <- Ref.new initialDocumentFragment
 
-    attach :: Effect Unit
-    attach = measured' slotNo "attached" do
-      mCurrentDocumentFragment <- Ref.read documentFragmentRef
-      for_ mCurrentDocumentFragment (_ `insertBefore` placeholderAfter)
-      -- after instering documentFragment becomes empty
+    let
+      attach :: Effect Unit
+      attach = measured' slotNo "attached" do
+        documentFragment <- Ref.read documentFragmentRef
+        documentFragment `insertBefore` placeholderAfter
+        -- inserting documentFragment makes it empty
 
-    detach :: Effect Unit
-    detach = measured' slotNo "detached" do
-      currentDocumentFragment <- createDocumentFragment
-      moveAllBetween placeholderBefore placeholderAfter currentDocumentFragment
-      Ref.write (Just currentDocumentFragment) documentFragmentRef
+      detach :: Effect Unit
+      detach = measured' slotNo "detached" do
+        documentFragment <- createDocumentFragment
+        moveAllBetween placeholderBefore placeholderAfter documentFragment
+        Ref.write documentFragment documentFragmentRef
 
-    -- destroy :: Effect Unit
-    -- destroy = measured' slotNo "destroyed" do
-    --   removeAllBetween placeholderBefore placeholderAfter
-    --   removeNode placeholderBefore
-    --   removeNode placeholderAfter
-
-    -- append :: forall a. Builder env a -> Effect (Tuple (Fragment (Builder env)) a)
-    -- append builder = measured' slotNo "fragment appended" do
-    --   fragment <- createDocumentFragment
-    --   result <- runBuilderWithUserEnv env.userEnv fragment $ newFragment builder
-    --   insertBefore fragment placeholderAfter
-    --   pure result
-
-  built <- liftEffect $ build builder
-
-  pure $ Tuple (Fragment attach detach) built
+    pure $ Tuple (DetachableDocumentFragment attach detach) built
     where
-      measured' :: forall a m. Bind m ⇒ MonadEffect m ⇒ Int -> String → m a → m a
-      measured' slotNo actionName = measured ("fragment " <> show slotNo <> " " <> actionName)
+      measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
+      measured' slotNo actionName = measured ("detachable document fragment " <> show slotNo <> " " <> actionName)
 
-text :: forall env. String -> Builder env Unit
-text str = mkBuilder \env -> do
-  node <- createTextNodeImpl str
-  appendChild node env.parent
+attachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
+attachDocumentFragment (DetachableDocumentFragment attach _) = attach
+
+detachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
+detachDocumentFragment (DetachableDocumentFragment _ detach) = detach
+
+--
 
 rawHtml :: forall env. String -> Builder env Unit
 rawHtml html = mkBuilder \env ->
@@ -300,7 +277,7 @@ createCommentNode = createCommentNodeImpl
 logIndent :: Ref.Ref Int
 logIndent = unsafePerformEffect $ Ref.new 0
 
-measured :: forall a m. Bind m ⇒ MonadEffect m ⇒ String → m a → m a
+measured :: forall a m. MonadEffect m ⇒ String → m a → m a
 measured actionName action = do
   start <- liftEffect now
   _ <- liftEffect $ Ref.modify (_ + 1) logIndent
@@ -313,6 +290,17 @@ measured actionName action = do
       repeatStr i s
         | i <= 0 = ""
         | otherwise = s <> repeatStr (i - 1) s
+
+slotCounter :: Ref.Ref Int
+slotCounter = unsafePerformEffect $ Ref.new 0
+
+newPlaceholderBefore ∷ ∀ (a95 ∷ Type). Show a95 ⇒ a95 → Effect Node
+-- newPlaceholderBefore slotNo = createTextNodeImpl $ "<" <> show slotNo <> ">"
+newPlaceholderBefore _ = createTextNodeImpl ""
+
+newPlaceholderAfter ∷ ∀ (a100 ∷ Type). Show a100 ⇒ a100 → Effect Node
+-- newPlaceholderAfter slotNo = createTextNodeImpl $ "</" <> show slotNo <> ">"
+newPlaceholderAfter _ = createTextNodeImpl ""
 
 foreign import documentBody :: Effect Node
 foreign import removeNode :: Node -> Effect Unit

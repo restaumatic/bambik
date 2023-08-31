@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachFragment, attr, detachFragment, elAttr, getChecked, getValue, newDynNode, newFragment, populateBody, replaceNode, setAttributes, setChecked, setValue)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, detachDocumentFragment, elAttr, getChecked, getValue, createDetachableDocumentFragment, createWritableTextNode, populateBody, setAttributes, setChecked, setValue, writeToTextNode)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
@@ -92,7 +92,7 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple slot update <- newFragment $ unwrapWidget w \cha -> do
+    Tuple fragment update <- createDetachableDocumentFragment $ unwrapWidget w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> callback $ Left <$> cha
@@ -105,14 +105,14 @@ instance Choice Widget where
           update $ a <$ chaorb
           case moldaorb of
             (Just (Left _)) -> mempty
-            _ -> attachFragment slot
+            _ -> attachDocumentFragment fragment
         Changed _ (Right _) -> do
           case moldaorb of
-            (Just (Left _)) -> detachFragment slot
+            (Just (Left _)) -> detachDocumentFragment fragment
             _ -> mempty
   right w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple slot update <- newFragment $ unwrapWidget w \chb -> do
+    Tuple fragment update <- createDetachableDocumentFragment $ unwrapWidget w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> callback $ Right <$> chb
@@ -125,10 +125,10 @@ instance Choice Widget where
           update $ b <$ chaorb
           case moldaorb of
             (Just (Right _)) -> mempty
-            _ -> attachFragment slot
+            _ -> attachDocumentFragment fragment
         Changed _ (Left _) -> do
           case moldaorb of
-            (Just (Right _)) -> detachFragment slot
+            (Just (Right _)) -> detachDocumentFragment fragment
             _ -> mempty
 
 instance ProfunctorPlus Widget where
@@ -178,13 +178,13 @@ instance ChProfunctor Widget where
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \callback -> do
     update1 <- unwrapWidget w1 \chb -> do
-      -- spawnedSlot <- appendSlot slot $ unwrapWidget w2 callback
+      -- spawnedSlot <- appendSlot fragment $ unwrapWidget w2 callback
       -- -- update chb
       mempty
     -- udpate1 <- unwrapWidget w2 \chc -> do
     --   mempty
     -- unwrapWIdget
-    -- liftEffect $ attachFragment slot
+    -- liftEffect $ attachDocumentFragment fragment
     pure update1
       -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
@@ -192,10 +192,10 @@ instance Semigroupoid Widget where
 
 text :: forall a. Widget String a
 text = Widget \_ -> do
-  dynNode <- newDynNode
+  node <- createWritableTextNode
   pure case _ of
     Changed None _ -> mempty
-    Changed _ news -> replaceNode dynNode news
+    Changed _ string -> writeToTextNode node string
 
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \callbackcha -> do
@@ -345,9 +345,9 @@ h6' content = h6 mempty mempty mempty content
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w i = populateBody $ do
-  Tuple slot update <- newFragment $ unwrapWidget w mempty
+  Tuple fragment update <- createDetachableDocumentFragment $ unwrapWidget w mempty
   liftEffect $ update (Changed Some i)
-  liftEffect $ attachFragment slot
+  liftEffect $ attachDocumentFragment fragment
 
 runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
 runWidgetInBuilder widget outViewModelCallback = do
