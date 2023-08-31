@@ -131,8 +131,12 @@ data DetachableDocumentFragment = DetachableDocumentFragment
   (Effect Unit) -- ^ attach
   (Effect Unit) -- ^ detach
 
-createDetachableRootDocumentFragment :: forall env a. Builder env a -> Builder env (Tuple DetachableDocumentFragment a)
-createDetachableRootDocumentFragment = createDetachableDocumentFragment' true
+createDetachableRootDocumentFragment :: forall env a. Builder env a -> (a -> Effect Unit) -> Builder env Unit
+createDetachableRootDocumentFragment builder initializer = do
+  Tuple fragment built <- createDetachableDocumentFragment' true builder
+  measured "initialization event handled" $ liftEffect $ do
+    initializer built
+    attachDocumentFragment fragment
 
 createDetachableDocumentFragment :: forall env a. Builder env a -> Builder env (Tuple DetachableDocumentFragment a)
 createDetachableDocumentFragment = createDetachableDocumentFragment' false

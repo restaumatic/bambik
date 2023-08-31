@@ -355,11 +355,8 @@ h6' content = h6 mempty mempty mempty content
 -- Entry point
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody w i = populateBody do
-  Tuple fragment update <- createDetachableRootDocumentFragment $ unwrapWidget w mempty
-  liftEffect do
-    update (Changed Some i)
-    attachDocumentFragment fragment
+runWidgetInBody w i = populateBody $ createDetachableRootDocumentFragment (unwrapWidget w mempty) \update -> update (Changed Some i)
+
 
 runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
 runWidgetInBuilder widget outViewModelCallback = do
