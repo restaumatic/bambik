@@ -34,7 +34,7 @@ import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Specular.Dom.Builder (Node, addEventListener, attr, classes, removeNode)
+import Web.Internal.DOM (Node, addEventListener, attr, classes, removeNode)
 import Web (Widget, aside, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
 import Web (button, checkbox, radioButton) as Web
 

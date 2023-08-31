@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, buildInDocumentBody, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
+import Web.Internal.DOM (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, buildInDocumentBody, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder (Changed i -> Effect Unit))
 

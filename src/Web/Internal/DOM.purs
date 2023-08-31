@@ -1,4 +1,4 @@
-module Specular.Dom.Builder
+module Web.Internal.DOM
   ( AttrValue(..)
   , Attrs
   , Builder
@@ -195,14 +195,11 @@ appendChildToBody child = do
   body <- documentBody
   appendChild child body
 
--- TODO EC move to Web.purs
-
 foreign import removeNode :: Node -> Effect Unit
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
 foreign import setChecked :: Node -> Boolean -> Effect Unit
-
 
 -- private
 
