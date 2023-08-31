@@ -33,8 +33,9 @@ import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Effect.Unsafe (unsafePerformEffect)
 import Specular.Dom.Builder (Node, addEventListener, attr, classes, removeNode)
-import Web (Widget, aside, div, h1, h2, h3, h4, h5, h6, label, label', p, path, pzero, span, svg, text, textInput, (<^), (^), (^>))
+import Web (Widget, aside, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
 import Web (button, checkbox, radioButton) as Web
 
 -- Primitive widgets
@@ -63,30 +64,36 @@ filledTextField floatingLabel =
     (span (classes "mdc-line-ripple") mempty mempty pzero)
 
 checkbox :: (Widget String String -> Widget Boolean Boolean) -> Widget Boolean Boolean
-checkbox label =
+checkbox labelCaption =
   div (classes "mdc-form-field") mempty (\node _ -> void $ newComponent material.formField."MDCFormField" node)
     ( div (classes "mdc-checkbox") mempty (\node _ -> void $ newComponent material.checkbox."MDCCheckbox" node)
-      ( Web.checkbox (classes "mdc-checkbox__native-control") ^
-        div (classes "mdc-checkbox__background") mempty mempty
-        ( svg (classes "mdc-checkbox__checkmark" <> attr "viewBox" "0 0 24 24") mempty mempty
-          ( path (classes "mdc-checkbox__checkmark-path" <> attr "fill" "none" <> attr "d" "M1.73,12.91 8.1,19.28 22.79,4.59") mempty mempty pzero) ^
-        div (classes "mdc-checkbox__mixedmark") mempty mempty pzero) ^
+      ( Web.checkbox (classes "mdc-checkbox__native-control" <> attr "type" "checkbox" <> attr "id" id)
+      ^ div (classes "mdc-checkbox__background") mempty mempty
+        ( html """
+          <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+            <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
+          </svg>""" -- Without raw HTML it doesn't work
+        ^ div (classes "mdc-checkbox__mixedmark") mempty mempty pzero) ^
       div (classes "mdc-checkbox__ripple") mempty mempty pzero) <^
-      label'
-        ( text # label ))
+      label (attr "for" id) mempty mempty
+        ( text # labelCaption ))
+    where
+      id = unsafePerformEffect randomElementId
 
 radioButton :: forall a. (Widget String String -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
-radioButton label =
+radioButton labelCaption =
   div (classes "mdc-form-field") mempty mempty
   ((div (classes "mdc-radio") mempty (\node _ -> void $ newComponent material.radio."MDCRadio" node) $
-      Web.radioButton (classes "mdc-radio__native-control" <> attr "id" "radio-1" ) <^
+      Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id ) <^
       div (classes "mdc-radio__background") mempty mempty
         ( div (classes "mdc-radio__outer-circle") mempty mempty pzero ^
           div (classes "mdc-radio__inner-circle") mempty mempty pzero) ^
       (div (classes "mdc-radio__ripple") mempty mempty pzero)
     ) <^
-    label'
-      ( text # label ))
+    label (attr "for" id) mempty mempty
+      ( text # labelCaption ))
+    where
+      id = unsafePerformEffect randomElementId
 
 headline1 :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 headline1 content = h1 (classes "mdc-typography--headline1") mempty mempty content
@@ -207,6 +214,4 @@ foreign import material
 
 foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
-
-
-
+foreign import randomElementId :: Effect String

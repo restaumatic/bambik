@@ -1,6 +1,5 @@
 module Web
   ( Widget
-  --
   , aside
   , aside'
   , button
@@ -20,22 +19,23 @@ module Web
   , h5'
   , h6
   , h6'
+  , html
+  , input
+  , input'
   , label
   , label'
+  , module Data.Profunctor.Plus
   , p
   , p'
   , path
   , radioButton
+  , runWidgetInBody
+  , runWidgetInBuilder
   , span
   , span'
   , svg
   , text
   , textInput
-  --
-  , module Data.Profunctor.Plus
-  --
-  , runWidgetInBody
-  , runWidgetInBuilder
   )
   where
 
@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, detachDocumentFragment, elAttr, getChecked, getValue, createDetachableDocumentFragment, createWritableTextNode, populateBody, setAttributes, setChecked, setValue, writeToTextNode)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, populateBody, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
 
@@ -197,6 +197,11 @@ text = Widget \_ -> do
     Changed None _ -> mempty
     Changed _ string -> writeToTextNode node string
 
+html :: forall a b. String -> Widget a b
+html h = Widget \_ -> do
+  rawHtml h
+  mempty
+
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
@@ -262,6 +267,12 @@ element_ tagName attrs dynAttrs listener w = Widget \callbackb -> do
       Ref.write (Just newa) aRef
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
+
+input' :: forall a b. Widget a b -> Widget a b
+input' = input mempty mempty mempty
+
+input :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
+input = element "div"
 
 div' :: forall a b. Widget a b -> Widget a b
 div' = div mempty mempty mempty
