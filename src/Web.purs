@@ -53,11 +53,11 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, createDetachableDocumentFragment, createDetachableRootDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, populateBody, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
+import Specular.Dom.Builder (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, buildBody, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
 
-newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit))
+newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder (Changed i -> Effect Unit))
 
-unwrapWidget :: forall i o. Widget i o -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Effect Unit)
+unwrapWidget :: forall i o. Widget i o -> (Changed o -> Effect Unit) -> Builder (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w
 
 -- Capabilites
@@ -355,10 +355,9 @@ h6' content = h6 mempty mempty mempty content
 -- Entry point
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody w i = populateBody $ createDetachableRootDocumentFragment (unwrapWidget w mempty) \update -> update (Changed Some i)
+runWidgetInBody w i = buildBody (unwrapWidget w mempty) \update -> update (Changed Some i)
 
-
-runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder Unit (i -> Effect Unit)
+runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder (i -> Effect Unit)
 runWidgetInBuilder widget outViewModelCallback = do
   update <- unwrapWidget widget \(Changed _ o) -> outViewModelCallback o
   pure $ update <<< Changed Some
