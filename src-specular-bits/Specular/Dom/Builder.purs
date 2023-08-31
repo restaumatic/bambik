@@ -132,9 +132,9 @@ data DetachableDocumentFragment = DetachableDocumentFragment
   (Effect Unit) -- ^ detach
 
 createDetachableRootDocumentFragment :: forall env a. Builder env a -> (a -> Effect Unit) -> Builder env Unit
-createDetachableRootDocumentFragment builder initializer = do
+createDetachableRootDocumentFragment builder initializer = measured "initialized" do
   Tuple fragment built <- createDetachableDocumentFragment' true builder
-  measured "initialization event handled" $ liftEffect $ do
+  liftEffect $ do
     initializer built
     attachDocumentFragment fragment
 
@@ -301,11 +301,13 @@ slotCounter = unsafePerformEffect $ Ref.new 0
 
 newPlaceholderBefore ∷ ∀ (a95 ∷ Type). Show a95 ⇒ a95 → Effect Node
 -- newPlaceholderBefore slotNo = createTextNode $ "<" <> show slotNo <> ">"
-newPlaceholderBefore _ = createTextNode ""
+newPlaceholderBefore slotNo = createCommentNode $ "<" <> show slotNo <> ">"
 
 newPlaceholderAfter ∷ ∀ (a100 ∷ Type). Show a100 ⇒ a100 → Effect Node
 -- newPlaceholderAfter slotNo = createTextNode $ "</" <> show slotNo <> ">"
-newPlaceholderAfter _ = createTextNode ""
+newPlaceholderAfter slotNo = createCommentNode $ "</" <> show slotNo <> ">"
+  -- createTextNode ""
+
 foreign import removeNode :: Node -> Effect Unit
 
 --  private
