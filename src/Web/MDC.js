@@ -22,9 +22,7 @@ export function close(component) {
 
 // randomElementId :: Effect String
 export function randomElementId() {
-    let x = "id-" + Math.floor(Math.random() * 99999999 + 100000000);
-    console.debug(x);
-    return x;
+    return "id-" + Math.floor(Math.random() * 99999999 + 100000000);
 }
 
 
