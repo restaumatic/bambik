@@ -2,9 +2,9 @@ module Specular.Dom.Builder
   ( AttrValue(..)
   , Attrs
   , Builder
+  , DetachableDocumentFragment
   , Event
   , EventType
-  , DetachableDocumentFragment
   , Namespace
   , Node
   , TagName
@@ -16,7 +16,10 @@ module Specular.Dom.Builder
   , attr
   , classes
   , comment
+  , createDetachableDocumentFragment
+  , createDetachableRootDocumentFragment
   , createDocumentFragment
+  , createWritableTextNode
   , detachDocumentFragment
   , elAttr
   , getChecked
@@ -24,8 +27,6 @@ module Specular.Dom.Builder
   , getParentNode
   , getValue
   , local
-  , createDetachableDocumentFragment
-  , createWritableTextNode
   , populateBody
   , rawHtml
   , removeNode
@@ -57,6 +58,7 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Specular.Internal.RIO (RIO, rio, runRIO)
 import Specular.Internal.RIO as RIO
+import Unsafe.Coerce (unsafeCoerce)
 
 
 newtype Builder env a = Builder (RIO (BuilderEnv env) a)
@@ -121,7 +123,7 @@ createWritableTextNode = do
       newNode `insertBefore` placeholderAfter
       where
         measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-        measured' slotNo actionName = measured $ "writable text node " <> show slotNo <> " " <> actionName
+        measured' slotNo actionName = measured $ "text node " <> show slotNo <> " " <> actionName
 
 writeToTextNode :: WritableTextNode -> String -> Effect Unit
 writeToTextNode (WritableTextNode write) = write
@@ -130,8 +132,14 @@ data DetachableDocumentFragment = DetachableDocumentFragment
   (Effect Unit) -- ^ attach
   (Effect Unit) -- ^ detach
 
+createDetachableRootDocumentFragment :: forall env a. Builder env a -> Builder env (Tuple DetachableDocumentFragment a)
+createDetachableRootDocumentFragment = createDetachableDocumentFragment' true
+
 createDetachableDocumentFragment :: forall env a. Builder env a -> Builder env (Tuple DetachableDocumentFragment a)
-createDetachableDocumentFragment builder = do
+createDetachableDocumentFragment = createDetachableDocumentFragment' false
+
+createDetachableDocumentFragment' :: forall env a. Boolean -> Builder env a -> Builder env (Tuple DetachableDocumentFragment a)
+createDetachableDocumentFragment' isRoot builder = do
   env <- getEnv
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
@@ -139,8 +147,12 @@ createDetachableDocumentFragment builder = do
     placeholderBefore <- newPlaceholderBefore slotNo
     placeholderAfter <- newPlaceholderAfter slotNo
 
-    appendChild placeholderBefore env.parent
-    appendChild placeholderAfter env.parent
+    if isRoot
+      then insertAsFirstChild placeholderBefore env.parent
+      else appendChild placeholderBefore env.parent
+    if isRoot
+      then insertAsLastChild placeholderAfter env.parent
+      else appendChild placeholderAfter env.parent
 
     initialDocumentFragment <- createDocumentFragment
     built <- runBuilderWithUserEnv env.userEnv initialDocumentFragment builder
@@ -150,9 +162,12 @@ createDetachableDocumentFragment builder = do
     let
       attach :: Effect Unit
       attach = measured' slotNo "attached" do
-        documentFragment <- Ref.read documentFragmentRef
+        when isRoot do
+          nullDocumentFragment <- createDocumentFragment
+          moveAllBetween placeholderBefore placeholderAfter nullDocumentFragment
+        documentFragment <- Ref.modify' (\fragment -> { state: unsafeCoerce unit, value: fragment}) documentFragmentRef
+          -- inserting documentFragment makes it empty but just in case not keeping reference to it while it's not needed
         documentFragment `insertBefore` placeholderAfter
-        -- inserting documentFragment makes it empty
 
       detach :: Effect Unit
       detach = measured' slotNo "detached" do
@@ -163,7 +178,7 @@ createDetachableDocumentFragment builder = do
     pure $ Tuple (DetachableDocumentFragment attach detach) built
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-      measured' slotNo actionName = measured ("detachable document fragment " <> show slotNo <> " " <> actionName)
+      measured' slotNo actionName = measured ("document fragment " <> show slotNo <> " " <> actionName)
 
 attachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
 attachDocumentFragment (DetachableDocumentFragment attach _) = attach
@@ -327,5 +342,7 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
 foreign import removeParentfulNode :: Node -> Effect Unit
 foreign import removeChildOfParent :: Node -> Node -> Effect Unit
-foreign import childNodes :: Node -> Effect (Array Node)
+foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
+foreign import insertAsLastChild :: Node -> Node -> Effect Unit
+foreign import removeChildren :: Node -> Effect Unit
 

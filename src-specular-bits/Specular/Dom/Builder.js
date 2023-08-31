@@ -81,9 +81,27 @@ export function parentNodeImpl(Just) {
 // insertBeforeImpl :: Node -> Node -> IOSync Unit
 export function insertBefore(newNode) {
   return function (existingNode) {
-      return function () {
-        existingNode.before(newNode);
-      };
+    return function () {
+      existingNode.before(newNode);
+    };
+  };
+}
+
+// insertAsFirstChild :: Node -> Node -> IOSync Unit
+export function insertAsFirstChild(newNode) {
+  return function (parentNode) {
+    return function () {
+      parentNode.insertBefore(newNode, parentNode.firstChild);
+    };
+  };
+}
+
+// insertAsLastChild :: Node -> Node -> IOSync Unit
+export function insertAsLastChild(newNode) {
+  return function (parentNode) {
+    return function () {
+      parentNode.appendChild(newNode);
+    };
   };
 }
 
@@ -257,10 +275,10 @@ export function setAttributesImpl(node, attrs) {
   }
 }
 
-// childNodes :: Node -> Effect (Array Node)
-export function childNodes(parent) {
+// removeChildren :: Node -> Effect Unit
+export function removeChildren(node) {
   return function () {
-    return Array.from(parent.childNodes);
+    node.innerHTML = '';
   };
 };
 
