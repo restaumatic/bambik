@@ -10,7 +10,6 @@ module Specular.Dom.Builder
   , TagName
   , WritableTextNode(..)
   , addEventListener
-  , appendChild
   , appendChildToBody
   , attachDocumentFragment
   , attr
@@ -118,8 +117,8 @@ createWritableTextNode = do
     appendChild placeholderBefore env.parent
     appendChild placeholderAfter env.parent
     pure $ WritableTextNode \str -> measured' slotNo "written" do
-      newNode <- createTextNodeImpl str
-      removeAllBetween placeholderBefore placeholderAfter
+      newNode <- createTextNode str
+      removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
       newNode `insertBefore` placeholderAfter
       where
         measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
@@ -163,8 +162,7 @@ createDetachableDocumentFragment' isRoot builder = do
       attach :: Effect Unit
       attach = measured' slotNo "attached" do
         when isRoot do
-          nullDocumentFragment <- createDocumentFragment
-          moveAllBetween placeholderBefore placeholderAfter nullDocumentFragment
+          removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
         documentFragment <- Ref.modify' (\fragment -> { state: unsafeCoerce unit, value: fragment}) documentFragmentRef
           -- inserting documentFragment makes it empty but just in case not keeping reference to it while it's not needed
         documentFragment `insertBefore` placeholderAfter
@@ -172,7 +170,7 @@ createDetachableDocumentFragment' isRoot builder = do
       detach :: Effect Unit
       detach = measured' slotNo "detached" do
         documentFragment <- createDocumentFragment
-        moveAllBetween placeholderBefore placeholderAfter documentFragment
+        moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
         Ref.write documentFragment documentFragmentRef
 
     pure $ Tuple (DetachableDocumentFragment attach detach) built
@@ -256,13 +254,10 @@ type EventType = String
 addEventListener :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
 addEventListener etype node callback = void $ addEventListenerImpl etype (measured (etype <> " event handled") <<< callback) node
 
-createDocumentFragment :: Effect Node
-createDocumentFragment = createDocumentFragmentImpl
-
 -- | Create an element, optionally with namespace.
 createElementNS :: Maybe Namespace -> TagName -> Effect Node
 createElementNS (Just namespace) = createElementNSImpl namespace
-createElementNS Nothing = createElementImpl
+createElementNS Nothing = createElement
 
 setAttributes :: Node -> Attrs -> Effect Unit
 setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
@@ -272,22 +267,13 @@ appendChildToBody child = do
   body <- documentBody
   appendChild child body
 
--- | Append a chunk of raw HTML to the end of the node.
-appendRawHtml :: String -> Node -> Effect Unit
-appendRawHtml = appendRawHtmlImpl
-
--- | `removeAllBetween from to`
+-- | `removeAllNodesBetweenSiblings from to`
 -- |
 -- | Remove all nodes after `from` and before `to` from their
 -- | parent. `from` and `to` are not removed.
 -- |
 -- | Assumes that `from` and `to` have the same parent,
 -- | and `from` is before `to`.
-removeAllBetween :: Node -> Node -> Effect Unit
-removeAllBetween = removeAllBetweenImpl
-
-createCommentNode ∷ String → Effect Node
-createCommentNode = createCommentNodeImpl
 
 logIndent :: Ref.Ref Int
 logIndent = unsafePerformEffect $ Ref.new 0
@@ -310,39 +296,34 @@ slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
 
 newPlaceholderBefore ∷ ∀ (a95 ∷ Type). Show a95 ⇒ a95 → Effect Node
--- newPlaceholderBefore slotNo = createTextNodeImpl $ "<" <> show slotNo <> ">"
-newPlaceholderBefore _ = createTextNodeImpl ""
+-- newPlaceholderBefore slotNo = createTextNode $ "<" <> show slotNo <> ">"
+newPlaceholderBefore _ = createTextNode ""
 
 newPlaceholderAfter ∷ ∀ (a100 ∷ Type). Show a100 ⇒ a100 → Effect Node
--- newPlaceholderAfter slotNo = createTextNodeImpl $ "</" <> show slotNo <> ">"
-newPlaceholderAfter _ = createTextNodeImpl ""
+-- newPlaceholderAfter slotNo = createTextNode $ "</" <> show slotNo <> ">"
+newPlaceholderAfter _ = createTextNode ""
+foreign import removeNode :: Node -> Effect Unit
+
+--  private
 
 foreign import documentBody :: Effect Node
-foreign import removeNode :: Node -> Effect Unit
-foreign import createTextNodeImpl :: String -> Effect Node
-foreign import setTextImpl :: Node -> String -> Effect Unit
-foreign import createDocumentFragmentImpl :: Effect Node
+foreign import createTextNode :: String -> Effect Node
+foreign import createDocumentFragment :: Effect Node
 foreign import createElementNSImpl :: Namespace -> TagName -> Effect Node
-foreign import createElementImpl :: TagName -> Effect Node
-foreign import removeAttributesImpl :: Node -> Array String -> Effect Unit
-foreign import parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> Effect (Maybe Node)
+foreign import createElement :: TagName -> Effect Node
 foreign import insertBefore :: Node -> Node -> Effect Unit
 foreign import appendChild :: Node -> Node -> Effect Unit
-foreign import removeAllBetweenImpl :: Node -> Node -> Effect Unit
-foreign import appendRawHtmlImpl :: String -> Node -> Effect Unit
-foreign import moveAllBetween :: Node -> Node -> Node -> Effect Unit
+foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
+foreign import appendRawHtml
+ :: String -> Node -> Effect Unit
+foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
 foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
-foreign import preventDefault :: Event -> Effect Unit
-foreign import innerHTML :: Node -> Effect String
-foreign import createCommentNodeImpl :: String -> Effect Node
+foreign import createCommentNode :: String -> Effect Node
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
 foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
-foreign import removeParentfulNode :: Node -> Effect Unit
-foreign import removeChildOfParent :: Node -> Node -> Effect Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import insertAsLastChild :: Node -> Node -> Effect Unit
-foreign import removeChildren :: Node -> Effect Unit
 

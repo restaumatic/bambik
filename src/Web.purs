@@ -102,7 +102,7 @@ instance Choice Widget where
       case chaorb of
         Changed None _ -> mempty
         Changed _ (Left a) -> do
-          update $ a <$ chaorb
+          update $ a <$ chaorb -- first update and only then attach TODO EC
           case moldaorb of
             (Just (Left _)) -> mempty
             _ -> attachDocumentFragment fragment

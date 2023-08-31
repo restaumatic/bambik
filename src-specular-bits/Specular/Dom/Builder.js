@@ -3,40 +3,27 @@ export function documentBody() {
   return document.body;
 }
 
-// copied from Browser.js
-
-// data Node :: Type
-
-// createTextNodeImpl :: String -> IOSync Node
-export function createTextNodeImpl(text) {
+// createTextNode :: String -> IOSync Node
+export function createTextNode(text) {
   return function () {
     return document.createTextNode(text);
   };
 }
 
-// createCommentNodeImpl :: String -> IOSync Node
-export function createCommentNodeImpl(text) {
+// createCommentNode :: String -> IOSync Node
+export function createCommentNode(text) {
   return function () {
     return document.createComment(text)
   }
 };
 
-// setTextImpl :: Node -> String -> IOSync Node
-export function setTextImpl(node) {
-  return function (text) {
-    return function () {
-      node.textContent = text;
-    };
-  };
-}
-
-// createDocumentFragmentImpl :: IOSync Node
-export function createDocumentFragmentImpl() {
+// createDocumentFragment :: IOSync Node
+export function createDocumentFragment() {
   return document.createDocumentFragment();
 }
 
-// createElementImpl :: TagName -> IOSync Node
-export function createElementImpl(tag) {
+// createElement :: TagName -> IOSync Node
+export function createElement(tag) {
   return function () {
     return document.createElement(tag);
   };
@@ -47,33 +34,6 @@ export function createElementNSImpl(namespace) {
   return function (tag) {
     return function () {
       return document.createElementNS(namespace, tag);
-    };
-  };
-}
-
-// removeAttributesImpl :: Node -> Array String -> IOSync Unit
-export function removeAttributesImpl(node) {
-  return function (names) {
-    return function () {
-      names.forEach(function (name) {
-        node.removeAttribute(name);
-      });
-    };
-  };
-}
-
-// parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> IOSync (Maybe Node)
-export function parentNodeImpl(Just) {
-  return function (Nothing) {
-    return function (node) {
-      return function () {
-        var parent = node.parentNode;
-        if (parent !== null) {
-          return Just(parent);
-        } else {
-          return Nothing;
-        }
-      };
     };
   };
 }
@@ -114,30 +74,6 @@ export function appendChild(newNode) {
   };
 }
 
-// removeAllBetweenImpl :: Node -> Node -> IOSync Unit
-export function removeAllBetweenImpl(from) {
-  return function (to) {
-    return function () {
-      if (!from.parentNode) {
-        return;
-      }
-      var node = from.nextSibling;
-      while (node && node !== to) {
-        var next = node.nextSibling;
-        node.parentNode.removeChild(node);
-        node = next;
-      }
-    };
-  };
-}
-
-// innerHTML :: Node -> IOSync String
-export function innerHTML(node) {
-  return function () {
-    return node.innerHTML;
-  };
-}
-
 // addEventListenerImpl :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
 export function addEventListenerImpl(eventType) {
   return function (handler) {
@@ -155,8 +91,8 @@ export function addEventListenerImpl(eventType) {
   };
 }
 
-// appendRawHtmlImpl :: String -> Node -> IOSync Unit
-export function appendRawHtmlImpl(html) {
+// appendRawHtml :: String -> Node -> IOSync Unit
+export function appendRawHtml(html) {
   return function (parent) {
     return function () {
       // According to https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
@@ -182,15 +118,17 @@ export function appendRawHtmlImpl(html) {
   };
 }
 
-// moveAllBetween :: Node -> Node -> Node -> IOSync Unit
-export function moveAllBetween(from) {
+// moveAllNodesBetweenSiblings :: Node -> Node -> Node -> IOSync Unit
+export function moveAllNodesBetweenSiblings(from) {
   return function (to) {
     return function (newParent) {
       return function () {
+        const parent = from.parentNode;
         var node = from.nextSibling;
-        while (node != to) {
-          var next = node.nextSibling;
-          newParent.appendChild(node);
+        var next = null;
+        while (node !== to) {
+          next = node.nextSibling;
+          newParent.appendChild(parent.removeChild(node));
           node = next;
         }
       };
@@ -198,41 +136,28 @@ export function moveAllBetween(from) {
   };
 }
 
-// preventDefault :: Event -> IOSync Unit
-export function preventDefault(event) {
-  return function () {
-    return event.preventDefault();
+// removeAllNodesBetweenSiblings :: Node -> Node -> IOSync Unit
+export function removeAllNodesBetweenSiblings(from) {
+  return function (to) {
+    return function () {
+      const parent = from.parentNode;
+      var node = from.nextSibling;
+      var next = null;
+      while (node !== to) {
+        next = node.nextSibling;
+        parent.removeChild(node)
+        node = next;
+      }
+    };
   };
 }
 
 // removeNode :: Node -> Effect Unit
 export function removeNode(node) {
   return function () {
-    if (node.parentNode) {
-      node.parentNode.removeChild(node);
-    }
-  };
-}
-
-// removeNode :: Node -> Effect Unit
-// assuming node has parent
-export function removeParentfulNode(node) {
-  return function () {
     node.parentNode.removeChild(node);
   };
 }
-
-// removeChildOfParent :: Node -> Node -> Effect Unit
-// assuming node has parent
-export function removeChildOfParent(node) {
-  return function (parent) {
-    return function () {
-      parent.removeChild(node);
-    };
-  };
-}
-
-// copied from Web.js
 
 // getValue :: Node -> IOSync String
 export function getValue(node) {
@@ -274,11 +199,3 @@ export function setAttributesImpl(node, attrs) {
     }
   }
 }
-
-// removeChildren :: Node -> Effect Unit
-export function removeChildren(node) {
-  return function () {
-    node.innerHTML = '';
-  };
-};
-
