@@ -2,35 +2,35 @@ module Specular.Dom.Builder
   ( AttrValue(..)
   , Attrs
   , Builder
+  , DynNode(..)
   , Event
   , EventType
   , Namespace
   , Node
-  , Slot
+  , Fragment
   , TagName
   , addEventListener
   , appendChild
   , appendChildToBody
-  , appendSlot
-  , attachSlot
+  , attachFragment
   , attr
   , classes
   , comment
   , createDocumentFragment
-  , destroySlot
-  , detachSlot
+  , detachFragment
   , elAttr
   , getChecked
   , getEnv
   , getParentNode
   , getValue
   , local
-  , newSlot
+  , newDynNode
+  , newFragment
   , populateBody
   , rawHtml
   , removeNode
-  , replaceSlot
-  , runBuilder
+  , replaceNode
+  , runBuilderWithUserEnv
   , setAttributes
   , setChecked
   , setValue
@@ -90,9 +90,6 @@ mkBuilder = Builder <<< rio
 unBuilder :: forall env a. Builder env a -> RIO (BuilderEnv env) a
 unBuilder (Builder f) = f
 
-runBuilder :: forall a env. env -> Node -> Builder env a -> Effect a
-runBuilder = runBuilderWithUserEnv
-
 runBuilderWithUserEnv :: forall env a. env -> Node -> Builder env a -> Effect a
 runBuilderWithUserEnv userEnv parent (Builder f) = do
   let env = { parent, userEnv }
@@ -107,95 +104,92 @@ setParent parent env = env { parent = parent }
 getParentNode :: forall env. Builder env Node
 getParentNode = Builder (asks _.parent)
 
-data Slot m = Slot
-  (forall a. m a -> Effect a) -- ^ run inner widget, replace contents
-  (Effect Unit) -- ^ destroy
-  (forall a. m a -> Effect (Tuple (Slot m) a)) -- ^ Create a new slot after this one
+data DynNode = DynNode (String -> Effect Unit)
+
+newDynNode :: forall env. Builder env DynNode
+newDynNode = do
+  env <- getEnv
+  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+  placeholderBefore <- liftEffect $ createTextNodeImpl $ "<" <> show slotNo <> ">"
+  placeholderAfter <- liftEffect $ createTextNodeImpl $ "</" <> show slotNo <> ">"
+  liftEffect $ appendChild placeholderBefore env.parent
+  liftEffect $ appendChild placeholderAfter env.parent
+
+  pure $ DynNode \str -> measured' slotNo do
+    newNode <- createTextNodeImpl str
+    removeAllBetween placeholderBefore placeholderAfter
+    newNode `insertBefore` placeholderAfter
+    where
+      measured' slotNo = measured $ "text " <> show slotNo <> " set"
+
+replaceNode :: DynNode -> String -> Effect Unit
+replaceNode (DynNode replace) = replace
+
+data Fragment = Fragment
   (Effect Unit) -- ^ attach
   (Effect Unit) -- ^ detach
 
-replaceSlot :: forall m a. Slot m -> m a -> Effect a
-replaceSlot (Slot replace _ _ _ _) = replace
+attachFragment :: Fragment -> Effect Unit
+attachFragment (Fragment attach _) = attach
 
-destroySlot :: forall m. Slot m -> Effect Unit
-destroySlot (Slot _ destroy _ _ _) = destroy
+detachFragment :: Fragment -> Effect Unit
+detachFragment (Fragment _ detach) = detach
 
-appendSlot :: forall m a. Slot m -> m a -> Effect (Tuple (Slot m) a)
-appendSlot (Slot _ _ append _ _) = append
+slotCounter :: Ref.Ref Int
+slotCounter = unsafePerformEffect $ Ref.new 0
 
-attachSlot :: forall m. Slot m -> Effect Unit
-attachSlot (Slot _ _ _ attach _) = attach
-
-detachSlot :: forall m. Slot m -> Effect Unit
-detachSlot (Slot _ _ _ _ detach) = detach
-
-
-newSlot :: forall env a. Builder env a -> Builder env (Tuple (Slot ((Builder env))) a)
-newSlot builder = do
+newFragment :: forall env a. Builder env a -> Builder env (Tuple Fragment a)
+newFragment builder = do
   env <- getEnv
+  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
 
-  placeholderBefore <- liftEffect $ createTextNodeImpl ""
-  placeholderAfter <- liftEffect $ createTextNodeImpl ""
+  placeholderBefore <- liftEffect $ createTextNodeImpl $ "<" <> show slotNo <> ">"
+  placeholderAfter <- liftEffect $ createTextNodeImpl $ "</" <> show slotNo <> ">"
 
   liftEffect $ appendChild placeholderBefore env.parent
   liftEffect $ appendChild placeholderAfter env.parent
 
-  fragment' <- liftEffect $ createDocumentFragment
-  result <- liftEffect $ runBuilderWithUserEnv env.userEnv fragment' builder
-  fragmentChildNodes <- liftEffect $ childNodes fragment'
+  documentFragmentRef <- liftEffect $ Ref.new Nothing
 
   let
+    build :: forall x. Builder env x -> Effect x
+    build builder = measured' slotNo "set" do
+      documentFragment <- createDocumentFragment
+      built <- runBuilderWithUserEnv env.userEnv documentFragment builder
+      Ref.write (Just documentFragment) documentFragmentRef
+      pure built
+
     attach :: Effect Unit
-    attach = measured "slot attached" do
-      newFragment <- createDocumentFragment
-      -- for_ fragmentChildNodes \childNode -> appendChild newFragment childNode
-      m_parent <- parentNodeImpl Just Nothing placeholderAfter
-      case m_parent of
-        Just parent -> do
-          insertBefore newFragment placeholderAfter parent
-          for_ fragmentChildNodes \childNode -> insertBefore childNode placeholderAfter parent
-        Nothing ->
-          pure unit -- FIXME
+    attach = measured' slotNo "attached" do
+      mCurrentDocumentFragment <- Ref.read documentFragmentRef
+      for_ mCurrentDocumentFragment (_ `insertBefore` placeholderAfter)
+      -- after instering documentFragment becomes empty
 
     detach :: Effect Unit
-    detach = measured "slot detached" do
-      removeAllBetween placeholderBefore placeholderAfter
+    detach = measured' slotNo "detached" do
+      currentDocumentFragment <- createDocumentFragment
+      moveAllBetween placeholderBefore placeholderAfter currentDocumentFragment
+      Ref.write (Just currentDocumentFragment) documentFragmentRef
 
-    replace :: forall x. Builder env x -> Effect x
-    replace builder = measured "slot replaced" do
-      removeAllBetween placeholderBefore placeholderAfter
-      fragment <- createDocumentFragment
-      result <- runBuilderWithUserEnv env.userEnv fragment builder
-      m_parent <- parentNodeImpl Just Nothing placeholderAfter
-      case m_parent of
-        Just parent -> do
-          insertBefore fragment placeholderAfter parent
-        Nothing ->
-          pure unit -- FIXME
-      pure result
+    -- destroy :: Effect Unit
+    -- destroy = measured' slotNo "destroyed" do
+    --   removeAllBetween placeholderBefore placeholderAfter
+    --   removeNode placeholderBefore
+    --   removeNode placeholderAfter
 
-    destroy :: Effect Unit
-    destroy = do
-      removeAllBetween placeholderBefore placeholderAfter
-      removeNode placeholderBefore
-      removeNode placeholderAfter
+    -- append :: forall a. Builder env a -> Effect (Tuple (Fragment (Builder env)) a)
+    -- append builder = measured' slotNo "fragment appended" do
+    --   fragment <- createDocumentFragment
+    --   result <- runBuilderWithUserEnv env.userEnv fragment $ newFragment builder
+    --   insertBefore fragment placeholderAfter
+    --   pure result
 
-    append :: forall a. Builder env a -> Effect (Tuple (Slot (Builder env)) a)
-    append builder = do
-      fragment <- createDocumentFragment
-      result <- runBuilderWithUserEnv env.userEnv fragment $ newSlot builder
+  built <- liftEffect $ build builder
 
-      m_parent <- parentNodeImpl Just Nothing placeholderAfter
-
-      case m_parent of
-        Just parent -> do
-          insertBefore fragment placeholderAfter parent
-        Nothing ->
-          pure unit -- FIXME
-
-      pure result
-
-  pure $ Tuple (Slot replace destroy append attach detach) result
+  pure $ Tuple (Fragment attach detach) built
+    where
+      measured' :: forall a m. Bind m ⇒ MonadEffect m ⇒ Int -> String → m a → m a
+      measured' slotNo actionName = measured ("fragment " <> show slotNo <> " " <> actionName)
 
 text :: forall env. String -> Builder env Unit
 text str = mkBuilder \env -> do
@@ -229,7 +223,7 @@ instance monoidBuilder :: Monoid a => Monoid (Builder node a) where
 populateBody :: forall a. Builder Unit a → Effect a
 populateBody builder = do
   body <- documentBody
-  runBuilder unit body builder
+  runBuilderWithUserEnv unit body builder
 
 type Attrs = Object AttrValue
 
@@ -281,19 +275,10 @@ createElementNS Nothing = createElementImpl
 setAttributes :: Node -> Attrs -> Effect Unit
 setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
 
--- | `insertBefore newNode nodeAfter parent`
--- | Insert `newNode` before `nodeAfter` in `parent`
-insertBefore :: Node -> Node -> Node -> Effect Unit
-insertBefore = insertBeforeImpl
-
--- | `appendChild newNode parent`
-appendChild :: Node -> Node -> Effect Unit
-appendChild = appendChildImpl
-
 appendChildToBody ::Node -> Effect Unit
 appendChildToBody child = do
   body <- documentBody
-  appendChildImpl child body
+  appendChild child body
 
 -- | Append a chunk of raw HTML to the end of the node.
 appendRawHtml :: String -> Node -> Effect Unit
@@ -338,11 +323,11 @@ foreign import createElementNSImpl :: Namespace -> TagName -> Effect Node
 foreign import createElementImpl :: TagName -> Effect Node
 foreign import removeAttributesImpl :: Node -> Array String -> Effect Unit
 foreign import parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> Effect (Maybe Node)
-foreign import insertBeforeImpl :: Node -> Node -> Node -> Effect Unit
-foreign import appendChildImpl :: Node -> Node -> Effect Unit
+foreign import insertBefore :: Node -> Node -> Effect Unit
+foreign import appendChild :: Node -> Node -> Effect Unit
 foreign import removeAllBetweenImpl :: Node -> Node -> Effect Unit
 foreign import appendRawHtmlImpl :: String -> Node -> Effect Unit
-foreign import moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> Effect Unit
+foreign import moveAllBetween :: Node -> Node -> Node -> Effect Unit
 foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
 foreign import preventDefault :: Event -> Effect Unit
 foreign import innerHTML :: Node -> Effect String

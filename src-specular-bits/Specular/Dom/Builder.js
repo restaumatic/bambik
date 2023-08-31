@@ -78,19 +78,17 @@ export function parentNodeImpl(Just) {
   };
 }
 
-// insertBeforeImpl :: Node -> Node -> Node -> IOSync Unit
-export function insertBeforeImpl(newNode) {
-  return function (nodeAfter) {
-    return function (parent) {
+// insertBeforeImpl :: Node -> Node -> IOSync Unit
+export function insertBefore(newNode) {
+  return function (existingNode) {
       return function () {
-        parent.insertBefore(newNode, nodeAfter);
+        existingNode.before(newNode);
       };
-    };
   };
 }
 
-// appendChildImpl :: Node -> Node -> IOSync Unit
-export function appendChildImpl(newNode) {
+// appendChild :: Node -> Node -> IOSync Unit
+export function appendChild(newNode) {
   return function (parent) {
     return function () {
       parent.appendChild(newNode);
@@ -166,18 +164,15 @@ export function appendRawHtmlImpl(html) {
   };
 }
 
-// moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> IOSync Unit
-export function moveAllBetweenInclusiveImpl(from) {
+// moveAllBetween :: Node -> Node -> Node -> IOSync Unit
+export function moveAllBetween(from) {
   return function (to) {
     return function (newParent) {
       return function () {
-        var node = from;
-        while (true) {
+        var node = from.nextSibling;
+        while (node != to) {
           var next = node.nextSibling;
           newParent.appendChild(node);
-          if (node === to) {
-            break;
-          }
           node = next;
         }
       };
