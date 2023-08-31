@@ -56,15 +56,6 @@ export function insertAsFirstChild(newNode) {
   };
 }
 
-// insertAsLastChild :: Node -> Node -> IOSync Unit
-export function insertAsLastChild(newNode) {
-  return function (parentNode) {
-    return function () {
-      parentNode.appendChild(newNode);
-    };
-  };
-}
-
 // appendChild :: Node -> Node -> IOSync Unit
 export function appendChild(newNode) {
   return function (parent) {

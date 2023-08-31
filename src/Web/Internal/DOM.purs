@@ -121,10 +121,10 @@ rawHtml html = mkBuilder \env ->
 
 elAttr :: forall a. TagName -> Attrs -> Builder a -> Builder (Tuple Node a)
 elAttr tagName attrs inner = do
-  node <- getParentNode
+  parent <- getParentNode
   node <- liftEffect $ createElementNS Nothing tagName
   liftEffect $ setAttributes node attrs
-  result <- Builder $ RIO.local (setParent node) $ unBuilder inner
+  result <- Builder $ RIO.local (setParent parent) $ unBuilder inner
   liftEffect $ appendChild node node
   pure $ Tuple node result
     where
@@ -190,11 +190,6 @@ createElementNS Nothing = createElement
 setAttributes :: Node -> Attrs -> Effect Unit
 setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
 
-appendChildToBody ::Node -> Effect Unit
-appendChildToBody child = do
-  body <- documentBody
-  appendChild child body
-
 foreign import removeNode :: Node -> Effect Unit
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
@@ -208,7 +203,7 @@ getParentNode = Builder (asks _.node)
 
 createDetachableDocumentFragment' :: forall a. Boolean -> Builder a -> Builder (Tuple DetachableDocumentFragment a)
 createDetachableDocumentFragment' isRoot builder = do
-  node <- getParentNode
+  parent <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
 
@@ -216,11 +211,9 @@ createDetachableDocumentFragment' isRoot builder = do
     placeholderAfter <- newPlaceholderAfter slotNo
 
     if isRoot
-      then insertAsFirstChild placeholderBefore node
-      else appendChild placeholderBefore node
-    if isRoot
-      then insertAsLastChild placeholderAfter node
-      else appendChild placeholderAfter node
+      then insertAsFirstChild placeholderBefore parent
+      else appendChild placeholderBefore parent
+    appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
     built <- buildInNode initialDocumentFragment builder
@@ -288,5 +281,4 @@ foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node 
 foreign import createCommentNode :: String -> Effect Node
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
-foreign import insertAsLastChild :: Node -> Node -> Effect Unit
 
