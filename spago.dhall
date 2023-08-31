@@ -20,7 +20,7 @@ to generate this file without the comments in this block.
   , "distributive"
   , "effect"
   , "either"
-  , "exceptions"
+  , "foldable-traversable"
   , "foreign-object"
   , "identity"
   , "maybe"

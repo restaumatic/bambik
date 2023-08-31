@@ -3,40 +3,27 @@ export function documentBody() {
   return document.body;
 }
 
-// copied from Browser.js
-
-// data Node :: Type
-
-// createTextNodeImpl :: String -> IOSync Node
-export function createTextNodeImpl(text) {
+// createTextNode :: String -> IOSync Node
+export function createTextNode(text) {
   return function () {
     return document.createTextNode(text);
   };
 }
 
-// createCommentNodeImpl :: String -> IOSync Node
-export function createCommentNodeImpl(text) {
+// createCommentNode :: String -> IOSync Node
+export function createCommentNode(text) {
   return function () {
     return document.createComment(text)
   }
 };
 
-// setTextImpl :: Node -> String -> IOSync Node
-export function setTextImpl(node) {
-  return function (text) {
-    return function () {
-      node.textContent = text;
-    };
-  };
-}
-
-// createDocumentFragmentImpl :: IOSync Node
-export function createDocumentFragmentImpl() {
+// createDocumentFragment :: IOSync Node
+export function createDocumentFragment() {
   return document.createDocumentFragment();
 }
 
-// createElementImpl :: TagName -> IOSync Node
-export function createElementImpl(tag) {
+// createElement :: TagName -> IOSync Node
+export function createElement(tag) {
   return function () {
     return document.createElement(tag);
   };
@@ -51,74 +38,39 @@ export function createElementNSImpl(namespace) {
   };
 }
 
-// removeAttributesImpl :: Node -> Array String -> IOSync Unit
-export function removeAttributesImpl(node) {
-  return function (names) {
+// insertBeforeImpl :: Node -> Node -> IOSync Unit
+export function insertBefore(newNode) {
+  return function (existingNode) {
     return function () {
-      names.forEach(function (name) {
-        node.removeAttribute(name);
-      });
+      existingNode.before(newNode);
     };
   };
 }
 
-// parentNodeImpl :: (Node -> Maybe Node) -> Maybe Node -> Node -> IOSync (Maybe Node)
-export function parentNodeImpl(Just) {
-  return function (Nothing) {
-    return function (node) {
-      return function () {
-        var parent = node.parentNode;
-        if (parent !== null) {
-          return Just(parent);
-        } else {
-          return Nothing;
-        }
-      };
+// insertAsFirstChild :: Node -> Node -> IOSync Unit
+export function insertAsFirstChild(newNode) {
+  return function (parentNode) {
+    return function () {
+      parentNode.insertBefore(newNode, parentNode.firstChild);
     };
   };
 }
 
-// insertBeforeImpl :: Node -> Node -> Node -> IOSync Unit
-export function insertBeforeImpl(newNode) {
-  return function (nodeAfter) {
-    return function (parent) {
-      return function () {
-        parent.insertBefore(newNode, nodeAfter);
-      };
+// insertAsLastChild :: Node -> Node -> IOSync Unit
+export function insertAsLastChild(newNode) {
+  return function (parentNode) {
+    return function () {
+      parentNode.appendChild(newNode);
     };
   };
 }
 
-// appendChildImpl :: Node -> Node -> IOSync Unit
-export function appendChildImpl(newNode) {
+// appendChild :: Node -> Node -> IOSync Unit
+export function appendChild(newNode) {
   return function (parent) {
     return function () {
       parent.appendChild(newNode);
     };
-  };
-}
-
-// removeAllBetweenImpl :: Node -> Node -> IOSync Unit
-export function removeAllBetweenImpl(from) {
-  return function (to) {
-    return function () {
-      if (!from.parentNode) {
-        return;
-      }
-      var node = from.nextSibling;
-      while (node && node !== to) {
-        var next = node.nextSibling;
-        node.parentNode.removeChild(node);
-        node = next;
-      }
-    };
-  };
-}
-
-// innerHTML :: Node -> IOSync String
-export function innerHTML(node) {
-  return function () {
-    return node.innerHTML;
   };
 }
 
@@ -139,8 +91,8 @@ export function addEventListenerImpl(eventType) {
   };
 }
 
-// appendRawHtmlImpl :: String -> Node -> IOSync Unit
-export function appendRawHtmlImpl(html) {
+// appendRawHtml :: String -> Node -> IOSync Unit
+export function appendRawHtml(html) {
   return function (parent) {
     return function () {
       // According to https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
@@ -166,18 +118,17 @@ export function appendRawHtmlImpl(html) {
   };
 }
 
-// moveAllBetweenInclusiveImpl :: Node -> Node -> Node -> IOSync Unit
-export function moveAllBetweenInclusiveImpl(from) {
+// moveAllNodesBetweenSiblings :: Node -> Node -> Node -> IOSync Unit
+export function moveAllNodesBetweenSiblings(from) {
   return function (to) {
     return function (newParent) {
       return function () {
-        var node = from;
-        while (true) {
-          var next = node.nextSibling;
-          newParent.appendChild(node);
-          if (node === to) {
-            break;
-          }
+        const parent = from.parentNode;
+        var node = from.nextSibling;
+        var next = null;
+        while (node !== to) {
+          next = node.nextSibling;
+          newParent.appendChild(parent.removeChild(node));
           node = next;
         }
       };
@@ -185,23 +136,28 @@ export function moveAllBetweenInclusiveImpl(from) {
   };
 }
 
-// preventDefault :: Event -> IOSync Unit
-export function preventDefault(event) {
-  return function () {
-    return event.preventDefault();
+// removeAllNodesBetweenSiblings :: Node -> Node -> IOSync Unit
+export function removeAllNodesBetweenSiblings(from) {
+  return function (to) {
+    return function () {
+      const parent = from.parentNode;
+      var node = from.nextSibling;
+      var next = null;
+      while (node !== to) {
+        next = node.nextSibling;
+        parent.removeChild(node)
+        node = next;
+      }
+    };
   };
 }
 
 // removeNode :: Node -> Effect Unit
 export function removeNode(node) {
   return function () {
-    if (node.parentNode) {
-      node.parentNode.removeChild(node);
-    }
+    node.parentNode.removeChild(node);
   };
 }
-
-// copied from Web.js
 
 // getValue :: Node -> IOSync String
 export function getValue(node) {
@@ -243,5 +199,3 @@ export function setAttributesImpl(node, attrs) {
     }
   }
 }
-
-

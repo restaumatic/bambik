@@ -11,7 +11,6 @@ module Data.Profunctor.Optics
   , Prism
   , Prism'
   , Projection
-  , constant
   , constructor
   , field
   , iso
@@ -69,6 +68,8 @@ iso' mapin mapout = dimap mapin mapout
 projection :: forall a s. (s -> a) -> Projection a s
 projection f = dimap f identity
 
+-- depracated
+-- TODO EC: (const None) is not right
 constant :: forall a b s. a -> ChOptic a b s b -- Constant a
 constant a = dimap (const a) identity >>> chmap (const None) identity
 

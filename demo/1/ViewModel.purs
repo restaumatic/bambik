@@ -192,58 +192,58 @@ submitOrder = log <<< case _ of
     (Delivery { address }) -> "delivery|\"" <> address <> "\""
   ]
 
-firstNameCaption :: Constant String
-firstNameCaption = constant "First name"
+firstNameCaption :: forall p a. ChProfunctor p => p String String -> p a a
+firstNameCaption text = text # fixed "First name"
 
-lastNameCaption :: Constant String
-lastNameCaption = constant "Last name"
+lastNameCaption :: forall p a. ChProfunctor p => p String String -> p a a
+lastNameCaption text = text # fixed "Last name"
 
-forenameCaption :: Constant String
-forenameCaption = constant "Forename"
+forenameCaption :: forall p a. ChProfunctor p => p String String -> p a a
+forenameCaption text = text # fixed "Forename"
 
-surnameCaption :: Constant String
-surnameCaption = constant "Surname"
+surnameCaption :: forall p a. ChProfunctor p => p String String -> p a a
+surnameCaption text = text # fixed "Surname"
 
-shortCaption :: Constant String
-shortCaption = constant "Short"
+shortCaption :: forall p a. ChProfunctor p => p String String -> p a a
+shortCaption text = text # fixed "Short"
 
-uniqueCaption :: Constant String
-uniqueCaption = constant "Unique"
+uniqueCaption :: forall p a. ChProfunctor p => p String String -> p a a
+uniqueCaption text = text # fixed "Unique"
 
-idCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+idCaption :: forall p a. ChProfunctor p => p String String -> p a a
 idCaption text = text # fixed "Identifier"
 
-shortIdCaption :: Constant String
-shortIdCaption = constant "Short ID"
+shortIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
+shortIdCaption text = text # fixed "Short ID"
 
-uniqueIdCaption :: Constant String
-uniqueIdCaption = constant "Unique ID"
+uniqueIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
+uniqueIdCaption text = text # fixed "Unique ID"
 
-paidCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+paidCaption :: forall p a. ChProfunctor p => p String String -> p a a
 paidCaption text = text # fixed "Paid"
 
-dineInCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+dineInCaption :: forall p a. ChProfunctor p => p String String -> p a a
 dineInCaption text = text # fixed "Dine in"
 
-takeawayCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+takeawayCaption :: forall p a. ChProfunctor p => p String String -> p a a
 takeawayCaption text = text # fixed "Takeaway"
 
-deliveryCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+deliveryCaption :: forall p a. ChProfunctor p => p String String -> p a a
 deliveryCaption text = text # fixed "Delivery"
 
-tableCaption :: Constant String
-tableCaption = constant "Table"
+tableCaption :: forall p a. ChProfunctor p => p String String -> p a a
+tableCaption text = text # fixed "Table"
 
-timeCaption :: Constant String
-timeCaption = constant "Time"
+timeCaption :: forall p a b. ChProfunctor p => p String String -> p a b
+timeCaption text = text # fixed "Time"
 
-addressCaption :: Constant String
-addressCaption = constant "Address"
+addressCaption :: forall p a. ChProfunctor p => p String String -> p a a
+addressCaption text = text # fixed "Address"
 
-fullfilmentCaption :: Constant String
-fullfilmentCaption = constant "Fullfilment"
+fullfilmentCaption :: forall p a. ChProfunctor p => p String String -> p a a
+fullfilmentCaption text = text # fixed "Fullfilment"
 
-orderCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+orderCaption :: forall p a. ChProfunctor p => p String String -> p a a
 orderCaption text = text # fixed "Order"
 
 submitOrderCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
@@ -257,23 +257,21 @@ orderSubmittedCaption text =
   ^ text # shortId
   ^ text # fixed " submitted" )
 
---
-
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
   { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
 
-orderIdCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+orderIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
 orderIdCaption text = text # fixed "Order ID"
 
-customerCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+customerCaption :: forall p a. ChProfunctor p => p String String -> p a a
 customerCaption text = text # fixed "Customer"
 
-informalCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+informalCaption :: forall p a. ChProfunctor p => p String String -> p a a
 informalCaption text = text # fixed "Informal"
 
-formalCaption :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+formalCaption :: forall p a. ChProfunctor p => p String String -> p a a
 formalCaption text = text # fixed "Formal"
 
 orderIdText :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p OrderId OrderId
@@ -282,7 +280,7 @@ orderIdText text = text # short ^ text # fixed " (" ^ text # unique ^ text # fix
 orderTitle :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
 orderTitle text = text # fixed "Order " ^ text # shortId
 
-areYouSureText :: forall p a. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p a a
+areYouSureText :: forall p a. ChProfunctor p => p String String -> p a a
 areYouSureText text = text # fixed "Are you sure?"
 
 orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
