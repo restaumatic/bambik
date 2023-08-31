@@ -128,8 +128,9 @@ writeToTextNode :: WritableTextNode -> String -> Effect Unit
 writeToTextNode (WritableTextNode write) = write
 
 data DetachableDocumentFragment = DetachableDocumentFragment
-  (Effect Unit) -- ^ attach
-  (Effect Unit) -- ^ detach
+  { attach :: Effect Unit
+  , detach :: Effect Unit
+  }
 
 createDetachableRootDocumentFragment :: forall env a. Builder env a -> (a -> Effect Unit) -> Builder env Unit
 createDetachableRootDocumentFragment builder initializer = measured "initialized" do
@@ -177,16 +178,16 @@ createDetachableDocumentFragment' isRoot builder = do
         moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
         Ref.write documentFragment documentFragmentRef
 
-    pure $ Tuple (DetachableDocumentFragment attach detach) built
+    pure $ Tuple (DetachableDocumentFragment { attach, detach }) built
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
       measured' slotNo actionName = measured ("document fragment " <> show slotNo <> " " <> actionName)
 
 attachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
-attachDocumentFragment (DetachableDocumentFragment attach _) = attach
+attachDocumentFragment (DetachableDocumentFragment { attach }) = attach
 
 detachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
-detachDocumentFragment (DetachableDocumentFragment _ detach) = detach
+detachDocumentFragment (DetachableDocumentFragment { detach }) = detach
 
 --
 
