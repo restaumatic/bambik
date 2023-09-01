@@ -95,7 +95,7 @@ createTextValue = do
       }
       where
         measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-        measured' slotNo actionName = measured $ "text value " <> show slotNo <> " " <> actionName
+        measured' slotNo actionName = measured $ "slot " <> show slotNo <> ": text value " <> actionName
 
 writeTextValue :: TextValue -> String -> Effect Unit
 writeTextValue (TextValue { write }) = write
@@ -225,7 +225,7 @@ createComponent' removePrecedingSiblingNodes dom = do
     pure $ Tuple (Component { attach, detach }) built
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-      measured' slotNo actionName = measured ("component " <> show slotNo <> " " <> actionName)
+      measured' slotNo actionName = measured $ "slot " <> show slotNo <> ": component " <> actionName
 
 
 logIndent :: Ref.Ref Int

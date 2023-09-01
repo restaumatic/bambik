@@ -53,6 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventListener, attachComponent, attr, initializeInBody, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
@@ -69,36 +70,36 @@ instance Profunctor Widget where
 
 instance Strong Widget where
   first w = Widget \callback -> do
-    maandbRef <- liftEffect $ Ref.new Nothing
+    aandbRef <- liftEffect $ Ref.new $ unsafeCoerce unit
     update <- unwrapWidget w \cha -> do
-      maandb <- Ref.read maandbRef
-      for_ maandb \(Tuple _ b) -> callback $ (\a -> Tuple a b) <$> cha
+      Tuple _ b <- Ref.read aandbRef
+      callback ((\a -> Tuple a b) <$> cha)
     pure \chab@(Changed _ aandb) -> do
-      Ref.write (Just aandb) maandbRef
+      Ref.write aandb aandbRef
       case chab of
         Changed None _ -> mempty
         Changed _ _ -> update $ fst <$> chab
   second w = Widget \callback -> do
-    maandbRef <- liftEffect $ Ref.new Nothing
+    aandbRef <- liftEffect $ Ref.new $ unsafeCoerce unit
     update <- unwrapWidget w \chb -> do
-      maandb <- Ref.read maandbRef
-      for_ maandb \(Tuple a _) -> callback $ (\b -> Tuple a b) <$> chb
+      Tuple a _ <- Ref.read aandbRef
+      callback $ (\b -> Tuple a b) <$> chb
     pure \chab@(Changed _ aandb) -> do
-      Ref.write (Just aandb) maandbRef
+      Ref.write aandb aandbRef
       case chab of
         Changed None _ -> mempty
         Changed _ _ -> update $ snd <$> chab
 
 instance Choice Widget where
   left w = Widget \callback -> do
-    maorbRef <- liftEffect $ Ref.new Nothing
+    aorbRef <- liftEffect $ Ref.new $ unsafeCoerce unit
     Tuple fragment update <- createComponent $ unwrapWidget w \cha -> do
-      maorb <- Ref.read maorbRef
-      case maorb of
-        Just (Left _) -> callback $ Left <$> cha
+      aorb <- Ref.read aorbRef
+      case aorb of
+        Left _ -> callback $ Left <$> cha
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
-      moldaorb <- Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
+      oldaorb <- Ref.modify' (\oldState -> { state: aorb, value: oldState}) aorbRef
       case chaorb of
         Changed None _ -> mempty
         Changed _ (Left a) -> do
@@ -133,7 +134,7 @@ instance Choice Widget where
 
 instance ProfunctorPlus Widget where
   proplus c1 c2 = Widget \updateParent -> do
-    -- TODO how to get rid of thess refs?
+    -- TODO EC how to get rid of thess refs?
     mUpdate1Ref <- liftEffect $ Ref.new Nothing
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
     update1 <- unwrapWidget c1 \cha@(Changed _ a) -> do
