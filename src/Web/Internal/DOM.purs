@@ -51,11 +51,10 @@ import Specular.Internal.RIO as RIO
 import Unsafe.Coerce (unsafeCoerce)
 
 
-newtype Builder a = Builder (RIO (BuilderEnv Unit) a)
+newtype Builder a = Builder (RIO BuilderEnv a)
 
-type BuilderEnv env =
+type BuilderEnv =
   { parent :: Node
-  , userEnv :: env
   }
 
 derive newtype instance functorBuilder :: Functor Builder
@@ -65,14 +64,14 @@ derive newtype instance bindBuilder :: Bind Builder
 derive newtype instance monadBuilder :: Monad Builder
 derive newtype instance monadEffectBuilder :: MonadEffect Builder
 
-mkBuilder :: forall a. (BuilderEnv Unit -> Effect a) -> Builder a
+mkBuilder :: forall a. (BuilderEnv -> Effect a) -> Builder a
 mkBuilder = Builder <<< rio
 
-unBuilder :: forall a. Builder a -> RIO (BuilderEnv Unit) a
+unBuilder :: forall a. Builder a -> RIO BuilderEnv a
 unBuilder (Builder f) = f
 
 buildInNode :: forall a. Node -> Builder a -> Effect a
-buildInNode node (Builder f) = runRIO { parent: node, userEnv: unit } f
+buildInNode node (Builder f) = runRIO { parent: node } f
 
 data WritableTextNode = WritableTextNode (String -> Effect Unit)
 
