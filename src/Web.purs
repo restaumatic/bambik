@@ -102,7 +102,7 @@ instance Choice Widget where
       case chaorb of
         Changed None _ -> mempty
         Changed _ (Left a) -> do
-          update $ a <$ chaorb -- first update and only then attach TODO EC
+          update $ a <$ chaorb -- first update and only then possibly attach
           case moldaorb of
             (Just (Left _)) -> mempty
             _ -> attachComponent fragment
@@ -122,7 +122,7 @@ instance Choice Widget where
       case chaorb of
         Changed None _ -> mempty
         Changed _ (Right b) -> do
-          update $ b <$ chaorb
+          update $ b <$ chaorb  -- first update and only then possibly attach
           case moldaorb of
             (Just (Right _)) -> mempty
             _ -> attachComponent fragment
