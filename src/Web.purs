@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventListener, attachDocumentFragment, attr, buildInDocumentBody, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventListener, attachComponent, attr, initializeInBody, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -92,7 +92,7 @@ instance Strong Widget where
 instance Choice Widget where
   left w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple fragment update <- createDetachableDocumentFragment $ unwrapWidget w \cha -> do
+    Tuple fragment update <- createComponent $ unwrapWidget w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> callback $ Left <$> cha
@@ -105,14 +105,14 @@ instance Choice Widget where
           update $ a <$ chaorb -- first update and only then attach TODO EC
           case moldaorb of
             (Just (Left _)) -> mempty
-            _ -> attachDocumentFragment fragment
+            _ -> attachComponent fragment
         Changed _ (Right _) -> do
           case moldaorb of
-            (Just (Left _)) -> detachDocumentFragment fragment
+            (Just (Left _)) -> detachComponent fragment
             _ -> mempty
   right w = Widget \callback -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple fragment update <- createDetachableDocumentFragment $ unwrapWidget w \chb -> do
+    Tuple fragment update <- createComponent $ unwrapWidget w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> callback $ Right <$> chb
@@ -125,10 +125,10 @@ instance Choice Widget where
           update $ b <$ chaorb
           case moldaorb of
             (Just (Right _)) -> mempty
-            _ -> attachDocumentFragment fragment
+            _ -> attachComponent fragment
         Changed _ (Left _) -> do
           case moldaorb of
-            (Just (Right _)) -> detachDocumentFragment fragment
+            (Just (Right _)) -> detachComponent fragment
             _ -> mempty
 
 instance ProfunctorPlus Widget where
@@ -184,7 +184,7 @@ instance Semigroupoid Widget where
     -- udpate1 <- unwrapWidget w2 \chc -> do
     --   mempty
     -- unwrapWIdget
-    -- liftEffect $ attachDocumentFragment fragment
+    -- liftEffect $ attachComponent fragment
     pure update1
       -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
 
@@ -192,10 +192,10 @@ instance Semigroupoid Widget where
 
 text :: forall a. Widget String a
 text = Widget \_ -> do
-  node <- createWritableTextNode
+  textValue <- createTextValue
   pure case _ of
     Changed None _ -> mempty
-    Changed _ string -> writeToTextNode node string
+    Changed _ string -> writeTextValue textValue string
 
 html :: forall a b. String -> Widget a b
 html h = Widget \_ -> do
@@ -355,7 +355,7 @@ h6' content = h6 mempty mempty mempty content
 -- Entry point
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody w i = buildInDocumentBody (unwrapWidget w mempty) \update -> update (Changed Some i)
+runWidgetInBody w i = initializeInBody (unwrapWidget w mempty) \update -> update (Changed Some i)
 
 runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> DOM (i -> Effect Unit)
 runWidgetInBuilder widget outViewModelCallback = do

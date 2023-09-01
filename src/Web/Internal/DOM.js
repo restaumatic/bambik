@@ -190,3 +190,12 @@ export function setAttributesImpl(node, attrs) {
     }
   }
 }
+
+// setNodeValue :: Node -> String -> Effect Unit
+export function setTextNodeValue(node) {
+  return function (value) {
+    return function () {
+      node.nodeValue = value;
+    };
+  };
+}

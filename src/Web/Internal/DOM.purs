@@ -1,31 +1,30 @@
 module Web.Internal.DOM
   ( AttrValue(..)
   , Attrs
+  , Component
   , DOM
-  , DetachableDocumentFragment
   , Event
   , Node
   , TagName
-  , WritableTextNode(..)
+  , TextValue(..)
   , addEventListener
-  , attachDocumentFragment
+  , attachComponent
   , attr
-  , buildInDocumentBody
   , classes
-  , createDetachableDocumentFragment
+  , createComponent
   , createElementNS
-  , createWritableTextNode
-  , detachDocumentFragment
+  , createTextValue
+  , detachComponent
   , elAttr
   , getChecked
   , getValue
+  , initializeInBody
   , rawHtml
   , removeNode
-  , buildInNode
   , setAttributes
   , setChecked
   , setValue
-  , writeToTextNode
+  , writeTextValue
   )
   where
 
@@ -63,54 +62,57 @@ derive newtype instance Bind DOM
 derive newtype instance Monad DOM
 derive newtype instance MonadEffect DOM
 
-buildInDocumentBody :: forall a. DOM a → (a -> Effect Unit) -> Effect Unit
-buildInDocumentBody dom initializer =  measured "initialized" do
+initializeInBody :: forall a. DOM a → (a -> Effect Unit) -> Effect Unit
+initializeInBody dom initializer =  measured "initialized" do
   body <- documentBody
-  buildInNode body do
-    Tuple documentFragment result <- createDetachableDocumentFragment' true dom
+  initializeInNode body do
+    Tuple documentComponent result <- createComponent' true dom
     liftEffect $ do
       initializer result
-      attachDocumentFragment documentFragment
+      attachComponent documentComponent
 
-buildInNode :: forall a. Node -> DOM a -> Effect a
-buildInNode node (DOM f) = runRIO { parent: node } f
+initializeInNode :: forall a. Node -> DOM a -> Effect a
+initializeInNode node (DOM f) = runRIO { parent: node } f
 
-data WritableTextNode = WritableTextNode (String -> Effect Unit)
+data TextValue = TextValue
+  { write :: String -> Effect Unit
+  }
 
-createWritableTextNode :: DOM WritableTextNode
-createWritableTextNode = do
-  node <- getParentNode
+createTextValue :: DOM TextValue
+createTextValue = do
+  parent <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
     placeholderBefore <- newPlaceholderBefore slotNo
     placeholderAfter <- newPlaceholderAfter slotNo
-    appendChild placeholderBefore node
-    appendChild placeholderAfter node
-    pure $ WritableTextNode \str -> measured' slotNo "written" do
-      newNode <- createTextNode str
-      removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
-      newNode `insertBefore` placeholderAfter
+    appendChild placeholderBefore parent
+    node <- createTextNode mempty
+    appendChild node parent
+    appendChild placeholderAfter parent
+    pure $ TextValue
+      { write: \str -> measured' slotNo "written" do
+        setTextNodeValue node str
+      }
       where
         measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-        measured' slotNo actionName = measured $ "text node " <> show slotNo <> " " <> actionName
+        measured' slotNo actionName = measured $ "text value " <> show slotNo <> " " <> actionName
 
+writeTextValue :: TextValue -> String -> Effect Unit
+writeTextValue (TextValue { write }) = write
 
-writeToTextNode :: WritableTextNode -> String -> Effect Unit
-writeToTextNode (WritableTextNode write) = write
-
-data DetachableDocumentFragment = DetachableDocumentFragment
+data Component = Component
   { attach :: Effect Unit
   , detach :: Effect Unit
   }
 
-createDetachableDocumentFragment :: forall a. DOM a -> DOM (Tuple DetachableDocumentFragment a)
-createDetachableDocumentFragment = createDetachableDocumentFragment' false
+createComponent :: forall a. DOM a -> DOM (Tuple Component a)
+createComponent = createComponent' false
 
-attachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
-attachDocumentFragment (DetachableDocumentFragment { attach }) = attach
+attachComponent :: Component -> Effect Unit
+attachComponent (Component { attach }) = attach
 
-detachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
-detachDocumentFragment (DetachableDocumentFragment { detach }) = detach
+detachComponent :: Component -> Effect Unit
+detachComponent (Component { detach }) = detach
 
 --
 
@@ -128,13 +130,11 @@ elAttr tagName attrs (DOM dom) = do
   liftEffect $ appendChild node parent
   pure $ Tuple node result
 
-instance semigroupBuilder :: Semigroup a => Semigroup (DOM a) where
+instance Semigroup a => Semigroup (DOM a) where
   append = lift2 append
 
-instance monoidBuilder :: Monoid a => Monoid (DOM a) where
+instance Monoid a => Monoid (DOM a) where
   mempty = pure mempty
-
-
 
 type Attrs = Object AttrValue
 
@@ -191,8 +191,8 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 getParentNode :: DOM Node
 getParentNode = DOM (asks _.parent)
 
-createDetachableDocumentFragment' :: forall a. Boolean -> DOM a -> DOM (Tuple DetachableDocumentFragment a)
-createDetachableDocumentFragment' removePrecedingSiblingNodes dom = do
+createComponent' :: forall a. Boolean -> DOM a -> DOM (Tuple Component a)
+createComponent' removePrecedingSiblingNodes dom = do
   parent <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
@@ -204,7 +204,7 @@ createDetachableDocumentFragment' removePrecedingSiblingNodes dom = do
     appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
-    built <- buildInNode initialDocumentFragment dom
+    built <- initializeInNode initialDocumentFragment dom
 
     documentFragmentRef <- Ref.new initialDocumentFragment
 
@@ -222,10 +222,10 @@ createDetachableDocumentFragment' removePrecedingSiblingNodes dom = do
         moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
         Ref.write documentFragment documentFragmentRef
 
-    pure $ Tuple (DetachableDocumentFragment { attach, detach }) built
+    pure $ Tuple (Component { attach, detach }) built
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-      measured' slotNo actionName = measured ("document documentFragment " <> show slotNo <> " " <> actionName)
+      measured' slotNo actionName = measured ("component " <> show slotNo <> " " <> actionName)
 
 
 logIndent :: Ref.Ref Int
@@ -268,4 +268,4 @@ foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node 
 foreign import createCommentNode :: String -> Effect Node
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
-
+foreign import setTextNodeValue :: Node -> String -> Effect Unit
