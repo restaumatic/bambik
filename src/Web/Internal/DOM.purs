@@ -54,7 +54,7 @@ import Unsafe.Coerce (unsafeCoerce)
 newtype Builder a = Builder (RIO (BuilderEnv Unit) a)
 
 type BuilderEnv env =
-  { node :: Node
+  { parent :: Node
   , userEnv :: env
   }
 
@@ -72,9 +72,7 @@ unBuilder :: forall a. Builder a -> RIO (BuilderEnv Unit) a
 unBuilder (Builder f) = f
 
 buildInNode :: forall a. Node -> Builder a -> Effect a
-buildInNode node (Builder f) = do
-  let env = { node, userEnv: unit }
-  runRIO env f
+buildInNode node (Builder f) = runRIO { parent: node, userEnv: unit } f
 
 data WritableTextNode = WritableTextNode (String -> Effect Unit)
 
@@ -117,19 +115,16 @@ detachDocumentFragment (DetachableDocumentFragment { detach }) = detach
 
 rawHtml :: String -> Builder Unit
 rawHtml html = mkBuilder \env ->
-  appendRawHtml html env.node
+  appendRawHtml html env.parent
 
 elAttr :: forall a. TagName -> Attrs -> Builder a -> Builder (Tuple Node a)
 elAttr tagName attrs inner = do
   parent <- getParentNode
   node <- liftEffect $ createElementNS Nothing tagName
   liftEffect $ setAttributes node attrs
-  result <- Builder $ RIO.local (setParent parent) $ unBuilder inner
-  liftEffect $ appendChild node node
+  result <- Builder $ RIO.local (\env -> env { parent = node }) $ unBuilder inner
+  liftEffect $ appendChild node parent
   pure $ Tuple node result
-    where
-      setParent :: Node -> BuilderEnv Unit -> BuilderEnv Unit
-      setParent node env = env { node = node }
 
 instance semigroupBuilder :: Semigroup a => Semigroup (Builder a) where
   append = lift2 append
@@ -199,7 +194,7 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 -- private
 
 getParentNode :: Builder Node
-getParentNode = Builder (asks _.node)
+getParentNode = Builder (asks _.parent)
 
 createDetachableDocumentFragment' :: forall a. Boolean -> Builder a -> Builder (Tuple DetachableDocumentFragment a)
 createDetachableDocumentFragment' isRoot builder = do
