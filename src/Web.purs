@@ -53,11 +53,11 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Web.Internal.DOM (Attrs, Builder, Node, TagName, addEventListener, attachDocumentFragment, attr, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, buildInDocumentBody, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventListener, attachDocumentFragment, attr, buildInDocumentBody, createDetachableDocumentFragment, createWritableTextNode, detachDocumentFragment, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeToTextNode)
 
-newtype Widget i o = Widget ((Changed o -> Effect Unit) -> Builder (Changed i -> Effect Unit))
+newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
-unwrapWidget :: forall i o. Widget i o -> (Changed o -> Effect Unit) -> Builder (Changed i -> Effect Unit)
+unwrapWidget :: forall i o. Widget i o -> (Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w
 
 -- Capabilites
@@ -357,7 +357,7 @@ h6' content = h6 mempty mempty mempty content
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody w i = buildInDocumentBody (unwrapWidget w mempty) \update -> update (Changed Some i)
 
-runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> Builder (i -> Effect Unit)
+runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> DOM (i -> Effect Unit)
 runWidgetInBuilder widget outViewModelCallback = do
   update <- unwrapWidget widget \(Changed _ o) -> outViewModelCallback o
   pure $ update <<< Changed Some

@@ -1,7 +1,7 @@
 module Web.Internal.DOM
   ( AttrValue(..)
   , Attrs
-  , Builder
+  , DOM
   , DetachableDocumentFragment
   , Event
   , Node
@@ -46,36 +46,38 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Specular.Internal.RIO (RIO, rio, runRIO)
+import Specular.Internal.RIO (RIO, runRIO)
 import Specular.Internal.RIO as RIO
 import Unsafe.Coerce (unsafeCoerce)
 
+newtype DOM a = DOM (RIO DOMEnv a) -- DOMBuilder? DOMFragment ? DocumentFragment? HTMLFragment?
 
-newtype Builder a = Builder (RIO BuilderEnv a)
-
-type BuilderEnv =
+type DOMEnv =
   { parent :: Node
   }
 
-derive newtype instance functorBuilder :: Functor Builder
-derive newtype instance applyBuilder :: Apply Builder
-derive newtype instance applicativeBuilder :: Applicative Builder
-derive newtype instance bindBuilder :: Bind Builder
-derive newtype instance monadBuilder :: Monad Builder
-derive newtype instance monadEffectBuilder :: MonadEffect Builder
+derive newtype instance Functor DOM
+derive newtype instance Apply DOM
+derive newtype instance Applicative DOM
+derive newtype instance Bind DOM
+derive newtype instance Monad DOM
+derive newtype instance MonadEffect DOM
 
-mkBuilder :: forall a. (BuilderEnv -> Effect a) -> Builder a
-mkBuilder = Builder <<< rio
+buildInDocumentBody :: forall a. DOM a → (a -> Effect Unit) -> Effect Unit
+buildInDocumentBody dom initializer =  measured "initialized" do
+  body <- documentBody
+  buildInNode body do
+    Tuple documentFragment result <- createDetachableDocumentFragment' true dom
+    liftEffect $ do
+      initializer result
+      attachDocumentFragment documentFragment
 
-unBuilder :: forall a. Builder a -> RIO BuilderEnv a
-unBuilder (Builder f) = f
-
-buildInNode :: forall a. Node -> Builder a -> Effect a
-buildInNode node (Builder f) = runRIO { parent: node } f
+buildInNode :: forall a. Node -> DOM a -> Effect a
+buildInNode node (DOM f) = runRIO { parent: node } f
 
 data WritableTextNode = WritableTextNode (String -> Effect Unit)
 
-createWritableTextNode :: Builder WritableTextNode
+createWritableTextNode :: DOM WritableTextNode
 createWritableTextNode = do
   node <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
@@ -101,7 +103,7 @@ data DetachableDocumentFragment = DetachableDocumentFragment
   , detach :: Effect Unit
   }
 
-createDetachableDocumentFragment :: forall a. Builder a -> Builder (Tuple DetachableDocumentFragment a)
+createDetachableDocumentFragment :: forall a. DOM a -> DOM (Tuple DetachableDocumentFragment a)
 createDetachableDocumentFragment = createDetachableDocumentFragment' false
 
 attachDocumentFragment :: DetachableDocumentFragment -> Effect Unit
@@ -112,33 +114,27 @@ detachDocumentFragment (DetachableDocumentFragment { detach }) = detach
 
 --
 
-rawHtml :: String -> Builder Unit
-rawHtml html = mkBuilder \env ->
-  appendRawHtml html env.parent
+rawHtml :: String -> DOM Unit
+rawHtml html = do
+  parent <- getParentNode
+  liftEffect $ appendRawHtml html parent
 
-elAttr :: forall a. TagName -> Attrs -> Builder a -> Builder (Tuple Node a)
-elAttr tagName attrs inner = do
+elAttr :: forall a. TagName -> Attrs -> DOM a -> DOM (Tuple Node a)
+elAttr tagName attrs (DOM dom) = do
   parent <- getParentNode
   node <- liftEffect $ createElementNS Nothing tagName
   liftEffect $ setAttributes node attrs
-  result <- Builder $ RIO.local (\env -> env { parent = node }) $ unBuilder inner
+  result <- DOM $ RIO.local (\env -> env { parent = node }) dom
   liftEffect $ appendChild node parent
   pure $ Tuple node result
 
-instance semigroupBuilder :: Semigroup a => Semigroup (Builder a) where
+instance semigroupBuilder :: Semigroup a => Semigroup (DOM a) where
   append = lift2 append
 
-instance monoidBuilder :: Monoid a => Monoid (Builder a) where
+instance monoidBuilder :: Monoid a => Monoid (DOM a) where
   mempty = pure mempty
 
-buildInDocumentBody :: forall a. Builder a → (a -> Effect Unit) -> Effect Unit
-buildInDocumentBody builder initializer =  measured "initialized" do
-  body <- documentBody
-  buildInNode body do
-    Tuple fragment built <- createDetachableDocumentFragment' true builder
-    liftEffect $ do
-      initializer built
-      attachDocumentFragment fragment
+
 
 type Attrs = Object AttrValue
 
@@ -192,11 +188,11 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 
 -- private
 
-getParentNode :: Builder Node
-getParentNode = Builder (asks _.parent)
+getParentNode :: DOM Node
+getParentNode = DOM (asks _.parent)
 
-createDetachableDocumentFragment' :: forall a. Boolean -> Builder a -> Builder (Tuple DetachableDocumentFragment a)
-createDetachableDocumentFragment' isRoot builder = do
+createDetachableDocumentFragment' :: forall a. Boolean -> DOM a -> DOM (Tuple DetachableDocumentFragment a)
+createDetachableDocumentFragment' removePrecedingSiblingNodes dom = do
   parent <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
@@ -204,22 +200,19 @@ createDetachableDocumentFragment' isRoot builder = do
     placeholderBefore <- newPlaceholderBefore slotNo
     placeholderAfter <- newPlaceholderAfter slotNo
 
-    if isRoot
-      then insertAsFirstChild placeholderBefore parent
-      else appendChild placeholderBefore parent
+    (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
     appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
-    built <- buildInNode initialDocumentFragment builder
+    built <- buildInNode initialDocumentFragment dom
 
     documentFragmentRef <- Ref.new initialDocumentFragment
 
     let
       attach :: Effect Unit
       attach = measured' slotNo "attached" do
-        when isRoot do
-          removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
-        documentFragment <- Ref.modify' (\fragment -> { state: unsafeCoerce unit, value: fragment}) documentFragmentRef
+        removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+        documentFragment <- Ref.modify' (\documentFragment -> { state: unsafeCoerce unit, value: documentFragment}) documentFragmentRef
           -- inserting documentFragment makes it empty but just in case not keeping reference to it while it's not needed
         documentFragment `insertBefore` placeholderAfter
 
@@ -232,7 +225,7 @@ createDetachableDocumentFragment' isRoot builder = do
     pure $ Tuple (DetachableDocumentFragment { attach, detach }) built
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-      measured' slotNo actionName = measured ("document fragment " <> show slotNo <> " " <> actionName)
+      measured' slotNo actionName = measured ("document documentFragment " <> show slotNo <> " " <> actionName)
 
 
 logIndent :: Ref.Ref Int
