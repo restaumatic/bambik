@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventListener, attachComponent, attr, initializeInBody, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, initializeInBody, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -205,7 +205,7 @@ html h = Widget \_ -> do
 textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
 textInput attrs = Widget \callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
-  liftEffect $ addEventListener "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
+  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
   pure case _ of
     Changed None _ -> mempty
     Changed _ newa -> setValue node newa
@@ -213,7 +213,7 @@ textInput attrs = Widget \callbackcha -> do
 checkbox :: Attrs -> Widget Boolean Boolean
 checkbox attrs = Widget \callbackcha -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ addEventListener "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
+  liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
   pure case _ of
     Changed None _ -> mempty
     Changed _ newa -> setChecked node newa
@@ -228,7 +228,7 @@ radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
 radioButton attrs = Widget \callbackchma -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
+  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
   pure case _ of
     Changed None _ -> mempty
     Changed _ Nothing -> setChecked node false

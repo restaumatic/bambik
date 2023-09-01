@@ -65,8 +65,8 @@ export function appendChild(newNode) {
   };
 }
 
-// addEventListenerImpl :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
-export function addEventListenerImpl(eventType) {
+// addEventListener :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
+export function addEventListener(eventType) {
   return function (handler) {
     return function (node) {
       return function () {
@@ -140,13 +140,6 @@ export function removeAllNodesBetweenSiblings(from) {
         node = next;
       }
     };
-  };
-}
-
-// removeNode :: Node -> Effect Unit
-export function removeNode(node) {
-  return function () {
-    node.parentNode.removeChild(node);
   };
 }
 

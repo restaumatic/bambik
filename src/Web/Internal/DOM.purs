@@ -7,7 +7,7 @@ module Web.Internal.DOM
   , Node
   , TagName
   , TextValue(..)
-  , addEventListener
+  , addEventCallback
   , attachComponent
   , attr
   , classes
@@ -20,7 +20,6 @@ module Web.Internal.DOM
   , getValue
   , initializeInBody
   , rawHtml
-  , removeNode
   , setAttributes
   , setChecked
   , setValue
@@ -168,9 +167,8 @@ foreign import data Event :: Type
 -- | HTML event type, e.g. "click".
 type EventType = String
 
--- | Register an event listener. Returns unregister action.
-addEventListener :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
-addEventListener etype node callback = void $ addEventListenerImpl etype (measured (etype <> " event handled") <<< callback) node
+addEventCallback :: EventType -> Node -> (Event -> Effect Unit) -> Effect Unit
+addEventCallback etype node callback = void $ addEventListener etype (measured (etype <> " event handled") <<< callback) node
 
 -- | Create an element, optionally with namespace.
 createElementNS :: Maybe Namespace -> TagName -> Effect Node
@@ -180,7 +178,6 @@ createElementNS Nothing = createElement
 setAttributes :: Node -> Attrs -> Effect Unit
 setAttributes node attrs = runEffectFn2 setAttributesImpl node (show <$> attrs)
 
-foreign import removeNode :: Node -> Effect Unit
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
@@ -264,7 +261,7 @@ foreign import appendChild :: Node -> Node -> Effect Unit
 foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
 foreign import appendRawHtml :: String -> Node -> Effect Unit
 foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
-foreign import addEventListenerImpl :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
+foreign import addEventListener :: String -> (Event -> Effect Unit) -> Node -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit

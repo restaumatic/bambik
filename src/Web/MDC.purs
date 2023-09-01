@@ -34,7 +34,7 @@ import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web.Internal.DOM (Node, addEventListener, attr, classes, removeNode)
+import Web.Internal.DOM (Node, addEventCallback, attr, classes)
 import Web (Widget, aside, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
 import Web (button, checkbox, radioButton) as Web
 
@@ -45,7 +45,7 @@ containedButton label =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
     void $ newComponent material.ripple."MDCRipple" node
     pure mempty) <> (\node ema action-> do
-    addEventListener "click" node $ const $ ema >>= maybe mempty action
+    addEventCallback "click" node $ const $ ema >>= maybe mempty action
     pure mempty))
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
@@ -168,7 +168,7 @@ dialog title w =
         open comp
         pure $ do
           close comp
-          removeNode node
+          -- removeNode node
 
 snackbar :: forall a. Number -> (Widget String String -> Widget a a) -> Widget a a
 snackbar ms label =
@@ -184,7 +184,7 @@ snackbar ms label =
           delay $ Milliseconds ms
           liftEffect $ do
             close comp
-            removeNode node
+            -- removeNode node
         pure mempty
 
 -- Private
