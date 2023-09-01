@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "description": "Profunctor optics for UIs",
   "scripts": {
-    "demo1": "parcel demo/1/index.html & spago bundle-app -y --main Main --to demo/1/output/bundle.js -w",
+    "demo1": "parcel demo/1/index.html & spago bundle-app -y --main Main --to demo/1/output/bundle.js -w -l",
     "deploy": "spago bundle-app -y --main Main --to demo/1/output/bundle.js && scp demo/1/index.html pi@erykciepiela.xyz:~/www/bambik/demo/1/index.html && scp demo/1/output/bundle.js pi@erykciepiela.xyz:~/www/bambik/demo/1/output/bundle.js"
   },
   "author": "Restaumatic.com",
