@@ -27,14 +27,14 @@ module Web.MDC
 
 import Prelude hiding (div)
 
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe)
 import Data.String (null)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web.Internal.DOM (Node, addEventCallback, attr, classes)
+import Web.Internal.DOM (Node, attr, classes)
 import Web (Widget, aside, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
 import Web (button, checkbox, radioButton) as Web
 
@@ -42,11 +42,7 @@ import Web (button, checkbox, radioButton) as Web
 
 containedButton :: forall a. (Widget String String -> Widget a a) -> Widget a a
 containedButton label =
-  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
-    void $ newComponent material.ripple."MDCRipple" node
-    pure mempty) <> (\node ema action-> do
-    addEventCallback "click" node $ const $ ema >>= maybe mempty action
-    pure mempty))
+  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty (void <<< newComponent material.ripple."MDCRipple")
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
@@ -172,20 +168,18 @@ dialog title w =
 
 snackbar :: forall a. Number -> (Widget String String -> Widget a a) -> Widget a a
 snackbar ms label =
-  aside (classes "mdc-snackbar") mempty initAside
+  aside (classes "mdc-snackbar") mempty initNode cleanupNode
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty mempty
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty mempty
         (text # label )))
     where
-      initAside node _ _ = do
+      initNode node = do
         comp <- newComponent material.snackbar."MDCSnackbar" node
         open comp
-        launchAff_ do
-          delay $ Milliseconds ms
-          liftEffect $ do
-            close comp
-            -- removeNode node
-        pure mempty
+      cleanupNode node = launchAff_ do
+        delay $ Milliseconds ms
+        liftEffect $ do
+          close comp
 
 -- Private
 
