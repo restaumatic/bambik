@@ -34,6 +34,7 @@ order =
       >>> MDC.dialog submitOrderCaption
           ( MDC.body1 areYouSureText
           ^ MDC.containedButton submitOrderCaption )
+      >>> serializeOrder
       >>> MDC.snackbar orderSubmittedCaption ) )
 
 name :: Widget NameInformal NameInformal

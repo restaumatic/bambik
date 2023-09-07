@@ -164,12 +164,13 @@ dialog title w =
       onInput comp _ = open comp
       onOutput comp _ = close comp
 
-snackbar :: forall a. (Widget String String -> Widget a a) -> Widget a a
+snackbar :: forall a b c. (Widget String String -> Widget a c) -> Widget a b
 snackbar label =
   aside (classes "mdc-snackbar") mempty mempty mempty $ bracket onInit onInput onOutput $
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty mempty
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty mempty
-        (text # label )))
+        ( text # label
+        ^> pzero)))
     where
       onInit = do
         node <- getParentNode

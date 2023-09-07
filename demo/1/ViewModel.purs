@@ -58,6 +58,7 @@ module ViewModel
   , idCaption
   , orderTitle
   , areYouSureText
+  , serializeOrder
   , orderSummary
   , defaultOrder
   ) where
@@ -184,9 +185,13 @@ fulfillmentData text =
   ^ (text # fixed "takeaway at " ^ text) # time # takeaway
   ^ (text # fixed "delivery to " ^ text) # address # delivery )
 
-submitOrder :: Order -> Effect Unit
-submitOrder = log <<< case _ of
-  { uniqueId, shortId, customer, paid, fulfillment } -> "submitted order: " <> intercalate "|" [uniqueId, shortId, customer.firstName, customer.lastName, if paid then "paid" else "not paid", case fulfillment of
+type SerializedOrder = String
+
+submitOrder :: SerializedOrder -> Effect Unit
+submitOrder = log
+
+serializeOrder :: forall p. Profunctor p => Category p => p Order SerializedOrder
+serializeOrder = arr \order -> "submitted order: " <> intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, if order.paid then "paid" else "not paid", case order.fulfillment of
     (DineIn { table }) -> "dinein|" <> table
     (Takeaway { time }) -> "takeaway|" <> time
     (Delivery { address }) -> "delivery|\"" <> address <> "\""
@@ -251,11 +256,11 @@ submitOrderCaption text =
   ( text # fixed "Submit order "
   ^ text # shortId )
 
-orderSubmittedCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
-orderSubmittedCaption text =
-  ( text # fixed "Order "
-  ^ text # shortId
-  ^ text # fixed " submitted" )
+orderSubmittedCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p SerializedOrder SerializedOrder
+orderSubmittedCaption text = text
+  -- ( text # fixed "Order "
+  -- ^ text # shortId
+  -- ^ text # fixed " submitted" )
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of

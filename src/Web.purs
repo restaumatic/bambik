@@ -263,38 +263,6 @@ element tagName attrs dynAttrs listener w = Widget \callbackb -> do
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
 
--- Element that cleans up after first output emitted, TODO EC: clean it up
-element_ :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
-element_ tagName attrs dynAttrs listener w = Widget \callbackb -> do
-  aRef <- liftEffect $ Ref.new Nothing
-  cleanupRef <- liftEffect $ Ref.new Nothing
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget w \chb -> do
-    mCleanup <- Ref.read cleanupRef
-    callbackb chb
-    fromMaybe mempty mCleanup
-  cleanup <- liftEffect $ listener node (Ref.read aRef) (callbackb <<< Changed Some)
-  liftEffect $ Ref.write (Just cleanup) cleanupRef
-  pure case _ of
-    Changed None _ -> mempty
-    Changed ch newa -> do
-      Ref.write (Just newa) aRef
-      setAttributes node (attrs <> dynAttrs newa)
-      update $ Changed ch newa
-
--- element__ :: forall a b. TagName -> Attrs -> (Node -> { callback :: Changed b -> Effect Unit} -> Effect { onInput :: Changed a -> Effect Unit,  onOutput ::  Changed b -> Effect Unit }) -> Widget a b -> Widget a b
--- element__ tagName attrs listener w = Widget \callbackb -> do
---   Tuple node update <- elAttr tagName attrs $ unwrapWidget w onOutput
---   {onInput, onOutput} <- liftEffect $ listener node { callback: callbackb }
---   -- liftEffect $ Ref.write (Just cleanup) cleanupRef
---   pure \cha -> do
---     onInput cha
---     case cha of
---       Changed None _ -> mempty
---       cha -> do
---         -- Ref.write (Just newa) aRef
---         -- setAttributes node (attrs <> dynAttrs newa)
---         update cha
-
 input' :: forall a b. Widget a b -> Widget a b
 input' = input mempty mempty mempty
 
