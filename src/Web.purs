@@ -56,7 +56,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, getParentNode, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
