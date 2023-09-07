@@ -17,6 +17,7 @@ module Web.Internal.DOM
   , detachComponent
   , elAttr
   , getChecked
+  , getParentNode
   , getValue
   , initializeInBody
   , rawHtml

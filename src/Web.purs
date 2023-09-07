@@ -2,6 +2,7 @@ module Web
   ( Widget
   , aside
   , aside'
+  , bracket
   , button
   , button'
   , checkbox
@@ -36,6 +37,7 @@ module Web
   , svg
   , text
   , textInput
+  , unwrapWidget
   )
   where
 
@@ -54,7 +56,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, getParentNode, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -186,6 +188,9 @@ instance Semigroupoid Widget where
     liftEffect $ Ref.write update2 update2Ref
     pure update1
 
+instance Category Widget where
+  identity = Widget pure -- update triggers callback
+
 -- Primitive widgets
 
 text :: forall a. Widget String a
@@ -235,6 +240,16 @@ radioButton attrs = Widget \callbackchma -> do
       setChecked node true
 
 -- Widget transformers
+
+bracket :: forall ctx a b. (DOM ctx) -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
+bracket onInit onIn onOut w = Widget \callback -> do
+  ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit --
+  update <- unwrapWidget w $ (\chb -> do
+    ctx <- Ref.read ctxRef
+    onOut ctx chb) <> callback
+  ctx <- onInit
+  liftEffect $ Ref.write ctx ctxRef
+  pure $ onIn ctx <> update
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener w = Widget \callbackb -> do
