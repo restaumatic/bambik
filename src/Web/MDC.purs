@@ -41,10 +41,10 @@ import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 
 containedButton :: forall a. (Widget String String -> Widget a a) -> Widget a a
 containedButton label =
-  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty (void <<< newComponent material.ripple."MDCRipple")
+  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
     ( div (classes "mdc-button__ripple") mempty pzero
     <^ span (classes "mdc-button__label") mempty
-      ( text # label ) )
+      ( text # label ) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty
 
 filledTextField :: (Widget String String -> Widget String String) -> Widget String String
 filledTextField floatingLabel =

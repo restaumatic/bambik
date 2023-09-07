@@ -253,12 +253,10 @@ bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Widget \callbackb -> do
-  aRef <- liftEffect $ Ref.new Nothing
   Tuple node update <- elAttr tagName attrs $ unwrapWidget w callbackb
   pure case _ of
     Changed None _ -> mempty
     Changed ch newa -> do
-      Ref.write (Just newa) aRef
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
 
@@ -292,12 +290,11 @@ label' = label mempty mempty
 label :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a. Attrs -> (a -> Attrs) -> (Node -> Effect Unit) -> Widget a a -> Widget a a
-button attrs dynAttrs initNode w = Widget \callbacka -> do
+button :: forall a. Attrs -> (a -> Attrs) -> Widget a a -> Widget a a
+button attrs dynAttrs w = Widget \callbacka -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   Tuple node update <- elAttr "button" attrs $ unwrapWidget w mempty
   liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka
-  liftEffect $ initNode node
   pure case _ of
     Changed None _ -> mempty
     cha@(Changed _ newa) -> do
@@ -306,7 +303,7 @@ button attrs dynAttrs initNode w = Widget \callbacka -> do
       update cha
 
 button' :: forall a. Widget a a -> Widget a a
-button' = button mempty mempty mempty
+button' = button mempty mempty
 
 svg :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 svg = element "svg"
