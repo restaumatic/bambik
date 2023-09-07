@@ -30,11 +30,11 @@ order =
     ^ MDC.filledTextField addressCaption # address # delivery ) # fulfillment
   ^ MDC.card
     ( MDC.body1 orderSummary
-    ^ ( MDC.containedButton submitOrderCaption
+    ^ MDC.containedButton submitOrderCaption
       >>> MDC.dialog submitOrderCaption
           ( MDC.body1 areYouSureText
           ^ MDC.containedButton submitOrderCaption )
-      >>> MDC.snackbar orderSubmittedCaption ) ) )
+      >>> MDC.snackbar orderSubmittedCaption ) )
 
 name :: Widget NameInformal NameInformal
 name =
