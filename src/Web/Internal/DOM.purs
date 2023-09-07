@@ -17,6 +17,7 @@ module Web.Internal.DOM
   , detachComponent
   , elAttr
   , getChecked
+  , getCurrentNode
   , getParentNode
   , getValue
   , initializeInBody
@@ -49,7 +50,7 @@ import Specular.Internal.RIO (RIO, runRIO)
 import Specular.Internal.RIO as RIO
 import Unsafe.Coerce (unsafeCoerce)
 
-newtype DOM a = DOM (RIO DOMEnv a) -- DOMBuilder? DOMFragment ? DocumentFragment? HTMLFragment?
+newtype DOM a = DOM (RIO DOMEnv a)
 
 type DOMEnv =
   { parent :: Node
@@ -189,6 +190,12 @@ foreign import setChecked :: Node -> Boolean -> Effect Unit
 getParentNode :: DOM Node
 getParentNode = DOM (asks _.parent)
 
+getCurrentNode :: DOM Node
+getCurrentNode = do
+  parent <- getParentNode
+  liftEffect $ lastChild parent
+
+
 createComponent' :: forall a. Boolean -> DOM a -> DOM (Tuple Component a)
 createComponent' removePrecedingSiblingNodes dom = do
   parent <- getParentNode
@@ -267,3 +274,4 @@ foreign import createCommentNode :: String -> Effect Node
 foreign import setAttributesImpl :: EffectFn2 Node (Object String) Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
+foreign import lastChild :: Node -> Effect Node

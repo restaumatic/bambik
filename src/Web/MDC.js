@@ -24,5 +24,3 @@ export function close(component) {
 export function randomElementId() {
     return "id-" + Math.floor(Math.random() * 99999999 + 100000000);
 }
-
-
