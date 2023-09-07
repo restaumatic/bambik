@@ -27,26 +27,21 @@ module Web.MDC
 
 import Prelude hiding (div)
 
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe)
 import Data.String (null)
 import Effect (Effect)
-import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web.Internal.DOM (Node, addEventCallback, attr, classes)
-import Web (Widget, aside, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
+import Web (Widget, aside, bracket, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
 import Web (button, checkbox, radioButton) as Web
+import Web.Internal.DOM (Node, attr, classes, getParentNode)
 
 -- Primitive widgets
 
 containedButton :: forall a. (Widget String String -> Widget a a) -> Widget a a
 containedButton label =
-  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty ((\node _ _ -> do
-    void $ newComponent material.ripple."MDCRipple" node
-    pure mempty) <> (\node ema action-> do
-    addEventCallback "click" node $ const $ ema >>= maybe mempty action
-    pure mempty))
+  Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty (void <<< newComponent material.ripple."MDCRipple")
     ( div (classes "mdc-button__ripple") mempty mempty pzero <^
       span (classes "mdc-button__label") mempty mempty
         (text # label))
@@ -156,36 +151,31 @@ card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15
 
 dialog :: forall a b. (Widget String String -> Widget a b) -> Widget a b -> Widget a b
 dialog title w =
-  aside (classes "mdc-dialog") mempty initAside
+  aside (classes "mdc-dialog") mempty mempty mempty $ bracket onInit onInput onOutput $
     ( div (classes "mdc-dialog__container") mempty mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty mempty
         ( h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty mempty title
         ^> div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty mempty w) ) <^
       div (classes "mdc-dialog__scrim") mempty mempty pzero )
     where
-      initAside node _ _ = do
-        comp <- newComponent material.dialog."MDCDialog" node
-        open comp
-        pure $ do
-          close comp
-          -- removeNode node
+      onInit = do
+        node <- getParentNode
+        liftEffect $ newComponent material.dialog."MDCDialog" node
+      onInput comp _ = open comp
+      onOutput comp _ = close comp
 
-snackbar :: forall a. Number -> (Widget String String -> Widget a a) -> Widget a a
-snackbar ms label =
-  aside (classes "mdc-snackbar") mempty initAside
+snackbar :: forall a. (Widget String String -> Widget a a) -> Widget a a
+snackbar label =
+  aside (classes "mdc-snackbar") mempty mempty mempty $ bracket onInit onInput onOutput $
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty mempty
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty mempty
         (text # label )))
     where
-      initAside node _ _ = do
-        comp <- newComponent material.snackbar."MDCSnackbar" node
-        open comp
-        launchAff_ do
-          delay $ Milliseconds ms
-          liftEffect $ do
-            close comp
-            -- removeNode node
-        pure mempty
+      onInit = do
+        node <- getParentNode
+        liftEffect $ newComponent material.snackbar."MDCSnackbar" node
+      onInput comp _ = open comp
+      onOutput comp _ = close comp
 
 -- Private
 

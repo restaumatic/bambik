@@ -34,7 +34,7 @@ order =
       >>> MDC.dialog submitOrderCaption
           ( MDC.body1 areYouSureText
           ^ MDC.containedButton submitOrderCaption )
-      >>> MDC.snackbar 2000.0 orderSubmittedCaption ) )
+      >>> MDC.snackbar orderSubmittedCaption ) )
 
 name :: Widget NameInformal NameInformal
 name =

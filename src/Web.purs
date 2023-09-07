@@ -2,6 +2,7 @@ module Web
   ( Widget
   , aside
   , aside'
+  , bracket
   , button
   , button'
   , checkbox
@@ -36,6 +37,7 @@ module Web
   , svg
   , text
   , textInput
+  , unwrapWidget
   )
   where
 
@@ -53,7 +55,8 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, initializeInBody, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Unsafe.Coerce (unsafeCoerce)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, getParentNode, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -177,16 +180,16 @@ instance ChProfunctor Widget where
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \callback -> do
+    update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
     update1 <- unwrapWidget w1 \chb -> do
-      -- spawnedSlot <- appendSlot fragment $ unwrapWidget w2 callback
-      -- -- update chb
-      mempty
-    -- udpate1 <- unwrapWidget w2 \chc -> do
-    --   mempty
-    -- unwrapWIdget
-    -- liftEffect $ attachComponent fragment
+      update2 <- Ref.read update2Ref
+      update2 chb
+    update2 <- unwrapWidget w2 callback
+    liftEffect $ Ref.write update2 update2Ref
     pure update1
-      -- note: w2 cannot be updated not destroyed externally, w2 should itself take care of its scope destroy
+
+instance Category Widget where
+  identity = Widget pure -- update triggers callback
 
 -- Primitive widgets
 
@@ -238,6 +241,16 @@ radioButton attrs = Widget \callbackchma -> do
 
 -- Widget transformers
 
+bracket :: forall ctx a b. (DOM ctx) -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
+bracket onInit onIn onOut w = Widget \callback -> do
+  ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit --
+  update <- unwrapWidget w $ (\chb -> do
+    ctx <- Ref.read ctxRef
+    onOut ctx chb) <> callback
+  ctx <- onInit
+  liftEffect $ Ref.write ctx ctxRef
+  pure $ onIn ctx <> update
+
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs listener w = Widget \callbackb -> do
   aRef <- liftEffect $ Ref.new Nothing
@@ -268,6 +281,20 @@ element_ tagName attrs dynAttrs listener w = Widget \callbackb -> do
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
 
+-- element__ :: forall a b. TagName -> Attrs -> (Node -> { callback :: Changed b -> Effect Unit} -> Effect { onInput :: Changed a -> Effect Unit,  onOutput ::  Changed b -> Effect Unit }) -> Widget a b -> Widget a b
+-- element__ tagName attrs listener w = Widget \callbackb -> do
+--   Tuple node update <- elAttr tagName attrs $ unwrapWidget w onOutput
+--   {onInput, onOutput} <- liftEffect $ listener node { callback: callbackb }
+--   -- liftEffect $ Ref.write (Just cleanup) cleanupRef
+--   pure \cha -> do
+--     onInput cha
+--     case cha of
+--       Changed None _ -> mempty
+--       cha -> do
+--         -- Ref.write (Just newa) aRef
+--         -- setAttributes node (attrs <> dynAttrs newa)
+--         update cha
+
 input' :: forall a b. Widget a b -> Widget a b
 input' = input mempty mempty mempty
 
@@ -287,10 +314,19 @@ span :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect
 span = element "span"
 
 aside' :: forall a b. Widget a b -> Widget a b
-aside' = aside mempty mempty mempty
+aside' = aside mempty mempty mempty mempty
 
-aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
-aside = element_ "aside"
+aside :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect Unit) -> (Node -> Effect Unit) -> Widget a b -> Widget a b
+aside attrs dynAttrs initNode cleanupNode w = Widget \callbackb -> do
+  Tuple node update <- elAttr "aside" attrs $ unwrapWidget w \chb -> do
+    -- cleanupNode node -- TODO EC
+    callbackb chb
+  liftEffect $ initNode node
+  pure case _ of
+    Changed None _ -> mempty
+    cha@(Changed _ newa) -> do
+      setAttributes node (attrs <> dynAttrs newa)
+      update cha
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = label mempty mempty mempty
@@ -298,10 +334,20 @@ label' = label mempty mempty mempty
 label :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
 label = element "label"
 
-button :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> (b -> Effect Unit) -> Effect (Effect Unit)) -> Widget a b -> Widget a b
-button = element_ "button"
+button :: forall a. Attrs -> (a -> Attrs) -> (Node -> Effect Unit) -> Widget a a -> Widget a a
+button attrs dynAttrs initNode w = Widget \callbacka -> do
+  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  Tuple node update <- elAttr "button" attrs $ unwrapWidget w mempty
+  liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka
+  liftEffect $ initNode node
+  pure case _ of
+    Changed None _ -> mempty
+    cha@(Changed _ newa) -> do
+      setAttributes node (attrs <> dynAttrs newa)
+      Ref.write cha aRef
+      update cha
 
-button' :: forall a b. Widget a b -> Widget a b
+button' :: forall a. Widget a a -> Widget a a
 button' = button mempty mempty mempty
 
 svg :: forall a b. Attrs -> (a -> Attrs) -> (Node -> Effect (Maybe a) -> Effect Unit) -> Widget a b -> Widget a b
