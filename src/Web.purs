@@ -181,9 +181,9 @@ instance ChProfunctor Widget where
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \callback -> do
     update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
-    update1 <- unwrapWidget w1 \chb -> do
+    update1 <- unwrapWidget w1 \(Changed _ b) -> do
       update2 <- Ref.read update2Ref
-      update2 chb
+      update2 $ Changed Some b -- we force w2 to update cause w2 is updated only via callback by w1
     update2 <- unwrapWidget w2 callback
     liftEffect $ Ref.write update2 update2Ref
     pure update1
