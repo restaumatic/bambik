@@ -218,7 +218,7 @@ createComponent' removePrecedingSiblingNodes dom = do
       attach = measured' slotNo "attached" do
         removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
         documentFragment <- Ref.modify' (\documentFragment -> { state: unsafeCoerce unit, value: documentFragment}) documentFragmentRef
-          -- inserting documentFragment makes it empty but just in case not keeping reference to it while it's not needed
+        -- inserting documentFragment makes it empty but just in case not keeping reference to it while it's not needed
         documentFragment `insertBefore` placeholderAfter
 
       detach :: Effect Unit
@@ -253,11 +253,11 @@ measured actionName action = do
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
 
-newPlaceholderBefore ∷ ∀ (a95 ∷ Type). Show a95 ⇒ a95 → Effect Node
-newPlaceholderBefore slotNo = createCommentNode $ "<" <> show slotNo <> ">"
+newPlaceholderBefore :: forall a. Show a ⇒ a → Effect Node
+newPlaceholderBefore slotNo = createCommentNode $ "BEGIN COMPONENT " <> show slotNo
 
-newPlaceholderAfter ∷ ∀ (a100 ∷ Type). Show a100 ⇒ a100 → Effect Node
-newPlaceholderAfter slotNo = createCommentNode $ "</" <> show slotNo <> ">"
+newPlaceholderAfter :: forall a. Show a ⇒ a → Effect Node
+newPlaceholderAfter slotNo = createCommentNode $ "END COMPONENT " <> show slotNo
 
 foreign import documentBody :: Effect Node
 foreign import createTextNode :: String -> Effect Node
