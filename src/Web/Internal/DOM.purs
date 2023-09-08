@@ -82,21 +82,12 @@ data TextValue = TextValue
 createTextValue :: DOM TextValue
 createTextValue = do
   parent <- getParentNode
-  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
-  liftEffect $ measured' slotNo "created" do
-    placeholderBefore <- newPlaceholderBefore slotNo
-    placeholderAfter <- newPlaceholderAfter slotNo
-    appendChild placeholderBefore parent
+  liftEffect $ do
     node <- createTextNode mempty
     appendChild node parent
-    appendChild placeholderAfter parent
     pure $ TextValue
-      { write: \str -> measured' slotNo "written" do
-        setTextNodeValue node str
+      { write: setTextNodeValue node
       }
-      where
-        measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-        measured' slotNo actionName = measured $ "slot " <> show slotNo <> ": text value " <> actionName
 
 writeTextValue :: TextValue -> String -> Effect Unit
 writeTextValue (TextValue { write }) = write
@@ -230,7 +221,7 @@ createComponent' removePrecedingSiblingNodes dom = do
     pure $ Tuple (Component { attach, detach }) built
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-      measured' slotNo actionName = measured $ "slot " <> show slotNo <> ": component " <> actionName
+      measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
 
 
 logIndent :: Ref.Ref Int
@@ -254,10 +245,10 @@ slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
 
 newPlaceholderBefore :: forall a. Show a ⇒ a → Effect Node
-newPlaceholderBefore slotNo = createCommentNode $ "BEGIN COMPONENT " <> show slotNo
+newPlaceholderBefore slotNo = createCommentNode $ "begin component " <> show slotNo
 
 newPlaceholderAfter :: forall a. Show a ⇒ a → Effect Node
-newPlaceholderAfter slotNo = createCommentNode $ "END COMPONENT " <> show slotNo
+newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
 
 foreign import documentBody :: Effect Node
 foreign import createTextNode :: String -> Effect Node
