@@ -31,7 +31,7 @@ module Web
   , path
   , radioButton
   , runWidgetInBody
-  , runWidgetInBuilder
+  , runWidgetInNode
   , span
   , span'
   , svg
@@ -56,7 +56,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -357,9 +357,12 @@ h6' content = h6 mempty mempty content
 -- Entry point
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody w i = initializeInBody (unwrapWidget w mempty) \update -> update (Changed Some i)
+runWidgetInBody widget i = initializeInBody (unwrapWidget widget mempty) (Changed Some i)
 
-runWidgetInBuilder :: forall i o. Widget i o -> (o -> Effect Unit) -> DOM (i -> Effect Unit)
-runWidgetInBuilder widget outViewModelCallback = do
-  update <- unwrapWidget widget \(Changed _ o) -> outViewModelCallback o
-  pure $ update <<< Changed Some
+runWidgetInNode :: forall i o. Node -> Widget i o -> (o -> Effect Unit) -> Effect (i -> Effect Unit)
+runWidgetInNode node widget callback = do
+  update <- initializeInNode node (unwrapWidget widget \(Changed _ o) -> callback o)
+  pure \i -> update (Changed Some i)
+
+
+

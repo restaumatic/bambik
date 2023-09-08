@@ -21,6 +21,7 @@ module Web.Internal.DOM
   , getParentNode
   , getValue
   , initializeInBody
+  , initializeInNode
   , rawHtml
   , setAttributes
   , setChecked
@@ -63,17 +64,20 @@ derive newtype instance Bind DOM
 derive newtype instance Monad DOM
 derive newtype instance MonadEffect DOM
 
-initializeInBody :: forall a. DOM a → (a -> Effect Unit) -> Effect Unit
-initializeInBody dom initializer =  measured "initialized" do
+initializeInBody :: forall a. DOM (a -> Effect Unit) → a -> Effect Unit
+initializeInBody dom a = measured "initialized" do
   body <- documentBody
-  initializeInNode body do
-    Tuple documentComponent result <- createComponent' true dom
-    liftEffect $ do
-      initializer result
-      attachComponent documentComponent
+  update <- initializeInNode body dom
+  update a
 
-initializeInNode :: forall a. Node -> DOM a -> Effect a
-initializeInNode node (DOM f) = runRIO { parent: node } f
+initializeInNode :: forall a. Node -> DOM a → Effect a
+initializeInNode node dom = runDomInNode node do
+  Tuple documentComponent result <- createComponent' true dom
+  liftEffect $ attachComponent documentComponent
+  pure result
+
+runDomInNode :: forall a. Node -> DOM a -> Effect a
+runDomInNode node (DOM f) = runRIO { parent: node } f
 
 data TextValue = TextValue
   { write :: String -> Effect Unit
@@ -200,7 +204,7 @@ createComponent' removePrecedingSiblingNodes dom = do
     appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
-    built <- initializeInNode initialDocumentFragment dom
+    built <- runDomInNode initialDocumentFragment dom
 
     documentFragmentRef <- Ref.new initialDocumentFragment
 

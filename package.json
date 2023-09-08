@@ -2,7 +2,7 @@
   "private": true,
   "name": "bambik",
   "displayName": "Bambik",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Profunctor optics for UIs",
   "scripts": {
     "demo1": "parcel demo/1/index.html & spago bundle-app -y --main Main --to demo/1/output/bundle.js -w -l",
