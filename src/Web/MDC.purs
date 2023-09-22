@@ -28,6 +28,7 @@ module Web.MDC
 import Prelude hiding (div)
 
 import Data.Maybe (Maybe)
+import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
@@ -49,6 +50,7 @@ filledTextField :: forall a b. { caption :: WidgetOptics String b a a, value :: 
 filledTextField { caption, value } =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
     ( span (classes "mdc-text-field__ripple") mempty pzero
+    -- TODO EC: fix it
     -- ^ span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)
     --   ( text # caption )
     ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
