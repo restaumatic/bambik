@@ -12,7 +12,7 @@ import Web.MDC as MDC
 order ∷ Widget Order Order
 order =
   MDC.elevation20
-  ( MDC.headline6 orderTitle
+  ( MDC.headline6 (\order2order -> (text # fixed "Order ") ^ (shortId order2order))
   ^ MDC.card
     ( MDC.subtitle1 (fixed "Identifier")
     ^ MDC.filledTextField { caption: fixed "Short ID", value: shortId }
@@ -21,8 +21,6 @@ order =
     ( MDC.subtitle1 (fixed "Customer")
     ^ name # customer )
   ^ MDC.card
-    ( MDC.checkbox { caption: fixed "Paid", checked: paid } )
-  ^ MDC.card
     ( MDC.radioButton { caption: fixed "Dine in", value: isDineIn }
     ^ MDC.radioButton { caption: fixed "Takeaway", value: isTakeaway }
     ^ MDC.radioButton { caption: fixed "Delivery", value: isDelivery }
@@ -30,13 +28,18 @@ order =
     ^ MDC.filledTextField { caption: fixed "Time", value: time } # takeaway
     ^ MDC.filledTextField { caption: fixed "Address", value: address } # delivery ) # fulfillment
   ^ MDC.card
+    ( MDC.subtitle1 (fixed "Total")
+    ^ MDC.filledTextField { caption: fixed "Total", value: total } )
+  ^ MDC.card
+    ( MDC.checkbox { caption: \order2order -> total order2order ^ text # fixed " paid", checked: paid } )
+  ^ MDC.card
     ( MDC.body1 orderSummary
-    ^ MDC.containedButton submitOrderCaption
-      >>> MDC.dialog { title: submitOrderCaption, content: identity}
+    ^ MDC.containedButton (\order2order -> text # fixed "Submit order " ^ shortId order2order )
+      >>> MDC.dialog { title: fixed "Submit order?", content: identity}
           ( MDC.body1 (fixed "Are you sure?")
-          ^ MDC.containedButton submitOrderCaption )
+          ^ MDC.containedButton (fixed "Submit order" ) )
       >>> serializeOrder
-      >>> MDC.snackbar orderSubmittedCaption ) )
+      >>> MDC.snackbar (\_ -> ( text # fixed "Order " ^ text ^ text # fixed " submitted" )) ) )
 
 name :: Widget NameInformal NameInformal
 name =
