@@ -28,23 +28,22 @@ module Web.MDC
 import Prelude hiding (div)
 
 import Data.Maybe (Maybe)
-import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web (Widget, WidgetOptics, aside, bracket, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
+import Web (Widget, WidgetOptics, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 
 -- Primitive widgets
 
-containedButton :: forall a. (WidgetOptics String String a a) -> Widget a a
+containedButton :: forall a b c. (WidgetOptics String b a c) -> Widget a a
 containedButton label =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
     ( div (classes "mdc-button__ripple") mempty pzero
     <^ span (classes "mdc-button__label") mempty
-      ( text # label ) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty
+      ( text # label ) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
 
 filledTextField :: forall a b. { caption :: WidgetOptics String b a a, value :: WidgetOptics String String a a } -> Widget a a
 filledTextField { caption, value } =

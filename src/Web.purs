@@ -7,6 +7,7 @@ module Web
   , button
   , button'
   , checkbox
+  , clickable
   , div
   , div'
   , h1
@@ -55,7 +56,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -206,7 +207,7 @@ html h = Widget \_ -> do
   rawHtml h
   mempty
 
-textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
+textInput :: Attrs -> Widget String String
 textInput attrs = Widget \callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
@@ -240,7 +241,7 @@ radioButton attrs = Widget \callbackchma -> do
       Ref.write newma maRef
       setChecked node true
 
--- Widget transformers
+-- Widget optics
 
 bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> WidgetOptics a b a b
 bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
@@ -285,21 +286,22 @@ label' = label mempty mempty
 label :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 label = element "label"
 
--- TODO EC refactor to using `element`, `bracket` etc functions
-button :: forall a. Attrs -> (a -> Attrs) -> WidgetOptics a a a a
-button attrs dynAttrs w = Widget \callbacka -> do
+button' :: forall a b. WidgetOptics a b a b
+button' = button mempty mempty
+
+button :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+button = element "button"
+
+clickable :: forall a b. WidgetOptics a b a a
+clickable w = Widget \callbacka -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  Tuple node update <- elAttr "button" attrs $ unwrapWidget w mempty
-  liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka
+  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka) mempty mempty
+  update <- unwrapWidget buttonWidget mempty
   pure case _ of
     Changed None _ -> mempty
-    cha@(Changed _ newa) -> do
-      setAttributes node (attrs <> dynAttrs newa)
+    cha -> do
       Ref.write cha aRef
       update cha
-
-button' :: forall a. WidgetOptics a a a a
-button' = button mempty mempty
 
 svg :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 svg = element "svg"
