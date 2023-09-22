@@ -32,17 +32,17 @@ order =
   ^ MDC.card
     ( MDC.body1 orderSummary
     ^ MDC.containedButton submitOrderCaption
-      >>> MDC.dialog submitOrderCaption
-          ( MDC.body1 areYouSureText
+      >>> MDC.dialog { title: submitOrderCaption, content: identity}
+          ( MDC.body1 (fixed "Are you sure?")
           ^ MDC.containedButton submitOrderCaption )
       >>> serializeOrder
       >>> MDC.snackbar orderSubmittedCaption ) )
 
 name :: Widget NameInformal NameInformal
 name =
-  MDC.subtitle2 informalCaption
+  MDC.subtitle2 (fixed "Informal")
   ^ MDC.filledTextField { caption: fixed "First name", value: firstName }
   ^ MDC.filledTextField { caption: fixed "Last name", value: lastName }
-  ^ ( MDC.subtitle2 formalCaption
+  ^ ( MDC.subtitle2 (fixed "Formal")
     ^ MDC.filledTextField { caption: fixed "Surname", value: surname }
     ^ MDC.filledTextField { caption: fixed "Forename", value: forename } ) # formal

@@ -30,17 +30,11 @@ module ViewModel
   , paymentStatus
   , fulfillmentData
   , submitOrder
-  , fullfilmentCaption
-  , orderCaption
   , orderId
-  , orderIdCaption
   , orderIdText
   , submitOrderCaption
   , orderSubmittedCaption
-  , informalCaption
-  , formalCaption
   , orderTitle
-  , areYouSureText
   , serializeOrder
   , orderSummary
   , defaultOrder
@@ -180,12 +174,6 @@ serializeOrder = arr \order -> "submitted order: " <> intercalate "|" [order.uni
     (Delivery { address }) -> "delivery|\"" <> address <> "\""
   ]
 
-fullfilmentCaption :: forall p a. ChProfunctor p => p String String -> p a a
-fullfilmentCaption text = text # fixed "Fullfilment"
-
-orderCaption :: forall p a. ChProfunctor p => p String String -> p a a
-orderCaption text = text # fixed "Order"
-
 submitOrderCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
 submitOrderCaption text =
   ( text # fixed "Submit order "
@@ -202,23 +190,11 @@ orderId = lens' "orderId" (case _ of
   { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
 
-orderIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
-orderIdCaption text = text # fixed "Order ID"
-
-informalCaption :: forall p a. ChProfunctor p => p String String -> p a a
-informalCaption text = text # fixed "Informal"
-
-formalCaption :: forall p a. ChProfunctor p => p String String -> p a a
-formalCaption text = text # fixed "Formal"
-
 orderIdText :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p OrderId OrderId
 orderIdText text = text # short ^ text # fixed " (" ^ text # unique ^ text # fixed ")"
 
 orderTitle :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
 orderTitle text = text # fixed "Order " ^ text # shortId
-
-areYouSureText :: forall p a. ChProfunctor p => p String String -> p a a
-areYouSureText text = text # fixed "Are you sure?"
 
 orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
 orderSummary text =

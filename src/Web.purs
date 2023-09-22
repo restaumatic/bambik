@@ -1,5 +1,6 @@
 module Web
   ( Widget
+  , WidgetOptics
   , aside
   , aside'
   , bracket
@@ -21,8 +22,6 @@ module Web
   , h6
   , h6'
   , html
-  , input
-  , input'
   , label
   , label'
   , module Data.Profunctor.Plus
@@ -191,6 +190,8 @@ instance Semigroupoid Widget where
 instance Category Widget where
   identity = Widget pure -- update triggers callback
 
+type WidgetOptics a b s t = Widget a b -> Widget s t
+
 -- Primitive widgets
 
 text :: forall a. Widget String a
@@ -241,7 +242,7 @@ radioButton attrs = Widget \callbackchma -> do
 
 -- Widget transformers
 
-bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
+bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> WidgetOptics a b a b
 bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
   ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   update <- unwrapWidget w $ (\chb -> do
@@ -251,7 +252,7 @@ bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
   liftEffect $ Ref.write ctx ctxRef
   pure $ update <> afterUpdate ctx
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 element tagName attrs dynAttrs w = Widget \callbackb -> do
   Tuple node update <- elAttr tagName attrs $ unwrapWidget w callbackb
   pure case _ of
@@ -260,38 +261,32 @@ element tagName attrs dynAttrs w = Widget \callbackb -> do
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
 
-input' :: forall a b. Widget a b -> Widget a b
-input' = input mempty mempty
-
-input :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-input = element "div"
-
-div' :: forall a b. Widget a b -> Widget a b
+div' :: forall a b. WidgetOptics a b a b
 div' = div mempty mempty
 
-div :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+div :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 div = element "div"
 
-span' :: forall a b. Widget a b -> Widget a b
+span' :: forall a b. WidgetOptics a b a b
 span' = span mempty mempty
 
-span :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+span :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 span = element "span"
 
-aside' :: forall a b. Widget a b -> Widget a b
+aside' :: forall a b. WidgetOptics a b a b
 aside' = aside mempty mempty
 
-aside :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+aside :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 aside = element "aside"
 
-label' :: forall a b. Widget a b -> Widget a b
+label' :: forall a b. WidgetOptics a b a b
 label' = label mempty mempty
 
-label :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+label :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 label = element "label"
 
 -- TODO EC refactor to using `element`, `bracket` etc functions
-button :: forall a. Attrs -> (a -> Attrs) -> Widget a a -> Widget a a
+button :: forall a. Attrs -> (a -> Attrs) -> WidgetOptics a a a a
 button attrs dynAttrs w = Widget \callbacka -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   Tuple node update <- elAttr "button" attrs $ unwrapWidget w mempty
@@ -303,55 +298,55 @@ button attrs dynAttrs w = Widget \callbacka -> do
       Ref.write cha aRef
       update cha
 
-button' :: forall a. Widget a a -> Widget a a
+button' :: forall a. WidgetOptics a a a a
 button' = button mempty mempty
 
-svg :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+svg :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 svg = element "svg"
 
-path :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+path :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 path = element "path"
 
-p :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+p :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
 p = element "p"
 
-p' :: forall a b. Widget a b -> Widget a b
+p' :: forall a b. WidgetOptics a b a b
 p' = p mempty mempty
 
-h1 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
+h1 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
 h1 attrs dynAttrs content = element "h1" attrs dynAttrs $ text # content
 
-h1' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+h1' :: forall a b. WidgetOptics String String a b -> Widget a b
 h1' content = h1 mempty mempty content
 
-h2 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
+h2 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
 h2 attrs dynAttrs content = element "h2" attrs dynAttrs $ text # content
 
-h2' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+h2' :: forall a b. WidgetOptics String String a b -> Widget a b
 h2' content = h2 mempty mempty content
 
-h3 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
+h3 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
 h3 attrs dynAttrs content = element "h3" attrs dynAttrs $ text # content
 
-h3' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+h3' :: forall a b. WidgetOptics String String a b -> Widget a b
 h3' content = h3 mempty mempty content
 
-h4 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
+h4 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
 h4 attrs dynAttrs content = element "h4" attrs dynAttrs $ text # content
 
-h4' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+h4' :: forall a b. WidgetOptics String String a b -> Widget a b
 h4' content = h4 mempty mempty content
 
-h5 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
+h5 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
 h5 attrs dynAttrs content = element "h5" attrs dynAttrs $ text # content
 
-h5' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+h5' :: forall a b. WidgetOptics String String a b -> Widget a b
 h5' content = h5 mempty mempty content
 
-h6 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
+h6 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
 h6 attrs dynAttrs content = element "h6" attrs dynAttrs $ text # content
 
-h6' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
+h6' :: forall a b. WidgetOptics String String a b -> Widget a b
 h6' content = h6 mempty mempty content
 
 -- Entry point
