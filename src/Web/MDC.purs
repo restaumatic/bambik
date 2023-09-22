@@ -46,20 +46,20 @@ containedButton label =
     <^ span (classes "mdc-button__label") mempty
       ( text # label ) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty
 
-filledTextField :: (Widget String String -> Widget String String) -> Widget String String
-filledTextField floatingLabel =
+filledTextField :: forall a b. { caption :: Widget String b -> Widget a a, value :: Widget String String -> Widget a a } -> Widget a a
+filledTextField { caption, value } =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
     ( span (classes "mdc-text-field__ripple") mempty pzero
-    ^ span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)
-      ( text # floatingLabel )
-    ^> textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id")
+    -- ^ span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)
+    --   ( text # caption )
+    ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
     ^ span (classes "mdc-line-ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
 
-checkbox :: (Widget String String -> Widget Boolean Boolean) -> Widget Boolean Boolean
-checkbox labelCaption =
+checkbox :: forall a b. { caption :: Widget String b -> Widget a a, checked :: Widget Boolean Boolean -> Widget a a } -> Widget a a
+checkbox { caption, checked } =
   div (classes "mdc-form-field") mempty
     ( div (classes "mdc-checkbox") mempty
-      ( Web.checkbox (classes "mdc-checkbox__native-control" <> attr "type" "checkbox" <> attr "id" id )
+      ( Web.checkbox (classes "mdc-checkbox__native-control" <> attr "type" "checkbox" <> attr "id" id) # checked
       ^ div (classes "mdc-checkbox__background") mempty
         ( html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -67,22 +67,22 @@ checkbox labelCaption =
           </svg>""" -- Without raw HTML it doesn't work
         ^ div (classes "mdc-checkbox__mixedmark") mempty pzero)
       ^ div (classes "mdc-checkbox__ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") mempty mempty
-    <^ label (attr "for" id) mempty
-      ( text # labelCaption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+    ^ label (attr "for" id) mempty
+      ( text # caption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
       id = unsafePerformEffect randomElementId
 
-radioButton :: forall a. (Widget String String -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
-radioButton labelCaption =
+radioButton :: forall a b. { caption :: Widget String b -> Widget a a, value :: Widget (Maybe a) (Maybe a) -> Widget a a } -> Widget a a
+radioButton { caption, value } =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
-      ( Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id )
+      ( Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id ) # value
       <^ div (classes "mdc-radio__background") mempty
         ( div (classes "mdc-radio__outer-circle") mempty pzero
         ^ div (classes "mdc-radio__inner-circle") mempty pzero)
         ^ div (classes "mdc-radio__ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") mempty mempty
-  <^ label (attr "for" id) mempty
-      ( text # labelCaption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+  ^ label (attr "for" id) mempty
+      ( text # caption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
       id = unsafePerformEffect randomElementId
 

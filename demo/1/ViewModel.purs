@@ -30,32 +30,15 @@ module ViewModel
   , paymentStatus
   , fulfillmentData
   , submitOrder
-  , firstNameCaption
-  , lastNameCaption
-  , forenameCaption
-  , surnameCaption
-  , shortCaption
-  , uniqueCaption
-  , shortIdCaption
-  , uniqueIdCaption
-  , paidCaption
-  , dineInCaption
-  , takeawayCaption
-  , deliveryCaption
-  , tableCaption
-  , timeCaption
-  , addressCaption
   , fullfilmentCaption
   , orderCaption
   , orderId
   , orderIdCaption
   , orderIdText
-  , customerCaption
   , submitOrderCaption
   , orderSubmittedCaption
   , informalCaption
   , formalCaption
-  , idCaption
   , orderTitle
   , areYouSureText
   , serializeOrder
@@ -197,54 +180,6 @@ serializeOrder = arr \order -> "submitted order: " <> intercalate "|" [order.uni
     (Delivery { address }) -> "delivery|\"" <> address <> "\""
   ]
 
-firstNameCaption :: forall p a. ChProfunctor p => p String String -> p a a
-firstNameCaption text = text # fixed "First name"
-
-lastNameCaption :: forall p a. ChProfunctor p => p String String -> p a a
-lastNameCaption text = text # fixed "Last name"
-
-forenameCaption :: forall p a. ChProfunctor p => p String String -> p a a
-forenameCaption text = text # fixed "Forename"
-
-surnameCaption :: forall p a. ChProfunctor p => p String String -> p a a
-surnameCaption text = text # fixed "Surname"
-
-shortCaption :: forall p a. ChProfunctor p => p String String -> p a a
-shortCaption text = text # fixed "Short"
-
-uniqueCaption :: forall p a. ChProfunctor p => p String String -> p a a
-uniqueCaption text = text # fixed "Unique"
-
-idCaption :: forall p a. ChProfunctor p => p String String -> p a a
-idCaption text = text # fixed "Identifier"
-
-shortIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
-shortIdCaption text = text # fixed "Short ID"
-
-uniqueIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
-uniqueIdCaption text = text # fixed "Unique ID"
-
-paidCaption :: forall p a. ChProfunctor p => p String String -> p a a
-paidCaption text = text # fixed "Paid"
-
-dineInCaption :: forall p a. ChProfunctor p => p String String -> p a a
-dineInCaption text = text # fixed "Dine in"
-
-takeawayCaption :: forall p a. ChProfunctor p => p String String -> p a a
-takeawayCaption text = text # fixed "Takeaway"
-
-deliveryCaption :: forall p a. ChProfunctor p => p String String -> p a a
-deliveryCaption text = text # fixed "Delivery"
-
-tableCaption :: forall p a. ChProfunctor p => p String String -> p a a
-tableCaption text = text # fixed "Table"
-
-timeCaption :: forall p a b. ChProfunctor p => p String String -> p a b
-timeCaption text = text # fixed "Time"
-
-addressCaption :: forall p a. ChProfunctor p => p String String -> p a a
-addressCaption text = text # fixed "Address"
-
 fullfilmentCaption :: forall p a. ChProfunctor p => p String String -> p a a
 fullfilmentCaption text = text # fixed "Fullfilment"
 
@@ -257,10 +192,10 @@ submitOrderCaption text =
   ^ text # shortId )
 
 orderSubmittedCaption :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p SerializedOrder SerializedOrder
-orderSubmittedCaption text = text
-  -- ( text # fixed "Order "
-  -- ^ text # shortId
-  -- ^ text # fixed " submitted" )
+orderSubmittedCaption text =
+  ( text # fixed "Order "
+  ^ text
+  ^ text # fixed " submitted" )
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
@@ -269,9 +204,6 @@ orderId = lens' "orderId" (case _ of
 
 orderIdCaption :: forall p a. ChProfunctor p => p String String -> p a a
 orderIdCaption text = text # fixed "Order ID"
-
-customerCaption :: forall p a. ChProfunctor p => p String String -> p a a
-customerCaption text = text # fixed "Customer"
 
 informalCaption :: forall p a. ChProfunctor p => p String String -> p a a
 informalCaption text = text # fixed "Informal"
