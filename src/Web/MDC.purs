@@ -73,7 +73,7 @@ checkbox { caption, checked } =
     where
       id = unsafePerformEffect randomElementId
 
-radioButton :: forall a b. { caption :: WidgetOptics String b a a, value :: WidgetOptics (Maybe a) (Maybe a) a a } -> Widget a a
+radioButton :: forall a. { caption :: Widget a a, value :: WidgetOptics (Maybe a) (Maybe a) a a } -> Widget a a
 radioButton { caption, value } =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
@@ -82,15 +82,14 @@ radioButton { caption, value } =
         ( div (classes "mdc-radio__outer-circle") mempty pzero
         ^ div (classes "mdc-radio__inner-circle") mempty pzero)
         ^ div (classes "mdc-radio__ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") mempty mempty
-  ^ label (attr "for" id) mempty
-      ( text # caption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+  ^ label (attr "for" id) mempty ( caption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
       id = unsafePerformEffect randomElementId
 
 headline1 :: forall a b. WidgetOptics String String a b -> Widget a b
 headline1 content = h1 (classes "mdc-typography--headline1") mempty content
 
-headline2 :: forall a b. WidgetOptics String String a b -> Widget a b
+headline2 :: forall a b. Widget a b -> Widget a b
 headline2 content = h2 (classes "mdc-typography--headline2") mempty content
 
 headline3 :: forall a b. WidgetOptics String String a b -> Widget a b
@@ -102,12 +101,11 @@ headline4 content = h4 (classes "mdc-typography--headline4") mempty content
 headline5 :: forall a b. WidgetOptics String String a b -> Widget a b
 headline5 content = h5 (classes "mdc-typography--headline5") mempty content
 
-headline6 :: forall a b. WidgetOptics String String a b -> Widget a b
-headline6 content = h6 (classes "mdc-typography--headline6") mempty content
+headline6 :: forall a b. Widget a b -> Widget a b
+headline6 = h6 (classes "mdc-typography--headline6") mempty
 
-subtitle1 :: forall a b. WidgetOptics String String a b -> Widget a b
-subtitle1 label = p (classes "mdc-typography--subtitle1") mempty
-  ( text # label )
+subtitle1 :: forall a b. Widget a b -> Widget a b
+subtitle1 = p (classes "mdc-typography--subtitle1") mempty
 
 subtitle2 :: forall a b. WidgetOptics String String a b -> Widget a b
 subtitle2 label = p (classes "mdc-typography--subtitle2") mempty
@@ -146,13 +144,13 @@ elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "
 card :: forall a b. WidgetOptics a b a b
 card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a b c d. { title :: WidgetOptics String String a b, content :: WidgetOptics c d a b } -> Widget c d -> Widget a b
-dialog { title, content } w =
+dialog :: forall a b c d. { title :: Widget a b, content :: Widget a b } -> Widget a b
+dialog { title, content } =
   aside (classes "mdc-dialog") mempty
     ( div (classes "mdc-dialog__container") mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty
         ( h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty title
-        ^> div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty w # content) )
+        ^> div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content) )
       <^ div (classes "mdc-dialog__scrim") mempty pzero ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = getCurrentNode >>= newComponent material.dialog."MDCDialog"

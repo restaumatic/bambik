@@ -12,32 +12,32 @@ import Web.MDC as MDC
 order ∷ Widget Order Order
 order =
   MDC.elevation20
-  ( MDC.headline6 (\order2order -> (text # fixed "Order ") ^ (shortId order2order))
+  ( MDC.headline6 (text # fixed "Order " ^ text # shortId)
   ^ MDC.card
-    ( MDC.subtitle1 (fixed "Identifier")
+    ( MDC.subtitle1 (text # fixed "Identifier")
     ^ MDC.filledTextField { caption: fixed "Short ID", value: shortId }
     ^ MDC.filledTextField { caption: fixed "Unique ID", value: uniqueId } )
   ^ MDC.card
-    ( MDC.subtitle1 (fixed "Customer")
+    ( MDC.subtitle1 (text # fixed "Customer")
     ^ name # customer )
   ^ MDC.card
-    ( MDC.radioButton { caption: fixed "Dine in", value: isDineIn }
-    ^ MDC.radioButton { caption: fixed "Takeaway", value: isTakeaway }
-    ^ MDC.radioButton { caption: fixed "Delivery", value: isDelivery }
+    ( MDC.radioButton { caption: text # fixed "Dine in", value: isDineIn }
+    ^ MDC.radioButton { caption: text # fixed "Takeaway", value: isTakeaway }
+    ^ MDC.radioButton { caption: text # fixed "Delivery", value: isDelivery }
     ^ MDC.filledTextField { caption: fixed "Table", value: table } # dineIn
     ^ MDC.filledTextField { caption: fixed "Time", value: time } # takeaway
     ^ MDC.filledTextField { caption: fixed "Address", value: address } # delivery ) # fulfillment
   ^ MDC.card
-    ( MDC.subtitle1 (fixed "Total")
+    ( MDC.subtitle1 (text # fixed "Total")
     ^ MDC.filledTextField { caption: fixed "Total", value: total } )
   ^ MDC.card
     ( MDC.checkbox { caption: \order2order -> total order2order ^ text # fixed " paid", checked: paid } )
   ^ MDC.card
     ( MDC.body1 orderSummary
     ^ MDC.containedButton (\order2order -> text # fixed "Submit order " ^ shortId order2order )
-      >>> MDC.dialog { title: fixed "Submit order?", content: identity}
+      >>> MDC.dialog { title: text # fixed "Submit order?", content:
           ( MDC.body1 (fixed "Are you sure?")
-          ^ MDC.containedButton (fixed "Submit order" ) )
+          ^ MDC.containedButton (fixed "Submit order" ) ) }
       >>> serializeOrder
       >>> MDC.snackbar (\_ -> ( text # fixed "Order " ^ text ^ text # fixed " submitted" )) ) )
 
