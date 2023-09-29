@@ -56,7 +56,7 @@ filledTextField { caption, value } =
     ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
     ^ span (classes "mdc-line-ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
 
-checkbox :: forall a b. { caption :: WidgetOptics String b a a, checked :: WidgetOptics Boolean Boolean a a } -> Widget a a
+checkbox :: forall a b c. { caption :: WidgetOptics String b a c, checked :: WidgetOptics Boolean Boolean a a } -> Widget a a
 checkbox { caption, checked } =
   div (classes "mdc-form-field") mempty
     ( div (classes "mdc-checkbox") mempty
@@ -69,7 +69,7 @@ checkbox { caption, checked } =
         ^ div (classes "mdc-checkbox__mixedmark") mempty pzero)
       ^ div (classes "mdc-checkbox__ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") mempty mempty
     ^ label (attr "for" id) mempty
-      ( text # caption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+      ( (text # caption) >>> pzero ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
       id = unsafePerformEffect randomElementId
 
