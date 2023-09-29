@@ -21,9 +21,9 @@ order =
     ( MDC.subtitle1 (text # fixed "Customer")
     ^ name # customer )
   ^ MDC.card
-    ( MDC.radioButton { caption: text # fixed "Dine in", value: isDineIn }
-    ^ MDC.radioButton { caption: text # fixed "Takeaway", value: isTakeaway }
-    ^ MDC.radioButton { caption: text # fixed "Delivery", value: isDelivery }
+    ( MDC.radioButton { caption: fixed "Dine in", value: isDineIn }
+    ^ MDC.radioButton { caption: fixed "Takeaway", value: isTakeaway }
+    ^ MDC.radioButton { caption: fixed "Delivery", value: isDelivery }
     ^ MDC.filledTextField { caption: fixed "Table", value: table } # dineIn
     ^ MDC.filledTextField { caption: fixed "Time", value: time } # takeaway
     ^ MDC.filledTextField { caption: fixed "Address", value: address } # delivery ) # fulfillment

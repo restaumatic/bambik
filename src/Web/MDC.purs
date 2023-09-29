@@ -73,7 +73,7 @@ checkbox { caption, checked } =
     where
       id = unsafePerformEffect randomElementId
 
-radioButton :: forall a. { caption :: Widget a a, value :: WidgetOptics (Maybe a) (Maybe a) a a } -> Widget a a
+radioButton :: forall a b c . { caption :: WidgetOptics String b a c, value :: WidgetOptics (Maybe a) (Maybe a) a a } -> Widget a a
 radioButton { caption, value } =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
@@ -82,7 +82,7 @@ radioButton { caption, value } =
         ( div (classes "mdc-radio__outer-circle") mempty pzero
         ^ div (classes "mdc-radio__inner-circle") mempty pzero)
         ^ div (classes "mdc-radio__ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") mempty mempty
-  ^ label (attr "for" id) mempty ( caption ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+  ^ label (attr "for" id) mempty ( (text # caption) >>> pzero ) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
       id = unsafePerformEffect randomElementId
 
