@@ -27,11 +27,9 @@ module ViewModel
   , isTakeaway
   , isDelivery
   , formal
-  , paymentStatus
   , submitOrder
   , orderId
   , serializeOrder
-  , orderSummary
   , total
   , defaultOrder
   ) where
@@ -152,9 +150,6 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
-paymentStatus :: Projection String Boolean
-paymentStatus = projection if _ then "paid" else "NOT PAID"
-
 type SerializedOrder = String
 
 submitOrder :: SerializedOrder -> Effect Unit
@@ -171,30 +166,6 @@ orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
   { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
-
-orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
-orderSummary text =
-  ( text # fixed "Summary: Order "
-  ^ text # shortId
-  ^ text # fixed " (uniquely "
-  ^ text # uniqueId
-  ^ text # fixed ") for "
-  ^ ( text # firstName
-    ^ text # fixed " "
-    ^ text # lastName
-      ^ ( text # fixed " (formally "
-        ^ text # surname
-        ^ text # fixed " "
-        ^ text # forename
-        ^ text # fixed ")" ) # formal ) # customer
-  ^ text # fixed ", fulfilled as "
-  ^ fulfillmentData text # fulfillment )
-    where
-      fulfillmentData :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => p String String -> p Fulfillment Fulfillment
-      fulfillmentData text =
-        ( (text # fixed "dine in at table " ^ text) # table # dineIn
-        ^ (text # fixed "takeaway at " ^ text) # time # takeaway
-        ^ (text # fixed "delivery to " ^ text) # address # delivery )
 
 --
 

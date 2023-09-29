@@ -125,9 +125,8 @@ overline label = span (classes "mdc-typography--overline") mempty
 
 -- Widget transformers
 
-body1 :: forall a b. WidgetOptics String String a b -> Widget a b
-body1 content = p (classes "mdc-typography--body1") mempty
-  ( text # content )
+body1 :: forall a b. Widget a b -> Widget a b
+body1 = p (classes "mdc-typography--body1") mempty
 
 body2 :: forall a b. WidgetOptics a b a b
 body2 = p (classes "mdc-typography--body2") mempty
