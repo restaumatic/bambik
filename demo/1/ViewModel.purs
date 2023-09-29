@@ -30,8 +30,6 @@ module ViewModel
   , paymentStatus
   , submitOrder
   , orderId
-  , orderIdText
-  , orderTitle
   , serializeOrder
   , orderSummary
   , total
@@ -173,12 +171,6 @@ orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
   { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
     { short, unique } -> id { shortId = short, uniqueId = unique })
-
-orderIdText :: forall p. ChProfunctor p => Strong p => Choice p => ProfunctorPlus p => (forall a. p String a) -> p OrderId OrderId
-orderIdText text = text # short ^ text # fixed " (" ^ text # unique ^ text # fixed ")"
-
-orderTitle :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => p String String -> p Order Order
-orderTitle text = text # fixed "Order " ^ text # shortId
 
 orderSummary :: forall p. ChProfunctor p => ProfunctorPlus p => Strong p => Choice p => p String String -> p Order Order
 orderSummary text =

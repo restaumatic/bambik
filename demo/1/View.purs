@@ -15,35 +15,37 @@ order =
   ( MDC.headline6 (text # fixed "Order " ^ text # shortId)
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Identifier")
-    ^ MDC.filledTextField { caption: fixed "Short ID", value: shortId }
-    ^ MDC.filledTextField { caption: fixed "Unique ID", value: uniqueId } )
+    ^ MDC.filledTextField { caption: fixed "Short ID" } shortId
+    ^ MDC.filledTextField { caption: fixed "Unique ID" } uniqueId )
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Customer")
     ^ name # customer )
   ^ MDC.card
-    ( MDC.radioButton { caption: fixed "Dine in", value: isDineIn }
-    ^ MDC.radioButton { caption: fixed "Takeaway", value: isTakeaway }
-    ^ MDC.radioButton { caption: fixed "Delivery", value: isDelivery }
-    ^ MDC.filledTextField { caption: fixed "Table", value: table } # dineIn
-    ^ MDC.filledTextField { caption: fixed "Time", value: time } # takeaway
-    ^ MDC.filledTextField { caption: fixed "Address", value: address } # delivery ) # fulfillment
+    ( MDC.radioButton { caption: fixed "Dine in" } isDineIn
+    ^ MDC.radioButton { caption: fixed "Takeaway" } isTakeaway
+    ^ MDC.radioButton { caption: fixed "Delivery" } isDelivery 
+    ^ MDC.filledTextField { caption: fixed "Table" } table # dineIn
+    ^ MDC.filledTextField { caption: fixed "Time" } time # takeaway
+    ^ MDC.filledTextField { caption: fixed "Address" } address # delivery ) # fulfillment
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Total")
-    ^ MDC.filledTextField { caption: fixed "Total", value: total } )
+    ^ MDC.filledTextField { caption: fixed "Total" } total )
   ^ MDC.card
-    ( MDC.checkbox { caption: \order2order -> total order2order ^ text # fixed " paid", checked: paid } )
+    ( MDC.checkbox { caption: \cap -> (cap # total) ^ text # fixed " paid" } paid )
   ^ MDC.card
     ( MDC.body1 orderSummary
     ^ MDC.containedButton (text # fixed "Submit order " ^ text # shortId )
-      >>> MDC.dialog { title: text # fixed "Submit order?", content: ( MDC.body1 (fixed "Are you sure?") ^ MDC.containedButton (text # fixed "Submit order" ) ) }
+      >>> MDC.dialog { title: text # fixed "Submit order " ^ text # shortId ^ text # fixed "?"}
+        ( MDC.body1 (fixed "Are you sure?")
+        ^ MDC.containedButton (text # fixed "Submit order" ) )
       >>> serializeOrder
       >>> MDC.snackbar (\_ -> ( text # fixed "Order " ^ text ^ text # fixed " submitted" ) ) ) )
 
 name :: Widget NameInformal NameInformal
 name =
   MDC.subtitle2 (fixed "Informal")
-  ^ MDC.filledTextField { caption: fixed "First name", value: firstName }
-  ^ MDC.filledTextField { caption: fixed "Last name", value: lastName }
+  ^ MDC.filledTextField { caption: fixed "First name" } firstName
+  ^ MDC.filledTextField { caption: fixed "Last name" } lastName
   ^ ( MDC.subtitle2 (fixed "Formal")
-    ^ MDC.filledTextField { caption: fixed "Surname", value: surname }
-    ^ MDC.filledTextField { caption: fixed "Forename", value: forename } ) # formal
+    ^ MDC.filledTextField { caption: fixed "Surname" } surname
+    ^ MDC.filledTextField { caption: fixed "Forename" } forename ) # formal

@@ -46,8 +46,8 @@ containedButton label =
     ^ span (classes "mdc-button__label") mempty
       label ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
 
-filledTextField :: forall a b. { caption :: WidgetOptics String b a a, value :: WidgetOptics String String a a } -> Widget a a
-filledTextField { caption, value } =
+filledTextField :: forall a b. { caption :: WidgetOptics String b a a } -> WidgetOptics String String a a -> Widget a a
+filledTextField { caption } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
     ( span (classes "mdc-text-field__ripple") mempty pzero
     -- TODO EC: fix it
@@ -56,8 +56,8 @@ filledTextField { caption, value } =
     ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
     ^ span (classes "mdc-line-ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
 
-checkbox :: forall a b c. { caption :: WidgetOptics String b a c, checked :: WidgetOptics Boolean Boolean a a } -> Widget a a
-checkbox { caption, checked } =
+checkbox :: forall a b c. { caption :: WidgetOptics String b a c } -> WidgetOptics Boolean Boolean a a -> Widget a a
+checkbox { caption } checked =
   div (classes "mdc-form-field") mempty
     ( div (classes "mdc-checkbox") mempty
       ( Web.checkbox (classes "mdc-checkbox__native-control" <> attr "type" "checkbox" <> attr "id" id) # checked
@@ -73,8 +73,8 @@ checkbox { caption, checked } =
     where
       id = unsafePerformEffect randomElementId
 
-radioButton :: forall a b c . { caption :: WidgetOptics String b a c, value :: WidgetOptics (Maybe a) (Maybe a) a a } -> Widget a a
-radioButton { caption, value } =
+radioButton :: forall a b c . { caption :: WidgetOptics String b a c } -> WidgetOptics (Maybe a) (Maybe a) a a -> Widget a a
+radioButton { caption } value =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
       ( Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id ) # value
@@ -144,8 +144,8 @@ elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "
 card :: forall a b. WidgetOptics a b a b
 card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a b. { title :: Widget a b, content :: Widget a a } -> Widget a a
-dialog { title, content } =
+dialog :: forall a b. { title :: Widget a b } -> Widget a a -> Widget a a
+dialog { title } content =
   aside (classes "mdc-dialog") mempty
     ( div (classes "mdc-dialog__container") mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty
