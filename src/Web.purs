@@ -49,7 +49,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor, arr)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, proplusfirst, proplussecond, pzero, (<^), (^), (^>))
+import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, pzero, (^))
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -155,14 +155,6 @@ instance ProfunctorPlus Widget where
       update1 cha
       updateParent cha
     liftEffect $ Ref.write (Just update2) mUpdate2Ref
-    pure $ update1 <> update2
-  proplusfirst c1 c2 = Widget \updateParent -> do
-    update1 <- unwrapWidget c1 updateParent
-    update2 <- unwrapWidget c2 mempty
-    pure $ update1 <> update2
-  proplussecond c1 c2 = Widget \updateParent -> do
-    update1 <- unwrapWidget c1 mempty
-    update2 <- unwrapWidget c2 updateParent
     pure $ update1 <> update2
 
 instance ProfunctorZero Widget where

@@ -33,18 +33,18 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web (Widget, WidgetOptics, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (<^), (^), (^>))
+import Web (Widget, WidgetOptics, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (^))
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 
 -- Primitive widgets
 
-containedButton :: forall a b c. (WidgetOptics String b a c) -> Widget a a
+containedButton :: forall a. Widget a a -> Widget a a
 containedButton label =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
     ( div (classes "mdc-button__ripple") mempty pzero
-    <^ span (classes "mdc-button__label") mempty
-      ( text # label ) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
+    ^ span (classes "mdc-button__label") mempty
+      label ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
 
 filledTextField :: forall a b. { caption :: WidgetOptics String b a a, value :: WidgetOptics String String a a } -> Widget a a
 filledTextField { caption, value } =
@@ -78,7 +78,7 @@ radioButton { caption, value } =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
       ( Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id ) # value
-      <^ div (classes "mdc-radio__background") mempty
+      ^ div (classes "mdc-radio__background") mempty
         ( div (classes "mdc-radio__outer-circle") mempty pzero
         ^ div (classes "mdc-radio__inner-circle") mempty pzero)
         ^ div (classes "mdc-radio__ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") mempty mempty
@@ -144,14 +144,17 @@ elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "
 card :: forall a b. WidgetOptics a b a b
 card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a b c d. { title :: Widget a b, content :: Widget a b } -> Widget a b
+dialog :: forall a b. { title :: Widget a b, content :: Widget a a } -> Widget a a
 dialog { title, content } =
   aside (classes "mdc-dialog") mempty
     ( div (classes "mdc-dialog__container") mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty
-        ( h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty title
-        ^> div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content) )
-      <^ div (classes "mdc-dialog__scrim") mempty pzero ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+        (
+        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title >>> pzero)
+        ^
+        div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
+        ) )
+      ^ div (classes "mdc-dialog__scrim") mempty pzero ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = getCurrentNode >>= newComponent material.dialog."MDCDialog"
       openMdcComponent comp _ = open comp
@@ -162,8 +165,7 @@ snackbar label =
   aside (classes "mdc-snackbar") mempty
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty
-        ( text # label
-        ^> pzero ) ) ) # bracket initializeMdcSnackbar openMdcComponent mempty
+        ( (text # label) >>> pzero ) ) ) # bracket initializeMdcSnackbar openMdcComponent mempty
     where
       initializeMdcSnackbar = getCurrentNode >>= newComponent material.snackbar."MDCSnackbar"
       openMdcComponent comp _ = open comp

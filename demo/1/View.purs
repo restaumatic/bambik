@@ -34,12 +34,12 @@ order =
     ( MDC.checkbox { caption: \order2order -> total order2order ^ text # fixed " paid", checked: paid } )
   ^ MDC.card
     ( MDC.body1 orderSummary
-    ^ MDC.containedButton (\order2order -> text # fixed "Submit order " ^ shortId order2order )
-      >>> MDC.dialog { title: text # fixed "Submit order?", content:
-          ( MDC.body1 (fixed "Are you sure?")
-          ^ MDC.containedButton (fixed "Submit order" ) ) }
+    ^ MDC.containedButton (text # fixed "Submit order " ^ text # shortId )
+      >>> MDC.dialog { title: text # fixed "Submit order?", content: ( MDC.body1 (fixed "Are you sure?") ^ MDC.containedButton (text # fixed "Submit order" ) ) }
       >>> serializeOrder
-      >>> MDC.snackbar (\_ -> ( text # fixed "Order " ^ text ^ text # fixed " submitted" )) ) )
+      >>> MDC.snackbar (\_ -> ( text # fixed "Order " ^ text ^ text # fixed " submitted" ))
+
+       ) )
 
 name :: Widget NameInformal NameInformal
 name =
