@@ -33,7 +33,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web (Widget, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (^))
+import Web (Widget, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, textInput, (^))
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 
