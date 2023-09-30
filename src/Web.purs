@@ -57,9 +57,14 @@ import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
-newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
-unwrapWidget :: forall i o. Widget i o -> (Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit)
+type Reaction a = Changed a -> Effect Unit
+
+-- Reactive?
+newtype Widget i o = Widget (Reaction o -> DOM (Reaction i))
+--                           -callback-         --update--
+
+unwrapWidget :: forall i o. Widget i o -> Reaction o -> DOM (Reaction i)
 unwrapWidget (Widget w) = w
 
 -- Capabilites
