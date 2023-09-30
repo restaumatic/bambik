@@ -33,7 +33,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web (Widget, WidgetOptics, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (^))
+import Web (Widget, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, pzero, span, text, textInput, (^))
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 
@@ -46,7 +46,7 @@ containedButton label =
     ^ span (classes "mdc-button__label") mempty
       label ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
 
-filledTextField :: forall a b. { caption :: WidgetOptics String b a a } -> WidgetOptics String String a a -> Widget a a
+filledTextField :: forall a b c. { caption :: Widget String b -> Widget a c } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { caption } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
     ( span (classes "mdc-text-field__ripple") mempty pzero
@@ -56,7 +56,7 @@ filledTextField { caption } value =
     ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
     ^ span (classes "mdc-line-ripple") mempty pzero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
 
-checkbox :: forall a b c. { caption :: WidgetOptics String b a c } -> WidgetOptics Boolean Boolean a a -> Widget a a
+checkbox :: forall a b c. { caption :: Widget String b -> Widget a c } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a
 checkbox { caption } checked =
   div (classes "mdc-form-field") mempty
     ( div (classes "mdc-checkbox") mempty
@@ -73,7 +73,7 @@ checkbox { caption } checked =
     where
       id = unsafePerformEffect randomElementId
 
-radioButton :: forall a b c . { caption :: WidgetOptics String b a c } -> WidgetOptics (Maybe a) (Maybe a) a a -> Widget a a
+radioButton :: forall a b c . { caption :: Widget String b -> Widget a c } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
 radioButton { caption } value =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
@@ -86,20 +86,20 @@ radioButton { caption } value =
     where
       id = unsafePerformEffect randomElementId
 
-headline1 :: forall a b. WidgetOptics String String a b -> Widget a b
-headline1 content = h1 (classes "mdc-typography--headline1") mempty content
+headline1 :: forall a b. Widget a b -> Widget a b
+headline1 = h1 (classes "mdc-typography--headline1") mempty
 
 headline2 :: forall a b. Widget a b -> Widget a b
-headline2 content = h2 (classes "mdc-typography--headline2") mempty content
+headline2 = h2 (classes "mdc-typography--headline2") mempty
 
-headline3 :: forall a b. WidgetOptics String String a b -> Widget a b
-headline3 content = h3 (classes "mdc-typography--headline3") mempty content
+headline3 :: forall a b. Widget a b -> Widget a b
+headline3 = h3 (classes "mdc-typography--headline3") mempty
 
-headline4 :: forall a b. WidgetOptics String String a b -> Widget a b
-headline4 content = h4 (classes "mdc-typography--headline4") mempty content
+headline4 :: forall a b. Widget a b -> Widget a b
+headline4 = h4 (classes "mdc-typography--headline4") mempty
 
-headline5 :: forall a b. WidgetOptics String String a b -> Widget a b
-headline5 content = h5 (classes "mdc-typography--headline5") mempty content
+headline5 :: forall a b. Widget a b -> Widget a b
+headline5 = h5 (classes "mdc-typography--headline5") mempty
 
 headline6 :: forall a b. Widget a b -> Widget a b
 headline6 = h6 (classes "mdc-typography--headline6") mempty
@@ -107,40 +107,37 @@ headline6 = h6 (classes "mdc-typography--headline6") mempty
 subtitle1 :: forall a b. Widget a b -> Widget a b
 subtitle1 = p (classes "mdc-typography--subtitle1") mempty
 
-subtitle2 :: forall a b. WidgetOptics String String a b -> Widget a b
-subtitle2 label = p (classes "mdc-typography--subtitle2") mempty
-  ( text # label )
+subtitle2 :: forall a b. Widget a b -> Widget a b
+subtitle2 = p (classes "mdc-typography--subtitle2") mempty
 
-button :: forall a b. WidgetOptics String String a b -> Widget a b
+button :: forall a b. (Widget String String -> Widget a b) -> Widget a b
 button label = span (classes "mdc-typography--button") mempty
   ( text # label )
 
-caption :: forall a b. WidgetOptics String String a b -> Widget a b
-caption label = span (classes "mdc-typography--caption") mempty
-  ( text # label )
+caption :: forall a b. Widget a b -> Widget a b
+caption = span (classes "mdc-typography--caption") mempty
 
-overline :: forall a b. WidgetOptics String String a b -> Widget a b
-overline label = span (classes "mdc-typography--overline") mempty
-  ( text # label )
+overline :: forall a b. Widget a b -> Widget a b
+overline = span (classes "mdc-typography--overline") mempty
 
 -- Widget transformers
 
 body1 :: forall a b. Widget a b -> Widget a b
 body1 = p (classes "mdc-typography--body1") mempty
 
-body2 :: forall a b. WidgetOptics a b a b
+body2 :: forall a b. Widget a b -> Widget a b
 body2 = p (classes "mdc-typography--body2") mempty
 
-elevation1 :: forall a b. WidgetOptics a b a b
+elevation1 :: forall a b. Widget a b -> Widget a b
 elevation1 = div (classes "elevation-demo-surface mdc-elevation--z1") mempty
 
-elevation10 :: forall a b. WidgetOptics a b a b
+elevation10 :: forall a b. Widget a b -> Widget a b
 elevation10 = div (classes "elevation-demo-surface mdc-elevation--z10" <> attr "style" "padding: 25px") mempty -- TODO padding added ad-hoc, to remove
 
-elevation20 :: forall a b. WidgetOptics a b a b
+elevation20 :: forall a b. Widget a b -> Widget a b
 elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "style" "padding: 25px") mempty -- TODO padding added ad-hoc, to remove
 
-card :: forall a b. WidgetOptics a b a b
+card :: forall a b. Widget a b -> Widget a b
 card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty -- TODO padding added ad-hoc, to remove
 
 dialog :: forall a b. { title :: Widget a b } -> Widget a a -> Widget a a
@@ -159,7 +156,7 @@ dialog { title } content =
       openMdcComponent comp _ = open comp
       closeMdcComponent comp _ = close comp
 
-snackbar :: forall a b c. WidgetOptics String String a c -> Widget a b
+snackbar :: forall a b c. (Widget String String -> Widget a c) -> Widget a b
 snackbar label =
   aside (classes "mdc-snackbar") mempty
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty

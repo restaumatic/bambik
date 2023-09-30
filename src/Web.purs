@@ -1,6 +1,5 @@
 module Web
   ( Widget
-  , WidgetOptics
   , aside
   , aside'
   , bracket
@@ -196,10 +195,6 @@ purePP' :: forall b p a. Category p => Profunctor p => b -> p a b
 purePP' b = arr (const b)
 
 
-
-
-type WidgetOptics a b s t = Widget a b -> Widget s t
-
 -- Primitive widgets
 
 text :: forall a. Widget String a
@@ -250,7 +245,7 @@ radioButton attrs = Widget \callbackchma -> do
 
 -- Widget optics
 
-bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> WidgetOptics a b a b
+bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
 bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
   ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   update <- unwrapWidget w $ (\chb -> do
@@ -260,7 +255,7 @@ bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
   liftEffect $ Ref.write ctx ctxRef
   pure $ update <> afterUpdate ctx
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Widget \callbackb -> do
   Tuple node update <- elAttr tagName attrs $ unwrapWidget w callbackb
   pure case _ of
@@ -269,37 +264,37 @@ element tagName attrs dynAttrs w = Widget \callbackb -> do
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
 
-div' :: forall a b. WidgetOptics a b a b
+div' :: forall a b. Widget a b -> Widget a b
 div' = div mempty mempty
 
-div :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+div :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 div = element "div"
 
-span' :: forall a b. WidgetOptics a b a b
+span' :: forall a b. Widget a b -> Widget a b
 span' = span mempty mempty
 
 span :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 span = element "span"
 
-aside' :: forall a b. WidgetOptics a b a b
+aside' :: forall a b. Widget a b -> Widget a b
 aside' = aside mempty mempty
 
-aside :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+aside :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 aside = element "aside"
 
-label' :: forall a b. WidgetOptics a b a b
+label' :: forall a b. Widget a b -> Widget a b
 label' = label mempty mempty
 
-label :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+label :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 label = element "label"
 
-button' :: forall a b. WidgetOptics a b a b
+button' :: forall a b. Widget a b -> Widget a b
 button' = button mempty mempty
 
-button :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+button :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 button = element "button"
 
-clickable :: forall a b. WidgetOptics a b a a
+clickable :: forall a b. Widget a b -> Widget a a
 clickable w = Widget \callbacka -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka) mempty mempty
@@ -310,46 +305,47 @@ clickable w = Widget \callbacka -> do
       Ref.write cha aRef
       update cha
 
-svg :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+svg :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 svg = element "svg"
 
-path :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+path :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 path = element "path"
 
-p :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics a b a b
+p :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 p = element "p"
 
-p' :: forall a b. WidgetOptics a b a b
+p' :: forall a b. Widget a b -> Widget a b
 p' = p mempty mempty
 
-h1 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
-h1 attrs dynAttrs content = element "h1" attrs dynAttrs $ text # content
+h1 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h1 attrs dynAttrs = element "h1" attrs dynAttrs
 
-h1' :: forall a b. WidgetOptics String String a b -> Widget a b
-h1' content = h1 mempty mempty content
+h1' :: forall a b. Widget a b -> Widget a b
+h1' = h1 mempty mempty
 
 h2 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h2 attrs dynAttrs content = element "h2" attrs dynAttrs $ content
+h2 attrs dynAttrs = element "h2" attrs dynAttrs
 
 h2' :: forall a b. Widget a b -> Widget a b
 h2' = h2 mempty mempty
-h3 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
-h3 attrs dynAttrs content = element "h3" attrs dynAttrs $ text # content
 
-h3' :: forall a b. WidgetOptics String String a b -> Widget a b
-h3' content = h3 mempty mempty content
+h3 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h3 attrs dynAttrs = element "h3" attrs dynAttrs
 
-h4 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
-h4 attrs dynAttrs content = element "h4" attrs dynAttrs $ text # content
+h3' :: forall a b. Widget a b -> Widget a b
+h3' = h3 mempty mempty
 
-h4' :: forall a b. WidgetOptics String String a b -> Widget a b
-h4' content = h4 mempty mempty content
+h4 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h4 attrs dynAttrs = element "h4" attrs dynAttrs
 
-h5 :: forall a b. Attrs -> (a -> Attrs) -> WidgetOptics String String a b -> Widget a b
-h5 attrs dynAttrs content = element "h5" attrs dynAttrs $ text # content
+h4' :: forall a b. Widget a b -> Widget a b
+h4' = h4 mempty mempty
 
-h5' :: forall a b. WidgetOptics String String a b -> Widget a b
-h5' content = h5 mempty mempty content
+h5 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h5 attrs dynAttrs = element "h5" attrs dynAttrs
+
+h5' :: forall a b. Widget a b -> Widget a b
+h5' = h5 mempty mempty
 
 h6 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 h6 attrs dynAttrs content = element "h6" attrs dynAttrs content

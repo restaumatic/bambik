@@ -60,9 +60,9 @@ order =
 
 name :: Widget NameInformal NameInformal
 name =
-  MDC.subtitle2 (fixed "Informal")
+  MDC.subtitle2 (text # fixed "Informal")
   ^ MDC.filledTextField { caption: fixed "First name" } firstName
   ^ MDC.filledTextField { caption: fixed "Last name" } lastName
-  ^ ( MDC.subtitle2 (fixed "Formal")
+  ^ ( MDC.subtitle2 (text # fixed "Formal")
     ^ MDC.filledTextField { caption: fixed "Surname" } surname
     ^ MDC.filledTextField { caption: fixed "Forename" } forename ) # formal
