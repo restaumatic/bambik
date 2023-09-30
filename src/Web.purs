@@ -6,6 +6,7 @@ module Web
   , button
   , button'
   , checkbox
+  , clickable
   , div
   , div'
   , h1
@@ -21,8 +22,6 @@ module Web
   , h6
   , h6'
   , html
-  , input
-  , input'
   , label
   , label'
   , module Data.Profunctor.Plus
@@ -46,17 +45,17 @@ import Prelude hiding (zero, div)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor (class Profunctor)
+import Data.Profunctor (class Profunctor, arr)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, proplusfirst, proplussecond, pzero, (<^), (^), (^>))
+import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, pzero, (^))
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 
@@ -156,14 +155,6 @@ instance ProfunctorPlus Widget where
       updateParent cha
     liftEffect $ Ref.write (Just update2) mUpdate2Ref
     pure $ update1 <> update2
-  proplusfirst c1 c2 = Widget \updateParent -> do
-    update1 <- unwrapWidget c1 updateParent
-    update2 <- unwrapWidget c2 mempty
-    pure $ update1 <> update2
-  proplussecond c1 c2 = Widget \updateParent -> do
-    update1 <- unwrapWidget c1 mempty
-    update2 <- unwrapWidget c2 updateParent
-    pure $ update1 <> update2
 
 instance ProfunctorZero Widget where
   pzero = Widget mempty
@@ -191,6 +182,19 @@ instance Semigroupoid Widget where
 instance Category Widget where
   identity = Widget pure -- update triggers callback
 
+class ProductProfunctor p where
+  purePP :: forall a b. b -> p a b
+
+instance ProductProfunctor Widget where
+  purePP b = Widget \callbackb -> pure case _ of
+    Changed None _ -> pure unit
+    _ -> callbackb (Changed Some b)
+
+-- or just:
+purePP' :: forall b p a. Category p => Profunctor p => b -> p a b
+purePP' b = arr (const b)
+
+
 -- Primitive widgets
 
 text :: forall a. Widget String a
@@ -205,7 +209,7 @@ html h = Widget \_ -> do
   rawHtml h
   mempty
 
-textInput :: Attrs -> Widget String String -- TODO EC incorporate validation here? The id would be plain Widget?
+textInput :: Attrs -> Widget String String
 textInput attrs = Widget \callbackcha -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
@@ -239,7 +243,7 @@ radioButton attrs = Widget \callbackchma -> do
       Ref.write newma maRef
       setChecked node true
 
--- Widget transformers
+-- Widget optics
 
 bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
 bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
@@ -259,12 +263,6 @@ element tagName attrs dynAttrs w = Widget \callbackb -> do
     Changed ch newa -> do
       setAttributes node (attrs <> dynAttrs newa)
       update $ Changed ch newa
-
-input' :: forall a b. Widget a b -> Widget a b
-input' = input mempty mempty
-
-input :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-input = element "div"
 
 div' :: forall a b. Widget a b -> Widget a b
 div' = div mempty mempty
@@ -290,21 +288,22 @@ label' = label mempty mempty
 label :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 label = element "label"
 
--- TODO EC refactor to using `element`, `bracket` etc functions
-button :: forall a. Attrs -> (a -> Attrs) -> Widget a a -> Widget a a
-button attrs dynAttrs w = Widget \callbacka -> do
+button' :: forall a b. Widget a b -> Widget a b
+button' = button mempty mempty
+
+button :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+button = element "button"
+
+clickable :: forall a b. Widget a b -> Widget a a
+clickable w = Widget \callbacka -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  Tuple node update <- elAttr "button" attrs $ unwrapWidget w mempty
-  liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka
+  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka) mempty mempty
+  update <- unwrapWidget buttonWidget mempty
   pure case _ of
     Changed None _ -> mempty
-    cha@(Changed _ newa) -> do
-      setAttributes node (attrs <> dynAttrs newa)
+    cha -> do
       Ref.write cha aRef
       update cha
-
-button' :: forall a. Widget a a -> Widget a a
-button' = button mempty mempty
 
 svg :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 svg = element "svg"
@@ -318,41 +317,41 @@ p = element "p"
 p' :: forall a b. Widget a b -> Widget a b
 p' = p mempty mempty
 
-h1 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
-h1 attrs dynAttrs content = element "h1" attrs dynAttrs $ text # content
+h1 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h1 attrs dynAttrs = element "h1" attrs dynAttrs
 
-h1' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-h1' content = h1 mempty mempty content
+h1' :: forall a b. Widget a b -> Widget a b
+h1' = h1 mempty mempty
 
-h2 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
-h2 attrs dynAttrs content = element "h2" attrs dynAttrs $ text # content
+h2 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h2 attrs dynAttrs = element "h2" attrs dynAttrs
 
-h2' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-h2' content = h2 mempty mempty content
+h2' :: forall a b. Widget a b -> Widget a b
+h2' = h2 mempty mempty
 
-h3 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
-h3 attrs dynAttrs content = element "h3" attrs dynAttrs $ text # content
+h3 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h3 attrs dynAttrs = element "h3" attrs dynAttrs
 
-h3' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-h3' content = h3 mempty mempty content
+h3' :: forall a b. Widget a b -> Widget a b
+h3' = h3 mempty mempty
 
-h4 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
-h4 attrs dynAttrs content = element "h4" attrs dynAttrs $ text # content
+h4 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h4 attrs dynAttrs = element "h4" attrs dynAttrs
 
-h4' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-h4' content = h4 mempty mempty content
+h4' :: forall a b. Widget a b -> Widget a b
+h4' = h4 mempty mempty
 
-h5 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
-h5 attrs dynAttrs content = element "h5" attrs dynAttrs $ text # content
+h5 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h5 attrs dynAttrs = element "h5" attrs dynAttrs
 
-h5' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-h5' content = h5 mempty mempty content
+h5' :: forall a b. Widget a b -> Widget a b
+h5' = h5 mempty mempty
 
-h6 :: forall a b. Attrs -> (a -> Attrs) -> (Widget String String -> Widget a b) -> Widget a b
-h6 attrs dynAttrs content = element "h6" attrs dynAttrs $ text # content
+h6 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h6 attrs dynAttrs content = element "h6" attrs dynAttrs content
 
-h6' :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-h6' content = h6 mempty mempty content
+h6' :: forall a b. Widget a b -> Widget a b
+h6' = h6 mempty mempty
 
 -- Entry point
 
