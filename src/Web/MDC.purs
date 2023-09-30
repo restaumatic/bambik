@@ -110,9 +110,8 @@ subtitle1 = p (classes "mdc-typography--subtitle1") mempty
 subtitle2 :: forall a b. Widget a b -> Widget a b
 subtitle2 = p (classes "mdc-typography--subtitle2") mempty
 
-button :: forall a b. (Widget String String -> Widget a b) -> Widget a b
-button label = span (classes "mdc-typography--button") mempty
-  ( text # label )
+button :: forall a b. Widget a b -> Widget a b
+button = span (classes "mdc-typography--button") mempty
 
 caption :: forall a b. Widget a b -> Widget a b
 caption = span (classes "mdc-typography--caption") mempty
