@@ -60,7 +60,8 @@ import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComp
 
 type Reaction a = Changed a -> Effect Unit
 
--- Reactive?
+-- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
+-- WebActor? SiteActor? DOMActor?
 newtype Widget i o = Widget (Reaction o -> DOM (Reaction i))
 --                           -callback-         --update--
 
