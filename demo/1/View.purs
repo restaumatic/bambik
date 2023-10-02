@@ -3,10 +3,10 @@ module View
   ) where
 
 import Prelude
-import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, serializeOrder, shortId, surname, table, takeaway, time, total, uniqueId)
-import Web (Widget, text, (^))
 
 import Data.Profunctor.Change (fixed)
+import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import Web (Widget, effect, text, (^))
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
@@ -53,10 +53,10 @@ order =
         ^ (text # fixed "delivery to " ^ text) # address # delivery ) # fulfillment )
     ^ MDC.containedButton { label: text # fixed "Submit order " ^ text # shortId }
       >>> MDC.dialog { title: text # fixed "Submit order " ^ text # shortId ^ text # fixed "?"}
-          ( MDC.body1 (text # fixed "Are you sure?")
-          ^ MDC.containedButton { label: text # fixed "Submit order" } )
-      >>> serializeOrder
-      >>> MDC.snackbar { label: text # fixed "Order \"" ^ text ^ text # fixed "\" submitted" } ) )
+        ( MDC.body1 (text # fixed "Are you sure?")
+        ^ MDC.containedButton { label: text # fixed "Submit order" } )
+      >>> MDC.snackbar { label: text # fixed "Submitting order " ^ text # shortId }
+      >>> effect submitOrder ) )
 
 name :: Widget NameInformal NameInformal
 name =

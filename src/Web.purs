@@ -9,6 +9,7 @@ module Web
   , clickable
   , div
   , div'
+  , effect
   , h1
   , h1'
   , h2
@@ -22,6 +23,7 @@ module Web
   , h6
   , h6'
   , html
+  , hush
   , label
   , label'
   , module Data.Profunctor.Plus
@@ -45,10 +47,10 @@ import Prelude hiding (zero, div)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor (class Profunctor, arr)
+import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, pzero, (^))
+import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, prozero, (^))
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -57,13 +59,15 @@ import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
-
 type Reaction a = Changed a -> Effect Unit
 
 -- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
 -- WebActor? SiteActor? DOMActor?
 newtype Widget i o = Widget (Reaction o -> DOM (Reaction i))
 --                           -callback-         --update--
+-- Important: callback should never be called as a direct reaction to input (TODO: how to encode it on type level? By allowing
+-- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will enter infinite loop
+-- of mutual updates.
 
 unwrapWidget :: forall i o. Widget i o -> Reaction o -> DOM (Reaction i)
 unwrapWidget (Widget w) = w
@@ -163,7 +167,7 @@ instance ProfunctorPlus Widget where
     pure $ update1 <> update2
 
 instance ProfunctorZero Widget where
-  pzero = Widget mempty
+  prozero = Widget mempty
 
 instance ChProfunctor Widget where
   chmap mapin mapout w = Widget \callback -> do
@@ -185,9 +189,6 @@ instance Semigroupoid Widget where
     liftEffect $ Ref.write update2 update2Ref
     pure update1
 
-instance Category Widget where
-  identity = Widget pure -- update triggers callback
-
 class ProductProfunctor p where
   purePP :: forall a b. b -> p a b
 
@@ -196,10 +197,11 @@ instance ProductProfunctor Widget where
     Changed None _ -> pure unit
     _ -> callbackb (Changed Some b)
 
--- or just:
-purePP' :: forall b p a. Category p => Profunctor p => b -> p a b
-purePP' b = arr (const b)
+effect :: forall i o. (i -> Effect Unit) -> Widget i o
+effect f = Widget \_ -> pure \(Changed _ a) -> f a -- callback is never called
 
+hush :: forall a b c. Widget a b -> Widget a c
+hush w = Widget \_ -> unwrapWidget w mempty -- callback is never called
 
 -- Primitive widgets
 

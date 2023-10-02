@@ -3,7 +3,7 @@ module Data.Profunctor.Plus
   , class ProfunctorZero
   , class ProfunctorPlus
   , proplus
-  , pzero
+  , prozero
   )
   where
 
@@ -14,10 +14,10 @@ class Profunctor p <= ProfunctorPlus p where -- TODO EC find fancier name
     -- laws:
     -- proplus a (proplus b c) = proplus (proplus a b) c
 
-class ProfunctorPlus p <= ProfunctorZero p where -- TODO EC find fancier name, is this ~ ArrowZero?
-    pzero :: forall a b. p a b
+class ProfunctorPlus p <= ProfunctorZero p where -- TODO EC find fancier name
+    prozero :: forall a. p a a
     -- laws:
-    --  proplus a pzero == a = proplus invzero a
+    --  proplus a prozero == a = proplus prozero a
 
 -- lower precedence than `#` which is 0
 infixr 0 proplus as ^
