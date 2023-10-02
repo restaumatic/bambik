@@ -33,17 +33,17 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Web (Widget, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, prozero, span, textInput, (^))
+import Web (Widget, aside, bracket, clickable, div, h1, h2, h3, h4, h5, h6, html, hush, label, p, prozero, span, textInput, (^))
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 
 -- Primitive widgets
 
-containedButton :: forall a. { label :: Widget a a } -> Widget a a
+containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
     ( div (classes "mdc-button__ripple") mempty prozero
-    ^ span (classes "mdc-button__label") mempty label ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
+    ^ span (classes "mdc-button__label") mempty (label # hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
@@ -55,7 +55,7 @@ filledTextField { floatingLabel } value =
     ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
     ^ span (classes "mdc-line-ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
 
-checkbox :: forall a. { labelContent :: Widget a a } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a
+checkbox :: forall a b. { labelContent :: Widget a b } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a
 checkbox { labelContent } checked =
   div (classes "mdc-form-field") mempty
     ( div (classes "mdc-checkbox") mempty
@@ -67,11 +67,11 @@ checkbox { labelContent } checked =
           </svg>""" -- Without raw HTML it doesn't work
         ^ div (classes "mdc-checkbox__mixedmark") mempty prozero)
       ^ div (classes "mdc-checkbox__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") mempty mempty
-    ^ label (attr "for" id) mempty labelContent ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+    ^ label (attr "for" id) mempty (labelContent # hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
       id = unsafePerformEffect randomElementId
 
-radioButton :: forall a. { labelContent :: Widget a a } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
+radioButton :: forall a b. { labelContent :: Widget a b } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
 radioButton { labelContent } value =
   div (classes "mdc-form-field") mempty
   ( div (classes "mdc-radio") mempty
@@ -80,7 +80,7 @@ radioButton { labelContent } value =
         ( div (classes "mdc-radio__outer-circle") mempty prozero
         ^ div (classes "mdc-radio__inner-circle") mempty prozero)
         ^ div (classes "mdc-radio__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") mempty mempty
-  ^ label (attr "for" id) mempty labelContent
+  ^ label (attr "for" id) mempty (labelContent # hush)
   )
   # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
     where
@@ -139,13 +139,13 @@ elevation20 = div (classes "elevation-demo-surface mdc-elevation--z20" <> attr "
 card :: forall a b. Widget a b -> Widget a b
 card = div (classes "mdc-card" <> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;") mempty -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a. { title :: Widget a a } -> Widget a a -> Widget a a
+dialog :: forall a b. { title :: Widget a b } -> Widget a a -> Widget a a
 dialog { title } content =
   aside (classes "mdc-dialog") mempty
     ( div (classes "mdc-dialog__container") mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty
         (
-        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title >>> prozero)
+        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title # hush)
         ^
         div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
         ) )

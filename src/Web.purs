@@ -1,6 +1,5 @@
 module Web
   ( Widget
-  , effect
   , aside
   , aside'
   , bracket
@@ -10,6 +9,7 @@ module Web
   , clickable
   , div
   , div'
+  , effect
   , h1
   , h1'
   , h2
@@ -23,6 +23,7 @@ module Web
   , h6
   , h6'
   , html
+  , hush
   , label
   , label'
   , module Data.Profunctor.Plus
@@ -194,6 +195,9 @@ instance ProductProfunctor Widget where
 
 effect :: forall i o. (i -> Effect Unit) -> Widget i o
 effect f = Widget \_ -> pure \(Changed _ a) -> f a -- callback is never called
+
+hush :: forall a b c. Widget a b -> Widget a c
+hush w = Widget \_ -> unwrapWidget w mempty -- callback is never called
 
 -- Primitive widgets
 
