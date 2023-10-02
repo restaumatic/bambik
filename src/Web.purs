@@ -46,7 +46,7 @@ import Prelude hiding (zero, div)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor (class Profunctor, arr)
+import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, pzero, (^))
@@ -59,6 +59,10 @@ import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
+-- Important: callback should never be called as a direct reaction to input (TODO: how to encode it on type level? By allowing
+-- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will neter inifinit loop
+-- of mutual updates.
+
 
 unwrapWidget :: forall i o. Widget i o -> (Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit)
 unwrapWidget (Widget w) = w
@@ -189,8 +193,7 @@ instance ProductProfunctor Widget where
     _ -> callbackb (Changed Some b)
 
 effect :: forall i o. (i -> Effect Unit) -> Widget i o
-effect f = Widget \_ -> do
-  pure \(Changed _ a) -> f a
+effect f = Widget \_ -> pure \(Changed _ a) -> f a -- callback is never called
 
 -- Primitive widgets
 
