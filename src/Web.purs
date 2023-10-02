@@ -1,5 +1,6 @@
 module Web
   ( Widget
+  , effect
   , aside
   , aside'
   , bracket
@@ -186,6 +187,10 @@ instance ProductProfunctor Widget where
   purePP b = Widget \callbackb -> pure case _ of
     Changed None _ -> pure unit
     _ -> callbackb (Changed Some b)
+
+effect :: forall i o. (i -> Effect Unit) -> Widget i o
+effect f = Widget \_ -> do
+  pure \(Changed _ a) -> f a
 
 -- Primitive widgets
 

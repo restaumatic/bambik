@@ -57,7 +57,8 @@ order =
       >>> MDC.dialog { title: text # fixed "Submit order " ^ text # shortId ^ text # fixed "?"}
         ( MDC.body1 (text # fixed "Are you sure?")
         ^ MDC.containedButton { label: text # fixed "Submit order" } )
-      >>> MDC.snackbar { label: text # fixed "Order " ^ text # dimap serializeOrder (\_ -> unsafeCoerce unit) ^ text # fixed " submitted" } ) )
+      >>> MDC.snackbar { label: text # fixed "Submitting order " ^ text # shortId }
+      >>> effect submitOrder ) )
 
 name :: Widget NameInformal NameInformal
 name =

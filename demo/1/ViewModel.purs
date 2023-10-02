@@ -29,7 +29,6 @@ module ViewModel
   , formal
   , submitOrder
   , orderId
-  , serializeOrder
   , total
   , defaultOrder
   ) where
@@ -152,15 +151,15 @@ formal = iso "formal" toFormal toInformal
 
 type SerializedOrder = String
 
-submitOrder :: SerializedOrder -> Effect Unit
-submitOrder = log
-
-serializeOrder :: Order -> SerializedOrder
-serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of
-    (DineIn { table }) -> "dinein|" <> table
-    (Takeaway { time }) -> "takeaway|" <> time
-    (Delivery { address }) -> "delivery|\"" <> address <> "\""
-  ]
+submitOrder :: Order -> Effect Unit
+submitOrder = serializeOrder >>> log
+  where
+    serializeOrder :: Order -> SerializedOrder
+    serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of
+        (DineIn { table }) -> "dinein|" <> table
+        (Takeaway { time }) -> "takeaway|" <> time
+        (Delivery { address }) -> "delivery|\"" <> address <> "\""
+      ]
 
 orderId :: Lens' OrderId Order
 orderId = lens' "orderId" (case _ of
