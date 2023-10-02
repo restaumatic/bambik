@@ -49,7 +49,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, pzero, (^))
+import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, prozero, (^))
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -162,7 +162,7 @@ instance ProfunctorPlus Widget where
     pure $ update1 <> update2
 
 instance ProfunctorZero Widget where
-  pzero = Widget mempty
+  prozero = Widget mempty
 
 instance ChProfunctor Widget where
   chmap mapin mapout w = Widget \callback -> do
