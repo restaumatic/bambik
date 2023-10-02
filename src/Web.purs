@@ -60,7 +60,7 @@ import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComp
 
 newtype Widget i o = Widget ((Changed o -> Effect Unit) -> DOM (Changed i -> Effect Unit))
 -- Important: callback should never be called as a direct reaction to input (TODO: how to encode it on type level? By allowing
--- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will neter inifinit loop
+-- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will enter infinite loop
 -- of mutual updates.
 
 

@@ -14,7 +14,7 @@ class Profunctor p <= ProfunctorPlus p where -- TODO EC find fancier name
     -- laws:
     -- proplus a (proplus b c) = proplus (proplus a b) c
 
-class ProfunctorPlus p <= ProfunctorZero p where -- TODO EC find fancier name, is this ~ ArrowZero?
+class ProfunctorPlus p <= ProfunctorZero p where -- TODO EC find fancier name
     pzero :: forall a b. p a b
     -- laws:
     --  proplus a pzero == a = proplus invzero a
