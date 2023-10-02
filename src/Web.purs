@@ -1,6 +1,5 @@
 module Web
   ( Widget
-  , effect
   , aside
   , aside'
   , bracket
@@ -10,6 +9,7 @@ module Web
   , clickable
   , div
   , div'
+  , effect
   , h1
   , h1'
   , h2
@@ -23,6 +23,7 @@ module Web
   , h6
   , h6'
   , html
+  , hush
   , label
   , label'
   , module Data.Profunctor.Plus
@@ -49,7 +50,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Change (class ChProfunctor, Change(..), Changed(..))
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, pzero, (^))
+import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, prozero, (^))
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -162,7 +163,7 @@ instance ProfunctorPlus Widget where
     pure $ update1 <> update2
 
 instance ProfunctorZero Widget where
-  pzero = Widget mempty
+  prozero = Widget mempty
 
 instance ChProfunctor Widget where
   chmap mapin mapout w = Widget \callback -> do
@@ -194,6 +195,9 @@ instance ProductProfunctor Widget where
 
 effect :: forall i o. (i -> Effect Unit) -> Widget i o
 effect f = Widget \_ -> pure \(Changed _ a) -> f a -- callback is never called
+
+hush :: forall a b c. Widget a b -> Widget a c
+hush w = Widget \_ -> unwrapWidget w mempty -- callback is never called
 
 -- Primitive widgets
 
