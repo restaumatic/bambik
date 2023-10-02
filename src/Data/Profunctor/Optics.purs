@@ -7,7 +7,6 @@ module Data.Profunctor.Optics
   , Iso
   , Lens
   , Lens'
-  , Null
   , Prism
   , Prism'
   , Projection
@@ -22,7 +21,6 @@ module Data.Profunctor.Optics
   , module Data.Profunctor.Choice
   , module Data.Profunctor.Plus
   , module Data.Profunctor.Strong
-  , null
   , prism
   , prism'
   , projection
@@ -56,7 +54,6 @@ type       Field a s = Lens' a (Record s)
 type   Prism a b s t = forall p. ChProfunctor p => Choice p => p a b -> p s t
 type     Prism' a s = Prism a a s s
 type       Constructor a s = Prism' a s -- TODO find better signature
-type Null = forall p a b s. ProfunctorZero p => p a b -> p s s
 
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> Iso a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
@@ -93,7 +90,3 @@ prism' = prism
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either (\a -> construct a) identity aors) >>> scopemap (Part name)
-
-null :: Null
-null = const prozero
-
