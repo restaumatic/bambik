@@ -6,7 +6,9 @@ import Prelude
 import ViewModel
 import Web
 
-import Data.Profunctor.Change (fixed) -- TODO: replace fixed with purePP (pure product profunctor)?
+import Data.Profunctor (dimap)
+import Data.Profunctor.Change (fixed)
+import Unsafe.Coerce (unsafeCoerce)
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
@@ -55,8 +57,7 @@ order =
       >>> MDC.dialog { title: text # fixed "Submit order " ^ text # shortId ^ text # fixed "?"}
         ( MDC.body1 (text # fixed "Are you sure?")
         ^ MDC.containedButton { label: text # fixed "Submit order" } )
-      >>> serializeOrder
-      >>> MDC.snackbar { label: text # fixed "Order " ^ text ^ text # fixed " submitted" } ) )
+      >>> MDC.snackbar { label: text # fixed "Order " ^ text # dimap serializeOrder (\_ -> unsafeCoerce unit) ^ text # fixed " submitted" } ) )
 
 name :: Widget NameInformal NameInformal
 name =

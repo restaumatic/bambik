@@ -179,9 +179,6 @@ instance Semigroupoid Widget where
     liftEffect $ Ref.write update2 update2Ref
     pure update1
 
-instance Category Widget where
-  identity = Widget pure -- update triggers callback
-
 class ProductProfunctor p where
   purePP :: forall a b. b -> p a b
 
@@ -189,11 +186,6 @@ instance ProductProfunctor Widget where
   purePP b = Widget \callbackb -> pure case _ of
     Changed None _ -> pure unit
     _ -> callbackb (Changed Some b)
-
--- or just:
-purePP' :: forall b p a. Category p => Profunctor p => b -> p a b
-purePP' b = arr (const b)
-
 
 -- Primitive widgets
 

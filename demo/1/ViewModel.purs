@@ -155,8 +155,8 @@ type SerializedOrder = String
 submitOrder :: SerializedOrder -> Effect Unit
 submitOrder = log
 
-serializeOrder :: forall p. Profunctor p => Category p => p Order SerializedOrder
-serializeOrder = arr \order -> intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of
+serializeOrder :: Order -> SerializedOrder
+serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of
     (DineIn { table }) -> "dinein|" <> table
     (Takeaway { time }) -> "takeaway|" <> time
     (Delivery { address }) -> "delivery|\"" <> address <> "\""
