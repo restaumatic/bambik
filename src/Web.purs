@@ -2,7 +2,6 @@ module Web
   ( Widget
   , aside
   , aside'
-  , bracket
   , button
   , button'
   , checkbox
@@ -42,13 +41,14 @@ module Web
 import Prelude hiding (zero, div)
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor.Change (Change(..), Changed(..))
+import Data.Newtype (unwrap)
+import Data.Profunctor.Change (Change(..))
 import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, prozero, (^))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Propagator (Propagator(..), unwrapPropagator)
+import Propagator (Occurrence(..), Propagator(..), bracket)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attr, createTextValue, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
@@ -66,8 +66,8 @@ text :: forall a. Widget String a
 text = Propagator \_ -> do
   textValue <- createTextValue
   pure case _ of
-    Changed None _ -> mempty
-    Changed _ string -> writeTextValue textValue string
+    Occurrence None _ -> mempty
+    Occurrence _ string -> writeTextValue textValue string
 
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
@@ -77,18 +77,18 @@ html h = Propagator \_ -> do
 textInput :: Attrs -> Widget String String
 textInput attrs = Propagator \outward -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> outward
+  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
-    Changed None _ -> mempty
-    Changed _ newa -> setValue node newa
+    Occurrence None _ -> mempty
+    Occurrence _ newa -> setValue node newa
 
 checkbox :: Attrs -> Widget Boolean Boolean
 checkbox attrs = Propagator \outward -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Changed Some >>> outward
+  liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Occurrence Some >>> outward
   pure case _ of
-    Changed None _ -> mempty
-    Changed _ newa -> setChecked node newa
+    Occurrence None _ -> mempty
+    Occurrence _ newa -> setChecked node newa
 
 -- input:
 -- Nothing -> turns off button
@@ -100,34 +100,24 @@ radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
 radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Changed Some >>> outward
+  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
-    Changed None _ -> mempty
-    Changed _ Nothing -> setChecked node false
-    Changed _ newma@(Just _) -> do
+    Occurrence None _ -> mempty
+    Occurrence _ Nothing -> setChecked node false
+    Occurrence _ newma@(Just _) -> do
       Ref.write newma maRef
       setChecked node true
 
 -- Widget optics
 
-bracket :: forall ctx a b m. MonadEffect m => m ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Propagator m a b -> Propagator m a b
-bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
-  ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  update <- unwrapPropagator w $ (\chb -> do
-    ctx <- Ref.read ctxRef
-    beforeOutward ctx chb) <> outward
-  ctx <- afterInit
-  liftEffect $ Ref.write ctx ctxRef
-  pure $ update <> afterInward ctx
-
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Propagator \outward -> do
-  Tuple node update <- elAttr tagName attrs $ unwrapPropagator w outward
+  Tuple node update <- elAttr tagName attrs $ unwrap w outward
   pure case _ of
-    Changed None _ -> mempty
-    Changed ch newa -> do
+    Occurrence None _ -> mempty
+    Occurrence ch newa -> do
       setAttributes node (attrs <> dynAttrs newa)
-      update $ Changed ch newa
+      update $ Occurrence ch newa
 
 div' :: forall a b. Widget a b -> Widget a b
 div' = div mempty mempty
@@ -163,9 +153,9 @@ clickable :: forall a b. Widget a b -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) mempty mempty
-  update <- unwrapPropagator buttonWidget mempty
+  update <- unwrap buttonWidget mempty
   pure case _ of
-    Changed None _ -> mempty
+    Occurrence None _ -> mempty
     cha -> do
       Ref.write cha aRef
       update cha
@@ -221,12 +211,12 @@ h6' = h6 mempty mempty
 -- Entry point
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody widget i = initializeInBody (unwrapPropagator widget mempty) (Changed Some i)
+runWidgetInBody widget i = initializeInBody (unwrap widget mempty) (Occurrence Some i)
 
 runWidgetInNode :: forall i o. Node -> Widget i o -> (o -> Effect Unit) -> Effect (i -> Effect Unit)
 runWidgetInNode node widget outward = do
-  update <- initializeInNode node (unwrapPropagator widget \(Changed _ o) -> outward o)
-  pure \i -> update (Changed Some i)
+  update <- initializeInNode node (unwrap widget \(Occurrence _ o) -> outward o)
+  pure \i -> update (Occurrence Some i)
 
 
 
