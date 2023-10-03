@@ -68,7 +68,7 @@ type Propagation a = Occurence a -> Effect Unit
 -- WebActor? SiteActor? DOMActor?
 newtype Widget i o = Widget (Propagation o -> DOM (Propagation i))
 --                           -- outward --         -- inward ---
--- Important: callback should never be called as a direct Propagation to input (TODO: how to encode it on type level? By allowing
+-- Important: outward propagation should never be trigerred by inward propagation (TODO: how to encode it on type level? By allowing
 -- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will enter infinite loop
 -- of mutual updates.
 
@@ -78,26 +78,26 @@ unwrapWidget (Widget w) = w
 -- Capabilites
 
 instance Profunctor Widget where
-  dimap pre post w = Widget \callback -> do
-    f <- unwrapWidget w $ callback <<< map post
+  dimap pre post w = Widget \outward -> do
+    f <- unwrapWidget w $ outward <<< map post
     pure $ f <<< map pre
 
 instance Strong Widget where
-  first w = Widget \callback -> do
+  first w = Widget \outward -> do
     maandbRef <- liftEffect $ Ref.new Nothing
     update <- unwrapWidget w \cha -> do
       maandb <- Ref.read maandbRef
-      for_ maandb \(Tuple _ b) -> callback $ (\a -> Tuple a b) <$> cha
+      for_ maandb \(Tuple _ b) -> outward $ (\a -> Tuple a b) <$> cha
     pure \chab@(Changed _ aandb) -> do
       Ref.write (Just aandb) maandbRef
       case chab of
         Changed None _ -> mempty
         Changed _ _ -> update $ fst <$> chab
-  second w = Widget \callback -> do
+  second w = Widget \outward -> do
     maandbRef <- liftEffect $ Ref.new Nothing
     update <- unwrapWidget w \chb -> do
       maandb <- Ref.read maandbRef
-      for_ maandb \(Tuple a _) -> callback $ (\b -> Tuple a b) <$> chb
+      for_ maandb \(Tuple a _) -> outward $ (\b -> Tuple a b) <$> chb
     pure \chab@(Changed _ aandb) -> do
       Ref.write (Just aandb) maandbRef
       case chab of
@@ -105,12 +105,12 @@ instance Strong Widget where
         Changed _ _ -> update $ snd <$> chab
 
 instance Choice Widget where
-  left w = Widget \callback -> do
+  left w = Widget \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
     Tuple fragment update <- createComponent $ unwrapWidget w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
-        Just (Left _) -> callback $ Left <$> cha
+        Just (Left _) -> outward $ Left <$> cha
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
       moldaorb <- Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
@@ -125,12 +125,12 @@ instance Choice Widget where
           case moldaorb of
             (Just (Left _)) -> detachComponent fragment
             _ -> mempty
-  right w = Widget \callback -> do
+  right w = Widget \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
     Tuple fragment update <- createComponent $ unwrapWidget w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
-        Just (Right _) -> callback $ Right <$> chb
+        Just (Right _) -> outward $ Right <$> chb
         _ -> mempty
     pure \chaorb@(Changed _ aorb) -> do
       moldaorb <- Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
@@ -173,18 +173,18 @@ instance ProfunctorZero Widget where
   prozero = Widget mempty
 
 instance ChProfunctor Widget where
-  chmap mapin mapout w = Widget \callback -> do
+  chmap mapin mapout w = Widget \outward -> do
     update <- unwrapWidget w \(Changed c a) -> do
-      callback $ Changed (mapout c) a
+      outward $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
 
 instance Semigroupoid Widget where
-  compose w2 w1 = Widget \callback -> do
+  compose w2 w1 = Widget \outward -> do
     update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
     update1 <- unwrapWidget w1 \(Changed _ b) -> do
       update2 <- Ref.read update2Ref
-      update2 $ Changed Some b -- we force w2 to update cause w2 is updated only via callback by w1
-    update2 <- unwrapWidget w2 callback
+      update2 $ Changed Some b -- we force w2 to update cause w2 is updated only via outward by w1
+    update2 <- unwrapWidget w2 outward
     liftEffect $ Ref.write update2 update2Ref
     pure update1
 
@@ -192,12 +192,12 @@ class ProductProfunctor p where
   purePP :: forall a b. b -> p a b
 
 instance ProductProfunctor Widget where
-  purePP b = Widget \callbackb -> pure case _ of
+  purePP b = Widget \outward -> pure case _ of
     Changed None _ -> pure unit
-    _ -> callbackb (Changed Some b)
+    _ -> outward (Changed Some b)
 
 effect :: forall i o. (i -> Effect Unit) -> Widget i o
-effect f = Widget \_ -> pure \(Changed _ a) -> f a -- callback is never called
+effect f = Widget \_ -> pure \(Changed _ a) -> f a -- outward is never called
 
 -- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
 fixed :: forall a b s t. a -> Widget a b -> Widget s t
@@ -207,7 +207,7 @@ fixed a w = Widget \_ -> do
   pure mempty
 
 hush :: forall a b c. Widget a b -> Widget a c
-hush w = Widget \_ -> unwrapWidget w mempty -- callback is never called
+hush w = Widget \_ -> unwrapWidget w mempty -- outward is never called
 
 -- Primitive widgets
 
@@ -224,17 +224,17 @@ html h = Widget \_ -> do
   mempty
 
 textInput :: Attrs -> Widget String String
-textInput attrs = Widget \callbackcha -> do
+textInput attrs = Widget \outward -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> callbackcha
+  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> outward
   pure case _ of
     Changed None _ -> mempty
     Changed _ newa -> setValue node newa
 
 checkbox :: Attrs -> Widget Boolean Boolean
-checkbox attrs = Widget \callbackcha -> do
+checkbox attrs = Widget \outward -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Changed Some >>> callbackcha
+  liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Changed Some >>> outward
   pure case _ of
     Changed None _ -> mempty
     Changed _ newa -> setChecked node newa
@@ -246,10 +246,10 @@ checkbox attrs = Widget \callbackcha -> do
 -- Nothing -> on button clicked when button doesn't remember any `a`
 -- Just a -> on button clicked when button does remember an `a`
 radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
-radioButton attrs = Widget \callbackchma -> do
+radioButton attrs = Widget \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Changed Some >>> callbackchma
+  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Changed Some >>> outward
   pure case _ of
     Changed None _ -> mempty
     Changed _ Nothing -> setChecked node false
@@ -260,18 +260,18 @@ radioButton attrs = Widget \callbackchma -> do
 -- Widget optics
 
 bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
-bracket afterInit afterUpdate beforeCallback w = Widget \callback -> do
+bracket afterInit afterInward beforeOutward w = Widget \outward -> do
   ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   update <- unwrapWidget w $ (\chb -> do
     ctx <- Ref.read ctxRef
-    beforeCallback ctx chb) <> callback
+    beforeOutward ctx chb) <> outward
   ctx <- afterInit
   liftEffect $ Ref.write ctx ctxRef
-  pure $ update <> afterUpdate ctx
+  pure $ update <> afterInward ctx
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-element tagName attrs dynAttrs w = Widget \callbackb -> do
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget w callbackb
+element tagName attrs dynAttrs w = Widget \outward -> do
+  Tuple node update <- elAttr tagName attrs $ unwrapWidget w outward
   pure case _ of
     Changed None _ -> mempty
     Changed ch newa -> do
@@ -309,9 +309,9 @@ button :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 button = element "button"
 
 clickable :: forall a b. Widget a b -> Widget a a
-clickable w = Widget \callbacka -> do
+clickable w = Widget \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= callbacka) mempty mempty
+  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) mempty mempty
   update <- unwrapWidget buttonWidget mempty
   pure case _ of
     Changed None _ -> mempty
@@ -373,8 +373,8 @@ runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody widget i = initializeInBody (unwrapWidget widget mempty) (Changed Some i)
 
 runWidgetInNode :: forall i o. Node -> Widget i o -> (o -> Effect Unit) -> Effect (i -> Effect Unit)
-runWidgetInNode node widget callback = do
-  update <- initializeInNode node (unwrapWidget widget \(Changed _ o) -> callback o)
+runWidgetInNode node widget outward = do
+  update <- initializeInNode node (unwrapWidget widget \(Changed _ o) -> outward o)
   pure \i -> update (Changed Some i)
 
 
