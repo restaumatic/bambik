@@ -64,9 +64,12 @@ type Occurence a = Changed a -- new can be changed or not changed
 
 type Propagation a = Occurence a -> Effect Unit
 
+type Propagator m i o = Propagation o -> m (Propagation i)
+
 -- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
 -- WebActor? SiteActor? DOMActor?
-newtype Widget i o = Widget (Propagation o -> DOM (Propagation i))
+-- Propagator?
+newtype Widget i o = Widget (Propagator DOM i o)
 --                           -- outward --         -- inward ---
 -- Important: outward propagation should never be trigerred by inward propagation (TODO: how to encode it on type level? By allowing
 -- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will enter infinite loop
