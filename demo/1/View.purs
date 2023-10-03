@@ -4,7 +4,6 @@ module View
 
 import Prelude
 
-import Data.Profunctor.Change (fixed)
 import ViewModel
 import Web
 import Web.MDC as MDC

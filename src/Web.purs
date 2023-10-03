@@ -10,6 +10,7 @@ module Web
   , div
   , div'
   , effect
+  , fixed
   , h1
   , h1'
   , h2
@@ -170,10 +171,6 @@ instance ChProfunctor Widget where
     update <- unwrapWidget w \(Changed c a) -> do
       callback $ Changed (mapout c) a
     pure \(Changed c a) -> update $ Changed (mapin c) a
-  fixed a w = Widget \_ -> do
-    update <- unwrapWidget w mempty
-    liftEffect $ update $ Changed Some a
-    pure mempty
 
 instance Semigroupoid Widget where
   compose w2 w1 = Widget \callback -> do
@@ -195,6 +192,13 @@ instance ProductProfunctor Widget where
 
 effect :: forall i o. (i -> Effect Unit) -> Widget i o
 effect f = Widget \_ -> pure \(Changed _ a) -> f a -- callback is never called
+
+-- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
+fixed :: forall a b s t. a -> Widget a b -> Widget s t
+fixed a w = Widget \_ -> do
+  update <- unwrapWidget w mempty
+  liftEffect $ update $ Changed Some a
+  pure mempty
 
 hush :: forall a b c. Widget a b -> Widget a c
 hush w = Widget \_ -> unwrapWidget w mempty -- callback is never called
