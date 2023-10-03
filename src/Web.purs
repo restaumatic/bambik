@@ -60,17 +60,19 @@ import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 
-type Reaction a = Changed a -> Effect Unit
+type Occurence a = Changed a -- new can be changed or not changed
+
+type Propagation a = Occurence a -> Effect Unit
 
 -- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
 -- WebActor? SiteActor? DOMActor?
-newtype Widget i o = Widget (Reaction o -> DOM (Reaction i))
---                           -callback-         --update--
--- Important: callback should never be called as a direct reaction to input (TODO: how to encode it on type level? By allowing
+newtype Widget i o = Widget (Propagation o -> DOM (Propagation i))
+--                           -- outward --         -- inward ---
+-- Important: callback should never be called as a direct Propagation to input (TODO: how to encode it on type level? By allowing
 -- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will enter infinite loop
 -- of mutual updates.
 
-unwrapWidget :: forall i o. Widget i o -> Reaction o -> DOM (Reaction i)
+unwrapWidget :: forall i o. Widget i o -> Propagation o -> DOM (Propagation i)
 unwrapWidget (Widget w) = w
 
 -- Capabilites
