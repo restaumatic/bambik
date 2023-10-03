@@ -55,9 +55,6 @@ import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attr, crea
 
 -- Widget
 
--- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
--- WebActor? SiteActor? DOMActor?
--- Propagator?
 type Widget i o = Propagator DOM i o
 
 -- Primitive widgets
@@ -213,10 +210,6 @@ h6' = h6 mempty mempty
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
 runWidgetInBody widget i = initializeInBody (unwrap widget mempty) (Occurrence Some i)
 
-runWidgetInNode :: forall i o. Node -> Widget i o -> (o -> Effect Unit) -> Effect (i -> Effect Unit)
-runWidgetInNode node widget outward = do
-  update <- initializeInNode node (unwrap widget \(Occurrence _ o) -> outward o)
-  pure \i -> update (Occurrence Some i)
-
-
+runWidgetInNode :: forall i o. Node -> Widget i o -> i -> (o -> Effect Unit) -> Effect Unit
+runWidgetInNode node widget i outward = initializeInNode node (unwrap widget \(Occurrence _ o) -> outward o) (Occurrence Some i)
 

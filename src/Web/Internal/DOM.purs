@@ -64,14 +64,14 @@ derive newtype instance MonadEffect DOM
 initializeInBody :: forall a. DOM (a -> Effect Unit) → a -> Effect Unit
 initializeInBody dom a = measured "initialized" do
   body <- documentBody
-  update <- initializeInNode body dom
-  update a
+  initializeInNode body dom a
 
-initializeInNode :: forall a. Node -> DOM a → Effect a
-initializeInNode node dom = runDomInNode node do
-  { attach, result } <- attachable' true dom
-  liftEffect attach
-  pure result
+initializeInNode :: forall a. Node -> DOM (a -> Effect Unit) -> a -> Effect Unit
+initializeInNode node dom a = runDomInNode node do
+  { attach, result: update } <- attachable' true dom
+  liftEffect do
+    update a
+    attach
 
 runDomInNode :: forall a. Node -> DOM a -> Effect a
 runDomInNode node (DOM f) = runRIO { parent: node } f
