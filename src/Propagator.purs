@@ -59,15 +59,13 @@ instance MonadEffect m => Strong (Propagator m) where
         Changed None _ -> mempty
         Changed _ _ -> update $ snd <$> chab
 
-class MonadFoo m where
-  createComponent :: m (m Unit)
-  attachComponent :: forall a. a -> m Unit
-  detachComponent :: forall a. a -> m Unit
+class MonadAttach m where
+  attachable :: forall a. m a -> m { result :: a, attach :: Effect Unit, detach :: Effect Unit}
 
-instance MonadFoo m => Choice (Propagator m) where
+instance (MonadEffect m, MonadAttach m) => Choice (Propagator m) where
   left w = Propagator \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple fragment update <- createComponent $ unwrapPropagator w \cha -> do
+    { attach, detach, result: update } <- attachable $ unwrapPropagator w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> outward $ Left <$> cha
@@ -80,14 +78,14 @@ instance MonadFoo m => Choice (Propagator m) where
           update $ a <$ chaorb -- first update and only then possibly attach
           case moldaorb of
             (Just (Left _)) -> mempty
-            _ -> attachComponent fragment
+            _ -> attach
         Changed _ (Right _) -> do
           case moldaorb of
-            (Just (Left _)) -> detachComponent fragment
+            (Just (Left _)) -> detach
             _ -> mempty
   right w = Propagator \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple fragment update <- createComponent $ unwrapPropagator w \chb -> do
+    { attach, detach, result: update } <- attachable $ unwrapPropagator w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> outward $ Right <$> chb
@@ -100,10 +98,10 @@ instance MonadFoo m => Choice (Propagator m) where
           update $ b <$ chaorb  -- first update and only then possibly attach
           case moldaorb of
             (Just (Right _)) -> mempty
-            _ -> attachComponent fragment
+            _ -> attach
         Changed _ (Left _) -> do
           case moldaorb of
-            (Just (Right _)) -> detachComponent fragment
+            (Just (Right _)) -> detach
             _ -> mempty
 
 instance MonadEffect m => ProfunctorPlus (Propagator m) where

@@ -1,20 +1,16 @@
 module Web.Internal.DOM
   ( AttrValue(..)
   , Attrs
-  , Component
   , DOM
   , Event
   , Node
   , TagName
   , TextValue(..)
   , addEventCallback
-  , attachComponent
   , attr
   , classes
-  , createComponent
   , createElementNS
   , createTextValue
-  , detachComponent
   , elAttr
   , getChecked
   , getCurrentNode
@@ -47,6 +43,7 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Propagator (class MonadAttach)
 import Specular.Internal.RIO (RIO, runRIO)
 import Specular.Internal.RIO as RIO
 import Unsafe.Coerce (unsafeCoerce)
@@ -72,8 +69,8 @@ initializeInBody dom a = measured "initialized" do
 
 initializeInNode :: forall a. Node -> DOM a → Effect a
 initializeInNode node dom = runDomInNode node do
-  Tuple documentComponent result <- createComponent' true dom
-  liftEffect $ attachComponent documentComponent
+  { attach, result } <- attachable' true dom
+  liftEffect attach
   pure result
 
 runDomInNode :: forall a. Node -> DOM a -> Effect a
@@ -96,19 +93,8 @@ createTextValue = do
 writeTextValue :: TextValue -> String -> Effect Unit
 writeTextValue (TextValue { write }) = write
 
-data Component = Component
-  { attach :: Effect Unit
-  , detach :: Effect Unit
-  }
-
-createComponent :: forall a. DOM a -> DOM (Tuple Component a)
-createComponent = createComponent' false
-
-attachComponent :: Component -> Effect Unit
-attachComponent (Component { attach }) = attach
-
-detachComponent :: Component -> Effect Unit
-detachComponent (Component { detach }) = detach
+instance MonadAttach DOM where
+  attachable = attachable' false
 
 --
 
@@ -190,9 +176,8 @@ getCurrentNode = do
   parent <- getParentNode
   liftEffect $ lastChild parent
 
-
-createComponent' :: forall a. Boolean -> DOM a -> DOM (Tuple Component a)
-createComponent' removePrecedingSiblingNodes dom = do
+attachable' :: forall a. Boolean -> DOM a -> DOM { result :: a, attach :: Effect Unit, detach :: Effect Unit }
+attachable' removePrecedingSiblingNodes dom = do
   parent <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
@@ -204,7 +189,7 @@ createComponent' removePrecedingSiblingNodes dom = do
     appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
-    built <- runDomInNode initialDocumentFragment dom
+    result <- runDomInNode initialDocumentFragment dom
 
     documentFragmentRef <- Ref.new initialDocumentFragment
 
@@ -222,7 +207,7 @@ createComponent' removePrecedingSiblingNodes dom = do
         moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
         Ref.write documentFragment documentFragmentRef
 
-    pure $ Tuple (Component { attach, detach }) built
+    pure $ { attach, detach, result }
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
       measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
