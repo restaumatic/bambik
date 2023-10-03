@@ -1,5 +1,6 @@
 module Web
-  ( Widget
+  ( Propagator
+  , Widget
   , aside
   , aside'
   , bracket
@@ -39,7 +40,7 @@ module Web
   , svg
   , text
   , textInput
-  , unwrapWidget
+  , unwrapPropagator
   )
   where
 
@@ -55,7 +56,7 @@ import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
-import Effect.Class (liftEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attachComponent, attr, createComponent, createTextValue, detachComponent, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
@@ -64,31 +65,27 @@ type Occurence a = Changed a -- new can be changed or not changed
 
 type Propagation a = Occurence a -> Effect Unit
 
-type Propagator m i o = Propagation o -> m (Propagation i)
-
--- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
--- WebActor? SiteActor? DOMActor?
--- Propagator?
-newtype Widget i o = Widget (Propagator DOM i o)
---                           -- outward --         -- inward ---
+newtype Propagator m i o = Propagator (Propagation o -> m (Propagation i))
+--                                     -- outward --       -- inward ---
+--                                                      ^ artefact effect
 -- Important: outward propagation should never be trigerred by inward propagation (TODO: how to encode it on type level? By allowing
 -- update to perform only a subset of effects?) otherwise w1 ^ w2, where w1 and w2 call back on on input will enter infinite loop
 -- of mutual updates.
 
-unwrapWidget :: forall i o. Widget i o -> Propagation o -> DOM (Propagation i)
-unwrapWidget (Widget w) = w
+unwrapPropagator :: forall m i o. Propagator m i o -> Propagation o -> m (Propagation i)
+unwrapPropagator (Propagator w) = w
 
 -- Capabilites
 
-instance Profunctor Widget where
-  dimap pre post w = Widget \outward -> do
-    f <- unwrapWidget w $ outward <<< map post
+instance Monad m => Profunctor (Propagator m) where
+  dimap pre post w = Propagator \outward -> do
+    f <- unwrapPropagator w $ outward <<< map post
     pure $ f <<< map pre
 
-instance Strong Widget where
-  first w = Widget \outward -> do
+instance MonadEffect m => Strong (Propagator m) where
+  first w = Propagator \outward -> do
     maandbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \cha -> do
+    update <- unwrapPropagator w \cha -> do
       maandb <- Ref.read maandbRef
       for_ maandb \(Tuple _ b) -> outward $ (\a -> Tuple a b) <$> cha
     pure \chab@(Changed _ aandb) -> do
@@ -96,9 +93,9 @@ instance Strong Widget where
       case chab of
         Changed None _ -> mempty
         Changed _ _ -> update $ fst <$> chab
-  second w = Widget \outward -> do
+  second w = Propagator \outward -> do
     maandbRef <- liftEffect $ Ref.new Nothing
-    update <- unwrapWidget w \chb -> do
+    update <- unwrapPropagator w \chb -> do
       maandb <- Ref.read maandbRef
       for_ maandb \(Tuple a _) -> outward $ (\b -> Tuple a b) <$> chb
     pure \chab@(Changed _ aandb) -> do
@@ -107,10 +104,81 @@ instance Strong Widget where
         Changed None _ -> mempty
         Changed _ _ -> update $ snd <$> chab
 
-instance Choice Widget where
-  left w = Widget \outward -> do
+instance MonadEffect m => ProfunctorPlus (Propagator m) where
+  proplus c1 c2 = Propagator \updateParent -> do
+    -- TODO how to get rid of thess refs?
+    mUpdate1Ref <- liftEffect $ Ref.new Nothing
+    mUpdate2Ref <- liftEffect $ Ref.new Nothing
+    update1 <- unwrapPropagator c1 \cha@(Changed _ a) -> do
+      mUpdate2 <- Ref.read mUpdate2Ref
+      let update2 = maybe mempty identity mUpdate2
+      mUpdate1 <- Ref.read mUpdate1Ref
+      let update1 = maybe mempty identity mUpdate1
+      update1 (Changed None a)
+      update2 cha
+      updateParent cha
+    liftEffect $ Ref.write (Just update1) mUpdate1Ref
+    update2 <- unwrapPropagator c2 \cha@(Changed _ a) -> do
+      mUpdate2 <- Ref.read mUpdate2Ref
+      let update2 = maybe mempty identity mUpdate2
+      update2 (Changed None a)
+      update1 cha
+      updateParent cha
+    liftEffect $ Ref.write (Just update2) mUpdate2Ref
+    pure $ update1 <> update2
+
+instance MonadEffect m => ProfunctorZero (Propagator m) where
+  prozero = Propagator \_ -> pure mempty
+
+instance Monad m => ChProfunctor (Propagator m) where
+  chmap mapin mapout w = Propagator \outward -> do
+    update <- unwrapPropagator w \(Changed c a) -> do
+      outward $ Changed (mapout c) a
+    pure \(Changed c a) -> update $ Changed (mapin c) a
+
+instance MonadEffect m => Semigroupoid (Propagator m) where
+  compose w2 w1 = Propagator \outward -> do
+    update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
+    update1 <- unwrapPropagator w1 \(Changed _ b) -> do
+      update2 <- Ref.read update2Ref
+      update2 $ Changed Some b -- we force w2 to update cause w2 is updated only via outward by w1
+    update2 <- unwrapPropagator w2 outward
+    liftEffect $ Ref.write update2 update2Ref
+    pure update1
+
+class ProductProfunctor p where
+  purePP :: forall a b. b -> p a b
+
+instance Monad m => ProductProfunctor (Propagator m) where
+  purePP b = Propagator \outward -> pure case _ of
+    Changed None _ -> pure unit
+    _ -> outward (Changed Some b)
+
+effect :: forall i o m. MonadEffect m => (i -> Effect Unit) -> Propagator m i o
+effect f = Propagator \_ -> pure \(Changed _ a) -> liftEffect $ f a -- outward is never called
+
+-- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
+fixed :: forall a b s t m. MonadEffect m => a -> Propagator m a b -> Propagator m s t
+fixed a w = Propagator \_ -> do
+  update <- unwrapPropagator w mempty
+  liftEffect $ update $ Changed Some a
+  pure mempty
+
+hush :: forall a b c m. Propagator m a b -> Propagator m a c
+hush w = Propagator \_ -> unwrapPropagator w mempty -- outward is never called
+
+-- Widget
+
+-- Reactive? Reactor? Actor? - too generic, doesn't relate to DOM
+-- WebActor? SiteActor? DOMActor?
+-- Propagator?
+type Widget i o = Propagator DOM i o
+
+
+instance Choice (Propagator DOM) where
+  left w = Propagator \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple fragment update <- createComponent $ unwrapWidget w \cha -> do
+    Tuple fragment update <- createComponent $ unwrapPropagator w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> outward $ Left <$> cha
@@ -128,9 +196,9 @@ instance Choice Widget where
           case moldaorb of
             (Just (Left _)) -> detachComponent fragment
             _ -> mempty
-  right w = Widget \outward -> do
+  right w = Propagator \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    Tuple fragment update <- createComponent $ unwrapWidget w \chb -> do
+    Tuple fragment update <- createComponent $ unwrapPropagator w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> outward $ Right <$> chb
@@ -149,85 +217,22 @@ instance Choice Widget where
             (Just (Right _)) -> detachComponent fragment
             _ -> mempty
 
-instance ProfunctorPlus Widget where
-  proplus c1 c2 = Widget \updateParent -> do
-    -- TODO how to get rid of thess refs?
-    mUpdate1Ref <- liftEffect $ Ref.new Nothing
-    mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    update1 <- unwrapWidget c1 \cha@(Changed _ a) -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      let update2 = maybe mempty identity mUpdate2
-      mUpdate1 <- Ref.read mUpdate1Ref
-      let update1 = maybe mempty identity mUpdate1
-      update1 (Changed None a)
-      update2 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just update1) mUpdate1Ref
-    update2 <- unwrapWidget c2 \cha@(Changed _ a) -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      let update2 = maybe mempty identity mUpdate2
-      update2 (Changed None a)
-      update1 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just update2) mUpdate2Ref
-    pure $ update1 <> update2
-
-instance ProfunctorZero Widget where
-  prozero = Widget mempty
-
-instance ChProfunctor Widget where
-  chmap mapin mapout w = Widget \outward -> do
-    update <- unwrapWidget w \(Changed c a) -> do
-      outward $ Changed (mapout c) a
-    pure \(Changed c a) -> update $ Changed (mapin c) a
-
-instance Semigroupoid Widget where
-  compose w2 w1 = Widget \outward -> do
-    update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
-    update1 <- unwrapWidget w1 \(Changed _ b) -> do
-      update2 <- Ref.read update2Ref
-      update2 $ Changed Some b -- we force w2 to update cause w2 is updated only via outward by w1
-    update2 <- unwrapWidget w2 outward
-    liftEffect $ Ref.write update2 update2Ref
-    pure update1
-
-class ProductProfunctor p where
-  purePP :: forall a b. b -> p a b
-
-instance ProductProfunctor Widget where
-  purePP b = Widget \outward -> pure case _ of
-    Changed None _ -> pure unit
-    _ -> outward (Changed Some b)
-
-effect :: forall i o. (i -> Effect Unit) -> Widget i o
-effect f = Widget \_ -> pure \(Changed _ a) -> f a -- outward is never called
-
--- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
-fixed :: forall a b s t. a -> Widget a b -> Widget s t
-fixed a w = Widget \_ -> do
-  update <- unwrapWidget w mempty
-  liftEffect $ update $ Changed Some a
-  pure mempty
-
-hush :: forall a b c. Widget a b -> Widget a c
-hush w = Widget \_ -> unwrapWidget w mempty -- outward is never called
-
 -- Primitive widgets
 
 text :: forall a. Widget String a
-text = Widget \_ -> do
+text = Propagator \_ -> do
   textValue <- createTextValue
   pure case _ of
     Changed None _ -> mempty
     Changed _ string -> writeTextValue textValue string
 
 html :: forall a b. String -> Widget a b
-html h = Widget \_ -> do
+html h = Propagator \_ -> do
   rawHtml h
   mempty
 
 textInput :: Attrs -> Widget String String
-textInput attrs = Widget \outward -> do
+textInput attrs = Propagator \outward -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Changed Some >>> outward
   pure case _ of
@@ -235,7 +240,7 @@ textInput attrs = Widget \outward -> do
     Changed _ newa -> setValue node newa
 
 checkbox :: Attrs -> Widget Boolean Boolean
-checkbox attrs = Widget \outward -> do
+checkbox attrs = Propagator \outward -> do
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
   liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Changed Some >>> outward
   pure case _ of
@@ -249,7 +254,7 @@ checkbox attrs = Widget \outward -> do
 -- Nothing -> on button clicked when button doesn't remember any `a`
 -- Just a -> on button clicked when button does remember an `a`
 radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
-radioButton attrs = Widget \outward -> do
+radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
   liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Changed Some >>> outward
@@ -262,10 +267,10 @@ radioButton attrs = Widget \outward -> do
 
 -- Widget optics
 
-bracket :: forall ctx a b. DOM ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Widget a b -> Widget a b
-bracket afterInit afterInward beforeOutward w = Widget \outward -> do
+bracket :: forall ctx a b m. MonadEffect m => m ctx -> (ctx -> Changed a -> Effect Unit) -> (ctx -> Changed b -> Effect Unit) -> Propagator m a b -> Propagator m a b
+bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   ctxRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  update <- unwrapWidget w $ (\chb -> do
+  update <- unwrapPropagator w $ (\chb -> do
     ctx <- Ref.read ctxRef
     beforeOutward ctx chb) <> outward
   ctx <- afterInit
@@ -273,8 +278,8 @@ bracket afterInit afterInward beforeOutward w = Widget \outward -> do
   pure $ update <> afterInward ctx
 
 element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-element tagName attrs dynAttrs w = Widget \outward -> do
-  Tuple node update <- elAttr tagName attrs $ unwrapWidget w outward
+element tagName attrs dynAttrs w = Propagator \outward -> do
+  Tuple node update <- elAttr tagName attrs $ unwrapPropagator w outward
   pure case _ of
     Changed None _ -> mempty
     Changed ch newa -> do
@@ -312,10 +317,10 @@ button :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
 button = element "button"
 
 clickable :: forall a b. Widget a b -> Widget a a
-clickable w = Widget \outward -> do
+clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) mempty mempty
-  update <- unwrapWidget buttonWidget mempty
+  update <- unwrapPropagator buttonWidget mempty
   pure case _ of
     Changed None _ -> mempty
     cha -> do
@@ -373,11 +378,11 @@ h6' = h6 mempty mempty
 -- Entry point
 
 runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody widget i = initializeInBody (unwrapWidget widget mempty) (Changed Some i)
+runWidgetInBody widget i = initializeInBody (unwrapPropagator widget mempty) (Changed Some i)
 
 runWidgetInNode :: forall i o. Node -> Widget i o -> (o -> Effect Unit) -> Effect (i -> Effect Unit)
 runWidgetInNode node widget outward = do
-  update <- initializeInNode node (unwrapWidget widget \(Changed _ o) -> outward o)
+  update <- initializeInNode node (unwrapPropagator widget \(Changed _ o) -> outward o)
   pure \i -> update (Changed Some i)
 
 
