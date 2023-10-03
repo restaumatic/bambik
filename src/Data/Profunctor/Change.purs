@@ -1,6 +1,5 @@
 module Data.Profunctor.Change
   ( Change(..)
-  , Changed(..)
   , Scope(..)
   , class ChProfunctor
   , scopemap
@@ -54,10 +53,6 @@ scopemap scope = chmap zoomIn zoomOut
 
 class Profunctor p <= ChProfunctor p where
   chmap :: forall a b. (Change -> Change) -> (Change -> Change) -> p a b -> p a b
-
-data Changed a = Changed Change a
-
-derive instance Functor Changed
 
 data Change = Some | Scoped (NonEmptyArray.NonEmptyArray Scope) | None -- TODO: find already existing data type for it
 

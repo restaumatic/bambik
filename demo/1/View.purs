@@ -4,6 +4,7 @@ module View
 
 import Prelude
 
+import Propagator (effect, fixed)
 import ViewModel
 import Web
 import Web.MDC as MDC
