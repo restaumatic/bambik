@@ -45,14 +45,12 @@ containedButton { label } =
     ( div (classes "mdc-button__ripple") mempty prozero
     ^ span (classes "mdc-button__label") mempty (label # hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
 
-filledTextField :: forall a b. { floatingLabel :: Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
+filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
     ( span (classes "mdc-text-field__ripple") mempty prozero
-    -- TODO EC: fix it
-    -- ^ span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\value -> if not (null value) then classes "mdc-floating-label--float-above" else mempty)
-    --   ( floatingLabel >>> prozero )
-    ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") # value
+    ^ ( span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) ( floatingLabel # hush )
+      ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
     ^ span (classes "mdc-line-ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
 
 checkbox :: forall a b. { labelContent :: Widget a b } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a

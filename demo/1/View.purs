@@ -3,12 +3,10 @@ module View
   ) where
 
 import Prelude
+
+import Data.Profunctor.Change (fixed)
 import ViewModel
 import Web
-
-import Data.Profunctor (dimap)
-import Data.Profunctor.Change (fixed)
-import Unsafe.Coerce (unsafeCoerce)
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
