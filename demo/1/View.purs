@@ -5,8 +5,8 @@ module View
 import Prelude
 
 import Propagator (effect, fixed)
-import ViewModel
-import Web
+import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import Web (Widget, text, (^))
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
