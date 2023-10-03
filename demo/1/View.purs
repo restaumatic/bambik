@@ -4,9 +4,8 @@ module View
 
 import Prelude
 
-import Data.Profunctor.Change (fixed)
-import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
-import Web (Widget, effect, text, (^))
+import ViewModel
+import Web
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
