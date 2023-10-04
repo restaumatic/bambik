@@ -1,6 +1,6 @@
 # Short story
 
-See [**live demo**](http://erykciepiela.xyz/bambik/demo/1/). To peek under the hood open dev tools console and watch log entries `[Specular.DOM.Builder] ...`.
+See [**live demo**](http://erykciepiela.xyz/bambik/demo/1/). To peek under the hood open dev tools console and watch log entries `[DOM] ...`.
 
 To run the demo locally:
 
