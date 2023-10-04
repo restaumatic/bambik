@@ -18,12 +18,12 @@ $ npm install && npm run demo1
 
 ## TODOs
 
-  1. First-order MDC components
+  1. Full set of first-order MDC components
   1. Higher-order components (including MDC) / traversals
-  1. Inputless components
-  1. I18n support
+  1. ~~Inputless components~~
+  1. I18n
   1. Make Arrow instance of Widget not representable e.g. `newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Builder env Unit))`
-  1. Generalize `Widget` for other types of UI
+  1. ~~Generalize `Widget` for other types of UI~~
   1. Validation
 
 # Long story
