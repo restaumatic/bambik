@@ -43,7 +43,7 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Propagator (class MonadAttach)
+import Propagator (class MonadGUI)
 import Specular.Internal.RIO (RIO, runRIO)
 import Specular.Internal.RIO as RIO
 import Unsafe.Coerce (unsafeCoerce)
@@ -61,6 +61,9 @@ derive newtype instance Bind DOM
 derive newtype instance Monad DOM
 derive newtype instance MonadEffect DOM
 
+instance MonadGUI DOM where
+  attachable = attachable' false
+
 initializeInBody :: forall a. DOM (a -> Effect Unit) → a -> Effect Unit
 initializeInBody dom a = measured "initialized" do
   body <- documentBody
@@ -68,7 +71,7 @@ initializeInBody dom a = measured "initialized" do
 
 initializeInNode :: forall a. Node -> DOM (a -> Effect Unit) -> a -> Effect Unit
 initializeInNode node dom a = runDomInNode node do
-  { attach, result: update } <- attachable' true dom
+  { attach, update } <- attachable' true dom
   liftEffect do
     update a
     attach
@@ -92,9 +95,6 @@ createTextValue = do
 
 writeTextValue :: TextValue -> String -> Effect Unit
 writeTextValue (TextValue { write }) = write
-
-instance MonadAttach DOM where
-  attachable = attachable' false
 
 --
 
@@ -176,7 +176,7 @@ getCurrentNode = do
   parent <- getParentNode
   liftEffect $ lastChild parent
 
-attachable' :: forall a. Boolean -> DOM a -> DOM { result :: a, attach :: Effect Unit, detach :: Effect Unit }
+attachable' :: forall a. Boolean -> DOM (a -> Effect Unit) -> DOM { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit }
 attachable' removePrecedingSiblingNodes dom = do
   parent <- getParentNode
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
@@ -189,7 +189,7 @@ attachable' removePrecedingSiblingNodes dom = do
     appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
-    result <- runDomInNode initialDocumentFragment dom
+    update <- runDomInNode initialDocumentFragment dom
 
     documentFragmentRef <- Ref.new initialDocumentFragment
 
@@ -207,7 +207,7 @@ attachable' removePrecedingSiblingNodes dom = do
         moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
         Ref.write documentFragment documentFragmentRef
 
-    pure $ { attach, detach, result }
+    pure $ { attach, detach, update }
     where
       measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
       measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName

@@ -61,13 +61,13 @@ instance MonadEffect m => Strong (Propagator m) where
         Occurrence None _ -> mempty
         Occurrence _ _ -> inward $ snd <$> chab
 
-class MonadEffect m <= MonadAttach m where
-  attachable :: forall a. m a -> m { result :: a, attach :: Effect Unit, detach :: Effect Unit}
+class MonadEffect m <= MonadGUI m where
+  attachable :: forall a. m (a -> Effect Unit) -> m { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit}
 
-instance MonadAttach m => Choice (Propagator m) where
+instance MonadGUI m => Choice (Propagator m) where
   left w = Propagator \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    { attach, detach, result: inward } <- attachable $ unwrap w \cha -> do
+    { attach, detach, update } <- attachable $ unwrap w \cha -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Left _) -> outward $ Left <$> cha
@@ -77,7 +77,7 @@ instance MonadAttach m => Choice (Propagator m) where
       case chaorb of
         Occurrence None _ -> mempty
         Occurrence _ (Left a) -> do
-          inward $ a <$ chaorb -- first inward and only then possibly attach
+          update $ a <$ chaorb -- first update and only then possibly attach
           case moldaorb of
             (Just (Left _)) -> mempty
             _ -> attach
@@ -87,7 +87,7 @@ instance MonadAttach m => Choice (Propagator m) where
             _ -> mempty
   right w = Propagator \outward -> do
     maorbRef <- liftEffect $ Ref.new Nothing
-    { attach, detach, result: inward } <- attachable $ unwrap w \chb -> do
+    { attach, detach, update } <- attachable $ unwrap w \chb -> do
       maorb <- Ref.read maorbRef
       case maorb of
         Just (Right _) -> outward $ Right <$> chb
@@ -97,7 +97,7 @@ instance MonadAttach m => Choice (Propagator m) where
       case chaorb of
         Occurrence None _ -> mempty
         Occurrence _ (Right b) -> do
-          inward $ b <$ chaorb  -- first inward and only then possibly attach
+          update $ b <$ chaorb  -- first inward and only then possibly attach
           case moldaorb of
             (Just (Right _)) -> mempty
             _ -> attach
