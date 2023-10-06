@@ -170,7 +170,7 @@ instance Monad m => ProductProfunctor (Propagator m) where
     Occurrence None _ -> pure unit
     _ -> outward (Occurrence Some b)
 
-precededByEffect ∷ ∀ (m ∷ Type -> Type) (i ∷ Type) (i' ∷ Type) (o ∷ Type). MonadEffect m ⇒ (i' → Effect i) → Propagator m i o → Propagator m i' o
+precededByEffect :: forall m i i' o. MonadEffect m => (i' → Effect i) -> Propagator m i o -> Propagator m i' o
 precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
 
 followedByEffect :: forall m i o o'. MonadEffect m => (o -> Effect o') -> Propagator m i o -> Propagator m i o'
