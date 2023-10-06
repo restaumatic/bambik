@@ -13,9 +13,9 @@
     "material-components-web": "^14.0.0"
   },
   "devDependencies": {
-    "spago": "^0.20.9",
+    "spago": "^0.21.0",
     "purescript": "^0.15.10",
     "esbuild": "^0.14.38",
-    "parcel": "^2.8.2"
+    "parcel": "^2.9.3"
   }
 }
