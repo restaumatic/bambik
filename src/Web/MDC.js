@@ -1,4 +1,4 @@
-import material_ from "material-components-web/dist/material-components-web.js";
+import material_ from "material-components-web/dist/material-components-web.min.js";
 
 export const material = material_;
 
