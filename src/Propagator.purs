@@ -5,7 +5,7 @@ module Propagator
   , attachable
   , bracket
   , class MonadGUI
-  , debuncingOutputMilliseconds
+  , debounced
   , fixed
   , followedByEffect
   , hush
@@ -26,7 +26,7 @@ import Data.Profunctor.Plus (class ProfunctorPlus, class ProfunctorZero)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds, delay, error, forkAff, joinFiber, killFiber, launchAff_)
+import Effect.Aff (Aff, Milliseconds, delay, error, forkAff, joinFiber, killFiber, launchAff_, runAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
@@ -180,8 +180,8 @@ fixed a w = Propagator \_ -> do
 hush :: forall m a b c. Propagator m a b -> Propagator m a c
 hush w = Propagator \_ -> unwrap w mempty -- outward is never called
 
-debuncingOutputMilliseconds :: forall m i o. MonadEffect m => Milliseconds -> Propagator m i o -> Propagator m i o
-debuncingOutputMilliseconds millis = bracket (liftEffect $ Ref.new Nothing) (const $ pure) (\mFiberRef occur -> do
+debounced :: forall m i o. MonadEffect m => Milliseconds -> Propagator m i o -> Propagator m i o
+debounced millis = bracket (liftEffect $ Ref.new Nothing) (const $ pure) (\mFiberRef occur -> do
   mFiber <- liftEffect $ read mFiberRef
   case mFiber of
     Nothing -> pure unit
@@ -198,7 +198,7 @@ bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   cRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   inward <- unwrap w \occurb -> do
     ctx <- Ref.read cRef
-    launchAff_ do
+    runAff_ (const $ pure unit) do
       o' <- beforeOutward ctx occurb
       liftEffect $ outward o'
   ctx <- afterInit
