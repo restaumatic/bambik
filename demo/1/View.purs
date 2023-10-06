@@ -17,7 +17,7 @@ order =
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Identifier")
     ^ MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced (Milliseconds 500.0)
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId )
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId # debounced (Milliseconds 500.0))
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Customer")
     ^ name # customer )
@@ -25,12 +25,12 @@ order =
     ( MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
     ^ MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
     ^ MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Table" } table # dineIn
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Time" } time # takeaway
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Address" } address # delivery ) # fulfillment
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Table" } table # debounced (Milliseconds 500.0) # dineIn
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Time" } time # debounced (Milliseconds 500.0) # takeaway
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Address" } address # debounced (Milliseconds 500.0) # delivery ) # fulfillment
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Total")
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Total" } total )
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced (Milliseconds 500.0) )
   ^ MDC.card
     ( MDC.checkbox { labelContent: text # total ^ text # fixed " paid" } paid )
   ^ MDC.card
@@ -61,8 +61,8 @@ order =
 name :: Widget NameInformal NameInformal
 name =
   MDC.subtitle2 (text # fixed "Informal")
-  ^ MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName
-  ^ MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName
+  ^ MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName # debounced (Milliseconds 500.0)
+  ^ MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName # debounced (Milliseconds 500.0)
   ^ ( MDC.subtitle2 (text # fixed "Formal")
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename ) # formal
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname # debounced (Milliseconds 500.0)
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename # debounced (Milliseconds 500.0)) # formal
