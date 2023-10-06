@@ -2,15 +2,13 @@ module Propagator
   ( Occurrence(..)
   , Propagation
   , Propagator(..)
+  , class MonadGUI
   , attachable
   , bracket
-  , class MonadGUI
-  , class ProductProfunctor
   , fixed
+  , hush
   , followedByEffect
   , precededByEffect
-  , hush
-  , purePP
   )
   where
 
@@ -163,14 +161,6 @@ instance MonadEffect m => Semigroupoid (Propagator m) where
     liftEffect $ Ref.write inward2 update2Ref
     pure inward1
 
-class ProductProfunctor p where
-  purePP :: forall a b. b -> p a b
-
-instance Monad m => ProductProfunctor (Propagator m) where
-  purePP b = Propagator \outward -> pure case _ of
-    Occurrence None _ -> pure unit
-    _ -> outward (Occurrence Some b)
-
 precededByEffect :: forall m i i' o. MonadEffect m => (i' → Aff i) -> Propagator m i o -> Propagator m i' o
 precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
 
@@ -182,7 +172,7 @@ fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator 
 fixed a w = Propagator \_ -> do
   inward <- unwrap w mempty
   liftEffect $ inward $ Occurrence Some a
-  pure mempty -- inward is never called again
+  pure mempty -- inward is never called again, outward is never called
 
 -- Suppresses outward propagation
 hush :: forall m a b c. Propagator m a b -> Propagator m a c
