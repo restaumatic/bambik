@@ -1,6 +1,6 @@
-module Data.Profunctor.Optics
+module Propagator.Optics
   ( Adapter
-  , ChOptic
+  , PropOptic
   , Constant
   , Constructor
   , Field
@@ -16,9 +16,6 @@ module Data.Profunctor.Optics
   , iso'
   , lens
   , lens'
-  , module Data.Profunctor
-  , module Data.Profunctor.Choice
-  , module Data.Profunctor.Strong
   , prism
   , prism'
   , projection
@@ -27,9 +24,9 @@ module Data.Profunctor.Optics
 
 import Prelude
 
-import Data.Profunctor
-import Data.Profunctor.Choice
-import Data.Profunctor.Strong
+import Data.Profunctor (dimap)
+import Data.Profunctor.Choice (left)
+import Data.Profunctor.Strong (first)
 
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe, maybe)
@@ -42,8 +39,8 @@ import Record (get, set)
 import Type.Proxy (Proxy(..))
 
 -- indentation to emphasize hierarchy
-type ChOptic a b s t = forall m. Monad m => Propagator m a b -> Propagator m s t
-type   Adapter a b s t = ChOptic a b s t
+type PropOptic a b s t = forall m. Monad m => Propagator m a b -> Propagator m s t
+type   Adapter a b s t = PropOptic a b s t
 type     Iso a s = Adapter a a s s
 type     Projection a s = forall b. Adapter a b s b
 type       Constant a = forall s. Projection a s
