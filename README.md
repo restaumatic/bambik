@@ -25,6 +25,11 @@ $ npm install && npm run demo1
   1. Make Arrow instance of Widget not representable e.g. `newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Builder env Unit))`
   1. ~~Generalize `Widget` for other types of UI~~
   1. Validation
+  1. ~~Effects~~
+  1. Enabled Aff effects
+  1. Debouncing
+  1. Collections
+
 
 # Long story
 
