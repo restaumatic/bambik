@@ -1,4 +1,18 @@
-module Propagator where
+module Propagator
+  ( Occurrence(..)
+  , Propagation
+  , Propagator(..)
+  , attachable
+  , bracket
+  , class MonadGUI
+  , class ProductProfunctor
+  , fixed
+  , followedByEffect
+  , precededByEffect
+  , hush
+  , purePP
+  )
+  where
 
 import Prelude
 
@@ -156,8 +170,11 @@ instance Monad m => ProductProfunctor (Propagator m) where
     Occurrence None _ -> pure unit
     _ -> outward (Occurrence Some b)
 
-effect :: forall i o m. MonadEffect m => (i -> Effect Unit) -> Propagator m i o
-effect f = Propagator \_ -> pure \(Occurrence _ a) -> liftEffect $ f a -- outward is never called
+precededByEffect :: forall m i i' o. MonadEffect m => (i' → Effect i) -> Propagator m i o -> Propagator m i' o
+precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
+
+followedByEffect :: forall m i o o'. MonadEffect m => (o -> Effect o') -> Propagator m i o -> Propagator m i o'
+followedByEffect f = bracket (pure unit) (const pure) (\_ (Occurrence _ o) -> f o <#> Occurrence Some)
 
 -- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
 fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
@@ -170,12 +187,15 @@ fixed a w = Propagator \_ -> do
 hush :: forall m a b c. Propagator m a b -> Propagator m a c
 hush w = Propagator \_ -> unwrap w mempty -- outward is never called
 
-bracket :: forall m a b c. MonadEffect m => m c -> (c -> Occurrence a -> Effect Unit) -> (c -> Occurrence b -> Effect Unit) -> Propagator m a b -> Propagator m a b
+bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Effect (Occurrence i)) -> (c -> Occurrence o -> Effect (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
 bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   cRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  inward <- unwrap w $ (\chb -> do
+  inward <- unwrap w \occurb -> do
     ctx <- Ref.read cRef
-    beforeOutward ctx chb) <> outward
+    o' <- beforeOutward ctx occurb
+    outward o'
   ctx <- afterInit
   liftEffect $ Ref.write ctx cRef
-  pure $ inward <> afterInward ctx
+  pure \occuri' -> do
+    i <- afterInward ctx occuri'
+    inward i
