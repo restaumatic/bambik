@@ -44,13 +44,13 @@ containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
     ( div (classes "mdc-button__ripple") mempty (mempty :: Widget a a)
-    ^ span (classes "mdc-button__label") mempty (label # hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
+    ^ span (classes "mdc-button__label") mempty (label >>> hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
     ( span (classes "mdc-text-field__ripple") mempty mempty
-    ^ ( span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) ( floatingLabel # hush )
+    ^ ( span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) ( floatingLabel >>> hush )
       ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
     ^ span (classes "mdc-line-ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
@@ -66,7 +66,7 @@ checkbox { labelContent } checked =
           </svg>""" -- Without raw HTML it doesn't work
         ^ div (classes "mdc-checkbox__mixedmark") mempty mempty)
       ^ div (classes "mdc-checkbox__ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
-    ^ label (attr "for" id) mempty (labelContent # hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+    ^ label (attr "for" id) mempty (labelContent >>> hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
 
@@ -79,7 +79,7 @@ radioButton { labelContent } value =
         ( div (classes "mdc-radio__outer-circle") mempty mempty
         ^ div (classes "mdc-radio__inner-circle") mempty mempty)
         ^ div (classes "mdc-radio__ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
-  ^ label (attr "for" id) mempty (labelContent # hush)
+  ^ label (attr "for" id) mempty (labelContent >>> hush)
   )
   # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
@@ -144,7 +144,7 @@ dialog { title } content =
     ( div (classes "mdc-dialog__container") mempty
       ( div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty
         (
-        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title # hush)
+        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title >>> hush)
         ^
         div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
         ) )
