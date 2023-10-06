@@ -56,7 +56,8 @@ order =
       >>> MDC.dialog { title: text # fixed "Submit order " ^ text # shortId ^ text # fixed "?"}
         ( MDC.body1 (text # fixed "Are you sure?")
         ^ MDC.containedButton { label: text # fixed "Submit order" } )
-      >>> ( MDC.snackbar { label: text # fixed "Order " ^ text # shortId ^ text # fixed " submitted"} # precededByEffect submitOrder # hush ) ) )
+      >>> ( MDC.snackbar { label: text # fixed "Order " ^ text # shortId ^ text # fixed " submitted"} # precededByEffect submitOrder )
+      >>> hush ) )
 
 name :: Widget NameInformal NameInformal
 name =

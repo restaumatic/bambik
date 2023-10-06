@@ -184,7 +184,7 @@ instance MonadEffect m => Semigroup (Propagator m a a) where
 infixr 0 append as ^ -- to lower precedence from 5 (<>) to 0 (^)
 
 instance MonadEffect m => Monoid (Propagator m a a) where
-  mempty = Propagator \_ -> pure mempty
+  mempty = hush
 
 precededByEffect :: forall m i i' o. MonadEffect m => (i' → Aff i) -> Propagator m i o -> Propagator m i' o
 precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
@@ -200,8 +200,8 @@ fixed a w = Propagator \_ -> do
   pure mempty -- inward is never called again, outward is never called
 
 -- Suppresses outward propagation
-hush :: forall m a b c. Propagator m a b -> Propagator m a c
-hush w = Propagator \_ -> unwrap w mempty -- outward is never called
+hush :: forall m i o. Applicative m => Propagator m i o
+hush = Propagator \_ -> pure mempty
 
 debounced :: forall m i o. MonadEffect m => Milliseconds -> Propagator m i o -> Propagator m i o
 debounced millis = bracket (liftEffect $ Ref.new Nothing) (const $ pure) (\mFiberRef occur -> do
