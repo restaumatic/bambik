@@ -4,13 +4,12 @@ module View
 
 import Prelude
 
-import Data.Time.Duration (Milliseconds(..))
-import Propagator (debounced, fixed, hush, precededByEffect)
+import Propagator (debounced', fixed, hush, precededByEffect)
+import QualifiedDo.Semigroup as S
+import QualifiedDo.Semigroupoid as T
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (Widget, text)
 import Web.MDC as MDC
-import QualifiedDo.Semigroup as S
-import QualifiedDo.Semigroupoid as T
 
 order ∷ Widget Order Order
 order =
@@ -20,8 +19,8 @@ order =
       text # shortId
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Identifier")
-      MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced (Milliseconds 500.0)
-      MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId # debounced (Milliseconds 500.0)
+      MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced'
+      MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId # debounced'
     MDC.card S.do
       MDC.subtitle1 S.do
         text # fixed "Customer"
@@ -30,12 +29,12 @@ order =
       MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
       MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
       MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
-      MDC.filledTextField { floatingLabel: text # fixed "Table" } table # debounced (Milliseconds 500.0) # dineIn
-      MDC.filledTextField { floatingLabel: text # fixed "Time" } time # debounced (Milliseconds 500.0) # takeaway
-      MDC.filledTextField { floatingLabel: text # fixed "Address" } address # debounced (Milliseconds 500.0) # delivery ) # fulfillment
+      MDC.filledTextField { floatingLabel: text # fixed "Table" } table # debounced' # dineIn
+      MDC.filledTextField { floatingLabel: text # fixed "Time" } time # debounced' # takeaway
+      MDC.filledTextField { floatingLabel: text # fixed "Address" } address # debounced' # delivery ) # fulfillment
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Total")
-      MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced (Milliseconds 500.0)
+      MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced'
     MDC.card S.do
       MDC.checkbox { labelContent: S.do
         text # total
@@ -87,9 +86,9 @@ order =
 name :: Widget NameInformal NameInformal
 name = S.do
   MDC.subtitle2 (text # fixed "Informal")
-  MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName # debounced (Milliseconds 500.0)
-  MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName # debounced (Milliseconds 500.0)
+  MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName # debounced'
+  MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName # debounced'
   ( S.do
     MDC.subtitle2 (text # fixed "Formal")
-    MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname # debounced (Milliseconds 500.0)
-    MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename # debounced (Milliseconds 500.0) ) # formal
+    MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname # debounced'
+    MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename # debounced' ) # formal

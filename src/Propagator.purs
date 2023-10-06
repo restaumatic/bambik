@@ -1,5 +1,6 @@
 module Propagator
-  ( Change(..)
+  ( (^)
+  , Change(..)
   , Occurrence(..)
   , Propagation
   , Propagator(..)
@@ -8,11 +9,11 @@ module Propagator
   , bracket
   , class MonadGUI
   , debounced
+  , debounced'
   , fixed
   , followedByEffect
   , hush
   , precededByEffect
-  , (^)
   , scopemap
   )
   where
@@ -30,7 +31,7 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds, delay, error, forkAff, joinFiber, killFiber, launchAff_, runAff_)
+import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, joinFiber, killFiber, launchAff_, runAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
@@ -215,6 +216,9 @@ debounced millis = bracket (liftEffect $ Ref.new Nothing) (const $ pure) (\mFibe
   liftEffect $ write (Just newFiber) mFiberRef
   joinFiber newFiber
   )
+
+debounced' :: forall m i o. MonadEffect m => Propagator m i o -> Propagator m i o
+debounced' = debounced (Milliseconds 500.0)
 
 bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Aff (Occurrence i)) -> (c -> Occurrence o -> Aff (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
 bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
