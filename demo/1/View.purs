@@ -4,7 +4,8 @@ module View
 
 import Prelude
 
-import Propagator (fixed, hush, precededByEffect)
+import Data.Time.Duration (Milliseconds(..))
+import Propagator (debounced, fixed, hush, precededByEffect)
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (Widget, text, (^))
 import Web.MDC as MDC
@@ -15,7 +16,7 @@ order =
   ( MDC.headline6 (text # fixed "Order " ^ text # shortId)
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Identifier")
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId
+    ^ MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced (Milliseconds 500.0)
     ^ MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId )
   ^ MDC.card
     ( MDC.subtitle1 (text # fixed "Customer")
