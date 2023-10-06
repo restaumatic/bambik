@@ -35,7 +35,6 @@ to generate this file without the comments in this block.
 , packages = ./packages.dhall
 , sources =
   [ "src/**/*.purs"
-  , "src-specular-bits/**/*.purs"
   , "test/**/*.purs"
   , "demo/1/*.purs"
   ]

@@ -44,8 +44,8 @@ import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Propagator (class MonadGUI)
-import Specular.Internal.RIO (RIO, runRIO)
-import Specular.Internal.RIO as RIO
+import Web.Internal.RIO (RIO, runRIO)
+import Web.Internal.RIO as RIO
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype DOM a = DOM (RIO DOMEnv a)

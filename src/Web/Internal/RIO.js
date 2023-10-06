@@ -47,13 +47,6 @@ export function runRIO(env) {
   };
 }
 
-// rio :: forall r a. (r -> IOSync a) -> RIO r a
-export function rio(f) {
-  return function RIO_rio_eff(env) {
-    return f(env)();
-  };
-}
-
 // local :: forall r e a. (e -> r) -> RIO r a -> RIO e a
 export function local(f) {
   return function (io) {
