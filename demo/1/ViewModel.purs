@@ -28,7 +28,6 @@ module ViewModel
   , isDelivery
   , formal
   , submitOrder
-  , orderId
   , total
   , defaultOrder
   ) where
@@ -37,7 +36,7 @@ import Prelude
 
 import Data.Array (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Propagator.Optics (Constructor, Iso, Lens', constructor, field, iso, iso', lens')
+import Propagator.Optics (Constructor, Iso, constructor, field, iso, iso')
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -153,25 +152,18 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
-type SerializedOrder = String
-
 submitOrder :: Order -> Aff OrderConfirmation
 submitOrder o = do
   let so = serializeOrder o
   liftEffect $ log so
   pure { shortId: o.shortId}
   where
-    serializeOrder :: Order -> SerializedOrder
+    serializeOrder :: Order -> String
     serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of
         (DineIn { table }) -> "dinein|" <> table
         (Takeaway { time }) -> "takeaway|" <> time
         (Delivery { address }) -> "delivery|\"" <> address <> "\""
       ]
-
-orderId :: Lens' OrderId Order
-orderId = lens' "orderId" (case _ of
-  { uniqueId, shortId} -> { short: shortId, unique: uniqueId }) (\id -> case _ of
-    { short, unique } -> id { shortId = short, uniqueId = unique })
 
 --
 
