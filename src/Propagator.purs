@@ -12,9 +12,7 @@ module Propagator
   , followedByEffect
   , hush
   , precededByEffect
-  , proplus
   , (^)
-  , prozero
   , scopemap
   )
   where
@@ -160,39 +158,33 @@ instance MonadEffect m => Semigroupoid (Propagator m) where
     liftEffect $ Ref.write inward2 update2Ref
     pure inward1
 
---
+instance MonadEffect m => Semigroup (Propagator m a a) where
+  append c1 c2 = Propagator \updateParent -> do
+    -- TODO how to get rid of thess refs?
+    mUpdate1Ref <- liftEffect $ Ref.new Nothing
+    mUpdate2Ref <- liftEffect $ Ref.new Nothing
+    inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
+      mUpdate2 <- Ref.read mUpdate2Ref
+      let inward2 = maybe mempty identity mUpdate2
+      mUpdate1 <- Ref.read mUpdate1Ref
+      let inward1 = maybe mempty identity mUpdate1
+      inward1 (Occurrence None a)
+      inward2 cha
+      updateParent cha
+    liftEffect $ Ref.write (Just inward1) mUpdate1Ref
+    inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
+      mUpdate2 <- Ref.read mUpdate2Ref
+      let inward2 = maybe mempty identity mUpdate2
+      inward2 (Occurrence None a)
+      inward1 cha
+      updateParent cha
+    liftEffect $ Ref.write (Just inward2) mUpdate2Ref
+    pure $ inward1 <> inward2
 
--- laws:
--- proplus a (proplus b c) = proplus (proplus a b) c
--- proplus a prozero == a = proplus prozero a
+infixr 0 append as ^ -- to lower precedence from 5 (<>) to 0 (^)
 
-proplus :: forall m a. MonadEffect m => Propagator m a a -> Propagator m a a -> Propagator m a a
-proplus c1 c2 = Propagator \updateParent -> do
-  -- TODO how to get rid of thess refs?
-  mUpdate1Ref <- liftEffect $ Ref.new Nothing
-  mUpdate2Ref <- liftEffect $ Ref.new Nothing
-  inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
-    mUpdate2 <- Ref.read mUpdate2Ref
-    let inward2 = maybe mempty identity mUpdate2
-    mUpdate1 <- Ref.read mUpdate1Ref
-    let inward1 = maybe mempty identity mUpdate1
-    inward1 (Occurrence None a)
-    inward2 cha
-    updateParent cha
-  liftEffect $ Ref.write (Just inward1) mUpdate1Ref
-  inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
-    mUpdate2 <- Ref.read mUpdate2Ref
-    let inward2 = maybe mempty identity mUpdate2
-    inward2 (Occurrence None a)
-    inward1 cha
-    updateParent cha
-  liftEffect $ Ref.write (Just inward2) mUpdate2Ref
-  pure $ inward1 <> inward2
-
-infixr 0 proplus as ^
-
-prozero :: forall m a. Applicative m => Propagator m a a
-prozero = Propagator \_ -> pure mempty
+instance MonadEffect m => Monoid (Propagator m a a) where
+  mempty = Propagator \_ -> pure mempty
 
 precededByEffect :: forall m i i' o. MonadEffect m => (i' → Aff i) -> Propagator m i o -> Propagator m i' o
 precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)

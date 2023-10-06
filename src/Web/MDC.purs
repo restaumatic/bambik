@@ -33,7 +33,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (bracket, hush, prozero, (^))
+import Propagator (bracket, hush, (^))
 import Web (Widget, aside, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, span, textInput)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
@@ -43,16 +43,16 @@ import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
-    ( div (classes "mdc-button__ripple") mempty prozero
+    ( div (classes "mdc-button__ripple") mempty (mempty :: Widget a a)
     ^ span (classes "mdc-button__label") mempty (label # hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty
-    ( span (classes "mdc-text-field__ripple") mempty prozero
+    ( span (classes "mdc-text-field__ripple") mempty mempty
     ^ ( span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) ( floatingLabel # hush )
       ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
-    ^ span (classes "mdc-line-ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
+    ^ span (classes "mdc-line-ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
 checkbox :: forall a b. { labelContent :: Widget a b } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a
 checkbox { labelContent } checked =
@@ -64,8 +64,8 @@ checkbox { labelContent } checked =
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
-        ^ div (classes "mdc-checkbox__mixedmark") mempty prozero)
-      ^ div (classes "mdc-checkbox__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
+        ^ div (classes "mdc-checkbox__mixedmark") mempty mempty)
+      ^ div (classes "mdc-checkbox__ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
     ^ label (attr "for" id) mempty (labelContent # hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
@@ -76,9 +76,9 @@ radioButton { labelContent } value =
   ( div (classes "mdc-radio") mempty
       ( Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id ) # value
       ^ div (classes "mdc-radio__background") mempty
-        ( div (classes "mdc-radio__outer-circle") mempty prozero
-        ^ div (classes "mdc-radio__inner-circle") mempty prozero)
-        ^ div (classes "mdc-radio__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
+        ( div (classes "mdc-radio__outer-circle") mempty mempty
+        ^ div (classes "mdc-radio__inner-circle") mempty mempty)
+        ^ div (classes "mdc-radio__ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
   ^ label (attr "for" id) mempty (labelContent # hush)
   )
   # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
@@ -148,7 +148,7 @@ dialog { title } content =
         ^
         div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
         ) )
-      ^ div (classes "mdc-dialog__scrim") mempty prozero ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+      ^ div (classes "mdc-dialog__scrim") mempty mempty ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = getCurrentNode >>= newComponent material.dialog."MDCDialog"
       openMdcComponent comp a = liftEffect do
