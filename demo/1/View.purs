@@ -4,7 +4,7 @@ module View
 
 import Prelude
 
-import Propagator (effect, fixed)
+import Propagator (effect, fixed, hush)
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (Widget, text, (^))
 import Web.MDC as MDC
@@ -56,7 +56,7 @@ order =
         ( MDC.body1 (text # fixed "Are you sure?")
         ^ MDC.containedButton { label: text # fixed "Submit order" } )
       >>> MDC.snackbar { label: text # fixed "Submitting order " ^ text # shortId }
-      >>> effect submitOrder ) )
+      >>> effect submitOrder # hush ) )
 
 name :: Widget NameInformal NameInformal
 name =

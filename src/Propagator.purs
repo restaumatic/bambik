@@ -156,8 +156,10 @@ instance Monad m => ProductProfunctor (Propagator m) where
     Occurrence None _ -> pure unit
     _ -> outward (Occurrence Some b)
 
-effect :: forall i o m. MonadEffect m => (i -> Effect Unit) -> Propagator m i o
-effect f = Propagator \_ -> pure \(Occurrence _ a) -> liftEffect $ f a -- outward is never called
+effect :: forall i o m. MonadEffect m => (i -> Effect o) -> Propagator m i o
+effect f = Propagator \outward -> pure \(Occurrence ch a) -> do
+  o <- liftEffect (f a)
+  outward $ Occurrence ch o -- outward is never called
 
 -- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
 fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
