@@ -1,7 +1,9 @@
 module Propagator
-  ( Occurrence(..)
+  ( Change(..)
+  , Occurrence(..)
   , Propagation
   , Propagator(..)
+  , Scope(..)
   , attachable
   , bracket
   , class MonadGUI
@@ -10,19 +12,23 @@ module Propagator
   , followedByEffect
   , hush
   , precededByEffect
+  , proplus
+  , (^)
+  , prozero
+  , scopemap
   )
   where
 
 import Prelude
 
+import Data.Array (uncons, (:))
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Change (class ChProfunctor, Change(..))
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorPlus, class ProfunctorZero)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -31,6 +37,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
+import Data.Array.NonEmpty (intercalate)
 
 data Occurrence a = Occurrence Change a
 
@@ -121,37 +128,38 @@ instance MonadGUI m => Choice (Propagator m) where
             (Just (Right _)) -> detach
             _ -> mempty
 
-instance MonadEffect m => ProfunctorPlus (Propagator m) where
-  proplus c1 c2 = Propagator \updateParent -> do
-    -- TODO how to get rid of thess refs?
-    mUpdate1Ref <- liftEffect $ Ref.new Nothing
-    mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      let inward2 = maybe mempty identity mUpdate2
-      mUpdate1 <- Ref.read mUpdate1Ref
-      let inward1 = maybe mempty identity mUpdate1
-      inward1 (Occurrence None a)
-      inward2 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just inward1) mUpdate1Ref
-    inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      let inward2 = maybe mempty identity mUpdate2
-      inward2 (Occurrence None a)
-      inward1 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just inward2) mUpdate2Ref
-    pure $ inward1 <> inward2
+-- laws:
+-- proplus a (proplus b c) = proplus (proplus a b) c
+-- proplus a prozero == a = proplus prozero a
 
-instance MonadEffect m => ProfunctorZero (Propagator m) where
-  prozero = Propagator \_ -> pure mempty
+proplus :: forall m a. MonadEffect m => Propagator m a a -> Propagator m a a -> Propagator m a a
+proplus c1 c2 = Propagator \updateParent -> do
+  -- TODO how to get rid of thess refs?
+  mUpdate1Ref <- liftEffect $ Ref.new Nothing
+  mUpdate2Ref <- liftEffect $ Ref.new Nothing
+  inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
+    mUpdate2 <- Ref.read mUpdate2Ref
+    let inward2 = maybe mempty identity mUpdate2
+    mUpdate1 <- Ref.read mUpdate1Ref
+    let inward1 = maybe mempty identity mUpdate1
+    inward1 (Occurrence None a)
+    inward2 cha
+    updateParent cha
+  liftEffect $ Ref.write (Just inward1) mUpdate1Ref
+  inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
+    mUpdate2 <- Ref.read mUpdate2Ref
+    let inward2 = maybe mempty identity mUpdate2
+    inward2 (Occurrence None a)
+    inward1 cha
+    updateParent cha
+  liftEffect $ Ref.write (Just inward2) mUpdate2Ref
+  pure $ inward1 <> inward2
 
-instance Monad m => ChProfunctor (Propagator m) where
-  chmap mapin mapout w = Propagator \outward -> do
-    inward <- unwrap w \(Occurrence c a) -> do
-      outward $ Occurrence (mapout c) a
-    pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
+infixr 0 proplus as ^
+
+prozero :: forall m a. Applicative m => Propagator m a a
+prozero = Propagator \_ -> pure mempty
+
 
 instance MonadEffect m => Semigroupoid (Propagator m) where
   compose w2 w1 = Propagator \outward -> do
@@ -206,3 +214,85 @@ bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   pure \occuri' -> launchAff_ do
       i <- afterInward ctx occuri'
       liftEffect $ inward i
+
+-- for debugging uncomment:
+-- import Debug (spy)
+-- and comment out:
+spy :: forall a. String -> a -> a
+spy _ = identity
+
+chmap :: forall m i o. Monad m => (Change -> Change) -> (Change -> Change) -> Propagator m i o -> Propagator m i o
+chmap mapin mapout w = Propagator \outward -> do
+  inward <- unwrap w \(Occurrence c a) -> do
+    outward $ Occurrence (mapout c) a
+  pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
+
+
+scopemap :: forall m a b. Monad m => Scope -> Propagator m a b -> Propagator m a b
+scopemap scope = chmap zoomIn zoomOut
+  where
+    zoomOut :: Change -> Change
+    zoomOut change = case zoomOut' change of
+      ch@None -> ch
+      ch -> spy ("change: " <> show ch <> " < " <> show scope <> " < " <> show change) ch
+      where
+        zoomOut' :: Change -> Change
+        zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
+        zoomOut' (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+        zoomOut' None = None
+
+    zoomIn :: Change -> Change
+    zoomIn change = case zoomIn' change of
+      ch@None -> ch
+      ch -> spy ("change: " <> show change <> " > " <> show scope <> " > " <> show ch) ch
+      where
+        zoomIn' :: Change -> Change
+        zoomIn' Some = Some
+        zoomIn' (Scoped scopes) = case NonEmptyArray.uncons scopes of
+          { head, tail } | head == scope -> case uncons tail of -- matching head
+            Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
+            Nothing -> Some -- empty tail
+          { head: Variant _ } -> Some -- not matching head but head is twist
+          _ -> case scope of
+            Variant _ -> Some -- not matching head but scope is twist
+            _ -> None -- otherwise
+        zoomIn' None = None
+
+
+--
+
+data Change = Some | Scoped (NonEmptyArray.NonEmptyArray Scope) | None -- TODO: find already existing data type for it
+
+data Scope = Part String | Variant String
+
+instance Show Scope where
+  show (Part s) = "." <> s
+  show (Variant s) = "@" <> s
+
+derive instance Eq Scope
+
+instance Show Change where
+  show Some = "*"
+  show None = "-"
+  show (Scoped scopes) = intercalate "" (show <$> scopes)
+
+-- finds least common scope
+instance Semigroup Change where
+  append None s = s
+  append s None = s
+  append Some _ = Some
+  append _ Some = Some
+  append (Scoped hops1) (Scoped hops2) = case NonEmptyArray.fromArray $ commonPrefix hops1 hops2 of
+    Nothing -> Some -- no common prefix
+    Just prefix -> Scoped prefix -- common prefix
+    where
+      commonPrefix :: forall a. Eq a => NonEmptyArray.NonEmptyArray a -> NonEmptyArray.NonEmptyArray a -> Array a
+      commonPrefix a1 a2 = let
+        {head: h1, tail: t1} = NonEmptyArray.uncons a1
+        {head: h2, tail: t2} = NonEmptyArray.uncons a2
+        in if h1 == h2 then h1:fromMaybe [] (commonPrefix <$> NonEmptyArray.fromArray t1 <*> NonEmptyArray.fromArray t2)
+        else []
+
+instance Monoid Change where
+  mempty = None
+
