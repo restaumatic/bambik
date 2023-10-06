@@ -151,10 +151,10 @@ dialog { title } content =
       ^ div (classes "mdc-dialog__scrim") mempty prozero ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = getCurrentNode >>= newComponent material.dialog."MDCDialog"
-      openMdcComponent comp a = do
+      openMdcComponent comp a = liftEffect do
         open comp
         pure a
-      closeMdcComponent comp a = do
+      closeMdcComponent comp a = liftEffect do
         close comp
         pure a
 
@@ -166,7 +166,7 @@ snackbar { label } =
         label ) ) # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
       initializeMdcSnackbar = getCurrentNode >>= newComponent material.snackbar."MDCSnackbar"
-      openMdcComponent comp a = do
+      openMdcComponent comp a = liftEffect do
         open comp
         pure a
 
