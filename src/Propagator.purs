@@ -1,4 +1,16 @@
-module Propagator where
+module Propagator
+  ( Occurrence(..)
+  , Propagation
+  , Propagator(..)
+  , bracket
+  , class MonadGUI
+  , attachable
+  , class ProductProfunctor
+  , purePP
+  , fixed
+  , hush
+  )
+  where
 
 import Prelude
 
