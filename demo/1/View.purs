@@ -5,65 +5,91 @@ module View
 import Prelude
 
 import Data.Time.Duration (Milliseconds(..))
-import Propagator (debounced, fixed, hush, precededByEffect, (^))
+import Propagator (debounced, fixed, hush, precededByEffect)
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (Widget, text)
 import Web.MDC as MDC
+import QualifiedDo.Semigroup as S
+import QualifiedDo.Semigroupoid as T
 
 order ∷ Widget Order Order
 order =
-  MDC.elevation20
-  ( MDC.headline6 (text # fixed "Order " ^ text # shortId)
-  ^ MDC.card
-    ( MDC.subtitle1 (text # fixed "Identifier")
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced (Milliseconds 500.0)
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId # debounced (Milliseconds 500.0))
-  ^ MDC.card
-    ( MDC.subtitle1 (text # fixed "Customer")
-    ^ name # customer )
-  ^ MDC.card
-    ( MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
-    ^ MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
-    ^ MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Table" } table # debounced (Milliseconds 500.0) # dineIn
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Time" } time # debounced (Milliseconds 500.0) # takeaway
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Address" } address # debounced (Milliseconds 500.0) # delivery ) # fulfillment
-  ^ MDC.card
-    ( MDC.subtitle1 (text # fixed "Total")
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced (Milliseconds 500.0) )
-  ^ MDC.card
-    ( MDC.checkbox { labelContent: text # total ^ text # fixed " paid" } paid )
-  ^ MDC.card
-    ( MDC.body1
-      ( text # fixed "Summary: Order "
-      ^ text # shortId
-      ^ text # fixed " (uniquely "
-      ^ text # uniqueId
-      ^ text # fixed ") for "
-      ^ ( text # firstName
-        ^ text # fixed " "
-        ^ text # lastName
-          ^ ( text # fixed " (formally "
-            ^ text # surname
-            ^ text # fixed " "
-            ^ text # forename
-            ^ text # fixed ")" ) # formal ) # customer
-      ^ text # fixed ", fulfilled as "
-      ^ ( (text # fixed "dine in at table " ^ text) # table # dineIn
-        ^ (text # fixed "takeaway at " ^ text) # time # takeaway
-        ^ (text # fixed "delivery to " ^ text) # address # delivery ) # fulfillment )
-    ^ MDC.containedButton { label: text # fixed "Submit order " ^ text # shortId }
-      >>> MDC.dialog { title: text # fixed "Submit order " ^ text # shortId ^ text # fixed "?"}
-        ( MDC.body1 (text # fixed "Are you sure?")
-        ^ MDC.containedButton { label: text # fixed "Submit order" } )
-      >>> ( MDC.snackbar { label: text # fixed "Order " ^ text # shortId ^ text # fixed " submitted"} # precededByEffect submitOrder )
-      >>> hush ) )
+  MDC.elevation20 S.do
+    MDC.headline6 S.do
+      text # fixed "Order "
+      text # shortId
+    MDC.card S.do
+      MDC.subtitle1 (text # fixed "Identifier")
+      MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced (Milliseconds 500.0)
+      MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId # debounced (Milliseconds 500.0)
+    MDC.card S.do
+      MDC.subtitle1 S.do
+        text # fixed "Customer"
+        name # customer
+    MDC.card ( S.do
+      MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
+      MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
+      MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
+      MDC.filledTextField { floatingLabel: text # fixed "Table" } table # debounced (Milliseconds 500.0) # dineIn
+      MDC.filledTextField { floatingLabel: text # fixed "Time" } time # debounced (Milliseconds 500.0) # takeaway
+      MDC.filledTextField { floatingLabel: text # fixed "Address" } address # debounced (Milliseconds 500.0) # delivery ) # fulfillment
+    MDC.card S.do
+      MDC.subtitle1 (text # fixed "Total")
+      MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced (Milliseconds 500.0)
+    MDC.card S.do
+      MDC.checkbox { labelContent: S.do
+        text # total
+        text # fixed " paid" } paid
+    MDC.card S.do
+      MDC.body1 S.do
+        text # fixed "Summary: Order "
+        text # shortId
+        text # fixed " (uniquely "
+        text # uniqueId
+        text # fixed ") for "
+        ( S.do
+          text # firstName
+          text # fixed " "
+          text # lastName
+          ( S.do
+            text # fixed " (formally "
+            text # surname
+            text # fixed " "
+            text # forename
+            text # fixed ")" ) # formal ) # customer
+        text # fixed ", fulfilled as "
+        ( S.do
+            ( S.do
+              text # fixed "dine in at table "
+              text ) # table # dineIn
+            ( S.do
+              text # fixed "takeaway at "
+              text) # time # takeaway
+            ( S.do
+              text # fixed "delivery to "
+              text) # address # delivery ) # fulfillment
+      T.do
+        MDC.containedButton { label: S.do
+          text # fixed "Submit order "
+          text # shortId }
+        MDC.dialog { title: S.do
+          text # fixed "Submit order "
+          text # shortId
+          text # fixed "?" } S.do
+            MDC.body1 (text # fixed "Are you sure?")
+            MDC.containedButton { label: text # fixed "Submit order" }
+        MDC.snackbar { label: S.do
+          text # fixed "Order "
+          text # shortId
+          text # fixed " submitted"} # precededByEffect submitOrder
+        hush
 
 name :: Widget NameInformal NameInformal
-name =
+name = S.do
   MDC.subtitle2 (text # fixed "Informal")
-  ^ MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName # debounced (Milliseconds 500.0)
-  ^ MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName # debounced (Milliseconds 500.0)
-  ^ ( MDC.subtitle2 (text # fixed "Formal")
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname # debounced (Milliseconds 500.0)
-    ^ MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename # debounced (Milliseconds 500.0)) # formal
+  MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName # debounced (Milliseconds 500.0)
+  MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName # debounced (Milliseconds 500.0)
+  ( S.do
+    MDC.subtitle2 (text # fixed "Formal")
+    MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname # debounced (Milliseconds 500.0)
+    MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename # debounced (Milliseconds 500.0) ) # formal
