@@ -27,7 +27,7 @@ $ npm install && npm run demo1
   1. Validation
   1. ~~Effects~~
   1. ~~Enabled Aff effects~~
-  1. Debouncing
+  1. ~~Debouncing~~
   1. Collections
 
 
