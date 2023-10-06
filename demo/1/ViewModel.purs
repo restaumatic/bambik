@@ -36,7 +36,7 @@ module ViewModel
 import Prelude
 
 import Data.Array (intercalate)
-import Data.Profunctor.Optics
+import Data.Profunctor.Optics (Constructor, Iso, Lens', constructor, field, iso, iso', lens')
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
@@ -49,6 +49,9 @@ type Order =
   , fulfillment :: Fulfillment
   , total :: String
   }
+
+type OrderConfirmation =
+  { shortId :: ShortId }
 
 type ShortId = String
 
@@ -151,8 +154,11 @@ formal = iso "formal" toFormal toInformal
 
 type SerializedOrder = String
 
-submitOrder :: Order -> Effect Unit
-submitOrder = serializeOrder >>> log
+submitOrder :: Order -> Effect OrderConfirmation
+submitOrder o = do
+  let so = serializeOrder o
+  log so
+  pure { shortId: o.shortId}
   where
     serializeOrder :: Order -> SerializedOrder
     serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of

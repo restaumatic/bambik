@@ -44,7 +44,7 @@ containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty
     ( div (classes "mdc-button__ripple") mempty prozero
-    ^ span (classes "mdc-button__label") mempty (label # hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") mempty mempty # clickable
+    ^ span (classes "mdc-button__label") mempty (label # hush) ) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
@@ -52,7 +52,7 @@ filledTextField { floatingLabel } value =
     ( span (classes "mdc-text-field__ripple") mempty prozero
     ^ ( span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) ( floatingLabel # hush )
       ^ textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
-    ^ span (classes "mdc-line-ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") mempty mempty
+    ^ span (classes "mdc-line-ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
 checkbox :: forall a b. { labelContent :: Widget a b } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a
 checkbox { labelContent } checked =
@@ -65,8 +65,8 @@ checkbox { labelContent } checked =
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         ^ div (classes "mdc-checkbox__mixedmark") mempty prozero)
-      ^ div (classes "mdc-checkbox__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") mempty mempty
-    ^ label (attr "for" id) mempty (labelContent # hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+      ^ div (classes "mdc-checkbox__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
+    ^ label (attr "for" id) mempty (labelContent # hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
 
@@ -78,10 +78,10 @@ radioButton { labelContent } value =
       ^ div (classes "mdc-radio__background") mempty
         ( div (classes "mdc-radio__outer-circle") mempty prozero
         ^ div (classes "mdc-radio__inner-circle") mempty prozero)
-        ^ div (classes "mdc-radio__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") mempty mempty
+        ^ div (classes "mdc-radio__ripple") mempty prozero ) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
   ^ label (attr "for" id) mempty (labelContent # hush)
   )
-  # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") mempty mempty
+  # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
 
@@ -151,18 +151,24 @@ dialog { title } content =
       ^ div (classes "mdc-dialog__scrim") mempty prozero ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = getCurrentNode >>= newComponent material.dialog."MDCDialog"
-      openMdcComponent comp _ = open comp
-      closeMdcComponent comp _ = close comp
+      openMdcComponent comp a = do
+        open comp
+        pure a
+      closeMdcComponent comp a = do
+        close comp
+        pure a
 
 snackbar :: forall a b. { label :: Widget a b } -> Widget a b
 snackbar { label } =
   aside (classes "mdc-snackbar") mempty
     ( div (classes "mdc-snackbar__surface" <> attr "role" "status" <> attr "aria-relevant" "additions") mempty
       ( div (classes "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty
-        label ) ) # bracket initializeMdcSnackbar openMdcComponent mempty
+        label ) ) # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
       initializeMdcSnackbar = getCurrentNode >>= newComponent material.snackbar."MDCSnackbar"
-      openMdcComponent comp _ = open comp
+      openMdcComponent comp a = do
+        open comp
+        pure a
 
 -- Private
 
