@@ -37,13 +37,6 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Data.Array.NonEmpty (intercalate)
-
-data Occurrence a = Occurrence Change a
-
-derive instance Functor Occurrence
-
-type Propagation a = Occurrence a -> Effect Unit
 
 newtype Propagator m i o = Propagator (Propagation o -> m (Propagation i))
 --                                     -- outward --       -- inward ---
@@ -52,9 +45,38 @@ newtype Propagator m i o = Propagator (Propagation o -> m (Propagation i))
 -- inward to perform only a subset of effects?) otherwise w1 ^ w2 for w1 and w2 doing so would cause propagation infinite loop
 -- of mutual updates.
 
+type Propagation a = Occurrence a -> Effect Unit
+
+data Occurrence a = Occurrence Change a
+
+data Change = Some | Scoped (NonEmptyArray.NonEmptyArray Scope) | None -- TODO: find already existing data type for it
+
+data Scope = Part String | Variant String
+
 derive instance Newtype (Propagator m i o) _
 
--- Capabilites
+derive instance Functor Occurrence
+
+instance Semigroup Change where -- finds least common scope
+  append None s = s
+  append s None = s
+  append Some _ = Some
+  append _ Some = Some
+  append (Scoped hops1) (Scoped hops2) = case NonEmptyArray.fromArray $ commonPrefix hops1 hops2 of
+    Nothing -> Some -- no common prefix
+    Just prefix -> Scoped prefix -- common prefix
+    where
+      commonPrefix :: forall a. Eq a => NonEmptyArray.NonEmptyArray a -> NonEmptyArray.NonEmptyArray a -> Array a
+      commonPrefix a1 a2 = let
+        {head: h1, tail: t1} = NonEmptyArray.uncons a1
+        {head: h2, tail: t2} = NonEmptyArray.uncons a2
+        in if h1 == h2 then h1:fromMaybe [] (commonPrefix <$> NonEmptyArray.fromArray t1 <*> NonEmptyArray.fromArray t2)
+        else []
+
+instance Monoid Change where
+  mempty = None
+
+derive instance Eq Scope
 
 instance Monad m => Profunctor (Propagator m) where
   dimap pre post w = Propagator \outward -> do
@@ -128,6 +150,18 @@ instance MonadGUI m => Choice (Propagator m) where
             (Just (Right _)) -> detach
             _ -> mempty
 
+instance MonadEffect m => Semigroupoid (Propagator m) where
+  compose w2 w1 = Propagator \outward -> do
+    update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
+    inward1 <- unwrap w1 \(Occurrence _ b) -> do
+      inward2 <- Ref.read update2Ref
+      inward2 $ Occurrence Some b -- we force w2 to inward cause w2 is updated only via outward by w1
+    inward2 <- unwrap w2 outward
+    liftEffect $ Ref.write inward2 update2Ref
+    pure inward1
+
+--
+
 -- laws:
 -- proplus a (proplus b c) = proplus (proplus a b) c
 -- proplus a prozero == a = proplus prozero a
@@ -159,17 +193,6 @@ infixr 0 proplus as ^
 
 prozero :: forall m a. Applicative m => Propagator m a a
 prozero = Propagator \_ -> pure mempty
-
-
-instance MonadEffect m => Semigroupoid (Propagator m) where
-  compose w2 w1 = Propagator \outward -> do
-    update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
-    inward1 <- unwrap w1 \(Occurrence _ b) -> do
-      inward2 <- Ref.read update2Ref
-      inward2 $ Occurrence Some b -- we force w2 to inward cause w2 is updated only via outward by w1
-    inward2 <- unwrap w2 outward
-    liftEffect $ Ref.write inward2 update2Ref
-    pure inward1
 
 precededByEffect :: forall m i i' o. MonadEffect m => (i' → Aff i) -> Propagator m i o -> Propagator m i' o
 precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
@@ -215,84 +238,29 @@ bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
       i <- afterInward ctx occuri'
       liftEffect $ inward i
 
--- for debugging uncomment:
--- import Debug (spy)
--- and comment out:
-spy :: forall a. String -> a -> a
-spy _ = identity
-
-chmap :: forall m i o. Monad m => (Change -> Change) -> (Change -> Change) -> Propagator m i o -> Propagator m i o
-chmap mapin mapout w = Propagator \outward -> do
-  inward <- unwrap w \(Occurrence c a) -> do
-    outward $ Occurrence (mapout c) a
-  pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
-
-
 scopemap :: forall m a b. Monad m => Scope -> Propagator m a b -> Propagator m a b
 scopemap scope = chmap zoomIn zoomOut
   where
+    chmap :: (Change -> Change) -> (Change -> Change) -> Propagator m a b -> Propagator m a b
+    chmap mapin mapout w = Propagator \outward -> do
+      inward <- unwrap w \(Occurrence c a) -> do
+        outward $ Occurrence (mapout c) a
+      pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
+
     zoomOut :: Change -> Change
-    zoomOut change = case zoomOut' change of
-      ch@None -> ch
-      ch -> spy ("change: " <> show ch <> " < " <> show scope <> " < " <> show change) ch
-      where
-        zoomOut' :: Change -> Change
-        zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
-        zoomOut' (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
-        zoomOut' None = None
+    zoomOut Some = Scoped (scope `NonEmptyArray.cons'` [])
+    zoomOut (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+    zoomOut None = None
 
     zoomIn :: Change -> Change
-    zoomIn change = case zoomIn' change of
-      ch@None -> ch
-      ch -> spy ("change: " <> show change <> " > " <> show scope <> " > " <> show ch) ch
-      where
-        zoomIn' :: Change -> Change
-        zoomIn' Some = Some
-        zoomIn' (Scoped scopes) = case NonEmptyArray.uncons scopes of
-          { head, tail } | head == scope -> case uncons tail of -- matching head
-            Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
-            Nothing -> Some -- empty tail
-          { head: Variant _ } -> Some -- not matching head but head is twist
-          _ -> case scope of
-            Variant _ -> Some -- not matching head but scope is twist
-            _ -> None -- otherwise
-        zoomIn' None = None
-
-
---
-
-data Change = Some | Scoped (NonEmptyArray.NonEmptyArray Scope) | None -- TODO: find already existing data type for it
-
-data Scope = Part String | Variant String
-
-instance Show Scope where
-  show (Part s) = "." <> s
-  show (Variant s) = "@" <> s
-
-derive instance Eq Scope
-
-instance Show Change where
-  show Some = "*"
-  show None = "-"
-  show (Scoped scopes) = intercalate "" (show <$> scopes)
-
--- finds least common scope
-instance Semigroup Change where
-  append None s = s
-  append s None = s
-  append Some _ = Some
-  append _ Some = Some
-  append (Scoped hops1) (Scoped hops2) = case NonEmptyArray.fromArray $ commonPrefix hops1 hops2 of
-    Nothing -> Some -- no common prefix
-    Just prefix -> Scoped prefix -- common prefix
-    where
-      commonPrefix :: forall a. Eq a => NonEmptyArray.NonEmptyArray a -> NonEmptyArray.NonEmptyArray a -> Array a
-      commonPrefix a1 a2 = let
-        {head: h1, tail: t1} = NonEmptyArray.uncons a1
-        {head: h2, tail: t2} = NonEmptyArray.uncons a2
-        in if h1 == h2 then h1:fromMaybe [] (commonPrefix <$> NonEmptyArray.fromArray t1 <*> NonEmptyArray.fromArray t2)
-        else []
-
-instance Monoid Change where
-  mempty = None
+    zoomIn Some = Some
+    zoomIn (Scoped scopes) = case NonEmptyArray.uncons scopes of
+      { head, tail } | head == scope -> case uncons tail of -- matching head
+        Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
+        Nothing -> Some -- empty tail
+      { head: Variant _ } -> Some -- not matching head but head is twist
+      _ -> case scope of
+        Variant _ -> Some -- not matching head but scope is twist
+        _ -> None -- otherwise
+    zoomIn None = None
 
