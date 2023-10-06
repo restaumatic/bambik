@@ -1,7 +1,9 @@
 module Propagator
-  ( Occurrence(..)
+  ( Change(..)
+  , Occurrence(..)
   , Propagation
   , Propagator(..)
+  , Scope(..)
   , attachable
   , bracket
   , class MonadGUI
@@ -10,17 +12,19 @@ module Propagator
   , followedByEffect
   , hush
   , precededByEffect
+  , scopemap
   )
   where
 
 import Prelude
 
+import Data.Array (tail, uncons)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Change (class ChProfunctor, Change(..))
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Plus (class ProfunctorPlus, class ProfunctorZero)
 import Data.Profunctor.Strong (class Strong)
@@ -31,6 +35,10 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
+import Data.Array ((:))
+import Data.Array.NonEmpty (intercalate)
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe (Maybe(..), fromMaybe)
 
 data Occurrence a = Occurrence Change a
 
@@ -147,11 +155,6 @@ instance MonadEffect m => ProfunctorPlus (Propagator m) where
 instance MonadEffect m => ProfunctorZero (Propagator m) where
   prozero = Propagator \_ -> pure mempty
 
-instance Monad m => ChProfunctor (Propagator m) where
-  chmap mapin mapout w = Propagator \outward -> do
-    inward <- unwrap w \(Occurrence c a) -> do
-      outward $ Occurrence (mapout c) a
-    pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
 
 instance MonadEffect m => Semigroupoid (Propagator m) where
   compose w2 w1 = Propagator \outward -> do
@@ -206,3 +209,85 @@ bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   pure \occuri' -> launchAff_ do
       i <- afterInward ctx occuri'
       liftEffect $ inward i
+
+-- for debugging uncomment:
+-- import Debug (spy)
+-- and comment out:
+spy :: forall a. String -> a -> a
+spy _ = identity
+
+chmap :: forall m i o. Monad m => (Change -> Change) -> (Change -> Change) -> Propagator m i o -> Propagator m i o
+chmap mapin mapout w = Propagator \outward -> do
+  inward <- unwrap w \(Occurrence c a) -> do
+    outward $ Occurrence (mapout c) a
+  pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
+
+
+scopemap :: forall m a b. Monad m => Scope -> Propagator m a b -> Propagator m a b
+scopemap scope = chmap zoomIn zoomOut
+  where
+    zoomOut :: Change -> Change
+    zoomOut change = case zoomOut' change of
+      ch@None -> ch
+      ch -> spy ("change: " <> show ch <> " < " <> show scope <> " < " <> show change) ch
+      where
+        zoomOut' :: Change -> Change
+        zoomOut' Some = Scoped (scope `NonEmptyArray.cons'` [])
+        zoomOut' (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+        zoomOut' None = None
+
+    zoomIn :: Change -> Change
+    zoomIn change = case zoomIn' change of
+      ch@None -> ch
+      ch -> spy ("change: " <> show change <> " > " <> show scope <> " > " <> show ch) ch
+      where
+        zoomIn' :: Change -> Change
+        zoomIn' Some = Some
+        zoomIn' (Scoped scopes) = case NonEmptyArray.uncons scopes of
+          { head, tail } | head == scope -> case uncons tail of -- matching head
+            Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
+            Nothing -> Some -- empty tail
+          { head: Variant _ } -> Some -- not matching head but head is twist
+          _ -> case scope of
+            Variant _ -> Some -- not matching head but scope is twist
+            _ -> None -- otherwise
+        zoomIn' None = None
+
+
+--
+
+data Change = Some | Scoped (NonEmptyArray.NonEmptyArray Scope) | None -- TODO: find already existing data type for it
+
+data Scope = Part String | Variant String
+
+instance Show Scope where
+  show (Part s) = "." <> s
+  show (Variant s) = "@" <> s
+
+derive instance Eq Scope
+
+instance Show Change where
+  show Some = "*"
+  show None = "-"
+  show (Scoped scopes) = intercalate "" (show <$> scopes)
+
+-- finds least common scope
+instance Semigroup Change where
+  append None s = s
+  append s None = s
+  append Some _ = Some
+  append _ Some = Some
+  append (Scoped hops1) (Scoped hops2) = case NonEmptyArray.fromArray $ commonPrefix hops1 hops2 of
+    Nothing -> Some -- no common prefix
+    Just prefix -> Scoped prefix -- common prefix
+    where
+      commonPrefix :: forall a. Eq a => NonEmptyArray.NonEmptyArray a -> NonEmptyArray.NonEmptyArray a -> Array a
+      commonPrefix a1 a2 = let
+        {head: h1, tail: t1} = NonEmptyArray.uncons a1
+        {head: h2, tail: t2} = NonEmptyArray.uncons a2
+        in if h1 == h2 then h1:fromMaybe [] (commonPrefix <$> NonEmptyArray.fromArray t1 <*> NonEmptyArray.fromArray t2)
+        else []
+
+instance Monoid Change where
+  mempty = None
+

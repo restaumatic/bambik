@@ -42,13 +42,12 @@ import Prelude hiding (zero, div)
 
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Change (Change(..))
 import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, prozero, (^))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Propagator (Occurrence(..), Propagator(..), bracket)
+import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attr, createTextValue, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
 

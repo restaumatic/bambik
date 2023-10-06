@@ -17,7 +17,6 @@ module Data.Profunctor.Optics
   , lens
   , lens'
   , module Data.Profunctor
-  , module Data.Profunctor.Change
   , module Data.Profunctor.Choice
   , module Data.Profunctor.Plus
   , module Data.Profunctor.Strong
@@ -29,29 +28,31 @@ module Data.Profunctor.Optics
 
 import Prelude
 
-import Data.Either (Either(..), either)
-import Data.Maybe (Maybe, maybe)
 import Data.Profunctor
-import Data.Profunctor.Change
 import Data.Profunctor.Choice
 import Data.Profunctor.Plus
 import Data.Profunctor.Strong
+
+import Data.Either (Either(..), either)
+import Data.Maybe (Maybe, maybe)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Effect.Class (class MonadEffect)
 import Prim.Row as Row
+import Propagator (class MonadGUI, Propagator, Scope(..), scopemap)
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 
--- identation to emphasize hierarchy
-type ChOptic a b s t = forall p. ChProfunctor p => p a b -> p s t
-type   Adapter a b s t = ChOptic a b s t -- TODO rename to ChOptic?
+-- indentation to emphasize hierarchy
+type ChOptic a b s t = forall m. Monad m => Propagator m a b -> Propagator m s t
+type   Adapter a b s t = ChOptic a b s t
 type     Iso a s = Adapter a a s s
 type     Projection a s = forall b. Adapter a b s b
 type       Constant a = forall s. Projection a s
-type   Lens a b s t = forall p. ChProfunctor p => Strong p => p a b -> p s t
+type   Lens a b s t = forall m. MonadEffect m => Propagator m a b -> Propagator m s t
 type     Lens' a s = Lens a a s s
 type       Field a s = Lens' a (Record s)
-type   Prism a b s t = forall p. ChProfunctor p => Choice p => p a b -> p s t
+type   Prism a b s t = forall m. MonadGUI m => Propagator m a b -> Propagator m s t
 type     Prism' a s = Prism a a s s
 type       Constructor a s = Prism' a s -- TODO find better signature
 
@@ -61,14 +62,8 @@ iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 iso' :: forall a s. (s -> Maybe a) -> (Maybe a -> s) -> Iso (Maybe a) s
 iso' mapin mapout = dimap mapin mapout
 
-
 projection :: forall a s. (s -> a) -> Projection a s
 projection f = dimap f identity
-
--- depracated
--- TODO EC: (const None) is not right
-constant :: forall a b s. a -> ChOptic a b s b -- Constant a
-constant a = dimap (const a) identity >>> chmap (const None) identity
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> Lens a b s t
 lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> scopemap (Variant name)
