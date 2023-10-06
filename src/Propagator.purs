@@ -12,21 +12,23 @@ module Propagator
   , followedByEffect
   , hush
   , precededByEffect
+  , proplus
+  , (^)
+  , prozero
   , scopemap
   )
   where
 
 import Prelude
 
-import Data.Array (tail, uncons)
+import Data.Array (uncons, (:))
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Plus (class ProfunctorPlus, class ProfunctorZero)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
@@ -35,10 +37,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
-import Data.Array ((:))
 import Data.Array.NonEmpty (intercalate)
-import Data.Array.NonEmpty as NonEmptyArray
-import Data.Maybe (Maybe(..), fromMaybe)
 
 data Occurrence a = Occurrence Change a
 
@@ -129,31 +128,37 @@ instance MonadGUI m => Choice (Propagator m) where
             (Just (Right _)) -> detach
             _ -> mempty
 
-instance MonadEffect m => ProfunctorPlus (Propagator m) where
-  proplus c1 c2 = Propagator \updateParent -> do
-    -- TODO how to get rid of thess refs?
-    mUpdate1Ref <- liftEffect $ Ref.new Nothing
-    mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      let inward2 = maybe mempty identity mUpdate2
-      mUpdate1 <- Ref.read mUpdate1Ref
-      let inward1 = maybe mempty identity mUpdate1
-      inward1 (Occurrence None a)
-      inward2 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just inward1) mUpdate1Ref
-    inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
-      mUpdate2 <- Ref.read mUpdate2Ref
-      let inward2 = maybe mempty identity mUpdate2
-      inward2 (Occurrence None a)
-      inward1 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just inward2) mUpdate2Ref
-    pure $ inward1 <> inward2
+-- laws:
+-- proplus a (proplus b c) = proplus (proplus a b) c
+-- proplus a prozero == a = proplus prozero a
 
-instance MonadEffect m => ProfunctorZero (Propagator m) where
-  prozero = Propagator \_ -> pure mempty
+proplus :: forall m a. MonadEffect m => Propagator m a a -> Propagator m a a -> Propagator m a a
+proplus c1 c2 = Propagator \updateParent -> do
+  -- TODO how to get rid of thess refs?
+  mUpdate1Ref <- liftEffect $ Ref.new Nothing
+  mUpdate2Ref <- liftEffect $ Ref.new Nothing
+  inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
+    mUpdate2 <- Ref.read mUpdate2Ref
+    let inward2 = maybe mempty identity mUpdate2
+    mUpdate1 <- Ref.read mUpdate1Ref
+    let inward1 = maybe mempty identity mUpdate1
+    inward1 (Occurrence None a)
+    inward2 cha
+    updateParent cha
+  liftEffect $ Ref.write (Just inward1) mUpdate1Ref
+  inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
+    mUpdate2 <- Ref.read mUpdate2Ref
+    let inward2 = maybe mempty identity mUpdate2
+    inward2 (Occurrence None a)
+    inward1 cha
+    updateParent cha
+  liftEffect $ Ref.write (Just inward2) mUpdate2Ref
+  pure $ inward1 <> inward2
+
+infixr 0 proplus as ^
+
+prozero :: forall m a. Applicative m => Propagator m a a
+prozero = Propagator \_ -> pure mempty
 
 
 instance MonadEffect m => Semigroupoid (Propagator m) where

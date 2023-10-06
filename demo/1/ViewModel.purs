@@ -38,7 +38,6 @@ import Prelude
 import Data.Array (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor.Optics (Constructor, Iso, Lens', constructor, field, iso, iso', lens')
-import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)

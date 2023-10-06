@@ -23,7 +23,6 @@ module Web
   , html
   , label
   , label'
-  , module Data.Profunctor.Plus
   , p
   , p'
   , path
@@ -42,7 +41,6 @@ import Prelude hiding (zero, div)
 
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Plus (class ProfunctorZero, class ProfunctorPlus, proplus, prozero, (^))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)

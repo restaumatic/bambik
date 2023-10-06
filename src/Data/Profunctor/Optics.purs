@@ -18,7 +18,6 @@ module Data.Profunctor.Optics
   , lens'
   , module Data.Profunctor
   , module Data.Profunctor.Choice
-  , module Data.Profunctor.Plus
   , module Data.Profunctor.Strong
   , prism
   , prism'
@@ -30,7 +29,6 @@ import Prelude
 
 import Data.Profunctor
 import Data.Profunctor.Choice
-import Data.Profunctor.Plus
 import Data.Profunctor.Strong
 
 import Data.Either (Either(..), either)
