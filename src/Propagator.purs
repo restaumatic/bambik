@@ -1,6 +1,5 @@
 module Propagator
-  ( (^)
-  , Change(..)
+  ( Change(..)
   , Occurrence(..)
   , Propagation
   , Propagator(..)
@@ -181,8 +180,6 @@ instance MonadEffect m => Semigroup (Propagator m a a) where
       updateParent cha
     liftEffect $ Ref.write (Just inward2) mUpdate2Ref
     pure $ inward1 <> inward2
-
-infixr 0 append as ^ -- to lower precedence from 5 (<>) to 0 (^)
 
 instance MonadEffect m => Monoid (Propagator m a a) where
   mempty = hush
