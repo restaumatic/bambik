@@ -146,7 +146,7 @@ button = element "button"
 clickable :: forall a b. Widget a b -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
+  let buttonWidget = bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure) $ w
   update <- unwrap buttonWidget mempty
   pure case _ of
     Occurrence None _ -> mempty
