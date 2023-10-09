@@ -34,7 +34,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
 import Propagator (bracket, hush)
-import Web (Widget, aside, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, span, textInput)
+import Web (Widget, aside, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, span, input)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 import QualifiedDo.Semigroup as S
@@ -52,9 +52,9 @@ filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget S
 filledTextField { floatingLabel } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (S.do
     span (classes "mdc-text-field__ripple") mempty mempty
-    ( span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) S.do
-      floatingLabel >>> hush
-      textInput (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
+    (S.do
+      span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) (floatingLabel >>> hush)
+      input (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
     span (classes "mdc-line-ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
 checkbox :: forall a b. { labelContent :: Widget a b } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a

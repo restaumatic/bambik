@@ -33,7 +33,7 @@ module Web
   , span'
   , svg
   , text
-  , textInput
+  , input
   )
   where
 
@@ -68,8 +68,8 @@ html h = Propagator \_ -> do
   rawHtml h
   mempty
 
-textInput :: Attrs -> Widget String String
-textInput attrs = Propagator \outward -> do
+input :: Attrs -> Widget String String
+input attrs = Propagator \outward -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
   liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
