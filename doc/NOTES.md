@@ -242,6 +242,16 @@ Model provides:
 
 what model requites from ui is expressed in invariant constraints.
 
+
+## Invariant to Profunctors
+
+Inavariants are simpler than profunctors but maybe oversimplified for our use case.
+
+Let's start with profunctors and see what additional constraints we need:
+  1. chaining: `p a b -> p b c -> p a c` without `id :: p a a` as this sould introduce infinite mutual update loop
+  1. looping: `p a a -> p a a -> p a a` with `id :: p a a`
+
+
 ---
 References
 
