@@ -4,10 +4,11 @@ module View
 
 import Prelude
 
+import Data.Lens (_Just)
 import Propagator (debounced', fixed, hush, precededByEffect)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, isDelivery, isDineIn, isTakeaway, lastName, paid, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, hasPayment, isDelivery, isDineIn, isTakeaway, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (Widget, text)
 import Web.MDC as MDC
 
@@ -37,8 +38,8 @@ order =
       MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced'
     MDC.card S.do
       MDC.checkbox { labelContent: S.do
-        text # total
-        text # fixed " paid" } paid
+        text # fixed "Payment" } hasPayment # payment
+      MDC.filledTextField { floatingLabel: text # fixed "Paid" } paid # _Just # payment
     MDC.card S.do
       MDC.body1 S.do
         text # fixed "Summary: Order "
