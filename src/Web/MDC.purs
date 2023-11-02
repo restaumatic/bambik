@@ -27,17 +27,18 @@ module Web.MDC
 
 import Prelude hiding (div)
 
+import Control.Plus (empty)
 import Data.Maybe (Maybe)
 import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (bracket, hush)
+import Propagator (bracket)
+import QualifiedDo.Semigroup as S
 import Web (Widget, aside, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, span, input)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
-import QualifiedDo.Semigroup as S
 
 -- Primitive widgets
 
@@ -46,14 +47,14 @@ containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty (S.do
     div (classes "mdc-button__ripple") mempty (mempty :: Widget a a)
     span (classes "mdc-button__label") mempty S.do
-      label >>> hush) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
+      label >>> empty) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (S.do
     span (classes "mdc-text-field__ripple") mempty mempty
     (S.do
-      span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) (floatingLabel >>> hush)
+      span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) (floatingLabel >>> empty)
       input (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
     span (classes "mdc-line-ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
@@ -69,7 +70,7 @@ checkbox { labelContent } checked =
           </svg>""" -- Without raw HTML it doesn't work
         div (classes "mdc-checkbox__mixedmark") mempty mempty
       div (classes "mdc-checkbox__ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
-    label (attr "for" id) mempty (labelContent >>> hush) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+    label (attr "for" id) mempty (labelContent >>> empty) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
 
@@ -82,7 +83,7 @@ radioButton { labelContent } value =
         div (classes "mdc-radio__outer-circle") mempty mempty
         div (classes "mdc-radio__inner-circle") mempty mempty
       div (classes "mdc-radio__ripple") mempty mempty) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
-  label (attr "for" id) mempty (labelContent >>> hush)
+  label (attr "for" id) mempty (labelContent >>> empty)
   )
   # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
@@ -146,7 +147,7 @@ dialog { title } content =
   aside (classes "mdc-dialog") mempty (S.do
     div (classes "mdc-dialog__container") mempty S.do
       div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty S.do
-        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title >>> hush)
+        h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title >>> empty)
         div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
     div (classes "mdc-dialog__scrim") mempty mempty ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where

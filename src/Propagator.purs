@@ -11,7 +11,6 @@ module Propagator
   , debounced'
   , fixed
   , followedByEffect
-  , hush
   , precededByEffect
   , scopemap
   )
@@ -19,12 +18,14 @@ module Propagator
 
 import Prelude
 
+import Control.Alt (class Alt)
+import Control.Alternative (class Plus, empty)
 import Data.Array (uncons, (:))
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
@@ -182,7 +183,17 @@ instance MonadEffect m => Semigroup (Propagator m a a) where
     pure $ inward1 <> inward2
 
 instance MonadEffect m => Monoid (Propagator m a a) where
-  mempty = hush
+  mempty = empty
+
+instance Functor (Propagator m a) where
+  map f p = wrap \outward -> unwrap p (map f >>> outward)
+
+instance Apply m => Alt (Propagator m a) where
+  alt p1 p2 = wrap \outward -> (<>) <$> unwrap p1 outward <*> unwrap p2 outward
+
+-- Suppresses outward propagation
+instance Applicative m => Plus (Propagator m a) where
+  empty = wrap \_ -> pure mempty
 
 precededByEffect :: forall m i i' o. MonadEffect m => (i' → Aff i) -> Propagator m i o -> Propagator m i' o
 precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
@@ -196,10 +207,6 @@ fixed a w = Propagator \_ -> do
   inward <- unwrap w mempty
   liftEffect $ inward $ Occurrence Some a
   pure mempty -- inward is never called again, outward is never called
-
--- Suppresses outward propagation
-hush :: forall m i o. Applicative m => Propagator m i o
-hush = Propagator \_ -> pure mempty
 
 debounced :: forall m i o. MonadEffect m => Milliseconds -> Propagator m i o -> Propagator m i o
 debounced millis = bracket (liftEffect $ Ref.new Nothing) (const $ pure) (\mFiberRef occur -> do
