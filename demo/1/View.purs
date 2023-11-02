@@ -4,8 +4,9 @@ module View
 
 import Prelude
 
+import Control.Plus (empty)
+import Propagator (debounced', fixed, precededByEffect)
 import Data.Lens (_Just)
-import Propagator (debounced', fixed, hush, precededByEffect)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, hasPayment, isDelivery, isDineIn, isTakeaway, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
@@ -82,7 +83,7 @@ order =
           text # fixed "Order "
           text # shortId
           text # fixed " submitted"} # precededByEffect submitOrder
-        hush
+        empty
 
 name :: Widget NameInformal NameInformal
 name = S.do
