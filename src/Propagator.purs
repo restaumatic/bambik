@@ -19,7 +19,7 @@ module Propagator
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Alternative (class Plus, empty)
+import Control.Alternative (class Plus)
 import Data.Array (uncons, (:))
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
@@ -181,9 +181,6 @@ instance MonadEffect m => Semigroup (Propagator m a a) where
       updateParent cha
     liftEffect $ Ref.write (Just inward2) mUpdate2Ref
     pure $ inward1 <> inward2
-
-instance MonadEffect m => Monoid (Propagator m a a) where
-  mempty = empty
 
 instance Functor (Propagator m a) where
   map f p = wrap \outward -> unwrap p (map f >>> outward)

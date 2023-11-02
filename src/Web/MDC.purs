@@ -45,18 +45,18 @@ import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty (S.do
-    div (classes "mdc-button__ripple") mempty (mempty :: Widget a a)
+    div (classes "mdc-button__ripple") mempty (empty :: Widget a a)
     span (classes "mdc-button__label") mempty S.do
       label >>> empty) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (classes "mdc-text-field mdc-text-field--filled mdc-text-field--label-floating") mempty (S.do
-    span (classes "mdc-text-field__ripple") mempty mempty
+    span (classes "mdc-text-field__ripple") mempty empty
     (S.do
       span (classes "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then classes "mdc-floating-label--float-above" else mempty) (floatingLabel >>> empty)
       input (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
-    span (classes "mdc-line-ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
+    span (classes "mdc-line-ripple") mempty empty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
 checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 checkbox { labelContent } checked =
@@ -68,8 +68,8 @@ checkbox { labelContent } checked =
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
-        div (classes "mdc-checkbox__mixedmark") mempty mempty
-      div (classes "mdc-checkbox__ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
+        div (classes "mdc-checkbox__mixedmark") mempty empty
+      div (classes "mdc-checkbox__ripple") mempty empty ) # bracket (getCurrentNode >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
     label (attr "for" id) mempty (labelContent >>> empty) ) # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
@@ -80,9 +80,9 @@ radioButton { labelContent } value =
   div (classes "mdc-radio") mempty (S.do
       Web.radioButton (classes "mdc-radio__native-control" <> attr "id" id ) # value
       div (classes "mdc-radio__background") mempty S.do
-        div (classes "mdc-radio__outer-circle") mempty mempty
-        div (classes "mdc-radio__inner-circle") mempty mempty
-      div (classes "mdc-radio__ripple") mempty mempty) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
+        div (classes "mdc-radio__outer-circle") mempty empty
+        div (classes "mdc-radio__inner-circle") mempty empty
+      div (classes "mdc-radio__ripple") mempty empty) # bracket (getCurrentNode >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
   label (attr "for" id) mempty (labelContent >>> empty)
   )
   # bracket (getCurrentNode >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
@@ -149,7 +149,7 @@ dialog { title } content =
       div (classes "mdc-dialog__surface" <> attr "role" "alertdialog" <> attr "aria-modal" "true" <> attr "aria-labelledby" "my-dialog-title" <> attr "aria-describedby" "my-dialog-content") mempty S.do
         h2 (classes "mdc-dialog__title" <> attr "id" "my-dialog-title") mempty (title >>> empty)
         div (classes "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
-    div (classes "mdc-dialog__scrim") mempty mempty ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+    div (classes "mdc-dialog__scrim") mempty empty ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = getCurrentNode >>= newComponent material.dialog."MDCDialog"
       openMdcComponent comp a = liftEffect do
