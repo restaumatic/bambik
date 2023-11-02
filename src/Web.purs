@@ -39,7 +39,8 @@ module Web
 
 import Prelude hiding (zero, div)
 
-import Data.Maybe (Maybe(..))
+import Data.Foldable (for_)
+import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -76,13 +77,19 @@ input attrs = Propagator \outward -> do
     Occurrence None _ -> mempty
     Occurrence _ newa -> setValue node newa
 
-checkbox :: Attrs -> Widget Boolean Boolean
+checkbox :: forall a .Attrs -> Widget (Maybe a) (Maybe (Maybe a))
 checkbox attrs = Propagator \outward -> do
+  maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getChecked node >>= Occurrence Some >>> outward
+  liftEffect $ addEventCallback "input" node $ const do
+    checked <- getChecked node
+    ma <- Ref.read maRef
+    outward $ Occurrence Some (if checked then Just ma else Nothing)
   pure case _ of
     Occurrence None _ -> mempty
-    Occurrence _ newa -> setChecked node newa
+    Occurrence _ newma -> do
+      setChecked node (isJust newma)
+      for_ newma \newa -> Ref.write (Just newa) maRef
 
 -- input:
 -- Nothing -> turns off button

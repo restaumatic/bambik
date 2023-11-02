@@ -58,7 +58,7 @@ filledTextField { floatingLabel } value =
       input (classes "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
     span (classes "mdc-line-ripple") mempty mempty ) # bracket (getCurrentNode >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
-checkbox :: forall a b. { labelContent :: Widget a b } -> (Widget Boolean Boolean -> Widget a a) -> Widget a a
+checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 checkbox { labelContent } checked =
   div (classes "mdc-form-field") mempty ( S.do
     div (classes "mdc-checkbox") mempty ( S.do
