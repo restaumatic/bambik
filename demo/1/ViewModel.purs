@@ -2,6 +2,7 @@ module ViewModel
   ( Order
   , NameInformal
   , NameFormal
+  , Payment
   , Fulfillment
   , Address
   , ShortId
@@ -9,7 +10,7 @@ module ViewModel
   , uniqueId
   , shortId
   , customer
-  , paid
+  , payment
   , short
   , unique
   , firstName
@@ -29,23 +30,26 @@ module ViewModel
   , formal
   , submitOrder
   , total
+  , hasPayment
+  , paid
   , defaultOrder
   ) where
   
 import Prelude
 
 import Data.Array (intercalate)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Propagator.Optics (Constructor, Iso, constructor, field, iso, iso')
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Profunctor (dimap)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Propagator.Optics (Constructor, Iso, PropOptic, constructor, field, iso, iso')
 
 type Order =
   { uniqueId :: UniqueId
   , shortId :: ShortId
   , customer :: NameInformal
-  , paid :: Boolean
+  , payment :: Maybe Payment
   , fulfillment :: Fulfillment
   , total :: String
   }
@@ -66,6 +70,8 @@ type NameFormal =
   { forename :: String
   , surname :: String
   }
+
+type Payment = { paid :: String }
 
 data Fulfillment
   = DineIn { table :: Table }
@@ -88,7 +94,7 @@ shortId = field @"shortId"
 
 customer = field @"customer"
 
-paid = field @"paid"
+payment = field @"payment"
 
 firstName = field @"firstName"
 
@@ -111,6 +117,8 @@ unique = field @"unique"
 short = field @"short"
 
 total = field @"total"
+
+paid = field @"paid"
 
 dineIn :: Constructor { table :: Table } Fulfillment
 dineIn = constructor "dineIn" DineIn (case _ of
@@ -144,6 +152,9 @@ isDelivery = iso' (case _ of
   d@(Delivery _) -> Just d
   _ -> Nothing) (fromMaybe (Delivery { address: "Mulholland Drive 2001, Los Angeles" }))
 
+hasPayment :: PropOptic (Maybe Payment) (Maybe (Maybe Payment)) (Maybe Payment) (Maybe Payment)
+hasPayment = dimap identity (map $ fromMaybe { paid: "0" })
+
 formal :: Iso NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
@@ -159,7 +170,7 @@ submitOrder o = do
   pure { shortId: o.shortId}
   where
     serializeOrder :: Order -> String
-    serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, if order.paid then "paid" else "not paid", case order.fulfillment of
+    serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, maybe "not paid" (\{ paid } -> "paid " <> paid) order.payment, case order.fulfillment of
         (DineIn { table }) -> "dinein|" <> table
         (Takeaway { time }) -> "takeaway|" <> time
         (Delivery { address }) -> "delivery|\"" <> address <> "\""
@@ -176,7 +187,7 @@ defaultOrder =
     , lastName: "Lynch"
     }
   , total: "12.30"
-  , paid: true
+  , payment: Nothing
   , fulfillment: DineIn { table: "1" }
   }
 

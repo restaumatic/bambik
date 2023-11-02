@@ -25,6 +25,7 @@ to generate this file without the comments in this block.
   , "now"
   , "prelude"
   , "profunctor"
+  , "profunctor-lenses"
   , "qualified-do"
   , "record"
   , "refs"
