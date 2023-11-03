@@ -45,9 +45,8 @@ import Web.Internal.DOM (Node, attr, classes, getCurrentNode)
 containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (classes "mdc-button mdc-button--raised initAside-button") mempty (S.do
-    div (classes "mdc-button__ripple") mempty (empty :: Widget a a)
-    span (classes "mdc-button__label") mempty S.do
-      label >>> empty) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
+    div (classes "mdc-button__ripple") mempty (empty :: Widget a a) -- TODO why we need to specify type?
+    span (classes "mdc-button__label") mempty (label >>> empty)) # bracket (getCurrentNode >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
