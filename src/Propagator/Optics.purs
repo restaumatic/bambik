@@ -79,4 +79,4 @@ prism' :: forall a s. String -> (a -> s) -> (s -> Either a s) -> Prism' a s
 prism' = prism
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
-constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either (\a -> construct a) identity aors) >>> scopemap (Part name)
+constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either construct identity aors) >>> scopemap (Part name)
