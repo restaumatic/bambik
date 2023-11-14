@@ -22,7 +22,7 @@ $ npm install && npm run demo1
   1. Higher-order components (including MDC) / traversals
   1. ~~Inputless components~~
   1. I18n
-  1. Make Arrow instance of Widget not representable e.g. `newtype Widget i o = Widget (i -> (Changed o -> Effect Unit) -> Builder Unit (Changed i -> Builder env Unit))`
+  1. Make `arr :: (a -> b) -> Widget a b` not representable
   1. ~~Generalize `Widget` for other types of UI~~
   1. Validation
   1. ~~Effects~~
