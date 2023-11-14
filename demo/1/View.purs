@@ -4,9 +4,8 @@ module View
 
 import Prelude hiding (div)
 
-import Control.Plus (empty)
 import Data.Lens (_Just)
-import Propagator (debounced', fixed, precededByEffect)
+import Propagator (debounced', fixed, precededByEffect, empty)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T

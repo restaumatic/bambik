@@ -10,10 +10,10 @@ $ npm install && npm run demo1
 
 ## Best practices
 
-  1. In widget definition each line should start with sub widget (e.g. `div`) possibly preceded by opening brackets (`(`), while `^`, `<^` and `^>`operators should be placed at the end of line.
+  1. In widget definition it's recommended to use do blocks with each line starting with a sub widget possibly preceded by opening brackets (`(`).
   1. In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
   1. General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
-  1. Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resistant to changes in `Show` instance implementation, 2) provide tailor-made textualizations
+  1. Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resilient to changes in `Show` instance implementation, 2) provide tailor-made textualizations
   1. View modules should not import any `Data.Profunctor.*` modules as they should not create or transform profuctors - it is view model modules job
 
 ## TODOs

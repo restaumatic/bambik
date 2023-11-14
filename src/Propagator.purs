@@ -13,13 +13,14 @@ module Propagator
   , followedByEffect
   , precededByEffect
   , scopemap
+  , module Control.Alternative
   )
   where
 
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Alternative (class Plus)
+import Control.Alternative (class Plus, empty)
 import Data.Array (uncons, (:))
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
