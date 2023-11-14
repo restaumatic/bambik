@@ -188,7 +188,6 @@ instance Functor (Propagator m a) where
 instance Apply m => Alt (Propagator m a) where
   alt p1 p2 = wrap \outward -> (<>) <$> unwrap p1 outward <*> unwrap p2 outward
 
--- Suppresses outward propagation
 instance Applicative m => Plus (Propagator m a) where
   empty = wrap \_ -> pure mempty
 
