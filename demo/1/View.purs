@@ -39,8 +39,7 @@ order =
       MDC.subtitle1 (text # fixed "Total")
       MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced'
     MDC.card S.do
-      MDC.checkbox { labelContent: S.do
-        text # fixed "Payment" } hasPayment # payment
+      MDC.checkbox { labelContent: text # fixed "Payment" } hasPayment # payment
       MDC.filledTextField { floatingLabel: text # fixed "Paid" } paid # _Just # payment
     MDC.card S.do
       MDC.body1 S.do
