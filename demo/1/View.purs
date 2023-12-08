@@ -5,7 +5,7 @@ module View
 import Prelude hiding (div)
 
 import Data.Lens (_Just)
-import Propagator (debounced', fixed, precededByEffect, empty)
+import Propagator (debounce', fixed, effect, empty)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
@@ -22,8 +22,8 @@ order =
       text # shortId
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Identifier")
-      MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId # debounced'
-      MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId # debounced'
+      MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId >>> debounce'
+      MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId >>> debounce'
     MDC.card S.do
       MDC.subtitle1 S.do
         text # fixed "Customer"
@@ -32,12 +32,12 @@ order =
       MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
       MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
       MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
-      MDC.filledTextField { floatingLabel: text # fixed "Table" } table # debounced' # dineIn
-      MDC.filledTextField { floatingLabel: text # fixed "Time" } time # debounced' # takeaway
-      MDC.filledTextField { floatingLabel: text # fixed "Address" } address # debounced' # delivery ) # fulfillment
+      MDC.filledTextField { floatingLabel: text # fixed "Table" } table >>> debounce' # dineIn
+      MDC.filledTextField { floatingLabel: text # fixed "Time" } time >>> debounce' # takeaway
+      MDC.filledTextField { floatingLabel: text # fixed "Address" } address >>> debounce' # delivery ) # fulfillment
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Total")
-      MDC.filledTextField { floatingLabel: text # fixed "Total" } total # debounced'
+      MDC.filledTextField { floatingLabel: text # fixed "Total" } total >>> debounce'
     MDC.card S.do
       MDC.checkbox { labelContent: text # fixed "Payment" } hasPayment # payment
       MDC.filledTextField { floatingLabel: text # fixed "Paid" } paid # _Just # payment
@@ -85,18 +85,18 @@ order =
           text # fixed "?" } S.do
             MDC.body1 (text # fixed "Are you sure?")
             MDC.containedButton { label: text # fixed "Submit order" }
-        MDC.snackbar { label: S.do
+        effect submitOrder >>> MDC.snackbar { label: S.do
           text # fixed "Order "
           text # shortId
-          text # fixed " submitted"} # precededByEffect submitOrder
+          text # fixed " submitted"}
         empty
 
 name :: Widget NameInformal NameInformal
 name = S.do
   MDC.subtitle2 (text # fixed "Informal")
-  MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName # debounced'
-  MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName # debounced'
+  MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName >>> debounce'
+  MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName >>> debounce'
   ( S.do
     MDC.subtitle2 (text # fixed "Formal")
-    MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname # debounced'
-    MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename # debounced' ) # formal
+    MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname >>> debounce'
+    MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename >>> debounce' ) # formal
