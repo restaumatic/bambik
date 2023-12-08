@@ -38,12 +38,15 @@ module ViewModel
 import Prelude
 
 import Data.Array (intercalate)
+import Data.Lens (lens)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor (dimap)
-import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
+import Effect.Aff (Aff, Milliseconds(..), delay)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (debug)
 import Effect.Console (log)
-import Propagator.Optics (Constructor, Iso, PropOptic, constructor, field, iso, iso')
+import Propagator (Propagator, effect)
+import Propagator.Optics (Constructor, Iso, PropOptic, Lens, constructor, field, iso, iso')
 
 type Order =
   { uniqueId :: UniqueId
@@ -163,11 +166,12 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
-submitOrder :: Order -> Aff OrderConfirmation
-submitOrder o = do
-  let so = serializeOrder o
-  liftEffect $ log so
-  pure { shortId: o.shortId}
+data SubmitOrderRequest = SubmitOrderRequest { orderSerialized :: String }
+
+data SubmitOrderResponse = SubmitOrderResponse { orderUniqueId :: String }
+
+submitOrder :: forall m. MonadEffect m => Propagator m Order Order
+submitOrder = doSubmitOrder # lens (\order -> SubmitOrderRequest { orderSerialized: serializeOrder order}) (\order (SubmitOrderResponse { orderUniqueId }) -> order { uniqueId = orderUniqueId })
   where
     serializeOrder :: Order -> String
     serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, maybe "not paid" (\{ paid } -> "paid " <> paid) order.payment, case order.fulfillment of
@@ -175,6 +179,12 @@ submitOrder o = do
         (Takeaway { time }) -> "takeaway|" <> time
         (Delivery { address }) -> "delivery|\"" <> address <> "\""
       ]
+    doSubmitOrder :: Propagator m SubmitOrderRequest SubmitOrderResponse
+    doSubmitOrder = effect \_ -> do
+      debug "processing request"
+      delay $ Milliseconds 1000.0
+      debug "request processed"
+      pure $ SubmitOrderResponse { orderUniqueId: "1761562781" }
 
 --
 
