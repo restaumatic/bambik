@@ -7,13 +7,12 @@ module Propagator
   , attachable
   , bracket
   , class MonadGUI
-  , debounced
-  , debounced'
+  , debounce
+  , debounce'
+  , effect
   , fixed
-  , followedByEffect
-  , precededByEffect
-  , scopemap
   , module Control.Alternative
+  , scopemap
   )
   where
 
@@ -32,7 +31,7 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, joinFiber, killFiber, launchAff_, runAff_)
+import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, killFiber, launchAff_, runAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
@@ -192,12 +191,6 @@ instance Apply m => Alt (Propagator m a) where
 instance Applicative m => Plus (Propagator m a) where
   empty = wrap \_ -> pure mempty
 
-precededByEffect :: forall m i i' o. MonadEffect m => (i' → Aff i) -> Propagator m i o -> Propagator m i' o
-precededByEffect f = bracket (pure unit) (\_ (Occurrence _ i') -> f i' <#> Occurrence Some) (const pure)
-
-followedByEffect :: forall m i o o'. MonadEffect m => (o -> Aff o') -> Propagator m i o -> Propagator m i o'
-followedByEffect f = bracket (pure unit) (const pure) (\_ (Occurrence _ o) -> f o <#> Occurrence Some)
-
 -- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
 fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
 fixed a w = Propagator \_ -> do
@@ -205,21 +198,24 @@ fixed a w = Propagator \_ -> do
   liftEffect $ inward $ Occurrence Some a
   pure mempty -- inward is never called again, outward is never called
 
-debounced :: forall m i o. MonadEffect m => Milliseconds -> Propagator m i o -> Propagator m i o
-debounced millis = bracket (liftEffect $ Ref.new Nothing) (const $ pure) (\mFiberRef occur -> do
-  mFiber <- liftEffect $ read mFiberRef
-  case mFiber of
-    Nothing -> pure unit
-    Just fiber -> killFiber (error "Debounce") fiber
-  newFiber <- forkAff do
-    delay millis
-    pure occur
-  liftEffect $ write (Just newFiber) mFiberRef
-  joinFiber newFiber
-  )
+effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Propagator m i o -- we require Aff so we can cancel propagation when new input comes in 
+effect action = Propagator \outward -> do
+  mFiberRef <- liftEffect $ Ref.new Nothing
+  pure \(Occurrence _ i) -> launchAff_ do -- we do update event if there is no change (we accept all Change values)
+    mFiber <- liftEffect $ read mFiberRef
+    for_ mFiber $ killFiber (error "Obsolete input")
+    newFiber <- forkAff do
+      o <- action i
+      liftEffect $ outward $ Occurrence Some o -- we callback with Some :: Change we don't know anything about a change
+    liftEffect $ write (Just newFiber) mFiberRef
 
-debounced' :: forall m i o. MonadEffect m => Propagator m i o -> Propagator m i o
-debounced' = debounced (Milliseconds 500.0)
+debounce :: forall m a. MonadEffect m => Milliseconds -> Propagator m a a
+debounce millis = effect \i -> do
+  delay millis
+  pure i
+
+debounce' :: forall m a. MonadEffect m => Propagator m a a
+debounce' = debounce (Milliseconds 500.0)
 
 bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Aff (Occurrence i)) -> (c -> Occurrence o -> Aff (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
 bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
