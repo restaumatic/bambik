@@ -1,6 +1,5 @@
 module Propagator.Optics
   ( Adapter
-  , PropOptic
   , Constant
   , Constructor
   , Field
@@ -10,12 +9,15 @@ module Propagator.Optics
   , Prism
   , Prism'
   , Projection
+  , PropOptic
   , constructor
   , field
+  , input
   , iso
   , iso'
   , lens
   , lens'
+  , output
   , prism
   , prism'
   , projection
@@ -80,3 +82,9 @@ prism' = prism
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either construct identity aors) >>> scopemap (Part name)
+
+output ∷ forall m a b. MonadEffect m => Propagator m a b -> Propagator m a a
+output = lens "?" identity (\s _ -> s)
+
+input :: forall m a b. MonadGUI m => Propagator m b a -> Propagator m a a
+input = prism "?" identity Right
