@@ -14,7 +14,6 @@ import Prelude
 import Control.Monad.Reader (asks)
 import Data.DateTime.Instant (unInstant)
 import Data.Newtype (unwrap)
-import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
@@ -24,7 +23,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Propagator (class MonadGUI)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, lastChild, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttributes, setTextNodeValue)
+import Web.Internal.DOM (Node, TagName, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttributes, setTextNodeValue)
 import Web.Internal.RIO (RIO, runRIO)
 import Web.Internal.RIO as RIO
 
@@ -32,6 +31,7 @@ newtype DOMBuilder a = DOMBuilder (RIO DOMBuilderEnv a)
 
 type DOMBuilderEnv =
   { parent :: Node
+  , currentNode :: Node
   }
 
 derive newtype instance Functor DOMBuilder
@@ -44,11 +44,8 @@ derive newtype instance MonadEffect DOMBuilder
 instance MonadGUI DOMBuilder where
   attachable = attachable' false
 
--- TODO should be private
 getCurrentNode :: DOMBuilder Node
-getCurrentNode = do
-  parent <- getParentNode
-  liftEffect $ lastChild parent
+getCurrentNode = DOMBuilder (asks _.currentNode)
 
 initializeInBody :: forall a. DOMBuilder (a -> Effect Unit) → a -> Effect Unit
 initializeInBody dom a = measured "initialized" do
@@ -77,25 +74,25 @@ html htmlString = do
   parent <- getParentNode
   liftEffect $ appendRawHtml htmlString parent
 
-element :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder (Tuple Node a)
+element :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder a
 element tagName attrs contents = do
-  parent <- getParentNode
+  currentNode <- getCurrentNode
   node <- liftEffect $ createElement tagName
   liftEffect $ setAttributes node attrs
-  result <- DOMBuilder $ RIO.local (\env -> env { parent = node }) (unDOMBuilder contents)
-  liftEffect $ appendChild node parent
-  pure $ Tuple node result
+  liftEffect $ appendChild node currentNode
+  result <- DOMBuilder $ RIO.local (\env -> env { parent = currentNode, currentNode = node}) (unDOMBuilder contents)
+  pure result
 
 -- private
 
-unDOMBuilder ∷ ∀ (a ∷ Type). DOMBuilder a → RIO { parent ∷ Node } a
+unDOMBuilder :: forall a . DOMBuilder a -> RIO { parent :: Node, currentNode :: Node } a
 unDOMBuilder (DOMBuilder r) = r
 
 getParentNode :: DOMBuilder Node
 getParentNode = DOMBuilder (asks _.parent)
 
 runDomInNode :: forall a. Node -> DOMBuilder a -> Effect a
-runDomInNode node (DOMBuilder f) = runRIO { parent: node } f
+runDomInNode node (DOMBuilder f) = runRIO { parent: node, currentNode: node } f
 
 attachable' :: forall a. Boolean -> DOMBuilder (a -> Effect Unit) -> DOMBuilder { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit }
 attachable' removePrecedingSiblingNodes dom = do

@@ -18,7 +18,6 @@ module Web.Internal.DOM
   , getValue
   , insertAsFirstChild
   , insertBefore
-  , lastChild
   , moveAllNodesBetweenSiblings
   , removeAllNodesBetweenSiblings
   , setAttributes
@@ -70,4 +69,3 @@ foreign import createCommentNode :: String -> Effect Node
 foreign import setAttributes :: Node -> Object String -> Effect Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
-foreign import lastChild :: Node -> Effect Node

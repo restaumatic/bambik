@@ -42,7 +42,6 @@ import Prelude hiding (zero, div)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -74,7 +73,8 @@ html h = Propagator \_ -> do
 
 input :: Object String -> Widget String String
 input attrs = Propagator \outward -> do
-  Tuple node _ <- Web.Internal.DOMBuilder.element "input" attrs (pure unit)
+  void $ Web.Internal.DOMBuilder.element "input" attrs (pure unit)
+  node <- getCurrentNode
   void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -83,7 +83,8 @@ input attrs = Propagator \outward -> do
 checkbox :: forall a . Object String -> Widget (Maybe a) (Maybe (Maybe a))
 checkbox attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Tuple node _ <- Web.Internal.DOMBuilder.element "input" (attr "type" "checkbox" <> attrs) (pure unit)
+  void $ Web.Internal.DOMBuilder.element "input" (attr "type" "checkbox" <> attrs) (pure unit)
+  node <- getCurrentNode
   void $ liftEffect $ addEventListener "input" node $ const do
     checked <- getChecked node
     ma <- Ref.read maRef
@@ -103,7 +104,9 @@ checkbox attrs = Propagator \outward -> do
 radioButton :: forall a. Object String -> Widget (Maybe a) (Maybe a)
 radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Tuple node _ <- Web.Internal.DOMBuilder.element "input" (attr "type" "radio" <> attrs) (pure unit)
+  -- TODO pass listeners to element function?
+  void $ Web.Internal.DOMBuilder.element "input" (attr "type" "radio" <> attrs) (pure unit)
+  node <- getCurrentNode
   void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -116,7 +119,8 @@ radioButton attrs = Propagator \outward -> do
 
 element :: forall a b. TagName -> Object String -> (a -> Object String) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Propagator \outward -> do
-  Tuple node update <- Web.Internal.DOMBuilder.element tagName attrs $ unwrap w outward
+  update <- Web.Internal.DOMBuilder.element tagName attrs $ unwrap w outward
+  node <- getCurrentNode
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do

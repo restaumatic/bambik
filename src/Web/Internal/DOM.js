@@ -196,9 +196,3 @@ export function setTextNodeValue(node) {
     };
   };
 }
-
-export function lastChild(parent) {
-  return function () {
-    return parent.lastChild;
-  };
-}
