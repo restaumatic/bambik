@@ -1,19 +1,16 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
-  , TextValue(..)
-  , createTextValue
-  , elAttr
+  , element
   , getCurrentNode
-  , getParentNode
+  , html
   , initializeInBody
   , initializeInNode
-  , rawHtml
+  , text
   )
   where
 
 import Prelude
 
-import Control.Apply (lift2)
 import Control.Monad.Reader (asks)
 import Data.DateTime.Instant (unInstant)
 import Data.Newtype (unwrap)
@@ -44,18 +41,10 @@ derive newtype instance Bind DOMBuilder
 derive newtype instance Monad DOMBuilder
 derive newtype instance MonadEffect DOMBuilder
 
-instance Semigroup a => Semigroup (DOMBuilder a) where
-  append = lift2 append
-
-instance Monoid a => Monoid (DOMBuilder a) where
-  mempty = pure mempty
-
 instance MonadGUI DOMBuilder where
   attachable = attachable' false
 
-getParentNode :: DOMBuilder Node
-getParentNode = DOMBuilder (asks _.parent)
-
+-- TODO should be private
 getCurrentNode :: DOMBuilder Node
 getCurrentNode = do
   parent <- getParentNode
@@ -73,15 +62,8 @@ initializeInNode node dom a = runDomInNode node do
     update a
     attach
 
-runDomInNode :: forall a. Node -> DOMBuilder a -> Effect a
-runDomInNode node (DOMBuilder f) = runRIO { parent: node } f
-
-type TextValue =
-  { write :: String -> Effect Unit
-  }
-
-createTextValue :: DOMBuilder TextValue
-createTextValue = do
+text :: DOMBuilder { write :: String -> Effect Unit }
+text = do
   parent <- getParentNode
   liftEffect $ do
     node <- createTextNode mempty
@@ -90,19 +72,30 @@ createTextValue = do
       { write: setTextNodeValue node
       }
 
-rawHtml :: String -> DOMBuilder Unit
-rawHtml html = do
+html :: String -> DOMBuilder Unit
+html htmlString = do
   parent <- getParentNode
-  liftEffect $ appendRawHtml html parent
+  liftEffect $ appendRawHtml htmlString parent
 
-elAttr :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder (Tuple Node a)
-elAttr tagName attrs (DOMBuilder dom) = do
+element :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder (Tuple Node a)
+element tagName attrs contents = do
   parent <- getParentNode
   node <- liftEffect $ createElement tagName
   liftEffect $ setAttributes node attrs
-  result <- DOMBuilder $ RIO.local (\env -> env { parent = node }) dom
+  result <- DOMBuilder $ RIO.local (\env -> env { parent = node }) (unDOMBuilder contents)
   liftEffect $ appendChild node parent
   pure $ Tuple node result
+
+-- private
+
+unDOMBuilder ∷ ∀ (a ∷ Type). DOMBuilder a → RIO { parent ∷ Node } a
+unDOMBuilder (DOMBuilder r) = r
+
+getParentNode :: DOMBuilder Node
+getParentNode = DOMBuilder (asks _.parent)
+
+runDomInNode :: forall a. Node -> DOMBuilder a -> Effect a
+runDomInNode node (DOMBuilder f) = runRIO { parent: node } f
 
 attachable' :: forall a. Boolean -> DOMBuilder (a -> Effect Unit) -> DOMBuilder { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit }
 attachable' removePrecedingSiblingNodes dom = do

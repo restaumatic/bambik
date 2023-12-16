@@ -50,7 +50,8 @@ import Foreign.Object (Object)
 import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, TagName, addEventListener, attr, getChecked, getValue, setAttributes, setChecked, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, createTextValue, elAttr, getCurrentNode, initializeInBody, initializeInNode, rawHtml)
+import Web.Internal.DOMBuilder (DOMBuilder, getCurrentNode, initializeInBody, initializeInNode)
+import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
 -- Widget
@@ -61,19 +62,19 @@ type Widget i o = Propagator DOMBuilder i o
 
 text :: forall a. Widget String a
 text = Propagator \_ -> do
-  textValue <- createTextValue
+  textValue <- Web.Internal.DOMBuilder.text
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence _ string -> textValue.write string
 
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
-  rawHtml h
-  mempty
+  Web.Internal.DOMBuilder.html h
+  pure $ mempty
 
 input :: Object String -> Widget String String
 input attrs = Propagator \outward -> do
-  Tuple node _ <- elAttr "input" attrs (pure unit)
+  Tuple node _ <- Web.Internal.DOMBuilder.element "input" attrs (pure unit)
   void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -82,7 +83,7 @@ input attrs = Propagator \outward -> do
 checkbox :: forall a . Object String -> Widget (Maybe a) (Maybe (Maybe a))
 checkbox attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
+  Tuple node _ <- Web.Internal.DOMBuilder.element "input" (attr "type" "checkbox" <> attrs) (pure unit)
   void $ liftEffect $ addEventListener "input" node $ const do
     checked <- getChecked node
     ma <- Ref.read maRef
@@ -102,7 +103,7 @@ checkbox attrs = Propagator \outward -> do
 radioButton :: forall a. Object String -> Widget (Maybe a) (Maybe a)
 radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
+  Tuple node _ <- Web.Internal.DOMBuilder.element "input" (attr "type" "radio" <> attrs) (pure unit)
   void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -115,7 +116,7 @@ radioButton attrs = Propagator \outward -> do
 
 element :: forall a b. TagName -> Object String -> (a -> Object String) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Propagator \outward -> do
-  Tuple node update <- elAttr tagName attrs $ unwrap w outward
+  Tuple node update <- Web.Internal.DOMBuilder.element tagName attrs $ unwrap w outward
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
