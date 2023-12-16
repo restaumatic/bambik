@@ -29,8 +29,8 @@ export function createElement(tag) {
   };
 }
 
-// createElementNSImpl :: Namespace -> TagName -> IOSync Node
-export function createElementNSImpl(namespace) {
+// createElementNS :: Namespace -> TagName -> IOSync Node
+export function createElementNS(namespace) {
   return function (tag) {
     return function () {
       return document.createElementNS(namespace, tag);
@@ -38,7 +38,7 @@ export function createElementNSImpl(namespace) {
   };
 }
 
-// insertBeforeImpl :: Node -> Node -> IOSync Unit
+// insertBefore :: Node -> Node -> IOSync Unit
 export function insertBefore(newNode) {
   return function (existingNode) {
     return function () {
@@ -67,8 +67,8 @@ export function appendChild(newNode) {
 
 // addEventListener :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
 export function addEventListener(eventType) {
-  return function (handler) {
-    return function (node) {
+  return function (node) {
+    return function (handler) {
       return function () {
         var listener = function (event) {
           handler(event)();
@@ -175,11 +175,15 @@ export function setChecked(node) {
   };
 }
 
-// setAttributesImpl :: EffectFn2 Node (Object String) Unit
-export function setAttributesImpl(node, attrs) {
-  for (var k in attrs) {
-    if (attrs.hasOwnProperty(k)) {
-      node.setAttribute(k, attrs[k]);
+// setAttributes :: Node -> Object String -> Effect Unit
+export function setAttributes(node) {
+  return function (attrs) {
+    return function () {
+      for (var k in attrs) {
+        if (attrs.hasOwnProperty(k)) {
+          node.setAttribute(k, attrs[k]);
+        }
+      }
     }
   }
 }

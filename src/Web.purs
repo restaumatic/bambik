@@ -46,14 +46,16 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Foreign.Object (Object)
 import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attr, createTextValue, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Node, TagName, addEventListener, attr, getChecked, getValue, setAttributes, setChecked, setValue)
+import Web.Internal.DOMBuilder (DOMBuilder, createTextValue, elAttr, getCurrentNode, initializeInBody, initializeInNode, rawHtml)
 
 
 -- Widget
 
-type Widget i o = Propagator DOM i o
+type Widget i o = Propagator DOMBuilder i o
 
 -- Primitive widgets
 
@@ -62,26 +64,26 @@ text = Propagator \_ -> do
   textValue <- createTextValue
   pure case _ of
     Occurrence None _ -> mempty
-    Occurrence _ string -> writeTextValue textValue string
+    Occurrence _ string -> textValue.write string
 
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
   rawHtml h
   mempty
 
-input :: Attrs -> Widget String String
+input :: Object String -> Widget String String
 input attrs = Propagator \outward -> do
   Tuple node _ <- elAttr "input" attrs (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Occurrence Some >>> outward
+  void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence _ newa -> setValue node newa
 
-checkbox :: forall a .Attrs -> Widget (Maybe a) (Maybe (Maybe a))
+checkbox :: forall a . Object String -> Widget (Maybe a) (Maybe (Maybe a))
 checkbox attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "input" node $ const do
+  void $ liftEffect $ addEventListener "input" node $ const do
     checked <- getChecked node
     ma <- Ref.read maRef
     outward $ Occurrence Some (if checked then Just ma else Nothing)
@@ -97,11 +99,11 @@ checkbox attrs = Propagator \outward -> do
 -- output:
 -- Nothing -> on button clicked when button doesn't remember any `a`
 -- Just a -> on button clicked when button does remember an `a`
-radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
+radioButton :: forall a. Object String -> Widget (Maybe a) (Maybe a)
 radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
+  void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence _ Nothing -> setChecked node false
@@ -111,7 +113,7 @@ radioButton attrs = Propagator \outward -> do
 
 -- Widget optics
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+element :: forall a b. TagName -> Object String -> (a -> Object String) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Propagator \outward -> do
   Tuple node update <- elAttr tagName attrs $ unwrap w outward
   pure case _ of
@@ -123,37 +125,37 @@ element tagName attrs dynAttrs w = Propagator \outward -> do
 div' :: forall a b. Widget a b -> Widget a b
 div' = div mempty mempty
 
-div :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+div :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 div = element "div"
 
 span' :: forall a b. Widget a b -> Widget a b
 span' = span mempty mempty
 
-span :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+span :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 span = element "span"
 
 aside' :: forall a b. Widget a b -> Widget a b
 aside' = aside mempty mempty
 
-aside :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+aside :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 aside = element "aside"
 
 label' :: forall a b. Widget a b -> Widget a b
 label' = label mempty mempty
 
-label :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+label :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 label = element "label"
 
 button' :: forall a b. Widget a b -> Widget a b
 button' = button mempty mempty
 
-button :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+button :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 button = element "button"
 
 clickable :: forall a b. Widget a b -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
+  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventListener "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
   update <- unwrap buttonWidget mempty
   pure case _ of
     Occurrence None _ -> mempty
@@ -161,49 +163,49 @@ clickable w = Propagator \outward -> do
       Ref.write cha aRef
       update cha
 
-svg :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+svg :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 svg = element "svg"
 
-path :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+path :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 path = element "path"
 
-p :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+p :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 p = element "p"
 
 p' :: forall a b. Widget a b -> Widget a b
 p' = p mempty mempty
 
-h1 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h1 :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 h1 attrs dynAttrs = element "h1" attrs dynAttrs
 
 h1' :: forall a b. Widget a b -> Widget a b
 h1' = h1 mempty mempty
 
-h2 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h2 :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 h2 attrs dynAttrs = element "h2" attrs dynAttrs
 
 h2' :: forall a b. Widget a b -> Widget a b
 h2' = h2 mempty mempty
 
-h3 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h3 :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 h3 attrs dynAttrs = element "h3" attrs dynAttrs
 
 h3' :: forall a b. Widget a b -> Widget a b
 h3' = h3 mempty mempty
 
-h4 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h4 :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 h4 attrs dynAttrs = element "h4" attrs dynAttrs
 
 h4' :: forall a b. Widget a b -> Widget a b
 h4' = h4 mempty mempty
 
-h5 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h5 :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 h5 attrs dynAttrs = element "h5" attrs dynAttrs
 
 h5' :: forall a b. Widget a b -> Widget a b
 h5' = h5 mempty mempty
 
-h6 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+h6 :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
 h6 attrs dynAttrs content = element "h6" attrs dynAttrs content
 
 h6' :: forall a b. Widget a b -> Widget a b
