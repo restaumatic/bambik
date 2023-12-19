@@ -1,7 +1,7 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
+  , DOMBuilderEnv
   , element
-  , getSibling
   , html
   , initializeInBody
   , initializeInNode
@@ -11,11 +11,10 @@ module Web.Internal.DOMBuilder
 
 import Prelude
 
-import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT, withStateT)
+import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.DateTime.Instant (unInstant)
 import Data.Newtype (unwrap)
 import Data.Tuple (fst)
-import Debug (spy)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
@@ -59,48 +58,38 @@ initializeInNode node dom a = runDomInNode node do
 
 text :: DOMBuilder Unit
 text = do
-  parentNode <- getParent
+  parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode mempty
     appendChild node parentNode
     pure node
-  setSibling newNode
+  modify_ _ { sibling = newNode}
 
 html :: String -> DOMBuilder Unit
 html htmlString = do
-  parent <- getParent
+  parent <- gets _.parent
   lastNode <- liftEffect $ appendRawHtml htmlString parent
-  setSibling lastNode
+  modify_ _ { sibling = lastNode}
 
 element :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder a
-element tagName attrs (DOMBuilder contents) = do
-  parentNode <- getParent
+element tagName attrs contents = do
+  parentNode <- gets _.parent
   newNode <- liftEffect $ createElement tagName
   liftEffect $ appendChild newNode parentNode
-  result <- DOMBuilder $ withStateT (\env -> env { parent = newNode}) contents
+  modify_ _ { parent = newNode}
+  result <- contents
   liftEffect $ setAttributes newNode attrs
-  setSibling newNode
+  modify_ _ { parent = parentNode, sibling = newNode}
   pure result
 
-getSibling :: DOMBuilder Node
-getSibling = do
-  node <- gets (_.sibling)
-  pure $ spy "get" node
-
-setSibling :: Node -> DOMBuilder Unit
-setSibling node = modify_ \s -> s { sibling = spy "set" node}
-
 -- private
-
-getParent :: DOMBuilder Node
-getParent = gets (_.parent)
 
 runDomInNode :: forall a. Node -> DOMBuilder a -> Effect a
 runDomInNode node (DOMBuilder domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
 
 attachable' :: forall a. Boolean -> DOMBuilder (a -> Effect Unit) -> DOMBuilder { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit }
 attachable' removePrecedingSiblingNodes dom = do
-  parent <- getParent
+  parent <- gets _.parent
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
 

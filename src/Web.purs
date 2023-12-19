@@ -39,6 +39,7 @@ module Web
 
 import Prelude hiding (zero, div)
 
+import Control.Monad.State (gets)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
@@ -49,7 +50,7 @@ import Foreign.Object (Object)
 import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, TagName, addEventListener, attr, getChecked, getValue, setAttributes, setChecked, setTextNodeValue, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, getSibling, initializeInBody, initializeInNode)
+import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
@@ -62,7 +63,7 @@ type Widget i o = Propagator DOMBuilder i o
 text :: forall a. Widget String a
 text = Propagator \_ -> do
   Web.Internal.DOMBuilder.text
-  node <- getSibling
+  node <- gets _.sibling
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence _ string -> setTextNodeValue node string
@@ -75,7 +76,7 @@ html h = Propagator \_ -> do
 input :: Object String -> Widget String String
 input attrs = Propagator \outward -> do
   void $ Web.Internal.DOMBuilder.element "input" attrs (pure unit)
-  node <- getSibling
+  node <- gets _.sibling
   void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -85,7 +86,7 @@ checkbox :: forall a . Object String -> Widget (Maybe a) (Maybe (Maybe a))
 checkbox attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   void $ Web.Internal.DOMBuilder.element "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  node <- getSibling
+  node <- gets _.sibling
   void $ liftEffect $ addEventListener "input" node $ const do
     checked <- getChecked node
     ma <- Ref.read maRef
@@ -107,7 +108,7 @@ radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   -- TODO pass listeners to element function?
   void $ Web.Internal.DOMBuilder.element "input" (attr "type" "radio" <> attrs) (pure unit)
-  node <- getSibling
+  node <- gets _.sibling
   void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -122,7 +123,7 @@ element :: forall a b. TagName -> Object String -> (a -> Object String) -> Widge
 element tagName attrs dynAttrs w = Propagator \outward -> do
   update <- Web.Internal.DOMBuilder.element tagName attrs do
     unwrap w outward
-  node <- getSibling
+  node <- gets _.sibling
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
@@ -162,7 +163,7 @@ button = element "button"
 clickable :: forall a b. Widget a b -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (getSibling >>= \node -> liftEffect $ addEventListener "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
+  let buttonWidget = w # bracket (gets _.sibling >>= \node -> liftEffect $ addEventListener "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
   update <- unwrap buttonWidget mempty
   pure case _ of
     Occurrence None _ -> mempty

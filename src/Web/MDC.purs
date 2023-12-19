@@ -27,6 +27,7 @@ module Web.MDC
 
 import Prelude hiding (div)
 
+import Control.Monad.State (gets)
 import Control.Plus (empty)
 import Data.Maybe (Maybe)
 import Data.String (null)
@@ -39,7 +40,6 @@ import QualifiedDo.Semigroup as S
 import Web (Widget, aside, clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, span, input)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node, attr)
-import Web.Internal.DOMBuilder (getSibling)
 
 -- Primitive widgets
 
@@ -47,7 +47,7 @@ containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (attr "class" "mdc-button mdc-button--raised initAside-button") mempty (S.do
     div (attr "class" "mdc-button__ripple") mempty (empty :: Widget a a) -- TODO why we need to specify type?
-    span (attr "class" "mdc-button__label") mempty (label >>> empty)) # bracket (getSibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
+    span (attr "class" "mdc-button__label") mempty (label >>> empty)) # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
@@ -56,7 +56,7 @@ filledTextField { floatingLabel } value =
     (S.do
       span (attr "class" "mdc-floating-label" <> attr "id" "my-label-id") (\currentInput -> if not (null currentInput) then attr "class" "mdc-floating-label--float-above" else mempty) (floatingLabel >>> empty)
       input (attr "class" "mdc-text-field__input" <> attr "type" "text" <> attr "aria-labelledby" "my-label-id") ) # value
-    span (attr "class" "mdc-line-ripple") mempty empty ) # bracket (getSibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
+    span (attr "class" "mdc-line-ripple") mempty empty ) # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
 checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 checkbox { labelContent } checked =
@@ -69,8 +69,8 @@ checkbox { labelContent } checked =
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         div (attr "class" "mdc-checkbox__mixedmark") mempty empty
-      div (attr "class" "mdc-checkbox__ripple") mempty empty ) # bracket (getSibling >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
-    label (attr "for" id) mempty (labelContent >>> empty) ) # bracket (getSibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+      div (attr "class" "mdc-checkbox__ripple") mempty empty ) # bracket (gets _.sibling >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
+    label (attr "for" id) mempty (labelContent >>> empty) ) # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
 
@@ -82,10 +82,10 @@ radioButton { labelContent } value =
       div (attr "class" "mdc-radio__background") mempty S.do
         div (attr "class" "mdc-radio__outer-circle") mempty empty
         div (attr "class" "mdc-radio__inner-circle") mempty empty
-      div (attr "class" "mdc-radio__ripple") mempty empty) # bracket (getSibling >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
+      div (attr "class" "mdc-radio__ripple") mempty empty) # bracket (gets _.sibling >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
   label (attr "for" id) mempty (labelContent >>> empty)
   )
-  # bracket (getSibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+  # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect randomElementId
 
@@ -151,7 +151,7 @@ dialog { title } content =
         div (attr "class" "mdc-dialog__content" <> attr "id" "my-dialog-content") mempty content
     div (attr "class" "mdc-dialog__scrim") mempty empty ) # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
-      initializeMdcDialog = getSibling >>= newComponent material.dialog."MDCDialog"
+      initializeMdcDialog = gets _.sibling >>= newComponent material.dialog."MDCDialog"
       openMdcComponent comp a = liftEffect do
         open comp
         pure a
@@ -166,7 +166,7 @@ snackbar { label } =
       ( div (attr "class" "mdc-snackbar__label" <> attr "aria-atomic" "false") mempty
         label ) ) # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
-      initializeMdcSnackbar = getSibling >>= newComponent material.snackbar."MDCSnackbar"
+      initializeMdcSnackbar = gets _.sibling >>= newComponent material.snackbar."MDCSnackbar"
       openMdcComponent comp a = liftEffect do
         open comp
         pure a
