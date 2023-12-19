@@ -21,6 +21,7 @@ module Web
   , h6
   , h6'
   , html
+  , input
   , label
   , label'
   , p
@@ -33,7 +34,6 @@ module Web
   , span'
   , svg
   , text
-  , input
   )
   where
 
@@ -48,8 +48,8 @@ import Effect.Ref as Ref
 import Foreign.Object (Object)
 import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, addEventListener, attr, getChecked, getValue, setAttributes, setChecked, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, getCurrentNode, initializeInBody, initializeInNode)
+import Web.Internal.DOM (Node, TagName, addEventListener, attr, getChecked, getValue, setAttributes, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOMBuilder (DOMBuilder, getSibling, initializeInBody, initializeInNode)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
@@ -61,10 +61,11 @@ type Widget i o = Propagator DOMBuilder i o
 
 text :: forall a. Widget String a
 text = Propagator \_ -> do
-  textValue <- Web.Internal.DOMBuilder.text
+  Web.Internal.DOMBuilder.text
+  node <- getSibling
   pure case _ of
     Occurrence None _ -> mempty
-    Occurrence _ string -> textValue.write string
+    Occurrence _ string -> setTextNodeValue node string
 
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
@@ -74,7 +75,7 @@ html h = Propagator \_ -> do
 input :: Object String -> Widget String String
 input attrs = Propagator \outward -> do
   void $ Web.Internal.DOMBuilder.element "input" attrs (pure unit)
-  node <- getCurrentNode
+  node <- getSibling
   void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -84,7 +85,7 @@ checkbox :: forall a . Object String -> Widget (Maybe a) (Maybe (Maybe a))
 checkbox attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   void $ Web.Internal.DOMBuilder.element "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  node <- getCurrentNode
+  node <- getSibling
   void $ liftEffect $ addEventListener "input" node $ const do
     checked <- getChecked node
     ma <- Ref.read maRef
@@ -106,7 +107,7 @@ radioButton attrs = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   -- TODO pass listeners to element function?
   void $ Web.Internal.DOMBuilder.element "input" (attr "type" "radio" <> attrs) (pure unit)
-  node <- getCurrentNode
+  node <- getSibling
   void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
@@ -119,8 +120,9 @@ radioButton attrs = Propagator \outward -> do
 
 element :: forall a b. TagName -> Object String -> (a -> Object String) -> Widget a b -> Widget a b
 element tagName attrs dynAttrs w = Propagator \outward -> do
-  update <- Web.Internal.DOMBuilder.element tagName attrs $ unwrap w outward
-  node <- getCurrentNode
+  update <- Web.Internal.DOMBuilder.element tagName attrs do
+    unwrap w outward
+  node <- getSibling
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
@@ -160,7 +162,7 @@ button = element "button"
 clickable :: forall a b. Widget a b -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventListener "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
+  let buttonWidget = w # bracket (getSibling >>= \node -> liftEffect $ addEventListener "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
   update <- unwrap buttonWidget mempty
   pure case _ of
     Occurrence None _ -> mempty

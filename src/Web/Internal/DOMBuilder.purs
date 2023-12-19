@@ -1,7 +1,7 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
   , element
-  , getCurrentNode
+  , getSibling
   , html
   , initializeInBody
   , initializeInNode
@@ -11,9 +11,11 @@ module Web.Internal.DOMBuilder
 
 import Prelude
 
-import Control.Monad.Reader (asks)
+import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT, withStateT)
 import Data.DateTime.Instant (unInstant)
 import Data.Newtype (unwrap)
+import Data.Tuple (fst)
+import Debug (spy)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
@@ -23,15 +25,13 @@ import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Propagator (class MonadGUI)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttributes, setTextNodeValue)
-import Web.Internal.RIO (RIO, runRIO)
-import Web.Internal.RIO as RIO
+import Web.Internal.DOM (Node, TagName, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttributes)
 
-newtype DOMBuilder a = DOMBuilder (RIO DOMBuilderEnv a)
+newtype DOMBuilder a = DOMBuilder (StateT DOMBuilderEnv Effect a)
 
 type DOMBuilderEnv =
   { parent :: Node
-  , currentNode :: Node
+  , sibling :: Node -- last sibling
   }
 
 derive newtype instance Functor DOMBuilder
@@ -40,12 +40,10 @@ derive newtype instance Applicative DOMBuilder
 derive newtype instance Bind DOMBuilder
 derive newtype instance Monad DOMBuilder
 derive newtype instance MonadEffect DOMBuilder
+derive newtype instance MonadState DOMBuilderEnv DOMBuilder
 
 instance MonadGUI DOMBuilder where
   attachable = attachable' false
-
-getCurrentNode :: DOMBuilder Node
-getCurrentNode = DOMBuilder (asks _.currentNode)
 
 initializeInBody :: forall a. DOMBuilder (a -> Effect Unit) → a -> Effect Unit
 initializeInBody dom a = measured "initialized" do
@@ -59,44 +57,50 @@ initializeInNode node dom a = runDomInNode node do
     update a
     attach
 
-text :: DOMBuilder { write :: String -> Effect Unit }
+text :: DOMBuilder Unit
 text = do
-  parent <- getParentNode
-  liftEffect $ do
+  parentNode <- getParent
+  newNode <- liftEffect $ do
     node <- createTextNode mempty
-    appendChild node parent
-    pure
-      { write: setTextNodeValue node
-      }
+    appendChild node parentNode
+    pure node
+  setSibling newNode
 
 html :: String -> DOMBuilder Unit
 html htmlString = do
-  parent <- getParentNode
-  liftEffect $ appendRawHtml htmlString parent
+  parent <- getParent
+  lastNode <- liftEffect $ appendRawHtml htmlString parent
+  setSibling lastNode
 
 element :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder a
-element tagName attrs contents = do
-  currentNode <- getCurrentNode
-  node <- liftEffect $ createElement tagName
-  liftEffect $ setAttributes node attrs
-  liftEffect $ appendChild node currentNode
-  result <- DOMBuilder $ RIO.local (\env -> env { parent = currentNode, currentNode = node}) (unDOMBuilder contents)
+element tagName attrs (DOMBuilder contents) = do
+  parentNode <- getParent
+  newNode <- liftEffect $ createElement tagName
+  liftEffect $ appendChild newNode parentNode
+  result <- DOMBuilder $ withStateT (\env -> env { parent = newNode}) contents
+  liftEffect $ setAttributes newNode attrs
+  setSibling newNode
   pure result
+
+getSibling :: DOMBuilder Node
+getSibling = do
+  node <- gets (_.sibling)
+  pure $ spy "get" node
+
+setSibling :: Node -> DOMBuilder Unit
+setSibling node = modify_ \s -> s { sibling = spy "set" node}
 
 -- private
 
-unDOMBuilder :: forall a . DOMBuilder a -> RIO { parent :: Node, currentNode :: Node } a
-unDOMBuilder (DOMBuilder r) = r
-
-getParentNode :: DOMBuilder Node
-getParentNode = DOMBuilder (asks _.parent)
+getParent :: DOMBuilder Node
+getParent = gets (_.parent)
 
 runDomInNode :: forall a. Node -> DOMBuilder a -> Effect a
-runDomInNode node (DOMBuilder f) = runRIO { parent: node, currentNode: node } f
+runDomInNode node (DOMBuilder domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
 
 attachable' :: forall a. Boolean -> DOMBuilder (a -> Effect Unit) -> DOMBuilder { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit }
 attachable' removePrecedingSiblingNodes dom = do
-  parent <- getParentNode
+  parent <- getParent
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   liftEffect $ measured' slotNo "created" do
 

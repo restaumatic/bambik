@@ -62,7 +62,7 @@ foreign import createElement :: TagName -> Effect Node
 foreign import insertBefore :: Node -> Node -> Effect Unit
 foreign import appendChild :: Node -> Node -> Effect Unit
 foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
-foreign import appendRawHtml :: String -> Node -> Effect Unit
+foreign import appendRawHtml :: String -> Node -> Effect Node
 foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node

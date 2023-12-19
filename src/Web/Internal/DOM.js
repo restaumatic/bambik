@@ -65,24 +65,7 @@ export function appendChild(newNode) {
   };
 }
 
-// addEventListener :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
-export function addEventListener(eventType) {
-  return function (node) {
-    return function (handler) {
-      return function () {
-        var listener = function (event) {
-          handler(event)();
-        };
-        node.addEventListener(eventType, listener);
-        return function () {
-          node.removeEventListener(eventType, listener);
-        };
-      };
-    };
-  };
-}
-
-// appendRawHtml :: String -> Node -> IOSync Unit
+// appendRawHtml :: String -> Node -> IOSync Node
 export function appendRawHtml(html) {
   return function (parent) {
     return function () {
@@ -105,9 +88,29 @@ export function appendRawHtml(html) {
         parent.appendChild(node); // moves the node from dummyElement to parent
         node = next;
       }
+      return dummyElement.lastChild;
     };
   };
 }
+
+// addEventListener :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
+export function addEventListener(eventType) {
+  return function (node) {
+    return function (handler) {
+      return function () {
+        var listener = function (event) {
+          handler(event)();
+        };
+        node.addEventListener(eventType, listener);
+        return function () {
+          node.removeEventListener(eventType, listener);
+        };
+      };
+    };
+  };
+}
+
+
 
 // moveAllNodesBetweenSiblings :: Node -> Node -> Node -> IOSync Unit
 export function moveAllNodesBetweenSiblings(from) {
