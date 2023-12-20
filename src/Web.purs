@@ -40,7 +40,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Foreign.Object (Object)
-import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
+import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeClass, setAttribute, setAttributes, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode)
