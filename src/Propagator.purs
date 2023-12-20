@@ -11,6 +11,7 @@ module Propagator
   , debounce'
   , effect
   , fixed
+  , foo
   , module Control.Alternative
   , scopemap
   )
@@ -31,7 +32,7 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, killFiber, launchAff_, runAff_)
+import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
@@ -191,6 +192,11 @@ instance Apply m => Alt (Propagator m a) where
 instance Applicative m => Plus (Propagator m a) where
   empty = wrap \_ -> pure mempty
 
+-- TODO: what's that really?
+foo :: forall m. Applicative m => forall a b. Propagator m a b
+foo = Propagator \_ ->
+  pure mempty
+
 -- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
 fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
 fixed a w = Propagator \_ -> do
@@ -217,17 +223,16 @@ debounce millis = effect \i -> do
 debounce' :: forall m a. MonadEffect m => Propagator m a a
 debounce' = debounce (Milliseconds 500.0)
 
-bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Aff (Occurrence i)) -> (c -> Occurrence o -> Aff (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
+bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Effect (Occurrence i)) -> (c -> Occurrence o -> Effect (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
 bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   cRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   inward <- unwrap w \occurb -> do
     ctx <- Ref.read cRef
-    runAff_ (const $ pure unit) do
-      o' <- beforeOutward ctx occurb
-      liftEffect $ outward o'
+    o' <- beforeOutward ctx occurb
+    outward o'
   ctx <- afterInit
   liftEffect $ Ref.write ctx cRef
-  pure \occuri' -> launchAff_ do
+  pure \occuri' -> do
       i <- afterInward ctx occuri'
       liftEffect $ inward i
 

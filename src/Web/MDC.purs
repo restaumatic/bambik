@@ -35,7 +35,8 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (bracket)
+import Propagator (bracket, foo)
+import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text)
 import Web (button, checkbox, radioButton) as Web
@@ -46,8 +47,8 @@ import Web.Internal.DOMBuilder (uniqueId)
 
 containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
-  Web.button (S.do
-    div (empty :: Widget a a) # cl' "mdc-button__ripple" -- TODO why we need to specify type?
+  Web.button (A.do
+    div foo # cl' "mdc-button__ripple"
     span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
@@ -158,10 +159,10 @@ dialog { title } content =
   ) # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = gets _.sibling >>= newComponent material.dialog."MDCDialog"
-      openMdcComponent comp a = liftEffect do
+      openMdcComponent comp a = do
         open comp
         pure a
-      closeMdcComponent comp a = liftEffect do
+      closeMdcComponent comp a = do
         close comp
         pure a
 
@@ -173,7 +174,7 @@ snackbar { label } =
         label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
       initializeMdcSnackbar = gets _.sibling >>= newComponent material.snackbar."MDCSnackbar"
-      openMdcComponent comp a = liftEffect do
+      openMdcComponent comp a = do
         open comp
         pure a
 

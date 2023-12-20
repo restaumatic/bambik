@@ -178,11 +178,12 @@ label = element "label"
 button :: forall a b. Widget a b -> Widget a b
 button = element "button"
 
-clickable :: forall a b. Widget a b -> Widget a a
+clickable :: forall a. Widget a Void -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (gets _.sibling >>= \node -> liftEffect $ addEventListener "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
-  update <- unwrap buttonWidget mempty
+  update <- unwrap w mempty
+  node <- gets _.sibling
+  liftEffect $ void $ addEventListener "click" node $ const $ Ref.read aRef >>= outward
   pure case _ of
     Occurrence None _ -> mempty
     cha -> do
