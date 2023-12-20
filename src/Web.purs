@@ -1,87 +1,85 @@
 module Web
   ( Widget
   , aside
-  , aside'
+  , at'
   , button
-  , button'
   , checkbox
+  , cl'
   , clickable
+  , dat'
+  , dcl'
   , div
-  , div'
   , h1
-  , h1'
   , h2
-  , h2'
   , h3
-  , h3'
   , h4
-  , h4'
   , h5
-  , h5'
   , h6
-  , h6'
   , html
+  , input
   , label
-  , label'
   , p
-  , p'
   , path
   , radioButton
   , runWidgetInBody
   , runWidgetInNode
   , span
-  , span'
   , svg
   , text
-  , input
   )
   where
 
 import Prelude hiding (zero, div)
 
+import Control.Monad.State (gets)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Propagator (Change(..), Occurrence(..), Propagator(..), bracket)
+import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Attrs, DOM, Node, TagName, addEventCallback, attr, createTextValue, elAttr, getChecked, getCurrentNode, getValue, initializeInBody, initializeInNode, rawHtml, setAttributes, setChecked, setValue, writeTextValue)
+import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode)
+import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
 -- Widget
 
-type Widget i o = Propagator DOM i o
+type Widget i o = Propagator DOMBuilder i o
 
 -- Primitive widgets
 
 text :: forall a. Widget String a
 text = Propagator \_ -> do
-  textValue <- createTextValue
+  Web.Internal.DOMBuilder.text
+  node <- gets _.sibling
   pure case _ of
     Occurrence None _ -> mempty
-    Occurrence _ string -> writeTextValue textValue string
+    Occurrence _ string -> setTextNodeValue node string
 
+-- TODO make it Widget String a
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
-  rawHtml h
-  mempty
+  Web.Internal.DOMBuilder.html h
+  pure $ mempty
 
-input :: Attrs -> Widget String String
-input attrs = Propagator \outward -> do
-  Tuple node _ <- elAttr "input" attrs (pure unit)
-  liftEffect $ addEventCallback "input" node $ const $ getValue node >>= Occurrence Some >>> outward
+input :: Widget String String
+input = Propagator \outward -> do
+  void $ Web.Internal.DOMBuilder.element "input" (pure unit)
+  node <- gets _.sibling
+  void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence _ newa -> setValue node newa
 
-checkbox :: forall a .Attrs -> Widget (Maybe a) (Maybe (Maybe a))
-checkbox attrs = Propagator \outward -> do
+checkbox :: forall a . Widget (Maybe a) (Maybe (Maybe a))
+checkbox = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Tuple node _ <- elAttr "input" (attr "type" "checkbox" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "input" node $ const do
+  void $ Web.Internal.DOMBuilder.element "input" (pure unit)
+  node <- gets _.sibling
+  void $ liftEffect $ addEventListener "input" node $ const do
     checked <- getChecked node
     ma <- Ref.read maRef
     outward $ Occurrence Some (if checked then Just ma else Nothing)
@@ -97,11 +95,12 @@ checkbox attrs = Propagator \outward -> do
 -- output:
 -- Nothing -> on button clicked when button doesn't remember any `a`
 -- Just a -> on button clicked when button does remember an `a`
-radioButton :: forall a. Attrs -> Widget (Maybe a) (Maybe a)
-radioButton attrs = Propagator \outward -> do
+radioButton :: forall a. Widget (Maybe a) (Maybe a)
+radioButton = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Tuple node _ <- elAttr "input" (attr "type" "radio" <> attrs) (pure unit)
-  liftEffect $ addEventCallback "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
+  void $ Web.Internal.DOMBuilder.element "input" (pure unit)
+  node <- gets _.sibling
+  void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence _ Nothing -> setChecked node false
@@ -111,103 +110,102 @@ radioButton attrs = Propagator \outward -> do
 
 -- Widget optics
 
-element :: forall a b. TagName -> Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-element tagName attrs dynAttrs w = Propagator \outward -> do
-  Tuple node update <- elAttr tagName attrs $ unwrap w outward
+element :: forall a b. TagName -> Widget a b -> Widget a b
+element tagName w = Propagator \outward -> do
+  update <- Web.Internal.DOMBuilder.element tagName do
+    unwrap w outward
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
-      setAttributes node (attrs <> dynAttrs newa)
       update $ Occurrence ch newa
 
-div' :: forall a b. Widget a b -> Widget a b
-div' = div mempty mempty
+at' :: forall a b. String -> String -> Widget a b -> Widget a b
+at' name value w = Propagator \outward -> do
+  update <- unwrap w outward
+  Web.Internal.DOMBuilder.at name value
+  pure update
 
-div :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-div = element "div"
+dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
+dat' name value pred w = Propagator \outward -> do
+  update <- unwrap w outward
+  node <- gets _.sibling
+  pure case _ of
+    Occurrence None _ -> mempty
+    Occurrence ch newa -> do
+      if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
+      update $ Occurrence ch newa
 
-span' :: forall a b. Widget a b -> Widget a b
-span' = span mempty mempty
+cl' :: forall a b. String -> Widget a b -> Widget a b
+cl' name w = Propagator \outward -> do
+  update <- unwrap w outward
+  Web.Internal.DOMBuilder.cl name
+  pure update
 
-span :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-span = element "span"
+dcl' :: forall a b. String -> (a -> Boolean) -> Widget a b -> Widget a b
+dcl' name pred w = Propagator \outward -> do
+  update <- unwrap w outward
+  node <- gets _.sibling
+  pure case _ of
+    Occurrence None _ -> mempty
+    Occurrence ch newa -> do
+      (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
+      update $ Occurrence ch newa
 
-aside' :: forall a b. Widget a b -> Widget a b
-aside' = aside mempty mempty
-
-aside :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-aside = element "aside"
-
-label' :: forall a b. Widget a b -> Widget a b
-label' = label mempty mempty
-
-label :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-label = element "label"
-
-button' :: forall a b. Widget a b -> Widget a b
-button' = button mempty mempty
-
-button :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-button = element "button"
-
-clickable :: forall a b. Widget a b -> Widget a a
+clickable :: forall a. Widget a Void -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  let buttonWidget = w # bracket (getCurrentNode >>= \node -> liftEffect $ addEventCallback "click" node $ const $ Ref.read aRef >>= outward) (const $ pure) (const $ pure)
-  update <- unwrap buttonWidget mempty
+  update <- unwrap w mempty
+  node <- gets _.sibling
+  liftEffect $ void $ addEventListener "click" node $ const $ Ref.read aRef >>= outward
   pure case _ of
     Occurrence None _ -> mempty
     cha -> do
       Ref.write cha aRef
       update cha
 
-svg :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+--
+
+div :: forall a b. Widget a b -> Widget a b
+div = element "div"
+
+span :: forall a b. Widget a b -> Widget a b
+span = element "span"
+
+aside :: forall a b. Widget a b -> Widget a b
+aside = element "aside"
+
+label :: forall a b. Widget a b -> Widget a b
+label = element "label"
+
+button :: forall a b. Widget a b -> Widget a b
+button = element "button"
+
+svg :: forall a b. Widget a b -> Widget a b
 svg = element "svg"
 
-path :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+path :: forall a b. Widget a b -> Widget a b
 path = element "path"
 
-p :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
+p :: forall a b. Widget a b -> Widget a b
 p = element "p"
 
-p' :: forall a b. Widget a b -> Widget a b
-p' = p mempty mempty
+h1 :: forall a b. Widget a b -> Widget a b
+h1 = element "h1"
 
-h1 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h1 attrs dynAttrs = element "h1" attrs dynAttrs
+h2 :: forall a b. Widget a b -> Widget a b
+h2 = element "h2"
 
-h1' :: forall a b. Widget a b -> Widget a b
-h1' = h1 mempty mempty
+h3 :: forall a b. Widget a b -> Widget a b
+h3 = element "h3"
 
-h2 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h2 attrs dynAttrs = element "h2" attrs dynAttrs
+h4 :: forall a b. Widget a b -> Widget a b
+h4 = element "h4"
 
-h2' :: forall a b. Widget a b -> Widget a b
-h2' = h2 mempty mempty
+h5 :: forall a b. Widget a b -> Widget a b
+h5 = element "h5"
 
-h3 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h3 attrs dynAttrs = element "h3" attrs dynAttrs
-
-h3' :: forall a b. Widget a b -> Widget a b
-h3' = h3 mempty mempty
-
-h4 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h4 attrs dynAttrs = element "h4" attrs dynAttrs
-
-h4' :: forall a b. Widget a b -> Widget a b
-h4' = h4 mempty mempty
-
-h5 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h5 attrs dynAttrs = element "h5" attrs dynAttrs
-
-h5' :: forall a b. Widget a b -> Widget a b
-h5' = h5 mempty mempty
-
-h6 :: forall a b. Attrs -> (a -> Attrs) -> Widget a b -> Widget a b
-h6 attrs dynAttrs content = element "h6" attrs dynAttrs content
-
-h6' :: forall a b. Widget a b -> Widget a b
-h6' = h6 mempty mempty
+h6 :: forall a b. Widget a b -> Widget a b
+h6 = element "h6"
 
 -- Entry point
 
