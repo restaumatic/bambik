@@ -102,8 +102,8 @@ cl name = do
   liftEffect $ addClass node name
   pure unit
 
-uniqueId :: String
-uniqueId = unsafePerformEffect randomElementId
+uniqueId :: Effect String
+uniqueId = randomElementId
 
 -- private
 

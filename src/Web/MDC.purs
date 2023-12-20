@@ -34,6 +34,7 @@ import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Effect.Unsafe (unsafePerformEffect)
 import Propagator (bracket)
 import QualifiedDo.Semigroup as S
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text)
@@ -58,7 +59,7 @@ filledTextField { floatingLabel } value =
       input # value # cl' "mdc-text-field__input" # at' "type" "text" # at' "aria-labelledby" id)
     span (empty :: Widget a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
     where
-      id = uniqueId
+      id = unsafePerformEffect uniqueId
 
 checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 checkbox { labelContent } checked =
@@ -74,14 +75,14 @@ checkbox { labelContent } checked =
       div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
     label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
-      id = uniqueId
+      id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping
 radioButton :: forall a b. { labelContent :: Widget a b } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
 radioButton { labelContent } value =
   div (S.do
     div (S.do
-        Web.radioButton # value # cl' "mdc-radio__native-control" # at' "id" uid
+        Web.radioButton # value # cl' "mdc-radio__native-control" # at' "type" "radio" # at' "id" uid
         div (S.do
           div empty # cl' "mdc-radio__outer-circle"
           div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"
@@ -89,7 +90,7 @@ radioButton { labelContent } value =
     label (labelContent >>> empty) # at' "for" uid
   ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
-      uid = uniqueId
+      uid = unsafePerformEffect uniqueId
 
 headline1 :: forall a b. Widget a b -> Widget a b
 headline1 w = h1 w # cl' "mdc-typography--headline1"
@@ -133,13 +134,13 @@ body2 :: forall a b. Widget a b -> Widget a b
 body2 w = p w # cl'"mdc-typography--body2"
 
 elevation1 :: forall a b. Widget a b -> Widget a b
-elevation1 w = div w # cl' "elevation-demo-surface mdc-elevation--z1"
+elevation1 w = div w # cl' "mdc-elevation--z1"
 
 elevation10 :: forall a b. Widget a b -> Widget a b
-elevation10 w = div w # cl' "elevation-demo-surface mdc-elevation--z10" # at' "style" "padding: 25px" -- TODO padding added ad-hoc, to remove
+elevation10 w = div w # cl' "mdc-elevation--z10" # at' "style" "padding: 25px" -- TODO padding added ad-hoc, to remove
 
 elevation20 :: forall a b. Widget a b -> Widget a b
-elevation20 w = div w # cl' "elevation-demo-surface mdc-elevation--z20" # at' "style" "padding: 25px"-- TODO padding added ad-hoc, to remove
+elevation20 w = div w # cl' "mdc-elevation--z20" # at' "style" "padding: 25px"-- TODO padding added ad-hoc, to remove
 
 card :: forall a b. Widget a b -> Widget a b
 card w = div w # cl' "mdc-card" # at' "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"  -- TODO padding added ad-hoc, to remove
@@ -166,7 +167,7 @@ snackbar { label } =
   aside
     ( div
       ( div
-        ( label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar") # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
+        label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
       initializeMdcSnackbar = gets _.sibling >>= newComponent material.snackbar."MDCSnackbar"
       openMdcComponent comp a = liftEffect do
