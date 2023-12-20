@@ -9,6 +9,7 @@ module Web
   , clickable
   , dat'
   , dcl'
+  , dcl''
   , div
   , h1
   , h2
@@ -161,6 +162,20 @@ dcl' name pred w = Propagator \outward -> do
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
       (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
+      update $ Occurrence ch newa
+
+dcl'' :: forall a b. String -> (b -> Boolean) -> Widget a b -> Widget a b
+dcl'' name pred w = Propagator \outward -> do
+  nodeRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  update <- unwrap w \ch@(Occurrence _ newb) -> do
+    node <- Ref.read nodeRef
+    (if pred newb then addClass else removeClass) node name -- TODO do not use directly DOM API
+    outward ch
+  node <- gets _.sibling
+  liftEffect $ Ref.write node nodeRef
+  pure case _ of
+    Occurrence None _ -> mempty
+    Occurrence ch newa -> do
       update $ Occurrence ch newa
 
 div :: forall a b. Widget a b -> Widget a b

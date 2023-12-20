@@ -30,13 +30,14 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Control.Plus (empty)
 import Data.Maybe (Maybe)
+import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
 import Propagator (bracket)
 import QualifiedDo.Semigroup as S
-import Web (Widget, aside, at', cl', clickable, div, h1, h2, h3, h4, h5, h6, html, label, p, span)
+import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node)
 
@@ -48,15 +49,14 @@ containedButton { label } =
     div (empty :: Widget a a) # cl' "mdc-button__ripple" -- TODO why we need to specify type?
     span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button mdc-button--raised initAside-button" # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
-filledTextField :: forall a b. { floatingLabel :: Widget String b } -> (Widget String String -> Widget a a) -> Widget a a
+filledTextField :: forall a b. { floatingLabel :: Widget String b -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (S.do
-    span empty # cl' "mdc-text-field__ripple"
-    -- (S.do
-    --   span (floatingLabel >>> empty) # cl' "mdc-floating-label" # at' "id" "my-label-id" # dcl' "mdc-floating-label--float-above" (not <<< null)
-    --   -- input # value # cl' "mdc-text-field__input" # at' "type" "text" # at' "aria-labelledby" "my-label-id")
-    --   )
-    span empty # cl' "mdc-line-ripple" ) # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
+    span (empty :: Widget a a) # cl' "mdc-text-field__ripple"
+    (S.do
+      span (text # cl' "mdc-floating-label" # at' "id" "my-label-id" # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
+      input # value # cl' "mdc-text-field__input" # at' "type" "text" # at' "aria-labelledby" "my-label-id")
+    span (empty :: Widget a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
 
 checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 checkbox { labelContent } checked =
@@ -74,6 +74,7 @@ checkbox { labelContent } checked =
     where
       id = unsafePerformEffect randomElementId
 
+-- TODO add html grouping
 radioButton :: forall a b. { labelContent :: Widget a b } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
 radioButton { labelContent } value =
   div (S.do

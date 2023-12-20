@@ -21,8 +21,8 @@ order =
       text # shortId
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Identifier")
-      MDC.filledTextField { floatingLabel: text # fixed "Short ID" } shortId >>> debounce'
-      MDC.filledTextField { floatingLabel: text # fixed "Unique ID" } uniqueId >>> debounce'
+      MDC.filledTextField { floatingLabel: (_ # fixed "Short ID") } shortId >>> debounce'
+      MDC.filledTextField { floatingLabel: (_ # fixed "Unique ID") } uniqueId >>> debounce'
     MDC.card S.do
       MDC.subtitle1 S.do
         text # fixed "Customer"
@@ -31,15 +31,15 @@ order =
       MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
       MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
       MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
-      MDC.filledTextField { floatingLabel: text # fixed "Table" } table >>> debounce' # dineIn
-      MDC.filledTextField { floatingLabel: text # fixed "Time" } time >>> debounce' # takeaway
-      MDC.filledTextField { floatingLabel: text # fixed "Address" } address >>> debounce' # delivery ) # fulfillment
+      MDC.filledTextField { floatingLabel: (_ # fixed "Table" )} table >>> debounce' # dineIn
+      MDC.filledTextField { floatingLabel: (_ # fixed "Time" )} time >>> debounce' # takeaway
+      MDC.filledTextField { floatingLabel: (_ # fixed "Address" )} address >>> debounce' # delivery ) # fulfillment
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Total")
-      MDC.filledTextField { floatingLabel: text # fixed "Total" } total >>> debounce'
+      MDC.filledTextField { floatingLabel: (_ # fixed "Total" )} total >>> debounce'
     MDC.card S.do
       MDC.checkbox { labelContent: text # fixed "Payment" } hasPayment # payment
-      MDC.filledTextField { floatingLabel: text # fixed "Paid" } paid # _Just # payment
+      MDC.filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # _Just # payment
     MDC.card S.do
       MDC.body1 S.do
         text # fixed "Summary: Order "
@@ -93,9 +93,9 @@ order =
 name :: Widget NameInformal NameInformal
 name = S.do
   MDC.subtitle2 (text # fixed "Informal")
-  MDC.filledTextField { floatingLabel: text # fixed "First name" } firstName >>> debounce'
-  MDC.filledTextField { floatingLabel: text # fixed "Last name" } lastName >>> debounce'
+  MDC.filledTextField { floatingLabel: (_ # fixed "First name") } firstName >>> debounce'
+  MDC.filledTextField { floatingLabel: (_ # fixed "Last name") } lastName >>> debounce'
   ( S.do
     MDC.subtitle2 (text # fixed "Formal")
-    MDC.filledTextField { floatingLabel: text # fixed "Surname" } surname >>> debounce'
-    MDC.filledTextField { floatingLabel: text # fixed "Forename" } forename >>> debounce' ) # formal
+    MDC.filledTextField { floatingLabel: (_ # fixed "Surname" )} surname >>> debounce'
+    MDC.filledTextField { floatingLabel: (_ # fixed "Forename" )} forename >>> debounce' ) # formal
