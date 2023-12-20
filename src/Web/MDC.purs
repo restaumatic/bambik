@@ -151,8 +151,11 @@ dialog { title } content =
     div (S.do
       div (S.do
         h2 (title >>> empty) # cl' "mdc-dialog__title" # at' "id" "my-dialog-title"
-        div content # cl' "mdc-dialog__content" # at' "id" "my-dialog-content") # cl' "mdc-dialog__container") # cl' "mdc-dialog__surface" # at' "role" "alertdialog" # at' "aria-modal" "true" # at' "aria-labelledby" "my-dialog-title" # at' "aria-describedby" "my-dialog-content"
-    div empty # cl' "mdc-dialog__scrim") # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+        div content # cl' "mdc-dialog__content" # at' "id" "my-dialog-content"
+      ) # cl' "mdc-dialog__surface" # at' "role" "alertdialog" # at' "aria-modal" "true" # at' "aria-labelledby" "my-dialog-title" # at' "aria-describedby" "my-dialog-content"
+    ) # cl' "mdc-dialog__container"
+    div empty # cl' "mdc-dialog__scrim"
+  ) # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = gets _.sibling >>= newComponent material.dialog."MDCDialog"
       openMdcComponent comp a = liftEffect do
