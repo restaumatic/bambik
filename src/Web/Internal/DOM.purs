@@ -21,6 +21,7 @@ module Web.Internal.DOM
   , insertBefore
   , moveAllNodesBetweenSiblings
   , removeAllNodesBetweenSiblings
+  , removeAttribute
   , removeClass
   , setAttribute
   , setAttributes
@@ -71,6 +72,7 @@ foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> E
 foreign import createCommentNode :: String -> Effect Node
 foreign import setAttributes :: Node -> Object String -> Effect Unit
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
+foreign import removeAttribute :: Node -> String -> Effect Unit
 foreign import addClass :: Node -> String -> Effect Unit
 foreign import removeClass :: Node -> String -> Effect Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit

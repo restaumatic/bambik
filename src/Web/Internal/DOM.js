@@ -191,6 +191,14 @@ export function setAttributes(node) {
   }
 }
 
+// removeAttribute :: Node -> String -> Effect Unit
+export function removeAttribute(node) {
+  return function (name) {
+    return function () {
+      node.removeAtribute(name);
+    }
+  }
+}
 // setAttribute:: Node -> String -> String -> Effect Unit
 export function setAttribute(node) {
   return function (name) {

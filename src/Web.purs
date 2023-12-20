@@ -2,7 +2,6 @@ module Web
   ( Widget
   , aside
   , at'
-  , ats'
   , button
   , checkbox
   , cl'
@@ -42,7 +41,7 @@ import Effect.Ref as Ref
 import Foreign.Object (Object)
 import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeClass, setAttribute, setAttributes, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeAttribute, removeClass, setAttribute, setAttributes, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
@@ -120,31 +119,20 @@ element tagName w = Propagator \outward -> do
     Occurrence ch newa -> do
       update $ Occurrence ch newa
 
-ats' :: forall a b. Object String -> (a -> Object String) -> Widget a b -> Widget a b
-ats' attrs dynAttrs w = Propagator \outward -> do
-  update <- unwrap w outward
-  Web.Internal.DOMBuilder.ats attrs
-  node <- gets _.sibling
-  pure case _ of
-    Occurrence None _ -> mempty
-    Occurrence ch newa -> do
-      setAttributes node (attrs <> dynAttrs newa)
-      update $ Occurrence ch newa
-
 at' :: forall a b. String -> String -> Widget a b -> Widget a b
 at' name value w = Propagator \outward -> do
   update <- unwrap w outward
   Web.Internal.DOMBuilder.at name value
   pure update
 
-dat' :: forall a b. String -> (a -> String) -> Widget a b -> Widget a b
-dat' name valuef w = Propagator \outward -> do
+dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
+dat' name value pred w = Propagator \outward -> do
   update <- unwrap w outward
   node <- gets _.sibling
   pure case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
-      setAttribute node name (valuef newa) -- TODO do not use directly DOM API
+      if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
       update $ Occurrence ch newa
 
 cl' :: forall a b. String -> Widget a b -> Widget a b
@@ -163,6 +151,20 @@ dcl' name pred w = Propagator \outward -> do
       (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
       update $ Occurrence ch newa
 
+clickable :: forall a. Widget a Void -> Widget a a
+clickable w = Propagator \outward -> do
+  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  update <- unwrap w mempty
+  node <- gets _.sibling
+  liftEffect $ void $ addEventListener "click" node $ const $ Ref.read aRef >>= outward
+  pure case _ of
+    Occurrence None _ -> mempty
+    cha -> do
+      Ref.write cha aRef
+      update cha
+
+--
+
 div :: forall a b. Widget a b -> Widget a b
 div = element "div"
 
@@ -177,18 +179,6 @@ label = element "label"
 
 button :: forall a b. Widget a b -> Widget a b
 button = element "button"
-
-clickable :: forall a. Widget a Void -> Widget a a
-clickable w = Propagator \outward -> do
-  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  update <- unwrap w mempty
-  node <- gets _.sibling
-  liftEffect $ void $ addEventListener "click" node $ const $ Ref.read aRef >>= outward
-  pure case _ of
-    Occurrence None _ -> mempty
-    cha -> do
-      Ref.write cha aRef
-      update cha
 
 svg :: forall a b. Widget a b -> Widget a b
 svg = element "svg"
