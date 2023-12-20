@@ -191,6 +191,35 @@ export function setAttributes(node) {
   }
 }
 
+// setAttribute:: Node -> String -> String -> Effect Unit
+export function setAttribute(node) {
+  return function (name) {
+    return function (value) {
+      return function () {
+          node.setAttribute(name, value);
+      }
+    }
+  }
+}
+
+// addClass :: Node -> String -> Effect Unit
+export function addClass(node) {
+  return function (name) {
+    return function () {
+        node.classList.add(name);
+    }
+  }
+}
+
+// removeClass :: Node -> String -> Effect Unit
+export function removeClass(node) {
+  return function (name) {
+    return function () {
+        node.classList.remove(name);
+    }
+  }
+}
+
 // setNodeValue :: Node -> String -> Effect Unit
 export function setTextNodeValue(node) {
   return function (value) {

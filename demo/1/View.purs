@@ -10,8 +10,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, hasPayment, isDelivery, isDineIn, isTakeaway, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
-import Web (Widget, div, text)
-import Web.Internal.DOM (attr)
+import Web (Widget, at', div, text)
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
@@ -70,15 +69,15 @@ order =
               text # fixed "delivery to "
               text) # address # delivery ) # fulfillment
       T.do
-        div (attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;") mempty
-          A.do
+        div
+          (A.do
             MDC.containedButton { label: S.do
               text # fixed "Submit order "
               text # shortId
               text # fixed " as draft" }
             MDC.containedButton { label: S.do
               text # fixed "Submit order "
-              text # shortId }
+              text # shortId }) # at' "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
         MDC.dialog { title: S.do
           text # fixed "Submit order "
           text # shortId

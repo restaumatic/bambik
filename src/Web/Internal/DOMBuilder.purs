@@ -1,6 +1,9 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
   , DOMBuilderEnv
+  , at
+  , ats
+  , cl
   , element
   , html
   , initializeInBody
@@ -24,8 +27,9 @@ import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Propagator (class MonadGUI)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttributes)
+import Web.Internal.DOM (Node, TagName, addClass, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttribute, setAttributes)
 
+-- Builds DOM and keeping track of parent/last sibling node
 newtype DOMBuilder a = DOMBuilder (StateT DOMBuilderEnv Effect a)
 
 type DOMBuilderEnv =
@@ -71,16 +75,30 @@ html htmlString = do
   lastNode <- liftEffect $ appendRawHtml htmlString parent
   modify_ _ { sibling = lastNode}
 
-element :: forall a. TagName -> Object String -> DOMBuilder a -> DOMBuilder a
-element tagName attrs contents = do
+element :: forall a. TagName -> DOMBuilder a -> DOMBuilder a
+element tagName contents = do
   parentNode <- gets _.parent
   newNode <- liftEffect $ createElement tagName
   liftEffect $ appendChild newNode parentNode
   modify_ _ { parent = newNode}
   result <- contents
-  liftEffect $ setAttributes newNode attrs
   modify_ _ { parent = parentNode, sibling = newNode}
   pure result
+
+at :: String -> String -> DOMBuilder Unit
+at name value = do
+  node <- gets _.sibling
+  liftEffect $ setAttribute node name value
+
+ats :: Object String -> DOMBuilder Unit
+ats attrs = do
+  node <- gets _.sibling
+  liftEffect $ setAttributes node attrs
+
+cl :: String -> DOMBuilder Unit
+cl name = do
+  node <- gets _.sibling
+  liftEffect $ addClass node name
 
 -- private
 
