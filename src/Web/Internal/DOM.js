@@ -29,8 +29,8 @@ export function createElement(tag) {
   };
 }
 
-// createElementNSImpl :: Namespace -> TagName -> IOSync Node
-export function createElementNSImpl(namespace) {
+// createElementNS :: Namespace -> TagName -> IOSync Node
+export function createElementNS(namespace) {
   return function (tag) {
     return function () {
       return document.createElementNS(namespace, tag);
@@ -38,7 +38,7 @@ export function createElementNSImpl(namespace) {
   };
 }
 
-// insertBeforeImpl :: Node -> Node -> IOSync Unit
+// insertBefore :: Node -> Node -> IOSync Unit
 export function insertBefore(newNode) {
   return function (existingNode) {
     return function () {
@@ -65,24 +65,7 @@ export function appendChild(newNode) {
   };
 }
 
-// addEventListener :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
-export function addEventListener(eventType) {
-  return function (handler) {
-    return function (node) {
-      return function () {
-        var listener = function (event) {
-          handler(event)();
-        };
-        node.addEventListener(eventType, listener);
-        return function () {
-          node.removeEventListener(eventType, listener);
-        };
-      };
-    };
-  };
-}
-
-// appendRawHtml :: String -> Node -> IOSync Unit
+// appendRawHtml :: String -> Node -> IOSync Node
 export function appendRawHtml(html) {
   return function (parent) {
     return function () {
@@ -105,9 +88,29 @@ export function appendRawHtml(html) {
         parent.appendChild(node); // moves the node from dummyElement to parent
         node = next;
       }
+      return dummyElement.lastChild;
     };
   };
 }
+
+// addEventListener :: EventType -> (Event -> IOSync Unit) -> Node -> IOSync (IOSync Unit)
+export function addEventListener(eventType) {
+  return function (node) {
+    return function (handler) {
+      return function () {
+        var listener = function (event) {
+          handler(event)();
+        };
+        node.addEventListener(eventType, listener);
+        return function () {
+          node.removeEventListener(eventType, listener);
+        };
+      };
+    };
+  };
+}
+
+
 
 // moveAllNodesBetweenSiblings :: Node -> Node -> Node -> IOSync Unit
 export function moveAllNodesBetweenSiblings(from) {
@@ -175,11 +178,52 @@ export function setChecked(node) {
   };
 }
 
-// setAttributesImpl :: EffectFn2 Node (Object String) Unit
-export function setAttributesImpl(node, attrs) {
-  for (var k in attrs) {
-    if (attrs.hasOwnProperty(k)) {
-      node.setAttribute(k, attrs[k]);
+// setAttributes :: Node -> Object String -> Effect Unit
+export function setAttributes(node) {
+  return function (attrs) {
+    return function () {
+      for (var k in attrs) {
+        if (attrs.hasOwnProperty(k)) {
+          node.setAttribute(k, attrs[k]);
+        }
+      }
+    }
+  }
+}
+
+// removeAttribute :: Node -> String -> Effect Unit
+export function removeAttribute(node) {
+  return function (name) {
+    return function () {
+      node.removeAtribute(name);
+    }
+  }
+}
+// setAttribute:: Node -> String -> String -> Effect Unit
+export function setAttribute(node) {
+  return function (name) {
+    return function (value) {
+      return function () {
+          node.setAttribute(name, value);
+      }
+    }
+  }
+}
+
+// addClass :: Node -> String -> Effect Unit
+export function addClass(node) {
+  return function (name) {
+    return function () {
+        node.classList.add(name);
+    }
+  }
+}
+
+// removeClass :: Node -> String -> Effect Unit
+export function removeClass(node) {
+  return function (name) {
+    return function () {
+        node.classList.remove(name);
     }
   }
 }
@@ -190,11 +234,5 @@ export function setTextNodeValue(node) {
     return function () {
       node.nodeValue = value;
     };
-  };
-}
-
-export function lastChild(parent) {
-  return function () {
-    return parent.lastChild;
   };
 }
