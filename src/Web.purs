@@ -38,10 +38,9 @@ import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Foreign.Object (Object)
 import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeAttribute, removeClass, setAttribute, setAttributes, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
