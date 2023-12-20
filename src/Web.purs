@@ -60,6 +60,7 @@ text = Propagator \_ -> do
     Occurrence None _ -> mempty
     Occurrence _ string -> setTextNodeValue node string
 
+-- TODO make it Widget String a
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
   Web.Internal.DOMBuilder.html h
