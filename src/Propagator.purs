@@ -217,6 +217,7 @@ debounce millis = effect \i -> do
 debounce' :: forall m a. MonadEffect m => Propagator m a a
 debounce' = debounce (Milliseconds 500.0)
 
+-- TODO do we need bracket?
 bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Aff (Occurrence i)) -> (c -> Occurrence o -> Aff (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
 bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   cRef <- liftEffect $ Ref.new $ unsafeCoerce unit

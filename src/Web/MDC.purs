@@ -34,12 +34,12 @@ import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Effect.Unsafe (unsafePerformEffect)
 import Propagator (bracket)
 import QualifiedDo.Semigroup as S
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node)
+import Web.Internal.DOMBuilder (uniqueId)
 
 -- Primitive widgets
 
@@ -72,23 +72,22 @@ checkbox { labelContent } checked =
       div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
     label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
-      id = unsafePerformEffect randomElementId
+      id = uniqueId
 
 -- TODO add html grouping
 radioButton :: forall a b. { labelContent :: Widget a b } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
 radioButton { labelContent } value =
   div (S.do
     div (S.do
-        Web.radioButton # value # cl' "mdc-radio__native-control" <> at' "id" id
+        Web.radioButton # value # cl' "mdc-radio__native-control" # at' "id" uid
         div (S.do
           div empty # cl' "mdc-radio__outer-circle"
           div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"
         div empty # cl' "mdc-radio__ripple") # cl' "mdc-radio" # bracket (gets _.sibling >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
-    label (labelContent >>> empty) # at' "for" id
-  ) # cl' "mdc-form-field"
-  # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+    label (labelContent >>> empty) # at' "for" uid
+  ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
     where
-      id = unsafePerformEffect randomElementId
+      uid = uniqueId
 
 headline1 :: forall a b. Widget a b -> Widget a b
 headline1 w = h1 w # cl' "mdc-typography--headline1"
@@ -199,4 +198,3 @@ foreign import material
 
 foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
-foreign import randomElementId :: Effect String

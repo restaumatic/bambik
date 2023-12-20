@@ -9,6 +9,7 @@ module Web.Internal.DOMBuilder
   , initializeInBody
   , initializeInNode
   , text
+  , uniqueId
   )
   where
 
@@ -90,6 +91,9 @@ at name value = do
   node <- gets _.sibling
   liftEffect $ setAttribute node name value
 
+uniqueId :: String
+uniqueId = unsafePerformEffect randomElementId
+
 ats :: Object String -> DOMBuilder Unit
 ats attrs = do
   node <- gets _.sibling
@@ -167,3 +171,5 @@ newPlaceholderBefore slotNo = createCommentNode $ "begin component " <> show slo
 
 newPlaceholderAfter :: forall a. Show a ⇒ a → Effect Node
 newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
+
+foreign import randomElementId :: Effect String
