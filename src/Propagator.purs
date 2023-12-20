@@ -161,7 +161,7 @@ instance MonadEffect m => Semigroupoid (Propagator m) where
 
 instance MonadEffect m => Semigroup (Propagator m a a) where
   append c1 c2 = Propagator \updateParent -> do
-    -- TODO how to get rid of thess refs?
+    -- TODO how to get rid of these refs?
     mUpdate1Ref <- liftEffect $ Ref.new Nothing
     mUpdate2Ref <- liftEffect $ Ref.new Nothing
     inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
@@ -217,7 +217,6 @@ debounce millis = effect \i -> do
 debounce' :: forall m a. MonadEffect m => Propagator m a a
 debounce' = debounce (Milliseconds 500.0)
 
--- TODO do we need bracket?
 bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> Aff (Occurrence i)) -> (c -> Occurrence o -> Aff (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
 bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
   cRef <- liftEffect $ Ref.new $ unsafeCoerce unit
