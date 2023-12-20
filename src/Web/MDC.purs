@@ -47,16 +47,18 @@ containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (S.do
     div (empty :: Widget a a) # cl' "mdc-button__ripple" -- TODO why we need to specify type?
-    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button mdc-button--raised initAside-button" # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
+    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (S.do
     span (empty :: Widget a a) # cl' "mdc-text-field__ripple"
     (S.do
-      span (text # cl' "mdc-floating-label" # at' "id" "my-label-id" # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
-      input # value # cl' "mdc-text-field__input" # at' "type" "text" # at' "aria-labelledby" "my-label-id")
+      (span text # cl' "mdc-floating-label" # at' "id" id # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
+      input # value # cl' "mdc-text-field__input" # at' "type" "text" # at' "aria-labelledby" id)
     span (empty :: Widget a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
+    where
+      id = uniqueId
 
 checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
 checkbox { labelContent } checked =

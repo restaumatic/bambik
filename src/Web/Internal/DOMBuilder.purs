@@ -91,9 +91,6 @@ at name value = do
   node <- gets _.sibling
   liftEffect $ setAttribute node name value
 
-uniqueId :: String
-uniqueId = unsafePerformEffect randomElementId
-
 ats :: Object String -> DOMBuilder Unit
 ats attrs = do
   node <- gets _.sibling
@@ -103,6 +100,10 @@ cl :: String -> DOMBuilder Unit
 cl name = do
   node <- gets _.sibling
   liftEffect $ addClass node name
+  pure unit
+
+uniqueId :: String
+uniqueId = unsafePerformEffect randomElementId
 
 -- private
 
