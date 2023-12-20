@@ -160,6 +160,9 @@ instance MonadEffect m => Semigroupoid (Propagator m) where
     liftEffect $ Ref.write inward2 update2Ref
     pure inward1
 
+instance MonadEffect m => Category (Propagator m) where
+  identity = Propagator \outward -> pure $ launchAff_ <<< liftEffect <<< outward
+
 instance MonadEffect m => Semigroup (Propagator m a a) where
   append c1 c2 = Propagator \updateParent -> do
     -- TODO how to get rid of these refs?
@@ -204,15 +207,15 @@ fixed a w = Propagator \_ -> do
   liftEffect $ inward $ Occurrence Some a
   pure mempty -- inward is never called again, outward is never called
 
-effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Propagator m i o -- we require Aff so we can cancel propagation when new input comes in 
+effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Propagator m i o -- we require Aff so we can cancel propagation when new input comes in
 effect action = Propagator \outward -> do
   mFiberRef <- liftEffect $ Ref.new Nothing
-  pure \(Occurrence _ i) -> launchAff_ do -- we do update event if there is no change (we accept all Change values)
+  pure \(Occurrence _ i) -> launchAff_ do -- update even if there is no change (we accept all Change values)
     mFiber <- liftEffect $ read mFiberRef
-    for_ mFiber $ killFiber (error "Obsolete input")
+    for_ mFiber $ killFiber (error "Newer input")
     newFiber <- forkAff do
       o <- action i
-      liftEffect $ outward $ Occurrence Some o -- we callback with Some :: Change we don't know anything about a change
+      liftEffect $ outward $ Occurrence Some o -- callback with Some :: Change as we don't know anything about a change
     liftEffect $ write (Just newFiber) mFiberRef
 
 debounce :: forall m a. MonadEffect m => Milliseconds -> Propagator m a a

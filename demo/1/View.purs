@@ -5,17 +5,19 @@ module View
 import Prelude hiding (div)
 
 import Data.Lens (_Just)
+import Data.Profunctor (arr)
 import Propagator (debounce', fixed, effect, empty)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, hasPayment, isDelivery, isDineIn, isTakeaway, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import ViewModel (NameInformal, Order, address, adjust, customer, delivery, dineIn, firstName, forename, formal, fulfillment, hasPayment, isDelivery, isDineIn, isTakeaway, lastName, offline, online, paid, payment, paymentMethod, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (Widget, at', div, text)
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
 order =
   MDC.elevation20 S.do
+    arr adjust
     MDC.headline6 S.do
       text # fixed "Order "
       text # shortId
@@ -38,6 +40,10 @@ order =
       MDC.subtitle1 (text # fixed "Total")
       MDC.filledTextField { floatingLabel: (_ # fixed "Total" )} total >>> debounce'
     MDC.card S.do
+      MDC.body1 S.do
+        text # fixed "Payment method: "
+        text # fixed "Online" # online # paymentMethod
+        text # fixed "Offline" # offline # paymentMethod
       MDC.checkbox { labelContent: text # fixed "Payment" } hasPayment # payment
       MDC.filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # _Just # payment
     MDC.card S.do
