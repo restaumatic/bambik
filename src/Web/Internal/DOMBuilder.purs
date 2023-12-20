@@ -78,8 +78,8 @@ html htmlString = do
 
 element :: forall a. TagName -> DOMBuilder a -> DOMBuilder a
 element tagName contents = do
-  parentNode <- gets _.parent
   newNode <- liftEffect $ createElement tagName
+  parentNode <- gets _.parent
   liftEffect $ appendChild newNode parentNode
   modify_ _ { parent = newNode}
   result <- contents
