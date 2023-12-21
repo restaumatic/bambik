@@ -41,12 +41,11 @@ import Data.Array (intercalate)
 import Data.Lens (lens)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor (dimap)
-import Effect.Aff (Aff, Milliseconds(..), delay)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Aff (Milliseconds(..), delay)
+import Effect.Class (class MonadEffect)
 import Effect.Class.Console (debug)
-import Effect.Console (log)
 import Propagator (Propagator, effect)
-import Propagator.Optics (Constructor, Iso, PropOptic, Lens, constructor, field, iso, iso')
+import Propagator.Optics (Constructor, Iso, PropOptic, constructor, field, iso, iso')
 
 type Order =
   { uniqueId :: UniqueId
