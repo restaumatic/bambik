@@ -1,12 +1,12 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
   , DOMBuilderEnv
-  , ac
+  , speaker
   , at
   , ats
   , cl
   , element
-  , ev
+  , listener
   , html
   , initializeInBody
   , initializeInNode
@@ -104,13 +104,13 @@ cl name = do
   liftEffect $ addClass node name
   pure unit
 
-ev :: String -> (Node -> Event -> Effect Unit) -> DOMBuilder Unit
-ev eventType callback = do
+listener :: String -> (Node -> Event -> Effect Unit) -> DOMBuilder Unit
+listener eventType callback = do
   node <- gets _.sibling
   void $ liftEffect $ addEventListener eventType node (callback node)
 
-ac :: forall a. (Node -> a) -> DOMBuilder a
-ac action = do
+speaker :: forall a. (Node -> a) -> DOMBuilder a
+speaker action = do
   node <- gets _.sibling
   pure $ action node
 

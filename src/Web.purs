@@ -41,7 +41,7 @@ import Effect.Ref as Ref
 import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, TagName, addClass, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, ac, ev, initializeInBody, initializeInNode)
+import Web.Internal.DOMBuilder (DOMBuilder, speaker, listener, initializeInBody, initializeInNode)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
@@ -54,7 +54,7 @@ type Widget i o = Propagator DOMBuilder i o
 text :: forall a. Widget String a
 text = Propagator \_ -> do
   Web.Internal.DOMBuilder.text
-  ac \node -> case _ of
+  speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ string -> setTextNodeValue node string
 
@@ -67,8 +67,8 @@ html h = Propagator \_ -> do
 input :: Widget String String
 input = Propagator \outward -> do
   Web.Internal.DOMBuilder.element "input" (pure unit)
-  ev "input" \node _ -> getValue node >>= Occurrence Some >>> outward
-  ac \node -> case _ of
+  listener "input" \node _ -> getValue node >>= Occurrence Some >>> outward
+  speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ newa -> setValue node newa
 
@@ -76,11 +76,11 @@ checkbox :: forall a . Widget (Maybe a) (Maybe (Maybe a))
 checkbox = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Web.Internal.DOMBuilder.element "input" (pure unit)
-  ev "input" \node _ -> do
+  listener "input" \node _ -> do
     checked <- getChecked node
     ma <- Ref.read maRef
     outward $ Occurrence Some (if checked then Just ma else Nothing)
-  ac \node -> case _ of
+  speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ newma -> do
       setChecked node (isJust newma)
@@ -96,8 +96,8 @@ radioButton :: forall a. Widget (Maybe a) (Maybe a)
 radioButton = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Web.Internal.DOMBuilder.element "input" (pure unit)
-  ev "change" \_ _ -> Ref.read maRef >>= Occurrence Some >>> outward
-  ac \node -> case _ of
+  listener "change" \_ _ -> Ref.read maRef >>= Occurrence Some >>> outward
+  speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ Nothing -> setChecked node false
     Occurrence _ newma@(Just _) -> do
@@ -124,7 +124,7 @@ at' name value w = Propagator \outward -> do
 dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
 dat' name value pred w = Propagator \outward -> do
   update <- unwrap w outward
-  ac \node -> case _ of
+  speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
       if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
@@ -139,7 +139,7 @@ cl' name w = Propagator \outward -> do
 dcl' :: forall a b. String -> (a -> Boolean) -> Widget a b -> Widget a b
 dcl' name pred w = Propagator \outward -> do
   update <- unwrap w outward
-  ac \node -> case _ of
+  speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
       (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
@@ -149,7 +149,7 @@ clickable :: forall a. Widget a Void -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   update <- unwrap w mempty
-  ev "click" \_ _ -> Ref.read aRef >>= outward
+  listener "click" \_ _ -> Ref.read aRef >>= outward
   pure case _ of
     Occurrence None _ -> mempty
     cha -> do
