@@ -40,8 +40,8 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, addClass, addEventListener, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode)
+import Web.Internal.DOM (Node, TagName, addClass, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOMBuilder (DOMBuilder, ac, ev, initializeInBody, initializeInNode)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
@@ -54,8 +54,7 @@ type Widget i o = Propagator DOMBuilder i o
 text :: forall a. Widget String a
 text = Propagator \_ -> do
   Web.Internal.DOMBuilder.text
-  node <- gets _.sibling
-  pure case _ of
+  ac \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ string -> setTextNodeValue node string
 
@@ -67,23 +66,21 @@ html h = Propagator \_ -> do
 
 input :: Widget String String
 input = Propagator \outward -> do
-  void $ Web.Internal.DOMBuilder.element "input" (pure unit)
-  node <- gets _.sibling
-  void $ liftEffect $ addEventListener "input" node $ const $ getValue node >>= Occurrence Some >>> outward
-  pure case _ of
+  Web.Internal.DOMBuilder.element "input" (pure unit)
+  ev "input" \node _ -> getValue node >>= Occurrence Some >>> outward
+  ac \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ newa -> setValue node newa
 
 checkbox :: forall a . Widget (Maybe a) (Maybe (Maybe a))
 checkbox = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  void $ Web.Internal.DOMBuilder.element "input" (pure unit)
-  node <- gets _.sibling
-  void $ liftEffect $ addEventListener "input" node $ const do
+  Web.Internal.DOMBuilder.element "input" (pure unit)
+  ev "input" \node _ -> do
     checked <- getChecked node
     ma <- Ref.read maRef
     outward $ Occurrence Some (if checked then Just ma else Nothing)
-  pure case _ of
+  ac \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ newma -> do
       setChecked node (isJust newma)
@@ -98,10 +95,9 @@ checkbox = Propagator \outward -> do
 radioButton :: forall a. Widget (Maybe a) (Maybe a)
 radioButton = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  void $ Web.Internal.DOMBuilder.element "input" (pure unit)
-  node <- gets _.sibling
-  void $ liftEffect $ addEventListener "change" node $ const $ Ref.read maRef >>= Occurrence Some >>> outward
-  pure case _ of
+  Web.Internal.DOMBuilder.element "input" (pure unit)
+  ev "change" \_ _ -> Ref.read maRef >>= Occurrence Some >>> outward
+  ac \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ Nothing -> setChecked node false
     Occurrence _ newma@(Just _) -> do
@@ -128,8 +124,7 @@ at' name value w = Propagator \outward -> do
 dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
 dat' name value pred w = Propagator \outward -> do
   update <- unwrap w outward
-  node <- gets _.sibling
-  pure case _ of
+  ac \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
       if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
@@ -144,8 +139,7 @@ cl' name w = Propagator \outward -> do
 dcl' :: forall a b. String -> (a -> Boolean) -> Widget a b -> Widget a b
 dcl' name pred w = Propagator \outward -> do
   update <- unwrap w outward
-  node <- gets _.sibling
-  pure case _ of
+  ac \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence ch newa -> do
       (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
@@ -155,8 +149,7 @@ clickable :: forall a. Widget a Void -> Widget a a
 clickable w = Propagator \outward -> do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   update <- unwrap w mempty
-  node <- gets _.sibling
-  liftEffect $ void $ addEventListener "click" node $ const $ Ref.read aRef >>= outward
+  ev "click" \_ _ -> Ref.read aRef >>= outward
   pure case _ of
     Occurrence None _ -> mempty
     cha -> do

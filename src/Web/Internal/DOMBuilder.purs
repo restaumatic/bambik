@@ -1,10 +1,12 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
   , DOMBuilderEnv
+  , ac
   , at
   , ats
   , cl
   , element
+  , ev
   , html
   , initializeInBody
   , initializeInNode
@@ -28,7 +30,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Propagator (class MonadGUI)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, addClass, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttribute, setAttributes)
+import Web.Internal.DOM (Event, Node, TagName, addClass, addEventListener, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttribute, setAttributes)
 
 -- Builds DOM and keeping track of parent/last sibling node
 newtype DOMBuilder a = DOMBuilder (StateT DOMBuilderEnv Effect a)
@@ -101,6 +103,16 @@ cl name = do
   node <- gets _.sibling
   liftEffect $ addClass node name
   pure unit
+
+ev :: String -> (Node -> Event -> Effect Unit) -> DOMBuilder Unit
+ev eventType callback = do
+  node <- gets _.sibling
+  void $ liftEffect $ addEventListener eventType node (callback node)
+
+ac :: forall a. (Node -> a) -> DOMBuilder a
+ac action = do
+  node <- gets _.sibling
+  pure $ action node
 
 uniqueId :: Effect String
 uniqueId = randomElementId
