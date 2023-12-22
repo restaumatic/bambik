@@ -35,19 +35,36 @@ import Control.Monad.State (gets)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
+import Data.Profunctor (class Profunctor)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Propagator (Change(..), Occurrence(..), Propagator(..))
+import Propagator (Change(..), Occurrence(..), Propagator(..), PropagatorC)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, TagName, addClass, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, speaker, listener, initializeInBody, initializeInNode)
+import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode, listener, speaker)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 
 -- Widget
 
 type Widget i o = Propagator DOMBuilder i o
+
+type WidgetC i o = PropagatorC DOMBuilderC i o
+
+data DOMBuilderC i o = DOMBuilderC
+
+instance Profunctor DOMBuilderC where
+  dimap = unsafeCoerce unit
+
+instance Semigroupoid DOMBuilderC where
+  compose = unsafeCoerce unit
+
+instance Category DOMBuilderC where
+  identity = unsafeCoerce unit
+
+-- then WidgetC is a profunctor
+
 
 -- Primitive widgets
 

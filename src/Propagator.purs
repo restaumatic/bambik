@@ -3,6 +3,7 @@ module Propagator
   , Occurrence(..)
   , Propagation
   , Propagator(..)
+  , PropagatorC(..)
   , Scope(..)
   , attachable
   , bracket
@@ -27,7 +28,7 @@ import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor)
+import Data.Profunctor (class Profunctor, arr)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -37,6 +38,33 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (read, write)
 import Effect.Ref as Ref
 import Unsafe.Coerce (unsafeCoerce)
+
+-- Propagator optics:
+-- (Propagation o -> m (Propagation i)) -> Propagation o' -> m (Propagation i')
+-- is isomorphic to a pair of functions:
+-- Propagation o' -> m (Propagation o) -- o ~> o'
+-- Propagation o' -> Propagation i -> m (Propagation i') -- i' ~> i
+-- but we want:
+-- Propagation i -> m (Propagation i') -- i' ~> i
+-- so let's:
+
+newtype PropagatorC c i o = PropagatorC (c (Propagation o) (Propagation i))
+
+derive instance Newtype (PropagatorC c i o) _
+
+instance (Profunctor c, Category c) => Profunctor (PropagatorC c) where
+  dimap g f (PropagatorC p) = PropagatorC (arr (map f >>> _) >>> p >>> arr (map g >>> _))
+-- is PropagatorC c Strong and Choice, Functor, Alt, Plus, Semigroup and Semigroupoind?
+
+-- type PropagatorCOptics c i o i' o' = c (Propagation o) (Propagation i) -> c (Propagation o') (Propagation i')
+-- if we only know that c is a category it's isomorphic to a pair:
+-- c (Propagation o') (Propagation o) -- o ~> o'
+-- c (Propagation i) (Propagation i') -- i' ~> i
+
+data PropagatorO m i o i' o' = PropagatorO
+  { inwardmap :: Propagation o' -> Propagation i -> m (Propagation i')  -- i' ~> i
+  , outwardmap :: Propagation o' -> m (Propagation o) -- o ~> o'
+  }
 
 newtype Propagator m i o = Propagator (Propagation o -> m (Propagation i))
 --                                     -- outward --       -- inward ---
