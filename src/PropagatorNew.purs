@@ -13,7 +13,6 @@ import Effect.Ref as Ref
 import Effect.Ref as Rew
 import Propagator (class Plus, Change(..), Occurrence(..), Propagation, Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Web (Widget)
 import Web.Internal.DOM (setTextNodeValue)
 import Web.Internal.DOMBuilder (DOMBuilder)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
@@ -122,7 +121,6 @@ instance Applicative m => Plus (SafePropagator m a) where
 --
 
 type SafeWidget i o = SafePropagator DOMBuilder i o
-
 
 text :: SafeWidget String Void
 text = SafePropagator do
