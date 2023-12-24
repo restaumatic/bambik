@@ -66,13 +66,11 @@ instance Monad m => Semigroup (SafePropagator m a a) where
   append p1 p2 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    p1'.listen p2'.speak
-    p2'.listen p1'.speak
     pure
       { speak: p1'.speak <> p2'.speak
       , listen: \propagation -> do
-        p1'.listen propagation
-        p2'.listen propagation
+        p1'.listen $ p2'.speak <> propagation
+        p2'.listen $ p1'.speak <> propagation
       }
 -- compare to: instance MonadEffect m => Semigroup (Propagator m a a) where
 
