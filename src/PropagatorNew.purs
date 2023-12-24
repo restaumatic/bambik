@@ -3,14 +3,14 @@ module PropagatorNew where
 import Prelude
 
 import Control.Alt (class Alt)
+import Control.Monad.ST.Class (class MonadST, liftST)
+import Control.Monad.ST.Global (Global)
+import Control.Monad.ST.Internal as ST
 import Control.Monad.State (gets)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Ref as Ref
-import Effect.Ref as Rew
 import Propagator (class Plus, Change(..), Occurrence(..), Propagation, Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (setTextNodeValue)
@@ -38,27 +38,27 @@ instance Monad m => Profunctor (SafePropagator m) where
       , listen: p'.listen <<< lcmap (map cof)
       }
 
-instance MonadEffect m => Strong (SafePropagator m) where
+instance MonadST Global m => Strong (SafePropagator m) where
   first p = wrap do
-    bref <- liftEffect $ Ref.new (unsafeCoerce unit)
+    bref <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
       { speak: \ab -> do
-        Rew.write (map snd ab) bref
+        void $ liftST $ ST.write (map snd ab) bref
         p'.speak (map fst ab)
       , listen: \propagationab -> do
-        (Occurrence _ b) <- liftEffect $ Ref.read bref
+        (Occurrence _ b) <- liftST $ ST.read bref
         p'.listen \a -> propagationab (map (flip Tuple b) a )
       }
   second p = wrap do
-    aref <- liftEffect $ Ref.new (unsafeCoerce unit)
+    aref <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
       { speak: \ab -> do
-        Rew.write (map fst ab) aref
+        void $ liftST $ ST.write (map fst ab) aref
         p'.speak (map snd ab)
       , listen: \propagationab -> do
-        (Occurrence _ a) <- liftEffect $ Ref.read aref
+        (Occurrence _ a) <-liftST $ ST.read aref
         p'.listen \b -> propagationab (map (Tuple a) b)
       }
 

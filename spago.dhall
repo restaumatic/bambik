@@ -31,6 +31,7 @@ to generate this file without the comments in this block.
   , "qualified-do"
   , "record"
   , "refs"
+  , "st"
   , "strings"
   , "transformers"
   , "tuples"
