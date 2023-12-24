@@ -2,38 +2,135 @@ module PropagatorNew where
 
 import Prelude
 
-import Propagator (Change(..), Occurrence(..), Propagation, Propagator(..))
+import Control.Alt (class Alt)
+import Control.Monad.State (gets)
+import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor.Strong (class Strong)
+import Data.Tuple (Tuple(..), fst, snd)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Ref as Ref
+import Effect.Ref as Rew
+import Propagator (class Plus, Change(..), Occurrence(..), Propagation, Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Web (Widget)
 import Web.Internal.DOM (setTextNodeValue)
-import Web.Internal.DOMBuilder (speaker)
+import Web.Internal.DOMBuilder (DOMBuilder)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
-data SafePropagator m i o = SafePropagator
-  { speak :: m (Propagation i)
+newtype SafePropagator m i o = SafePropagator (m
+  { speak :: Propagation i
   , listen :: Propagation o -> m Unit
-  }
+  })
 
-safePropagator :: forall m i o. Apply m => SafePropagator m i o -> Propagator m i o
-safePropagator (SafePropagator {speak, listen}) = Propagator \propagationo -> speak <* listen propagationo
+derive instance Newtype (SafePropagator m i o) _
 
--- compare with: instance Monad m => Profunctor (SafePropagator m) where
--- instance Functor m => Profunctor (SafePropagator m) where
---   dimap contraf cof (SafePropagator {listen, speak})= SafePropagator
---     { listen: listen <<< lcmap (map cof)
---     , speak: map (_ <<< map contraf) speak
+safePropagator :: forall m i o. Monad m => SafePropagator m i o -> Propagator m i o
+safePropagator (SafePropagator p) = Propagator \propagationo -> do
+  {speak, listen} <- p
+  listen propagationo
+  pure speak
+
+instance Monad m => Profunctor (SafePropagator m) where
+  dimap contraf cof p = wrap do
+    p' <- unwrap p
+    pure
+      { speak: (_ <<< map contraf) $ p'.speak
+      , listen: p'.listen <<< lcmap (map cof)
+      }
+
+instance MonadEffect m => Strong (SafePropagator m) where
+  first p = wrap do
+    bref <- liftEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    pure
+      { speak: \ab -> do
+        Rew.write (map snd ab) bref
+        p'.speak (map fst ab)
+      , listen: \propagationab -> do
+        (Occurrence _ b) <- liftEffect $ Ref.read bref
+        p'.listen \a -> propagationab (map (flip Tuple b) a )
+      }
+  second p = wrap do
+    aref <- liftEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    pure
+      { speak: \ab -> do
+        Rew.write (map fst ab) aref
+        p'.speak (map snd ab)
+      , listen: \propagationab -> do
+        (Occurrence _ a) <- liftEffect $ Ref.read aref
+        p'.listen \b -> propagationab (map (Tuple a) b)
+      }
+
+instance Monad m => Semigroup (SafePropagator m a a) where
+  append p1 p2 = wrap do
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    p1'.listen p2'.speak
+    p2'.listen p1'.speak
+    pure
+      { speak: p1'.speak <> p2'.speak
+      , listen: \propagation -> do
+        p1'.listen propagation
+        p2'.listen propagation
+      }
+-- compare to: instance MonadEffect m => Semigroup (Propagator m a a) where
+
+instance Monad m => Semigroupoid (SafePropagator m) where
+  compose p2 p1 = wrap do
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    p1'.listen p2'.speak
+    pure
+      { speak: p1'.speak
+      , listen: p2'.listen
+      }
+-- compare to: instance MonadEffect m => Semigroupoid (Propagator m) where
+
+-- impossible:
+-- instance Monad m => Category (SafePropagator m) where
+--   identity = wrap $ pure
+--     { speak: unsafeThrow "impossible"
+--     , listen: unsafeThrow "impossible"
 --     }
 
-instance Apply m => Semigroup (SafePropagator m i i) where
-  append (SafePropagator p1) (SafePropagator p2) = SafePropagator {speak, listen}
-    where
-      speak = p1.speak *> p2.speak
-      listen = unsafeCoerce unit
+instance Functor m => Functor (SafePropagator m a) where
+  map f p = wrap $ unwrap p <#> \p' ->
+    { speak: p'.speak
+    , listen: p'.listen <<< lcmap (map f)
+    }
 
-text :: Widget String Void
-text = safePropagator $ SafePropagator {listen, speak}
-  where
-    listen _ = Web.Internal.DOMBuilder.text
-    speak = speaker \node -> case _ of
+instance Apply m => Alt (SafePropagator m a) where
+  alt p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { speak: p1'.speak <> p2'.speak
+      , listen: \propagation -> ado
+        p1'.listen propagation
+        p2'.listen propagation
+        in unit
+      }
+
+instance Applicative m => Plus (SafePropagator m a) where
+  empty = wrap $ pure
+    { speak: const $ pure unit
+    , listen: const $ pure unit
+    }
+
+--
+
+type SafeWidget i o = SafePropagator DOMBuilder i o
+
+
+text :: SafeWidget String Void
+text = SafePropagator do
+  Web.Internal.DOMBuilder.text
+  node <- gets (_.sibling)
+  pure
+    { speak: case _ of
       Occurrence None _ -> mempty
       Occurrence _ string -> setTextNodeValue node string
+    , listen: \_ -> pure unit
+    }
