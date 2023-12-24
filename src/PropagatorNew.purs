@@ -7,8 +7,10 @@ import Control.Monad.ST.Class (class MonadST, liftST)
 import Control.Monad.ST.Global (Global)
 import Control.Monad.ST.Internal as ST
 import Control.Monad.State (gets)
+import Data.Either (Either(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Propagator (class Plus, Change(..), Occurrence(..), Propagation, Propagator(..))
@@ -60,6 +62,26 @@ instance MonadST Global m => Strong (SafePropagator m) where
       , listen: \propagationab -> do
         (Occurrence _ a) <-liftST $ ST.read aref
         p'.listen \b -> propagationab (map (Tuple a) b)
+      }
+
+instance MonadST Global m => Choice (SafePropagator m) where
+  left p = wrap do
+    p' <- unwrap p
+    pure
+      { speak: \ab -> case ab of
+        o@(Occurrence _ (Left a)) -> p'.speak $ o $> a
+        (Occurrence _ (Right _)) -> pure unit
+      , listen: \propagationab -> do
+        p'.listen \a -> propagationab (map Left a)
+      }
+  right p = wrap do
+    p' <- unwrap p
+    pure
+      { speak: \ab -> case ab of
+        o@(Occurrence _ (Right b)) -> p'.speak $ o $> b
+        (Occurrence _ (Left _)) -> pure unit
+      , listen: \propagationab -> do
+        p'.listen \a -> propagationab (map Right a)
       }
 
 instance Monad m => Semigroup (SafePropagator m a a) where
