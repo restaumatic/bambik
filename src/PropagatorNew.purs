@@ -32,6 +32,10 @@ safePropagator (SafePropagator p) = Propagator \propagationo -> do
   listen propagationo
   pure speak
 
+preview :: forall m i o. Functor m => SafePropagator m i o -> m Unit
+preview p = void $ unwrap p
+-- notice: this is not possible with Propagator
+
 instance Monad m => Profunctor (SafePropagator m) where
   dimap contraf cof p = wrap do
     p' <- unwrap p
