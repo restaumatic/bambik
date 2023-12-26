@@ -50,7 +50,7 @@ instance MonadST Global m => Strong (SafePropagator m) where
     p' <- unwrap p
     pure
       { speak: \ab -> do
-        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence?
+        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence? notice: abref can be not initialized
         p'.speak (map fst ab) -- TODO should it happen always regardless of last occurrence
         void $ liftST $ ST.write ab abref
       , listen: \propagationab -> do
@@ -66,7 +66,7 @@ instance MonadST Global m => Choice (SafePropagator m) where
     p' <- unwrap p
     pure
       { speak: \ab -> do
-        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence?
+        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence? notice: abref can be not initialized
         case ab of
           o@(Occurrence _ (Left a)) -> p'.speak $ o $> a
           (Occurrence _ (Right _)) -> pure unit -- TODO what should happen here? detach?
