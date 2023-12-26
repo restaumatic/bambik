@@ -46,47 +46,39 @@ instance Monad m => Profunctor (SafePropagator m) where
 
 instance MonadST Global m => Strong (SafePropagator m) where
   first p = wrap do
-    bref <- liftST $ ST.new (unsafeCoerce unit)
+    (abref :: ST.STRef Global (Occurrence (Tuple _ _))) <- liftST $ ST.new (unsafeCoerce unit) -- last occurrence
     p' <- unwrap p
     pure
       { speak: \ab -> do
-        void $ liftST $ ST.write (map snd ab) bref
-        p'.speak (map fst ab)
+        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence?
+        p'.speak (map fst ab) -- TODO should it happen always regardless of last occurrence
+        void $ liftST $ ST.write ab abref
       , listen: \propagationab -> do
-        (Occurrence _ b) <- liftST $ ST.read bref
-        p'.listen \a -> propagationab (map (flip Tuple b) a )
+        p'.listen \a -> do
+          (Occurrence _ ab) <- liftST $ ST.read abref -- TODO what to do with last occurence?
+          propagationab (map (flip Tuple (snd ab)) a )
       }
-  second p = wrap do
-    aref <- liftST $ ST.new (unsafeCoerce unit)
-    p' <- unwrap p
-    pure
-      { speak: \ab -> do
-        void $ liftST $ ST.write (map fst ab) aref
-        p'.speak (map snd ab)
-      , listen: \propagationab -> do
-        (Occurrence _ a) <-liftST $ ST.read aref
-        p'.listen \b -> propagationab (map (Tuple a) b)
-      }
+  second p = unsafeCoerce unit
 
 instance MonadST Global m => Choice (SafePropagator m) where
   left p = wrap do
+    (abref :: ST.STRef Global (Occurrence (Either _ _))) <- liftST $ ST.new (unsafeCoerce unit) -- last occurrence
     p' <- unwrap p
     pure
-      { speak: \ab -> case ab of
-        o@(Occurrence _ (Left a)) -> p'.speak $ o $> a
-        (Occurrence _ (Right _)) -> pure unit
+      { speak: \ab -> do
+        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence?
+        case ab of
+          o@(Occurrence _ (Left a)) -> p'.speak $ o $> a
+          (Occurrence _ (Right _)) -> pure unit -- TODO what should happen here? detach?
+        void $ liftST $ ST.write ab abref
       , listen: \propagationab -> do
-        p'.listen \a -> propagationab (map Left a)
+        p'.listen \a -> do
+          ab <- liftST $ ST.read abref -- TODO what to do with last occurence?
+          case ab of
+            (Occurrence _ (Left _)) -> propagationab (map Left a)
+            (Occurrence _ (Right _)) -> pure unit
       }
-  right p = wrap do
-    p' <- unwrap p
-    pure
-      { speak: \ab -> case ab of
-        o@(Occurrence _ (Right b)) -> p'.speak $ o $> b
-        (Occurrence _ (Left _)) -> pure unit
-      , listen: \propagationab -> do
-        p'.listen \a -> propagationab (map Right a)
-      }
+  right p = unsafeCoerce unit
 
 instance Monad m => Semigroup (SafePropagator m a a) where
   append p1 p2 = wrap do

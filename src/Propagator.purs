@@ -237,14 +237,11 @@ bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
       liftEffect $ inward i
 
 scopemap :: forall m a b. Monad m => Scope -> Propagator m a b -> Propagator m a b
-scopemap scope = chmap zoomIn zoomOut
+scopemap scope p = Propagator \outward -> do
+  inward <- unwrap p \(Occurrence c a) -> do
+    outward $ Occurrence (zoomOut c) a
+  pure \(Occurrence c a) -> inward $ Occurrence (zoomIn c) a
   where
-    chmap :: (Change -> Change) -> (Change -> Change) -> Propagator m a b -> Propagator m a b
-    chmap mapin mapout w = Propagator \outward -> do
-      inward <- unwrap w \(Occurrence c a) -> do
-        outward $ Occurrence (mapout c) a
-      pure \(Occurrence c a) -> inward $ Occurrence (mapin c) a
-
     zoomOut :: Change -> Change
     zoomOut Some = Scoped (scope `NonEmptyArray.cons'` [])
     zoomOut (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
