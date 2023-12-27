@@ -54,21 +54,23 @@ instance Monad m => Profunctor (SafePropagator m) where
 
 instance MonadST Global m => Strong (SafePropagator m) where
   first p = wrap do
-    (oabref :: ST.STRef Global (Occurrence (Tuple _ _))) <- liftST $ ST.new (unsafeCoerce unit) -- last occurrence
+    oabref <- liftST $ ST.new (unsafeCoerce unit) -- last occurrence
     p' <- unwrap p
     pure
       { speak: \oab -> do
         void $ liftST $ ST.write oab oabref
         case oab of
-          Occurrence None _ -> pure unit -- short-circuiting
+          Occurrence None _ -> pure unit
           _ -> p'.speak (map fst oab)
       , listen: \propagationab -> do
-        p'.listen \a -> do
-          (Occurrence lastachange lastab) <- liftST $ ST.read oabref -- TODO what to do with last ab occurence? it contain info about the last change of a
-          case lastachange of
-            None -> pure unit -- last occurrence was without change, should never happen?
-            Some -> propagationab (map (flip Tuple (snd lastab)) a ) -- last occurrence was with some change
-            Scoped _ -> propagationab (map (flip Tuple (snd lastab)) a ) -- last occurence was with scoped change
+        p'.listen case _ of
+          (Occurrence None _) -> pure unit
+          oa -> do
+            (Occurrence lastachange lastab) <- liftST $ ST.read oabref -- TODO what to do with last ab occurence? it contain info about the last change of a
+            case lastachange of
+              None -> pure unit -- last occurrence was without change, should never happen?
+              Some -> propagationab (map (flip Tuple (snd lastab)) oa ) -- last occurrence was with some change
+              Scoped _ -> propagationab (map (flip Tuple (snd lastab)) oa ) -- last occurence was with scoped change
       }
   second p = unsafeCoerce unit
 
