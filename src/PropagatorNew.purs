@@ -54,11 +54,11 @@ instance Monad m => Profunctor (SafePropagator m) where
 
 instance MonadST Global m => Strong (SafePropagator m) where
   first p = wrap do
-    oabref <- liftST $ ST.new (unsafeCoerce unit) -- last occurrence
+    lastoab <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
       { speak: \oab -> do
-        void $ liftST $ ST.write oab oabref
+        void $ liftST $ ST.write oab lastoab
         case oab of
           Occurrence None _ -> pure unit
           _ -> p'.speak (map fst oab)
@@ -66,7 +66,7 @@ instance MonadST Global m => Strong (SafePropagator m) where
         p'.listen case _ of
           (Occurrence None _) -> pure unit
           oa -> do
-            (Occurrence lastachange lastab) <- liftST $ ST.read oabref -- TODO what to do with last ab occurence? it contain info about the last change of a
+            (Occurrence lastachange lastab) <- liftST $ ST.read lastoab -- TODO what to do with last ab occurence? it contain info about the last change of a
             case lastachange of
               None -> pure unit -- last occurrence was without change, should never happen?
               Some -> propagationab (map (flip Tuple (snd lastab)) oa ) -- last occurrence was with some change
@@ -76,20 +76,22 @@ instance MonadST Global m => Strong (SafePropagator m) where
 
 instance MonadST Global m => Choice (SafePropagator m) where
   left p = wrap do
-    (abref :: ST.STRef Global (Occurrence (Either _ _))) <- liftST $ ST.new (unsafeCoerce unit) -- last occurrence
+    lastoab <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
-      { speak: \ab -> do
-        lastab <- liftST $ ST.read abref -- TODO what to do with last occurence? notice: abref can be not initialized
-        case ab of
-          o@(Occurrence _ (Left a)) -> p'.speak $ o $> a
-          (Occurrence _ (Right _)) -> pure unit -- TODO what should happen here? detach?
-        void $ liftST $ ST.write ab abref
+      { speak: \oab -> do
+        previousoab <- liftST $ ST.modify' (\poab -> { state: oab, value: poab}) lastoab -- TODO what to do with last occurence? notice: abref can be not initialized
+        case { previousoab, oab } of
+          { previousoab: Occurrence _ (Right _), oab: o@(Occurrence _ (Left a))} -> p'.speak $ o $> a -- and re-attach?
+          { previousoab: Occurrence _ (Left _), oab: (Occurrence None (Left a))} -> pure unit
+          { previousoab: Occurrence _ (Left _), oab: o@(Occurrence _ (Left a))} -> p'.speak $ o $> a
+          { previousoab: Occurrence _ (Left _), oab: (Occurrence _ (Right _))} -> pure unit -- and detach?
+          { previousoab: Occurrence _ (Right _), oab: (Occurrence _ (Right _))} -> pure unit
       , listen: \propagationab -> do
-        p'.listen \a -> do
-          ab <- liftST $ ST.read abref -- TODO what to do with last occurence? it could contain info about the change of a or b
-          case ab of
-            (Occurrence _ (Left _)) -> propagationab (map Left a)
+        p'.listen \propagationa -> do
+          oab <- liftST $ ST.read lastoab -- TODO what to do with last occurence? it could contain info about the change of a or b
+          case oab of
+            (Occurrence _ (Left _)) -> propagationab (map Left propagationa)
             (Occurrence _ (Right _)) -> pure unit
       }
   right p = unsafeCoerce unit
