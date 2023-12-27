@@ -69,7 +69,7 @@ lens' = lens
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
-    field' name setter getter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a) >>> scopemap (Part name)
+    field' name setter getter = scopemap (Part name) >>> first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a)
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> Prism a b s t
 prism name construct deconstruct = left >>> dimap deconstruct (either construct identity)

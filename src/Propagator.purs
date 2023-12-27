@@ -25,11 +25,13 @@ import Data.Array (uncons, (:))
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Foldable (for_)
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
+import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, killFiber, launchAff_)
@@ -51,7 +53,15 @@ data Occurrence a = Occurrence Change a
 
 data Change = Some | Scoped (NonEmptyArray.NonEmptyArray Scope) | None -- TODO: find already existing data type for it
 
+derive instance Generic Change _
+instance Show Change where
+  show = genericShow
+
 data Scope = Part String | Variant String
+
+derive instance Generic Scope _
+instance Show Scope where
+  show = genericShow
 
 derive instance Newtype (Propagator m i o) _
 

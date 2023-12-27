@@ -31,12 +31,12 @@ module Web
 
 import Prelude hiding (zero, div)
 
-import Control.Monad.State (gets)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Class.Console (debug)
 import Effect.Ref as Ref
 import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -56,7 +56,9 @@ text = Propagator \_ -> do
   Web.Internal.DOMBuilder.text
   speaker \node -> case _ of
     Occurrence None _ -> mempty
-    Occurrence _ string -> setTextNodeValue node string
+    Occurrence ch string -> do
+      debug $ "setTextNodeValue " <> show ch
+      setTextNodeValue node string
 
 -- TODO make it Widget String a
 html :: forall a b. String -> Widget a b
@@ -70,7 +72,9 @@ input = Propagator \outward -> do
   listener "input" \node _ -> getValue node >>= Occurrence Some >>> outward
   speaker \node -> case _ of
     Occurrence None _ -> mempty
-    Occurrence _ newa -> setValue node newa
+    Occurrence ch newa -> do
+      debug $ "setValue " <> show ch
+      setValue node newa
 
 checkbox :: forall a . Widget (Maybe a) (Maybe (Maybe a))
 checkbox = Propagator \outward -> do
@@ -82,7 +86,8 @@ checkbox = Propagator \outward -> do
     outward $ Occurrence Some (if checked then Just ma else Nothing)
   speaker \node -> case _ of
     Occurrence None _ -> mempty
-    Occurrence _ newma -> do
+    Occurrence ch newma -> do
+      debug $ "setChecked " <> show ch
       setChecked node (isJust newma)
       for_ newma \newa -> Ref.write (Just newa) maRef
 
@@ -100,8 +105,9 @@ radioButton = Propagator \outward -> do
   speaker \node -> case _ of
     Occurrence None _ -> mempty
     Occurrence _ Nothing -> setChecked node false
-    Occurrence _ newma@(Just _) -> do
+    Occurrence ch newma@(Just _) -> do
       Ref.write newma maRef
+      debug $ "setChecked " <> show ch
       setChecked node true
 
 -- Widget optics
