@@ -13,7 +13,6 @@ import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
-import Debug (spy)
 import Effect.Class (liftEffect)
 import Propagator (class Plus, Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -30,9 +29,10 @@ newtype SafePropagator m i o = SafePropagator (m
 
 derive instance Newtype (SafePropagator m i o) _
 
+-- SafePropagator is a special case of Propagator:
 safePropagator :: forall m i o. Monad m => SafePropagator m i o -> Propagator m i o
-safePropagator (SafePropagator p) = Propagator \propagationo -> do
-  {speak, listen} <- p
+safePropagator p  = wrap \propagationo -> do
+  {speak, listen} <- unwrap p
   listen propagationo
   pure speak
 
