@@ -22,7 +22,9 @@ import Web.Internal.DOMBuilder (DOMBuilder)
 import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 newtype SafePropagator m i o = SafePropagator (m
-  { speak :: Propagation i
+  { attach :: m Unit
+  , detach :: m Unit
+  , speak :: Propagation i
   , listen :: Propagation o -> m Unit
   })
 
@@ -40,15 +42,18 @@ preview p = void $ unwrap p
 
 view :: forall m i o. Monad m => SafePropagator m i o -> m (i -> Effect Unit)
 view p = do
-  { speak, listen } <- unwrap p
+  { attach, speak, listen } <- unwrap p
   listen (\(Occurrence ch _) -> debug $ show ch)
+  attach
   pure \i -> speak (Occurrence Some i)
 
 instance Monad m => Profunctor (SafePropagator m) where
   dimap contraf cof p = wrap do
     p' <- unwrap p
     pure
-      { speak: (_ <<< map contraf) $ p'.speak
+      { attach: p'.attach
+      , detach: p'.detach
+      , speak: (_ <<< map contraf) $ p'.speak
       , listen: p'.listen <<< lcmap (map cof)
       }
 
@@ -57,7 +62,9 @@ instance MonadST Global m => Strong (SafePropagator m) where
     lastoab <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
-      { speak: \oab -> do
+      { attach: p'.attach
+      , detach: p'.detach
+      , speak: \oab -> do
         void $ liftST $ ST.write oab lastoab
         case oab of
           Occurrence None _ -> pure unit
@@ -79,7 +86,9 @@ instance MonadST Global m => Choice (SafePropagator m) where
     lastoab <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
-      { speak: \oab -> do
+      { attach: pure unit --TODO
+      , detach: pure unit --TODO
+      , speak: \oab -> do
         previousoab <- liftST $ ST.modify' (\poab -> { state: oab, value: poab}) lastoab -- TODO what to do with last occurence? notice: abref can be not initialized
         case { previousoab, oab } of
           { previousoab: Occurrence _ (Right _), oab: o@(Occurrence _ (Left a))} -> p'.speak $ o $> a -- and re-attach?
@@ -101,7 +110,9 @@ instance Monad m => Semigroup (SafePropagator m a a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     pure
-      { speak: p1'.speak <> p2'.speak
+      { attach: p1'.attach *> p2'.attach
+      , detach: p1'.detach *> p2'.detach
+      , speak: p1'.speak <> p2'.speak
       , listen: \propagation -> do
         p1'.listen $ p2'.speak <> propagation
         p2'.listen $ p1'.speak <> propagation
@@ -114,7 +125,9 @@ instance Monad m => Semigroupoid (SafePropagator m) where
     p2' <- unwrap p2
     p1'.listen p2'.speak
     pure
-      { speak: p1'.speak
+      { attach: p1'.attach
+      , detach: p1'.detach
+      , speak: p1'.speak
       , listen: p2'.listen
       }
 -- compare to: instance MonadEffect m => Semigroupoid (Propagator m) where
@@ -128,7 +141,9 @@ instance Monad m => Semigroupoid (SafePropagator m) where
 
 instance Functor m => Functor (SafePropagator m a) where
   map f p = wrap $ unwrap p <#> \p' ->
-    { speak: p'.speak
+    { attach: p'.attach
+    , detach: p'.detach
+    , speak: p'.speak
     , listen: p'.listen <<< lcmap (map f)
     }
 
@@ -137,7 +152,9 @@ instance Apply m => Alt (SafePropagator m a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { speak: p1'.speak <> p2'.speak
+      { attach: p1'.attach *> p2'.attach
+      , detach: p1'.detach *> p2'.detach
+      , speak: p1'.speak <> p2'.speak
       , listen: \propagation -> ado
         p1'.listen propagation
         p2'.listen propagation
@@ -146,7 +163,9 @@ instance Apply m => Alt (SafePropagator m a) where
 
 instance Applicative m => Plus (SafePropagator m a) where
   empty = wrap $ pure
-    { speak: const $ pure unit
+    { attach: pure unit
+    , detach: pure unit
+    , speak: const $ pure unit
     , listen: const $ pure unit
     }
 
@@ -159,7 +178,9 @@ text = SafePropagator do
   Web.Internal.DOMBuilder.text
   node <- gets (_.sibling)
   pure
-    { speak: case _ of
+    { attach: pure unit --TODO
+    , detach: pure unit --TODO
+    , speak: case _ of
       Occurrence None _ -> mempty
       Occurrence _ string -> setTextNodeValue node string
     , listen: \_ -> pure unit
