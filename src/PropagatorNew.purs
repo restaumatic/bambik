@@ -86,15 +86,17 @@ instance MonadST Global m => Choice (SafePropagator m) where
     lastoab <- liftST $ ST.new (unsafeCoerce unit)
     p' <- unwrap p
     pure
-      { attach: pure unit --TODO
-      , detach: pure unit --TODO
+      { attach: p'.detach
+      , detach: p'.attach
       , speak: \oab -> do
         previousoab <- liftST $ ST.modify' (\poab -> { state: oab, value: poab}) lastoab -- TODO what to do with last occurence? notice: abref can be not initialized
         case { previousoab, oab } of
-          { previousoab: Occurrence _ (Right _), oab: o@(Occurrence _ (Left a))} -> p'.speak $ o $> a -- and re-attach?
+          { previousoab: Occurrence _ (Right _), oab: o@(Occurrence _ (Left a))} -> do
+            p'.speak $ o $> a
+            p'.attach
           { previousoab: Occurrence _ (Left _), oab: (Occurrence None (Left a))} -> pure unit
           { previousoab: Occurrence _ (Left _), oab: o@(Occurrence _ (Left a))} -> p'.speak $ o $> a
-          { previousoab: Occurrence _ (Left _), oab: (Occurrence _ (Right _))} -> pure unit -- and detach?
+          { previousoab: Occurrence _ (Left _), oab: (Occurrence _ (Right _))} -> p'.detach
           { previousoab: Occurrence _ (Right _), oab: (Occurrence _ (Right _))} -> pure unit
       , listen: \propagationab -> do
         p'.listen \propagationa -> do
