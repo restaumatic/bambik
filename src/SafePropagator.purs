@@ -40,12 +40,12 @@ preview :: forall m i o. Functor m => SafePropagator m i o -> m Unit
 preview p = void $ unwrap p
 -- notice: this is not possible with Propagator
 
-view :: forall m i o. Monad m => SafePropagator m i o -> m (i -> m Unit)
-view p = do
+view :: forall m i o. Monad m => SafePropagator m i o -> i -> m Unit
+view p i = do
   { attach, speak, listen } <- unwrap p
-  listen (\(Occurrence ch _) -> spy ("heard" <> show ch) $ pure unit)
+  listen (const $ pure unit)
   attach
-  pure \i -> speak (Occurrence Some i)
+  speak (Occurrence Some i)
 
 instance Monad m => Profunctor (SafePropagator m) where
   dimap contraf cof p = wrap do
