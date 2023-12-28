@@ -35,7 +35,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (bracket, foo)
+import Propagator (bracket)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text)
@@ -48,7 +48,7 @@ import Web.Internal.DOMBuilder (uniqueId)
 containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (A.do
-    div foo # cl' "mdc-button__ripple"
+    div empty # cl' "mdc-button__ripple"
     span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
@@ -159,10 +159,10 @@ dialog { title } content =
   ) # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = gets _.sibling >>= newComponent material.dialog."MDCDialog"
-      openMdcComponent comp a = do
+      openMdcComponent comp a = liftEffect do
         open comp
         pure a
-      closeMdcComponent comp a = do
+      closeMdcComponent comp a = liftEffect do
         close comp
         pure a
 
@@ -174,7 +174,7 @@ snackbar { label } =
         label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
       initializeMdcSnackbar = gets _.sibling >>= newComponent material.snackbar."MDCSnackbar"
-      openMdcComponent comp a = do
+      openMdcComponent comp a = liftEffect do
         open comp
         pure a
 

@@ -1,4 +1,4 @@
-module PropagatorNew where
+module SafePropagator where
 
 import Prelude
 
@@ -13,9 +13,9 @@ import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect (Effect)
-import Effect.Class.Console (debug)
-import Propagator (class Plus, Change(..), Occurrence(..), Propagation, Propagator(..))
+import Debug (spy)
+import Effect.Class (liftEffect)
+import Propagator (class Plus, Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (setTextNodeValue)
 import Web.Internal.DOMBuilder (DOMBuilder)
@@ -24,8 +24,8 @@ import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 newtype SafePropagator m i o = SafePropagator (m
   { attach :: m Unit
   , detach :: m Unit
-  , speak :: Propagation i
-  , listen :: Propagation o -> m Unit
+  , speak :: Occurrence i -> m Unit
+  , listen :: (Occurrence o -> m Unit) -> m Unit
   })
 
 derive instance Newtype (SafePropagator m i o) _
@@ -40,10 +40,10 @@ preview :: forall m i o. Functor m => SafePropagator m i o -> m Unit
 preview p = void $ unwrap p
 -- notice: this is not possible with Propagator
 
-view :: forall m i o. Monad m => SafePropagator m i o -> m (i -> Effect Unit)
+view :: forall m i o. Monad m => SafePropagator m i o -> m (i -> m Unit)
 view p = do
   { attach, speak, listen } <- unwrap p
-  listen (\(Occurrence ch _) -> debug $ show ch)
+  listen (\(Occurrence ch _) -> spy ("heard" <> show ch) $ pure unit)
   attach
   pure \i -> speak (Occurrence Some i)
 
@@ -114,10 +114,10 @@ instance Monad m => Semigroup (SafePropagator m a a) where
     pure
       { attach: p1'.attach *> p2'.attach
       , detach: p1'.detach *> p2'.detach
-      , speak: p1'.speak <> p2'.speak
+      , speak: p1'.speak *> p2'.speak
       , listen: \propagation -> do
-        p1'.listen $ p2'.speak <> propagation
-        p2'.listen $ p1'.speak <> propagation
+        p1'.listen $ p2'.speak *> propagation
+        p2'.listen $ p1'.speak *> propagation
       }
 -- compare to: instance MonadEffect m => Semigroup (Propagator m a a) where
 
@@ -156,7 +156,7 @@ instance Apply m => Alt (SafePropagator m a) where
     in
       { attach: p1'.attach *> p2'.attach
       , detach: p1'.detach *> p2'.detach
-      , speak: p1'.speak <> p2'.speak
+      , speak: p1'.speak *> p2'.speak
       , listen: \propagation -> ado
         p1'.listen propagation
         p2'.listen propagation
@@ -183,7 +183,7 @@ text = SafePropagator do
     { attach: pure unit --TODO
     , detach: pure unit --TODO
     , speak: case _ of
-      Occurrence None _ -> mempty
-      Occurrence _ string -> setTextNodeValue node string
+      Occurrence None _ -> pure unit
+      Occurrence _ string -> liftEffect $ setTextNodeValue node string
     , listen: \_ -> pure unit
     }

@@ -51,17 +51,16 @@ derive newtype instance MonadState DOMBuilderEnv DOMBuilder
 instance MonadGUI DOMBuilder where
   attachable = attachable' false
 
-initializeInBody :: forall a. DOMBuilder (a -> Effect Unit) → a -> Effect Unit
+initializeInBody :: forall a. DOMBuilder (a -> DOMBuilder Unit) → a -> Effect Unit
 initializeInBody dom a = measured "initialized" do
   body <- documentBody
   initializeInNode body dom a
 
-initializeInNode :: forall a. Node -> DOMBuilder (a -> Effect Unit) -> a -> Effect Unit
+initializeInNode :: forall a. Node -> DOMBuilder (a -> DOMBuilder Unit) -> a -> Effect Unit
 initializeInNode node dom a = runDomInNode node do
   { attach, update } <- attachable' true dom
-  liftEffect do
-    update a
-    attach
+  update a
+  attach
 
 text :: DOMBuilder Unit
 text = do
@@ -104,10 +103,10 @@ cl name = do
   liftEffect $ addClass node name
   pure unit
 
-listener :: String -> (Node -> Event -> Effect Unit) -> DOMBuilder Unit
+listener :: String -> (Event -> DOMBuilder Unit) -> DOMBuilder Unit
 listener eventType callback = do
   node <- gets _.sibling
-  void $ liftEffect $ addEventListener eventType node (callback node)
+  void $ liftEffect $ addEventListener eventType node (\evt -> runDomInNode node $ callback evt)
 
 speaker :: forall a. (Node -> a) -> DOMBuilder a
 speaker action = do
@@ -122,7 +121,7 @@ uniqueId = randomElementId
 runDomInNode :: forall a. Node -> DOMBuilder a -> Effect a
 runDomInNode node (DOMBuilder domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
 
-attachable' :: forall a. Boolean -> DOMBuilder (a -> Effect Unit) -> DOMBuilder { update :: a -> Effect Unit, attach :: Effect Unit, detach :: Effect Unit }
+attachable' :: forall a. Boolean -> DOMBuilder (a -> DOMBuilder Unit) -> DOMBuilder { update :: a -> DOMBuilder Unit, attach :: DOMBuilder Unit, detach :: DOMBuilder Unit }
 attachable' removePrecedingSiblingNodes dom = do
   parent <- gets _.parent
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
@@ -140,15 +139,15 @@ attachable' removePrecedingSiblingNodes dom = do
     documentFragmentRef <- Ref.new initialDocumentFragment
 
     let
-      attach :: Effect Unit
-      attach = measured' slotNo "attached" do
+      attach :: DOMBuilder Unit
+      attach = measured' slotNo "attached" $ liftEffect do
         removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
         documentFragment <- Ref.modify' (\documentFragment -> { state: unsafeCoerce unit, value: documentFragment}) documentFragmentRef
         -- inserting documentFragment makes it empty but just in case not keeping reference to it while it's not needed
         documentFragment `insertBefore` placeholderAfter
 
-      detach :: Effect Unit
-      detach = measured' slotNo "detached" do
+      detach :: DOMBuilder Unit
+      detach = measured' slotNo "detached" $ liftEffect do
         documentFragment <- createDocumentFragment
         moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
         Ref.write documentFragment documentFragmentRef
