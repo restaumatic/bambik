@@ -70,14 +70,9 @@ instance MonadST Global m => Strong (SafePropagator m) where
           Occurrence None _ -> pure unit
           _ -> p'.speak (map fst oab)
       , listen: \propagationab -> do
-        p'.listen case _ of
-          (Occurrence None _) -> pure unit
-          oa -> do
-            (Occurrence lastachange lastab) <- liftST $ ST.read lastoab -- TODO what to do with last ab occurence? it contain info about the last change of a
-            case lastachange of
-              None -> pure unit -- last occurrence was without change, should never happen?
-              Some -> propagationab (map (flip Tuple (snd lastab)) oa ) -- last occurrence was with some change
-              Scoped _ -> propagationab (map (flip Tuple (snd lastab)) oa ) -- last occurence was with scoped change
+        p'.listen \oa -> do
+          (Occurrence _ prevab) <- liftST $ ST.read lastoab
+          propagationab (map (flip Tuple (snd prevab)) oa )
       }
   second p = unsafeCoerce unit
 
@@ -89,21 +84,15 @@ instance MonadST Global m => Choice (SafePropagator m) where
       { attach: p'.detach
       , detach: p'.attach
       , speak: \oab -> do
-        previousoab <- liftST $ ST.modify' (\poab -> { state: oab, value: poab}) lastoab -- TODO what to do with last occurence? notice: abref can be not initialized
-        case { previousoab, oab } of
-          { previousoab: Occurrence _ (Right _), oab: o@(Occurrence _ (Left a))} -> do
-            p'.speak $ o $> a
-            p'.attach
-          { previousoab: Occurrence _ (Left _), oab: (Occurrence None (Left a))} -> pure unit
-          { previousoab: Occurrence _ (Left _), oab: o@(Occurrence _ (Left a))} -> p'.speak $ o $> a
-          { previousoab: Occurrence _ (Left _), oab: (Occurrence _ (Right _))} -> p'.detach
-          { previousoab: Occurrence _ (Right _), oab: (Occurrence _ (Right _))} -> pure unit
+        void $ liftST $ ST.write oab lastoab
+        case oab of
+          Occurrence None _ -> pure unit
+          Occurrence _ (Left a) -> p'.speak $ oab $> a
+          Occurrence _ (Right _) -> p'.detach
       , listen: \propagationab -> do
-        p'.listen \propagationa -> do
-          oab <- liftST $ ST.read lastoab -- TODO what to do with last occurence? it could contain info about the change of a or b
-          case oab of
-            (Occurrence _ (Left _)) -> propagationab (map Left propagationa)
-            (Occurrence _ (Right _)) -> pure unit
+        p'.listen \oa -> do
+          prevoab <- liftST $ ST.read lastoab -- TODO what to do with previous occurence? it could contain info about the change of a or b
+          propagationab (Left <$> oa)
       }
   right p = unsafeCoerce unit
 
