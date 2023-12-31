@@ -3,9 +3,6 @@ module SafePropagator where
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Monad.ST.Class (class MonadST, liftST)
-import Control.Monad.ST.Global (Global)
-import Control.Monad.ST.Internal as ST
 import Control.Monad.State (gets)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
@@ -16,6 +13,8 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Class (liftEffect)
+import Effect.Ref as Ref
+import Effect.Unsafe (unsafePerformEffect)
 import Propagator (class Plus, Change(..), Occurrence(..), Propagator)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (setTextNodeValue)
@@ -52,30 +51,30 @@ instance Functor m => Profunctor (SafePropagator m) where
     , listen: p'.listen <<< lcmap (map cof)
     }
 
-instance MonadST Global m => Strong (SafePropagator m) where
-  first p = wrap do
-    lastomab <- liftST $ ST.new (unsafeCoerce unit)
+instance Applicative m => Strong (SafePropagator m) where
+  first p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
-    pure
+    in
       { speak: \omab -> do
-        void $ liftST $ ST.write omab lastomab
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
         case omab of
           Occurrence None _ -> pure unit -- should never happen
           _ -> p'.speak (map (map fst) omab)
       , listen: \propagationab -> do
         p'.listen \oa -> do
-          (Occurrence _ prevmab) <- liftST $ ST.read lastomab
+          let (Occurrence _ prevmab) = unsafePerformEffect $ Ref.read lastomab
           for_ prevmab \prevab -> propagationab (map (flip Tuple (snd prevab)) oa )
       }
   second p = unsafeCoerce unit
 
-instance MonadST Global m => Choice (SafePropagator m) where
-  left p = wrap do
-    lastomab <- liftST $ ST.new (unsafeCoerce unit)
+instance Applicative m => Choice (SafePropagator m) where
+  left p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
-    pure
+    in
       { speak: \omab -> do
-        void $ liftST $ ST.write omab lastomab
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
         case omab of
           Occurrence None _ -> pure unit
           Occurrence _ Nothing -> p'.speak $ omab $> Nothing
