@@ -1,15 +1,16 @@
 module Web.Internal.DOMBuilder
   ( DOMBuilder
   , DOMBuilderEnv
-  , speaker
   , at
   , ats
+  , attachable'
   , cl
   , element
-  , listener
   , html
   , initializeInBody
   , initializeInNode
+  , listener
+  , speaker
   , text
   , uniqueId
   )

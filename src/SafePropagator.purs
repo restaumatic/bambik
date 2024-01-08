@@ -156,7 +156,7 @@ instance Applicative m => Plus (SafePropagator m a) where
 type SafeWidget i o = SafePropagator DOMBuilder i o
 
 text :: String -> SafeWidget String Void
-text default = SafePropagator do
+text default = wrap do
   Web.Internal.DOMBuilder.text
   node <- gets (_.sibling)
   pure
@@ -165,3 +165,14 @@ text default = SafePropagator do
       Occurrence _ mstring -> liftEffect $ setTextNodeValue node $ fromMaybe default mstring
     , listen: \_ -> pure unit
     }
+
+-- radioButton - deselects on Nothing, sets provided value on select, default select provided
+-- checkbox    - deselects on Nothing, sets provided value on select, default select provided
+-- button      - disables on Nothing, enables on Just
+-- element     - detached on Nothing,
+
+element :: forall i o. String -> SafeWidget i o -> SafeWidget i o
+element tagName w = wrap do
+  let w' = unwrap w
+  Web.Internal.DOMBuilder.element tagName w'
+  node <- gets (_.sibling)
