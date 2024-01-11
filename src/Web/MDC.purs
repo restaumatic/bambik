@@ -32,8 +32,7 @@ import Control.Plus (empty)
 import Data.Maybe (Maybe)
 import Data.String (null)
 import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import Propagator (bracket)
 import QualifiedDo.Alt as A
@@ -49,7 +48,7 @@ containedButton :: forall a b. { label :: Widget a b } -> Widget a a
 containedButton { label } =
   Web.button (A.do
     div empty # cl' "mdc-button__ripple"
-    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= newComponent material.ripple."MDCRipple") (const $ pure) (const $ pure) # clickable
+    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure) (const $ pure) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget String b -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
@@ -58,7 +57,7 @@ filledTextField { floatingLabel } value =
     (S.do
       (span text # cl' "mdc-floating-label" # at' "id" id # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
       textInput # value # cl' "mdc-text-field__input" # at' "aria-labelledby" id)
-    span (empty :: Widget a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
+    span (empty :: Widget a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect uniqueId
 
@@ -73,8 +72,8 @@ checkbox { labelContent } checked =
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         div empty # cl' "mdc-checkbox__mixedmark") # cl' "mdc-checkbox__background"
-      div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= newComponent material.checkbox."MDCCheckbox") (const $ pure) (const $ pure)
-    label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+      div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure) (const $ pure)
+    label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect uniqueId
 
@@ -87,9 +86,9 @@ radioButton { labelContent } value =
         div (S.do
           div empty # cl' "mdc-radio__outer-circle"
           div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"
-        div empty # cl' "mdc-radio__ripple") # cl' "mdc-radio" # bracket (gets _.sibling >>= newComponent material.radio."MDCRadio") (const $ pure) (const $ pure)
+        div empty # cl' "mdc-radio__ripple") # cl' "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure) (const $ pure)
     label (labelContent >>> empty) # at' "for" uid
-  ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= newComponent material.formField."MDCFormField") (const $ pure) (const $ pure)
+  ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure) (const $ pure)
     where
       uid = unsafePerformEffect uniqueId
 
@@ -126,8 +125,6 @@ caption w = span w # cl' "mdc-typography--caption"
 overline :: forall a b. Widget a b -> Widget a b
 overline w = span w # cl' "mdc-typography--overline"
 
--- Widget transformers
-
 body1 :: forall a b. Widget a b -> Widget a b
 body1 w = p w # cl'"mdc-typography--body1"
 
@@ -158,7 +155,7 @@ dialog { title } content =
     div empty # cl' "mdc-dialog__scrim"
   ) # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
-      initializeMdcDialog = gets _.sibling >>= newComponent material.dialog."MDCDialog"
+      initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
       openMdcComponent comp a = liftEffect do
         open comp
         pure a
@@ -173,21 +170,18 @@ snackbar { label } =
       ( div
         label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
     where
-      initializeMdcSnackbar = gets _.sibling >>= newComponent material.snackbar."MDCSnackbar"
+      initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
       openMdcComponent comp a = liftEffect do
         open comp
         pure a
 
 -- Private
 
-newComponent :: forall m. MonadEffect m => ComponentClass -> Node -> m Component
-newComponent classes node = liftEffect $ runEffectFn2 _new classes node
-
 foreign import data Component :: Type
 foreign import data ComponentClass :: Type
-foreign import data WebUI :: Type
-
-foreign import _new :: EffectFn2 ComponentClass Node Component
+foreign import open :: Component -> Effect Unit
+foreign import close :: Component -> Effect Unit
+foreign import newComponent :: ComponentClass -> Node -> Effect Component
 foreign import material
   :: { textField :: { "MDCTextField" :: ComponentClass }
      , ripple :: { "MDCRipple" :: ComponentClass }
@@ -203,5 +197,3 @@ foreign import material
      , formField :: { "MDCFormField" :: ComponentClass }
      }
 
-foreign import open :: Component -> Effect Unit
-foreign import close :: Component -> Effect Unit

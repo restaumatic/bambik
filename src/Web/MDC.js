@@ -2,11 +2,16 @@ import material_ from "material-components-web/dist/material-components-web.min.
 
 export const material = material_;
 
-export function _new(cls, node) {
-  return new cls(node);
+// newComponent :: ComponentClass -> Node -> Effect Component
+export function newComponent(cls) {
+  return function (node) {
+    return function () {
+      return new cls(node);
+    }
+  }
 }
 
-// open :: Component -> IOSync Unit
+// open :: Component -> Effect Unit
 export function open(mdcDialog) {
   return function () {
     mdcDialog.open();
