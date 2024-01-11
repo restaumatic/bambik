@@ -3,7 +3,7 @@ module Web
   , aside
   , at'
   , button
-  , checkbox
+  , checkboxInput
   , cl'
   , clickable
   , dat'
@@ -79,8 +79,8 @@ textInput = Propagator \outward -> do
     Occurrence _ newa -> do
       liftEffect $ setValue node newa
 
-checkbox :: forall a . Widget (Maybe a) (Maybe (Maybe a))
-checkbox = Propagator \outward -> do
+checkboxInput :: forall a . Widget (Maybe a) (Maybe (Maybe a))
+checkboxInput = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Web.Internal.DOMBuilder.element "input" (pure unit)
   Web.Internal.DOMBuilder.at "type" "checkbox"

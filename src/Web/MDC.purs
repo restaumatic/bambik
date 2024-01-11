@@ -39,7 +39,7 @@ import Propagator (bracket)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
-import Web (button, checkbox, radioButton) as Web
+import Web (button, checkboxInput, radioButton) as Web
 import Web.Internal.DOM (Node)
 import Web.Internal.DOMBuilder (uniqueId)
 
@@ -66,7 +66,7 @@ checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe
 checkbox { labelContent } checked =
   div ( S.do
     div ( S.do
-      Web.checkbox # checked # cl' "mdc-checkbox__native-control" # at' "id" id -- TODO define id' = at' "id" id
+      Web.checkboxInput # checked # cl' "mdc-checkbox__native-control" # at' "id" id -- TODO define id' = at' "id" id
       div (S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
