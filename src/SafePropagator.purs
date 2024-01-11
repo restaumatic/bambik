@@ -166,13 +166,17 @@ text default = wrap do
     , listen: \_ -> pure unit
     }
 
--- radioButton - deselects on Nothing, sets provided value on select, default select provided
--- checkbox    - deselects on Nothing, sets provided value on select, default select provided
--- button      - disables on Nothing, enables on Just
--- element     - detached on Nothing,
+--                Nothing                   Just _                        default
+-- radioButton    deselects                 sets provided value,          default select provided
+-- checkboxInput       deselects                 sets provided value,          default select provided
+-- button         disables                  enables
+-- textBox        detach                    attach
+
+-- element        detach                    attach
 
 element :: forall i o. String -> SafeWidget i o -> SafeWidget i o
 element tagName w = wrap do
-  let w' = unwrap w
-  Web.Internal.DOMBuilder.element tagName w'
-  node <- gets (_.sibling)
+  -- let w' = unwrap w
+  -- Web.Internal.DOMBuilder.element tagName w'
+  -- node <- gets (_.sibling)
+  pure $ unsafeCoerce unit
