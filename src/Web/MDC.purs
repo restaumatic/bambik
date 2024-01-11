@@ -38,7 +38,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Propagator (bracket)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text)
+import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
 import Web (button, checkbox, radioButton) as Web
 import Web.Internal.DOM (Node)
 import Web.Internal.DOMBuilder (uniqueId)
@@ -57,7 +57,7 @@ filledTextField { floatingLabel } value =
     span (empty :: Widget a a) # cl' "mdc-text-field__ripple"
     (S.do
       (span text # cl' "mdc-floating-label" # at' "id" id # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
-      input # value # cl' "mdc-text-field__input" # at' "type" "text" # at' "aria-labelledby" id)
+      textInput # value # cl' "mdc-text-field__input" # at' "aria-labelledby" id)
     span (empty :: Widget a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= newComponent material.textField."MDCTextField") (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect uniqueId
@@ -66,7 +66,7 @@ checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe
 checkbox { labelContent } checked =
   div ( S.do
     div ( S.do
-      Web.checkbox # checked # cl' "mdc-checkbox__native-control" # at' "type" "checkbox" # at' "id" id -- TODO define id' = at' "id" id
+      Web.checkbox # checked # cl' "mdc-checkbox__native-control" # at' "id" id -- TODO define id' = at' "id" id
       div (S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ radioButton :: forall a b. { labelContent :: Widget a b } -> (Widget (Maybe a) (
 radioButton { labelContent } value =
   div (S.do
     div (S.do
-        Web.radioButton # value # cl' "mdc-radio__native-control" # at' "type" "radio" # at' "id" uid
+        Web.radioButton # value # cl' "mdc-radio__native-control" # at' "id" uid
         div (S.do
           div empty # cl' "mdc-radio__outer-circle"
           div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"

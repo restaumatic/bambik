@@ -16,7 +16,6 @@ module Web
   , h5
   , h6
   , html
-  , input
   , label
   , p
   , path
@@ -26,6 +25,7 @@ module Web
   , span
   , svg
   , text
+  , textInput
   )
   where
 
@@ -67,9 +67,10 @@ html h = Propagator \_ -> do
   Web.Internal.DOMBuilder.html h
   pure $ const $ pure unit
 
-input :: Widget String String
-input = Propagator \outward -> do
+textInput :: Widget String String
+textInput = Propagator \outward -> do
   Web.Internal.DOMBuilder.element "input" (pure unit)
+  Web.Internal.DOMBuilder.at "type" "text"
   listener "input" \_ -> do
     node <- gets _.sibling
     liftEffect (getValue node) >>= Occurrence Some >>> outward
@@ -82,6 +83,7 @@ checkbox :: forall a . Widget (Maybe a) (Maybe (Maybe a))
 checkbox = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Web.Internal.DOMBuilder.element "input" (pure unit)
+  Web.Internal.DOMBuilder.at "type" "checkbox"
   listener "input" \_ -> do
     node <- gets _.sibling
     checked <- liftEffect $ getChecked node
@@ -103,6 +105,7 @@ radioButton :: forall a. Widget (Maybe a) (Maybe a)
 radioButton = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
   Web.Internal.DOMBuilder.element "input" (pure unit)
+  Web.Internal.DOMBuilder.at "type" "radio"
   listener "change" \_ -> liftEffect (Ref.read maRef) >>= Occurrence Some >>> outward
   speaker \node -> case _ of
     Occurrence None _ -> pure unit
