@@ -12,8 +12,6 @@ import Web.Internal.DOM (setTextNodeValue)
 import Web.Internal.DOMBuilder (DOMBuilder)
 import Web.Internal.DOMBuilder as DOMBuilder
 
---
-
 type SafeWidget i o = SafePropagator DOMBuilder i o
 
 text :: String -> SafeWidget String Void
