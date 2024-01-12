@@ -10,6 +10,7 @@ module Web.Internal.DOMBuilder
   , initializeInBody
   , initializeInNode
   , listener
+  , runDomInNode
   , speaker
   , text
   , uniqueId
