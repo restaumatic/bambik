@@ -14,6 +14,17 @@ import Web.Internal.DOMBuilder as DOMBuilder
 
 type SafeWidget i o = SafePropagator DOMBuilder i o
 
+-- how Maybe _ input is handled by SafeWidgets
+--                Nothing           Just _         default
+-- text           empty text        text
+-- html           no html           html
+-- textInput      disables          enables
+-- checkboxInput  deselects         selects        default select provided
+-- radioButton    deselects         selects        default select provided
+-- button         disables          enables
+-- element        no-op             no-op
+-- ?              detaches          attaches
+
 text :: String -> SafeWidget String Void
 text default = wrap do
   DOMBuilder.text
@@ -25,12 +36,5 @@ text default = wrap do
     , listen: \_ -> pure unit
     }
 
---                Nothing           Just _         default
--- radioButton    deselects         selects        default select provided
--- checkboxInput  deselects         selects        default select provided
--- button         disables          enables
--- textBox        disables          enables
--- element        no-op             no-op
--- ?              detaches          attaches
 element :: forall i o. String -> SafeWidget i o -> SafeWidget i o
 element tagName = wrap <<< DOMBuilder.element tagName <<< unwrap

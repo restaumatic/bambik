@@ -43,7 +43,7 @@ import Propagator (Change(..), Occurrence(..), Propagator(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, TagName, addClass, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode, listener, speaker)
-import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
+import Web.Internal.DOMBuilder as DOMBuilder
 
 
 -- Widget
@@ -54,7 +54,7 @@ type Widget i o = Propagator DOMBuilder i o
 
 text :: forall a. Widget String a
 text = Propagator \_ -> do
-  Web.Internal.DOMBuilder.text
+  DOMBuilder.text
   speaker \node -> case _ of
     Occurrence None _ -> pure unit
     Occurrence ch string -> do
@@ -64,13 +64,13 @@ text = Propagator \_ -> do
 -- TODO make it Widget String a
 html :: forall a b. String -> Widget a b
 html h = Propagator \_ -> do
-  Web.Internal.DOMBuilder.html h
+  DOMBuilder.html h
   pure $ const $ pure unit
 
 textInput :: Widget String String
 textInput = Propagator \outward -> do
-  Web.Internal.DOMBuilder.element "input" (pure unit)
-  Web.Internal.DOMBuilder.at "type" "text"
+  DOMBuilder.element "input" (pure unit)
+  DOMBuilder.at "type" "text"
   listener "input" \_ -> do
     node <- gets _.sibling
     liftEffect (getValue node) >>= Occurrence Some >>> outward
@@ -82,8 +82,8 @@ textInput = Propagator \outward -> do
 checkboxInput :: forall a . Widget (Maybe a) (Maybe (Maybe a))
 checkboxInput = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Web.Internal.DOMBuilder.element "input" (pure unit)
-  Web.Internal.DOMBuilder.at "type" "checkbox"
+  DOMBuilder.element "input" (pure unit)
+  DOMBuilder.at "type" "checkbox"
   listener "input" \_ -> do
     node <- gets _.sibling
     checked <- liftEffect $ getChecked node
@@ -104,8 +104,8 @@ checkboxInput = Propagator \outward -> do
 radioButton :: forall a. Widget (Maybe a) (Maybe a)
 radioButton = Propagator \outward -> do
   maRef <- liftEffect $ Ref.new Nothing
-  Web.Internal.DOMBuilder.element "input" (pure unit)
-  Web.Internal.DOMBuilder.at "type" "radio"
+  DOMBuilder.element "input" (pure unit)
+  DOMBuilder.at "type" "radio"
   listener "change" \_ -> liftEffect (Ref.read maRef) >>= Occurrence Some >>> outward
   speaker \node -> case _ of
     Occurrence None _ -> pure unit
@@ -118,7 +118,7 @@ radioButton = Propagator \outward -> do
 
 element :: forall a b. TagName -> Widget a b -> Widget a b
 element tagName w = Propagator \outward -> do
-  update <- Web.Internal.DOMBuilder.element tagName do
+  update <- DOMBuilder.element tagName do
     unwrap w outward
   pure case _ of
     Occurrence None _ -> pure unit
@@ -128,7 +128,7 @@ element tagName w = Propagator \outward -> do
 at' :: forall a b. String -> String -> Widget a b -> Widget a b
 at' name value w = Propagator \outward -> do
   update <- unwrap w outward
-  Web.Internal.DOMBuilder.at name value
+  DOMBuilder.at name value
   pure update
 
 dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
@@ -143,7 +143,7 @@ dat' name value pred w = Propagator \outward -> do
 cl' :: forall a b. String -> Widget a b -> Widget a b
 cl' name w = Propagator \outward -> do
   update <- unwrap w outward
-  Web.Internal.DOMBuilder.cl name
+  DOMBuilder.cl name
   pure update
 
 dcl' :: forall a b. String -> (a -> Boolean) -> Widget a b -> Widget a b
@@ -217,4 +217,3 @@ runWidgetInBody widget i = initializeInBody (unwrap widget (const $ pure unit)) 
 
 runWidgetInNode :: forall i o. Node -> Widget i o -> i -> (o -> DOMBuilder Unit) -> Effect Unit
 runWidgetInNode node widget i outward = initializeInNode node (unwrap widget \(Occurrence _ o) -> outward o) (Occurrence Some i)
-
