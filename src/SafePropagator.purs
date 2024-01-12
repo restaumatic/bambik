@@ -3,23 +3,18 @@ module SafePropagator where
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Monad.State (gets)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Propagator (class Plus, Change(..), Occurrence(..), Propagator)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (setTextNodeValue)
-import Web.Internal.DOMBuilder (DOMBuilder)
-import Web.Internal.DOMBuilder as Web.Internal.DOMBuilder
 
 newtype SafePropagator m i o = SafePropagator (m
   { speak :: Occurrence (Maybe i) -> m Unit
@@ -66,7 +61,20 @@ instance Applicative m => Strong (SafePropagator m) where
           let (Occurrence _ prevmab) = unsafePerformEffect $ Ref.read lastomab
           for_ prevmab \prevab -> propagationab (map (flip Tuple (snd prevab)) oa )
       }
-  second p = unsafeCoerce unit
+  second p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { speak: \omab -> do
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
+        case omab of
+          Occurrence None _ -> pure unit -- should never happen
+          _ -> p'.speak (map (map snd) omab)
+      , listen: \propagationab -> do
+        p'.listen \oa -> do
+          let (Occurrence _ prevmab) = unsafePerformEffect $ Ref.read lastomab
+          for_ prevmab \prevab -> propagationab (map (Tuple (fst prevab)) oa )
+      }
 
 instance Applicative m => Choice (SafePropagator m) where
   left p = wrap ado
@@ -85,7 +93,22 @@ instance Applicative m => Choice (SafePropagator m) where
           -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
           propagationab (Left <$> oa)
       }
-  right p = unsafeCoerce unit
+  right p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { speak: \omab -> do
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
+        case omab of
+          Occurrence None _ -> pure unit
+          Occurrence _ Nothing -> p'.speak $ omab $> Nothing
+          Occurrence _ (Just (Left _)) -> p'.speak $ omab $> Nothing
+          Occurrence _ (Just (Right a)) -> p'.speak $ omab $> Just a
+      , listen: \propagationab -> do
+        p'.listen \oa -> do -- should never happen
+          -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
+          propagationab (Right <$> oa)
+      }
 
 instance Apply m => Semigroup (SafePropagator m a a) where
   append p1 p2 = wrap ado
