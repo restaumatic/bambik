@@ -150,28 +150,3 @@ instance Applicative m => Plus (SafePropagator m a) where
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
-
---
-
-type SafeWidget i o = SafePropagator DOMBuilder i o
-
-text :: String -> SafeWidget String Void
-text default = wrap do
-  Web.Internal.DOMBuilder.text
-  node <- gets (_.sibling)
-  pure
-    { speak: case _ of
-      Occurrence None _ -> pure unit
-      Occurrence _ mstring -> liftEffect $ setTextNodeValue node $ fromMaybe default mstring
-    , listen: \_ -> pure unit
-    }
-
---                Nothing           Just _         default
--- radioButton    deselects         selects        default select provided
--- checkboxInput  deselects         selects        default select provided
--- button         disables          enables
--- textBox        disables          enables
--- element        no-op             no-op
--- ?              detaches          attaches
-element :: forall i o. String -> SafeWidget i o -> SafeWidget i o
-element tagName = wrap <<< Web.Internal.DOMBuilder.element tagName <<< unwrap
