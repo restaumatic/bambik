@@ -1,15 +1,14 @@
 module Propagator.Optics
   ( Adapter
-  , PropOptic
   , Constant
   , Constructor
   , Field
   , Iso
   , Lens
-  , Lens'
   , Prism
-  , Prism'
   , Projection
+  , PropOptic
+  , PropOptic'
   , constructor
   , field
   , iso
@@ -32,24 +31,23 @@ import Data.Either (Either(..), either)
 import Data.Maybe (Maybe, maybe)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
-import Effect.Class (class MonadEffect)
 import Prim.Row as Row
-import Propagator (class MonadGUI, Propagator, Scope(..), scopemap)
+import SafePropagator (SafePropagator, scopemap)
+import Propagator (Scope(..))
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 
 -- indentation to emphasize hierarchy
-type PropOptic a b s t = forall m. Monad m => Propagator m a b -> Propagator m s t
+type PropOptic a b s t = forall m. Applicative m => SafePropagator m a b -> SafePropagator m s t
+type PropOptic' a b = forall m. Applicative m => SafePropagator m a a -> SafePropagator m b b
 type   Adapter a b s t = PropOptic a b s t
-type     Iso a s = Adapter a a s s
+type     Iso a s = PropOptic' a s
 type     Projection a s = forall b. Adapter a b s b
 type       Constant a = forall s. Projection a s
-type   Lens a b s t = forall m. MonadEffect m => Propagator m a b -> Propagator m s t
-type     Lens' a s = Lens a a s s
-type       Field a s = Lens' a (Record s)
-type   Prism a b s t = forall m. MonadGUI m => Propagator m a b -> Propagator m s t
-type     Prism' a s = Prism a a s s
-type       Constructor a s = Prism' a s -- TODO find better signature
+type   Lens a s = PropOptic' a s
+type     Field a s = PropOptic' a (Record s)
+type   Prism a b s t = PropOptic a b s t
+type     Constructor a s = PropOptic' a s -- TODO find better signature
 
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> Iso a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
@@ -60,10 +58,10 @@ iso' mapin mapout = dimap mapin mapout
 projection :: forall a s. (s -> a) -> Projection a s
 projection f = dimap f identity
 
-lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> Lens a b s t
+lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> PropOptic a b s t
 lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> scopemap (Variant name)
 
-lens' :: forall a s. String -> (s -> a) -> (s -> a -> s) -> Lens' a s
+lens' :: forall a s. String -> (s -> a) -> (s -> a -> s) -> Lens a s
 lens' = lens
 
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => Field a s
@@ -75,7 +73,7 @@ prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> Prism a b s 
 prism name construct deconstruct = left >>> dimap deconstruct (either construct identity)
   >>> scopemap (Variant name) -- TODO not sure about it
 
-prism' :: forall a s. String -> (a -> s) -> (s -> Either a s) -> Prism' a s
+prism' :: forall a s. String -> (a -> s) -> (s -> Either a s) -> PropOptic a a s s
 prism' = prism
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Constructor a s

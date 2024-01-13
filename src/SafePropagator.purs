@@ -3,6 +3,7 @@ module SafePropagator
   , bracket
   , fixed
   , preview
+  , scopemap
   , view
   )
   where
@@ -10,6 +11,8 @@ module SafePropagator
 import Prelude
 
 import Control.Alt (class Alt)
+import Data.Array (uncons)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
@@ -17,13 +20,12 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
-import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Class (class MonadEffect)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (class Plus, Change(..), Occurrence(..), Propagator)
+import Propagator (class Plus, Change(..), Occurrence(..), Propagator, Scope(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype SafePropagator m i o = SafePropagator (m
@@ -214,3 +216,29 @@ fixed a w = wrap do
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
+
+scopemap :: forall m a b. Applicative m => Scope -> SafePropagator m a b -> SafePropagator m a b
+scopemap scope p = wrap ado
+  { speak, listen } <- unwrap p
+  in
+    { speak: \(Occurrence c a) -> speak $ Occurrence (zoomIn c) a
+    , listen: \prop -> do
+      listen \(Occurrence c a) -> prop $ Occurrence (zoomIn c) a
+    }
+  where
+    zoomOut :: Change -> Change
+    zoomOut Some = Scoped (scope `NonEmptyArray.cons'` [])
+    zoomOut (Scoped scopes) = Scoped (scope `NonEmptyArray.cons` scopes)
+    zoomOut None = None
+
+    zoomIn :: Change -> Change
+    zoomIn Some = Some
+    zoomIn (Scoped scopes) = case NonEmptyArray.uncons scopes of
+      { head, tail } | head == scope -> case uncons tail of -- matching head
+        Just { head: headOtTail, tail: tailOfTail } -> Scoped $ NonEmptyArray.cons' headOtTail tailOfTail -- non empty tail
+        Nothing -> Some -- empty tail
+      { head: Variant _ } -> Some -- not matching head but head is twist
+      _ -> case scope of
+        Variant _ -> Some -- not matching head but scope is twist
+        _ -> None -- otherwise
+    zoomIn None = None
