@@ -29,16 +29,15 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
-import Data.Maybe (Maybe)
 import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (bracket)
+import SafePropagator (bracket) -- TODO
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
-import Web (button, checkboxInput, radioButton) as Web
+import SafeWeb (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
+import SafeWeb (button, checkboxInput, radioButton) as Web
 import Web.Internal.DOM (Node)
 import Web.Internal.DOMBuilder (uniqueId)
 
@@ -50,7 +49,7 @@ containedButton { label } =
     div empty # cl' "mdc-button__ripple"
     span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure) (const $ pure) # clickable
 
-filledTextField :: forall a b. { floatingLabel :: Widget String b -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
+filledTextField :: forall a b. { floatingLabel :: Widget String Void -> Widget a b } -> (Widget String String -> Widget a a) -> Widget a a
 filledTextField { floatingLabel } value =
   label (S.do
     span (empty :: Widget a a) # cl' "mdc-text-field__ripple"
@@ -61,11 +60,11 @@ filledTextField { floatingLabel } value =
     where
       id = unsafePerformEffect uniqueId
 
-checkbox :: forall a b. { labelContent :: Widget (Maybe a) b } -> (Widget (Maybe a) (Maybe (Maybe a)) -> Widget (Maybe a) (Maybe a)) -> Widget (Maybe a) (Maybe a)
-checkbox { labelContent } checked =
+checkbox :: forall a b c. { labelContent :: Widget b c, default :: a } -> (Widget a a -> Widget b b) -> Widget b b
+checkbox { labelContent, default } checked =
   div ( S.do
     div ( S.do
-      Web.checkboxInput # checked # cl' "mdc-checkbox__native-control" # at' "id" id -- TODO define id' = at' "id" id
+      Web.checkboxInput default # checked # cl' "mdc-checkbox__native-control" # at' "id" id -- TODO define id' = at' "id" id
       div (S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -78,11 +77,11 @@ checkbox { labelContent } checked =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping
-radioButton :: forall a b. { labelContent :: Widget a b } -> (Widget (Maybe a) (Maybe a) -> Widget a a) -> Widget a a
-radioButton { labelContent } value =
+radioButton :: forall a b c. { labelContent :: Widget c b, default :: a } -> (Widget a a -> Widget c c) -> Widget c c
+radioButton { labelContent, default } value =
   div (S.do
     div (S.do
-        Web.radioButton # value # cl' "mdc-radio__native-control" # at' "id" uid
+        Web.radioButton default # value # cl' "mdc-radio__native-control" # at' "id" uid
         div (S.do
           div empty # cl' "mdc-radio__outer-circle"
           div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"

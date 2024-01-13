@@ -1,5 +1,7 @@
 module SafePropagator
   ( SafePropagator(..)
+  , bracket
+  , fixed
   , preview
   , view
   )
@@ -15,7 +17,9 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
+import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
+import Effect.Class (class MonadEffect)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
@@ -41,8 +45,11 @@ downcast p  = wrap \propagationo -> do
 upcast :: forall m i o. Monad m => Propagator m i o -> SafePropagator m i o
 upcast p  = unsafeThrow "not implemented" -- TODO
 
-preview :: forall m i o. Functor m => SafePropagator m i o -> m Unit
-preview p = void $ unwrap p
+preview :: forall m i o. Monad m => SafePropagator m i o -> m Unit
+preview p = do
+  { speak, listen } <- unwrap p
+  listen (const $ pure unit)
+  speak (Occurrence Some Nothing)
 -- notice: this is not possible with Propagator
 
 view :: forall m i o. Monad m => SafePropagator m i o -> i -> m Unit
@@ -181,6 +188,29 @@ instance Apply m => Alt (SafePropagator m a) where
 
 instance Applicative m => Plus (SafePropagator m a) where
   empty = wrap $ pure
+    { speak: const $ pure unit
+    , listen: const $ pure unit
+    }
+
+bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence (Maybe i') -> m (Occurrence (Maybe i))) -> (c -> Occurrence (Maybe o) -> m (Occurrence (Maybe o'))) -> SafePropagator m i o -> SafePropagator m i' o'
+bracket afterInit afterInward beforeOutward w = wrap do
+  w' <- unwrap w
+  ctx <- afterInit
+  pure
+    { speak: \occur -> do
+      occur' <- afterInward ctx occur
+      w'.speak occur'
+    , listen: \prop -> do
+      w'.listen \occur -> do
+        occur' <- beforeOutward ctx occur
+        prop occur'
+      }
+
+fixed :: forall m a b s t. MonadEffect m => a -> SafePropagator m a b -> SafePropagator m s t
+fixed a w = wrap do
+  w' <- unwrap w
+  w'.speak (Occurrence Some (Just a))
+  pure
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
