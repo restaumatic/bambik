@@ -62,7 +62,7 @@ textInput = wrap do
       setAttribute node "disabled" "true"
       setValue node ""
     Occurrence _ (Just newa) -> liftEffect do
-      setAttribute node "disabled" "false"
+      removeAttribute node "disabled"
       setValue node newa
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
       value <- liftEffect $ getValue node
@@ -80,10 +80,10 @@ checkboxInput default = wrap do
     Occurrence None _ -> pure unit
     Occurrence _ Nothing -> liftEffect $ setAttribute node "disabled" "true"
     Occurrence _ (Just Nothing) -> liftEffect $ do
-      setAttribute node "disabled" "false"
+      removeAttribute node "disabled"
       setChecked node false
     Occurrence _ (Just (Just newa)) -> liftEffect do
-      setAttribute node "disabled" "false"
+      removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
