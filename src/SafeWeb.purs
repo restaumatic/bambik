@@ -36,7 +36,7 @@ text = wrap do
   pure
     { speak: case _ of
       Occurrence None _ -> pure unit
-      Occurrence _ Nothing -> pure unit -- TODO is this correct?
+      Occurrence _ Nothing -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
       Occurrence _ (Just string) -> liftEffect $ setTextNodeValue node string
     , listen: \_ -> pure unit
     }

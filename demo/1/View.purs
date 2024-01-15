@@ -65,10 +65,10 @@ order =
               text ) # table # dineIn
             ( S.do
               text # fixed "takeaway at "
-              text) # time # takeaway
+              text ) # time # takeaway
             ( S.do
               text # fixed "delivery to "
-              text) # address # delivery ) # fulfillment
+              text ) # address # delivery ) # fulfillment
       T.do
         div
           (A.do
