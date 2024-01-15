@@ -39,8 +39,7 @@ import QualifiedDo.Semigroup as S
 import Propagator (bracket)
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
 import Web (button, checkboxInput, radioButton) as Web
-import Web.Internal.DOM (Node)
-import Web.Internal.DOMBuilder (uniqueId)
+import Web.Internal.DocumentBuilder (Node, uniqueId)
 
 -- Primitive widgets
 
