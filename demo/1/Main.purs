@@ -2,10 +2,11 @@ module Main (main) where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
+import SafeWeb (runWidgetInBody)
 import View (order)
 import ViewModel (defaultOrder)
-import Effect (Effect)
-import Web (runWidgetInBody)
 
 main :: Effect Unit
-main = runWidgetInBody order defaultOrder
+main = runWidgetInBody order $ Just defaultOrder

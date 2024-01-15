@@ -29,7 +29,7 @@ type Widget i o = SafePropagator DOMBuilder i o
 -- element        no-op             no-op
 -- ?              detaches          attaches
 
-text :: Widget String Void -- TODO is default needed?
+text :: forall a . Widget String a -- TODO is default needed?
 text = wrap do
   DOMBuilder.text
   node <- gets (_.sibling)
@@ -69,7 +69,7 @@ textInput = wrap do
       prop $ Occurrence Some (if null value then Nothing else Just value) -- TODO how to handle null value?
     }
 
-checkboxInput :: forall a . a -> Widget a a
+checkboxInput :: forall a . a -> Widget (Maybe a) (Maybe a)
 checkboxInput default = wrap do
   aRef <- liftEffect $ Ref.new default
   DOMBuilder.element "input" (pure unit)
@@ -78,14 +78,18 @@ checkboxInput default = wrap do
   pure
     { speak: case _ of
     Occurrence None _ -> pure unit
-    Occurrence _ Nothing -> liftEffect $ setChecked node false
-    Occurrence _ (Just newa) -> do
-      liftEffect $ setChecked node true
-      liftEffect $ Ref.write newa aRef
+    Occurrence _ Nothing -> liftEffect $ setAttribute node "disabled" "true"
+    Occurrence _ (Just Nothing) -> liftEffect $ do
+      setAttribute node "disabled" "false"
+      setChecked node false
+    Occurrence _ (Just (Just newa)) -> liftEffect do
+      setAttribute node "disabled" "false"
+      setChecked node true
+      Ref.write newa aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
       checked <- liftEffect $ getChecked node
       a <- liftEffect $ Ref.read aRef
-      prop $ Occurrence Some $ if checked then (Just a) else Nothing
+      prop $ Occurrence Some $ Just $ if checked then (Just a) else Nothing
     }
 
 radioButton :: forall a. a -> Widget a a

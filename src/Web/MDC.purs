@@ -29,13 +29,14 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
+import Data.Maybe (Maybe)
 import Data.String (null)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import SafePropagator (bracket) -- TODO
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
+import SafePropagator (bracket)
 import SafeWeb (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
 import SafeWeb (button, checkboxInput, radioButton) as Web
 import Web.Internal.DOM (Node)
@@ -60,7 +61,7 @@ filledTextField { floatingLabel } value =
     where
       id = unsafePerformEffect uniqueId
 
-checkbox :: forall a b c. { labelContent :: Widget b c, default :: a } -> (Widget a a -> Widget b b) -> Widget b b
+checkbox :: forall a s c. { labelContent :: Widget s c, default :: a } -> (Widget (Maybe a) (Maybe a) -> Widget s s) -> Widget s s
 checkbox { labelContent, default } checked =
   div ( S.do
     div ( S.do

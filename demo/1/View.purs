@@ -11,7 +11,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import SafePropagator (fixed)
 import SafeWeb (Widget, at', div, text)
-import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, hasPayment, isDelivery, isDineIn, isTakeaway, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, surname, table, takeaway, time, total, uniqueId)
 import Web.MDC as MDC
 
 order ∷ Widget Order Order
@@ -29,9 +29,9 @@ order =
         text # fixed "Customer"
         name # customer
     MDC.card ( S.do
-      MDC.radioButton { labelContent: text # fixed "Dine in" } isDineIn
-      MDC.radioButton { labelContent: text # fixed "Takeaway" } isTakeaway
-      MDC.radioButton { labelContent: text # fixed "Delivery" } isDelivery
+      MDC.radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
+      MDC.radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
+      MDC.radioButton { labelContent: text # fixed "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
       MDC.filledTextField { floatingLabel: (_ # fixed "Table" )} table # dineIn
       MDC.filledTextField { floatingLabel: (_ # fixed "Time" )} time # takeaway
       MDC.filledTextField { floatingLabel: (_ # fixed "Address" )} address # delivery ) # fulfillment
@@ -39,7 +39,7 @@ order =
       MDC.subtitle1 (text # fixed "Total")
       MDC.filledTextField { floatingLabel: (_ # fixed "Total" )} total
     MDC.card S.do
-      MDC.checkbox { labelContent: text # fixed "Payment" } hasPayment # payment
+      MDC.checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
       MDC.filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # _Just # payment
     MDC.card S.do
       MDC.body1 S.do
