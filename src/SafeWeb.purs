@@ -3,16 +3,21 @@ module SafeWeb where
 import Prelude
 
 import Control.Monad.State (gets)
+import Data.DateTime.Instant (unInstant)
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.String (null)
 import Effect (Effect)
-import Effect.Class (liftEffect)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (info)
+import Effect.Now (now)
 import Effect.Ref as Ref
+import Effect.Unsafe (unsafePerformEffect)
 import Propagator (Change(..), Occurrence(..))
 import SafePropagator (SafePropagator)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, addClass, addEventListener, documentBody, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOM (Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, runDomInNode)
 import Web.Internal.DOMBuilder as DOMBuilder
 
@@ -175,6 +180,84 @@ clickable w = wrap do
     a <- liftEffect $ Ref.read aRef
     prop $ Occurrence Some (Just a)
     }
+
+slot :: forall a b. Widget a b -> Widget a b
+slot w = wrap do
+  {update: { speak, listen}, attach, detach} <- attachable' false $ unwrap w
+  pure
+    { speak: \occur -> do
+      speak occur
+      case occur of
+        (Occurrence None _) -> pure unit
+        (Occurrence _ Nothing) -> detach
+        (Occurrence _ (Just _)) -> attach
+    , listen: listen
+    }
+
+attachable' :: forall a. Boolean -> DOMBuilder a -> DOMBuilder { update :: a, attach :: DOMBuilder Unit, detach :: DOMBuilder Unit }
+attachable' removePrecedingSiblingNodes dom = do
+  parent <- gets _.parent
+  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+  liftEffect $ measured' slotNo "created" do
+
+    placeholderBefore <- newPlaceholderBefore slotNo
+    placeholderAfter <- newPlaceholderAfter slotNo
+
+    (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
+    appendChild placeholderAfter parent
+
+    initialDocumentFragment <- createDocumentFragment
+    update <- runDomInNode initialDocumentFragment dom
+
+    detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
+
+    let
+      attach :: DOMBuilder Unit
+      attach = measured' slotNo "attached" $ liftEffect do
+        removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+        mDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
+        for_ mDocumentFragment \documentFragment -> documentFragment `insertBefore` placeholderAfter
+
+      detach :: DOMBuilder Unit
+      detach = measured' slotNo "detached" $ liftEffect do
+        mDocumentFragment <- Ref.read detachedDocumentFragmentRef
+        case mDocumentFragment of
+          Nothing -> do
+            documentFragment <- createDocumentFragment
+            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
+            Ref.write (Just documentFragment) detachedDocumentFragmentRef
+          Just _ -> pure unit
+
+    pure $ { attach, detach, update }
+    where
+      measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
+      measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
+
+measured :: forall a m. MonadEffect m ⇒ String → m a → m a
+measured actionName action = do
+  start <- liftEffect now
+  _ <- liftEffect $ Ref.modify (_ + 1) logIndent
+  a <- action
+  currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
+  stop <- liftEffect now
+  info $ "[DOMBuilder] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  pure a
+    where
+      repeatStr i s
+        | i <= 0 = ""
+        | otherwise = s <> repeatStr (i - 1) s
+
+logIndent :: Ref.Ref Int -- TODO ST?
+logIndent = unsafePerformEffect $ Ref.new 0
+
+slotCounter :: Ref.Ref Int
+slotCounter = unsafePerformEffect $ Ref.new 0
+
+newPlaceholderBefore :: forall a. Show a ⇒ a → Effect Node
+newPlaceholderBefore slotNo = createCommentNode $ "begin component " <> show slotNo
+
+newPlaceholderAfter :: forall a. Show a ⇒ a → Effect Node
+newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
 
 --
 

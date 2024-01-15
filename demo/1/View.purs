@@ -10,7 +10,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import SafePropagator (fixed)
-import SafeWeb (Widget, at', div, text)
+import SafeWeb (Widget, at', div, slot, text)
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, surname, table, takeaway, time, total, uniqueId)
 import Web.MDC as MDC
 
@@ -32,15 +32,15 @@ order =
       MDC.radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
       MDC.radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
       MDC.radioButton { labelContent: text # fixed "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
-      MDC.filledTextField { floatingLabel: (_ # fixed "Table" )} table # dineIn
-      MDC.filledTextField { floatingLabel: (_ # fixed "Time" )} time # takeaway
-      MDC.filledTextField { floatingLabel: (_ # fixed "Address" )} address # delivery ) # fulfillment
+      MDC.filledTextField { floatingLabel: (_ # fixed "Table" )} table # slot # dineIn
+      MDC.filledTextField { floatingLabel: (_ # fixed "Time" )} time # slot # takeaway
+      MDC.filledTextField { floatingLabel: (_ # fixed "Address" )} address # slot # delivery ) # fulfillment
     MDC.card S.do
       MDC.subtitle1 (text # fixed "Total")
       MDC.filledTextField { floatingLabel: (_ # fixed "Total" )} total
     MDC.card S.do
       MDC.checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
-      MDC.filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # _Just # payment
+      MDC.filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # slot # _Just # payment
     MDC.card S.do
       MDC.body1 S.do
         text # fixed "Summary: Order "
@@ -62,13 +62,13 @@ order =
         ( S.do
             ( S.do
               text # fixed "dine in at table "
-              text ) # table # dineIn
+              text ) # table # slot # dineIn
             ( S.do
               text # fixed "takeaway at "
-              text ) # time # takeaway
+              text ) # time # slot # takeaway
             ( S.do
               text # fixed "delivery to "
-              text ) # address # delivery ) # fulfillment
+              text ) # address # slot # delivery ) # fulfillment
       T.do
         div
           (A.do
