@@ -44,8 +44,7 @@ field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l
     field' name setter getter = scopemap (Part name) >>> first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a)
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> PropOptic a b s t
-prism name construct deconstruct = left >>> dimap deconstruct (either construct identity)
-  >>> scopemap (Variant name) -- TODO not sure about it
+prism name construct deconstruct = left >>> dimap deconstruct (either construct identity) >>> scopemap (Variant name) -- TODO not sure about it
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> PropOptic' a s
-constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (\aors -> either construct identity aors) >>> scopemap (Part name)
+constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
