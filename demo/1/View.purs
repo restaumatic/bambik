@@ -11,11 +11,11 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, surname, table, takeaway, time, total, uniqueId)
 import Web (at', div, slot, text)
-import Web.Internal.DocumentBuilder (DocumentBuilder)
+import Web.Internal.Web (Web)
 import Web.MDC as MDC
 import Widget (Widget, fixed)
 
-order ∷ Widget DocumentBuilder Order Order
+order ∷ Widget Web Order Order
 order =
   MDC.elevation20 S.do
     MDC.headline6 S.do
@@ -92,7 +92,7 @@ order =
         --   text # fixed " submitted"}
         empty
 
-name :: Widget DocumentBuilder NameInformal NameInformal
+name :: Widget Web NameInformal NameInformal
 name = S.do
   MDC.subtitle2 (text # fixed "Informal")
   MDC.filledTextField { floatingLabel: (_ # fixed "First name") } firstName

@@ -38,29 +38,29 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
 import Web (button, checkboxInput, radioButton) as Web
-import Web.Internal.DocumentBuilder (DocumentBuilder, Node, uniqueId)
+import Web.Internal.Web (Web, Node, uniqueId)
 import Widget (Widget, bracket)
 
 -- Primitive widgets
 
-containedButton :: forall a b. { label :: Widget DocumentBuilder a b } -> Widget DocumentBuilder a a
+containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button (A.do
     div empty # cl' "mdc-button__ripple"
     span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure) (const $ pure) # clickable
 
-filledTextField :: forall a b. { floatingLabel :: Widget DocumentBuilder String Void -> Widget DocumentBuilder a b } -> (Widget DocumentBuilder String String -> Widget DocumentBuilder a a) -> Widget DocumentBuilder a a
+filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> (Widget Web String String -> Widget Web a a) -> Widget Web a a
 filledTextField { floatingLabel } value =
   label (S.do
-    span (empty :: Widget DocumentBuilder a a) # cl' "mdc-text-field__ripple"
+    span (empty :: Widget Web a a) # cl' "mdc-text-field__ripple"
     (S.do
       (span text # cl' "mdc-floating-label" # at' "id" id # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
       textInput # value # cl' "mdc-text-field__input" # at' "aria-labelledby" id)
-    span (empty :: Widget DocumentBuilder a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure) (const $ pure)
+    span (empty :: Widget Web a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure) (const $ pure)
     where
       id = unsafePerformEffect uniqueId
 
-checkbox :: forall a s c. { labelContent :: Widget DocumentBuilder s c, default :: a } -> (Widget DocumentBuilder (Maybe a) (Maybe a) -> Widget DocumentBuilder s s) -> Widget DocumentBuilder s s
+checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> (Widget Web (Maybe a) (Maybe a) -> Widget Web s s) -> Widget Web s s
 checkbox { labelContent, default } checked =
   div ( S.do
     div ( S.do
@@ -77,7 +77,7 @@ checkbox { labelContent, default } checked =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping
-radioButton :: forall a b c. { labelContent :: Widget DocumentBuilder c b, default :: a } -> (Widget DocumentBuilder a a -> Widget DocumentBuilder c c) -> Widget DocumentBuilder c c
+radioButton :: forall a b c. { labelContent :: Widget Web c b, default :: a } -> (Widget Web a a -> Widget Web c c) -> Widget Web c c
 radioButton { labelContent, default } value =
   div (S.do
     div (S.do
@@ -91,58 +91,58 @@ radioButton { labelContent, default } value =
     where
       uid = unsafePerformEffect uniqueId
 
-headline1 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+headline1 :: forall a b. Widget Web a b -> Widget Web a b
 headline1 w = h1 w # cl' "mdc-typography--headline1"
 
-headline2 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+headline2 :: forall a b. Widget Web a b -> Widget Web a b
 headline2 w = h2 w # cl' "mdc-typography--headline2"
 
-headline3 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+headline3 :: forall a b. Widget Web a b -> Widget Web a b
 headline3 w = h3 w # cl' "mdc-typography--headline3"
 
-headline4 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+headline4 :: forall a b. Widget Web a b -> Widget Web a b
 headline4 w = h4 w # cl' "mdc-typography--headline4"
 
-headline5 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+headline5 :: forall a b. Widget Web a b -> Widget Web a b
 headline5 w = h5 w # cl' "mdc-typography--headline5"
 
-headline6 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+headline6 :: forall a b. Widget Web a b -> Widget Web a b
 headline6 w = h6 w # cl' "mdc-typography--headline6"
 
-subtitle1 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+subtitle1 :: forall a b. Widget Web a b -> Widget Web a b
 subtitle1 w = p w # cl' "mdc-typography--subtitle1"
 
-subtitle2 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+subtitle2 :: forall a b. Widget Web a b -> Widget Web a b
 subtitle2 w = p w # cl' "mdc-typography--subtitle2"
 
-button :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+button :: forall a b. Widget Web a b -> Widget Web a b
 button w = span w # cl' "mdc-typography--button"
 
-caption :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+caption :: forall a b. Widget Web a b -> Widget Web a b
 caption w = span w # cl' "mdc-typography--caption"
 
-overline :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+overline :: forall a b. Widget Web a b -> Widget Web a b
 overline w = span w # cl' "mdc-typography--overline"
 
-body1 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+body1 :: forall a b. Widget Web a b -> Widget Web a b
 body1 w = p w # cl'"mdc-typography--body1"
 
-body2 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+body2 :: forall a b. Widget Web a b -> Widget Web a b
 body2 w = p w # cl'"mdc-typography--body2"
 
-elevation1 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+elevation1 :: forall a b. Widget Web a b -> Widget Web a b
 elevation1 w = div w # cl' "mdc-elevation--z1"
 
-elevation10 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+elevation10 :: forall a b. Widget Web a b -> Widget Web a b
 elevation10 w = div w # cl' "mdc-elevation--z10" # at' "style" "padding: 25px" -- TODO padding added ad-hoc, to remove
 
-elevation20 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+elevation20 :: forall a b. Widget Web a b -> Widget Web a b
 elevation20 w = div w # cl' "mdc-elevation--z20" # at' "style" "padding: 25px"-- TODO padding added ad-hoc, to remove
 
-card :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
+card :: forall a b. Widget Web a b -> Widget Web a b
 card w = div w # cl' "mdc-card" # at' "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"  -- TODO padding added ad-hoc, to remove
 
-dialog :: forall a b. { title :: Widget DocumentBuilder a b } -> Widget DocumentBuilder a a -> Widget DocumentBuilder a a
+dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
   aside (S.do
     div (S.do
@@ -162,7 +162,7 @@ dialog { title } content =
         close comp
         pure a
 
-snackbar :: forall a b. { label :: Widget DocumentBuilder a b } -> Widget DocumentBuilder a b
+snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a b
 snackbar { label } =
   aside
     ( div

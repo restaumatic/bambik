@@ -260,9 +260,9 @@ scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
 scopemap scope p = wrap ado
   { speak, listen } <- unwrap p
   in
-    { speak: \(Occurrence c a) -> speak $ Occurrence (zoomOut c) a
+    { speak: \(Occurrence c a) -> speak $ Occurrence (zoomIn c) a
     , listen: \prop -> do
-      listen \(Occurrence c a) -> prop $ Occurrence (zoomIn c) a
+      listen \(Occurrence c a) -> prop $ Occurrence (zoomOut c) a
     }
   where
     zoomOut :: Change -> Change
