@@ -195,7 +195,7 @@ export function setAttributes(node) {
 export function removeAttribute(node) {
   return function (name) {
     return function () {
-      node.removeAtribute(name);
+      node.removeAttribute(name);
     }
   }
 }
