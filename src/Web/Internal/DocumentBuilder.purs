@@ -117,25 +117,6 @@ uniqueId = randomElementId
 runDomInNode :: forall a. Node -> DocumentBuilder a -> Effect a
 runDomInNode node (DocumentBuilder domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
 
-
--- TODO move to Web?
--- measured :: forall a m. MonadEffect m ⇒ String → m a → m a
--- measured actionName action = do
---   start <- liftEffect now
---   _ <- liftEffect $ Ref.modify (_ + 1) logIndent
---   a <- action
---   currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
---   stop <- liftEffect now
---   info $ "[DocumentBuilder] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
---   pure a
---     where
---       repeatStr i s
---         | i <= 0 = ""
---         | otherwise = s <> repeatStr (i - 1) s
--- logIndent :: Ref.Ref Int
--- logIndent = unsafePerformEffect $ Ref.new 0
-
-
 foreign import randomElementId :: Effect String
 
 -- from former DOM.purs

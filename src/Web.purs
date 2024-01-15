@@ -14,12 +14,10 @@ import Effect.Class.Console (info)
 import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (Propagator, Change(..), Occurrence(..))
+import Widget (Widget, Change(..), Occurrence(..))
 import Unsafe.Coerce (unsafeCoerce) -- TODO not relying on unsafe stuff
 import Web.Internal.DocumentBuilder (DocumentBuilder, runDomInNode, Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DocumentBuilder as DocumentBuilder
-
-type Widget i o = Propagator DocumentBuilder i o
 
 -- how Maybe _ input is handled by SafeWidgets
 --                Nothing           Just _         default
@@ -32,7 +30,7 @@ type Widget i o = Propagator DocumentBuilder i o
 -- element        no-op             no-op
 -- ?              detaches          attaches
 
-text :: forall a . Widget String a -- TODO is default needed?
+text :: forall a . Widget DocumentBuilder String a -- TODO is default needed?
 text = wrap do
   DocumentBuilder.text
   node <- gets (_.sibling)
@@ -44,8 +42,8 @@ text = wrap do
     , listen: \_ -> pure unit
     }
 
--- TODO make it Widget String a
-html :: forall a b. String -> Widget a b
+-- TODO make it Widget DocumentBuilder String a
+html :: forall a b. String -> Widget DocumentBuilder a b
 html h = wrap do
   DocumentBuilder.html h
   pure
@@ -53,7 +51,7 @@ html h = wrap do
     , listen: const $ pure unit
     }
 
-textInput :: Widget String String
+textInput :: Widget DocumentBuilder String String
 textInput = wrap do
   DocumentBuilder.element "input" (pure unit)
   DocumentBuilder.at "type" "text"
@@ -72,7 +70,7 @@ textInput = wrap do
       prop $ Occurrence Some (if null value then Nothing else Just value) -- TODO how to handle null value?
     }
 
-checkboxInput :: forall a . a -> Widget (Maybe a) (Maybe a)
+checkboxInput :: forall a . a -> Widget DocumentBuilder (Maybe a) (Maybe a)
 checkboxInput default = wrap do
   aRef <- liftEffect $ Ref.new default
   DocumentBuilder.element "input" (pure unit)
@@ -95,7 +93,7 @@ checkboxInput default = wrap do
       prop $ Occurrence Some $ Just $ if checked then (Just a) else Nothing
     }
 
-radioButton :: forall a. a -> Widget a a
+radioButton :: forall a. a -> Widget DocumentBuilder a a
 radioButton default = wrap do
   aRef <- liftEffect $ Ref.new default
   DocumentBuilder.element "input" (pure unit)
@@ -113,16 +111,16 @@ radioButton default = wrap do
     prop $ Occurrence Some (Just a)
     }
 
-element :: forall i o. String -> Widget i o -> Widget i o
+element :: forall i o. String -> Widget DocumentBuilder i o -> Widget DocumentBuilder i o
 element tagName = wrap <<< DocumentBuilder.element tagName <<< unwrap
 
-at' :: forall a b. String -> String -> Widget a b -> Widget a b
+at' :: forall a b. String -> String -> Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 at' name value w = wrap do
   w' <- unwrap w
   DocumentBuilder.at name value
   pure w'
 
-dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
+dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 dat' name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -137,7 +135,7 @@ dat' name value pred w = wrap do
     , listen: w'.listen
     }
 
-cl' :: forall a b. String -> Widget a b -> Widget a b
+cl' :: forall a b. String -> Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 cl' name w = wrap do
   w' <- unwrap w
   DocumentBuilder.cl name
@@ -146,7 +144,7 @@ cl' name w = wrap do
     , listen: w'.listen
     }
 
-dcl' :: forall a b. String -> (a -> Boolean) -> Widget a b -> Widget a b
+dcl' :: forall a b. String -> (a -> Boolean) -> Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 dcl' name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -161,7 +159,7 @@ dcl' name pred w = wrap do
     , listen: w'.listen
     }
 
-clickable :: forall a. Widget a Void -> Widget a a
+clickable :: forall a. Widget DocumentBuilder a Void -> Widget DocumentBuilder a a
 clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   w' <- unwrap w
@@ -179,7 +177,7 @@ clickable w = wrap do
     prop $ Occurrence Some (Just a)
     }
 
-slot :: forall a b. Widget a b -> Widget a b
+slot :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 slot w = wrap do
   {update: { speak, listen}, attach, detach} <- attachable' false $ unwrap w
   pure
@@ -259,56 +257,56 @@ newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
 
 --
 
-div :: forall a b. Widget a b -> Widget a b
+div :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 div = element "div"
 
-span :: forall a b. Widget a b -> Widget a b
+span :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 span = element "span"
 
-aside :: forall a b. Widget a b -> Widget a b
+aside :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 aside = element "aside"
 
-label :: forall a b. Widget a b -> Widget a b
+label :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 label = element "label"
 
-button :: forall a b. Widget a b -> Widget a b
+button :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 button = element "button"
 
-svg :: forall a b. Widget a b -> Widget a b
+svg :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 svg = element "svg"
 
-path :: forall a b. Widget a b -> Widget a b
+path :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 path = element "path"
 
-p :: forall a b. Widget a b -> Widget a b
+p :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 p = element "p"
 
-h1 :: forall a b. Widget a b -> Widget a b
+h1 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 h1 = element "h1"
 
-h2 :: forall a b. Widget a b -> Widget a b
+h2 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 h2 = element "h2"
 
-h3 :: forall a b. Widget a b -> Widget a b
+h3 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 h3 = element "h3"
 
-h4 :: forall a b. Widget a b -> Widget a b
+h4 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 h4 = element "h4"
 
-h5 :: forall a b. Widget a b -> Widget a b
+h5 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 h5 = element "h5"
 
-h6 :: forall a b. Widget a b -> Widget a b
+h6 :: forall a b. Widget DocumentBuilder a b -> Widget DocumentBuilder a b
 h6 = element "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall i o. Widget i o -> Maybe i -> Effect Unit
+runWidgetInBody :: forall i o. Widget DocumentBuilder i o -> Maybe i -> Effect Unit
 runWidgetInBody w mi = do
   node <- documentBody
   runWidgetInNode node w mi $ const $ pure unit
 
-runWidgetInNode :: forall i o. Node -> Widget i o -> Maybe i -> (Maybe o -> DocumentBuilder Unit) -> Effect Unit
+runWidgetInNode :: forall i o. Node -> Widget DocumentBuilder i o -> Maybe i -> (Maybe o -> DocumentBuilder Unit) -> Effect Unit
 runWidgetInNode node w mi outward = runDomInNode node do
   { speak, listen } <- unwrap w
   listen case _ of

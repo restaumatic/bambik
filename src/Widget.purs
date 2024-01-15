@@ -1,9 +1,9 @@
-module Propagator
+module Widget
   ( Change(..)
   , Occurrence(..)
-  , PropOptic
-  , PropOptic'
-  , Propagator(..)
+  , WidgetOptics
+  , WidgetOptics'
+  , Widget(..)
   , Scope(..)
   , bracket
   , constructor
@@ -43,12 +43,12 @@ import Record (get, set)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
-newtype Propagator m i o = Propagator (m
+newtype Widget m i o = Widget (m
   { speak :: Occurrence (Maybe i) -> m Unit
   , listen :: (Occurrence (Maybe o) -> m Unit) -> m Unit
   })
 
-derive instance Newtype (Propagator m i o) _
+derive instance Newtype (Widget m i o) _
 
 data Occurrence a = Occurrence Change a
 
@@ -87,25 +87,25 @@ instance Monoid Change where
 
 derive instance Eq Scope
 
-preview :: forall m i o. Monad m => Propagator m i o -> m Unit
+preview :: forall m i o. Monad m => Widget m i o -> m Unit
 preview p = do
   { speak, listen } <- unwrap p
   listen (const $ pure unit)
   speak (Occurrence Some Nothing)
 
-view :: forall m i o. Monad m => Propagator m i o -> i -> m Unit
+view :: forall m i o. Monad m => Widget m i o -> i -> m Unit
 view p i = do
   { speak, listen } <- unwrap p
   listen (const $ pure unit)
   speak (Occurrence Some (Just i))
 
-instance Functor m => Profunctor (Propagator m) where
+instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
     { speak: (_ <<< map (map contraf)) $ p'.speak
     , listen: p'.listen <<< lcmap (map (map cof))
     }
 
-instance Applicative m => Strong (Propagator m) where
+instance Applicative m => Strong (Widget m) where
   first p = wrap ado
     let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
@@ -135,7 +135,7 @@ instance Applicative m => Strong (Propagator m) where
           for_ prevmab \prevab -> propagationab (map (map (Tuple (fst prevab))) oa )
       }
 
-instance Applicative m => Choice (Propagator m) where
+instance Applicative m => Choice (Widget m) where
   left p = wrap ado
     let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
@@ -169,7 +169,7 @@ instance Applicative m => Choice (Propagator m) where
           propagationab (map Right <$> oa)
       }
 
-instance Apply m => Semigroup (Propagator m a a) where
+instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -189,9 +189,9 @@ instance Apply m => Semigroup (Propagator m a a) where
           in unit
         in unit
       }
--- compare to: instance MonadEffect m => Semigroup (Propagator m a a) where
+-- compare to: instance MonadEffect m => Semigroup (Widget m a a) where
 
-instance Monad m => Semigroupoid (Propagator m) where
+instance Monad m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -200,22 +200,22 @@ instance Monad m => Semigroupoid (Propagator m) where
       { speak: p1'.speak -- TODO call p2.speak Nothing?
       , listen: p2'.listen
       }
--- compare to: instance MonadEffect m => Semigroupoid (Propagator m) where
+-- compare to: instance MonadEffect m => Semigroupoid (Widget m) where
 
 -- impossible:
--- instance Monad m => Category (Propagator m) where
+-- instance Monad m => Category (Widget m) where
 --   identity = wrap $ pure
 --     { speak: unsafeThrow "impossible"
 --     , listen: unsafeThrow "impossible"
 --     }
 
-instance Functor m => Functor (Propagator m a) where
+instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
     { speak: p'.speak
     , listen: p'.listen <<< lcmap (map (map f))
     }
 
-instance Apply m => Alt (Propagator m a) where
+instance Apply m => Alt (Widget m a) where
   alt p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -227,13 +227,13 @@ instance Apply m => Alt (Propagator m a) where
         in unit
       }
 
-instance Applicative m => Plus (Propagator m a) where
+instance Applicative m => Plus (Widget m a) where
   empty = wrap $ pure
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
 
-bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence (Maybe i') -> m (Occurrence (Maybe i))) -> (c -> Occurrence (Maybe o) -> m (Occurrence (Maybe o'))) -> Propagator m i o -> Propagator m i' o'
+bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence (Maybe i') -> m (Occurrence (Maybe i))) -> (c -> Occurrence (Maybe o) -> m (Occurrence (Maybe o'))) -> Widget m i o -> Widget m i' o'
 bracket afterInit afterInward beforeOutward w = wrap do
   w' <- unwrap w
   ctx <- afterInit
@@ -247,7 +247,7 @@ bracket afterInit afterInward beforeOutward w = wrap do
         prop occur'
       }
 
-fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
+fixed :: forall m a b s t. MonadEffect m => a -> Widget m a b -> Widget m s t
 fixed a w = wrap do
   w' <- unwrap w
   w'.speak (Occurrence Some (Just a))
@@ -256,7 +256,7 @@ fixed a w = wrap do
     , listen: const $ pure unit
     }
 
-scopemap :: forall m a b. Applicative m => Scope -> Propagator m a b -> Propagator m a b
+scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
 scopemap scope p = wrap ado
   { speak, listen } <- unwrap p
   in
@@ -284,25 +284,25 @@ scopemap scope p = wrap ado
 
 -- optics
 
-type PropOptic a b s t = forall m. Applicative m => Propagator m a b -> Propagator m s t
-type PropOptic' a s = forall m. Applicative m => Propagator m a a -> Propagator m s s
+type WidgetOptics a b s t = forall m. Applicative m => Widget m a b -> Widget m s t
+type WidgetOptics' a s = forall m. Applicative m => Widget m a a -> Widget m s s
 
-iso :: forall a s. String -> (s -> a) -> (a -> s) -> PropOptic' a s
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics' a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-projection :: forall a b s. (s -> a) -> PropOptic a b s b
+projection :: forall a b s. (s -> a) -> WidgetOptics a b s b
 projection f = dimap f identity
 
-lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> PropOptic a b s t
-lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> scopemap (Variant name)
+lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
+lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) -> setter s b) >>> scopemap (Variant name)
 
-field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => PropOptic' a (Record s)
+field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Record s)
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
     field' name setter getter = scopemap (Part name) >>> first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a)
 
-prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> PropOptic a b s t
+prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> WidgetOptics a b s t
 prism name construct deconstruct = left >>> dimap deconstruct (either construct identity) >>> scopemap (Variant name) -- TODO not sure about it
 
-constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> PropOptic' a s
+constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
