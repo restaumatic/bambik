@@ -14,9 +14,8 @@ import Effect.Class.Console (info)
 import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Propagator (Change(..), Occurrence(..))
-import Propagator (Propagator)
-import Unsafe.Coerce (unsafeCoerce)
+import Propagator (Propagator, Change(..), Occurrence(..))
+import Unsafe.Coerce (unsafeCoerce) -- TODO not relying on unsafe stuff
 import Web.Internal.DOM (Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, runDomInNode)
 import Web.Internal.DOMBuilder as DOMBuilder
