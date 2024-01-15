@@ -37,15 +37,9 @@ module Web.Internal.DocumentBuilder
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
-import Data.DateTime.Instant (unInstant)
-import Data.Newtype (unwrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console (info)
-import Effect.Now (now)
-import Effect.Ref as Ref
-import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 
 -- Builds DOM and keeping track of parent/last sibling node
@@ -123,22 +117,24 @@ uniqueId = randomElementId
 runDomInNode :: forall a. Node -> DocumentBuilder a -> Effect a
 runDomInNode node (DocumentBuilder domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
 
-logIndent :: Ref.Ref Int
-logIndent = unsafePerformEffect $ Ref.new 0
 
-measured :: forall a m. MonadEffect m ⇒ String → m a → m a
-measured actionName action = do
-  start <- liftEffect now
-  _ <- liftEffect $ Ref.modify (_ + 1) logIndent
-  a <- action
-  currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
-  stop <- liftEffect now
-  info $ "[DocumentBuilder] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
-  pure a
-    where
-      repeatStr i s
-        | i <= 0 = ""
-        | otherwise = s <> repeatStr (i - 1) s
+-- TODO move to Web?
+-- measured :: forall a m. MonadEffect m ⇒ String → m a → m a
+-- measured actionName action = do
+--   start <- liftEffect now
+--   _ <- liftEffect $ Ref.modify (_ + 1) logIndent
+--   a <- action
+--   currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
+--   stop <- liftEffect now
+--   info $ "[DocumentBuilder] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+--   pure a
+--     where
+--       repeatStr i s
+--         | i <= 0 = ""
+--         | otherwise = s <> repeatStr (i - 1) s
+-- logIndent :: Ref.Ref Int
+-- logIndent = unsafePerformEffect $ Ref.new 0
+
 
 foreign import randomElementId :: Effect String
 
