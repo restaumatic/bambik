@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import SafeWeb (runWidgetInBody)
+import Web (runWidgetInBody)
 import View (order)
 import ViewModel (defaultOrder)
 

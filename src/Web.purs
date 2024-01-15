@@ -1,170 +1,263 @@
-module Web
-  ( Widget
-  , aside
-  , at'
-  , button
-  , checkboxInput
-  , cl'
-  , clickable
-  , dat'
-  , dcl'
-  , div
-  , h1
-  , h2
-  , h3
-  , h4
-  , h5
-  , h6
-  , html
-  , label
-  , p
-  , path
-  , radioButton
-  , runWidgetInBody
-  , runWidgetInNode
-  , span
-  , svg
-  , text
-  , textInput
-  )
-  where
+module Web where
 
-import Prelude hiding (zero, div)
+import Prelude
 
 import Control.Monad.State (gets)
+import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), isJust)
-import Data.Newtype (unwrap)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap, wrap)
+import Data.String (null)
 import Effect (Effect)
-import Effect.Class (liftEffect)
-import Effect.Class.Console (debug)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (info)
+import Effect.Now (now)
 import Effect.Ref as Ref
-import Propagator (Change(..), Occurrence(..), Propagator(..))
+import Effect.Unsafe (unsafePerformEffect)
+import Propagator (Change(..), Occurrence(..))
+import SafePropagator (SafePropagator)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Internal.DOM (Node, TagName, addClass, getChecked, getValue, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
-import Web.Internal.DOMBuilder (DOMBuilder, initializeInBody, initializeInNode, listener, speaker)
+import Web.Internal.DOM (Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
+import Web.Internal.DOMBuilder (DOMBuilder, runDomInNode)
 import Web.Internal.DOMBuilder as DOMBuilder
 
+type Widget i o = SafePropagator DOMBuilder i o
 
--- Widget
+-- how Maybe _ input is handled by SafeWidgets
+--                Nothing           Just _         default
+-- text           empty text        text
+-- html           no html           html
+-- textInput      disables          enables
+-- checkboxInput  deselects         selects        default select provided
+-- radioButton    deselects         selects        default select provided
+-- button         disables          enables
+-- element        no-op             no-op
+-- ?              detaches          attaches
 
-type Widget i o = Propagator DOMBuilder i o
-
--- Primitive widgets
-
-text :: forall a. Widget String a
-text = Propagator \_ -> do
+text :: forall a . Widget String a -- TODO is default needed?
+text = wrap do
   DOMBuilder.text
-  speaker \node -> case _ of
-    Occurrence None _ -> pure unit
-    Occurrence ch string -> do
-      debug $ "setTextNodeValue " <> show ch
-      liftEffect $ setTextNodeValue node string
+  node <- gets (_.sibling)
+  pure
+    { speak: case _ of
+      Occurrence None _ -> pure unit
+      Occurrence _ Nothing -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
+      Occurrence _ (Just string) -> liftEffect $ setTextNodeValue node string
+    , listen: \_ -> pure unit
+    }
 
 -- TODO make it Widget String a
 html :: forall a b. String -> Widget a b
-html h = Propagator \_ -> do
+html h = wrap do
   DOMBuilder.html h
-  pure $ const $ pure unit
+  pure
+    { speak: const $ pure unit
+    , listen: const $ pure unit
+    }
 
 textInput :: Widget String String
-textInput = Propagator \outward -> do
+textInput = wrap do
   DOMBuilder.element "input" (pure unit)
   DOMBuilder.at "type" "text"
-  listener "input" \_ -> do
-    node <- gets _.sibling
-    liftEffect (getValue node) >>= Occurrence Some >>> outward
-  speaker \node -> case _ of
+  node <- gets _.sibling
+  pure
+    { speak: case _ of
     Occurrence None _ -> pure unit
-    Occurrence _ newa -> do
-      liftEffect $ setValue node newa
+    Occurrence _ Nothing -> liftEffect do
+      setAttribute node "disabled" "true"
+      setValue node ""
+    Occurrence _ (Just newa) -> liftEffect do
+      removeAttribute node "disabled"
+      setValue node newa
+    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
+      value <- liftEffect $ getValue node
+      prop $ Occurrence Some (if null value then Nothing else Just value) -- TODO how to handle null value?
+    }
 
-checkboxInput :: forall a . Widget (Maybe a) (Maybe (Maybe a))
-checkboxInput = Propagator \outward -> do
-  maRef <- liftEffect $ Ref.new Nothing
+checkboxInput :: forall a . a -> Widget (Maybe a) (Maybe a)
+checkboxInput default = wrap do
+  aRef <- liftEffect $ Ref.new default
   DOMBuilder.element "input" (pure unit)
   DOMBuilder.at "type" "checkbox"
-  listener "input" \_ -> do
-    node <- gets _.sibling
-    checked <- liftEffect $ getChecked node
-    ma <- liftEffect $ Ref.read maRef
-    outward $ Occurrence Some (if checked then Just ma else Nothing)
-  speaker \node -> case _ of
+  node <- gets _.sibling
+  pure
+    { speak: case _ of
     Occurrence None _ -> pure unit
-    Occurrence _ newma -> do
-      liftEffect $ setChecked node (isJust newma)
-      for_ newma \newa -> liftEffect $ Ref.write (Just newa) maRef
+    Occurrence _ Nothing -> liftEffect $ setAttribute node "disabled" "true"
+    Occurrence _ (Just Nothing) -> liftEffect $ do
+      removeAttribute node "disabled"
+      setChecked node false
+    Occurrence _ (Just (Just newa)) -> liftEffect do
+      removeAttribute node "disabled"
+      setChecked node true
+      Ref.write newa aRef
+    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
+      checked <- liftEffect $ getChecked node
+      a <- liftEffect $ Ref.read aRef
+      prop $ Occurrence Some $ Just $ if checked then (Just a) else Nothing
+    }
 
--- input:
--- Nothing -> turns off button
--- Just a -> turns on (if turned off) button and remembers `a`
--- output:
--- Nothing -> on button clicked when button doesn't remember any `a`
--- Just a -> on button clicked when button does remember an `a`
-radioButton :: forall a. Widget (Maybe a) (Maybe a)
-radioButton = Propagator \outward -> do
-  maRef <- liftEffect $ Ref.new Nothing
+radioButton :: forall a. a -> Widget a a
+radioButton default = wrap do
+  aRef <- liftEffect $ Ref.new default
   DOMBuilder.element "input" (pure unit)
   DOMBuilder.at "type" "radio"
-  listener "change" \_ -> liftEffect (Ref.read maRef) >>= Occurrence Some >>> outward
-  speaker \node -> case _ of
+  node <- gets _.sibling
+  pure
+    { speak: case _ of
     Occurrence None _ -> pure unit
     Occurrence _ Nothing -> liftEffect $ setChecked node false
-    Occurrence _ newma@(Just _) -> do
-      liftEffect $ Ref.write newma maRef
+    Occurrence _ (Just newa) -> do
       liftEffect $ setChecked node true
+      liftEffect $ Ref.write newa aRef
+    , listen: \prop -> void $ liftEffect $ addEventListener "change" node $ const $ runDomInNode node do
+    a <- liftEffect $ Ref.read aRef
+    prop $ Occurrence Some (Just a)
+    }
 
--- Widget optics
-
-element :: forall a b. TagName -> Widget a b -> Widget a b
-element tagName w = Propagator \outward -> do
-  update <- DOMBuilder.element tagName do
-    unwrap w outward
-  pure case _ of
-    Occurrence None _ -> pure unit
-    Occurrence ch newa -> do
-      update $ Occurrence ch newa
+element :: forall i o. String -> Widget i o -> Widget i o
+element tagName = wrap <<< DOMBuilder.element tagName <<< unwrap
 
 at' :: forall a b. String -> String -> Widget a b -> Widget a b
-at' name value w = Propagator \outward -> do
-  update <- unwrap w outward
+at' name value w = wrap do
+  w' <- unwrap w
   DOMBuilder.at name value
-  pure update
+  pure w'
 
 dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget a b -> Widget a b
-dat' name value pred w = Propagator \outward -> do
-  update <- unwrap w outward
-  speaker \node -> case _ of
-    Occurrence None _ -> pure unit
-    Occurrence ch newa -> do
-      liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
-      update $ Occurrence ch newa
+dat' name value pred w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  pure
+    { speak: \occur -> do
+      w'.speak occur
+      case occur of
+        Occurrence None _ -> pure unit
+        Occurrence _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
+        Occurrence _ (Just newa) -> do
+          liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
+    , listen: w'.listen
+    }
 
 cl' :: forall a b. String -> Widget a b -> Widget a b
-cl' name w = Propagator \outward -> do
-  update <- unwrap w outward
+cl' name w = wrap do
+  w' <- unwrap w
   DOMBuilder.cl name
-  pure update
+  pure
+    { speak: w'.speak
+    , listen: w'.listen
+    }
 
 dcl' :: forall a b. String -> (a -> Boolean) -> Widget a b -> Widget a b
-dcl' name pred w = Propagator \outward -> do
-  update <- unwrap w outward
-  speaker \node -> case _ of
-    Occurrence None _ -> pure unit
-    Occurrence ch newa -> do
-      liftEffect $ (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
-      update $ Occurrence ch newa
+dcl' name pred w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  pure
+    { speak: \occur -> do
+    w'.speak occur
+    case occur of
+      Occurrence None _ -> pure unit
+      Occurrence _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
+      Occurrence _ (Just newa) -> do
+        liftEffect $ (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
+    , listen: w'.listen
+    }
 
 clickable :: forall a. Widget a Void -> Widget a a
-clickable w = Propagator \outward -> do
+clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  update <- unwrap w (const $ pure unit)
-  listener "click" \_ -> liftEffect (Ref.read aRef) >>= outward
-  pure case _ of
-    Occurrence None _ -> pure unit
-    cha -> do
-      liftEffect $ Ref.write cha aRef
-      update cha
+  w' <- unwrap w
+  node <- gets _.sibling
+  pure
+    { speak: \occur -> do
+    w'.speak occur
+    case occur of
+      Occurrence None _ -> pure unit
+      Occurrence _ Nothing -> pure unit
+      Occurrence _ (Just cha) -> do
+        liftEffect $ Ref.write cha aRef
+    , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const $ runDomInNode node do
+    a <- liftEffect $ Ref.read aRef
+    prop $ Occurrence Some (Just a)
+    }
+
+slot :: forall a b. Widget a b -> Widget a b
+slot w = wrap do
+  {update: { speak, listen}, attach, detach} <- attachable' false $ unwrap w
+  pure
+    { speak: \occur -> do
+      speak occur
+      case occur of
+        (Occurrence None _) -> pure unit
+        (Occurrence _ Nothing) -> detach
+        (Occurrence _ (Just _)) -> attach
+    , listen: listen
+    }
+
+attachable' :: forall a. Boolean -> DOMBuilder a -> DOMBuilder { update :: a, attach :: DOMBuilder Unit, detach :: DOMBuilder Unit }
+attachable' removePrecedingSiblingNodes dom = do
+  parent <- gets _.parent
+  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+  liftEffect $ measured' slotNo "created" do
+
+    placeholderBefore <- newPlaceholderBefore slotNo
+    placeholderAfter <- newPlaceholderAfter slotNo
+
+    (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
+    appendChild placeholderAfter parent
+
+    initialDocumentFragment <- createDocumentFragment
+    update <- runDomInNode initialDocumentFragment dom
+
+    detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
+
+    let
+      attach :: DOMBuilder Unit
+      attach = measured' slotNo "attached" $ liftEffect do
+        removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+        mDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
+        for_ mDocumentFragment \documentFragment -> documentFragment `insertBefore` placeholderAfter
+
+      detach :: DOMBuilder Unit
+      detach = measured' slotNo "detached" $ liftEffect do
+        mDocumentFragment <- Ref.read detachedDocumentFragmentRef
+        case mDocumentFragment of
+          Nothing -> do
+            documentFragment <- createDocumentFragment
+            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
+            Ref.write (Just documentFragment) detachedDocumentFragmentRef
+          Just _ -> pure unit
+
+    pure $ { attach, detach, update }
+    where
+      measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
+      measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
+
+measured :: forall a m. MonadEffect m ⇒ String → m a → m a
+measured actionName action = do
+  start <- liftEffect now
+  _ <- liftEffect $ Ref.modify (_ + 1) logIndent
+  a <- action
+  currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
+  stop <- liftEffect now
+  info $ "[DOMBuilder] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
+  pure a
+    where
+      repeatStr i s
+        | i <= 0 = ""
+        | otherwise = s <> repeatStr (i - 1) s
+
+logIndent :: Ref.Ref Int -- TODO ST?
+logIndent = unsafePerformEffect $ Ref.new 0
+
+slotCounter :: Ref.Ref Int
+slotCounter = unsafePerformEffect $ Ref.new 0
+
+newPlaceholderBefore :: forall a. Show a ⇒ a → Effect Node
+newPlaceholderBefore slotNo = createCommentNode $ "begin component " <> show slotNo
+
+newPlaceholderAfter :: forall a. Show a ⇒ a → Effect Node
+newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
 
 --
 
@@ -212,8 +305,15 @@ h6 = element "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall i o. Widget i o -> i -> Effect Unit
-runWidgetInBody widget i = initializeInBody (unwrap widget (const $ pure unit)) (Occurrence Some i)
+runWidgetInBody :: forall i o. Widget i o -> Maybe i -> Effect Unit
+runWidgetInBody w mi = do
+  node <- documentBody
+  runWidgetInNode node w mi $ const $ pure unit
 
-runWidgetInNode :: forall i o. Node -> Widget i o -> i -> (o -> DOMBuilder Unit) -> Effect Unit
-runWidgetInNode node widget i outward = initializeInNode node (unwrap widget \(Occurrence _ o) -> outward o) (Occurrence Some i)
+runWidgetInNode :: forall i o. Node -> Widget i o -> Maybe i -> (Maybe o -> DOMBuilder Unit) -> Effect Unit
+runWidgetInNode node w mi outward = runDomInNode node do
+  { speak, listen } <- unwrap w
+  listen case _ of
+    Occurrence None _ -> pure unit
+    Occurrence _ mo -> outward mo
+  speak (Occurrence Some mi)
