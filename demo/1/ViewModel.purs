@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Propagator.Optics (PropOptic', constructor, field, iso)
+import Propagator (PropOptic', constructor, field, iso)
 
 type Order =
   { uniqueId :: UniqueId

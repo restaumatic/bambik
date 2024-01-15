@@ -9,7 +9,7 @@ import Data.Lens (_Just)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import SafePropagator (fixed)
+import Propagator (fixed)
 import Web (Widget, at', div, slot, text)
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, surname, table, takeaway, time, total, uniqueId)
 import Web.MDC as MDC

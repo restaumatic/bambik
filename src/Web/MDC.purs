@@ -36,7 +36,7 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import SafePropagator (bracket)
+import Propagator (bracket)
 import Web (Widget, aside, at', cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, textInput, label, p, span, text)
 import Web (button, checkboxInput, radioButton) as Web
 import Web.Internal.DOM (Node)

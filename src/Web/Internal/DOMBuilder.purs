@@ -30,7 +30,6 @@ import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import Propagator (class MonadGUI)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Event, Node, TagName, addClass, addEventListener, appendChild, appendRawHtml, createCommentNode, createDocumentFragment, createElement, createTextNode, documentBody, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, setAttribute, setAttributes)
 
@@ -49,9 +48,6 @@ derive newtype instance Bind DOMBuilder
 derive newtype instance Monad DOMBuilder
 derive newtype instance MonadEffect DOMBuilder
 derive newtype instance MonadState DOMBuilderEnv DOMBuilder
-
-instance MonadGUI DOMBuilder where
-  attachable = attachable' false
 
 initializeInBody :: forall a. DOMBuilder (a -> DOMBuilder Unit) → a -> Effect Unit
 initializeInBody dom a = measured "initialized" do

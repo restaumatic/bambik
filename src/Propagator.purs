@@ -1,52 +1,54 @@
 module Propagator
   ( Change(..)
   , Occurrence(..)
-  , Propagation
+  , PropOptic
+  , PropOptic'
   , Propagator(..)
   , Scope(..)
-  , attachable
   , bracket
-  , class MonadGUI
-  , debounce
-  , debounce'
-  , effect
+  , constructor
+  , field
   , fixed
-  , module Control.Alternative
-  , scopemap
+  , iso
+  , lens
+  , preview
+  , prism
+  , projection
+  , view
   )
   where
 
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Alternative (class Plus, empty)
+import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe(..), maybe, fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Strong (class Strong)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor.Choice (class Choice, left)
+import Data.Profunctor.Strong (class Strong, first)
 import Data.Show.Generic (genericShow)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, killFiber, launchAff_)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Ref (read, write)
+import Effect.Class (class MonadEffect)
 import Effect.Ref as Ref
+import Effect.Unsafe (unsafePerformEffect)
+import Prim.Row as Row
+import Record (get, set)
+import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
-newtype Propagator m i o = Propagator (Propagation m o -> m (Propagation m i))
---                                     -- outward --       -- inward ---
---                                                      ^ artefact effect
--- Important: outward propagation should never be trigerred by inward propagation (TODO: how to encode it on type level? By allowing
--- inward to perform only a subset of effects?) otherwise w1 ^ w2 for w1 and w2 doing so would cause propagation infinite loop
--- of mutual updates.
+newtype Propagator m i o = Propagator (m
+  { speak :: Occurrence (Maybe i) -> m Unit
+  , listen :: (Occurrence (Maybe o) -> m Unit) -> m Unit
+  })
 
-type Propagation m a = Occurrence a -> m Unit
+derive instance Newtype (Propagator m i o) _
 
 data Occurrence a = Occurrence Change a
 
@@ -61,8 +63,6 @@ data Scope = Part String | Variant String
 derive instance Generic Scope _
 instance Show Scope where
   show = genericShow
-
-derive instance Newtype (Propagator m i o) _
 
 derive instance Functor Occurrence
 
@@ -87,169 +87,183 @@ instance Monoid Change where
 
 derive instance Eq Scope
 
-instance Monad m => Profunctor (Propagator m) where
-  dimap pre post w = Propagator \outward -> do
-    inward <- unwrap w $ outward <<< map post
-    pure $ inward <<< map pre
+preview :: forall m i o. Monad m => Propagator m i o -> m Unit
+preview p = do
+  { speak, listen } <- unwrap p
+  listen (const $ pure unit)
+  speak (Occurrence Some Nothing)
 
-instance MonadEffect m => Strong (Propagator m) where
-  first w = Propagator \outward -> do
-    maandbRef <- liftEffect $ Ref.new Nothing
-    inward <- unwrap w \cha -> do
-      maandb <- liftEffect $ Ref.read maandbRef
-      for_ maandb \(Tuple _ b) -> outward $ (\a -> Tuple a b) <$> cha
-    pure \chab@(Occurrence _ aandb) -> do
-      liftEffect $ Ref.write (Just aandb) maandbRef
-      case chab of
-        Occurrence None _ -> pure unit
-        Occurrence _ _ -> inward $ fst <$> chab
-  second w = Propagator \outward -> do
-    maandbRef <- liftEffect $ Ref.new Nothing
-    inward <- unwrap w \chb -> do
-      maandb <- liftEffect $ Ref.read maandbRef
-      for_ maandb \(Tuple a _) -> outward $ (\b -> Tuple a b) <$> chb
-    pure \chab@(Occurrence _ aandb) -> do
-      liftEffect $ Ref.write (Just aandb) maandbRef
-      case chab of
-        Occurrence None _ -> pure unit
-        Occurrence _ _ -> inward $ snd <$> chab
+view :: forall m i o. Monad m => Propagator m i o -> i -> m Unit
+view p i = do
+  { speak, listen } <- unwrap p
+  listen (const $ pure unit)
+  speak (Occurrence Some (Just i))
 
-class MonadEffect m <= MonadGUI m where
-  attachable :: forall a. m (a -> m Unit) -> m { update :: a -> m Unit, attach :: m Unit, detach :: m Unit}
+instance Functor m => Profunctor (Propagator m) where
+  dimap contraf cof p = wrap $ unwrap p <#> \p' ->
+    { speak: (_ <<< map (map contraf)) $ p'.speak
+    , listen: p'.listen <<< lcmap (map (map cof))
+    }
 
-instance MonadGUI m => Choice (Propagator m) where
-  left w = Propagator \outward -> do
-    maorbRef <- liftEffect $ Ref.new Nothing
-    { attach, detach, update } <- attachable $ unwrap w \cha -> do
-      maorb <- liftEffect $ Ref.read maorbRef
-      case maorb of
-        Just (Left _) -> outward $ Left <$> cha
-        _ -> pure unit
-    pure \chaorb@(Occurrence _ aorb) -> do
-      moldaorb <- liftEffect $ Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
-      case chaorb of
-        Occurrence None _ -> pure unit
-        Occurrence _ (Left a) -> do
-          update $ a <$ chaorb -- first update and only then possibly attach
-          case moldaorb of
-            (Just (Left _)) -> pure unit
-            _ -> attach
-        Occurrence _ (Right _) -> do
-          case moldaorb of
-            (Just (Left _)) -> detach
-            _ -> pure unit
-  right w = Propagator \outward -> do
-    maorbRef <- liftEffect $ Ref.new Nothing
-    { attach, detach, update } <- attachable $ unwrap w \chb -> do
-      maorb <- liftEffect $ Ref.read maorbRef
-      case maorb of
-        Just (Right _) -> outward $ Right <$> chb
-        _ -> pure unit
-    pure \chaorb@(Occurrence _ aorb) -> do
-      moldaorb <- liftEffect $ Ref.modify' (\oldState -> { state: Just aorb, value: oldState}) maorbRef
-      case chaorb of
-        Occurrence None _ -> pure unit
-        Occurrence _ (Right b) -> do
-          update $ b <$ chaorb  -- first inward and only then possibly attach
-          case moldaorb of
-            (Just (Right _)) -> pure unit
-            _ -> attach
-        Occurrence _ (Left _) -> do
-          case moldaorb of
-            (Just (Right _)) -> detach
-            _ -> pure unit
+instance Applicative m => Strong (Propagator m) where
+  first p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { speak: \omab -> do
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
+        case omab of
+          Occurrence None _ -> pure unit -- should never happen
+          _ -> p'.speak (map (map fst) omab)
+      , listen: \propagationab -> do
+        p'.listen \oa -> do
+          let (Occurrence _ prevmab) = unsafePerformEffect $ Ref.read lastomab
+          for_ prevmab \prevab -> propagationab (map (map (flip Tuple (snd prevab))) oa)
+      }
+  second p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { speak: \omab -> do
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
+        case omab of
+          Occurrence None _ -> pure unit -- should never happen
+          _ -> p'.speak (map (map snd) omab)
+      , listen: \propagationab -> do
+        p'.listen \oa -> do
+          let (Occurrence _ prevmab) = unsafePerformEffect $ Ref.read lastomab
+          for_ prevmab \prevab -> propagationab (map (map (Tuple (fst prevab))) oa )
+      }
 
-instance MonadEffect m => Semigroupoid (Propagator m) where
-  compose w2 w1 = Propagator \outward -> do
-    update2Ref <- liftEffect $ Ref.new $ unsafeCoerce unit
-    inward1 <- unwrap w1 \(Occurrence _ b) -> do
-      inward2 <- liftEffect $ Ref.read update2Ref
-      inward2 $ Occurrence Some b -- we force w2 to inward cause w2 is updated only via outward by w1
-    inward2 <- unwrap w2 outward
-    liftEffect $ Ref.write inward2 update2Ref
-    pure inward1
+instance Applicative m => Choice (Propagator m) where
+  left p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { speak: \omab -> do
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
+        case omab of
+          Occurrence None _ -> pure unit
+          Occurrence _ Nothing -> p'.speak $ omab $> Nothing
+          Occurrence _ (Just (Right _)) -> p'.speak $ omab $> Nothing
+          Occurrence _ (Just (Left a)) -> p'.speak $ omab $> Just a
+      , listen: \propagationab -> do
+        p'.listen \oa -> do -- should never happen
+          -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
+          propagationab (map Left <$> oa)
+      }
+  right p = wrap ado
+    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { speak: \omab -> do
+        let _ = unsafePerformEffect $ Ref.write omab lastomab
+        case omab of
+          Occurrence None _ -> pure unit
+          Occurrence _ Nothing -> p'.speak $ omab $> Nothing
+          Occurrence _ (Just (Left _)) -> p'.speak $ omab $> Nothing
+          Occurrence _ (Just (Right a)) -> p'.speak $ omab $> Just a
+      , listen: \propagationab -> do
+        p'.listen \oa -> do -- should never happen
+          -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
+          propagationab (map Right <$> oa)
+      }
 
-instance MonadEffect m => Semigroup (Propagator m a a) where
-  append c1 c2 = Propagator \updateParent -> do
-    -- TODO how to get rid of these refs?
-    mUpdate1Ref <- liftEffect $ Ref.new Nothing
-    mUpdate2Ref <- liftEffect $ Ref.new Nothing
-    inward1 <- unwrap c1 \cha@(Occurrence _ a) -> do
-      mUpdate2 <- liftEffect $ Ref.read mUpdate2Ref
-      let inward2 = maybe (const (pure unit)) identity mUpdate2
-      mUpdate1 <- liftEffect $ Ref.read mUpdate1Ref
-      let inward1 = maybe (const (pure unit)) identity mUpdate1
-      inward1 (Occurrence None a)
-      inward2 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just inward1) mUpdate1Ref
-    inward2 <- unwrap c2 \cha@(Occurrence _ a) -> do
-      mUpdate2 <- liftEffect $ Ref.read mUpdate2Ref
-      let inward2 = maybe (const (pure unit)) identity mUpdate2
-      inward2 (Occurrence None a)
-      inward1 cha
-      updateParent cha
-    liftEffect $ Ref.write (Just inward2) mUpdate2Ref
-    pure $ inward1 *> inward2
+instance Apply m => Semigroup (Propagator m a a) where
+  append p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { speak: \o -> ado
+        p1'.speak o
+        p2'.speak o
+        in unit
+      , listen: \propagation -> ado
+        p1'.listen \o -> ado
+          p2'.speak o
+          propagation o
+          in unit
+        p2'.listen \o -> ado
+          p1'.speak o
+          propagation o
+          in unit
+        in unit
+      }
+-- compare to: instance MonadEffect m => Semigroup (Propagator m a a) where
 
-instance Functor (Propagator m a) where
-  map f p = wrap \outward -> unwrap p (map f >>> outward)
+instance Monad m => Semigroupoid (Propagator m) where
+  compose p2 p1 = wrap do
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    p1'.listen \o -> p2'.speak o -- TODO what does it mean if o is Nothing?
+    pure
+      { speak: p1'.speak -- TODO call p2.speak Nothing?
+      , listen: p2'.listen
+      }
+-- compare to: instance MonadEffect m => Semigroupoid (Propagator m) where
+
+-- impossible:
+-- instance Monad m => Category (Propagator m) where
+--   identity = wrap $ pure
+--     { speak: unsafeThrow "impossible"
+--     , listen: unsafeThrow "impossible"
+--     }
+
+instance Functor m => Functor (Propagator m a) where
+  map f p = wrap $ unwrap p <#> \p' ->
+    { speak: p'.speak
+    , listen: p'.listen <<< lcmap (map (map f))
+    }
 
 instance Apply m => Alt (Propagator m a) where
-  alt p1 p2 = wrap \outward -> (*>) <$> unwrap p1 outward <*> unwrap p2 outward
+  alt p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { speak: p1'.speak *> p2'.speak
+      , listen: \propagation -> ado
+        p1'.listen propagation
+        p2'.listen propagation
+        in unit
+      }
 
 instance Applicative m => Plus (Propagator m a) where
-  empty = wrap \_ -> pure (const (pure unit))
+  empty = wrap $ pure
+    { speak: const $ pure unit
+    , listen: const $ pure unit
+    }
 
--- Makes `Widget a b` fixed on `a` - no matter what `s` from the context of `Widget s t` is, so the `s`s are not listened to at all
-fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
-fixed a w = Propagator \_ -> do
-  inward <- unwrap w (const (pure unit))
-  inward $ Occurrence Some a
-  pure (const (pure unit)) -- inward is never called again, outward is never called
-
-effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Propagator m i o -- we require Aff so we can cancel propagation when new input comes in
-effect action = Propagator \outward -> do
-  mFiberRef <- liftEffect $ Ref.new Nothing
-  pure \(Occurrence _ i) -> liftEffect $ launchAff_ do -- we do update event if there is no change (we accept all Change values)
-    mFiber <- liftEffect $ read mFiberRef
-    for_ mFiber $ killFiber (error "Obsolete input")
-    newFiber <- forkAff do
-      o <- action i
-      liftEffect $ bar $ outward $ Occurrence Some o -- we callback with Some :: Change we don't know anything about a change
-    liftEffect $ write (Just newFiber) mFiberRef
-    where
-      -- hack to type check, but it won't work
-      bar :: m Unit -> Effect Unit
-      bar = unsafeCoerce unit
-
-
-debounce :: forall m a. MonadEffect m => Milliseconds -> Propagator m a a
-debounce millis = effect \i -> do
-  delay millis
-  pure i
-
-debounce' :: forall m a. MonadEffect m => Propagator m a a
-debounce' = debounce (Milliseconds 500.0)
-
-bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence i' -> m (Occurrence i)) -> (c -> Occurrence o -> m (Occurrence o')) -> Propagator m i o -> Propagator m i' o'
-bracket afterInit afterInward beforeOutward w = Propagator \outward -> do
-  cRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  inward <- unwrap w \occurb -> do
-    ctx <- liftEffect $ Ref.read cRef
-    o' <- beforeOutward ctx occurb
-    outward o'
+bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Occurrence (Maybe i') -> m (Occurrence (Maybe i))) -> (c -> Occurrence (Maybe o) -> m (Occurrence (Maybe o'))) -> Propagator m i o -> Propagator m i' o'
+bracket afterInit afterInward beforeOutward w = wrap do
+  w' <- unwrap w
   ctx <- afterInit
-  liftEffect $ Ref.write ctx cRef
-  pure \occuri' -> do
-      i <- afterInward ctx occuri'
-      inward i
+  pure
+    { speak: \occur -> do
+      occur' <- afterInward ctx occur
+      w'.speak occur'
+    , listen: \prop -> do
+      w'.listen \occur -> do
+        occur' <- beforeOutward ctx occur
+        prop occur'
+      }
 
-scopemap :: forall m a b. Monad m => Scope -> Propagator m a b -> Propagator m a b
-scopemap scope p = Propagator \outward -> do
-  inward <- unwrap p \(Occurrence c a) -> do
-    outward $ Occurrence (zoomOut c) a
-  pure \(Occurrence c a) -> inward $ Occurrence (zoomIn c) a
+fixed :: forall m a b s t. MonadEffect m => a -> Propagator m a b -> Propagator m s t
+fixed a w = wrap do
+  w' <- unwrap w
+  w'.speak (Occurrence Some (Just a))
+  pure
+    { speak: const $ pure unit
+    , listen: const $ pure unit
+    }
+
+scopemap :: forall m a b. Applicative m => Scope -> Propagator m a b -> Propagator m a b
+scopemap scope p = wrap ado
+  { speak, listen } <- unwrap p
+  in
+    { speak: \(Occurrence c a) -> speak $ Occurrence (zoomOut c) a
+    , listen: \prop -> do
+      listen \(Occurrence c a) -> prop $ Occurrence (zoomIn c) a
+    }
   where
     zoomOut :: Change -> Change
     zoomOut Some = Scoped (scope `NonEmptyArray.cons'` [])
@@ -268,3 +282,27 @@ scopemap scope p = Propagator \outward -> do
         _ -> None -- otherwise
     zoomIn None = None
 
+-- optics
+
+type PropOptic a b s t = forall m. Applicative m => Propagator m a b -> Propagator m s t
+type PropOptic' a s = forall m. Applicative m => Propagator m a a -> Propagator m s s
+
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> PropOptic' a s
+iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
+
+projection :: forall a b s. (s -> a) -> PropOptic a b s b
+projection f = dimap f identity
+
+lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> PropOptic a b s t
+lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) ->setter s b) >>> scopemap (Variant name)
+
+field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => PropOptic' a (Record s)
+field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
+  where
+    field' name setter getter = scopemap (Part name) >>> first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a)
+
+prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> PropOptic a b s t
+prism name construct deconstruct = left >>> dimap deconstruct (either construct identity) >>> scopemap (Variant name) -- TODO not sure about it
+
+constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> PropOptic' a s
+constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)

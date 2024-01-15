@@ -15,13 +15,13 @@ import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Propagator (Change(..), Occurrence(..))
-import SafePropagator (SafePropagator)
+import Propagator (Propagator)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.DOM (Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.DOMBuilder (DOMBuilder, runDomInNode)
 import Web.Internal.DOMBuilder as DOMBuilder
 
-type Widget i o = SafePropagator DOMBuilder i o
+type Widget i o = Propagator DOMBuilder i o
 
 -- how Maybe _ input is handled by SafeWidgets
 --                Nothing           Just _         default
