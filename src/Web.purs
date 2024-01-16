@@ -19,17 +19,6 @@ import Unsafe.Coerce (unsafeCoerce) -- TODO not relying on unsafe stuff
 import Web.Internal.Web (Web, runDomInNode, Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.Web as Web
 
--- how Maybe _ input is handled by SafeWidgets
---                Nothing           Just _         default
--- text           empty text        text
--- html           no html           html
--- textInput      disables          enables
--- checkboxInput  deselects         selects        default select provided
--- radioButton    deselects         selects        default select provided
--- button         disables          enables
--- element        no-op             no-op
--- ?              detaches          attaches
-
 text :: forall a . Widget Web String a -- TODO is default needed?
 text = wrap do
   Web.text
@@ -189,45 +178,45 @@ slot w = wrap do
         Some _ (Just _) -> attach
     , listen: listen
     }
+  where
+  attachable' :: forall x. Boolean -> Web x -> Web { update :: x, attach :: Web Unit, detach :: Web Unit }
+  attachable' removePrecedingSiblingNodes dom = do
+    parent <- gets _.parent
+    slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+    liftEffect $ measured' slotNo "created" do
 
-attachable' :: forall a. Boolean -> Web a -> Web { update :: a, attach :: Web Unit, detach :: Web Unit }
-attachable' removePrecedingSiblingNodes dom = do
-  parent <- gets _.parent
-  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
-  liftEffect $ measured' slotNo "created" do
+      placeholderBefore <- newPlaceholderBefore slotNo
+      placeholderAfter <- newPlaceholderAfter slotNo
 
-    placeholderBefore <- newPlaceholderBefore slotNo
-    placeholderAfter <- newPlaceholderAfter slotNo
+      (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
+      appendChild placeholderAfter parent
 
-    (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
-    appendChild placeholderAfter parent
+      initialDocumentFragment <- createDocumentFragment
+      update <- runDomInNode initialDocumentFragment dom
 
-    initialDocumentFragment <- createDocumentFragment
-    update <- runDomInNode initialDocumentFragment dom
+      detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
 
-    detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
+      let
+        attach :: Web Unit
+        attach = measured' slotNo "attached" $ liftEffect do
+          removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+          mDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
+          for_ mDocumentFragment \documentFragment -> documentFragment `insertBefore` placeholderAfter
 
-    let
-      attach :: Web Unit
-      attach = measured' slotNo "attached" $ liftEffect do
-        removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
-        mDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
-        for_ mDocumentFragment \documentFragment -> documentFragment `insertBefore` placeholderAfter
+        detach :: Web Unit
+        detach = measured' slotNo "detached" $ liftEffect do
+          mDocumentFragment <- Ref.read detachedDocumentFragmentRef
+          case mDocumentFragment of
+            Nothing -> do
+              documentFragment <- createDocumentFragment
+              moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
+              Ref.write (Just documentFragment) detachedDocumentFragmentRef
+            Just _ -> pure unit
 
-      detach :: Web Unit
-      detach = measured' slotNo "detached" $ liftEffect do
-        mDocumentFragment <- Ref.read detachedDocumentFragmentRef
-        case mDocumentFragment of
-          Nothing -> do
-            documentFragment <- createDocumentFragment
-            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
-            Ref.write (Just documentFragment) detachedDocumentFragmentRef
-          Just _ -> pure unit
-
-    pure $ { attach, detach, update }
-    where
-      measured' :: forall b m. MonadEffect m => Int -> String → m b → m b
-      measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
+      pure $ { attach, detach, update }
+      where
+        measured' :: forall y m. MonadEffect m => Int -> String → m y → m y
+        measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
 
 measured :: forall a m. MonadEffect m ⇒ String → m a → m a
 measured actionName action = do
