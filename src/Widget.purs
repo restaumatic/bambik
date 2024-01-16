@@ -230,6 +230,7 @@ projection f = dimap f identity
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Part name)
 
+-- TODO use Data.Lens.Record.prop
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Record s)
 field = lens (reflectSymbol (Proxy @l)) (get (Proxy @l)) (flip (set (Proxy @l)))
 
