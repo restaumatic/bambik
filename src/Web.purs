@@ -14,7 +14,7 @@ import Effect.Class.Console (info)
 import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Widget (Widget, Change(..), Occurrence(..))
+import Widget (Widget, Change(..))
 import Unsafe.Coerce (unsafeCoerce) -- TODO not relying on unsafe stuff
 import Web.Internal.Web (Web, runDomInNode, Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.Web as Web
@@ -36,9 +36,9 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { speak: case _ of
-      Occurrence None _ -> pure unit
-      Occurrence _ Nothing -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
-      Occurrence _ (Just string) -> liftEffect $ setTextNodeValue node string
+      None -> pure unit
+      Some _ Nothing -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
+      Some _ (Just string) -> liftEffect $ setTextNodeValue node string
     , listen: \_ -> pure unit
     }
 
@@ -58,16 +58,16 @@ textInput = wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    Occurrence None _ -> pure unit
-    Occurrence _ Nothing -> liftEffect do
+    None -> pure unit
+    Some _ Nothing -> liftEffect do
       setAttribute node "disabled" "true"
       setValue node ""
-    Occurrence _ (Just newa) -> liftEffect do
+    Some _ (Just newa) -> liftEffect do
       removeAttribute node "disabled"
       setValue node newa
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
       value <- liftEffect $ getValue node
-      prop $ Occurrence Some (if null value then Nothing else Just value) -- TODO how to handle null value?
+      prop $ Some [] (if null value then Nothing else Just value) -- TODO how to handle null value?
     }
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
@@ -78,19 +78,19 @@ checkboxInput default = wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    Occurrence None _ -> pure unit
-    Occurrence _ Nothing -> liftEffect $ setAttribute node "disabled" "true"
-    Occurrence _ (Just Nothing) -> liftEffect $ do
+    None -> pure unit
+    Some _ Nothing -> liftEffect $ setAttribute node "disabled" "true"
+    Some _ (Just Nothing) -> liftEffect $ do
       removeAttribute node "disabled"
       setChecked node false
-    Occurrence _ (Just (Just newa)) -> liftEffect do
+    Some _ (Just (Just newa)) -> liftEffect do
       removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
       checked <- liftEffect $ getChecked node
       a <- liftEffect $ Ref.read aRef
-      prop $ Occurrence Some $ Just $ if checked then (Just a) else Nothing
+      prop $ Some [] $ Just $ if checked then (Just a) else Nothing
     }
 
 radioButton :: forall a. a -> Widget Web a a
@@ -101,14 +101,14 @@ radioButton default = wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    Occurrence None _ -> pure unit
-    Occurrence _ Nothing -> liftEffect $ setChecked node false
-    Occurrence _ (Just newa) -> do
+    None -> pure unit
+    Some _ Nothing -> liftEffect $ setChecked node false
+    Some _ (Just newa) -> do
       liftEffect $ setChecked node true
       liftEffect $ Ref.write newa aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "change" node $ const $ runDomInNode node do
     a <- liftEffect $ Ref.read aRef
-    prop $ Occurrence Some (Just a)
+    prop $ Some [] (Just a)
     }
 
 element :: forall i o. String -> Widget Web i o -> Widget Web i o
@@ -128,9 +128,9 @@ dat' name value pred w = wrap do
     { speak: \occur -> do
       w'.speak occur
       case occur of
-        Occurrence None _ -> pure unit
-        Occurrence _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
-        Occurrence _ (Just newa) -> do
+        None -> pure unit
+        Some _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
+        Some _ (Just newa) -> do
           liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
     , listen: w'.listen
     }
@@ -152,9 +152,9 @@ dcl' name pred w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      Occurrence None _ -> pure unit
-      Occurrence _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
-      Occurrence _ (Just newa) -> do
+      None -> pure unit
+      Some _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
+      Some _ (Just newa) -> do
         liftEffect $ (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
     , listen: w'.listen
     }
@@ -168,13 +168,13 @@ clickable w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      Occurrence None _ -> pure unit
-      Occurrence _ Nothing -> pure unit
-      Occurrence _ (Just cha) -> do
+      None -> pure unit
+      Some _ Nothing -> pure unit
+      Some _ (Just cha) -> do
         liftEffect $ Ref.write cha aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const $ runDomInNode node do
     a <- liftEffect $ Ref.read aRef
-    prop $ Occurrence Some (Just a)
+    prop $ Some [] (Just a)
     }
 
 slot :: forall a b. Widget Web a b -> Widget Web a b
@@ -184,9 +184,9 @@ slot w = wrap do
     { speak: \occur -> do
       speak occur
       case occur of
-        (Occurrence None _) -> pure unit
-        (Occurrence _ Nothing) -> detach
-        (Occurrence _ (Just _)) -> attach
+        None -> pure unit
+        Some _ Nothing -> detach
+        Some _ (Just _) -> attach
     , listen: listen
     }
 
@@ -310,6 +310,6 @@ runWidgetInNode :: forall i o. Node -> Widget Web i o -> Maybe i -> (Maybe o -> 
 runWidgetInNode node w mi outward = runDomInNode node do
   { speak, listen } <- unwrap w
   listen case _ of
-    Occurrence None _ -> pure unit
-    Occurrence _ mo -> outward mo
-  speak (Occurrence Some mi)
+    None -> pure unit
+    Some _ mo -> outward mo
+  speak (Some [] mi)
