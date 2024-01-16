@@ -33,7 +33,6 @@ import Data.Profunctor.Strong (class Strong, first)
 import Data.Show.Generic (genericShow)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect.Class (class MonadEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -164,7 +163,6 @@ instance Apply m => Semigroup (Widget m a a) where
           in unit
         in unit
       }
--- compare to: instance MonadEffect m => Semigroup (Widget m a a) where
 
 instance Monad m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
@@ -175,7 +173,6 @@ instance Monad m => Semigroupoid (Widget m) where
       { speak: p1'.speak -- TODO call p2.speak Nothing?
       , listen: p2'.listen
       }
--- compare to: instance MonadEffect m => Semigroupoid (Widget m) where
 
 -- impossible:
 -- instance Monad m => Category (Widget m) where
@@ -208,7 +205,7 @@ instance Applicative m => Plus (Widget m a) where
     , listen: const $ pure unit
     }
 
-bracket :: forall m c i o i' o'. MonadEffect m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
+bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
 bracket afterInit afterInward beforeOutward w = wrap do
   w' <- unwrap w
   ctx <- afterInit
@@ -222,7 +219,7 @@ bracket afterInit afterInward beforeOutward w = wrap do
         prop occur'
       }
 
-fixed :: forall m a b s t. MonadEffect m => a -> Widget m a b -> Widget m s t
+fixed :: forall m a b s t. Monad m => a -> Widget m a b -> Widget m s t
 fixed a w = wrap do
   w' <- unwrap w
   w'.speak (Some [] (Just a))
@@ -230,29 +227,6 @@ fixed a w = wrap do
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
-
-scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
-scopemap scope p = wrap ado
-  { speak, listen } <- unwrap p
-  in
-    { speak: speak <<< zoomIn
-    , listen: \prop -> do
-      listen $ prop <<< zoomOut
-    }
-  where
-    zoomOut :: Change b -> Change b
-    zoomOut (Some scopes mb) = Some (scope : scopes) mb
-    zoomOut None = None
-
-    zoomIn :: Change a -> Change a
-    zoomIn (Some scopes ma) = case uncons scopes of
-      Just { head, tail } | head == scope -> Some tail ma
-      Nothing -> Some [] ma
-      Just { head: Variant _ } -> Some [] ma -- not matching head but head is twist
-      _ -> case scope of
-        Variant _ -> Some [] ma -- not matching head but scope is twist
-        _ -> None -- otherwise
-    zoomIn None = None
 
 -- optics
 
@@ -278,3 +252,28 @@ prism name construct deconstruct = left >>> dimap deconstruct (either construct 
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
+
+-- private
+
+scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
+scopemap scope p = wrap ado
+  { speak, listen } <- unwrap p
+  in
+    { speak: speak <<< zoomIn
+    , listen: \prop -> do
+      listen $ prop <<< zoomOut
+    }
+  where
+    zoomOut :: Change b -> Change b
+    zoomOut (Some scopes mb) = Some (scope : scopes) mb
+    zoomOut None = None
+
+    zoomIn :: Change a -> Change a
+    zoomIn (Some scopes ma) = case uncons scopes of
+      Just { head, tail } | head == scope -> Some tail ma
+      Nothing -> Some [] ma
+      Just { head: Variant _ } -> Some [] ma -- not matching head but head is twist
+      _ -> case scope of
+        Variant _ -> Some [] ma -- not matching head but scope is twist
+        _ -> None -- otherwise
+    zoomIn None = None
