@@ -205,21 +205,12 @@ instance Applicative m => Plus (Widget m a) where
     , listen: const $ pure unit
     }
 
-bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
-bracket afterInit afterInward beforeOutward w = wrap do
-  w' <- unwrap w
-  ctx <- afterInit
-  pure
-    { speak: \occur -> do
-      occur' <- afterInward ctx occur
-      w'.speak occur'
-    , listen: \prop -> do
-      w'.listen \occur -> do
-        occur' <- beforeOutward ctx occur
-        prop occur'
-      }
+-- optics
 
-fixed :: forall m a b s t. Monad m => a -> Widget m a b -> Widget m s t
+type WidgetOptics a b s t = forall m. Monad m => Widget m a b -> Widget m s t
+type WidgetOptics' a s = forall m. Monad m => Widget m a a -> Widget m s s
+
+fixed :: forall a b s t. a -> WidgetOptics a b s t
 fixed a w = wrap do
   w' <- unwrap w
   w'.speak (Some [] (Just a))
@@ -227,11 +218,6 @@ fixed a w = wrap do
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
-
--- optics
-
-type WidgetOptics a b s t = forall m. Applicative m => Widget m a b -> Widget m s t
-type WidgetOptics' a s = forall m. Applicative m => Widget m a a -> Widget m s s
 
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics' a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
@@ -252,6 +238,21 @@ prism name construct deconstruct = left >>> dimap deconstruct (either construct 
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
+
+-- TODO this is not really optics
+bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
+bracket afterInit afterInward beforeOutward w = wrap do
+  w' <- unwrap w
+  ctx <- afterInit
+  pure
+    { speak: \occur -> do
+      occur' <- afterInward ctx occur
+      w'.speak occur'
+    , listen: \prop -> do
+      w'.listen \occur -> do
+        occur' <- beforeOutward ctx occur
+        prop occur'
+      }
 
 -- private
 
