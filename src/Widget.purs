@@ -25,6 +25,7 @@ import Data.Array (uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
+import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
@@ -54,6 +55,7 @@ derive instance Functor Change
 data Scope = Part String | Variant String
 
 derive instance Generic Scope _
+
 instance Show Scope where
   show = genericShow
 
@@ -73,7 +75,7 @@ view p i = do
 
 instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
-    { speak: (_ <<< map contraf) $ p'.speak
+    { speak: (_ <<< map contraf) p'.speak
     , listen: p'.listen <<< lcmap (map cof)
     }
 
@@ -226,15 +228,15 @@ projection :: forall a b s. (s -> a) -> WidgetOptics a b s b
 projection f = dimap f identity
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
-lens name getter setter = first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple b s) -> setter s b) >>> scopemap (Variant name)
+lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Record s)
 field = field' (reflectSymbol (Proxy @l)) (flip (set (Proxy @l))) (get (Proxy @l))
   where
     field' name setter getter = scopemap (Part name) >>> first >>> dimap (\s -> Tuple (getter s) s) (\(Tuple a s) -> setter s a)
 
-prism :: forall a b s t. String -> (b -> t) -> (s -> Either a t) -> WidgetOptics a b s t
-prism name construct deconstruct = left >>> dimap deconstruct (either construct identity) >>> scopemap (Variant name) -- TODO not sure about it
+prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
+prism name construct deconstruct = Profunctor.prism construct deconstruct >>> scopemap (Variant name) -- TODO not sure about it
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
