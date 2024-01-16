@@ -241,10 +241,10 @@ constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) L
 
 -- TODO this is not really optics
 bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
-bracket afterInit afterInward beforeOutward w = wrap do
+bracket afterInit afterInward beforeOutward w = wrap ado
   w' <- unwrap w
   ctx <- afterInit
-  pure
+  in
     { speak: \occur -> do
       occur' <- afterInward ctx occur
       w'.speak occur'
