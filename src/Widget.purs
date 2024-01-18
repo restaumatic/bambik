@@ -48,7 +48,10 @@ newtype Widget m i o = Widget (m
 
 derive instance Newtype (Widget m i o) _
 
-data Change a = Some (Array Scope) (Maybe a) | None
+data Change a
+  = Update (Array Scope) a
+  | Removal
+  | None
 
 derive instance Functor Change
 
@@ -65,13 +68,13 @@ preview :: forall m i o. Monad m => Widget m i o -> m Unit
 preview p = do
   { speak, listen } <- unwrap p
   listen (const $ pure unit)
-  speak (Some [] Nothing)
+  speak (Update [] Nothing)
 
 view :: forall m i o. Monad m => Widget m i o -> i -> m Unit
 view p i = do
   { speak, listen } <- unwrap p
   listen (const $ pure unit)
-  speak (Some [] (Just i))
+  speak (Update [] (Just i))
 
 instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
@@ -87,9 +90,10 @@ instance Applicative m => Strong (Widget m) where
       { speak: \chab -> do
         case chab of
           None -> pure unit -- should never happen
-          Some _ mab -> do
+          Removal -> p'.speak Removal
+          Update _ ab -> do
             let _ = unsafePerformEffect $ Ref.write mab lastchab
-            p'.speak (map fst chab)
+            p'.speak $ Update $ fst ab
       , listen: \propagationab -> do
         p'.listen \cha -> do
           let prevchab = unsafePerformEffect $ Ref.read lastchab
@@ -102,7 +106,7 @@ instance Applicative m => Strong (Widget m) where
       { speak: \chab -> do
         case chab of
           None -> pure unit -- should never happen
-          Some _ mab -> do
+          Update _ mab -> do
             let _ = unsafePerformEffect $ Ref.write mab lastchab
             p'.speak (map snd chab)
       , listen: \propagationab -> do
@@ -120,9 +124,9 @@ instance Applicative m => Choice (Widget m) where
         let _ = unsafePerformEffect $ Ref.write chab lastomab
         case chab of
           None -> pure unit
-          Some s Nothing -> p'.speak $ Some s Nothing
-          Some s (Just (Right _)) -> p'.speak $ Some s Nothing
-          Some s (Just (Left a)) -> p'.speak $ Some s $ Just a
+          Update s Nothing -> p'.speak $ Update s Nothing
+          Update s (Just (Right _)) -> p'.speak $ Update s Nothing
+          Update s (Just (Left a)) -> p'.speak $ Update s $ Just a
       , listen: \propagationab -> do
         p'.listen \cha -> do -- should never happen
           -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
@@ -136,9 +140,9 @@ instance Applicative m => Choice (Widget m) where
         let _ = unsafePerformEffect $ Ref.write omab lastomab
         case omab of
           None -> pure unit
-          Some s Nothing -> p'.speak $ Some s Nothing
-          Some s (Just (Left _)) -> p'.speak $ Some s Nothing
-          Some s (Just (Right a)) -> p'.speak $ Some s $ Just a
+          Update s Nothing -> p'.speak $ Update s Nothing
+          Update s (Just (Left _)) -> p'.speak $ Update s Nothing
+          Update s (Just (Right a)) -> p'.speak $ Update s $ Just a
       , listen: \propagationab -> do
         p'.listen \oa -> do -- should never happen
           -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
@@ -215,7 +219,7 @@ type WidgetOptics' a s = forall m. Monad m => Widget m a a -> Widget m s s
 fixed :: forall a b s t. a -> WidgetOptics a b s t
 fixed a w = wrap do
   w' <- unwrap w
-  w'.speak (Some [] (Just a))
+  w'.speak (Update [] (Just a))
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -267,15 +271,15 @@ scopemap scope p = wrap ado
     }
   where
     zoomOut :: Change b -> Change b
-    zoomOut (Some scopes mb) = Some (scope : scopes) mb
+    zoomOut (Update scopes mb) = Update (scope : scopes) mb
     zoomOut None = None
 
     zoomIn :: Change a -> Change a
-    zoomIn (Some scopes ma) = case uncons scopes of
-      Just { head, tail } | head == scope -> Some tail ma
-      Nothing -> Some [] ma
-      Just { head: Variant _ } -> Some [] ma -- not matching head but head is twist
+    zoomIn (Update scopes ma) = case uncons scopes of
+      Just { head, tail } | head == scope -> Update tail ma
+      Nothing -> Update [] ma
+      Just { head: Variant _ } -> Update [] ma -- not matching head but head is twist
       _ -> case scope of
-        Variant _ -> Some [] ma -- not matching head but scope is twist
+        Variant _ -> Update [] ma -- not matching head but scope is twist
         _ -> None -- otherwise
     zoomIn None = None
