@@ -23,7 +23,6 @@ import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..), either)
-import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
@@ -68,13 +67,13 @@ preview :: forall m i o. Monad m => Widget m i o -> m Unit
 preview p = do
   { speak, listen } <- unwrap p
   listen (const $ pure unit)
-  speak (Update [] Nothing)
+  speak None
 
 view :: forall m i o. Monad m => Widget m i o -> i -> m Unit
 view p i = do
   { speak, listen } <- unwrap p
   listen (const $ pure unit)
-  speak (Update [] (Just i))
+  speak (Update [] i)
 
 instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
@@ -84,65 +83,60 @@ instance Functor m => Profunctor (Widget m) where
 
 instance Applicative m => Strong (Widget m) where
   first p = wrap ado
-    let lastchab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { speak: \chab -> do
         case chab of
-          None -> pure unit -- should never happen
+          None -> pure unit
           Removal -> p'.speak Removal
           Update _ ab -> do
-            let _ = unsafePerformEffect $ Ref.write mab lastchab
-            p'.speak $ Update $ fst ab
+            let _ = unsafePerformEffect $ Ref.write ab lastab
+            p'.speak $ map fst chab
       , listen: \propagationab -> do
         p'.listen \cha -> do
-          let prevchab = unsafePerformEffect $ Ref.read lastchab
-          for_ prevchab \prevab -> propagationab (map (flip Tuple (snd prevab)) cha)
+          let prevab = unsafePerformEffect $ Ref.read lastab
+          propagationab (map (flip Tuple (snd prevab)) cha)
       }
   second p = wrap ado
-    let lastchab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { speak: \chab -> do
         case chab of
-          None -> pure unit -- should never happen
-          Update _ mab -> do
-            let _ = unsafePerformEffect $ Ref.write mab lastchab
-            p'.speak (map snd chab)
+          None -> pure unit
+          Removal -> p'.speak Removal
+          Update _ ab -> do
+            let _ = unsafePerformEffect $ Ref.write ab lastab
+            p'.speak $ map snd chab
       , listen: \propagationab -> do
         p'.listen \cha -> do
-          let prevchab = unsafePerformEffect $ Ref.read lastchab
-          for_ prevchab \prevab -> propagationab (map (Tuple (fst prevab)) cha)
+          let prevab = unsafePerformEffect $ Ref.read lastab
+          propagationab (map (Tuple (fst prevab)) cha)
       }
 
 instance Applicative m => Choice (Widget m) where
   left p = wrap ado
-    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { speak: \chab -> do
-        let _ = unsafePerformEffect $ Ref.write chab lastomab
         case chab of
           None -> pure unit
-          Update s Nothing -> p'.speak $ Update s Nothing
-          Update s (Just (Right _)) -> p'.speak $ Update s Nothing
-          Update s (Just (Left a)) -> p'.speak $ Update s $ Just a
+          Removal -> p'.speak Removal
+          Update _ (Right _) -> p'.speak Removal
+          Update _ (Left a) -> p'.speak $ chab $> a
       , listen: \propagationab -> do
-        p'.listen \cha -> do -- should never happen
-          -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
-          propagationab (Left <$> cha)
+        p'.listen \cha -> do propagationab (Left <$> cha)
       }
   right p = wrap ado
-    let lastomab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { speak: \omab -> do
-        let _ = unsafePerformEffect $ Ref.write omab lastomab
-        case omab of
+      { speak: \chab -> do
+        case chab of
           None -> pure unit
-          Update s Nothing -> p'.speak $ Update s Nothing
-          Update s (Just (Left _)) -> p'.speak $ Update s Nothing
-          Update s (Just (Right a)) -> p'.speak $ Update s $ Just a
+          Removal -> p'.speak Removal
+          Update _ (Left _) -> p'.speak Removal
+          Update _ (Right a) -> p'.speak $ chab $> a
       , listen: \propagationab -> do
         p'.listen \oa -> do -- should never happen
           -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
@@ -219,7 +213,7 @@ type WidgetOptics' a s = forall m. Monad m => Widget m a a -> Widget m s s
 fixed :: forall a b s t. a -> WidgetOptics a b s t
 fixed a w = wrap do
   w' <- unwrap w
-  w'.speak (Update [] (Just a))
+  w'.speak (Update [] a)
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -271,8 +265,9 @@ scopemap scope p = wrap ado
     }
   where
     zoomOut :: Change b -> Change b
-    zoomOut (Update scopes mb) = Update (scope : scopes) mb
     zoomOut None = None
+    zoomOut Removal = Removal
+    zoomOut (Update scopes mb) = Update (scope : scopes) mb
 
     zoomIn :: Change a -> Change a
     zoomIn (Update scopes ma) = case uncons scopes of
@@ -283,3 +278,4 @@ scopemap scope p = wrap ado
         Variant _ -> Update [] ma -- not matching head but scope is twist
         _ -> None -- otherwise
     zoomIn None = None
+    zoomIn Removal = Removal

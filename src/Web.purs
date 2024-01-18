@@ -26,8 +26,8 @@ text = wrap do
   pure
     { speak: case _ of
       None -> pure unit
-      Some _ Nothing -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
-      Some _ (Just string) -> liftEffect $ setTextNodeValue node string
+      Removal -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
+      Update _ string -> liftEffect $ setTextNodeValue node string
     , listen: \_ -> pure unit
     }
 
@@ -48,15 +48,15 @@ textInput = wrap do
   pure
     { speak: case _ of
     None -> pure unit
-    Some _ Nothing -> liftEffect do
+    Removal -> liftEffect do
       setAttribute node "disabled" "true"
       setValue node ""
-    Some _ (Just newa) -> liftEffect do
+    Update _ newa -> liftEffect do
       removeAttribute node "disabled"
       setValue node newa
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
       value <- liftEffect $ getValue node
-      prop $ Some [] (if null value then Nothing else Just value) -- TODO how to handle null value?
+      prop $ Update [] value
     }
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
@@ -68,18 +68,18 @@ checkboxInput default = wrap do
   pure
     { speak: case _ of
     None -> pure unit
-    Some _ Nothing -> liftEffect $ setAttribute node "disabled" "true"
-    Some _ (Just Nothing) -> liftEffect $ do
+    Removal -> liftEffect $ setAttribute node "disabled" "true"
+    Update _ Nothing -> liftEffect $ do
       removeAttribute node "disabled"
       setChecked node false
-    Some _ (Just (Just newa)) -> liftEffect do
+    Update _ (Just newa) -> liftEffect do
       removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
       checked <- liftEffect $ getChecked node
       a <- liftEffect $ Ref.read aRef
-      prop $ Some [] $ Just $ if checked then (Just a) else Nothing
+      prop $ Update [] $ if checked then (Just a) else Nothing
     }
 
 radioButton :: forall a. a -> Widget Web a a
@@ -91,13 +91,13 @@ radioButton default = wrap do
   pure
     { speak: case _ of
     None -> pure unit
-    Some _ Nothing -> liftEffect $ setChecked node false
-    Some _ (Just newa) -> do
+    Removal -> liftEffect $ setChecked node false
+    Update _ newa -> do
       liftEffect $ setChecked node true
       liftEffect $ Ref.write newa aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "change" node $ const $ runDomInNode node do
     a <- liftEffect $ Ref.read aRef
-    prop $ Some [] (Just a)
+    prop $ Update [] a
     }
 
 element :: forall i o. String -> Widget Web i o -> Widget Web i o
@@ -118,8 +118,8 @@ dat' name value pred w = wrap do
       w'.speak occur
       case occur of
         None -> pure unit
-        Some _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
-        Some _ (Just newa) -> do
+        Removal -> pure unit -- TODO pred :: Maybe a -> Bool?
+        Update _ newa -> do
           liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
     , listen: w'.listen
     }
@@ -142,8 +142,8 @@ dcl' name pred w = wrap do
     w'.speak occur
     case occur of
       None -> pure unit
-      Some _ Nothing -> pure unit -- TODO pred :: Maybe a -> Bool?
-      Some _ (Just newa) -> do
+      Removal -> pure unit -- TODO pred :: Maybe a -> Bool?
+      Update _ newa -> do
         liftEffect $ (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
     , listen: w'.listen
     }
@@ -158,12 +158,12 @@ clickable w = wrap do
     w'.speak occur
     case occur of
       None -> pure unit
-      Some _ Nothing -> pure unit
-      Some _ (Just cha) -> do
-        liftEffect $ Ref.write cha aRef
+      Removal -> pure unit
+      Update _ a -> do
+        liftEffect $ Ref.write a aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const $ runDomInNode node do
     a <- liftEffect $ Ref.read aRef
-    prop $ Some [] (Just a)
+    prop $ Update [] a
     }
 
 slot :: forall a b. Widget Web a b -> Widget Web a b
@@ -174,8 +174,8 @@ slot w = wrap do
       speak occur
       case occur of
         None -> pure unit
-        Some _ Nothing -> detach
-        Some _ (Just _) -> attach
+        Removal -> detach
+        Update _ _ -> attach
     , listen: listen
     }
   where
@@ -290,15 +290,16 @@ h6 = element "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall i o. Widget Web i o -> Maybe i -> Effect Unit
-runWidgetInBody w mi = do
+runWidgetInBody :: forall i o. Widget Web i o -> i -> Effect Unit
+runWidgetInBody w i = do
   node <- documentBody
-  runWidgetInNode node w mi $ const $ pure unit
+  runWidgetInNode node w i $ const $ pure unit
 
-runWidgetInNode :: forall i o. Node -> Widget Web i o -> Maybe i -> (Maybe o -> Web Unit) -> Effect Unit
-runWidgetInNode node w mi outward = runDomInNode node do
+runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Web Unit) -> Effect Unit
+runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
   listen case _ of
     None -> pure unit
-    Some _ mo -> outward mo
-  speak (Some [] mi)
+    Removal -> pure unit
+    Update _ mo -> outward mo
+  speak (Update [] i)
