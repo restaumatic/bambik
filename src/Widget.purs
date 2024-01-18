@@ -232,17 +232,17 @@ projection :: forall a b s. (s -> a) -> WidgetOptics a b s b
 projection f = dimap f identity
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
-lens name getter setter = Profunctor.lens getter setter >>> scopemap (Part name)
+lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
 -- TODO use Data.Lens.Record.prop
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Record s)
-field = lens (reflectSymbol (Proxy @l)) (get (Proxy @l)) (flip (set (Proxy @l)))
+field = Profunctor.lens (get (Proxy @l)) (flip (set (Proxy @l))) >>> scopemap (Part (reflectSymbol (Proxy @l)))
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
 prism name construct deconstruct = Profunctor.prism construct deconstruct >>> scopemap (Variant name) -- TODO not sure about it
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
-constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Variant name)
+constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
 
 -- TODO this is not really optics
 bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
