@@ -70,6 +70,9 @@ order =
             ( S.do
               text # fixed "delivery to "
               text ) # address # slot # delivery ) # fulfillment
+        ( S.do
+          text # fixed ", paid "
+          text # paid ) # slot # _Just # payment
       T.do
         div
           (A.do
