@@ -31,6 +31,7 @@ import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
 import Data.Show.Generic (genericShow)
+import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Ref as Ref
@@ -53,6 +54,12 @@ data Change a
   | None
 
 derive instance Functor Change
+
+instance Show (Change a) where
+  show = case _ of
+    None -> "None"
+    Removal -> "Removal"
+    Update scopes _ -> "Update " <> joinWith "." (show <$> scopes)
 
 data Scope = Part String | Variant String
 
@@ -138,9 +145,7 @@ instance Applicative m => Choice (Widget m) where
           Update _ (Left _) -> p'.speak Removal
           Update _ (Right a) -> p'.speak $ chab $> a
       , listen: \propagationab -> do
-        p'.listen \oa -> do -- should never happen
-          -- prevoab <- liftST $ ST.read lastomab -- TODO what to do with previous occurence? it could contain info about the change of a or b
-          propagationab (Right <$> oa)
+        p'.listen \cha -> propagationab (Right <$> cha)
       }
 
 instance Apply m => Semigroup (Widget m a a) where
@@ -230,13 +235,13 @@ lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant na
 
 -- TODO use Data.Lens.Record.prop
 field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Record s)
-field = Profunctor.lens (get (Proxy @l)) (flip (set (Proxy @l))) >>> scopemap (Part (reflectSymbol (Proxy @l)))
+field = scopemap (Part (reflectSymbol (Proxy @l))) >>> Profunctor.lens (get (Proxy @l)) (flip (set (Proxy @l)))
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
 prism name construct deconstruct = Profunctor.prism construct deconstruct >>> scopemap (Variant name) -- TODO not sure about it
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
-constructor name construct deconstruct = left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity) >>> scopemap (Part name)
+constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
 
 -- TODO this is not really optics
 bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'

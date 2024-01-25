@@ -7,17 +7,16 @@ import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
-import Data.String (null)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
 import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Widget (Widget, Change(..))
-import Unsafe.Coerce (unsafeCoerce) -- TODO not relying on unsafe stuff
+import Unsafe.Coerce (unsafeCoerce)
 import Web.Internal.Web (Web, runDomInNode, Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
 import Web.Internal.Web as Web
+import Widget (Widget, Change(..))
 
 text :: forall a . Widget Web String a -- TODO is default needed?
 text = wrap do
@@ -171,11 +170,12 @@ slot w = wrap do
   {update: { speak, listen}, attach, detach} <- attachable' false $ unwrap w
   pure
     { speak: \occur -> do
-      speak occur
       case occur of
         None -> pure unit
         Removal -> detach
-        Update _ _ -> attach
+        Update _ _ -> do
+          speak occur
+          attach
     , listen: listen
     }
   where
@@ -199,9 +199,10 @@ slot w = wrap do
       let
         attach :: Web Unit
         attach = measured' slotNo "attached" $ liftEffect do
-          removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
           mDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
-          for_ mDocumentFragment \documentFragment -> documentFragment `insertBefore` placeholderAfter
+          for_ mDocumentFragment \documentFragment -> do
+            removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+            documentFragment `insertBefore` placeholderAfter
 
         detach :: Web Unit
         detach = measured' slotNo "detached" $ liftEffect do
