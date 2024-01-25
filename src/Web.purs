@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.State (gets)
 import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -199,20 +199,18 @@ slot w = wrap do
       let
         attach :: Web Unit
         attach = measured' slotNo "attached" $ liftEffect do
-          mDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
-          for_ mDocumentFragment \documentFragment -> do
+          detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
+          for_ detachedDocumentFragment \documentFragment -> do
             removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
             documentFragment `insertBefore` placeholderAfter
 
         detach :: Web Unit
         detach = measured' slotNo "detached" $ liftEffect do
-          mDocumentFragment <- Ref.read detachedDocumentFragmentRef
-          case mDocumentFragment of
-            Nothing -> do
-              documentFragment <- createDocumentFragment
-              moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
-              Ref.write (Just documentFragment) detachedDocumentFragmentRef
-            Just _ -> pure unit
+          detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
+          when (isNothing detachedDocumentFragment) do
+            documentFragment <- createDocumentFragment
+            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
+            Ref.write (Just documentFragment) detachedDocumentFragmentRef
 
       pure $ { attach, detach, update }
       where
