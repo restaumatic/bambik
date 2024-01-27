@@ -92,7 +92,7 @@ text = wrap do
     , listen: \_ -> pure unit
     }
 
--- TODO make it Widget Web String a
+-- TODO make it Widget Web String a?
 html :: forall a b. String -> Widget Web a b
 html htmlString = wrap do
   parent <- gets _.parent

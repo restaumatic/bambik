@@ -289,7 +289,7 @@ effect processRequest = Widget $ liftEffect do
             Left error -> pure unit -- TODO handle error
             Right res -> do
               log $ show $ Update [] res
-              -- propagate $ Update [] res
+              -- TODO propagate $ Update [] res
               waitAndPropagate
        in liftEffect waitAndPropagate
     }
