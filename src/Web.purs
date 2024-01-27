@@ -1,4 +1,34 @@
-module Web where
+module Web
+  ( aside
+  , at'
+  , button
+  , checkboxInput
+  , cl'
+  , clickable
+  , dat'
+  , dcl'
+  , div
+  , element
+  , h1
+  , h2
+  , h3
+  , h4
+  , h5
+  , h6
+  , html
+  , label
+  , p
+  , path
+  , radioButton
+  , runWidgetInBody
+  , runWidgetInNode
+  , slot
+  , span
+  , svg
+  , text
+  , textInput
+  )
+  where
 
 import Prelude
 
