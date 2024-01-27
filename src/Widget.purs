@@ -12,10 +12,8 @@ module Widget
   , fixed
   , iso
   , lens
-  , preview
   , prism
   , projection
-  , view
   )
   where
 
@@ -77,18 +75,6 @@ instance Show Scope where
 
 derive instance Eq Scope
 
-preview :: forall m i o. Monad m => Widget m i o -> m Unit
-preview p = do
-  { speak, listen } <- unwrap p
-  listen (const $ pure unit)
-  speak None
-
-view :: forall m i o. Monad m => Widget m i o -> i -> m Unit
-view p i = do
-  { speak, listen } <- unwrap p
-  listen (const $ pure unit)
-  speak (Update [] i)
-
 instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
     { speak: (_ <<< map contraf) p'.speak
@@ -100,17 +86,17 @@ instance Applicative m => Strong (Widget m) where
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { speak: \chab -> do
-        case chab of
+      { speak: \ch -> do
+        case ch of
           None -> pure unit
           Removal -> p'.speak Removal
           Update _ ab -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ map fst chab
+            p'.speak $ map fst ch
       , listen: \prop -> do
-        p'.listen \cha -> do
+        p'.listen \ch -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
-          prop (map (flip Tuple (snd prevab)) cha)
+          prop (map (flip Tuple (snd prevab)) ch)
       }
   second p = wrap ado
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
@@ -124,35 +110,35 @@ instance Applicative m => Strong (Widget m) where
             let _ = unsafePerformEffect $ Ref.write ab lastab
             p'.speak $ map snd chab
       , listen: \prop -> do
-        p'.listen \cha -> do
+        p'.listen \ch -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
-          prop (map (Tuple (fst prevab)) cha)
+          prop (map (Tuple (fst prevab)) ch)
       }
 
 instance Applicative m => Choice (Widget m) where
   left p = wrap ado
     p' <- unwrap p
     in
-      { speak: \chab -> do
-        case chab of
+      { speak: \ch -> do
+        case ch of
           None -> pure unit
           Removal -> p'.speak Removal
           Update _ (Right _) -> p'.speak Removal
-          Update _ (Left a) -> p'.speak $ chab $> a
+          Update _ (Left a) -> p'.speak $ ch $> a
       , listen: \prop -> do
-        p'.listen \cha -> prop (Left <$> cha)
+        p'.listen \ch -> prop (Left <$> ch)
       }
   right p = wrap ado
     p' <- unwrap p
     in
-      { speak: \chab -> do
-        case chab of
+      { speak: \ch -> do
+        case ch of
           None -> pure unit
           Removal -> p'.speak Removal
           Update _ (Left _) -> p'.speak Removal
-          Update _ (Right a) -> p'.speak $ chab $> a
+          Update _ (Right a) -> p'.speak $ ch $> a
       , listen: \prop -> do
-        p'.listen \cha -> prop (Right <$> cha)
+        p'.listen \ch -> prop (Right <$> ch)
       }
 
 instance Apply m => Semigroup (Widget m a a) where
@@ -160,29 +146,17 @@ instance Apply m => Semigroup (Widget m a a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { speak: \o -> ado
-        p1'.speak o
-        p2'.speak o
-        in unit
-      , listen: \propagation -> ado
-        p1'.listen \o -> ado
-          p2'.speak o
-          propagation o
-          in unit
-        p2'.listen \o -> ado
-          p1'.speak o
-          propagation o
-          in unit
-        in unit
+      { speak: \ch -> p1'.speak ch *> p2'.speak ch
+      , listen: \prop -> (p1'.listen \ch -> p2'.speak ch *> prop ch) *> (p2'.listen \ch -> p1'.speak ch *> prop ch)
       }
 
 instance Monad m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    p1'.listen \o -> p2'.speak o -- TODO what does it mean if o is Nothing?
+    p1'.listen \ch -> p2'.speak ch
     pure
-      { speak: p1'.speak -- TODO call p2.speak Nothing?
+      { speak: p1'.speak
       , listen: p2'.listen
       }
 
