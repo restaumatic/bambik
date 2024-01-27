@@ -189,6 +189,9 @@ instance Monad m => Semigroupoid (Widget m) where
 --     { speak: unsafeThrow "impossible"
 --     , listen: unsafeThrow "impossible"
 --     }
+-- but:
+-- instance MonadEffect m => Category (Widget m) where
+-- possible
 
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
