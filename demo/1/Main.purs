@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import Web (runWidgetInBody)
 import View (order)
-import ViewModel (defaultOrder)
+import Model (defaultOrder)
 
 main :: Effect Unit
 main = runWidgetInBody order defaultOrder

@@ -1,4 +1,4 @@
-module ViewModel where
+module Model where
 
 import Prelude
 
