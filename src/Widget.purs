@@ -107,10 +107,10 @@ instance Applicative m => Strong (Widget m) where
           Update _ ab -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
             p'.speak $ map fst chab
-      , listen: \propagationab -> do
+      , listen: \prop -> do
         p'.listen \cha -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
-          propagationab (map (flip Tuple (snd prevab)) cha)
+          prop (map (flip Tuple (snd prevab)) cha)
       }
   second p = wrap ado
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
@@ -123,10 +123,10 @@ instance Applicative m => Strong (Widget m) where
           Update _ ab -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
             p'.speak $ map snd chab
-      , listen: \propagationab -> do
+      , listen: \prop -> do
         p'.listen \cha -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
-          propagationab (map (Tuple (fst prevab)) cha)
+          prop (map (Tuple (fst prevab)) cha)
       }
 
 instance Applicative m => Choice (Widget m) where
@@ -139,8 +139,8 @@ instance Applicative m => Choice (Widget m) where
           Removal -> p'.speak Removal
           Update _ (Right _) -> p'.speak Removal
           Update _ (Left a) -> p'.speak $ chab $> a
-      , listen: \propagationab -> do
-        p'.listen \cha -> do propagationab (Left <$> cha)
+      , listen: \prop -> do
+        p'.listen \cha -> prop (Left <$> cha)
       }
   right p = wrap ado
     p' <- unwrap p
@@ -151,8 +151,8 @@ instance Applicative m => Choice (Widget m) where
           Removal -> p'.speak Removal
           Update _ (Left _) -> p'.speak Removal
           Update _ (Right a) -> p'.speak $ chab $> a
-      , listen: \propagationab -> do
-        p'.listen \cha -> propagationab (Right <$> cha)
+      , listen: \prop -> do
+        p'.listen \cha -> prop (Right <$> cha)
       }
 
 instance Apply m => Semigroup (Widget m a a) where
@@ -198,7 +198,7 @@ instance MonadEffect m => Category (Widget m) where
     chaAVar <- liftEffect AVar.empty
     pure
       { speak: \cha -> liftEffect $ void $ AVar.put cha chaAVar mempty
-      , listen: \propagate ->
+      , listen: \prop ->
         let waitAndPropagate = void $ AVar.take chaAVar case _ of
               Left error -> pure unit -- TODO handle error
               Right cha -> waitAndPropagate -- TODO propagate
@@ -218,7 +218,7 @@ instance Apply m => Alt (Widget m a) where
     p2' <- unwrap p2
     in
       { speak: \ch -> p1'.speak ch *> p2'.speak ch
-      , listen: \propagation -> p1'.listen propagation *> p2'.listen propagation
+      , listen: \prop -> p1'.listen prop *> p2'.listen prop
       }
 
 instance Applicative m => Plus (Widget m a) where
@@ -269,9 +269,9 @@ bracket afterInit afterInward beforeOutward w = wrap ado
   w' <- unwrap w
   ctx <- afterInit
   in
-    { speak: \occur -> w'.speak occur <* afterInward ctx
-    , listen: \propagate -> do
-      w'.listen \occur -> beforeOutward ctx *> propagate occur
+    { speak: \cha -> w'.speak cha <* afterInward ctx
+    , listen: \prop -> do
+      w'.listen \chb -> beforeOutward ctx *> prop chb
     }
 
 -- private
@@ -310,7 +310,7 @@ effect processRequest = Widget $ liftEffect do
         res <- processRequest req
         void $ liftEffect $ AVar.put res resAVar mempty
       _-> pure unit
-    , listen: \propagate ->
+    , listen: \prop ->
       let waitAndPropagate = void $ AVar.take resAVar case _ of
             Left error -> pure unit -- TODO handle error
             Right res -> do
