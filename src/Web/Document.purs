@@ -1,7 +1,7 @@
--- TODO merge with Web module?
-module Web.Internal.Web
-  ( DocumentBuilderEnv
-  , Web
+-- TODO merge with Document module?
+module Web.Document
+  ( DocumentEnv
+  , Document
   , Event
   , Node
   , addClass
@@ -43,23 +43,23 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Foreign.Object (Object)
 
--- Builds DOM and keeping track of parent/last sibling node
-newtype Web a = Web (StateT DocumentBuilderEnv Effect a)
+-- Builds Document and keeping track of parent/last sibling node
+newtype Document a = Document (StateT DocumentEnv Effect a)
 
-type DocumentBuilderEnv =
+type DocumentEnv =
   { parent :: Node
   , sibling :: Node -- last sibling
   }
 
-derive newtype instance Functor Web
-derive newtype instance Apply Web
-derive newtype instance Applicative Web
-derive newtype instance Bind Web
-derive newtype instance Monad Web
-derive newtype instance MonadEffect Web
-derive newtype instance MonadState DocumentBuilderEnv Web
+derive newtype instance Functor Document
+derive newtype instance Apply Document
+derive newtype instance Applicative Document
+derive newtype instance Bind Document
+derive newtype instance Monad Document
+derive newtype instance MonadEffect Document
+derive newtype instance MonadState DocumentEnv Document
 
-text :: Web Unit
+text :: Document Unit
 text = do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -68,13 +68,13 @@ text = do
     pure node
   modify_ _ { sibling = newNode}
 
-html :: String -> Web Unit
+html :: String -> Document Unit
 html htmlString = do
   parent <- gets _.parent
   lastNode <- liftEffect $ appendRawHtml htmlString parent
   modify_ _ { sibling = lastNode}
 
-element :: forall a. TagName -> Web a -> Web a
+element :: forall a. TagName -> Document a -> Document a
 element tagName contents = do
   newNode <- liftEffect $ createElement tagName
   parentNode <- gets _.parent
@@ -84,28 +84,28 @@ element tagName contents = do
   modify_ _ { parent = parentNode, sibling = newNode}
   pure result
 
-at :: String -> String -> Web Unit
+at :: String -> String -> Document Unit
 at name value = do
   node <- gets _.sibling
   liftEffect $ setAttribute node name value
 
-ats :: Object String -> Web Unit
+ats :: Object String -> Document Unit
 ats attrs = do
   node <- gets _.sibling
   liftEffect $ setAttributes node attrs
 
-cl :: String -> Web Unit
+cl :: String -> Document Unit
 cl name = do
   node <- gets _.sibling
   liftEffect $ addClass node name
   pure unit
 
-listener :: String -> (Event -> Web Unit) -> Web Unit
+listener :: String -> (Event -> Document Unit) -> Document Unit
 listener eventType callback = do
   node <- gets _.sibling
   void $ liftEffect $ addEventListener eventType node (\evt -> runDomInNode node $ callback evt)
 
-speaker :: forall a. (Node -> a) -> Web a
+speaker :: forall a. (Node -> a) -> Document a
 speaker action = do
   node <- gets _.sibling
   pure $ action node
@@ -113,24 +113,20 @@ speaker action = do
 uniqueId :: Effect String
 uniqueId = randomElementId
 
--- private
-
-runDomInNode :: forall a. Node -> Web a -> Effect a
-runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
+runDomInNode :: forall a. Node -> Document a -> Effect a
+runDomInNode node (Document domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
 
 foreign import randomElementId :: Effect String
-
--- from former DOM.purs
 
 type TagName = String
 
 -- | XML namespace URI.
 type Namespace = String
 
--- | DOMBuilder node.
+-- | Document node.
 foreign import data Node :: Type
 
--- | DOMBuilder event.
+-- | Document event.
 foreign import data Event :: Type
 
 foreign import getValue :: Node -> Effect String
