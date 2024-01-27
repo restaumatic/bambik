@@ -89,10 +89,10 @@ order =
             MDC.body1 (text # fixed "Are you sure?")
             MDC.containedButton { label: text # fixed "Submit order" }
         submitOrder
-        -- submitOrder >>> MDC.snackbar { label: S.do
-        --   text # fixed "Order "
-        --   text # shortId
-        --   text # fixed " submitted"}
+        MDC.snackbar { label: S.do
+          text # fixed "Order "
+          text # shortId
+          text # fixed " submitted"}
 
 name :: Widget Web NameInformal NameInformal
 name = S.do
