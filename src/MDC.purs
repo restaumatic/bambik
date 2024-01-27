@@ -63,7 +63,7 @@ checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> (W
 checkbox { labelContent, default } checked =
   div ( S.do
     div ( S.do
-      checkboxInput default # checked # cl "mdc-checkbox__native-control" # attr "id" id -- TODO define id' = attr "id" id
+      checkboxInput default # checked # cl "mdc-checkbox__native-control" # attr "id" id
       div (S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -75,7 +75,7 @@ checkbox { labelContent, default } checked =
     where
       id = unsafePerformEffect uniqueId
 
--- TODO add html grouping
+-- TODO add html grouping?
 radioButton :: forall a b c. { labelContent :: Widget Web c b, default :: a } -> (Widget Web a a -> Widget Web c c) -> Widget Web c c
 radioButton { labelContent, default } value =
   div (S.do
@@ -133,13 +133,13 @@ elevation1 :: forall a b. Widget Web a b -> Widget Web a b
 elevation1 w = div w # cl "mdc-elevation--z1"
 
 elevation10 :: forall a b. Widget Web a b -> Widget Web a b
-elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px" -- TODO padding added ad-hoc, to remove
+elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px"
 
 elevation20 :: forall a b. Widget Web a b -> Widget Web a b
-elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"-- TODO padding added ad-hoc, to remove
+elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
 
 card :: forall a b. Widget Web a b -> Widget Web a b
-card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"  -- TODO padding added ad-hoc, to remove
+card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
 dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =

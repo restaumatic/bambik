@@ -75,7 +75,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: forall a . Widget Web String a -- TODO is default needed?
+text :: forall a . Widget Web String a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -87,7 +87,7 @@ text = wrap do
   pure
     { speak: case _ of
       None -> pure unit
-      Removal -> liftEffect $ setTextNodeValue node "" -- TODO is this correct?
+      Removal -> liftEffect $ setTextNodeValue node ""
       Update _ string -> liftEffect $ setTextNodeValue node string
     , listen: \_ -> pure unit
     }
@@ -176,13 +176,12 @@ dynAttr name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   pure
-    { speak: \occur -> do
-      w'.speak occur
-      case occur of
-        None -> pure unit
-        Removal -> pure unit -- TODO pred :: Maybe a -> Bool?
+    { speak: \ch -> do
+      w'.speak ch
+      case ch of
         Update _ newa -> do
-          liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name -- TODO do not use directly DOM API
+          liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name
+        _ -> pure unit
     , listen: w'.listen
     }
 
@@ -203,10 +202,9 @@ dynClass name pred w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      None -> pure unit
-      Removal -> pure unit -- TODO pred :: Maybe a -> Bool?
       Update _ newa -> do
-        liftEffect $ (if pred newa then addClass else removeClass) node name -- TODO do not use directly DOM API
+        liftEffect $ (if pred newa then addClass else removeClass) node name
+      _ -> pure unit
     , listen: w'.listen
     }
 
@@ -407,7 +405,7 @@ measured actionName action = do
         | i <= 0 = ""
         | otherwise = s <> repeatStr (i - 1) s
 
-logIndent :: Ref.Ref Int -- TODO ST?
+logIndent :: Ref.Ref Int
 logIndent = unsafePerformEffect $ Ref.new 0
 
 slotCounter :: Ref.Ref Int
