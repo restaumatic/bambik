@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Show.Generic (genericShow)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
-import Widget (Change(..), Widget(..), WidgetOptics', constructor, field, iso)
+import Widget (Change(..), Widget(..), WidgetOptics', constructor, effect, field, iso)
 
 type Order =
   { uniqueId :: UniqueId
@@ -121,7 +121,7 @@ formal = iso "formal" toFormal toInformal
     toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
 
 submitOrder :: forall m. MonadEffect m => Widget m Order Order
-submitOrder = doSubmitOrder # lens (\order -> SubmitOrderRequest { orderSerialized: serializeOrder order}) (\order (SubmitOrderResponse { orderUniqueId }) -> order { uniqueId = orderUniqueId })
+submitOrder = submitOrderEffect # lens (\order -> SubmitOrderRequest { orderSerialized: serializeOrder order}) (\order (SubmitOrderResponse { orderUniqueId }) -> order { uniqueId = orderUniqueId })
   where
     serializeOrder :: Order -> String
     serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, maybe "not paid" (\{ paid } -> "paid " <> paid) order.payment, case order.fulfillment of
@@ -129,20 +129,8 @@ submitOrder = doSubmitOrder # lens (\order -> SubmitOrderRequest { orderSerializ
         (Takeaway { time }) -> "takeaway|" <> time
         (Delivery { address }) -> "delivery|\"" <> address <> "\""
       ]
-    doSubmitOrder :: Widget m SubmitOrderRequest SubmitOrderResponse
-    doSubmitOrder = Widget do
-      -- Ref.new
-      pure
-        { speak: case _ of
-          Update _ request-> do
-            response <- processRequest request
-            -- TODO notify listen about response
-            pure unit
-          _-> pure unit
-        , listen: \propagate -> pure unit -- TODO wait for reponse and propagate it
-        }
-    processRequest :: SubmitOrderRequest -> m SubmitOrderResponse
-    processRequest request = do
+    submitOrderEffect :: Widget m SubmitOrderRequest SubmitOrderResponse
+    submitOrderEffect = effect \request -> do
       liftEffect $ log $ show request
       pure $ SubmitOrderResponse { orderUniqueId: "HAJ78" }
 

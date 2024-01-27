@@ -1,11 +1,12 @@
 module Widget
   ( Change(..)
+  , Scope(..)
+  , Widget(..)
   , WidgetOptics
   , WidgetOptics'
-  , Widget(..)
-  , Scope(..)
   , bracket
   , constructor
+  , effect
   , field
   , fixed
   , iso
@@ -284,3 +285,15 @@ scopemap scope p = wrap ado
         _ -> None -- otherwise
     zoomIn None = None
     zoomIn Removal = Removal
+
+effect :: forall req res m. Monad m => (req -> m res) -> Widget m req res
+effect processRequest = Widget do
+  pure
+    { speak: case _ of
+      Update _ req-> do
+        res <- processRequest req
+        -- TODO notify listen about response
+        pure unit
+      _-> pure unit
+    , listen: \propagate -> pure unit -- TODO wait for reponse and propagate it
+    }
