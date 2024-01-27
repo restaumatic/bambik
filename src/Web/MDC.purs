@@ -47,7 +47,7 @@ containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button (A.do
     div empty # cl' "mdc-button__ripple"
-    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure) (const $ pure) # clickable
+    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> (Widget Web String String -> Widget Web a a) -> Widget Web a a
 filledTextField { floatingLabel } value =
@@ -56,7 +56,7 @@ filledTextField { floatingLabel } value =
     (S.do
       (span text # cl' "mdc-floating-label" # at' "id" id # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
       textInput # value # cl' "mdc-text-field__input" # at' "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure) (const $ pure)
+    span (empty :: Widget Web a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit)
     where
       id = unsafePerformEffect uniqueId
 
@@ -71,8 +71,8 @@ checkbox { labelContent, default } checked =
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         div empty # cl' "mdc-checkbox__mixedmark") # cl' "mdc-checkbox__background"
-      div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure) (const $ pure)
-    label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure) (const $ pure)
+      div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit)
+    label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where
       id = unsafePerformEffect uniqueId
 
@@ -85,9 +85,9 @@ radioButton { labelContent, default } value =
         div (S.do
           div empty # cl' "mdc-radio__outer-circle"
           div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"
-        div empty # cl' "mdc-radio__ripple") # cl' "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure) (const $ pure)
+        div empty # cl' "mdc-radio__ripple") # cl' "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
     label (labelContent >>> empty) # at' "for" uid
-  ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure) (const $ pure)
+  ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where
       uid = unsafePerformEffect uniqueId
 
@@ -155,24 +155,18 @@ dialog { title } content =
   ) # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
-      openMdcComponent comp a = liftEffect do
-        open comp
-        pure a
-      closeMdcComponent comp a = liftEffect do
-        close comp
-        pure a
+      openMdcComponent comp = liftEffect $ open comp
+      closeMdcComponent comp = liftEffect $ close comp
 
 snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a b
 snackbar { label } =
   aside
     ( div
       ( div
-        label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure)
+        label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure unit)
     where
       initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
-      openMdcComponent comp a = liftEffect do
-        open comp
-        pure a
+      openMdcComponent comp = liftEffect $ open comp
 
 -- Private
 

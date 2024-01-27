@@ -247,20 +247,19 @@ prism name construct deconstruct = Profunctor.prism construct deconstruct >>> sc
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
 
--- TODO this is not really optics
-bracket :: forall m c i o i' o'. Monad m => m c -> (c -> Change i' -> m (Change i)) -> (c -> Change o -> m (Change o')) -> Widget m i o -> Widget m i' o'
+-- modifiers
+
+-- notice: this is not really optics, operates for given m
+-- TODO add release parameter?
+bracket :: forall a b c m. Applicative m => m c -> (c -> m Unit) -> (c -> m Unit) -> Widget m a b -> Widget m a b
 bracket afterInit afterInward beforeOutward w = wrap ado
   w' <- unwrap w
   ctx <- afterInit
   in
-    { speak: \occur -> do
-      occur' <- afterInward ctx occur
-      w'.speak occur'
-    , listen: \prop -> do
-      w'.listen \occur -> do
-        occur' <- beforeOutward ctx occur
-        prop occur'
-      }
+    { speak: \occur -> w'.speak occur <* afterInward ctx
+    , listen: \propagate -> do
+      w'.listen \occur -> beforeOutward ctx *> propagate occur
+    }
 
 -- private
 
