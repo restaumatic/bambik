@@ -4,12 +4,11 @@ module View
 
 import Prelude hiding (div)
 
-import Control.Plus (empty)
 import Data.Lens (_Just)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, surname, table, takeaway, time, total, uniqueId)
+import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (at', div, slot, text)
 import Web.Internal.Web (Web)
 import Web.MDC as MDC
@@ -89,11 +88,11 @@ order =
           text # fixed "?" } S.do
             MDC.body1 (text # fixed "Are you sure?")
             MDC.containedButton { label: text # fixed "Submit order" }
-        -- effect submitOrder >>> MDC.snackbar { label: S.do
-        --   text # fixed "Order "
-        --   text # shortId
-        --   text # fixed " submitted"}
-        empty
+        submitOrder
+        MDC.snackbar { label: S.do
+          text # fixed "Order "
+          text # shortId
+          text # fixed " submitted"}
 
 name :: Widget Web NameInformal NameInformal
 name = S.do
