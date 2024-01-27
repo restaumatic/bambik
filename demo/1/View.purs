@@ -13,7 +13,7 @@ import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firs
 import Web (Web, at', div, slot, text)
 import Widget (Widget, fixed)
 
-order ∷ Widget Web Order Order
+order :: Widget Web Order Order
 order =
   MDC.elevation20 S.do
     MDC.headline6 S.do
