@@ -202,10 +202,7 @@ instance Apply m => Alt (Widget m a) where
     p2' <- unwrap p2
     in
       { speak: p1'.speak *> p2'.speak
-      , listen: \propagation -> ado
-        p1'.listen propagation
-        p2'.listen propagation
-        in unit
+      , listen: \propagation -> p1'.listen propagation *> p2'.listen propagation
       }
 
 instance Applicative m => Plus (Widget m a) where
