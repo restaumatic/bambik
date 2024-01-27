@@ -131,12 +131,20 @@ submitOrder = doSubmitOrder # lens (\order -> SubmitOrderRequest { orderSerializ
       ]
     doSubmitOrder :: Widget m SubmitOrderRequest SubmitOrderResponse
     doSubmitOrder = Widget do
+      -- Ref.new
       pure
         { speak: case _ of
-          Update _ request-> liftEffect $ log $ show request
+          Update _ request-> do
+            response <- processRequest request
+            -- TODO notify listen about response
+            pure unit
           _-> pure unit
-        , listen: const $ pure unit -- TODO handle responses
+        , listen: \propagate -> pure unit -- TODO wait for reponse and propagate it
         }
+    processRequest :: SubmitOrderRequest -> m SubmitOrderResponse
+    processRequest request = do
+      liftEffect $ log $ show request
+      pure $ SubmitOrderResponse { orderUniqueId: "HAJ78" }
 
 defaultOrder :: Order
 defaultOrder =
