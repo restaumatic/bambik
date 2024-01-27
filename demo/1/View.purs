@@ -4,7 +4,7 @@ module View
 
 
 -- commons
-import Prelude hiding (div)
+import Data.Function ((#))
 import Data.Lens (_Just)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
