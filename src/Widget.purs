@@ -196,8 +196,6 @@ instance MonadEffect m => Category (Widget m) where
     chaAVar <- liftEffect AVar.empty
     pure
       { speak: \cha -> liftEffect $ void $ AVar.put cha chaAVar mempty
-      -- { speak: unsafeThrow "!"
-      -- , listen: unsafeThrow "!"
       , listen: \propagate ->
         let go = void $ AVar.take chaAVar case _ of
               Left error -> pure unit -- TODO handle error
