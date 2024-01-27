@@ -1,5 +1,8 @@
 module Web
-  ( aside
+  ( Web
+  , DocumentEnv
+  , Node
+  , aside
   , at'
   , button
   , checkboxInput
@@ -27,30 +30,130 @@ module Web
   , svg
   , text
   , textInput
+  , uniqueId
   )
   where
 
 import Prelude
 
-import Control.Monad.State (gets)
+import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
+import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
 import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
+import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Document (Document, runDomInNode, Node, addClass, addEventListener, appendChild, createCommentNode, createDocumentFragment, documentBody, getChecked, getValue, insertAsFirstChild, insertBefore, moveAllNodesBetweenSiblings, removeAllNodesBetweenSiblings, removeAttribute, removeClass, setAttribute, setChecked, setTextNodeValue, setValue)
-import Web.Document as Web
 import Widget (Widget, Change(..))
 
-text :: forall a . Widget Document String a -- TODO is default needed?
+-- Builds Web Document and keeping track of parent/last sibling node
+newtype Web a = Web (StateT DocumentEnv Effect a)
+
+type DocumentEnv =
+  { parent :: Node
+  , sibling :: Node -- last sibling
+  }
+
+derive newtype instance Functor Web
+derive newtype instance Apply Web
+derive newtype instance Applicative Web
+derive newtype instance Bind Web
+derive newtype instance Monad Web
+derive newtype instance MonadEffect Web
+derive newtype instance MonadState DocumentEnv Web
+
+element :: forall a. TagName -> Web a -> Web a
+element tagName contents = do
+  newNode <- liftEffect $ createElement tagName
+  parentNode <- gets _.parent
+  liftEffect $ appendChild newNode parentNode
+  modify_ _ { parent = newNode}
+  result <- contents
+  modify_ _ { parent = parentNode, sibling = newNode}
+  pure result
+
+at :: String -> String -> Web Unit
+at name value = do
+  node <- gets _.sibling
+  liftEffect $ setAttribute node name value
+
+ats :: Object String -> Web Unit
+ats attrs = do
+  node <- gets _.sibling
+  liftEffect $ setAttributes node attrs
+
+cl :: String -> Web Unit
+cl name = do
+  node <- gets _.sibling
+  liftEffect $ addClass node name
+  pure unit
+
+listener :: String -> (Event -> Web Unit) -> Web Unit
+listener eventType callback = do
+  node <- gets _.sibling
+  void $ liftEffect $ addEventListener eventType node (\evt -> runDomInNode node $ callback evt)
+
+speaker :: forall a. (Node -> a) -> Web a
+speaker action = do
+  node <- gets _.sibling
+  pure $ action node
+
+uniqueId :: Effect String
+uniqueId = randomElementId
+
+runDomInNode :: forall a. Node -> Web a -> Effect a
+runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
+
+foreign import randomElementId :: Effect String
+
+type TagName = String
+
+-- | XML namespace URI.
+type Namespace = String
+
+-- | Web node.
+foreign import data Node :: Type
+
+-- | Web event.
+foreign import data Event :: Type
+
+foreign import getValue :: Node -> Effect String
+foreign import setValue :: Node -> String -> Effect Unit
+foreign import getChecked :: Node -> Effect Boolean
+foreign import setChecked :: Node -> Boolean -> Effect Unit
+foreign import documentBody :: Effect Node
+foreign import createTextNode :: String -> Effect Node
+foreign import createDocumentFragment :: Effect Node
+foreign import createElementNS :: Namespace -> TagName -> Effect Node
+foreign import createElement :: TagName -> Effect Node
+foreign import insertBefore :: Node -> Node -> Effect Unit
+foreign import appendChild :: Node -> Node -> Effect Unit
+foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
+foreign import appendRawHtml :: String -> Node -> Effect Node
+foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
+foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
+foreign import createCommentNode :: String -> Effect Node
+foreign import setAttributes :: Node -> Object String -> Effect Unit
+foreign import setAttribute :: Node -> String -> String -> Effect Unit
+foreign import removeAttribute :: Node -> String -> Effect Unit
+foreign import addClass :: Node -> String -> Effect Unit
+foreign import removeClass :: Node -> String -> Effect Unit
+foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
+foreign import setTextNodeValue :: Node -> String -> Effect Unit
+text :: forall a . Widget Web String a -- TODO is default needed?
 text = wrap do
-  Web.text
+  parentNode <- gets _.parent
+  newNode <- liftEffect $ do
+    node <- createTextNode mempty
+    appendChild node parentNode
+    pure node
+  modify_ _ { sibling = newNode}
   node <- gets (_.sibling)
   pure
     { speak: case _ of
@@ -60,19 +163,21 @@ text = wrap do
     , listen: \_ -> pure unit
     }
 
--- TODO make it Widget Document String a
-html :: forall a b. String -> Widget Document a b
-html h = wrap do
-  Web.html h
+-- TODO make it Widget Web String a
+html :: forall a b. String -> Widget Web a b
+html htmlString = wrap do
+  parent <- gets _.parent
+  lastNode <- liftEffect $ appendRawHtml htmlString parent
+  modify_ _ { sibling = lastNode}
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
 
-textInput :: Widget Document String String
+textInput :: Widget Web String String
 textInput = wrap do
-  Web.element "input" (pure unit)
-  Web.at "type" "text"
+  element "input" (pure unit)
+  at "type" "text"
   node <- gets _.sibling
   pure
     { speak: case _ of
@@ -88,11 +193,11 @@ textInput = wrap do
       prop $ Update [] value
     }
 
-checkboxInput :: forall a . a -> Widget Document (Maybe a) (Maybe a)
+checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
 checkboxInput default = wrap do
   aRef <- liftEffect $ Ref.new default
-  Web.element "input" (pure unit)
-  Web.at "type" "checkbox"
+  element "input" (pure unit)
+  at "type" "checkbox"
   node <- gets _.sibling
   pure
     { speak: case _ of
@@ -111,11 +216,11 @@ checkboxInput default = wrap do
       prop $ Update [] $ if checked then (Just a) else Nothing
     }
 
-radioButton :: forall a. a -> Widget Document a a
+radioButton :: forall a. a -> Widget Web a a
 radioButton default = wrap do
   aRef <- liftEffect $ Ref.new default
-  Web.element "input" (pure unit)
-  Web.at "type" "radio"
+  element "input" (pure unit)
+  at "type" "radio"
   node <- gets _.sibling
   pure
     { speak: case _ of
@@ -129,16 +234,16 @@ radioButton default = wrap do
     prop $ Update [] a
     }
 
-element :: forall i o. String -> Widget Document i o -> Widget Document i o
-element tagName = wrap <<< Web.element tagName <<< unwrap
+element' :: forall i o. String -> Widget Web i o -> Widget Web i o
+element' tagName = wrap <<< element tagName <<< unwrap
 
-at' :: forall a b. String -> String -> Widget Document a b -> Widget Document a b
+at' :: forall a b. String -> String -> Widget Web a b -> Widget Web a b
 at' name value w = wrap do
   w' <- unwrap w
-  Web.at name value
+  at name value
   pure w'
 
-dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget Document a b -> Widget Document a b
+dat' :: forall a b. String -> String -> (a -> Boolean) -> Widget Web a b -> Widget Web a b
 dat' name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -153,16 +258,16 @@ dat' name value pred w = wrap do
     , listen: w'.listen
     }
 
-cl' :: forall a b. String -> Widget Document a b -> Widget Document a b
+cl' :: forall a b. String -> Widget Web a b -> Widget Web a b
 cl' name w = wrap do
   w' <- unwrap w
-  Web.cl name
+  cl name
   pure
     { speak: w'.speak
     , listen: w'.listen
     }
 
-dcl' :: forall a b. String -> (a -> Boolean) -> Widget Document a b -> Widget Document a b
+dcl' :: forall a b. String -> (a -> Boolean) -> Widget Web a b -> Widget Web a b
 dcl' name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -177,7 +282,7 @@ dcl' name pred w = wrap do
     , listen: w'.listen
     }
 
-clickable :: forall a. Widget Document a Void -> Widget Document a a
+clickable :: forall a. Widget Web a Void -> Widget Web a a
 clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   w' <- unwrap w
@@ -195,7 +300,7 @@ clickable w = wrap do
     prop $ Update [] a
     }
 
-slot :: forall a b. Widget Document a b -> Widget Document a b
+slot :: forall a b. Widget Web a b -> Widget Web a b
 slot w = wrap do
   {update: { speak, listen}, attach, detach} <- attachable' false $ unwrap w
   pure
@@ -209,7 +314,7 @@ slot w = wrap do
     , listen: listen
     }
   where
-  attachable' :: forall x. Boolean -> Document x -> Document { update :: x, attach :: Document Unit, detach :: Document Unit }
+  attachable' :: forall x. Boolean -> Web x -> Web { update :: x, attach :: Web Unit, detach :: Web Unit }
   attachable' removePrecedingSiblingNodes dom = do
     parent <- gets _.parent
     slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
@@ -227,14 +332,14 @@ slot w = wrap do
       detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
 
       let
-        attach :: Document Unit
+        attach :: Web Unit
         attach = measured' slotNo "attached" $ liftEffect do
           detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
           for_ detachedDocumentFragment \documentFragment -> do
             removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
             documentFragment `insertBefore` placeholderAfter
 
-        detach :: Document Unit
+        detach :: Web Unit
         detach = measured' slotNo "detached" $ liftEffect do
           detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
           when (isNothing detachedDocumentFragment) do
@@ -275,56 +380,56 @@ newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
 
 --
 
-div :: forall a b. Widget Document a b -> Widget Document a b
-div = element "div"
+div :: forall a b. Widget Web a b -> Widget Web a b
+div = element' "div"
 
-span :: forall a b. Widget Document a b -> Widget Document a b
-span = element "span"
+span :: forall a b. Widget Web a b -> Widget Web a b
+span = element' "span"
 
-aside :: forall a b. Widget Document a b -> Widget Document a b
-aside = element "aside"
+aside :: forall a b. Widget Web a b -> Widget Web a b
+aside = element' "aside"
 
-label :: forall a b. Widget Document a b -> Widget Document a b
-label = element "label"
+label :: forall a b. Widget Web a b -> Widget Web a b
+label = element' "label"
 
-button :: forall a b. Widget Document a b -> Widget Document a b
-button = element "button"
+button :: forall a b. Widget Web a b -> Widget Web a b
+button = element' "button"
 
-svg :: forall a b. Widget Document a b -> Widget Document a b
-svg = element "svg"
+svg :: forall a b. Widget Web a b -> Widget Web a b
+svg = element' "svg"
 
-path :: forall a b. Widget Document a b -> Widget Document a b
-path = element "path"
+path :: forall a b. Widget Web a b -> Widget Web a b
+path = element' "path"
 
-p :: forall a b. Widget Document a b -> Widget Document a b
-p = element "p"
+p :: forall a b. Widget Web a b -> Widget Web a b
+p = element' "p"
 
-h1 :: forall a b. Widget Document a b -> Widget Document a b
-h1 = element "h1"
+h1 :: forall a b. Widget Web a b -> Widget Web a b
+h1 = element' "h1"
 
-h2 :: forall a b. Widget Document a b -> Widget Document a b
-h2 = element "h2"
+h2 :: forall a b. Widget Web a b -> Widget Web a b
+h2 = element' "h2"
 
-h3 :: forall a b. Widget Document a b -> Widget Document a b
-h3 = element "h3"
+h3 :: forall a b. Widget Web a b -> Widget Web a b
+h3 = element' "h3"
 
-h4 :: forall a b. Widget Document a b -> Widget Document a b
-h4 = element "h4"
+h4 :: forall a b. Widget Web a b -> Widget Web a b
+h4 = element' "h4"
 
-h5 :: forall a b. Widget Document a b -> Widget Document a b
-h5 = element "h5"
+h5 :: forall a b. Widget Web a b -> Widget Web a b
+h5 = element' "h5"
 
-h6 :: forall a b. Widget Document a b -> Widget Document a b
-h6 = element "h6"
+h6 :: forall a b. Widget Web a b -> Widget Web a b
+h6 = element' "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall i o. Widget Document i o -> i -> Effect Unit
+runWidgetInBody :: forall i o. Widget Web i o -> i -> Effect Unit
 runWidgetInBody w i = do
   node <- documentBody
   runWidgetInNode node w i $ const $ pure unit
 
-runWidgetInNode :: forall i o. Node -> Widget Document i o -> i -> (o -> Document Unit) -> Effect Unit
+runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Web Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
   listen case _ of

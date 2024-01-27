@@ -5,16 +5,15 @@ module View
 import Prelude hiding (div)
 
 import Data.Lens (_Just)
-import Web.Document (Document)
+import MDC as MDC
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
-import Web (at', div, slot, text)
-import MDC as MDC
+import Web (Web, at', div, slot, text)
 import Widget (Widget, fixed)
 
-order ∷ Widget Document Order Order
+order ∷ Widget Web Order Order
 order =
   MDC.elevation20 S.do
     MDC.headline6 S.do
@@ -94,7 +93,7 @@ order =
           text # shortId
           text # fixed " submitted"}
 
-name :: Widget Document NameInformal NameInformal
+name :: Widget Web NameInformal NameInformal
 name = S.do
   MDC.subtitle2 (text # fixed "Informal")
   MDC.filledTextField { floatingLabel: (_ # fixed "First name") } firstName
