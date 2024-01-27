@@ -36,7 +36,7 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Node, Web, aside, at', checkboxInput, cl', clickable, dcl', div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Widget, bracket)
 
@@ -45,17 +45,17 @@ import Widget (Widget, bracket)
 containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button (A.do
-    div empty # cl' "mdc-button__ripple"
-    span (label >>> empty) # cl' "mdc-button__label") # cl' "mdc-button" # cl' "mdc-button--raised" # cl' "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
+    div empty # cl "mdc-button__ripple"
+    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> (Widget Web String String -> Widget Web a a) -> Widget Web a a
 filledTextField { floatingLabel } value =
   label (S.do
-    span (empty :: Widget Web a a) # cl' "mdc-text-field__ripple"
+    span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
     (S.do
-      (span text # cl' "mdc-floating-label" # at' "id" id # dcl' "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
-      textInput # value # cl' "mdc-text-field__input" # at' "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl' "mdc-line-ripple") # cl' "mdc-text-field" # cl' "mdc-text-field--filled" # cl' "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit)
+      (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
+      textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
+    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit)
     where
       id = unsafePerformEffect uniqueId
 
@@ -63,15 +63,15 @@ checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> (W
 checkbox { labelContent, default } checked =
   div ( S.do
     div ( S.do
-      checkboxInput default # checked # cl' "mdc-checkbox__native-control" # at' "id" id -- TODO define id' = at' "id" id
+      checkboxInput default # checked # cl "mdc-checkbox__native-control" # attr "id" id -- TODO define id' = attr "id" id
       div (S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
-        div empty # cl' "mdc-checkbox__mixedmark") # cl' "mdc-checkbox__background"
-      div empty # cl' "mdc-checkbox__ripple") # cl' "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit)
-    label (labelContent >>> empty) # at' "for" id) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
+        div empty # cl "mdc-checkbox__mixedmark") # cl "mdc-checkbox__background"
+      div empty # cl "mdc-checkbox__ripple") # cl "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit)
+    label (labelContent >>> empty) # attr "for" id) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where
       id = unsafePerformEffect uniqueId
 
@@ -80,78 +80,78 @@ radioButton :: forall a b c. { labelContent :: Widget Web c b, default :: a } ->
 radioButton { labelContent, default } value =
   div (S.do
     div (S.do
-        Web.radioButton default # value # cl' "mdc-radio__native-control" # at' "id" uid
+        Web.radioButton default # value # cl "mdc-radio__native-control" # attr "id" uid
         div (S.do
-          div empty # cl' "mdc-radio__outer-circle"
-          div empty # cl' "mdc-radio__inner-circle") # cl' "mdc-radio__background"
-        div empty # cl' "mdc-radio__ripple") # cl' "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
-    label (labelContent >>> empty) # at' "for" uid
-  ) # cl' "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
+          div empty # cl "mdc-radio__outer-circle"
+          div empty # cl "mdc-radio__inner-circle") # cl "mdc-radio__background"
+        div empty # cl "mdc-radio__ripple") # cl "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
+    label (labelContent >>> empty) # attr "for" uid
+  ) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where
       uid = unsafePerformEffect uniqueId
 
 headline1 :: forall a b. Widget Web a b -> Widget Web a b
-headline1 w = h1 w # cl' "mdc-typography--headline1"
+headline1 w = h1 w # cl "mdc-typography--headline1"
 
 headline2 :: forall a b. Widget Web a b -> Widget Web a b
-headline2 w = h2 w # cl' "mdc-typography--headline2"
+headline2 w = h2 w # cl "mdc-typography--headline2"
 
 headline3 :: forall a b. Widget Web a b -> Widget Web a b
-headline3 w = h3 w # cl' "mdc-typography--headline3"
+headline3 w = h3 w # cl "mdc-typography--headline3"
 
 headline4 :: forall a b. Widget Web a b -> Widget Web a b
-headline4 w = h4 w # cl' "mdc-typography--headline4"
+headline4 w = h4 w # cl "mdc-typography--headline4"
 
 headline5 :: forall a b. Widget Web a b -> Widget Web a b
-headline5 w = h5 w # cl' "mdc-typography--headline5"
+headline5 w = h5 w # cl "mdc-typography--headline5"
 
 headline6 :: forall a b. Widget Web a b -> Widget Web a b
-headline6 w = h6 w # cl' "mdc-typography--headline6"
+headline6 w = h6 w # cl "mdc-typography--headline6"
 
 subtitle1 :: forall a b. Widget Web a b -> Widget Web a b
-subtitle1 w = p w # cl' "mdc-typography--subtitle1"
+subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
 subtitle2 :: forall a b. Widget Web a b -> Widget Web a b
-subtitle2 w = p w # cl' "mdc-typography--subtitle2"
+subtitle2 w = p w # cl "mdc-typography--subtitle2"
 
 button :: forall a b. Widget Web a b -> Widget Web a b
-button w = span w # cl' "mdc-typography--button"
+button w = span w # cl "mdc-typography--button"
 
 caption :: forall a b. Widget Web a b -> Widget Web a b
-caption w = span w # cl' "mdc-typography--caption"
+caption w = span w # cl "mdc-typography--caption"
 
 overline :: forall a b. Widget Web a b -> Widget Web a b
-overline w = span w # cl' "mdc-typography--overline"
+overline w = span w # cl "mdc-typography--overline"
 
 body1 :: forall a b. Widget Web a b -> Widget Web a b
-body1 w = p w # cl'"mdc-typography--body1"
+body1 w = p w # cl"mdc-typography--body1"
 
 body2 :: forall a b. Widget Web a b -> Widget Web a b
-body2 w = p w # cl'"mdc-typography--body2"
+body2 w = p w # cl"mdc-typography--body2"
 
 elevation1 :: forall a b. Widget Web a b -> Widget Web a b
-elevation1 w = div w # cl' "mdc-elevation--z1"
+elevation1 w = div w # cl "mdc-elevation--z1"
 
 elevation10 :: forall a b. Widget Web a b -> Widget Web a b
-elevation10 w = div w # cl' "mdc-elevation--z10" # at' "style" "padding: 25px" -- TODO padding added ad-hoc, to remove
+elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px" -- TODO padding added ad-hoc, to remove
 
 elevation20 :: forall a b. Widget Web a b -> Widget Web a b
-elevation20 w = div w # cl' "mdc-elevation--z20" # at' "style" "padding: 25px"-- TODO padding added ad-hoc, to remove
+elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"-- TODO padding added ad-hoc, to remove
 
 card :: forall a b. Widget Web a b -> Widget Web a b
-card w = div w # cl' "mdc-card" # at' "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"  -- TODO padding added ad-hoc, to remove
+card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"  -- TODO padding added ad-hoc, to remove
 
 dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
   aside (S.do
     div (S.do
       div (S.do
-        h2 (title >>> empty) # cl' "mdc-dialog__title" # at' "id" "my-dialog-title"
-        div content # cl' "mdc-dialog__content" # at' "id" "my-dialog-content"
-      ) # cl' "mdc-dialog__surface" # at' "role" "alertdialog" # at' "aria-modal" "true" # at' "aria-labelledby" "my-dialog-title" # at' "aria-describedby" "my-dialog-content"
-    ) # cl' "mdc-dialog__container"
-    div empty # cl' "mdc-dialog__scrim"
-  ) # cl' "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+        h2 (title >>> empty) # cl "mdc-dialog__title" # attr "id" "my-dialog-title"
+        div content # cl "mdc-dialog__content" # attr "id" "my-dialog-content"
+      ) # cl "mdc-dialog__surface" # attr "role" "alertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
+    ) # cl "mdc-dialog__container"
+    div empty # cl "mdc-dialog__scrim"
+  ) # cl "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
       openMdcComponent comp = liftEffect $ open comp
@@ -162,7 +162,7 @@ snackbar { label } =
   aside
     ( div
       ( div
-        label # cl' "mdc-snackbar__label" # at' "aria-atomic" "false") # at' "role" "status" # at' "aria-relevant" "additions" # cl' "mdc-snackbar__surface") # cl' "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure unit)
+        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false") # attr "role" "status" # attr "aria-relevant" "additions" # cl "mdc-snackbar__surface") # cl "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure unit)
     where
       initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
       openMdcComponent comp = liftEffect $ open comp

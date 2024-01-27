@@ -15,7 +15,7 @@ import Model (NameInformal, Order, address, customer, delivery, dineIn, firstNam
 
 -- ui framweork
 import Widget (Widget, fixed)
-import Web (Web, at', div, slot, text)
+import Web (Web, attr, div, slot, text)
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
 
 
@@ -86,7 +86,7 @@ order =
               text # fixed " as draft" }
             containedButton { label: S.do
               text # fixed "Submit order "
-              text # shortId }) # at' "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
+              text # shortId }) # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
         dialog { title: S.do
           text # fixed "Submit order "
           text # shortId

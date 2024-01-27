@@ -36,15 +36,6 @@ export function createElement(tag) {
   };
 }
 
-// createElementNS :: Namespace -> TagName -> IOSync Node
-export function createElementNS(namespace) {
-  return function (tag) {
-    return function () {
-      return document.createElementNS(namespace, tag);
-    };
-  };
-}
-
 // insertBefore :: Node -> Node -> IOSync Unit
 export function insertBefore(newNode) {
   return function (existingNode) {
