@@ -11,7 +11,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import Web (at', div, slot, text)
-import Web.MDC as MDC
+import MDC as MDC
 import Widget (Widget, fixed)
 
 order ∷ Widget Document Order Order

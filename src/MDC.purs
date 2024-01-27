@@ -1,4 +1,4 @@
-module Web.MDC
+module MDC
   ( body1
   , body2
   , button
