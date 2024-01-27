@@ -197,10 +197,10 @@ instance MonadEffect m => Category (Widget m) where
     pure
       { speak: \cha -> liftEffect $ void $ AVar.put cha chaAVar mempty
       , listen: \propagate ->
-        let go = void $ AVar.take chaAVar case _ of
+        let waitAndPropagate = void $ AVar.take chaAVar case _ of
               Left error -> pure unit -- TODO handle error
-              Right cha -> go -- TODO propagate
-        in liftEffect go
+              Right cha -> waitAndPropagate -- TODO propagate
+        in liftEffect waitAndPropagate
       }
 -- is maybe possible?
 
@@ -309,11 +309,11 @@ effect processRequest = Widget $ liftEffect do
         void $ liftEffect $ AVar.put res resAVar mempty
       _-> pure unit
     , listen: \propagate ->
-      let go = void $ AVar.take resAVar case _ of
+      let waitAndPropagate = void $ AVar.take resAVar case _ of
             Left error -> pure unit -- TODO handle error
             Right res -> do
               log $ show $ Update [] res
               -- propagate $ Update [] res
-              go
-       in liftEffect go
+              waitAndPropagate
+       in liftEffect waitAndPropagate
     }
