@@ -284,10 +284,3 @@ scopemap scope p = wrap ado
         _ -> None -- otherwise
     zoomIn None = None
     zoomIn Removal = Removal
-
--- TODO
--- output ∷ forall m a b. MonadEffect m => Propagator m a b -> Propagator m a a
--- output = lens "?" identity (\s _ -> s)
-
--- input :: forall m a b. MonadGUI m => Propagator m b a -> Propagator m a a
--- input = prism "?" identity Right
