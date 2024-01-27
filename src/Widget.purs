@@ -1,5 +1,6 @@
 module Widget
   ( Change(..)
+  , Propagation
   , Scope(..)
   , Widget(..)
   , WidgetOptics
@@ -38,7 +39,6 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect.AVar as AVar
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
-import Effect.Exception.Unsafe (unsafeThrow)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -47,9 +47,11 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
-  { speak :: Change i -> m Unit
-  , listen :: (Change o -> m Unit) -> m Unit
+  { speak :: Propagation m i
+  , listen :: Propagation m o -> m Unit
   })
+
+type Propagation m a = Change a -> m Unit
 
 derive instance Newtype (Widget m i o) _
 
