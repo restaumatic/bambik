@@ -38,6 +38,7 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect.AVar as AVar
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
+import Effect.Exception.Unsafe (unsafeThrow)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -190,8 +191,20 @@ instance Monad m => Semigroupoid (Widget m) where
 --     , listen: unsafeThrow "impossible"
 --     }
 -- but:
--- instance MonadEffect m => Category (Widget m) where
--- possible
+instance MonadEffect m => Category (Widget m) where
+  identity = wrap do
+    chaAVar <- liftEffect AVar.empty
+    pure
+      { speak: \cha -> liftEffect $ void $ AVar.put cha chaAVar mempty
+      -- { speak: unsafeThrow "!"
+      -- , listen: unsafeThrow "!"
+      , listen: \propagate ->
+        let go = void $ AVar.take chaAVar case _ of
+              Left error -> pure unit -- TODO handle error
+              Right cha -> go -- TODO propagate
+        in liftEffect go
+      }
+-- is maybe possible?
 
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
