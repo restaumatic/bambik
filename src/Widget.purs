@@ -35,6 +35,9 @@ import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
+import Effect.AVar as AVar
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -286,14 +289,21 @@ scopemap scope p = wrap ado
     zoomIn None = None
     zoomIn Removal = Removal
 
-effect :: forall req res m. Monad m => (req -> m res) -> Widget m req res
-effect processRequest = Widget do
+effect :: forall req res m. MonadEffect m => (req -> m res) -> Widget m req res
+effect processRequest = Widget $ liftEffect do
+  resAVar <- AVar.empty
   pure
     { speak: case _ of
-      Update _ req-> do
+      Update _ req -> do
         res <- processRequest req
-        -- TODO notify listen about response
-        pure unit
+        void $ liftEffect $ AVar.put res resAVar mempty
       _-> pure unit
-    , listen: \propagate -> pure unit -- TODO wait for reponse and propagate it
+    , listen: \propagate ->
+      let go = void $ AVar.take resAVar case _ of
+            Left error -> pure unit -- TODO handle error
+            Right res -> do
+              log $ show $ Update [] res
+              -- propagate $ Update [] res
+              go
+       in liftEffect go
     }
