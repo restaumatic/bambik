@@ -189,7 +189,7 @@ dynAttr name value pred w = wrap do
 cl :: forall a b. String -> Widget Web a b -> Widget Web a b
 cl name w = wrap do
   w' <- unwrap w
-  class_ name
+  clazz name
   pure
     { speak: w'.speak
     , listen: w'.listen
@@ -383,8 +383,9 @@ attribute name value = do
   node <- gets _.sibling
   liftEffect $ setAttribute node name value
 
-class_ :: String -> Web Unit
-class_ name = do
+-- read: class
+clazz :: String -> Web Unit
+clazz name = do
   node <- gets _.sibling
   liftEffect $ addClass node name
   pure unit
