@@ -2,46 +2,52 @@ module View
   ( order
   ) where
 
-import Prelude hiding (div)
 
+-- commons
+import Prelude hiding (div)
 import Data.Lens (_Just)
-import MDC as MDC
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
+
+-- model
 import ViewModel (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
-import Web (Web, at', div, slot, text)
+
+-- ui framweork
 import Widget (Widget, fixed)
+import Web (Web, at', div, slot, text)
+import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
+
 
 order :: Widget Web Order Order
 order =
-  MDC.elevation20 S.do
-    MDC.headline6 S.do
+  elevation20 S.do
+    headline6 S.do
       text # fixed "Order "
       text # shortId
-    MDC.card S.do
-      MDC.subtitle1 (text # fixed "Identifier")
-      MDC.filledTextField { floatingLabel: (_ # fixed "Short ID") } shortId
-      MDC.filledTextField { floatingLabel: (_ # fixed "Unique ID") } uniqueId
-    MDC.card S.do
-      MDC.subtitle1 S.do
+    card S.do
+      subtitle1 (text # fixed "Identifier")
+      filledTextField { floatingLabel: (_ # fixed "Short ID") } shortId
+      filledTextField { floatingLabel: (_ # fixed "Unique ID") } uniqueId
+    card S.do
+      subtitle1 S.do
         text # fixed "Customer"
         name # customer
-    MDC.card ( S.do
-      MDC.radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
-      MDC.radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
-      MDC.radioButton { labelContent: text # fixed "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
-      MDC.filledTextField { floatingLabel: (_ # fixed "Table" )} table # slot # dineIn
-      MDC.filledTextField { floatingLabel: (_ # fixed "Time" )} time # slot # takeaway
-      MDC.filledTextField { floatingLabel: (_ # fixed "Address" )} address # slot # delivery ) # fulfillment
-    MDC.card S.do
-      MDC.subtitle1 (text # fixed "Total")
-      MDC.filledTextField { floatingLabel: (_ # fixed "Total" )} total
-    MDC.card S.do
-      MDC.checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
-      MDC.filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # slot # _Just # payment
-    MDC.card S.do
-      MDC.body1 S.do
+    card ( S.do
+      radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
+      radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
+      radioButton { labelContent: text # fixed "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
+      filledTextField { floatingLabel: (_ # fixed "Table" )} table # slot # dineIn
+      filledTextField { floatingLabel: (_ # fixed "Time" )} time # slot # takeaway
+      filledTextField { floatingLabel: (_ # fixed "Address" )} address # slot # delivery ) # fulfillment
+    card S.do
+      subtitle1 (text # fixed "Total")
+      filledTextField { floatingLabel: (_ # fixed "Total" )} total
+    card S.do
+      checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
+      filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # slot # _Just # payment
+    card S.do
+      body1 S.do
         text # fixed "Summary: Order "
         text # shortId
         text # fixed " (uniquely "
@@ -74,31 +80,31 @@ order =
       T.do
         div
           (A.do
-            MDC.containedButton { label: S.do
+            containedButton { label: S.do
               text # fixed "Submit order "
               text # shortId
               text # fixed " as draft" }
-            MDC.containedButton { label: S.do
+            containedButton { label: S.do
               text # fixed "Submit order "
               text # shortId }) # at' "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
-        MDC.dialog { title: S.do
+        dialog { title: S.do
           text # fixed "Submit order "
           text # shortId
           text # fixed "?" } S.do
-            MDC.body1 (text # fixed "Are you sure?")
-            MDC.containedButton { label: text # fixed "Submit order" }
+            body1 (text # fixed "Are you sure?")
+            containedButton { label: text # fixed "Submit order" }
         submitOrder
-        MDC.snackbar { label: S.do
+        snackbar { label: S.do
           text # fixed "Order "
           text # shortId
           text # fixed " submitted"}
 
 name :: Widget Web NameInformal NameInformal
 name = S.do
-  MDC.subtitle2 (text # fixed "Informal")
-  MDC.filledTextField { floatingLabel: (_ # fixed "First name") } firstName
-  MDC.filledTextField { floatingLabel: (_ # fixed "Last name") } lastName
+  subtitle2 (text # fixed "Informal")
+  filledTextField { floatingLabel: (_ # fixed "First name") } firstName
+  filledTextField { floatingLabel: (_ # fixed "Last name") } lastName
   ( S.do
-    MDC.subtitle2 (text # fixed "Formal")
-    MDC.filledTextField { floatingLabel: (_ # fixed "Surname" )} surname
-    MDC.filledTextField { floatingLabel: (_ # fixed "Forename" )} forename ) # formal
+    subtitle2 (text # fixed "Formal")
+    filledTextField { floatingLabel: (_ # fixed "Surname" )} surname
+    filledTextField { floatingLabel: (_ # fixed "Forename" )} forename ) # formal
