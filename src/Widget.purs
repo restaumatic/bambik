@@ -201,7 +201,10 @@ instance Apply m => Alt (Widget m a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { speak: p1'.speak *> p2'.speak
+      { speak: \ch -> ado
+        p1'.speak ch
+        p2'.speak ch
+        in unit
       , listen: \propagation -> p1'.listen propagation *> p2'.listen propagation
       }
 
