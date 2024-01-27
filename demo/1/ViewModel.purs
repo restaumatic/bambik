@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Show.Generic (genericShow)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
-import Widget (Change(..), Widget(..), WidgetOptics', constructor, effect, field, iso)
+import Widget (Widget, WidgetOptics', constructor, effect, field, iso)
 
 type Order =
   { uniqueId :: UniqueId
