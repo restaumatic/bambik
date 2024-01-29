@@ -38,7 +38,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, bracket)
+import Widget (Widget, WidgetOptics', bracket)
 
 -- Primitive widgets
 
@@ -48,7 +48,7 @@ containedButton { label } =
     div empty # cl "mdc-button__ripple"
     span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
-filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> (Widget Web String String -> Widget Web a a) -> Widget Web a a
+filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
   label (S.do
     span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
@@ -59,7 +59,7 @@ filledTextField { floatingLabel } value =
     where
       id = unsafePerformEffect uniqueId
 
-checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> (Widget Web (Maybe a) (Maybe a) -> Widget Web s s) -> Widget Web s s
+checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' (Maybe a) s -> Widget Web s s
 checkbox { labelContent, default } checked =
   div ( S.do
     div ( S.do
@@ -76,7 +76,7 @@ checkbox { labelContent, default } checked =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a b c. { labelContent :: Widget Web c b, default :: a } -> (Widget Web a a -> Widget Web c c) -> Widget Web c c
+radioButton :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' a s -> Widget Web s s
 radioButton { labelContent, default } value =
   div (S.do
     div (S.do
