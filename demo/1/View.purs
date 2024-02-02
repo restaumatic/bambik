@@ -4,22 +4,26 @@ module View
 
 
 -- commons
-
 import Data.Function ((#))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
-import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
-import Model (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
+
+-- model
+import Model (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+
+-- ui framework
+import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
 import Web (Web, attr, div, slot, text)
 import Widget (Widget, fixed)
 
 order :: Widget Web Order Order
 order =
   elevation20 S.do
-    headline6 (text # fixed "Order " <> shortId)
+    headline6 S.do
+      text # fixed "Order " <> shortId
     card S.do
       subtitle1 (text # fixed "Identifier")
       filledTextField { floatingLabel: (_ # fixed "Short ID") } shortId
