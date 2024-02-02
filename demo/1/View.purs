@@ -4,18 +4,15 @@ module View
 
 
 -- commons
+
 import Data.Function ((#))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
+import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
+import Model (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-
--- model
-import Model (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
-
--- ui framework
-import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
 import Web (Web, attr, div, slot, text)
 import Widget (Widget, fixed)
 
@@ -53,9 +50,9 @@ order =
           ( text # fixed " (formally " <> surname <> fixed " " <> forename <> fixed ")" ) # formal ) # customer
         text # fixed ", fulfilled as "
         ( S.do
-            text # fixed "dine in at table " <> table # slot # dineIn
-            text # fixed "takeaway at " <> time # slot # takeaway
-            text # fixed "delivery to " <> address # slot # delivery ) # fulfillment
+          (text # fixed "dine in at table " <> table) # slot # dineIn
+          (text # fixed "takeaway at " <> time) # slot # takeaway
+          (text # fixed "delivery to " <> address) # slot # delivery ) # fulfillment
         text # fixed ", paid " <> paid # slot # _Just # payment
       T.do
         div
