@@ -3,8 +3,6 @@ module View
   ) where
 
 
--- commons
-
 import Data.Function ((#))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
@@ -13,7 +11,7 @@ import Model (NameInformal, Order, address, customer, delivery, dineIn, firstNam
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Web, attr, div, slot, text)
+import Web (Web, div, slot, text)
 import Widget (Widget, fixed)
 
 order :: Widget Web Order Order
@@ -45,23 +43,20 @@ order =
     card S.do
       body1 S.do
         text # fixed "Summary: Order " <> shortId <> fixed " (uniquely " <> uniqueId <> fixed ") for "
-        ( S.do
-          text # firstName <> fixed " " <> lastName
-          ( text # fixed " (formally " <> surname <> fixed " " <> forename <> fixed ")" ) # formal ) # customer
+        text # firstName <> fixed " " <> lastName # customer
+        text # fixed " (formally " <> surname <> fixed " " <> forename <> fixed ")" # formal # customer
         text # fixed ", fulfilled as "
-        ( S.do
-          (text # fixed "dine in at table " <> table) # slot # dineIn
-          (text # fixed "takeaway at " <> time) # slot # takeaway
-          (text # fixed "delivery to " <> address) # slot # delivery ) # fulfillment
+        text # fixed "dine in at table " <> table # slot # dineIn # fulfillment
+        text # fixed "takeaway at " <> time # slot # takeaway # fulfillment
+        text # fixed "delivery to " <> address # slot # delivery # fulfillment
         text # fixed ", paid " <> paid # slot # _Just # payment
       T.do
-        div
-          (A.do
-            containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
-            containedButton { label: text # fixed "Submit order " <> shortId }) # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
+        div S.do
+          containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
+          containedButton { label: text # fixed "Submit order " <> shortId } -- # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
         dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
-            body1 (text # fixed "Are you sure?")
-            containedButton { label: text # fixed "Submit order" }
+          body1 (text # fixed "Are you sure?")
+          containedButton { label: text # fixed "Submit order" }
         submitOrder
         snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}
 
@@ -70,7 +65,6 @@ name = S.do
   subtitle2 (text # fixed "Informal")
   filledTextField { floatingLabel: (_ # fixed "First name") } firstName
   filledTextField { floatingLabel: (_ # fixed "Last name") } lastName
-  ( S.do
-    subtitle2 (text # fixed "Formal")
-    filledTextField { floatingLabel: (_ # fixed "Surname" )} surname
-    filledTextField { floatingLabel: (_ # fixed "Forename" )} forename ) # formal
+  subtitle2 (text # fixed "Formal")
+  filledTextField { floatingLabel: (_ # fixed "Surname" )} surname # formal
+  filledTextField { floatingLabel: (_ # fixed "Forename" )} forename # formal
