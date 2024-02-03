@@ -22,10 +22,10 @@ order =
       subtitle1 (text # fixed "Identifier")
       filledTextField { floatingLabel: fixed "Short ID" } shortId
       filledTextField { floatingLabel: fixed "Unique ID" } uniqueId
-    card S.do
+    card ( S.do
       subtitle1 S.do
         text # fixed "Customer"
-        name # customer
+        name ) # customer
     card ( S.do
       radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
       radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
