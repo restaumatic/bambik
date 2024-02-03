@@ -7,7 +7,7 @@ import Data.Function ((#), (>>>))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
-import Model (NameInformal, Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import Model (Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div, slot, text)
@@ -25,7 +25,12 @@ order =
     card ( S.do
       subtitle1 S.do
         text # fixed "Customer"
-        name ) # customer
+        subtitle2 (text # fixed "Informal")
+        filledTextField { floatingLabel: fixed "First name" } firstName
+        filledTextField { floatingLabel: fixed "Last name" } lastName
+        subtitle2 (text # fixed "Formal")
+        filledTextField { floatingLabel: fixed "Surname" } surname # formal
+        filledTextField { floatingLabel: fixed "Forename" } forename # formal ) # customer
     card ( S.do
       radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
       radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
@@ -57,12 +62,3 @@ order =
             containedButton { label: text # fixed "Submit order" }
           submitOrder
           snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}
-
-name :: Widget Web NameInformal NameInformal
-name = S.do
-  subtitle2 (text # fixed "Informal")
-  filledTextField { floatingLabel: fixed "First name" } firstName
-  filledTextField { floatingLabel: fixed "Last name" } lastName
-  subtitle2 (text # fixed "Formal")
-  filledTextField { floatingLabel: fixed "Surname" } surname # formal
-  filledTextField { floatingLabel: fixed "Forename" } forename # formal
