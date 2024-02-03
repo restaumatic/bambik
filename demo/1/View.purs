@@ -20,8 +20,8 @@ order =
       text # fixed "Order " <> shortId
     card S.do
       subtitle1 (text # fixed "Identifier")
-      filledTextField { floatingLabel: (_ # fixed "Short ID") } shortId
-      filledTextField { floatingLabel: (_ # fixed "Unique ID") } uniqueId
+      filledTextField { floatingLabel: fixed "Short ID" } shortId
+      filledTextField { floatingLabel: fixed "Unique ID" } uniqueId
     card S.do
       subtitle1 S.do
         text # fixed "Customer"
@@ -30,15 +30,15 @@ order =
       radioButton { labelContent: text # fixed "Dine in", default: { table: "1"} } dineIn
       radioButton { labelContent: text # fixed "Takeaway", default: { time: "15:30"} } takeaway
       radioButton { labelContent: text # fixed "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
-      filledTextField { floatingLabel: (_ # fixed "Table" )} table # slot # dineIn
-      filledTextField { floatingLabel: (_ # fixed "Time" )} time # slot # takeaway
-      filledTextField { floatingLabel: (_ # fixed "Address" )} address # slot # delivery ) # fulfillment
+      filledTextField { floatingLabel: fixed "Table" } table # slot # dineIn
+      filledTextField { floatingLabel: fixed "Time" } time # slot # takeaway
+      filledTextField { floatingLabel: fixed "Address" } address # slot # delivery ) # fulfillment
     card S.do
       subtitle1 (text # fixed "Total")
-      filledTextField { floatingLabel: (_ # fixed "Total" )} total
+      filledTextField { floatingLabel: fixed "Total" } total
     card S.do
       checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
-      filledTextField { floatingLabel: (_ # fixed "Paid" )} paid # slot # _Just # payment
+      filledTextField { floatingLabel: fixed "Paid" } paid # slot # _Just # payment
     card S.do
       body1 S.do
         text # fixed "Summary: Order " <> shortId <> fixed " (uniquely " <> uniqueId <> fixed ") for "
@@ -62,8 +62,8 @@ order =
 name :: Widget Web NameInformal NameInformal
 name = S.do
   subtitle2 (text # fixed "Informal")
-  filledTextField { floatingLabel: (_ # fixed "First name") } firstName
-  filledTextField { floatingLabel: (_ # fixed "Last name") } lastName
+  filledTextField { floatingLabel: fixed "First name" } firstName
+  filledTextField { floatingLabel: fixed "Last name" } lastName
   subtitle2 (text # fixed "Formal")
-  filledTextField { floatingLabel: (_ # fixed "Surname" )} surname # formal
-  filledTextField { floatingLabel: (_ # fixed "Forename" )} forename # formal
+  filledTextField { floatingLabel: fixed "Surname" } surname # formal
+  filledTextField { floatingLabel: fixed "Forename" } forename # formal
