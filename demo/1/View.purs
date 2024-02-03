@@ -3,7 +3,7 @@ module View
   ) where
 
 
-import Data.Function ((#), (>>>))
+import Data.Function ((#), ($), (>>>))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
@@ -16,19 +16,18 @@ import Widget (Widget, fixed)
 order :: Widget Web Order Order
 order =
   elevation20 S.do
-    headline6 S.do
-      text # fixed "Order " <> shortId
+    headline6 $ text # fixed "Order " <> shortId
     card S.do
-      subtitle1 (text # fixed "Identifier")
+      subtitle1 $ text # fixed "Identifier"
       filledTextField { floatingLabel: fixed "Short ID" } shortId
       filledTextField { floatingLabel: fixed "Unique ID" } uniqueId
     card ( S.do
       subtitle1 S.do
         text # fixed "Customer"
-        subtitle2 (text # fixed "Informal")
+        subtitle2 $ text # fixed "Informal"
         filledTextField { floatingLabel: fixed "First name" } firstName
         filledTextField { floatingLabel: fixed "Last name" } lastName
-        subtitle2 (text # fixed "Formal")
+        subtitle2 $ text # fixed "Formal"
         filledTextField { floatingLabel: fixed "Surname" } surname # formal
         filledTextField { floatingLabel: fixed "Forename" } forename # formal ) # customer
     card ( S.do
@@ -39,7 +38,7 @@ order =
       filledTextField { floatingLabel: fixed "Time" } time # slot # takeaway
       filledTextField { floatingLabel: fixed "Address" } address # slot # delivery ) # fulfillment
     card S.do
-      subtitle1 (text # fixed "Total")
+      subtitle1 $ text # fixed "Total"
       filledTextField { floatingLabel: fixed "Total" } total
     card S.do
       checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
@@ -58,7 +57,7 @@ order =
         containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
         containedButton { label: text # fixed "Submit order " <> shortId } ) >>> T.do
           dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
-            body1 (text # fixed "Are you sure?")
+            body1 $ text # fixed "Are you sure?"
             containedButton { label: text # fixed "Submit order" }
           submitOrder
           snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}
