@@ -49,9 +49,9 @@ order =
         text # fixed "takeaway at " <> time # slot # takeaway # fulfillment
         text # fixed "delivery to " <> address # slot # delivery # fulfillment
         text # fixed ", paid " <> paid # slot # _Just # payment
-      div S.do -- # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
+      div ( S.do -- # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
         containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
-        containedButton { label: text # fixed "Submit order " <> shortId } >>> T.do
+        containedButton { label: text # fixed "Submit order " <> shortId } ) >>> T.do
           dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
             body1 (text # fixed "Are you sure?")
             containedButton { label: text # fixed "Submit order" }
