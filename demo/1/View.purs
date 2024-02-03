@@ -2,7 +2,6 @@ module View
   ( order
   ) where
 
-
 import Data.Function ((#), ($), (>>>))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
