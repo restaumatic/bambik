@@ -149,6 +149,7 @@ instance Apply m => Semigroup (Widget m a a) where
       { speak: \ch -> p1'.speak ch *> p2'.speak ch
       , listen: \prop -> (p1'.listen \ch -> p2'.speak ch *> prop ch) *> (p2'.listen \ch -> p1'.speak ch *> prop ch)
       }
+-- Notice: optic `Widget m c d -> Widget m a a` is also a Semigroup
 
 instance Monad m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
@@ -159,6 +160,7 @@ instance Monad m => Semigroupoid (Widget m) where
       { speak: p1'.speak
       , listen: p2'.listen
       }
+-- Notice: optic `Widget m c d -> Widget m a a` is also a Monoid
 
 -- impossible:
 -- instance Monad m => Category (Widget m) where
