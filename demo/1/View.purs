@@ -3,7 +3,7 @@ module View
   ) where
 
 
-import Data.Function ((#))
+import Data.Function ((#), (>>>))
 import Data.Lens (_Just)
 import Data.Semigroup ((<>))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
@@ -49,15 +49,14 @@ order =
         text # fixed "takeaway at " <> time # slot # takeaway # fulfillment
         text # fixed "delivery to " <> address # slot # delivery # fulfillment
         text # fixed ", paid " <> paid # slot # _Just # payment
-      T.do
-        div S.do
-          containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
-          containedButton { label: text # fixed "Submit order " <> shortId } -- # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
-        dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
-          body1 (text # fixed "Are you sure?")
-          containedButton { label: text # fixed "Submit order" }
-        submitOrder
-        snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}
+      div S.do -- # attr "style" "display: flex; justify-content: space-between; align-items: center; width: 100%;"
+        containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
+        containedButton { label: text # fixed "Submit order " <> shortId } >>> T.do
+          dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
+            body1 (text # fixed "Are you sure?")
+            containedButton { label: text # fixed "Submit order" }
+          submitOrder
+          snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}
 
 name :: Widget Web NameInformal NameInformal
 name = S.do
