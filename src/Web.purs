@@ -9,6 +9,7 @@ module Web
   , cl
   , clickable
   , div
+  , div'
   , dynAttr
   , dynClass
   , el
@@ -283,6 +284,9 @@ el tagName = wrap <<< element tagName <<< unwrap
 
 div :: forall a b. Widget Web a b -> Widget Web a b
 div = el "div"
+
+div' :: forall a b. { style :: String } -> Widget Web a b -> Widget Web a b
+div' { style } w = el "div" w # attr "style" style
 
 span :: forall a b. Widget Web a b -> Widget Web a b
 span = el "span"
