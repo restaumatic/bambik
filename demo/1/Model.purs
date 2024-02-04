@@ -52,6 +52,15 @@ type Address = String
 
 type OrderId = { short :: String, unique :: String}
 
+data SubmitOrderRequest = SubmitOrderRequest { orderSerialized :: String }
+
+derive instance Generic SubmitOrderRequest _
+
+instance Show SubmitOrderRequest where
+  show = genericShow
+
+data SubmitOrderResponse = SubmitOrderResponse { orderUniqueId :: String }
+
 formal :: WidgetOptics' NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
@@ -135,13 +144,3 @@ delivery :: WidgetOptics' { address :: Address } Fulfillment
 delivery = constructor "delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
-
-data SubmitOrderRequest = SubmitOrderRequest { orderSerialized :: String }
-
-derive instance Generic SubmitOrderRequest _
-
-instance Show SubmitOrderRequest where
-  show = genericShow
-
-data SubmitOrderResponse = SubmitOrderResponse { orderUniqueId :: String }
-
