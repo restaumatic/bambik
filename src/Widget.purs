@@ -58,6 +58,8 @@ newtype Widget m i o = Widget (m
 --     monitoring
 --     analytics
 --     authorization
+--     curren time
+--     localization
 --   UI-specific:
 --     scheduleNotification :: NotificationOptions -> Effect Unit
 --     updateNotification :: NotificationOptions -> Effect Unit
