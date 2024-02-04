@@ -58,7 +58,7 @@ newtype Widget m i o = Widget (m
 --     monitoring
 --     analytics
 --     authorization
---     curren time
+--     current time
 --     localization
 --   UI-specific:
 --     scheduleNotification :: NotificationOptions -> Effect Unit
@@ -70,6 +70,7 @@ newtype Widget m i o = Widget (m
 --     onPushNotification :: (PushMessage -> Effect Unit) -> Effect Unit
 --     printing
 --     media type
+--     sounds
 
 type Propagation m a = Change a -> m Unit
 
