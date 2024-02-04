@@ -43,8 +43,7 @@ order =
       checkbox { labelContent: text # fixed "Payment", default: { paid: "0" } } payment
       filledTextField { floatingLabel: fixed "Paid" } paid # slot # _Just # payment
     card S.do
-      body1 S.do
-        text # fixed "Summary: Order " <> shortId <> fixed " (uniquely " <> uniqueId <> fixed ") for " <> firstName >>> customer <> fixed " " <> lastName >>> customer <> fixed " (formally " <> surname >>> formal >>> customer <> fixed " " <> forename >>> formal >>> customer <> fixed ")" <> fixed ", fulfilled as " <> (fixed "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (fixed "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (fixed "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (fixed ", paid " <> paid) >>> slot >>> _Just >>> payment
+      body1 $ text # fixed "Summary: Order " <> shortId <> fixed " (uniquely " <> uniqueId <> fixed ") for " <> firstName >>> customer <> fixed " " <> lastName >>> customer <> fixed " (formally " <> surname >>> formal >>> customer <> fixed " " <> forename >>> formal >>> customer <> fixed ")" <> fixed ", fulfilled as " <> (fixed "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (fixed "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (fixed "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (fixed ", paid " <> paid) >>> slot >>> _Just >>> payment
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # fixed "Submit order " <> shortId <> fixed " as draft" }
         containedButton { label: text # fixed "Submit order " <> shortId } ) >>> T.do
