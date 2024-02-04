@@ -65,9 +65,9 @@ formal :: WidgetOptics' NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
     toFormal :: NameInformal -> NameFormal
-    toFormal { firstName: forename, lastName: surname } = { forename, surname }
+    toFormal { firstName, lastName } = { forename: firstName, surname: lastName }
     toInformal :: NameFormal -> NameInformal
-    toInformal { forename: firstName, surname: lastName } = { firstName, lastName }
+    toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
 submitOrder :: forall m. MonadEffect m => Widget m Order Order
 submitOrder = submitOrderEffect # lens (\order -> SubmitOrderRequest { orderSerialized: serializeOrder order}) (\order (SubmitOrderResponse { orderUniqueId }) -> order { uniqueId = orderUniqueId })
