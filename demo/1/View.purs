@@ -9,7 +9,7 @@ import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledT
 import Model (Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Web, div, div', slot, text)
+import Web (Web, div', slot, text)
 import Widget (Widget, fixed)
 
 order :: Widget Web Order Order
