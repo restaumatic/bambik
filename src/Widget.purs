@@ -49,6 +49,26 @@ newtype Widget m i o = Widget (m
   , listen :: Propagation m o -> m Unit
   })
 
+-- things that can `ReaderT r m` can enable:
+--   UI-independent:
+--     platform
+--     app metadata e.g verion
+--     feature flags
+--     logging
+--     monitoring
+--     analytics
+--     authorization
+--   UI-specific:
+--     scheduleNotification :: NotificationOptions -> Effect Unit
+--     updateNotification :: NotificationOptions -> Effect Unit
+--     clearNotification :: NotificationId -> Effect Unit
+--     onClickNotification :: (NotificationOptions -> Effect Unit) -> Effect Unit
+--     device permissions - checking/fixing
+--     sounds (or rather it should be widget?)
+--     onPushNotification :: (PushMessage -> Effect Unit) -> Effect Unit
+--     printing
+--     media type
+
 type Propagation m a = Change a -> m Unit
 
 derive instance Newtype (Widget m i o) _
