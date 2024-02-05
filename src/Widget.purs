@@ -20,6 +20,7 @@ module Widget
 import Prelude
 
 import Control.Alt (class Alt)
+import Control.Monad.Reader (ReaderT, lift)
 import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..), either)
@@ -44,7 +45,7 @@ import Record (get, set)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
-newtype Widget m i o = Widget (m
+newtype Widget env m i o = Widget (ReaderT env m
   { speak :: Propagation m i
   , listen :: Propagation m o -> m Unit
   })
@@ -75,7 +76,7 @@ newtype Widget m i o = Widget (m
 
 type Propagation m a = Change a -> m Unit
 
-derive instance Newtype (Widget m i o) _
+derive instance Newtype (Widget env m i o) _
 
 data Change a
   = Update (Array Scope) a
@@ -99,13 +100,13 @@ instance Show Scope where
 
 derive instance Eq Scope
 
-instance Functor m => Profunctor (Widget m) where
+instance Functor m => Profunctor (Widget env m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
     { speak: (_ <<< map contraf) p'.speak
     , listen: p'.listen <<< lcmap (map cof)
     }
 
-instance Applicative m => Strong (Widget m) where
+instance Applicative m => Strong (Widget env m) where
   first p = wrap ado
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
@@ -139,7 +140,7 @@ instance Applicative m => Strong (Widget m) where
           prop (map (Tuple (fst prevab)) ch)
       }
 
-instance Applicative m => Choice (Widget m) where
+instance Applicative m => Choice (Widget env m) where
   left p = wrap ado
     p' <- unwrap p
     in
@@ -165,7 +166,7 @@ instance Applicative m => Choice (Widget m) where
         p'.listen \ch -> prop (Right <$> ch)
       }
 
-instance Apply m => Semigroup (Widget m a a) where
+instance Apply m => Semigroup (Widget env m a a) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -173,27 +174,27 @@ instance Apply m => Semigroup (Widget m a a) where
       { speak: \ch -> p1'.speak ch *> p2'.speak ch
       , listen: \prop -> (p1'.listen \ch -> p2'.speak ch *> prop ch) *> (p2'.listen \ch -> p1'.speak ch *> prop ch)
       }
--- Notice: optic `Widget m c d -> Widget m a a` is also a Semigroup
+-- Notice: optic `Widget env m c d -> Widget env m a a` is also a Semigroup
 
-instance Monad m => Semigroupoid (Widget m) where
+instance Monad m => Semigroupoid (Widget env m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    p1'.listen \ch -> p2'.speak ch
+    lift $ p1'.listen \ch -> p2'.speak ch
     pure
       { speak: p1'.speak
       , listen: p2'.listen
       }
--- Notice: optic `Widget m c d -> Widget m a a` is also a Monoid
+-- Notice: optic `Widget env m c d -> Widget env m a a` is also a Monoid
 
 -- impossible:
--- instance Monad m => Category (Widget m) where
+-- instance Monad m => Category (Widget env m) where
 --   identity = wrap $ pure
 --     { speak: unsafeThrow "impossible"
 --     , listen: unsafeThrow "impossible"
 --     }
 -- but:
-instance MonadEffect m => Category (Widget m) where
+instance MonadEffect m => Category (Widget env m) where
   identity = wrap do
     chaAVar <- liftEffect AVar.empty
     pure
@@ -206,13 +207,13 @@ instance MonadEffect m => Category (Widget m) where
       }
 -- is maybe possible?
 
-instance Functor m => Functor (Widget m a) where
+instance Functor m => Functor (Widget env m a) where
   map f p = wrap $ unwrap p <#> \p' ->
     { speak: p'.speak
     , listen: p'.listen <<< lcmap (map f)
     }
 
-instance Apply m => Alt (Widget m a) where
+instance Apply m => Alt (Widget env m a) where
   alt p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -221,7 +222,7 @@ instance Apply m => Alt (Widget m a) where
       , listen: \prop -> p1'.listen prop *> p2'.listen prop
       }
 
-instance Applicative m => Plus (Widget m a) where
+instance Applicative m => Plus (Widget env m a) where
   empty = wrap $ pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -229,13 +230,13 @@ instance Applicative m => Plus (Widget m a) where
 
 -- optics
 
-type WidgetOptics a b s t = forall m. Monad m => Widget m a b -> Widget m s t
-type WidgetOptics' a s = forall m. Monad m => Widget m a a -> Widget m s s
+type WidgetOptics a b s t = forall env m. Monad m => Widget env m a b -> Widget env m s t
+type WidgetOptics' a s = forall env m. Monad m => Widget env m a a -> Widget env m s s
 
 fixed :: forall a b s t. a -> WidgetOptics a b s t
 fixed a w = wrap do
   w' <- unwrap w
-  w'.speak (Update [] a)
+  lift $ w'.speak (Update [] a)
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -264,7 +265,7 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
-bracket :: forall a b c m. Applicative m => m c -> (c -> m Unit) -> (c -> m Unit) -> Widget m a b -> Widget m a b
+bracket :: forall env a b c m. Applicative m => ReaderT env m c -> (c -> m Unit) -> (c -> m Unit) -> Widget env m a b -> Widget env m a b
 bracket afterInit afterInward beforeOutward w = wrap ado
   w' <- unwrap w
   ctx <- afterInit
@@ -276,7 +277,7 @@ bracket afterInit afterInward beforeOutward w = wrap ado
 
 -- private
 
-scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
+scopemap :: forall env m a b. Applicative m => Scope -> Widget env m a b -> Widget env m a b
 scopemap scope p = wrap ado
   { speak, listen } <- unwrap p
   in
@@ -301,7 +302,7 @@ scopemap scope p = wrap ado
     zoomIn None = None
     zoomIn Removal = Removal
 
-effect :: forall req res m. MonadEffect m => (req -> m res) -> Widget m req res
+effect :: forall env req res m. MonadEffect m => (req -> m res) -> Widget env m req res
 effect processRequest = Widget $ liftEffect do
   resAVar <- AVar.empty
   pure

@@ -69,7 +69,7 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-submitOrder :: forall m. MonadEffect m => Widget m Order Order
+submitOrder :: forall env m. MonadEffect m => Widget env m Order Order
 submitOrder = submitOrderEffect # lens (\order -> SubmitOrderRequest { orderSerialized: serializeOrder order}) (\order (SubmitOrderResponse { orderUniqueId }) -> order { uniqueId = orderUniqueId })
   where
     serializeOrder :: Order -> String
@@ -78,7 +78,7 @@ submitOrder = submitOrderEffect # lens (\order -> SubmitOrderRequest { orderSeri
         (Takeaway { time }) -> "takeaway|" <> time
         (Delivery { address }) -> "delivery|\"" <> address <> "\""
       ]
-    submitOrderEffect :: Widget m SubmitOrderRequest SubmitOrderResponse
+    submitOrderEffect :: Widget env m SubmitOrderRequest SubmitOrderResponse
     submitOrderEffect = effect \request -> do
       liftEffect $ log $ show request
       pure $ SubmitOrderResponse { orderUniqueId: "HAJ78" }
