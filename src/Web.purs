@@ -37,6 +37,7 @@ module Web
 
 import Prelude
 
+import Control.Monad.Reader (lift, runReaderT)
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
@@ -76,7 +77,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: forall a . Widget Web String a
+text :: forall env a . Widget env Web String a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -227,7 +228,7 @@ clickable w = wrap do
     prop $ Update [] a
     }
 
-slot :: forall a b. Widget Web a b -> Widget Web a b
+slot :: forall env a b. Widget env Web a b -> Widget env Web a b
 slot w = wrap do
   {result: { speak, listen}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
   pure
@@ -329,14 +330,14 @@ h6 = el "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall i o. Widget Web i o -> i -> Effect Unit
-runWidgetInBody w i = do
+runWidgetInBody :: forall env i o. env -> Widget env Web i o -> i -> Effect Unit
+runWidgetInBody env w i = do
   node <- documentBody
-  runWidgetInNode node w i $ const $ pure unit
+  runWidgetInNode env node w i $ const $ pure unit
 
-runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Web Unit) -> Effect Unit
-runWidgetInNode node w i outward = runDomInNode node do
-  { speak, listen } <- unwrap w
+runWidgetInNode :: forall env i o. env -> Node -> Widget env Web i o -> i -> (o -> Web Unit) -> Effect Unit
+runWidgetInNode env node w i outward = runDomInNode node do
+  { speak, listen } <- runReaderT (unwrap w) env
   listen case _ of
     None -> pure unit
     Removal -> pure unit
