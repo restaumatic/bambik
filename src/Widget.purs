@@ -163,27 +163,19 @@ instance MonadEffect m => Semigroupoid (Widget m) where
       }
 -- Notice: optic `Widget m c d -> Widget m a a` is also a Monoid
 
--- impossible:
--- instance Monad m => Category (Widget m) where
---   identity = wrap $ pure
---     { speak: unsafeThrow "impossible"
---     , listen: unsafeThrow "impossible"
---     }
--- but:
 instance MonadEffect m => Category (Widget m) where
   identity = wrap do
     chaAVar <- liftEffect AVar.empty
     pure
-      { speak: \cha -> liftEffect $ void $ AVar.put cha chaAVar mempty
+      { speak: \cha -> void $ AVar.put cha chaAVar mempty
       , listen: \prop ->
         let waitAndPropagate = void $ AVar.take chaAVar case _ of
               Left error -> pure unit -- TODO handle error
               Right cha -> do
                 prop cha
                 waitAndPropagate
-        in liftEffect waitAndPropagate
+        in waitAndPropagate
       }
--- is maybe possible?
 
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
