@@ -34,6 +34,7 @@ import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
+import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
@@ -45,11 +46,11 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
-  { speak :: Propagation m i
-  , listen :: Propagation m o -> m Unit
+  { speak :: Propagation i
+  , listen :: Propagation o -> Effect Unit
   })
 
-type Propagation m a = Change a -> m Unit
+type Propagation a = Change a -> Effect Unit
 
 derive instance Newtype (Widget m i o) _
 
@@ -151,11 +152,11 @@ instance Apply m => Semigroup (Widget m a a) where
       }
 -- Notice: optic `Widget m c d -> Widget m a a` is also a Semigroup
 
-instance Monad m => Semigroupoid (Widget m) where
+instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    p1'.listen \ch -> p2'.speak ch
+    liftEffect $ p1'.listen \ch -> p2'.speak ch
     pure
       { speak: p1'.speak
       , listen: p2'.listen
@@ -177,7 +178,9 @@ instance MonadEffect m => Category (Widget m) where
       , listen: \prop ->
         let waitAndPropagate = void $ AVar.take chaAVar case _ of
               Left error -> pure unit -- TODO handle error
-              Right cha -> waitAndPropagate -- TODO propagate
+              Right cha -> do
+                prop cha
+                waitAndPropagate
         in liftEffect waitAndPropagate
       }
 -- is maybe possible?
@@ -205,13 +208,13 @@ instance Applicative m => Plus (Widget m a) where
 
 -- optics
 
-type WidgetOptics a b s t = forall m. Monad m => Widget m a b -> Widget m s t
-type WidgetOptics' a s = forall m. Monad m => Widget m a a -> Widget m s s
+type WidgetOptics a b s t = forall m. MonadEffect m => Widget m a b -> Widget m s t
+type WidgetOptics' a s = WidgetOptics a a s s
 
 fixed :: forall a b s t. a -> WidgetOptics a b s t
 fixed a w = wrap do
   w' <- unwrap w
-  w'.speak (Update [] a)
+  liftEffect $ w'.speak (Update [] a)
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -240,7 +243,7 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
-bracket :: forall a b c m. Applicative m => m c -> (c -> m Unit) -> (c -> m Unit) -> Widget m a b -> Widget m a b
+bracket :: forall a b c m. Applicative m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
 bracket afterInit afterInward beforeOutward w = wrap ado
   w' <- unwrap w
   ctx <- afterInit
@@ -277,21 +280,21 @@ scopemap scope p = wrap ado
     zoomIn None = None
     zoomIn Removal = Removal
 
-effect :: forall req res m. MonadEffect m => (req -> m res) -> Widget m req res
-effect processRequest = Widget $ liftEffect do
-  resAVar <- AVar.empty
+effect :: forall req res m. MonadEffect m => (req -> Effect res) -> Widget m req res
+effect processRequest = wrap do
+  resAVar <- liftEffect $ AVar.empty
   pure
     { speak: case _ of
       Update _ req -> do
         res <- processRequest req
-        void $ liftEffect $ AVar.put res resAVar mempty
+        void $ AVar.put res resAVar mempty
       _-> pure unit
     , listen: \prop ->
       let waitAndPropagate = void $ AVar.take resAVar case _ of
             Left error -> pure unit -- TODO handle error
             Right res -> do
               log $ show $ Update [] res
-              -- TODO propagate $ Update [] res
+              prop $ Update [] res
               waitAndPropagate
-       in liftEffect waitAndPropagate
+       in waitAndPropagate
     }

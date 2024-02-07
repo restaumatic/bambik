@@ -112,13 +112,13 @@ textInput = wrap do
   pure
     { speak: case _ of
     None -> pure unit
-    Removal -> liftEffect do
+    Removal -> do
       setAttribute node "disabled" "true"
       setValue node ""
-    Update _ newa -> liftEffect do
+    Update _ newa -> do
       removeAttribute node "disabled"
       setValue node newa
-    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
+    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const do
       value <- liftEffect $ getValue node
       prop $ Update [] value
     }
@@ -132,17 +132,17 @@ checkboxInput default = wrap do
   pure
     { speak: case _ of
     None -> pure unit
-    Removal -> liftEffect $ setAttribute node "disabled" "true"
-    Update _ Nothing -> liftEffect $ do
+    Removal -> setAttribute node "disabled" "true"
+    Update _ Nothing -> do
       removeAttribute node "disabled"
       setChecked node false
-    Update _ (Just newa) -> liftEffect do
+    Update _ (Just newa) -> do
       removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
-    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const $ runDomInNode node do
-      checked <- liftEffect $ getChecked node
-      a <- liftEffect $ Ref.read aRef
+    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const do
+      checked <- getChecked node
+      a <- Ref.read aRef
       prop $ Update [] $ if checked then (Just a) else Nothing
     }
 
@@ -155,12 +155,12 @@ radioButton default = wrap do
   pure
     { speak: case _ of
     None -> pure unit
-    Removal -> liftEffect $ setChecked node false
+    Removal -> setChecked node false
     Update _ newa -> do
-      liftEffect $ setChecked node true
-      liftEffect $ Ref.write newa aRef
-    , listen: \prop -> void $ liftEffect $ addEventListener "change" node $ const $ runDomInNode node do
-    a <- liftEffect $ Ref.read aRef
+      setChecked node true
+      Ref.write newa aRef
+    , listen: \prop -> void $ addEventListener "change" node $ const do
+    a <- Ref.read aRef
     prop $ Update [] a
     }
 
@@ -220,10 +220,9 @@ clickable w = wrap do
     case occur of
       None -> pure unit
       Removal -> pure unit
-      Update _ a -> do
-        liftEffect $ Ref.write a aRef
-    , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const $ runDomInNode node do
-    a <- liftEffect $ Ref.read aRef
+      Update _ a -> Ref.write a aRef
+    , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const do
+    a <- Ref.read aRef
     prop $ Update [] a
     }
 
@@ -241,7 +240,7 @@ slot w = wrap do
     , listen: listen
     }
   where
-  attachable' :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Web Unit, ensureDetached :: Web Unit }
+  attachable' :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
   attachable' removePrecedingSiblingNodes dom = do
     parent <- gets _.parent
     slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
@@ -259,14 +258,14 @@ slot w = wrap do
       detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
 
       let
-        ensureAttached :: Web Unit
+        ensureAttached :: Effect Unit
         ensureAttached = measured' slotNo "attached" $ liftEffect do
           detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
           for_ detachedDocumentFragment \documentFragment -> do
             removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
             documentFragment `insertBefore` placeholderAfter
 
-        ensureDetached :: Web Unit
+        ensureDetached :: Effect Unit
         ensureDetached = measured' slotNo "detached" $ liftEffect do
           detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
           when (isNothing detachedDocumentFragment) do
@@ -334,14 +333,14 @@ runWidgetInBody w i = do
   node <- documentBody
   runWidgetInNode node w i $ const $ pure unit
 
-runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Web Unit) -> Effect Unit
+runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
-  listen case _ of
+  liftEffect $ listen case _ of
     None -> pure unit
     Removal -> pure unit
     Update _ mo -> outward mo
-  speak (Update [] i)
+  liftEffect $ speak (Update [] i)
 
 --- private
 
