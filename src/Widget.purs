@@ -7,6 +7,8 @@ module Widget
   , WidgetOptics'
   , bracket
   , constructor
+  , debounce
+  , debounce'
   , effect
   , field
   , fixed
@@ -33,9 +35,11 @@ import Data.Profunctor.Strong (class Strong)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.AVar as AVar
+import Effect.Aff (Aff, delay, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
@@ -272,14 +276,15 @@ scopemap scope p = wrap ado
     zoomIn None = None
     zoomIn Removal = Removal
 
-effect :: forall req res m. MonadEffect m => (req -> Effect res) -> Widget m req res
+effect :: forall req res m. MonadEffect m => (req -> Aff res) -> Widget m req res
 effect processRequest = wrap do
   resAVar <- liftEffect $ AVar.empty
   pure
     { speak: case _ of
       Update _ req -> do
-        res <- processRequest req
-        void $ AVar.put res resAVar mempty
+        launchAff_ do
+          res <- processRequest req
+          liftEffect $ void $ AVar.put res resAVar mempty
       _-> pure unit
     , listen: \prop ->
       let waitAndPropagate = void $ AVar.take resAVar case _ of
@@ -290,3 +295,11 @@ effect processRequest = wrap do
               waitAndPropagate
        in waitAndPropagate
     }
+
+debounce :: forall m a. MonadEffect m => Milliseconds -> Widget m a a
+debounce millis = effect \i -> do
+  delay millis
+  pure i
+
+debounce' :: forall m a. MonadEffect m => Widget m a a
+debounce' = debounce (Milliseconds 500.0)

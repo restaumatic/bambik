@@ -10,7 +10,7 @@ import Model (Order, address, customer, delivery, dineIn, firstName, forename, f
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, fixed)
+import Widget (Widget, debounce', fixed)
 
 order :: Widget Web Order Order
 order =
@@ -18,7 +18,7 @@ order =
     headline6 $ text # fixed "Order " <> shortId
     card S.do
       subtitle1 $ text # fixed "Identifier"
-      filledTextField { floatingLabel: fixed "Short ID" } shortId
+      filledTextField { floatingLabel: fixed "Short ID" } shortId >>> debounce'
       filledTextField { floatingLabel: fixed "Unique ID" } uniqueId
     card ( S.do
       subtitle1 S.do
