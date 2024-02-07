@@ -1,5 +1,5 @@
 module Web
-  ( DocumentEnv
+  ( DocumentBuilderState
   , Node
   , Web
   , aside
@@ -56,9 +56,9 @@ import Widget (Widget, Change(..))
 foreign import data Node :: Type
 
 -- Builds Web Document keeping track of parent/last sibling node
-newtype Web a = Web (StateT DocumentEnv Effect a)
+newtype Web a = Web (StateT DocumentBuilderState Effect a) -- TODO rename to DocumentBuilder?
 
-type DocumentEnv =
+type DocumentBuilderState =
   { parent :: Node
   , sibling :: Node -- last sibling
   }
@@ -69,7 +69,7 @@ derive newtype instance Applicative Web
 derive newtype instance Bind Web
 derive newtype instance Monad Web
 derive newtype instance MonadEffect Web
-derive newtype instance MonadState DocumentEnv Web
+derive newtype instance MonadState DocumentBuilderState Web
 
 uniqueId :: Effect String
 uniqueId = randomElementId
