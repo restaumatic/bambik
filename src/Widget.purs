@@ -25,6 +25,7 @@ import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..), either)
+import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
@@ -39,7 +40,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.AVar as AVar
-import Effect.Aff (Aff, delay, launchAff_)
+import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Effect.Ref as Ref
@@ -276,15 +277,19 @@ scopemap scope p = wrap ado
     zoomIn None = None
     zoomIn Removal = Removal
 
-effect :: forall req res m. MonadEffect m => (req -> Aff res) -> Widget m req res
+effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Widget m i o -- we require Aff so we can cancel propagation when new input comes in
 effect processRequest = wrap do
   resAVar <- liftEffect $ AVar.empty
+  mFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { speak: case _ of
-      Update _ req -> do
-        launchAff_ do
+      Update _ req -> launchAff_ do
+        mFiber <- liftEffect $ Ref.read mFiberRef
+        for_ mFiber $ killFiber (error "Obsolete input")
+        newFiber <- forkAff do
           res <- processRequest req
           liftEffect $ void $ AVar.put res resAVar mempty
+        liftEffect $ Ref.write (Just newFiber) mFiberRef
       _-> pure unit
     , listen: \prop ->
       let waitAndPropagate = void $ AVar.take resAVar case _ of
