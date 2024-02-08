@@ -31,6 +31,7 @@ import Control.Monad.State (gets)
 import Control.Plus (empty)
 import Data.Maybe (Maybe)
 import Data.String (null)
+import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -38,7 +39,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOptics', bracket)
+import Widget (Widget, WidgetOptics', bracket, debounce)
 
 -- Primitive widgets
 
@@ -49,7 +50,7 @@ containedButton { label } =
     span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
-filledTextField { floatingLabel } value =
+filledTextField { floatingLabel } value = debounce (Milliseconds 500.0) <<<
   label (S.do
     span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
     (S.do
