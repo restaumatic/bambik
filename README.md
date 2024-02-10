@@ -1,6 +1,6 @@
 # Short story
 
-See [**live demo**](http://erykciepiela.xyz/bambik/demo/1/). To peek under the hood open dev tools console and watch log entries `[DOM] ...`.
+See [**live demo**](http://erykciepiela.xyz/bambik/demo/1/). To peek under the hood open dev tools console and watch logs.
 
 To run the demo locally:
 
@@ -10,26 +10,20 @@ $ npm install && npm run demo1
 
 ## Best practices
 
-  1. In widget definition it's recommended to use do blocks with each line starting with a sub widget possibly preceded by opening brackets (`(`).
+  1. Use qualified do for Semigroup and Semigroupoid composition of Widgets so there is one-to-one correspondence of widget and line of code.
   1. In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
-  1. General lenses (`Lens`, `Lens'`) are less performant than specialied `Field`
+  1. In widget definition read `>>>` as *followed by*, so `dialog >>> save` can be read as *dialog followed by save*.
+  1. General lenses/prisms are less performant than specialied `field`/`constructor`
   1. Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resilient to changes in `Show` instance implementation, 2) provide tailor-made textualizations
-  1. View modules should not import any `Data.Profunctor.*` modules as they should not create or transform profuctors - it is view model modules job
+  1. View modules should not create Widgets just compose them.
 
 ## TODOs
 
+  1. Debounced widget input (example: auto-save)
   1. Full set of first-order MDC components
-  1. Higher-order components (including MDC) / traversals
-  1. ~~Inputless components~~
-  1. I18n
-  1. Make `arr :: (a -> b) -> Widget a b` not representable
-  1. ~~Generalize `Widget` for other types of UI~~
   1. Validation
-  1. ~~Effects~~
-  1. ~~Enabled Aff effects~~
-  1. ~~Debouncing~~
-  1. Collections
-
+  1. Collections and Higher-order components (including MDC)
+  1. I18n
 
 # Long story
 
@@ -166,3 +160,27 @@ Is this still the case for InvPlusoid and InvPlus? They were not derived from pr
 If they don't then we are not able to build anything beyond single component UIs.
 
 Profunctor can only be combinable if their input and output are of the same type.  
+
+# 8. Lifting optics
+
+`Lens a b s t` denotes relation of `a` being part of `s` and `b` being modificator of `s` into `t`.
+In particular, `Lens a a s s ` denotes `a` "is part of" `s` relation.
+
+"Lifting is a concept which allows you to transform a function into a corresponding function within another (usually more general) setting." - https://wiki.haskell.org/Lifting
+
+Just like functor `F` lifts `a -> b` to `F a -> F b`,
+applicative functor `F` lifts `a -> b -> c` to `F a -> F b -> F c`:
+profunctor `P` lifts adapter to `P a b -> P s t` function,
+strong profunctor `P` lifts lens to `P a b -> P s t` function,
+choice profunctor `P` lifts prism to `P a b -> P s t` function.
+
+# Lifting other things
+We look for other things `X` can lift, e.g.
+... `X a a -> X (f a) (f a)` function?
+
+and:
+... `X a a -> X a a -> X a a` function?
+... `X a b -> X b c -> X a c` function?
+... `X a b -> X b a -> X a a` function?
+... `X a a -> X [a] [a]` function?
+... `X a a -> X (Maybe a) (Maybe a)` function?
