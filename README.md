@@ -24,7 +24,8 @@ $ npm install && npm run demo1
   1. Validation
   1. Collections and Higher-order components (including MDC)
   1. I18n
-
+  1. Live preview
+  
 # Long story
 
 > (!) Notice: this section is still work in progress.
