@@ -13,7 +13,6 @@ module Widget
   , effBracket
   , field
   , fixed
-  , foo
   , iso
   , lens
   , prism
@@ -334,16 +333,6 @@ debounced millis = affAdapter $ pure
 
 debounced' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
 debounced' = debounced (Milliseconds 500.0)
-
-foo :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
-foo afterInit afterInward beforeOutward = effBracket do
-  ctx <- afterInit
-  pure
-    { beforeInputChange: mempty
-    , afterInputChange: const $ afterInward ctx
-    , beforeOutputChange: const $ beforeOutward ctx
-    , afterOutputChange: mempty
-    }
 
 -- private
 
