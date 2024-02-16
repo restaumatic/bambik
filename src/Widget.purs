@@ -242,14 +242,19 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 
 -- modifiers
 
-effBracket :: forall m a b. Monad m => m { afterInput :: Effect Unit, beforeOutput :: Effect Unit} -> Widget m a b -> Widget m a b
+effBracket :: forall m a b. Monad m => m
+  { beforeInputChange :: Change a -> Effect Unit
+  , afterInputChange :: Change a -> Effect Unit
+  , beforeOutputChange :: Change b -> Effect Unit
+  , afterOutputChange :: Change b -> Effect Unit
+  } -> Widget m a b -> Widget m a b
 effBracket f w = wrap do
   { speak, listen } <- unwrap w
-  { afterInput, beforeOutput } <- f
+  { beforeInputChange, afterInputChange, beforeOutputChange, afterOutputChange } <- f
   pure
-    { speak: \ch -> speak ch *> afterInput
+    { speak: \ch -> beforeInputChange ch *> speak ch *> afterInputChange ch
     , listen: \prop -> do
-      listen \ch -> beforeOutput *> prop ch
+      listen \ch -> beforeOutputChange ch *> prop ch *> afterOutputChange ch
     }
 
 -- notice: this is not really optics, operates for given m
@@ -334,8 +339,10 @@ foo :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit
 foo afterInit afterInward beforeOutward = effBracket do
   ctx <- afterInit
   pure
-    { afterInput: afterInward ctx
-    , beforeOutput: beforeOutward ctx
+    { beforeInputChange: mempty
+    , afterInputChange: const $ afterInward ctx
+    , beforeOutputChange: const $ beforeOutward ctx
+    , afterOutputChange: mempty
     }
 
 -- private
