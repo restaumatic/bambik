@@ -5,6 +5,7 @@ module Widget
   , Widget(..)
   , WidgetOptics
   , WidgetOptics'
+  , effectful
   , bracket
   , constructor
   , debounce
@@ -240,42 +241,23 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
-bracket :: forall a b c m. Applicative m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
-bracket afterInit afterInward beforeOutward w = wrap ado
-  w' <- unwrap w
-  ctx <- afterInit
-  in
-    { speak: \cha -> w'.speak cha <* afterInward ctx
+effectful :: forall m a b s t. Monad m => Widget m a b -> m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m s t
+effectful w f = wrap do
+  { speak, listen } <- unwrap w
+  { pre, post } <- f
+  pure
+    { speak: case _ of
+      Update _ s -> do
+        a <- pre s
+        speak $ Update [] a
+      _ -> pure unit -- TODO really?
     , listen: \prop -> do
-      w'.listen \chb -> beforeOutward ctx *> prop chb
+      listen case _ of
+        Update _ b -> do
+          t <- post b
+          prop $ Update [] t
+        _ -> pure unit -- TODO really?
     }
-
--- private
-
-scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
-scopemap scope p = wrap ado
-  { speak, listen } <- unwrap p
-  in
-    { speak: speak <<< zoomIn
-    , listen: \prop -> do
-      listen $ prop <<< zoomOut
-    }
-  where
-    zoomOut :: Change b -> Change b
-    zoomOut None = None
-    zoomOut Removal = Removal
-    zoomOut (Update scopes mb) = Update (scope : scopes) mb
-
-    zoomIn :: Change a -> Change a
-    zoomIn (Update scopes ma) = case uncons scopes of
-      Just { head, tail } | head == scope -> Update tail ma
-      Nothing -> Update [] ma
-      Just { head: Variant _ } -> Update [] ma -- not matching head but head is twist
-      _ -> case scope of
-        Variant _ -> Update [] ma -- not matching head but scope is twist
-        _ -> None -- otherwise
-    zoomIn None = None
-    zoomIn Removal = Removal
 
 effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Widget m i o -- we require Aff so we can cancel propagation when new input comes in
 effect processRequest = wrap do
@@ -308,3 +290,39 @@ debounce millis = effect \i -> do
 
 debounce' :: forall m a. MonadEffect m => Widget m a a
 debounce' = debounce (Milliseconds 500.0)
+
+bracket :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
+bracket afterInit afterInward beforeOutward w = effectful w do
+  ctx <- afterInit
+  pure
+    { pre: \a -> afterInward ctx *> pure a
+    , post: \b -> beforeOutward ctx *> pure b
+    }
+
+-- private
+
+scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
+scopemap scope p = wrap ado
+  { speak, listen } <- unwrap p
+  in
+    { speak: speak <<< zoomIn
+    , listen: \prop -> do
+      listen $ prop <<< zoomOut
+    }
+  where
+    zoomOut :: Change b -> Change b
+    zoomOut None = None
+    zoomOut Removal = Removal
+    zoomOut (Update scopes mb) = Update (scope : scopes) mb
+
+    zoomIn :: Change a -> Change a
+    zoomIn (Update scopes ma) = case uncons scopes of
+      Just { head, tail } | head == scope -> Update tail ma
+      Nothing -> Update [] ma
+      Just { head: Variant _ } -> Update [] ma -- not matching head but head is twist
+      _ -> case scope of
+        Variant _ -> Update [] ma -- not matching head but scope is twist
+        _ -> None -- otherwise
+    zoomIn None = None
+    zoomIn Removal = Removal
+
