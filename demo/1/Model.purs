@@ -4,12 +4,13 @@ import Prelude
 
 import Data.Array (intercalate)
 import Data.Generic.Rep (class Generic)
-import Data.Lens (lens)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Show.Generic (genericShow)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (Widget, WidgetOptics', constructor, effect, field, iso)
+import Widget (WidgetOptics', constructor, field, iso)
 
 type Order =
   { uniqueId :: UniqueId
@@ -59,7 +60,9 @@ derive instance Generic SubmitOrderRequest _
 instance Show SubmitOrderRequest where
   show = genericShow
 
-data SubmitOrderResponse = SubmitOrderResponse { orderUniqueId :: String }
+newtype SubmitOrderResponse = SubmitOrderResponse { orderUniqueId :: String }
+
+derive instance Newtype SubmitOrderResponse _
 
 formal :: WidgetOptics' NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
@@ -69,8 +72,12 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-submitOrder :: forall m. MonadEffect m => Widget m Order Order
-submitOrder = submitOrderEffect # lens (\order -> SubmitOrderRequest { orderSerialized: serializeOrder order}) (\order (SubmitOrderResponse { orderUniqueId }) -> order { uniqueId = orderUniqueId })
+submitOrder :: Order -> Aff Order
+submitOrder order = do
+  let req = SubmitOrderRequest { orderSerialized: serializeOrder order }
+  liftEffect $ log $ show req
+  let resp = SubmitOrderResponse { orderUniqueId: "HAJ78" }
+  pure $ order { uniqueId = (unwrap resp).orderUniqueId }
   where
     serializeOrder :: Order -> String
     serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, maybe "not paid" (\{ paid } -> "paid " <> paid) order.payment, case order.fulfillment of
@@ -78,10 +85,7 @@ submitOrder = submitOrderEffect # lens (\order -> SubmitOrderRequest { orderSeri
         (Takeaway { time }) -> "takeaway|" <> time
         (Delivery { address }) -> "delivery|\"" <> address <> "\""
       ]
-    submitOrderEffect :: Widget m SubmitOrderRequest SubmitOrderResponse
-    submitOrderEffect = effect \request -> do
-      liftEffect $ log $ show request
-      pure $ SubmitOrderResponse { orderUniqueId: "HAJ78" }
+
 
 defaultOrder :: Order
 defaultOrder =

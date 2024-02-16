@@ -50,5 +50,5 @@ order =
           dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
             body1 $ text # fixed "Are you sure?"
             containedButton { label: text # fixed "Submit order" }
-          submitOrder
+          -- submitOrder -- TODO uncomment
           snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}

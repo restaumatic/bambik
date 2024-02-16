@@ -39,7 +39,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOptics', bracket, debounce)
+import Widget (Widget, WidgetOptics', bracket, debounced)
 
 -- Primitive widgets
 
@@ -50,13 +50,13 @@ containedButton { label } =
     span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
-filledTextField { floatingLabel } value = debounce (Milliseconds 500.0) <<<
+filledTextField { floatingLabel } value =
   label (S.do
     span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
     (S.do
       (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit)
+    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 500.0)
     where
       id = unsafePerformEffect uniqueId
 

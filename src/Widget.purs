@@ -5,12 +5,12 @@ module Widget
   , Widget(..)
   , WidgetOptics
   , WidgetOptics'
-  , effectful
+  , adapter
   , bracket
   , constructor
-  , debounce
-  , debounce'
-  , effect
+  , debounced
+  , debounced'
+  , effAdapter
   , field
   , fixed
   , iso
@@ -43,7 +43,6 @@ import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -218,6 +217,9 @@ fixed a w = wrap do
     , listen: const $ pure unit
     }
 
+adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
+adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
+
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics' a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
@@ -239,10 +241,28 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 
 -- modifiers
 
+eff :: forall m a b. Monad m => m { afterInput :: Effect Unit, beforeOutput :: Effect Unit} -> Widget m a b -> Widget m a b
+eff f w = wrap do
+  { speak, listen } <- unwrap w
+  { afterInput, beforeOutput } <- f
+  pure
+    { speak: case _ of
+      Update _ s -> do
+        speak $ Update [] s
+        afterInput
+      _ -> pure unit -- TODO really?
+    , listen: \prop -> do
+      listen case _ of
+        Update _ b -> do
+          beforeOutput
+          prop $ Update [] b
+        _ -> pure unit -- TODO really?
+    }
+
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
-effectful :: forall m a b s t. Monad m => Widget m a b -> m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m s t
-effectful w f = wrap do
+effAdapter :: forall m a b s t. Monad m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
+effAdapter f w = wrap do
   { speak, listen } <- unwrap w
   { pre, post } <- f
   pure
@@ -259,44 +279,70 @@ effectful w f = wrap do
         _ -> pure unit -- TODO really?
     }
 
-effect :: forall m i o. MonadEffect m => (i -> Aff o) -> Widget m i o -- we require Aff so we can cancel propagation when new input comes in
-effect processRequest = wrap do
-  resAVar <- liftEffect $ AVar.empty
-  mFiberRef <- liftEffect $ Ref.new Nothing
+affAdapter :: forall m a b s t. MonadEffect m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Widget m a b -> Widget m s t
+affAdapter f w = wrap do
+  { speak, listen } <- unwrap w
+  { pre, post } <- f
+  mInputFiberRef <- liftEffect $ Ref.new Nothing
+  mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { speak: case _ of
-      Update _ req -> launchAff_ do
-        mFiber <- liftEffect $ Ref.read mFiberRef
+      Update _ s -> launchAff_ do
+        mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")
         newFiber <- forkAff do
-          res <- processRequest req
-          liftEffect $ void $ AVar.put res resAVar mempty
-        liftEffect $ Ref.write (Just newFiber) mFiberRef
-      _-> pure unit
-    , listen: \prop ->
-      let waitAndPropagate = void $ AVar.take resAVar case _ of
-            Left error -> pure unit -- TODO handle error
-            Right res -> do
-              log $ show $ Update [] res
-              prop $ Update [] res
-              waitAndPropagate
-       in waitAndPropagate
+          a <- pre s
+          liftEffect $ speak $ Update [] a
+        liftEffect $ Ref.write (Just newFiber) mInputFiberRef
+      _ -> pure unit -- TODO really?
+    , listen: \prop -> do
+      listen case _ of
+        Update _ b -> launchAff_ do
+          mFiber <- liftEffect $ Ref.read mOutputFiberRef
+          for_ mFiber $ killFiber (error "Obsolete output")
+          newFiber <- forkAff do
+            t <- post b
+            liftEffect $ prop $ Update [] t
+          liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
+        _ -> pure unit -- TODO really?
     }
 
-debounce :: forall m a. MonadEffect m => Milliseconds -> Widget m a a
-debounce millis = effect \i -> do
-  delay millis
-  pure i
+effLens :: forall m a b s t. MonadEffect m => Widget m a b -> m { get :: s -> Effect a, set :: s -> b -> Effect t} -> Widget m s t
+effLens w mlens = wrap do
+  { speak, listen } <- unwrap w
+  sref <- liftEffect $ Ref.new $ unsafeCoerce unit
+  { get, set } <- mlens
+  pure
+    { speak: case _ of
+      Update _ s -> do
+        a <- get s
+        Ref.write s sref
+        speak $ Update [] a
+      _ -> pure unit -- TODO really?
+    , listen: \prop -> do
+      listen case _ of
+        Update _ b -> do
+          s <- Ref.read sref
+          t <- set s b
+          prop $ Update [] t
+        _ -> pure unit -- TODO really?
+    }
 
-debounce' :: forall m a. MonadEffect m => Widget m a a
-debounce' = debounce (Milliseconds 500.0)
+debounced :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
+debounced millis = affAdapter $ pure
+  { pre: pure
+  , post: \i -> delay millis *> pure i
+  }
+
+debounced' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
+debounced' = debounced (Milliseconds 500.0)
 
 bracket :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
-bracket afterInit afterInward beforeOutward w = effectful w do
+bracket afterInit afterInward beforeOutward = eff do
   ctx <- afterInit
   pure
-    { pre: \a -> afterInward ctx *> pure a
-    , post: \b -> beforeOutward ctx *> pure b
+    { afterInput: afterInward ctx
+    , beforeOutput: beforeOutward ctx
     }
 
 -- private
