@@ -39,7 +39,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOptics', bracket, debounced)
+import Widget (Widget, WidgetOptics', foo, debounced)
 
 -- Primitive widgets
 
@@ -47,7 +47,7 @@ containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button (A.do
     div empty # cl "mdc-button__ripple"
-    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
+    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # foo (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
@@ -56,7 +56,7 @@ filledTextField { floatingLabel } value =
     (S.do
       (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 500.0)
+    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # foo (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 500.0)
     where
       id = unsafePerformEffect uniqueId
 
@@ -71,8 +71,8 @@ checkbox { labelContent, default } checked =
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         div empty # cl "mdc-checkbox__mixedmark") # cl "mdc-checkbox__background"
-      div empty # cl "mdc-checkbox__ripple") # cl "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit)
-    label (labelContent >>> empty) # attr "for" id) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
+      div empty # cl "mdc-checkbox__ripple") # cl "mdc-checkbox" # foo (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit)
+    label (labelContent >>> empty) # attr "for" id) # cl "mdc-form-field" # foo (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where
       id = unsafePerformEffect uniqueId
 
@@ -85,9 +85,9 @@ radioButton { labelContent, default } value =
         div (S.do
           div empty # cl "mdc-radio__outer-circle"
           div empty # cl "mdc-radio__inner-circle") # cl "mdc-radio__background"
-        div empty # cl "mdc-radio__ripple") # cl "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
+        div empty # cl "mdc-radio__ripple") # cl "mdc-radio" # foo (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
     label (labelContent >>> empty) # attr "for" uid
-  ) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
+  ) # cl "mdc-form-field" # foo (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where
       uid = unsafePerformEffect uniqueId
 
@@ -152,7 +152,7 @@ dialog { title } content =
       ) # cl "mdc-dialog__surface" # attr "role" "alertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
     ) # cl "mdc-dialog__container"
     div empty # cl "mdc-dialog__scrim"
-  ) # cl "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+  ) # cl "mdc-dialog" # foo initializeMdcDialog openMdcComponent closeMdcComponent
     where
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
       openMdcComponent comp = liftEffect $ open comp
@@ -163,7 +163,7 @@ snackbar { label } =
   aside
     ( div
       ( div
-        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false") # attr "role" "status" # attr "aria-relevant" "additions" # cl "mdc-snackbar__surface") # cl "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure unit)
+        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false") # attr "role" "status" # attr "aria-relevant" "additions" # cl "mdc-snackbar__surface") # cl "mdc-snackbar" # foo initializeMdcSnackbar openMdcComponent (const $ pure unit)
     where
       initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
       openMdcComponent comp = liftEffect $ open comp

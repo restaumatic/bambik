@@ -6,13 +6,14 @@ module Widget
   , WidgetOptics
   , WidgetOptics'
   , adapter
-  , bracket
   , constructor
   , debounced
   , debounced'
   , effAdapter
+  , effBracket
   , field
   , fixed
+  , foo
   , iso
   , lens
   , prism
@@ -241,22 +242,14 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 
 -- modifiers
 
-eff :: forall m a b. Monad m => m { afterInput :: Effect Unit, beforeOutput :: Effect Unit} -> Widget m a b -> Widget m a b
-eff f w = wrap do
+effBracket :: forall m a b. Monad m => m { afterInput :: Effect Unit, beforeOutput :: Effect Unit} -> Widget m a b -> Widget m a b
+effBracket f w = wrap do
   { speak, listen } <- unwrap w
   { afterInput, beforeOutput } <- f
   pure
-    { speak: case _ of
-      Update _ s -> do
-        speak $ Update [] s
-        afterInput
-      _ -> pure unit -- TODO really?
+    { speak: \ch -> speak ch *> afterInput
     , listen: \prop -> do
-      listen case _ of
-        Update _ b -> do
-          beforeOutput
-          prop $ Update [] b
-        _ -> pure unit -- TODO really?
+      listen \ch -> beforeOutput *> prop ch
     }
 
 -- notice: this is not really optics, operates for given m
@@ -337,8 +330,8 @@ debounced millis = affAdapter $ pure
 debounced' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
 debounced' = debounced (Milliseconds 500.0)
 
-bracket :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
-bracket afterInit afterInward beforeOutward = eff do
+foo :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
+foo afterInit afterInward beforeOutward = effBracket do
   ctx <- afterInit
   pure
     { afterInput: afterInward ctx
