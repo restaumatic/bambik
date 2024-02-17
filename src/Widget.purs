@@ -14,7 +14,7 @@ module Widget
   , effAdapter
   , effBracket
   , field
-  , fixed
+  , constant
   , iso
   , lens
   , prism
@@ -210,8 +210,8 @@ instance Applicative m => Plus (Widget m a) where
 type WidgetOptics a b s t = forall m. MonadEffect m => Widget m a b -> Widget m s t
 type WidgetOptics' a s = WidgetOptics a a s s
 
-fixed :: forall a b s t. a -> WidgetOptics a b s t
-fixed a w = wrap do
+constant :: forall a b s t. a -> WidgetOptics a b s t
+constant a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.speak (Update [] a)
   pure
