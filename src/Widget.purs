@@ -6,6 +6,8 @@ module Widget
   , WidgetOptics
   , WidgetOptics'
   , adapter
+  , affAdapter
+  , affArr
   , constructor
   , debounced
   , debounced'
@@ -303,6 +305,9 @@ affAdapter f w = wrap do
           liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
         _ -> pure unit -- TODO really?
     }
+
+affArr :: forall m a b. MonadEffect m => (a -> Aff b) -> Widget m a b
+affArr arr = identity # affAdapter (pure { pre: arr, post: pure })
 
 effLens :: forall m a b s t. MonadEffect m => Widget m a b -> m { get :: s -> Effect a, set :: s -> b -> Effect t} -> Widget m s t
 effLens w mlens = wrap do

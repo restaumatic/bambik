@@ -2,11 +2,7 @@ module Model where
 
 import Prelude
 
-import Data.Array (intercalate)
-import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, unwrap)
-import Data.Show.Generic (genericShow)
+import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -53,17 +49,6 @@ type Address = String
 
 type OrderId = { short :: String, unique :: String}
 
-data SubmitOrderRequest = SubmitOrderRequest { orderSerialized :: String }
-
-derive instance Generic SubmitOrderRequest _
-
-instance Show SubmitOrderRequest where
-  show = genericShow
-
-newtype SubmitOrderResponse = SubmitOrderResponse { orderUniqueId :: String }
-
-derive instance Newtype SubmitOrderResponse _
-
 formal :: WidgetOptics' NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
@@ -74,18 +59,8 @@ formal = iso "formal" toFormal toInformal
 
 submitOrder :: Order -> Aff Order
 submitOrder order = do
-  let req = SubmitOrderRequest { orderSerialized: serializeOrder order }
-  liftEffect $ log $ show req
-  let resp = SubmitOrderResponse { orderUniqueId: "HAJ78" }
-  pure $ order { uniqueId = (unwrap resp).orderUniqueId }
-  where
-    serializeOrder :: Order -> String
-    serializeOrder order = intercalate "|" [order.uniqueId, order.shortId, order.customer.firstName, order.customer.lastName, order.total, maybe "not paid" (\{ paid } -> "paid " <> paid) order.payment, case order.fulfillment of
-        (DineIn { table }) -> "dinein|" <> table
-        (Takeaway { time }) -> "takeaway|" <> time
-        (Delivery { address }) -> "delivery|\"" <> address <> "\""
-      ]
-
+  liftEffect $ log $ "submitting order"
+  pure order
 
 defaultOrder :: Order
 defaultOrder =
