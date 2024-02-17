@@ -234,7 +234,7 @@ field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Re
 field = scopemap (Part (reflectSymbol (Proxy @l))) >>> Profunctor.lens (get (Proxy @l)) (flip (set (Proxy @l)))
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
-prism name construct deconstruct = Profunctor.prism construct deconstruct >>> scopemap (Variant name)
+prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
@@ -321,6 +321,29 @@ effLens w mlens = wrap do
         Update _ b -> do
           s <- Ref.read sref
           t <- set s b
+          prop $ Update [] t
+        _ -> pure unit -- TODO really?
+    }
+
+effPrism :: forall m a b s t. MonadEffect m => Widget m a b -> m { to :: s -> Effect (Either t a), from :: b -> Effect t} -> Widget m s t
+effPrism w mprism = wrap do
+  { speak, listen } <- unwrap w
+  sref <- liftEffect $ Ref.new $ unsafeCoerce unit
+  { to, from } <- mprism
+  pure
+    { speak: case _ of
+      Update _ s -> do
+        tora <- to s
+        case tora of
+          Right a -> speak $ Update [] a
+          Left t -> speak Removal
+      Removal -> speak Removal
+      _ -> pure unit -- TODO really?
+    , listen: \prop -> do
+      listen case _ of
+        Update _ b -> do
+          s <- Ref.read sref
+          t <- from b
           prop $ Update [] t
         _ -> pure unit -- TODO really?
     }
