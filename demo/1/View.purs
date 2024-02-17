@@ -10,7 +10,7 @@ import Model (Order, address, customer, delivery, dineIn, firstName, forename, f
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, fixed)
+import Widget (Widget, affArr, fixed)
 
 order :: Widget Web Order Order
 order =
@@ -50,5 +50,5 @@ order =
           dialog { title: text # fixed "Submit order " <> shortId <> fixed "?" } S.do
             body1 $ text # fixed "Are you sure?"
             containedButton { label: text # fixed "Submit order" }
-          submitOrder
+          affArr submitOrder
           snackbar { label: text # fixed "Order " <> shortId <> fixed " submitted"}
