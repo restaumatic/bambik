@@ -383,6 +383,8 @@ scopemap scope p = wrap ado
     zoomOut (Update scopes mb) = Update (scope : scopes) mb
 
     zoomIn :: Maybe (Change a) -> Maybe (Change a)
+    zoomIn Nothing = Nothing
+    zoomIn (Just Removal) = Just Removal
     zoomIn (Just (Update scopes ma)) = case uncons scopes of
       Just { head, tail } | head == scope -> Just $ Update tail ma
       Nothing -> Just $ Update [] ma
@@ -390,6 +392,4 @@ scopemap scope p = wrap ado
       _ -> case scope of
         Variant _ -> Just $ Update [] ma -- not matching head but scope is twist
         _ -> Nothing -- otherwise
-    zoomIn Nothing = Nothing
-    zoomIn (Just Removal) = Just Removal
 
