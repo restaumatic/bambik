@@ -177,8 +177,9 @@ bracket afterInit afterInward beforeOutward = effBracket do
   pure
     { beforeInputChange: mempty
     , afterInputChange: case _ of
-      Just (Update _ _) -> afterInward ctx
-      mch -> log $ "!!! mch" <> show mch
+      Nothing -> pure unit -- TODO really?
+      Just Removal -> pure unit -- TODO really?
+      Just (Update _) -> afterInward ctx
     , beforeOutputChange: const $ beforeOutward ctx
     , afterOutputChange: mempty
     }

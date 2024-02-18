@@ -52,7 +52,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Widget, Change(..))
+import Widget (Change(..), Changed(..), Widget)
 
 foreign import data Node :: Type
 
@@ -90,7 +90,7 @@ text = wrap do
     { speak: case _ of
       Nothing -> pure unit
       Just Removal -> setTextNodeValue node ""
-      Just (Update _ string) -> setTextNodeValue node string
+      Just (Update (Changed _ string)) -> setTextNodeValue node string
     , listen: \_ -> pure unit
     }
 
@@ -114,12 +114,12 @@ textInput = wrap do
     { speak: case _ of
     Nothing -> pure unit
     Just Removal -> setAttribute node "disabled" "true"
-    Just (Update _ newa) -> do
+    Just (Update (Changed _ newa)) -> do
       removeAttribute node "disabled"
       setValue node newa
     , listen: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      prop $ Update [] value
+      prop $ Changed [] value
     }
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
@@ -132,17 +132,17 @@ checkboxInput default = wrap do
     { speak: case _ of
     Nothing -> pure unit
     Just Removal -> setAttribute node "disabled" "true"
-    Just (Update _ Nothing) -> do
+    Just (Update (Changed _ Nothing)) -> do
       removeAttribute node "disabled"
       setChecked node false
-    Just (Update _ (Just newa)) -> do
+    Just (Update (Changed _ (Just newa))) -> do
       removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
-      prop $ Update [] $ if checked then (Just a) else Nothing
+      prop $ Changed [] $ if checked then (Just a) else Nothing
     }
 
 radioButton :: forall a. a -> Widget Web a a
@@ -155,12 +155,12 @@ radioButton default = wrap do
     { speak: case _ of
     Nothing -> pure unit
     Just Removal -> setChecked node false
-    Just (Update _ newa) -> do
+    Just (Update (Changed _ newa)) -> do
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ addEventListener "change" node $ const do
     a <- Ref.read aRef
-    prop $ Update [] a
+    prop $ Changed [] a
     }
 
 -- Optics
@@ -179,7 +179,7 @@ dynAttr name value pred w = wrap do
     { speak: \ch -> do
       w'.speak ch
       case ch of
-        Just (Update _ newa) -> do
+        Just (Update (Changed _ newa)) -> do
           if pred newa then setAttribute node name value else removeAttribute node name
         _ -> pure unit
     , listen: w'.listen
@@ -202,7 +202,7 @@ dynClass name pred w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      Just (Update _ newa) -> do
+      Just (Update (Changed _ newa)) -> do
         (if pred newa then addClass else removeClass) node name
       _ -> pure unit
     , listen: w'.listen
@@ -219,10 +219,10 @@ clickable w = wrap do
     case occur of
       Nothing -> pure unit
       Just Removal -> pure unit
-      Just (Update _ a) -> Ref.write a aRef
+      Just (Update (Changed _ a)) -> Ref.write a aRef
     , listen: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
-    prop $ Update [] a
+    prop $ Changed [] a
     }
 
 slot :: forall a b. Widget Web a b -> Widget Web a b
@@ -233,7 +233,7 @@ slot w = wrap do
       case occur of
         Nothing -> pure unit
         Just Removal -> ensureDetached
-        Just (Update _ _) -> do
+        Just (Update _) -> do
           speak occur
           ensureAttached
     , listen: listen
@@ -335,10 +335,8 @@ runWidgetInBody w = do
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
-  liftEffect $ listen case _ of
-    Removal -> pure unit -- TODO really?
-    Update _ mo -> outward mo
-  liftEffect $ speak $ Just $ Update [] i
+  liftEffect $ listen \(Changed _ mo) -> outward mo
+  liftEffect $ speak $ Just $ Update $ Changed [] i
 
 --- private
 
