@@ -152,6 +152,13 @@ instance Apply m => Semigroup (Widget m a a) where
       }
 -- Notice: optic `Widget m c d -> Widget m a a` is also a Semigroup
 
+instance Applicative m => Monoid (Widget m a a) where
+  mempty = wrap $ pure
+    { speak: mempty
+    , listen: mempty
+    }
+-- Notice: optic `Widget m c d -> Widget m a a` is also a Monoid
+
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
@@ -161,7 +168,6 @@ instance MonadEffect m => Semigroupoid (Widget m) where
       { speak: p1'.speak
       , listen: p2'.listen
       }
--- Notice: optic `Widget m c d -> Widget m a a` is also a Monoid
 
 instance MonadEffect m => Category (Widget m) where
   identity = wrap do
