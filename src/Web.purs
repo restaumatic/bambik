@@ -89,8 +89,8 @@ text = wrap do
   pure
     { speak: case _ of
       Nothing -> pure unit
-      Just Removal -> liftEffect $ setTextNodeValue node ""
-      Just (Update _ string) -> liftEffect $ setTextNodeValue node string
+      Just Removal -> setTextNodeValue node ""
+      Just (Update _ string) -> setTextNodeValue node string
     , listen: \_ -> pure unit
     }
 
@@ -113,14 +113,12 @@ textInput = wrap do
   pure
     { speak: case _ of
     Nothing -> pure unit
-    Just Removal -> do
-      setAttribute node "disabled" "true"
-      setValue node ""
+    Just Removal -> setAttribute node "disabled" "true"
     Just (Update _ newa) -> do
       removeAttribute node "disabled"
       setValue node newa
-    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const do
-      value <- liftEffect $ getValue node
+    , listen: \prop -> void $ addEventListener "input" node $ const do
+      value <- getValue node
       prop $ Update [] value
     }
 
@@ -141,7 +139,7 @@ checkboxInput default = wrap do
       removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
-    , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const do
+    , listen: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
       prop $ Update [] $ if checked then (Just a) else Nothing
@@ -182,7 +180,7 @@ dynAttr name value pred w = wrap do
       w'.speak ch
       case ch of
         Just (Update _ newa) -> do
-          liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name
+          if pred newa then setAttribute node name value else removeAttribute node name
         _ -> pure unit
     , listen: w'.listen
     }
@@ -205,7 +203,7 @@ dynClass name pred w = wrap do
     w'.speak occur
     case occur of
       Just (Update _ newa) -> do
-        liftEffect $ (if pred newa then addClass else removeClass) node name
+        (if pred newa then addClass else removeClass) node name
       _ -> pure unit
     , listen: w'.listen
     }
@@ -222,7 +220,7 @@ clickable w = wrap do
       Nothing -> pure unit
       Just Removal -> pure unit
       Just (Update _ a) -> Ref.write a aRef
-    , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const do
+    , listen: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     prop $ Update [] a
     }
@@ -338,7 +336,7 @@ runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit)
 runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
   liftEffect $ listen case _ of
-    Removal -> pure unit
+    Removal -> pure unit -- TODO really?
     Update _ mo -> outward mo
   liftEffect $ speak $ Just $ Update [] i
 
