@@ -88,9 +88,9 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { speak: case _ of
-      None -> pure unit
-      Removal -> liftEffect $ setTextNodeValue node ""
-      Update _ string -> liftEffect $ setTextNodeValue node string
+      Nothing -> pure unit
+      Just Removal -> liftEffect $ setTextNodeValue node ""
+      Just (Update _ string) -> liftEffect $ setTextNodeValue node string
     , listen: \_ -> pure unit
     }
 
@@ -112,11 +112,11 @@ textInput = wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    None -> pure unit
-    Removal -> do
+    Nothing -> pure unit
+    Just Removal -> do
       setAttribute node "disabled" "true"
       setValue node ""
-    Update _ newa -> do
+    Just (Update _ newa) -> do
       removeAttribute node "disabled"
       setValue node newa
     , listen: \prop -> void $ liftEffect $ addEventListener "input" node $ const do
@@ -132,12 +132,12 @@ checkboxInput default = wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    None -> pure unit
-    Removal -> setAttribute node "disabled" "true"
-    Update _ Nothing -> do
+    Nothing -> pure unit
+    Just Removal -> setAttribute node "disabled" "true"
+    Just (Update _ Nothing) -> do
       removeAttribute node "disabled"
       setChecked node false
-    Update _ (Just newa) -> do
+    Just (Update _ (Just newa)) -> do
       removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
@@ -155,9 +155,9 @@ radioButton default = wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    None -> pure unit
-    Removal -> setChecked node false
-    Update _ newa -> do
+    Nothing -> pure unit
+    Just Removal -> setChecked node false
+    Just (Update _ newa) -> do
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ addEventListener "change" node $ const do
@@ -181,7 +181,7 @@ dynAttr name value pred w = wrap do
     { speak: \ch -> do
       w'.speak ch
       case ch of
-        Update _ newa -> do
+        Just (Update _ newa) -> do
           liftEffect $ if pred newa then setAttribute node name value else removeAttribute node name
         _ -> pure unit
     , listen: w'.listen
@@ -204,7 +204,7 @@ dynClass name pred w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      Update _ newa -> do
+      Just (Update _ newa) -> do
         liftEffect $ (if pred newa then addClass else removeClass) node name
       _ -> pure unit
     , listen: w'.listen
@@ -219,9 +219,9 @@ clickable w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      None -> pure unit
-      Removal -> pure unit
-      Update _ a -> Ref.write a aRef
+      Nothing -> pure unit
+      Just Removal -> pure unit
+      Just (Update _ a) -> Ref.write a aRef
     , listen: \prop -> void $ liftEffect $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     prop $ Update [] a
@@ -233,9 +233,9 @@ slot w = wrap do
   pure
     { speak: \occur -> do
       case occur of
-        None -> pure unit
-        Removal -> ensureDetached
-        Update _ _ -> do
+        Nothing -> pure unit
+        Just Removal -> ensureDetached
+        Just (Update _ _) -> do
           speak occur
           ensureAttached
     , listen: listen
@@ -338,10 +338,9 @@ runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit)
 runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
   liftEffect $ listen case _ of
-    None -> pure unit
     Removal -> pure unit
     Update _ mo -> outward mo
-  liftEffect $ speak (Update [] i)
+  liftEffect $ speak $ Just $ Update [] i
 
 --- private
 
