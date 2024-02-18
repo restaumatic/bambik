@@ -43,6 +43,7 @@ import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
+import Debug (spy)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (info)
@@ -331,7 +332,7 @@ h6 = el "h6"
 runWidgetInBody :: forall o. Widget Web Unit o -> Effect Unit
 runWidgetInBody w = do
   node <- documentBody
-  runWidgetInNode node w unit $ const $ pure unit
+  runWidgetInNode node w unit \o -> pure $ let _ = spy "main widget emitted: " o in unit
 
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
