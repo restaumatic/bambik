@@ -33,6 +33,10 @@ order = affArr loadOrder >>> S.do
       radioButton { labelContent: text # constant "Dine in", default: { table: "1"} } dineIn
       radioButton { labelContent: text # constant "Takeaway", default: { time: "15:30"} } takeaway
       radioButton { labelContent: text # constant "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
+      dialog { title: text # constant "Do sth with delivery" } (S.do
+            body1 $ text # constant "Do sth with delivery?"
+            containedButton { label: text # constant "Do" }
+          ) # delivery
       filledTextField { floatingLabel: constant "Table" } table # slot # dineIn
       filledTextField { floatingLabel: constant "Time" } time # slot # takeaway
       filledTextField { floatingLabel: constant "Address" } address # slot # delivery ) # fulfillment

@@ -44,6 +44,7 @@ import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -163,7 +164,9 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    liftEffect $ p1'.listen \ch -> p2'.speak $ Just ch -- TODO what if `ch == Remove`?
+    liftEffect $ p1'.listen \ch -> case ch of
+      Removal -> log $ "removed input"
+      _ -> p2'.speak $ Just ch -- TODO what if `ch == Remove`?
     pure
       { speak: p1'.speak
       , listen: p2'.listen

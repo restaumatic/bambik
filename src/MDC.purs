@@ -29,17 +29,18 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.String (null)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOptics', debounced, effBracket)
+import Widget (Change(..), Widget, WidgetOptics', debounced, effBracket)
 
 -- Primitive widgets
 
@@ -175,7 +176,9 @@ bracket afterInit afterInward beforeOutward = effBracket do
   ctx <- afterInit
   pure
     { beforeInputChange: mempty
-    , afterInputChange: const $ afterInward ctx
+    , afterInputChange: case _ of
+      Just (Update _ _) -> afterInward ctx
+      mch -> log $ "!!! mch" <> show mch
     , beforeOutputChange: const $ beforeOutward ctx
     , afterOutputChange: mempty
     }
