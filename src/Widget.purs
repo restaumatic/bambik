@@ -126,7 +126,7 @@ instance Applicative m => Choice (Widget m) where
     p' <- unwrap p
     in
       { speak: case _ of
-        Nothing -> p'.speak Nothing
+        Nothing -> pure unit
         Just Removal -> p'.speak $ Just Removal
         Just (Update (Changed _ (Right _))) -> p'.speak $ Just Removal
         Just (Update (Changed scope (Left a))) -> p'.speak $ Just $ Update $ Changed scope a
@@ -137,7 +137,7 @@ instance Applicative m => Choice (Widget m) where
     p' <- unwrap p
     in
       { speak: case _ of
-        Nothing -> p'.speak Nothing
+        Nothing -> pure unit
         Just Removal -> p'.speak $ Just Removal
         Just (Update (Changed _ (Left _))) -> p'.speak $ Just Removal
         Just (Update (Changed scope (Right a))) -> p'.speak $ Just $ Update $ Changed scope a
@@ -153,14 +153,14 @@ instance Apply m => Semigroup (Widget m a a) where
       { speak: \ch -> p1'.speak ch *> p2'.speak ch
       , listen: \prop -> (p1'.listen \ch -> p2'.speak (Just $ Update ch) *> prop ch) *> (p2'.listen \ch -> p1'.speak (Just $ Update ch) *> prop ch)
       }
--- Notice: optic `Widget m c d -> Widget m a a` is also a Semigroup
+-- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
   mempty = wrap $ pure
     { speak: mempty
     , listen: mempty
     }
--- Notice: optic `Widget m c d -> Widget m a a` is also a Monoid
+-- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
@@ -270,7 +270,7 @@ effAdapter f w = wrap do
   { pre, post } <- f
   pure
     { speak: case _ of
-      Nothing -> speak Nothing
+      Nothing -> pure unit
       Just (Update (Changed _ s)) -> do
         a <- pre s
         speak $ Just $ Update $ Changed [] a
@@ -289,7 +289,7 @@ affAdapter f w = wrap do
   mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { speak: case _ of
-      Nothing -> speak Nothing
+      Nothing -> pure unit -- TODO really?
       Just (Update (Changed _ s)) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")
@@ -318,7 +318,7 @@ effLens w mlens = wrap do
   { get, set } <- mlens
   pure
     { speak: case _ of
-      Nothing -> speak Nothing
+      Nothing -> pure unit -- TODO really?
       Just (Update (Changed _ s)) -> do
         a <- get s
         Ref.write s sref
@@ -338,7 +338,7 @@ effPrism w mprism = wrap do
   { to, from } <- mprism
   pure
     { speak: case _ of
-      Nothing -> speak Nothing
+      Nothing -> pure unit -- TODO really?
       Just (Update (Changed _ s)) -> do
         tora <- to s
         case tora of
