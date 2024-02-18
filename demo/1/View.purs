@@ -6,20 +6,20 @@ import Prelude
 
 import Data.Lens (_Just)
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
-import Model (Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, orderId)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
 import Widget (Widget, affArr, constant)
 
-order :: Widget Web Unit Order
+order :: Widget Web OrderId Order
 order = affArr loadOrder >>> S.do
   elevation20 S.do
     headline6 $ text # constant "Order " <> shortId
     card S.do
       subtitle1 $ text # constant "Identifier"
       filledTextField { floatingLabel: constant "Short ID" } shortId
-      filledTextField { floatingLabel: constant "Unique ID" } uniqueId
+      filledTextField { floatingLabel: constant "Unique ID" } orderId
     card ( S.do
       subtitle1 S.do
         text # constant "Customer"
@@ -43,7 +43,7 @@ order = affArr loadOrder >>> S.do
       checkbox { labelContent: text # constant "Payment", default: { paid: "0" } } payment
       filledTextField { floatingLabel: constant "Paid" } paid # slot # _Just # payment
     card S.do
-      body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> uniqueId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment
+      body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId } ) >>> T.do

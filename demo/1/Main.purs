@@ -2,9 +2,10 @@ module Main (main) where
 
 import Prelude
 
+import Data.Profunctor (lcmap)
 import Effect (Effect)
-import Web (runWidgetInBody)
 import View (order)
+import Web (runWidgetInBody)
 
 main :: Effect Unit
-main = runWidgetInBody order
+main = runWidgetInBody $ lcmap (const "451") order
