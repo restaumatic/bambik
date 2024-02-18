@@ -10,7 +10,7 @@ import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, fo
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, affArr, constant)
+import Widget (Widget, affArr, constant, spied)
 
 order :: Widget Web OrderId Order
 order = affArr loadOrder >>> S.do
@@ -36,7 +36,7 @@ order = affArr loadOrder >>> S.do
       dialog { title: text # constant "Do sth with delivery" } (S.do
             body1 $ text # constant "Do sth with delivery?"
             containedButton { label: text # constant "Do" }
-          ) # delivery
+          ) # spied # delivery
       filledTextField { floatingLabel: constant "Table" } table # slot # dineIn
       filledTextField { floatingLabel: constant "Time" } time # slot # takeaway
       filledTextField { floatingLabel: constant "Address" } address # slot # delivery ) # fulfillment

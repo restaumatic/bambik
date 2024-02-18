@@ -19,6 +19,7 @@ module Widget
   , lens
   , prism
   , projection
+  , spied
   )
   where
 
@@ -41,10 +42,12 @@ import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
+import Debug (spy)
 import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
@@ -61,6 +64,9 @@ derive instance Newtype (Widget m i o) _
 
 data Changed a = Changed (Array Scope) a
 
+instance Show a => Show (Changed a) where
+  show (Changed scopes a) = "Changed " <> joinWith "." (show <$> scopes) <> " of " <> show a
+
 derive instance Functor Changed
 
 data Change a
@@ -69,10 +75,11 @@ data Change a
 
 derive instance Functor Change
 
-instance Show (Change a) where
+instance Show a => Show (Change a) where
   show = case _ of
     Removal -> "Removal"
-    Update (Changed scope _) -> "Update " <> joinWith "." (show <$> scope)
+    Update (Changed [] a) -> "Update whole of " <> show a
+    Update (Changed scope a) -> "Update part " <> joinWith "." (show <$> scope) <> " of " <> show a
 
 data Scope = Part String | Variant String
 
@@ -260,6 +267,16 @@ effBracket f w = wrap do
     { speak: \ch -> beforeInputChange ch *> speak ch *> afterInputChange ch
     , listen: \prop -> do
       listen \ch -> beforeOutputChange ch *> prop ch *> afterOutputChange ch
+    }
+
+spied :: forall m a . MonadEffect m => Show a => Widget m a a -> Widget m a a
+spied = effBracket do
+  liftEffect $ log "I will spy..."
+  pure
+    { beforeInputChange: \a -> log $ "spied input: " <> show a
+    , afterInputChange: mempty
+    , beforeOutputChange: \a -> log $ "spied output: " <> show a
+    , afterOutputChange: mempty
     }
 
 -- notice: this is not really optics, operates for given m
