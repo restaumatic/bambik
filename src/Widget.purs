@@ -163,7 +163,7 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    liftEffect $ p1'.listen \ch -> p2'.speak $ Just ch
+    liftEffect $ p1'.listen \ch -> p2'.speak $ Just ch -- TODO what if `ch == Remove`?
     pure
       { speak: p1'.speak
       , listen: p2'.listen
