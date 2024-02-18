@@ -328,10 +328,10 @@ h6 = el "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall i o. Widget Web i o -> i -> Effect Unit
-runWidgetInBody w i = do
+runWidgetInBody :: forall o. Widget Web Unit o -> Effect Unit
+runWidgetInBody w = do
   node <- documentBody
-  runWidgetInNode node w i $ const $ pure unit
+  runWidgetInNode node w unit $ const $ pure unit
 
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do

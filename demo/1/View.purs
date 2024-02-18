@@ -2,18 +2,18 @@ module View
   ( order
   ) where
 
-import Data.Function ((#), ($), (>>>))
+import Prelude
+
 import Data.Lens (_Just)
-import Data.Semigroup ((<>))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
-import Model (Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
+import Model (Order, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, uniqueId)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
 import Widget (Widget, affArr, constant)
 
-order :: Widget Web Order Order
-order =
+order :: Widget Web Unit Order
+order = affArr loadOrder >>> S.do
   elevation20 S.do
     headline6 $ text # constant "Order " <> shortId
     card S.do
