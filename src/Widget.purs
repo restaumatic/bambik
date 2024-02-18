@@ -1,5 +1,6 @@
 module Widget
   ( Change(..)
+  , Changed(..)
   , Scope(..)
   , Widget(..)
   , WidgetOptics
@@ -7,13 +8,13 @@ module Widget
   , adapter
   , affAdapter
   , affArr
+  , constant
   , constructor
   , debounced
   , debounced'
   , effAdapter
   , effBracket
   , field
-  , constant
   , iso
   , lens
   , prism
@@ -53,13 +54,17 @@ import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
   { speak :: Maybe (Change i) -> Effect Unit
-  , listen :: (Change o -> Effect Unit) -> Effect Unit
+  , listen :: (Changed o -> Effect Unit) -> Effect Unit
   })
 
 derive instance Newtype (Widget m i o) _
 
+data Changed a = Changed (Array Scope) a
+
+derive instance Functor Changed
+
 data Change a
-  = Update (Array Scope) a
+  = Update (Changed a)
   | Removal
 
 derive instance Functor Change
@@ -67,7 +72,7 @@ derive instance Functor Change
 instance Show (Change a) where
   show = case _ of
     Removal -> "Removal"
-    Update scopes _ -> "Update " <> joinWith "." (show <$> scopes)
+    Update (Changed scope _) -> "Update " <> joinWith "." (show <$> scope)
 
 data Scope = Part String | Variant String
 
@@ -89,13 +94,12 @@ instance Applicative m => Strong (Widget m) where
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { speak: \mch -> do
-        case mch of
+      { speak: case _ of
           Nothing -> pure unit
           Just Removal -> p'.speak $ Just Removal
-          Just (Update _ ab) -> do
+          Just (Update (Changed scope ab)) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ map (map fst) mch
+            p'.speak $ Just $ Update $ Changed scope $ fst ab
       , listen: \prop -> do
         p'.listen \ch -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -105,13 +109,12 @@ instance Applicative m => Strong (Widget m) where
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { speak: \mch -> do
-        case mch of
+      { speak: case _ of
           Nothing -> pure unit
           Just Removal -> p'.speak $ Just Removal
-          Just (Update _ ab) -> do
+          Just (Update (Changed scope ab)) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ map (map snd) mch
+            p'.speak $ Just $ Update $ Changed scope $ snd ab
       , listen: \prop -> do
         p'.listen \ch -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -125,8 +128,8 @@ instance Applicative m => Choice (Widget m) where
       { speak: case _ of
         Nothing -> p'.speak Nothing
         Just Removal -> p'.speak $ Just Removal
-        Just (Update _ (Right _)) -> p'.speak $ Just Removal
-        Just (Update scope (Left a)) -> p'.speak $ Just $ Update scope a
+        Just (Update (Changed _ (Right _))) -> p'.speak $ Just Removal
+        Just (Update (Changed scope (Left a))) -> p'.speak $ Just $ Update $ Changed scope a
       , listen: \prop -> do
         p'.listen \ch -> prop (Left <$> ch)
       }
@@ -136,8 +139,8 @@ instance Applicative m => Choice (Widget m) where
       { speak: case _ of
         Nothing -> p'.speak Nothing
         Just Removal -> p'.speak $ Just Removal
-        Just (Update _ (Left _)) -> p'.speak $ Just Removal
-        Just (Update scope (Right a)) -> p'.speak $ Just $ Update scope a
+        Just (Update (Changed _ (Left _))) -> p'.speak $ Just Removal
+        Just (Update (Changed scope (Right a))) -> p'.speak $ Just $ Update $ Changed scope a
       , listen: \prop -> do
         p'.listen \ch -> prop (Right <$> ch)
       }
@@ -148,7 +151,7 @@ instance Apply m => Semigroup (Widget m a a) where
     p2' <- unwrap p2
     in
       { speak: \ch -> p1'.speak ch *> p2'.speak ch
-      , listen: \prop -> (p1'.listen \ch -> p2'.speak (Just ch) *> prop ch) *> (p2'.listen \ch -> p1'.speak (Just ch) *> prop ch)
+      , listen: \prop -> (p1'.listen \ch -> p2'.speak (Just $ Update ch) *> prop ch) *> (p2'.listen \ch -> p1'.speak (Just $ Update ch) *> prop ch)
       }
 -- Notice: optic `Widget m c d -> Widget m a a` is also a Semigroup
 
@@ -163,7 +166,7 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    liftEffect $ p1'.listen \ch -> p2'.speak $ Just ch -- TODO what if `ch == Remove`?
+    liftEffect $ p1'.listen \ch -> p2'.speak $ Just $ Update ch -- TODO smell: well, it's not an update it's rather brand new value/event
     pure
       { speak: p1'.speak
       , listen: p2'.listen
@@ -173,14 +176,14 @@ instance MonadEffect m => Category (Widget m) where
   identity = wrap do
     chaAVar <- liftEffect AVar.empty
     pure
-      { speak: case _ of
-        Nothing -> pure unit
-        Just cha -> void $ AVar.put cha chaAVar mempty
+      { speak: \mcha -> void $ AVar.put mcha chaAVar mempty
       , listen: \prop ->
         let waitAndPropagate = void $ AVar.take chaAVar case _ of
               Left error -> pure unit -- TODO handle error
-              Right cha -> do
-                prop cha
+              Right Nothing -> pure unit -- TODO really?
+              Right (Just Removal) -> pure unit -- TODO really?
+              Right (Just (Update changeda)) -> do
+                prop changeda
                 waitAndPropagate
         in waitAndPropagate
       }
@@ -214,7 +217,7 @@ type WidgetOptics' a s = WidgetOptics a a s s
 constant :: forall a b s t. a -> WidgetOptics a b s t
 constant a w = wrap do
   w' <- unwrap w
-  liftEffect $ w'.speak $ Just $ Update [] a
+  liftEffect $ w'.speak $ Just $ Update $ Changed [] a
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -247,8 +250,8 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 effBracket :: forall m a b. Monad m => m
   { beforeInputChange :: Maybe (Change a) -> Effect Unit
   , afterInputChange :: Maybe (Change a) -> Effect Unit
-  , beforeOutputChange :: Change b -> Effect Unit
-  , afterOutputChange :: Change b -> Effect Unit
+  , beforeOutputChange :: Changed b -> Effect Unit
+  , afterOutputChange :: Changed b -> Effect Unit
   } -> Widget m a b -> Widget m a b
 effBracket f w = wrap do
   { speak, listen } <- unwrap w
@@ -268,16 +271,14 @@ effAdapter f w = wrap do
   pure
     { speak: case _ of
       Nothing -> speak Nothing
-      Just (Update _ s) -> do
+      Just (Update (Changed _ s)) -> do
         a <- pre s
-        speak $ Just $ Update [] a
+        speak $ Just $ Update $ Changed [] a
       _ -> pure unit -- TODO really?
     , listen: \prop -> do
-      listen case _ of
-        Update _ b -> do
-          t <- post b
-          prop $ Update [] t
-        _ -> pure unit -- TODO really?
+      listen \(Changed _ b) -> do
+        t <- post b
+        prop $ Changed [] t
     }
 
 affAdapter :: forall m a b s t. MonadEffect m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Widget m a b -> Widget m s t
@@ -289,24 +290,22 @@ affAdapter f w = wrap do
   pure
     { speak: case _ of
       Nothing -> speak Nothing
-      Just (Update _ s) -> launchAff_ do
+      Just (Update (Changed _ s)) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")
         newFiber <- forkAff do
           a <- pre s
-          liftEffect $ speak $ Just $ Update [] a
+          liftEffect $ speak $ Just $ Update $ Changed [] a
         liftEffect $ Ref.write (Just newFiber) mInputFiberRef
       _ -> pure unit -- TODO really?
     , listen: \prop -> do
-      listen case _ of
-        Update _ b -> launchAff_ do
-          mFiber <- liftEffect $ Ref.read mOutputFiberRef
-          for_ mFiber $ killFiber (error "Obsolete output")
-          newFiber <- forkAff do
-            t <- post b
-            liftEffect $ prop $ Update [] t
-          liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
-        _ -> pure unit -- TODO really?
+      listen \(Changed _ b) -> launchAff_ do
+        mFiber <- liftEffect $ Ref.read mOutputFiberRef
+        for_ mFiber $ killFiber (error "Obsolete output")
+        newFiber <- forkAff do
+          t <- post b
+          liftEffect $ prop $ Changed [] t
+        liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
     }
 
 affArr :: forall m a b. MonadEffect m => (a -> Aff b) -> Widget m a b
@@ -320,19 +319,17 @@ effLens w mlens = wrap do
   pure
     { speak: case _ of
       Nothing -> speak Nothing
-      Just (Update _ s) -> do
+      Just (Update (Changed _ s)) -> do
         a <- get s
         Ref.write s sref
-        speak $ Just $ Update [] a
+        speak $ Just $ Update $ Changed [] a
       _ -> pure unit -- TODO really?
     , listen: \prop -> do
-      listen case _ of
-        Update _ b -> do
-          s <- Ref.read sref
-          t <- set s b
-          prop $ Update [] t
-        _ -> pure unit -- TODO really?
-    }
+      listen \(Changed _ b) -> do
+        s <- Ref.read sref
+        t <- set s b
+        prop $ Changed [] t
+  }
 
 effPrism :: forall m a b s t. MonadEffect m => Widget m a b -> m { to :: s -> Effect (Either t a), from :: b -> Effect t} -> Widget m s t
 effPrism w mprism = wrap do
@@ -342,21 +339,19 @@ effPrism w mprism = wrap do
   pure
     { speak: case _ of
       Nothing -> speak Nothing
-      Just (Update _ s) -> do
+      Just (Update (Changed _ s)) -> do
         tora <- to s
         case tora of
-          Right a -> speak $ Just $ Update [] a
+          Right a -> speak $ Just $ Update $ Changed [] a
           Left t -> speak $ Just Removal
       Just Removal -> speak $ Just Removal
       _ -> pure unit -- TODO really?
     , listen: \prop -> do
-      listen case _ of
-        Update _ b -> do
-          s <- Ref.read sref
-          t <- from b
-          prop $ Update [] t
-        _ -> pure unit -- TODO really?
-    }
+      listen \(Changed _ b) -> do
+        s <- Ref.read sref
+        t <- from b
+        prop $ Changed [] t
+  }
 
 debounced :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
 debounced millis = affAdapter $ pure
@@ -378,18 +373,17 @@ scopemap scope p = wrap ado
       listen $ prop <<< zoomOut
     }
   where
-    zoomOut :: Change b -> Change b
-    zoomOut Removal = Removal
-    zoomOut (Update scopes mb) = Update (scope : scopes) mb
+    zoomOut :: Changed b -> Changed b
+    zoomOut (Changed scopes mb) = Changed (scope : scopes) mb
 
     zoomIn :: Maybe (Change a) -> Maybe (Change a)
     zoomIn Nothing = Nothing
     zoomIn (Just Removal) = Just Removal
-    zoomIn (Just (Update scopes ma)) = case uncons scopes of
-      Just { head, tail } | head == scope -> Just $ Update tail ma
-      Nothing -> Just $ Update [] ma
-      Just { head: Variant _ } -> Just $ Update [] ma -- not matching head but head is twist
+    zoomIn (Just (Update (Changed scopes ma))) = case uncons scopes of
+      Just { head, tail } | head == scope -> Just $ Update $ Changed tail ma
+      Nothing -> Just $ Update $ Changed [] ma
+      Just { head: Variant _ } -> Just $ Update $ Changed [] ma -- not matching head but head is twist
       _ -> case scope of
-        Variant _ -> Just $ Update [] ma -- not matching head but scope is twist
+        Variant _ -> Just $ Update $ Changed [] ma -- not matching head but scope is twist
         _ -> Nothing -- otherwise
 
