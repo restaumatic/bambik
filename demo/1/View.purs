@@ -5,15 +5,15 @@ module View
 import Prelude
 
 import Data.Lens (_Just)
-import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, radioButton, snackbar, subtitle1, subtitle2)
+import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, progressBar, radioButton, snackbar, subtitle1, subtitle2)
 import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, orderId)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, affArr, constant, spied)
+import Widget (Widget, action, constant, spied)
 
 order :: Widget Web OrderId Order
-order = affArr loadOrder >>> S.do
+order = (progressBar # action loadOrder) >>> S.do
   elevation20 S.do
     headline6 $ text # constant "Order " <> shortId
     card S.do
@@ -54,5 +54,5 @@ order = affArr loadOrder >>> S.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
             containedButton { label: text # constant "Submit order" }
-          affArr submitOrder
+          progressBar # action submitOrder
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}

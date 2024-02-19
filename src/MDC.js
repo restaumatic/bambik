@@ -24,3 +24,12 @@ export function close(component) {
     component.close();
   };
 }
+
+// setDeterminate :: Component -> Boolean -> Effect Unit
+export function setDeterminate(component) {
+  return function (determinate) {
+    return function () {
+      component.determinate = determinate;
+    }
+  };
+}
