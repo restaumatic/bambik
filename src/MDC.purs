@@ -18,6 +18,7 @@ module MDC
   , headline5
   , headline6
   , overline
+  , progressBar
   , radioButton
   , snackbar
   , subtitle1
@@ -30,6 +31,7 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Control.Plus (empty)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor (lcmap)
 import Data.String (null)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -40,7 +42,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Change(..), Widget, WidgetOptics', debounced, effBracket)
+import Widget (Change(..), Widget, WidgetOptics', constant, debounced, effBracket)
 
 -- Primitive widgets
 
@@ -168,6 +170,10 @@ snackbar { label } =
     where
       initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
       openMdcComponent comp = liftEffect $ open comp
+
+
+progressBar :: Widget Web Boolean Void
+progressBar = lcmap show $ text -- TODO use genuine MDC progress bar
 
 -- Private
 

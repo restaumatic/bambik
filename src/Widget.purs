@@ -7,7 +7,7 @@ module Widget
   , WidgetOptics'
   , adapter
   , affAdapter
-  , affArr
+  , action
   , constant
   , constructor
   , debounced
@@ -43,6 +43,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
+import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
@@ -177,7 +178,7 @@ instance MonadEffect m => Semigroupoid (Widget m) where
       , listen: p2'.listen
       }
 
--- Notice: Widget is not a category 
+-- Notice: Widget is not a category
 -- instance MonadEffect m => Category (Widget m) where
 --   identity = wrap do
 --     chaAVar <- liftEffect AVar.empty
@@ -297,6 +298,29 @@ effAdapter f w = wrap do
         prop $ Changed [] t
     }
 
+action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
+action arr w = wrap do
+  oVar <- liftEffect AVar.empty
+  w' <- unwrap w
+  pure
+    { speak: case _ of
+      Nothing -> pure unit
+      Just Removal -> pure unit -- TODO really?
+      Just (Update (Changed _ i)) -> do
+        w'.speak $ Just $ Update $ Changed [] true
+        launchAff_ do
+          o <- arr i
+          liftEffect $ void $ AVar.put o oVar mempty
+    , listen: \prop ->
+      let waitAndPropagate = void $ AVar.take oVar case _ of
+            Left error -> pure unit -- TODO handle error
+            Right o -> do
+              w'.speak $ Just $ Update $ Changed [] false
+              prop $ Changed [] o
+              waitAndPropagate
+      in waitAndPropagate
+    }
+
 affAdapter :: forall m a b s t. MonadEffect m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Widget m a b -> Widget m s t
 affAdapter f w = wrap do
   { speak, listen } <- unwrap w
@@ -323,10 +347,6 @@ affAdapter f w = wrap do
           liftEffect $ prop $ Changed [] t
         liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
     }
-
-affArr :: forall m a b. MonadEffect m => (a -> Aff b) -> Widget m a b
-affArr = unsafeCoerce unit
--- affArr arr = identity # affAdapter (pure { pre: arr, post: pure })
 
 debounced :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
 debounced millis = affAdapter $ pure
