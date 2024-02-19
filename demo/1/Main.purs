@@ -8,4 +8,4 @@ import View (order)
 import Web (runWidgetInBody)
 
 main :: Effect Unit
-main = runWidgetInBody $ lcmap (const "451") order
+main = runWidgetInBody $ lcmap (const "45123519") order
