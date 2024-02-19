@@ -58,14 +58,14 @@ formal = iso "formal" toFormal toInformal
 submitOrder :: Order -> Aff Order
 submitOrder order = do
   liftEffect $ log $ "submitting order"
-  delay (Milliseconds 1000.0)
+  delay (Milliseconds 3000.0)
   liftEffect $ log $ "submitted order"
   pure order
 
 loadOrder :: OrderId -> Aff Order
 loadOrder id = do
   liftEffect $ log $ "loading order"
-  delay (Milliseconds 1000.0)
+  delay (Milliseconds 3000.0)
   liftEffect $ log $ "loaded order"
   pure
     { orderId: id

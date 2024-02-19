@@ -31,18 +31,16 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Control.Plus (empty)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.String (null)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, dynClass, div, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Change(..), Widget, WidgetOptics', constant, debounced, effBracket)
+import Widget (Change(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -171,9 +169,24 @@ snackbar { label } =
       initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
       openMdcComponent comp = liftEffect $ open comp
 
-
-progressBar :: Widget Web Boolean Void
-progressBar = lcmap show $ text -- TODO use genuine MDC progress bar
+progressBar :: Widget Web Boolean Unit -- TODO should be Widget Web Boolean Void
+progressBar =
+  div ( S.do
+    div ( S.do
+      div empty # cl "mdc-linear-progress__buffer-bar"
+      div empty # cl "mdc-linear-progress__buffer-dots" ) # cl "mdc-linear-progress__buffer"
+    div ( S.do
+      span empty # cl "mdc-linear-progress__bar-inner" ) # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__primary-bar"
+    div (S.do
+      span empty # cl "mdc-linear-progress__bar-inner") # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__secondary-bar" ) # attr "role" "progressbar" # cl "mdc-linear-progress" # attr "aria-label" "TODO: Example Progress Bar" # attr "aria-valuemin" "0" # attr "aria-valuemax" "1" # attr "aria-valuenow" "0" # effAdapter do
+        comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
+        liftEffect $ close comp
+        liftEffect $ setDeterminate comp false
+        pure
+          { pre: case _ of
+            true -> open comp
+            false -> close comp
+          , post: \unit -> pure unit }
 
 -- Private
 
@@ -195,6 +208,7 @@ foreign import data ComponentClass :: Type
 foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
 foreign import newComponent :: ComponentClass -> Node -> Effect Component
+foreign import setDeterminate :: Component -> Boolean -> Effect Unit
 foreign import material
   :: { textField :: { "MDCTextField" :: ComponentClass }
      , ripple :: { "MDCRipple" :: ComponentClass }
@@ -208,5 +222,6 @@ foreign import material
      , list :: { "MDCList" :: ComponentClass }
      , checkbox :: { "MDCCheckbox" :: ComponentClass }
      , formField :: { "MDCFormField" :: ComponentClass }
+     , linearProgress :: { "MDCLinearProgress" :: ComponentClass }
      }
 

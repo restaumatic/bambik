@@ -298,7 +298,7 @@ effAdapter f w = wrap do
         prop $ Changed [] t
     }
 
-action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
+action :: forall a i o. (i -> Aff o) -> WidgetOptics Boolean a i o
 action arr w = wrap do
   oVar <- liftEffect AVar.empty
   w' <- unwrap w
