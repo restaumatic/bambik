@@ -65,7 +65,7 @@ submitOrder order = do
 loadOrder :: OrderId -> Aff Order
 loadOrder id = do
   liftEffect $ log $ "loading order"
-  delay (Milliseconds 3000.0)
+  delay (Milliseconds 1000.0)
   liftEffect $ log $ "loaded order"
   pure
     { orderId: id
