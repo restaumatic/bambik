@@ -53,6 +53,7 @@ order = (progressBar # action loadOrder) >>> S.do
         containedButton { label: text # constant "Submit order " <> shortId } ) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
-            containedButton { label: text # constant "Submit order" }
-          progressBar # action submitOrder
-          snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
+            filledTextField { floatingLabel: constant "Adjust total" } total
+            containedButton { label: text # constant "Submit order" } >>> T.do
+              progressBar # action submitOrder
+              snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
