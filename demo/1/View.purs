@@ -51,9 +51,9 @@ order = (progressBar # action loadOrder) >>> S.do
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId } ) >>> T.do
-          dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
+          dialog { title: text # constant "Submit order " <> shortId <> constant "?" } T.do
             body1 $ text # constant "Are you sure?"
-            filledTextField { floatingLabel: constant "Adjust total" } total
-            containedButton { label: text # constant "Submit order" } >>> T.do
-              progressBar # action submitOrder
-              snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
+            filledTextField { floatingLabel: constant "Confirm total" } total
+            containedButton { label: text # constant "Submit order" }
+          progressBar # action submitOrder
+          snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
