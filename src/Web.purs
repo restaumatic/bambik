@@ -38,16 +38,12 @@ module Web
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
-import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
-import Debug (spy)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console (info)
-import Effect.Now (now)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
@@ -236,8 +232,7 @@ slot w = wrap do
   attachable' removePrecedingSiblingNodes dom = do
     parent <- gets _.parent
     slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
-    liftEffect $ measured' slotNo "created" do
-
+    liftEffect do
       placeholderBefore <- newPlaceholderBefore slotNo
       placeholderAfter <- newPlaceholderAfter slotNo
 
@@ -251,14 +246,14 @@ slot w = wrap do
 
       let
         ensureAttached :: Effect Unit
-        ensureAttached = measured' slotNo "attached" $ liftEffect do
+        ensureAttached = do
           detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
           for_ detachedDocumentFragment \documentFragment -> do
             removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
             documentFragment `insertBefore` placeholderAfter
 
         ensureDetached :: Effect Unit
-        ensureDetached = measured' slotNo "detached" $ liftEffect do
+        ensureDetached = do
           detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
           when (isNothing detachedDocumentFragment) do
             documentFragment <- createDocumentFragment
@@ -266,9 +261,6 @@ slot w = wrap do
             Ref.write (Just documentFragment) detachedDocumentFragmentRef
 
       pure $ { ensureAttached, ensureDetached, result }
-      where
-        measured' :: forall y m. MonadEffect m => Int -> String → m y → m y
-        measured' slotNo actionName = measured $ "component " <> show slotNo <> " " <> actionName
 
 el :: forall a b. String -> Widget Web a b -> Widget Web a b
 el tagName = wrap <<< element tagName <<< unwrap
@@ -323,7 +315,7 @@ h6 = el "h6"
 runWidgetInBody :: forall o. Widget Web Unit o -> Effect Unit
 runWidgetInBody w = do
   node <- documentBody
-  runWidgetInNode node w unit \o -> pure $ let _ = spy "main widget emitted: " o in unit
+  runWidgetInNode node w unit mempty
 
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
@@ -382,20 +374,6 @@ clazz name = do
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
-
-measured :: forall a m. MonadEffect m ⇒ String → m a → m a
-measured actionName action = do
-  start <- liftEffect now
-  _ <- liftEffect $ Ref.modify (_ + 1) logIndent
-  a <- action
-  currentIndent <- liftEffect $ Ref.modify (_ - 1) logIndent
-  stop <- liftEffect now
-  info $ "[Web] " <> repeatStr currentIndent "." <> actionName <> " in " <> show (unwrap (unInstant stop) - unwrap (unInstant start)) <> " ms"
-  pure a
-    where
-      repeatStr i s
-        | i <= 0 = ""
-        | otherwise = s <> repeatStr (i - 1) s
 
 logIndent :: Ref.Ref Int
 logIndent = unsafePerformEffect $ Ref.new 0

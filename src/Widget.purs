@@ -19,7 +19,7 @@ module Widget
   , lens
   , prism
   , projection
-  , spied
+  , spy
   )
   where
 
@@ -27,7 +27,7 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
-import Data.Array (null, uncons, (:))
+import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
@@ -37,8 +37,6 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
-import Data.Show.Generic (genericShow)
-import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -64,9 +62,11 @@ derive instance Newtype (Widget m i o) _
 data New a = New (Array Scope) a
 
 instance Show a => Show (New a) where
-  show (New scopes a)
-    | null scopes = "Entirely new " <> show a
-    | otherwise = "New in part " <> joinWith "." (show <$> scopes) <> " " <> show a
+  show (New scopes a) = "new " <> path <> " of " <> show a
+    where
+    path
+      | null scopes = "."
+      | otherwise = "new " <> fold (show <$> scopes) <> " of " <> show a
 
 derive instance Functor New
 
@@ -86,7 +86,9 @@ data Scope = Part String | Variant String
 derive instance Generic Scope _
 
 instance Show Scope where
-  show = genericShow
+  show = case _ of
+    Part s -> "." <> s
+    Variant s -> "?" <> s
 
 derive instance Eq Scope
 
@@ -267,14 +269,16 @@ effBracket f w = wrap do
       listen \u -> beforeOutput u *> prop u *> afterOutput u
     }
 
-spied :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
-spied name = effBracket do
+spy :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
+spy name w = wrap do
+  { speak, listen } <- unwrap w
   pure
-    { beforeInput: \a -> log $ "[Spy] " <> name <> " input: " <> show a
-    , afterInput: mempty
-    , beforeOutput: \a -> log $ "[Spy] " <> name <> " output: " <> show a
-    , afterOutput: mempty
+    { speak: \ch -> log' ("< " <> show ch) *> speak ch *> log' ">"
+    , listen: \prop -> do
+      listen \u -> log' ("> " <> show u) *> prop u *> log' "<"
     }
+  where
+    log' s = log $ "[WidgetSpy] " <> name <> " " <> s
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
