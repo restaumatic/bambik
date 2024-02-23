@@ -66,7 +66,7 @@ instance Show a => Show (New a) where
     where
     path
       | null scopes = "."
-      | otherwise = "new " <> fold (show <$> scopes) <> " of " <> show a
+      | otherwise = fold (show <$> scopes)
 
 derive instance Functor New
 
