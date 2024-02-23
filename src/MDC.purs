@@ -31,15 +31,14 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
-import Data.Maybe (Maybe(..), isNothing, maybe)
-import Data.String (null)
+import Data.Maybe (Maybe, isNothing, maybe)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, slot, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Change(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
 
@@ -201,9 +200,8 @@ bracket afterInit afterInward beforeOutward = effBracket do
   pure
     { beforeInput: mempty
     , afterInput: case _ of
-      Nothing -> pure unit -- TODO really?
-      Just Removal -> pure unit -- TODO really?
-      Just (Update _) -> afterInward ctx
+      Removal -> pure unit -- TODO really?
+      Update _ -> afterInward ctx
     , beforeOutput: const $ beforeOutward ctx
     , afterOutput: mempty
     }
