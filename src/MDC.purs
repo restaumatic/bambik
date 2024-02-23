@@ -40,7 +40,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Change(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -56,12 +56,12 @@ filledTextField { floatingLabel } value =
     span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
     (S.do
       (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (maybe false (case _ of
-        Removal -> false
-        Update _ -> true)) # floatingLabel) >>> empty
+        Removed -> false
+        Altered _ -> true)) # floatingLabel) >>> empty
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
     span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # dynClass "mdc-text-field--disabled" (maybe true $ case _ of
-    Update _ -> false
-    Removal -> true) # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 300.0)
+    Altered _ -> false
+    Removed -> true) # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 300.0)
     where
       id = unsafePerformEffect uniqueId
 
@@ -200,8 +200,8 @@ bracket afterInit afterInward beforeOutward = effBracket do
   pure
     { beforeInput: mempty
     , afterInput: case _ of
-      Removal -> pure unit -- TODO really?
-      Update _ -> afterInward ctx
+      Removed -> pure unit -- TODO really?
+      Altered _ -> afterInward ctx
     , beforeOutput: const $ beforeOutward ctx
     , afterOutput: mempty
     }

@@ -52,7 +52,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Change(..), Changed(..), Widget)
+import Widget (Changed(..), New(..), Widget)
 
 foreign import data Node :: Type
 
@@ -88,8 +88,8 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { speak: case _ of
-      Removal -> setTextNodeValue node ""
-      Update (Changed _ string) -> setTextNodeValue node string
+      Removed -> setTextNodeValue node ""
+      Altered (New _ string) -> setTextNodeValue node string
     , listen: \_ -> pure unit
     }
 
@@ -106,19 +106,19 @@ html htmlString = wrap do
 
 textInput :: Widget Web String String
 textInput = dynAttr "disabled" "true" (maybe true $ case _ of
-    Update _ -> false
-    Removal -> true) $ wrap do
+    Altered _ -> false
+    Removed -> true) $ wrap do
   element "input" (pure unit)
   attribute "type" "text"
   node <- gets _.sibling
   pure
     { speak: case _ of
-    Removal -> pure unit
-    Update (Changed _ newa) -> do
+    Removed -> pure unit
+    Altered (New _ newa) -> do
       setValue node newa
     , listen: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      prop $ Changed [] value
+      prop $ New [] value
     }
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
@@ -129,16 +129,16 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    Removal -> pure unit
-    Update (Changed _ Nothing) -> do
+    Removed -> pure unit
+    Altered (New _ Nothing) -> do
       setChecked node false
-    Update (Changed _ (Just newa)) -> do
+    Altered (New _ (Just newa)) -> do
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
-      prop $ Changed [] $ if checked then (Just a) else Nothing
+      prop $ New [] $ if checked then (Just a) else Nothing
     }
 
 radioButton :: forall a. a -> Widget Web a a
@@ -149,13 +149,13 @@ radioButton default = dynAttr "disabled" "true" isNothing $ wrap do
   node <- gets _.sibling
   pure
     { speak: case _ of
-    Removal -> setChecked node false
-    Update (Changed _ newa) -> do
+    Removed -> setChecked node false
+    Altered (New _ newa) -> do
       setChecked node true
       Ref.write newa aRef
-    , listen: \prop -> void $ addEventListener "change" node $ const do
+    , listen: \prop -> void $ addEventListener "Changed" node $ const do
     a <- Ref.read aRef
-    prop $ Changed [] a
+    prop $ New [] a
     }
 
 -- Optics
@@ -166,7 +166,7 @@ attr name value w = wrap do
   attribute name value
   pure w'
 
-dynAttr :: forall a b. String -> String -> (Maybe (Change a) -> Boolean) -> Widget Web a b -> Widget Web a b
+dynAttr :: forall a b. String -> String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
 dynAttr name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -189,7 +189,7 @@ cl name w = wrap do
     , listen: w'.listen
     }
 
-dynClass :: forall a b. String -> (Maybe (Change a) -> Boolean) -> Widget Web a b -> Widget Web a b
+dynClass :: forall a b. String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
 dynClass name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -205,19 +205,19 @@ clickable :: forall a. Widget Web a Void -> Widget Web a a
 clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
-    Update _ -> false
-    Removal -> true))
+    Altered _ -> false
+    Removed -> true))
   node <- gets _.sibling
   pure
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      Removal -> pure unit
-      Update (Changed _ a) -> Ref.write a aRef
+      Removed -> pure unit
+      Altered (New _ a) -> Ref.write a aRef
     , listen: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.speak Nothing -- TODO check
-    prop $ Changed [] a
+    prop $ New [] a
     }
 
 slot :: forall a b. Widget Web a b -> Widget Web a b
@@ -225,9 +225,9 @@ slot w = wrap do
   {result: { speak, listen}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
   pure
     { speak: case _ of
-      Removal -> ensureDetached
-      update@(Update _) -> do
-        speak update
+      Removed -> ensureDetached
+      updated@(Altered _) -> do
+        speak updated
         ensureAttached
     , listen: listen
     }
@@ -328,8 +328,8 @@ runWidgetInBody w = do
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { speak, listen } <- unwrap w
-  liftEffect $ listen \(Changed _ mo) -> outward mo
-  liftEffect $ speak $ Update $ Changed [] i
+  liftEffect $ listen \(New _ mo) -> outward mo
+  liftEffect $ speak $ Altered $ New [] i
 
 --- private
 
