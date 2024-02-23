@@ -270,11 +270,10 @@ effBracket f w = wrap do
 
 spied :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
 spied name = effBracket do
-  liftEffect $ log $ "[Spy] " <> name <> " being spied"
   pure
-    { beforeInput: \a -> log $ "[" <> name <> "] input: " <> show a
+    { beforeInput: \a -> log $ "[Spy] " <> name <> " input: " <> show a
     , afterInput: mempty
-    , beforeOutput: \a -> log $ "[" <> name <> "] output: " <> show a
+    , beforeOutput: \a -> log $ "[Spy] " <> name <> " output: " <> show a
     , afterOutput: mempty
     }
 
@@ -287,10 +286,10 @@ effAdapter f w = wrap do
   pure
     { speak: case _ of
       Nothing -> pure unit
+      Just Removal -> speak $ Just $ Removal
       Just (Update (Changed _ s)) -> do
         a <- pre s
         speak $ Just $ Update $ Changed [] a
-      _ -> pure unit -- TODO really?
     , listen: \prop -> do
       listen \(Changed _ b) -> do
         t <- post b

@@ -36,24 +36,20 @@ order = (progressBar # action loadOrder) >>> S.do
       radioButton { labelContent: text # constant "Dine in", default: { table: "1"} } dineIn
       radioButton { labelContent: text # constant "Takeaway", default: { time: "15:30"} } takeaway
       radioButton { labelContent: text # constant "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
-      dialog { title: text # constant "Do sth with delivery" } (S.do
-            body1 $ text # constant "Do sth with delivery?"
-            containedButton { label: text # constant "Do" }
-          ) # delivery
-      filledTextField { floatingLabel: constant "Table" } table # slot # dineIn
-      filledTextField { floatingLabel: constant "Time" } time # slot # takeaway
-      filledTextField { floatingLabel: constant "Address" } address # slot # delivery ) # fulfillment
+      filledTextField { floatingLabel: constant "Table" } identity # spied "field" # table # spied "table" # dineIn
+      filledTextField { floatingLabel: constant "Time" } time # takeaway
+      filledTextField { floatingLabel: constant "Address" } address # delivery ) # fulfillment
     card S.do
       subtitle1 $ text # constant "Total"
       filledTextField { floatingLabel: constant "Total" } total
     card S.do
       checkbox { labelContent: text # constant "Payment", default: { paid: "0" } } payment
-      filledTextField { floatingLabel: constant "Paid" } paid # slot # _Just # payment
+      filledTextField { floatingLabel: constant "Paid" } paid  # _Just # payment
     card S.do
       body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment # slot
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
-        containedButton { label: text # constant "Submit order " <> shortId } # spied "submit button") >>> T.do
+        containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
             (( T.do

@@ -106,14 +106,17 @@ html htmlString = wrap do
     }
 
 textInput :: Widget Web String String
-textInput = dynAttr "disabled" "true" isNothing $ wrap do
+textInput = dynAttr "disabled" "true" (maybe true $ case _ of
+    Update _ -> false
+    Removal -> true) $ wrap do
   element "input" (pure unit)
   attribute "type" "text"
   node <- gets _.sibling
   pure
     { speak: case _ of
     Nothing -> pure unit
-    Just Removal -> pure unit
+    Just Removal -> do
+      pure unit
     Just (Update (Changed _ newa)) -> do
       setValue node newa
     , listen: \prop -> void $ addEventListener "input" node $ const do
@@ -174,11 +177,11 @@ dynAttr name value pred w = wrap do
   node <- gets _.sibling
   liftEffect $ updateAttribute node Nothing
   pure
-    { speak: \ch -> do
-      w'.speak ch
-      case ch of
-            Nothing -> pure unit
-            Just x -> updateAttribute node $ Just x
+    { speak: \mch -> do
+      case mch of
+        Nothing -> pure unit
+        Just x -> updateAttribute node $ Just x
+      w'.speak mch
     , listen: w'.listen
     }
     where
@@ -193,27 +196,26 @@ cl name w = wrap do
     , listen: w'.listen
     }
 
-dynClass :: forall a b. String -> (Maybe a -> Boolean) -> Widget Web a b -> Widget Web a b
+dynClass :: forall a b. String -> (Maybe (Change a) -> Boolean) -> Widget Web a b -> Widget Web a b
 dynClass name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
+  when (pred Nothing) $ liftEffect $ addClass node name
   pure
-    { speak: \occur -> do
-    w'.speak occur
-    case occur of
-      Nothing -> (if pred Nothing then addClass else removeClass) node name
-      Just (Update (Changed _ newa)) -> do
-        (if pred (Just newa) then addClass else removeClass) node name
-      _ -> pure unit
+    { speak: \mch -> do
+    w'.speak mch
+    case mch of
+      Nothing -> pure unit
+      Just x -> (if pred (Just x) then addClass else removeClass) node name
     , listen: w'.listen
     }
 
 clickable :: forall a. Widget Web a Void -> Widget Web a a
 clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  w' <- unwrap (w # dynAttr "disabled" "true" (\ma -> maybe true (case _ of
+  w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
     Update _ -> false
-    Removal -> true) ma))
+    Removal -> true))
   node <- gets _.sibling
   pure
     { speak: \occur -> do

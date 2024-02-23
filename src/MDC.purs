@@ -39,7 +39,7 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, slot, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Change(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
 
@@ -56,9 +56,13 @@ filledTextField { floatingLabel } value =
   label (S.do
     span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
     (S.do
-      (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (maybe false (not <<< null)) # floatingLabel) >>> empty
+      (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (maybe false (case _ of
+        Removal -> false
+        Update _ -> true)) # floatingLabel) >>> empty
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # dynClass "mdc-text-field--disabled" isNothing # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 300.0)
+    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # dynClass "mdc-text-field--disabled" (maybe true $ case _ of
+    Update _ -> false
+    Removal -> true) # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 300.0)
     where
       id = unsafePerformEffect uniqueId
 
