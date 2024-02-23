@@ -33,10 +33,10 @@ order = (progressBar # action loadOrder) >>> S.do
         filledTextField { floatingLabel: constant "Surname" } surname # formal
         filledTextField { floatingLabel: constant "Forename" } forename # formal ) # customer
     card ( S.do
-      radioButton { labelContent: text # constant "Dine in", default: { table: "1"} } dineIn
-      radioButton { labelContent: text # constant "Takeaway", default: { time: "15:30"} } takeaway
+      radioButton { labelContent: text # constant "Dine in", default: { table: "1"} } (spied "dine-in") # dineIn
+      radioButton { labelContent: text # constant "Takeaway", default: { time: "15:30"} } (spied "takeaway") # takeaway
       radioButton { labelContent: text # constant "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
-      filledTextField { floatingLabel: constant "Table" } identity # spied "field" # table # spied "table" # dineIn
+      filledTextField { floatingLabel: constant "Table" } table # dineIn
       filledTextField { floatingLabel: constant "Time" } time # takeaway
       filledTextField { floatingLabel: constant "Address" } address # delivery ) # fulfillment
     card S.do

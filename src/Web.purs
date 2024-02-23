@@ -153,7 +153,7 @@ radioButton default = dynAttr "disabled" "true" isNothing $ wrap do
     Altered (New _ newa) -> do
       setChecked node true
       Ref.write newa aRef
-    , listen: \prop -> void $ addEventListener "Changed" node $ const do
+    , listen: \prop -> void $ addEventListener "change" node $ const do
     a <- Ref.read aRef
     prop $ New [] a
     }
