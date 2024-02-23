@@ -10,8 +10,8 @@ module Widget
   , action
   , constant
   , constructor
-  , debounced
-  , debounced'
+  , debouncer
+  , debouncer'
   , effAdapter
   , effBracket
   , field
@@ -346,14 +346,14 @@ affAdapter f w = wrap do
         liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
     }
 
-debounced :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
-debounced millis = affAdapter $ pure
-  { pre: pure
-  , post: \i -> delay millis *> pure i
+debouncer :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
+debouncer millis = affAdapter $ pure
+  { pre: \i -> delay millis *> pure i
+  , post: pure
   }
 
-debounced' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
-debounced' = debounced (Milliseconds 500.0)
+debouncer' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
+debouncer' = debouncer (Milliseconds 500.0)
 
 -- private
 

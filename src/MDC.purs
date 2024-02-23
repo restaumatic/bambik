@@ -32,7 +32,6 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Control.Plus (empty)
 import Data.Maybe (Maybe, isNothing, maybe)
-import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -40,7 +39,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics', effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -61,7 +60,7 @@ filledTextField { floatingLabel } value =
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
     span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
-    Removed -> true) # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 300.0)
+    Removed -> true) # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit)
     where
       id = unsafePerformEffect uniqueId
 
