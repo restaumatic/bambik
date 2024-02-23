@@ -64,7 +64,9 @@ derive instance Newtype (Widget m i o) _
 data New a = New (Array Scope) a
 
 instance Show a => Show (New a) where
-  show (New scopes a) = "New " <> (if null scopes then "entire" else joinWith "." (show <$> scopes) <> " part of") <> " " <> show a
+  show (New scopes a)
+    | null scopes = "Entirely new " <> show a
+    | otherwise = "New in part " <> joinWith "." (show <$> scopes) <> " " <> show a
 
 derive instance Functor New
 
