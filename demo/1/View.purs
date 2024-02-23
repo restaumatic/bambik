@@ -5,7 +5,7 @@ module View
 import Prelude
 
 import Data.Lens (_Just)
-import Data.Profunctor (dimap, lcmap, rmap)
+import Data.Profunctor (dimap)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (Tuple(..))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, progressBar, radioButton, snackbar, subtitle1, subtitle2)
@@ -50,7 +50,7 @@ order = (progressBar # action loadOrder) >>> S.do
       checkbox { labelContent: text # constant "Payment", default: { paid: "0" } } payment
       filledTextField { floatingLabel: constant "Paid" } paid # slot # _Just # payment
     card S.do
-      body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment
+      body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment # slot
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId } # spied "submit button") >>> T.do

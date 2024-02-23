@@ -31,7 +31,7 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.String (null)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -39,7 +39,7 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynAttr, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Change(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
 
@@ -49,16 +49,16 @@ containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button (A.do
     div empty # cl "mdc-button__ripple"
-    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # dynAttr "disabled" "true" isNothing # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
+    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
   label (S.do
     span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
     (S.do
-      (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (not <<< null) # floatingLabel) >>> empty
+      (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (maybe false (not <<< null)) # floatingLabel) >>> empty
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 500.0)
+    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # dynClass "mdc-text-field--disabled" isNothing # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) # debounced (Milliseconds 300.0)
     where
       id = unsafePerformEffect uniqueId
 
@@ -87,7 +87,7 @@ radioButton { labelContent, default } value =
         div (S.do
           div empty # cl "mdc-radio__outer-circle"
           div empty # cl "mdc-radio__inner-circle") # cl "mdc-radio__background"
-        div empty # cl "mdc-radio__ripple") # cl "mdc-radio" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
+        div empty # cl "mdc-radio__ripple") # cl "mdc-radio" # dynClass "mdc-radio--disabled" isNothing # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
     label (labelContent >>> empty) # attr "for" uid
   ) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
     where

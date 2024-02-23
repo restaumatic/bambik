@@ -40,7 +40,7 @@ import Prelude
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.DateTime.Instant (unInstant)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Debug (spy)
@@ -106,16 +106,15 @@ html htmlString = wrap do
     }
 
 textInput :: Widget Web String String
-textInput = wrap do
+textInput = dynAttr "disabled" "true" isNothing $ wrap do
   element "input" (pure unit)
   attribute "type" "text"
   node <- gets _.sibling
   pure
     { speak: case _ of
     Nothing -> pure unit
-    Just Removal -> setAttribute node "disabled" "true"
+    Just Removal -> pure unit
     Just (Update (Changed _ newa)) -> do
-      removeAttribute node "disabled"
       setValue node newa
     , listen: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
@@ -123,7 +122,7 @@ textInput = wrap do
     }
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
-checkboxInput default = wrap do
+checkboxInput default = dynAttr "disabled" "true" isNothing $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   attribute "type" "checkbox"
@@ -131,12 +130,10 @@ checkboxInput default = wrap do
   pure
     { speak: case _ of
     Nothing -> pure unit
-    Just Removal -> setAttribute node "disabled" "true"
+    Just Removal -> pure unit
     Just (Update (Changed _ Nothing)) -> do
-      removeAttribute node "disabled"
       setChecked node false
     Just (Update (Changed _ (Just newa))) -> do
-      removeAttribute node "disabled"
       setChecked node true
       Ref.write newa aRef
     , listen: \prop -> void $ addEventListener "input" node $ const do
@@ -146,7 +143,7 @@ checkboxInput default = wrap do
     }
 
 radioButton :: forall a. a -> Widget Web a a
-radioButton default = wrap do
+radioButton default = dynAttr "disabled" "true" isNothing $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   attribute "type" "radio"
@@ -171,7 +168,7 @@ attr name value w = wrap do
   attribute name value
   pure w'
 
-dynAttr :: forall a b. String -> String -> (Maybe a -> Boolean) -> Widget Web a b -> Widget Web a b
+dynAttr :: forall a b. String -> String -> (Maybe (Change a) -> Boolean) -> Widget Web a b -> Widget Web a b
 dynAttr name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -179,10 +176,9 @@ dynAttr name value pred w = wrap do
   pure
     { speak: \ch -> do
       w'.speak ch
-      let mnewa = case ch of
-            Just (Update (Changed _ newa)) -> Just newa
-            _ -> Nothing
-      updateAttribute node mnewa
+      case ch of
+            Nothing -> pure unit
+            Just x -> updateAttribute node $ Just x
     , listen: w'.listen
     }
     where
@@ -197,7 +193,7 @@ cl name w = wrap do
     , listen: w'.listen
     }
 
-dynClass :: forall a b. String -> (a -> Boolean) -> Widget Web a b -> Widget Web a b
+dynClass :: forall a b. String -> (Maybe a -> Boolean) -> Widget Web a b -> Widget Web a b
 dynClass name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -205,8 +201,9 @@ dynClass name pred w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
+      Nothing -> (if pred Nothing then addClass else removeClass) node name
       Just (Update (Changed _ newa)) -> do
-        (if pred newa then addClass else removeClass) node name
+        (if pred (Just newa) then addClass else removeClass) node name
       _ -> pure unit
     , listen: w'.listen
     }
@@ -214,7 +211,9 @@ dynClass name pred w = wrap do
 clickable :: forall a. Widget Web a Void -> Widget Web a a
 clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  w' <- unwrap w
+  w' <- unwrap (w # dynAttr "disabled" "true" (\ma -> maybe true (case _ of
+    Update _ -> false
+    Removal -> true) ma))
   node <- gets _.sibling
   pure
     { speak: \occur -> do
