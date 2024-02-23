@@ -1,3 +1,4 @@
+-- MDC implemented with Widgets, dogfooding intentional.
 module MDC
   ( body1
   , body2

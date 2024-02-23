@@ -270,11 +270,11 @@ effBracket f w = wrap do
 
 spied :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
 spied name = effBracket do
-  liftEffect $ log $ "I will spy widget " <> name
+  liftEffect $ log $ "[Spy] " <> name <> " being spied"
   pure
-    { beforeInput: \a -> log $ name <> " input: " <> show a
+    { beforeInput: \a -> log $ "[" <> name <> "] input: " <> show a
     , afterInput: mempty
-    , beforeOutput: \a -> log $ name <> " output: " <> show a
+    , beforeOutput: \a -> log $ "[" <> name <> "] output: " <> show a
     , afterOutput: mempty
     }
 

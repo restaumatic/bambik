@@ -2,7 +2,9 @@ module Model where
 
 import Prelude
 
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
+import Data.Show.Generic (genericShow)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -40,6 +42,11 @@ data Fulfillment
   = DineIn { table :: Table }
   | Takeaway { time :: Time }
   | Delivery { address :: Address }
+
+derive instance Generic Fulfillment _
+
+instance Show Fulfillment where
+  show = genericShow
 
 type Table = String
 

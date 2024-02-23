@@ -13,7 +13,7 @@ import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, fo
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, action, constant)
+import Widget (Widget, action, constant, spied)
 
 order :: Widget Web OrderId Order
 order = (progressBar # action loadOrder) >>> S.do
@@ -53,7 +53,7 @@ order = (progressBar # action loadOrder) >>> S.do
       body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
-        containedButton { label: text # constant "Submit order " <> shortId } ) >>> T.do
+        containedButton { label: text # constant "Submit order " <> shortId } # spied "submit button") >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
             (( T.do
