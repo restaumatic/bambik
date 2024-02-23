@@ -13,7 +13,7 @@ import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, fo
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, action, constant, spied)
+import Widget (Widget, action, constant)
 
 order :: Widget Web OrderId Order
 order = (progressBar # action loadOrder) >>> S.do
@@ -57,7 +57,9 @@ order = (progressBar # action loadOrder) >>> S.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
             T.do
-              lcmap (\order -> Tuple "" order) $ first (spied "auth token" $ filledTextField { floatingLabel: constant "Auth token" } identity)
-              rmap (\(Tuple authToken order) -> {authToken, order}) $ second (containedButton { label: text # constant "Submit order" })
+              lcmap (\order -> Tuple "" order) $ rmap (\(Tuple authToken order) -> {authToken, order}) T.do
+                first $ filledTextField { floatingLabel: constant "Auth token" } identity
+                second $ containedButton { label: text # constant "Submit order" }
               progressBar # action submitOrder
+            containedButton { label: text # constant "Cancel" }
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
