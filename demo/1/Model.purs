@@ -60,7 +60,7 @@ type AuthToken = String
 submitOrder :: { authToken :: AuthToken, order :: Order } -> Aff Order
 submitOrder {authToken, order} = do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
-  delay (Milliseconds 3000.0)
+  delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
   pure order
 

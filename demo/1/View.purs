@@ -5,7 +5,7 @@ module View
 import Prelude
 
 import Data.Lens (_Just)
-import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor (dimap, lcmap, rmap)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (Tuple(..))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, progressBar, radioButton, snackbar, subtitle1, subtitle2)
@@ -56,10 +56,9 @@ order = (progressBar # action loadOrder) >>> S.do
         containedButton { label: text # constant "Submit order " <> shortId } ) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
-            T.do
-              lcmap (\order -> Tuple "" order) $ rmap (\(Tuple authToken order) -> {authToken, order}) T.do
-                first $ filledTextField { floatingLabel: constant "Auth token" } identity
-                second $ containedButton { label: text # constant "Submit order" }
-              progressBar # action submitOrder
+            (( T.do
+              first $ filledTextField { floatingLabel: constant "Auth token" } identity
+              second $ containedButton { label: text # constant "Submit order" }) # dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order})) >>> T.do
+                progressBar # action submitOrder
             containedButton { label: text # constant "Cancel" }
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
