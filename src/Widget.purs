@@ -357,7 +357,7 @@ debouncer millis = affAdapter $ pure
   }
 
 debouncer' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
-debouncer' = debouncer (Milliseconds 500.0)
+debouncer' = debouncer (Milliseconds 300.0)
 
 -- private
 
