@@ -171,19 +171,22 @@ attr name value w = wrap do
   attribute name value
   pure w'
 
-dynAttr :: forall a b. String -> String -> (a -> Boolean) -> Widget Web a b -> Widget Web a b
+dynAttr :: forall a b. String -> String -> (Maybe a -> Boolean) -> Widget Web a b -> Widget Web a b
 dynAttr name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
+  liftEffect $ updateAttribute node Nothing
   pure
     { speak: \ch -> do
       w'.speak ch
-      case ch of
-        Just (Update (Changed _ newa)) -> do
-          if pred newa then setAttribute node name value else removeAttribute node name
-        _ -> pure unit
+      let mnewa = case ch of
+            Just (Update (Changed _ newa)) -> Just newa
+            _ -> Nothing
+      updateAttribute node mnewa
     , listen: w'.listen
     }
+    where
+      updateAttribute node mnewa = if pred mnewa then setAttribute node name value else removeAttribute node name
 
 cl :: forall a b. String -> Widget Web a b -> Widget Web a b
 cl name w = wrap do
@@ -222,6 +225,7 @@ clickable w = wrap do
       Just (Update (Changed _ a)) -> Ref.write a aRef
     , listen: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
+    w'.speak Nothing
     prop $ Changed [] a
     }
 

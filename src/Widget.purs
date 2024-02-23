@@ -27,7 +27,7 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
-import Data.Array (uncons, (:))
+import Data.Array (null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
@@ -64,7 +64,7 @@ derive instance Newtype (Widget m i o) _
 data Changed a = Changed (Array Scope) a
 
 instance Show a => Show (Changed a) where
-  show (Changed scopes a) = "Changed " <> joinWith "." (show <$> scopes) <> " of " <> show a
+  show (Changed scopes a) = "Changed " <> (if null scopes then "entire" else joinWith "." (show <$> scopes) <> " part of") <> " " <> show a
 
 derive instance Functor Changed
 
@@ -77,8 +77,7 @@ derive instance Functor Change
 instance Show a => Show (Change a) where
   show = case _ of
     Removal -> "Removal"
-    Update (Changed [] a) -> "Update whole of " <> show a
-    Update (Changed scope a) -> "Update part " <> joinWith "." (show <$> scope) <> " of " <> show a
+    Update ch -> show ch
 
 data Scope = Part String | Variant String
 
@@ -255,28 +254,28 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 -- modifiers
 
 effBracket :: forall m a b. Monad m => m
-  { beforeInputChange :: Maybe (Change a) -> Effect Unit
-  , afterInputChange :: Maybe (Change a) -> Effect Unit
-  , beforeOutputChange :: Changed b -> Effect Unit
-  , afterOutputChange :: Changed b -> Effect Unit
+  { beforeInput :: Maybe (Change a) -> Effect Unit
+  , afterInput :: Maybe (Change a) -> Effect Unit
+  , beforeOutput :: Changed b -> Effect Unit
+  , afterOutput :: Changed b -> Effect Unit
   } -> Widget m a b -> Widget m a b
 effBracket f w = wrap do
   { speak, listen } <- unwrap w
-  { beforeInputChange, afterInputChange, beforeOutputChange, afterOutputChange } <- f
+  { beforeInput, afterInput, beforeOutput, afterOutput } <- f
   pure
-    { speak: \ch -> beforeInputChange ch *> speak ch *> afterInputChange ch
+    { speak: \ch -> beforeInput ch *> speak ch *> afterInput ch
     , listen: \prop -> do
-      listen \ch -> beforeOutputChange ch *> prop ch *> afterOutputChange ch
+      listen \ch -> beforeOutput ch *> prop ch *> afterOutput ch
     }
 
-spied :: forall m a . MonadEffect m => Show a => Widget m a a -> Widget m a a
-spied = effBracket do
-  liftEffect $ log "I will spy..."
+spied :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
+spied name = effBracket do
+  liftEffect $ log $ "I will spy widget " <> name
   pure
-    { beforeInputChange: \a -> log $ "spied input: " <> show a
-    , afterInputChange: mempty
-    , beforeOutputChange: \a -> log $ "spied output: " <> show a
-    , afterOutputChange: mempty
+    { beforeInput: \a -> log $ name <> " input: " <> show a
+    , afterInput: mempty
+    , beforeOutput: \a -> log $ name <> " output: " <> show a
+    , afterOutput: mempty
     }
 
 -- notice: this is not really optics, operates for given m

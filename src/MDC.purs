@@ -30,7 +30,7 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
 import Data.String (null)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -38,7 +38,7 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynAttr, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Change(..), Widget, WidgetOptics', debounced, effAdapter, effBracket)
 
@@ -48,7 +48,7 @@ containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button (A.do
     div empty # cl "mdc-button__ripple"
-    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
+    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # dynAttr "disabled" "true" isNothing # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
@@ -194,13 +194,13 @@ bracket :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect 
 bracket afterInit afterInward beforeOutward = effBracket do
   ctx <- afterInit
   pure
-    { beforeInputChange: mempty
-    , afterInputChange: case _ of
+    { beforeInput: mempty
+    , afterInput: case _ of
       Nothing -> pure unit -- TODO really?
       Just Removal -> pure unit -- TODO really?
       Just (Update _) -> afterInward ctx
-    , beforeOutputChange: const $ beforeOutward ctx
-    , afterOutputChange: mempty
+    , beforeOutput: const $ beforeOutward ctx
+    , afterOutput: mempty
     }
 
 foreign import data Component :: Type

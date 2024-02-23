@@ -5,8 +5,11 @@ module View
 import Prelude
 
 import Data.Lens (_Just)
+import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor.Strong (first, second)
+import Data.Tuple (Tuple(..))
 import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, progressBar, radioButton, snackbar, subtitle1, subtitle2)
-import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total, orderId)
+import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
@@ -36,7 +39,7 @@ order = (progressBar # action loadOrder) >>> S.do
       dialog { title: text # constant "Do sth with delivery" } (S.do
             body1 $ text # constant "Do sth with delivery?"
             containedButton { label: text # constant "Do" }
-          ) # spied # delivery
+          ) # delivery
       filledTextField { floatingLabel: constant "Table" } table # slot # dineIn
       filledTextField { floatingLabel: constant "Time" } time # slot # takeaway
       filledTextField { floatingLabel: constant "Address" } address # slot # delivery ) # fulfillment
@@ -51,9 +54,10 @@ order = (progressBar # action loadOrder) >>> S.do
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId } ) >>> T.do
-          dialog { title: text # constant "Submit order " <> shortId <> constant "?" } T.do
+          dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
-            filledTextField { floatingLabel: constant "Confirm total" } total
-            containedButton { label: text # constant "Submit order" }
-          progressBar # action submitOrder
+            T.do
+              lcmap (\order -> Tuple "" order) $ first (spied "auth token" $ filledTextField { floatingLabel: constant "Auth token" } identity)
+              rmap (\(Tuple authToken order) -> {authToken, order}) $ second (containedButton { label: text # constant "Submit order" })
+              progressBar # action submitOrder
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}

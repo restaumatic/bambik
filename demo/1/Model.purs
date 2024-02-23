@@ -55,9 +55,11 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-submitOrder :: Order -> Aff Order
-submitOrder order = do
-  liftEffect $ log $ "submitting order"
+type AuthToken = String
+
+submitOrder :: { authToken :: AuthToken, order :: Order } -> Aff Order
+submitOrder {authToken, order} = do
+  liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 3000.0)
   liftEffect $ log $ "submitted order"
   pure order
