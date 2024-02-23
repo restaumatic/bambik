@@ -4,7 +4,6 @@ module View
 
 import Prelude
 
-import Data.Lens (_Just)
 import Data.Profunctor (dimap)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (Tuple(..))
@@ -13,7 +12,7 @@ import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, fo
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, action, constant, debouncer', spy)
+import Widget (Widget, action, constant, debouncer', just, spy)
 
 order :: Widget Web OrderId Order
 order = (progressBar # action loadOrder) >>> spy "order" S.do
@@ -44,9 +43,9 @@ order = (progressBar # action loadOrder) >>> spy "order" S.do
       filledTextField { floatingLabel: constant "Total" } total
     card S.do
       checkbox { labelContent: text # constant "Payment", default: { paid: "0" } } payment
-      filledTextField { floatingLabel: constant "Paid" } paid  # _Just # payment
+      filledTextField { floatingLabel: constant "Paid" } paid # just # payment
     card S.do
-      body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> _Just >>> payment # slot # debouncer'
+      body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> just >>> payment # slot # debouncer'
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do

@@ -5,9 +5,9 @@ module Widget
   , Widget(..)
   , WidgetOptics
   , WidgetOptics'
+  , action
   , adapter
   , affAdapter
-  , action
   , constant
   , constructor
   , debouncer
@@ -16,6 +16,7 @@ module Widget
   , effBracket
   , field
   , iso
+  , just
   , lens
   , prism
   , projection
@@ -251,6 +252,9 @@ prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
+
+just :: forall a. WidgetOptics' a (Maybe a)
+just = constructor "Just" Just identity
 
 -- modifiers
 
