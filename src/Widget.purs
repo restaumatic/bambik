@@ -60,10 +60,10 @@ newtype Widget m i o = Widget (m
 
 derive instance Newtype (Widget m i o) _
 
-data New a = New (Array Scope) a
+data New a = New (Array Scope) a Boolean
 
 instance Show a => Show (New a) where
-  show (New scopes a) = "new " <> path <> " of " <> show a
+  show (New scopes a cont) = "new " <> path <> " of " <> show a <> (if cont then " and expected to change continously" else "")
     where
     path
       | null scopes = "."
@@ -106,9 +106,9 @@ instance Applicative m => Strong (Widget m) where
     in
       { speak: case _ of
           Removed -> p'.speak Removed
-          Altered (New scope ab) -> do
+          Altered (New scope ab cont) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ Altered $ New scope $ fst ab
+            p'.speak $ Altered $ New scope (fst ab) cont
       , listen: \prop -> do
         p'.listen \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -120,9 +120,9 @@ instance Applicative m => Strong (Widget m) where
     in
       { speak: case _ of
           Removed -> p'.speak Removed
-          Altered (New scope ab) -> do
+          Altered (New scope ab cont) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ Altered $ New scope $ snd ab
+            p'.speak $ Altered $ New scope (snd ab) cont
       , listen: \prop -> do
         p'.listen \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -135,8 +135,8 @@ instance Applicative m => Choice (Widget m) where
     in
       { speak: case _ of
         Removed -> p'.speak Removed
-        Altered (New _ (Right _)) -> p'.speak Removed
-        Altered (New scope (Left a)) -> p'.speak $ Altered $ New scope a
+        Altered (New _ (Right _) _) -> p'.speak Removed
+        Altered (New scope (Left a) cont) -> p'.speak $ Altered $ New scope a cont
       , listen: \prop -> do
         p'.listen \u -> prop (Left <$> u)
       }
@@ -145,8 +145,8 @@ instance Applicative m => Choice (Widget m) where
     in
       { speak: case _ of
         Removed -> p'.speak Removed
-        Altered (New _ (Left _)) -> p'.speak Removed
-        Altered (New scope (Right a)) -> p'.speak $ Altered $ New scope a
+        Altered (New _ (Left _) _) -> p'.speak Removed
+        Altered (New scope (Right a) cont) -> p'.speak $ Altered $ New scope a cont
       , listen: \prop -> do
         p'.listen \u -> prop (Right <$> u)
       }
@@ -225,7 +225,7 @@ type WidgetOptics' a s = WidgetOptics a a s s
 constant :: forall a b s t. a -> WidgetOptics a b s t
 constant a w = wrap do
   w' <- unwrap w
-  liftEffect $ w'.speak $ Altered $ New [] a
+  liftEffect $ w'.speak $ Altered $ New [] a false
   pure
     { speak: const $ pure unit
     , listen: const $ pure unit
@@ -293,13 +293,13 @@ effAdapter f w = wrap do
   pure
     { speak: case _ of
       Removed -> speak Removed
-      Altered (New _ s) -> do
+      Altered (New _ s cont) -> do
         a <- pre s
-        speak $ Altered $ New [] a
+        speak $ Altered $ New [] a cont
     , listen: \prop -> do
-      listen \(New _ b) -> do
+      listen \(New _ b cont) -> do
         t <- post b
-        prop $ New [] t
+        prop $ New [] t cont
     }
 
 action :: forall a i o. (i -> Aff o) -> WidgetOptics Boolean a i o
@@ -309,8 +309,8 @@ action arr w = wrap do
   pure
     { speak: case _ of
       Removed -> pure unit -- TODO really?
-      Altered (New _ i) -> do
-        w'.speak $ Altered $ New [] true
+      Altered (New _ i cont) -> do
+        w'.speak $ Altered $ New [] true cont
         launchAff_ do
           o <- arr i
           liftEffect $ void $ AVar.put o oVar mempty
@@ -318,13 +318,13 @@ action arr w = wrap do
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
-              w'.speak $ Altered $ New [] false
-              prop $ New [] o
+              w'.speak $ Altered $ New [] false false
+              prop $ New [] o false
               waitAndPropagate
       in waitAndPropagate
     }
 
-affAdapter :: forall m a b s t. MonadEffect m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Widget m a b -> Widget m s t
+affAdapter :: forall m a b s t. MonadEffect m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> Widget m a b -> Widget m s t
 affAdapter f w = wrap do
   { speak, listen } <- unwrap w
   { pre, post } <- f
@@ -333,27 +333,29 @@ affAdapter f w = wrap do
   pure
     { speak: case _ of
       Removed -> pure unit -- TODO really?
-      Altered (New _ s) -> launchAff_ do
+      Altered news@(New _ _ cont) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")
         newFiber <- forkAff do
-          a <- pre s
-          liftEffect $ speak $ Altered $ New [] a
+          a <- pre news
+          liftEffect $ speak $ Altered $ New [] a cont
         liftEffect $ Ref.write (Just newFiber) mInputFiberRef
     , listen: \prop -> do
-      listen \(New _ b) -> launchAff_ do
+      listen \newb@(New _ _ cont) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mOutputFiberRef
         for_ mFiber $ killFiber (error "Obsolete output")
         newFiber <- forkAff do
-          t <- post b
-          liftEffect $ prop $ New [] t
+          t <- post newb
+          liftEffect $ prop $ New [] t cont
         liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
     }
 
 debouncer :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
 debouncer millis = affAdapter $ pure
-  { pre: \i -> delay millis *> pure i
-  , post: pure
+  { pre: case _ of
+    (New _ i true) -> delay millis *> pure i
+    (New _ i false) -> pure i
+  , post: \(New _ i _) -> pure i
   }
 
 debouncer' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
@@ -373,15 +375,15 @@ scopemap scope p = wrap ado
     }
   where
     zoomOut :: New b -> New b
-    zoomOut (New scopes mb) = New (scope : scopes) mb
+    zoomOut (New scopes mb cont) = New (scope : scopes) mb cont
 
     zoomIn :: Changed a -> Maybe (Changed a)
     zoomIn Removed = Just Removed
-    zoomIn (Altered (New scopes ma)) = case uncons scopes of
-      Just { head, tail } | head == scope -> Just $ Altered $ New tail ma
-      Nothing -> Just $ Altered $ New [] ma
-      Just { head: Variant _ } -> Just $ Altered $ New [] ma -- not matching head but head is twist
+    zoomIn (Altered (New scopes ma cont)) = case uncons scopes of
+      Just { head, tail } | head == scope -> Just $ Altered $ New tail ma cont
+      Nothing -> Just $ Altered $ New [] ma cont
+      Just { head: Variant _ } -> Just $ Altered $ New [] ma cont -- not matching head but head is twist
       _ -> case scope of
-        Variant _ -> Just $ Altered $ New [] ma -- not matching head but scope is twist
+        Variant _ -> Just $ Altered $ New [] ma cont -- not matching head but scope is twist
         _ -> Nothing -- otherwise
 
