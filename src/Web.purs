@@ -74,7 +74,7 @@ uniqueId = randomElementId
 -- Primitives
 
 text :: forall a . Widget Web String a
-text = debouncer' $ wrap do
+text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode mempty
@@ -103,7 +103,7 @@ html htmlString = wrap do
 textInput :: Widget Web String String
 textInput = dynAttr "disabled" "true" (maybe true $ case _ of
     Altered _ -> false
-    Removed -> true) $ debouncer' $ wrap do
+    Removed -> true) $ wrap do
   element "input" (pure unit)
   attribute "type" "text"
   node <- gets _.sibling
