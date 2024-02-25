@@ -172,11 +172,11 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    -- liftEffect $ p1'.speak Removed
-    -- liftEffect $ p2'.speak Removed -- TODO makes sense?
     liftEffect $ p1'.listen \u -> p2'.speak $ Altered u -- TODO smell: well, it's not an Altered it's rather brand new value/event
     pure
-      { speak: p1'.speak
+      { speak: \cha -> do
+        p2'.speak Removed -- TODO makes sense?
+        p1'.speak cha
       , listen: p2'.listen
       }
 

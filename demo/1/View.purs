@@ -51,9 +51,10 @@ order = (progressBar # action loadOrder) >>> spy "order" S.do
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?"
-            (( T.do
-              first $ filledTextField { floatingLabel: constant "Auth token" } identity
-              second $ containedButton { label: text # constant "Submit order" }) # dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order})) >>> T.do
-                progressBar # action submitOrder
+            T.do
+              dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
+                filledTextField { floatingLabel: constant "Auth token" } identity # first
+                containedButton { label: text # constant "Submit order" } # second
+              (progressBar # action submitOrder)
+              snackbar { label: text # constant "Order " <> shortId <> constant " submitted"} # spy "snackbar"
             containedButton { label: text # constant "Cancel" }
-          snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
