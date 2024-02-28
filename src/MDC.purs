@@ -164,18 +164,35 @@ dialog { title } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-confirmationDialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
-confirmationDialog { title } content =
-  aside (S.do
-    div (S.do
+confirmationDialog :: forall a. { title :: Widget Web a a, dismiss :: Widget Web a a, confirm :: Widget Web a a } -> Widget Web a a -> Widget Web a a
+confirmationDialog { title, dismiss, confirm } content =
+  div (S.do
+    div (
       div (S.do
-        h2 (title >>> empty) # cl "mdc-dialog__title" # attr "id" "my-dialog-title"
-        div content # cl "mdc-dialog__content" # attr "id" "my-dialog-content"
-      ) # cl "mdc-dialog__surface" # attr "role" "alertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
+        h2 (
+          title
+        ) # cl "mdc-dialog__title" # attr "id" id
+        (T.do
+          div (
+            content
+          ) # cl "mdc-dialog__content" # attr "id" id'
+          div (S.do
+            Web.button (S.do
+              div empty # cl "mdc-button__ripple"
+              span dismiss # cl "mdc-button__label"
+            ) # attr "type" "button" # cl "mdc-button" # cl "mdc-dialog__button" # attr "data-mdc-dialog-action" "close"
+            Web.button (S.do
+              div empty # cl "mdc-button__ripple"
+              span confirm # cl "mdc-button__label"
+            ) # attr "type" "button" # cl "mdc-button" # cl "mdc-dialog__button" # clickable
+          ) # cl "mdc-dialog__actions" )
+      ) # cl "mdc-dialog__surface" # attr "role" "altertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
     ) # cl "mdc-dialog__container"
     div empty # cl "mdc-dialog__scrim"
   ) # cl "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
     where
+      id = unsafePerformEffect uniqueId
+      id' = unsafePerformEffect uniqueId
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp

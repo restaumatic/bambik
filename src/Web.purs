@@ -197,7 +197,7 @@ dynClass name pred w = wrap do
     , listen: w'.listen
     }
 
-clickable :: forall a. Widget Web a Void -> Widget Web a a
+clickable :: forall a b. Widget Web a b -> Widget Web a a
 clickable w = wrap do
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
@@ -208,7 +208,7 @@ clickable w = wrap do
     { speak: \occur -> do
     w'.speak occur
     case occur of
-      Removed -> pure unit
+      Removed -> Ref.write (unsafeCoerce unit) aRef
       Altered (New _ a _) -> Ref.write a aRef
     , listen: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef

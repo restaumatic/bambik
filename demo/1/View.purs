@@ -4,7 +4,7 @@ module View
 
 import Prelude
 
-import Data.Profunctor (dimap)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (Tuple(..))
 import MDC (body1, card, checkbox, containedButton, confirmationDialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
@@ -49,11 +49,9 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
-          confirmationDialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
-            body1 $ text # constant "This can not be undone."
-            T.do
-              (dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
-                filledTextField { floatingLabel: constant "Auth token" } identity # first
-                containedButton { label: text # constant "Submit order" } # second)
-              indeterminateLinearProgress # submitOrder
+          confirmationDialog { title: text # constant "Submit order " <> (shortId >>> second) <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } (S.do
+              body1 $
+                text # constant "This can not be undone."
+              filledTextField { floatingLabel: constant "Auth token" } identity # first) # lcmap (\order -> Tuple "" order)
+          indeterminateLinearProgress # submitOrder # lcmap (\(Tuple authToken order) -> {authToken, order})
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
