@@ -7,7 +7,7 @@ import Prelude
 import Data.Profunctor (dimap)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (Tuple(..))
-import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
+import MDC (body1, card, checkbox, containedButton, confirmationDialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
 import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
@@ -49,7 +49,7 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
       div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
-          dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
+          confirmationDialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "This can not be undone."
             T.do
               (dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do

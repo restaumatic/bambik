@@ -6,6 +6,7 @@ module MDC
   , caption
   , card
   , checkbox
+  , confirmationDialog
   , containedButton
   , dialog
   , elevation1
@@ -18,8 +19,8 @@ module MDC
   , headline4
   , headline5
   , headline6
-  , overline
   , indeterminateLinearProgress
+  , overline
   , radioButton
   , snackbar
   , subtitle1
@@ -149,6 +150,22 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 
 dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
+  aside (S.do
+    div (S.do
+      div (S.do
+        h2 (title >>> empty) # cl "mdc-dialog__title" # attr "id" "my-dialog-title"
+        div content # cl "mdc-dialog__content" # attr "id" "my-dialog-content"
+      ) # cl "mdc-dialog__surface" # attr "role" "alertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
+    ) # cl "mdc-dialog__container"
+    div empty # cl "mdc-dialog__scrim"
+  ) # cl "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+    where
+      initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
+      openMdcComponent comp = liftEffect $ open comp
+      closeMdcComponent comp = liftEffect $ close comp
+
+confirmationDialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
+confirmationDialog { title } content =
   aside (S.do
     div (S.do
       div (S.do
