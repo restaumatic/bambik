@@ -56,5 +56,4 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
                 filledTextField { floatingLabel: constant "Auth token" } identity # first
                 containedButton { label: text # constant "Submit order" } # second)
               indeterminateLinearProgress # submitOrder
-            -- containedButton { label: text # constant "Cancel" }
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
