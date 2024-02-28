@@ -186,13 +186,13 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --   identity = wrap do
 --     chaAVar <- liftEffect AVar.empty
 --     pure
---       { speak: \mcha -> void $ AVar.put mcha chaAVar mempty
+--       { speak: \cha -> void $ AVar.put cha chaAVar mempty
 --       , listen: \prop ->
 --         let waitAndPropagate = void $ AVar.take chaAVar case _ of
 --               Left error -> pure unit -- TODO handle error
---               Right Removed -> ... -- impossible -- TODO: check
---               Right (Altered Newa) -> do
---                 prop Newa
+--               Right Removed -> pure unit -- ... -- impossible -- TODO: check
+--               Right (Altered newa) -> do
+--                 prop newa
 --                 waitAndPropagate
 --         in waitAndPropagate
 --       }
