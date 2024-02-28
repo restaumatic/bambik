@@ -12,7 +12,7 @@ import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, fo
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, constant, debouncer', just, spy)
+import Widget (Widget, constant, debouncer', just)
 
 order :: Widget Web OrderId Order
 order = (indeterminateLinearProgress # loadOrder) >>> S.do
@@ -50,7 +50,7 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
-            body1 $ text # constant "Are you sure?" # spy "body"
+            body1 $ text # constant "This can not be undone."
             T.do
               (dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
                 filledTextField { floatingLabel: constant "Auth token" } identity # first
