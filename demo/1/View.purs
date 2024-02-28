@@ -7,15 +7,15 @@ import Prelude
 import Data.Profunctor (dimap)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (Tuple(..))
-import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, progressBar, radioButton, snackbar, subtitle1, subtitle2)
+import MDC (body1, card, checkbox, containedButton, dialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
 import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, div', slot, text)
-import Widget (Widget, action, constant, debouncer', just, spy)
+import Widget (Widget, constant, debouncer', just, spy)
 
 order :: Widget Web OrderId Order
-order = (progressBar # action loadOrder) >>> spy "order" S.do
+order = (indeterminateLinearProgress # loadOrder) >>> S.do
   elevation20 S.do
     headline6 $ text # constant "Order " <> shortId
     card S.do
@@ -50,11 +50,9 @@ order = (progressBar # action loadOrder) >>> spy "order" S.do
         containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
-            body1 $ text # constant "Are you sure?"
-            T.do
-              dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
-                filledTextField { floatingLabel: constant "Auth token" } identity # first
-                containedButton { label: text # constant "Submit order" } # second
-              (progressBar # action submitOrder)
-              snackbar { label: text # constant "Order " <> shortId <> constant " submitted"} # spy "snackbar"
-            containedButton { label: text # constant "Cancel" }
+            body1 $ text # constant "Are you sure?" # spy "body"
+            (dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
+              filledTextField { floatingLabel: constant "Auth token" } identity # first
+              containedButton { label: text # constant "Submit order" } # second) >>> (indeterminateLinearProgress # submitOrder)
+            -- containedButton { label: text # constant "Cancel" }
+          snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}

@@ -5,10 +5,10 @@ import Prelude
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
-import Effect.Aff (Aff, Milliseconds(..), delay)
+import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetOptics', constructor, field, iso)
+import Widget (WidgetOptics', WidgetOptics, action, constructor, field, iso)
 
 type Order =
   { orderId :: OrderId
@@ -59,20 +59,20 @@ formal = iso "formal" toFormal toInformal
 
 type AuthToken = String
 
-submitOrder :: { authToken :: AuthToken, order :: Order } -> Aff Order
-submitOrder {authToken, order} = do
+submitOrder :: forall a . WidgetOptics Boolean a { authToken :: String , order :: Order } Order
+submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
   pure order
 
-loadOrder :: OrderId -> Aff Order
-loadOrder id = do
+loadOrder :: forall a . WidgetOptics Boolean a OrderId Order
+loadOrder = action \orderId -> do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "loaded order"
   pure
-    { orderId: id
+    { orderId
     , shortId: "7"
     , customer:
       { firstName: "David"

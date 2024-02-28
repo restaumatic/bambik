@@ -19,7 +19,7 @@ module MDC
   , headline5
   , headline6
   , overline
-  , progressBar
+  , indeterminateLinearProgress
   , radioButton
   , snackbar
   , subtitle1
@@ -37,9 +37,10 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
+import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics', effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -162,26 +163,35 @@ dialog { title } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a b
+snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 snackbar { label } =
   aside
     ( div
       ( div
-        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false") # attr "role" "status" # attr "aria-relevant" "additions" # cl "mdc-snackbar__surface") # cl "mdc-snackbar" # bracket initializeMdcSnackbar openMdcComponent (const $ pure unit)
-    where
-      initializeMdcSnackbar = gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
-      openMdcComponent comp = liftEffect $ open comp
+        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false") # attr "role" "status" # attr "aria-relevant" "additions" # cl "mdc-snackbar__surface") # cl "mdc-snackbar" # effBracket (do
+          comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
+          pure { beforeInput: case _ of
+            Removed -> close comp
+            Altered _ -> mempty
+          , afterInput: case _ of
+            Removed -> mempty
+            Altered _ -> open comp
+          , beforeOutput: mempty
+          , afterOutput: mempty
+          }) # action' \a a2eff o2eff -> liftEffect do
+            a2eff a
+            o2eff a
 
-progressBar :: Widget Web Boolean Unit -- TODO should be Widget Web Boolean Void
-progressBar =
-  div ( S.do
-    div ( S.do
+indeterminateLinearProgress :: forall a. Widget Web Boolean a
+indeterminateLinearProgress =
+  div ( T.do
+    div ( T.do
       div empty # cl "mdc-linear-progress__buffer-bar"
       div empty # cl "mdc-linear-progress__buffer-dots" ) # cl "mdc-linear-progress__buffer"
     div ( S.do
       span empty # cl "mdc-linear-progress__bar-inner" ) # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__primary-bar"
     div (S.do
-      span empty # cl "mdc-linear-progress__bar-inner") # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__secondary-bar" ) # attr "role" "progressbar" # cl "mdc-linear-progress" # attr "aria-label" "TODO: Example Progress Bar" # attr "aria-valuemin" "0" # attr "aria-valuemax" "1" # attr "aria-valuenow" "0" # effAdapter do
+      span empty # cl "mdc-linear-progress__bar-inner") # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__secondary-bar" ) # attr "role" "indeterminateLinearProgress" # cl "mdc-linear-progress" # attr "aria-label" "TODO: Example Progress Bar" # attr "aria-valuemin" "0" # attr "aria-valuemax" "1" # attr "aria-valuenow" "0" # effAdapter do
         comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
         liftEffect $ close comp
         liftEffect $ setDeterminate comp false
@@ -189,7 +199,7 @@ progressBar =
           { pre: case _ of
             true -> open comp
             false -> close comp
-          , post: \unit -> pure unit }
+          , post: pure }
 
 -- Private
 

@@ -6,6 +6,7 @@ module Widget
   , WidgetOptics
   , WidgetOptics'
   , action
+  , action'
   , adapter
   , affAdapter
   , constant
@@ -303,22 +304,26 @@ effAdapter f w = wrap do
     }
 
 action :: forall a i o. (i -> Aff o) -> WidgetOptics Boolean a i o
-action arr w = wrap do
+action arr = action' \i pro post -> do
+  liftEffect $ pro true
+  o <- arr i
+  liftEffect $ pro false
+  liftEffect $ post o
+
+action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics a b i o
+action' arr w = wrap do
   oVar <- liftEffect AVar.empty
   w' <- unwrap w
   pure
     { speak: case _ of
-      Removed -> pure unit -- TODO really?
+      Removed -> w'.speak Removed
       Altered (New _ i cont) -> do
-        w'.speak $ Altered $ New [] true cont
-        launchAff_ do
-          o <- arr i
-          liftEffect $ void $ AVar.put o oVar mempty
+        launchAff_ $ arr i (\a -> w'.speak $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
     , listen: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
-              w'.speak $ Altered $ New [] false false
+              -- w'.speak $ Altered $ New [] Nothing false
               prop $ New [] o false
               waitAndPropagate
       in waitAndPropagate
