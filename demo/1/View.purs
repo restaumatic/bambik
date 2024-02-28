@@ -47,7 +47,7 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
     card S.do
       body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> just >>> payment # slot # debouncer'
       containedButton { label: text # constant "Submit order " <> shortId } >>> T.do
-        confirmationDialog { title: text # constant "Submit order " <> (shortId >>> second) <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } (S.do
+        confirmationDialog { title: text # constant "Submit order " <> shortId >>> second <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } (S.do
           body1 S.do
             text # constant "Provide authentication token"
           filledTextField { floatingLabel: constant "Auth token" } identity # first) # lcmap (\order -> Tuple "" order)
