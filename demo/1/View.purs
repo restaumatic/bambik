@@ -51,8 +51,10 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
         containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
           dialog { title: text # constant "Submit order " <> shortId <> constant "?" } S.do
             body1 $ text # constant "Are you sure?" # spy "body"
-            (dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
-              filledTextField { floatingLabel: constant "Auth token" } identity # first
-              containedButton { label: text # constant "Submit order" } # second) >>> (indeterminateLinearProgress # submitOrder)
+            T.do
+              (dimap (\order -> Tuple "" order) (\(Tuple authToken order) -> {authToken, order}) T.do
+                filledTextField { floatingLabel: constant "Auth token" } identity # first
+                containedButton { label: text # constant "Submit order" } # second)
+              indeterminateLinearProgress # submitOrder
             -- containedButton { label: text # constant "Cancel" }
           snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
