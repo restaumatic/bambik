@@ -46,12 +46,10 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
       filledTextField { floatingLabel: constant "Paid" } paid # just # payment
     card S.do
       body1 $ text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> just >>> payment # slot # debouncer'
-      div' { style: "display: flex; justify-content: space-between; align-items: center; width: 100%;" } ( S.do
-        containedButton { label: text # constant "Submit order " <> shortId <> constant " as draft" }
-        containedButton { label: text # constant "Submit order " <> shortId }) >>> T.do
-          confirmationDialog { title: text # constant "Submit order " <> (shortId >>> second) <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } (S.do
-              body1 $
-                text # constant "This can not be undone."
-              filledTextField { floatingLabel: constant "Auth token" } identity # first) # lcmap (\order -> Tuple "" order)
-          indeterminateLinearProgress # submitOrder # lcmap (\(Tuple authToken order) -> {authToken, order})
-          snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
+      containedButton { label: text # constant "Submit order " <> shortId } >>> T.do
+        confirmationDialog { title: text # constant "Submit order " <> (shortId >>> second) <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } (S.do
+          body1 S.do
+            text # constant "Provide authentication token"
+          filledTextField { floatingLabel: constant "Auth token" } identity # first) # lcmap (\order -> Tuple "" order)
+        indeterminateLinearProgress # submitOrder # lcmap (\(Tuple authToken order) -> {authToken, order})
+        snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
