@@ -218,14 +218,16 @@ snackbar { label } =
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =
-  div ( T.do
-    div ( T.do
-      div empty # cl "mdc-linear-progress__buffer-bar"
-      div empty # cl "mdc-linear-progress__buffer-dots" ) # cl "mdc-linear-progress__buffer"
-    div ( S.do
-      span empty # cl "mdc-linear-progress__bar-inner" ) # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__primary-bar"
-    div (S.do
-      span empty # cl "mdc-linear-progress__bar-inner") # cl "mdc-linear-progress__bar" # cl "mdc-linear-progress__secondary-bar" ) # attr "role" "indeterminateLinearProgress" # cl "mdc-linear-progress" # attr "aria-label" "TODO: Example Progress Bar" # attr "aria-valuemin" "0" # attr "aria-valuemax" "1" # attr "aria-valuenow" "0" # effAdapter do
+  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ T.do
+    div >>> cl "mdc-linear-progress__buffer" $ T.do
+      div >>> cl "mdc-linear-progress__buffer-bar" $ empty
+      div >>> cl "mdc-linear-progress__buffer-dots" $ empty
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ empty
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ empty
+    where
+      adapter = do
         comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
         liftEffect $ close comp
         liftEffect $ setDeterminate comp false
