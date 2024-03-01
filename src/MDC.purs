@@ -31,7 +31,6 @@ module MDC
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Control.Plus (empty)
 import Data.Maybe (Maybe, isNothing, maybe)
 import Effect (Effect)
 import Effect.Class (liftEffect)
