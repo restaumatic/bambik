@@ -47,55 +47,66 @@ import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBrack
 
 containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
-  Web.button (A.do
-    div empty # cl "mdc-button__ripple"
-    span (label >>> empty) # cl "mdc-button__label") # cl "mdc-button" # cl "mdc-button--raised" # cl "initAside-button" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit) # clickable
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br >>> clickable $ A.do
+    div >>> cl "mdc-button__ripple" $
+      empty
+    span >>> cl "mdc-button__label" $
+      label >>> empty
+  where
+    br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
-  label (S.do
-    span (empty :: Widget Web a a) # cl "mdc-text-field__ripple"
-    (S.do
-      (span text # cl "mdc-floating-label" # attr "id" id # dynClass "mdc-floating-label--float-above" (maybe false (case _ of
-        Removed -> false
-        Altered _ -> true)) # floatingLabel) >>> empty
-      textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id)
-    span (empty :: Widget Web a a) # cl "mdc-line-ripple") # cl "mdc-text-field" # cl "mdc-text-field--filled" # cl "mdc-text-field--label-floating" # dynClass "mdc-text-field--disabled" (maybe true $ case _ of
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
-    Removed -> true) # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit)
+    Removed -> true) >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) $ S.do
+    span >>> cl "mdc-text-field__ripple" $
+      empty
+    S.do
+      (span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
+        Removed -> false
+        Altered _ -> true)) $
+          text # floatingLabel) >>> empty
+      textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id
+    span >>> cl "mdc-line-ripple" $
+      empty
     where
       id = unsafePerformEffect uniqueId
 
 checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' (Maybe a) s -> Widget Web s s
 checkbox { labelContent, default } checked =
-  div ( S.do
-    div ( S.do
+  div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
+    div >>> cl "mdc-checkbox" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit) $ S.do
       checkboxInput default # checked # cl "mdc-checkbox__native-control" # attr "id" id
-      div (S.do
+      div >>> cl "mdc-checkbox__background" $ S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
-        div empty # cl "mdc-checkbox__mixedmark") # cl "mdc-checkbox__background"
-      div empty # cl "mdc-checkbox__ripple") # cl "mdc-checkbox" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit)
-    label (labelContent >>> empty) # attr "for" id) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
+        div >>> cl "mdc-checkbox__mixedmark" $
+          empty
+      div >>> cl "mdc-checkbox__ripple" $
+        empty
+    label (labelContent >>> empty) # attr "for" id
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
 radioButton :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' a s -> Widget Web s s
 radioButton { labelContent, default } value =
-  div (S.do
-    div (S.do
-        Web.radioButton default # value # cl "mdc-radio__native-control" # attr "id" uid
-        div (S.do
-          div empty # cl "mdc-radio__outer-circle"
-          div empty # cl "mdc-radio__inner-circle") # cl "mdc-radio__background"
-        div empty # cl "mdc-radio__ripple") # cl "mdc-radio" # dynClass "mdc-radio--disabled" isNothing # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit)
+  div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
+    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit) $ S.do
+      Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid # value
+      div >>> cl "mdc-radio__background" $ S.do
+        div >>> cl "mdc-radio__outer-circle" $
+          empty
+        div >>> cl "mdc-radio__inner-circle" $
+          empty
+      div >>> cl "mdc-radio__ripple" $
+        empty
     label (labelContent >>> empty) # attr "for" uid
-  ) # cl "mdc-form-field" # bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit)
-    where
-      uid = unsafePerformEffect uniqueId
+  where
+    uid = unsafePerformEffect uniqueId
 
 headline1 :: forall a b. Widget Web a b -> Widget Web a b
 headline1 w = h1 w # cl "mdc-typography--headline1"
@@ -150,15 +161,15 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 
 dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
-  aside (S.do
-    div (S.do
-      div (S.do
-        h2 (title >>> empty) # cl "mdc-dialog__title" # attr "id" "my-dialog-title"
-        div content # cl "mdc-dialog__content" # attr "id" "my-dialog-content"
-      ) # cl "mdc-dialog__surface" # attr "role" "alertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
-    ) # cl "mdc-dialog__container"
-    div empty # cl "mdc-dialog__scrim"
-  ) # cl "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+  aside >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
+    div >>> cl "mdc-dialog__container" $ S.do
+      div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
+        h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $
+          title >>> empty
+        div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $
+          content
+    div >>> cl "mdc-dialog__scrim" $
+      empty
     where
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
       openMdcComponent comp = liftEffect $ open comp
@@ -166,30 +177,27 @@ dialog { title } content =
 
 confirmationDialog :: forall a. { title :: Widget Web a a, dismiss :: Widget Web a a, confirm :: Widget Web a a } -> Widget Web a a -> Widget Web a a
 confirmationDialog { title, dismiss, confirm } content =
-  div (S.do
-    div (
-      div (S.do
-        h2 (
+  div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
+    div >>> cl "mdc-dialog__container" $
+      div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
+        h2 >>> cl "mdc-dialog__title" >>> attr "id" id $
           title
-        ) # cl "mdc-dialog__title" # attr "id" id
-        (T.do
-          div (
+        T.do
+          div >>> cl "mdc-dialog__content" >>> attr "id" id' $
             content
-          ) # cl "mdc-dialog__content" # attr "id" id'
-          div (S.do
-            Web.button (S.do
-              div empty # cl "mdc-button__ripple"
-              span dismiss # cl "mdc-button__label"
-            ) # attr "type" "button" # cl "mdc-button" # cl "mdc-dialog__button" # attr "data-mdc-dialog-action" "close"
-            Web.button (S.do
-              div empty # cl "mdc-button__ripple"
-              span confirm # cl "mdc-button__label"
-            ) # attr "type" "button" # cl "mdc-button" # cl "mdc-dialog__button" # clickable
-          ) # cl "mdc-dialog__actions" )
-      ) # cl "mdc-dialog__surface" # attr "role" "altertdialog" # attr "aria-modal" "true" # attr "aria-labelledby" "my-dialog-title" # attr "aria-describedby" "my-dialog-content"
-    ) # cl "mdc-dialog__container"
-    div empty # cl "mdc-dialog__scrim"
-  ) # cl "mdc-dialog" # bracket initializeMdcDialog openMdcComponent closeMdcComponent
+          div >>> cl "mdc-dialog__actions" $ S.do
+            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ S.do
+              div >>> cl "mdc-button__ripple" $
+                empty
+              span >>> cl "mdc-button__label" $
+                dismiss
+            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> clickable $ S.do
+              div >>> cl "mdc-button__ripple" $
+                empty
+              span >>>  cl "mdc-button__label" $
+                confirm
+    div >>> cl "mdc-dialog__scrim" $
+      empty
     where
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
@@ -199,22 +207,22 @@ confirmationDialog { title, dismiss, confirm } content =
 
 snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 snackbar { label } =
-  aside
-    ( div
-      ( div
-        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false") # attr "role" "status" # attr "aria-relevant" "additions" # cl "mdc-snackbar__surface") # cl "mdc-snackbar" # effBracket (do
-          comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
-          pure { beforeInput: case _ of
-            Removed -> close comp
-            Altered _ -> mempty
-          , afterInput: case _ of
-            Removed -> mempty
-            Altered _ -> open comp
-          , beforeOutput: mempty
-          , afterOutput: mempty
-          }) # action' \a a2eff o2eff -> liftEffect do
-            a2eff a
-            o2eff a
+  aside >>> cl "mdc-snackbar" >>> effBracket (do
+    comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
+    pure { beforeInput: case _ of
+      Removed -> close comp
+      Altered _ -> mempty
+    , afterInput: case _ of
+      Removed -> mempty
+      Altered _ -> open comp
+    , beforeOutput: mempty
+    , afterOutput: mempty
+    }) >>> (action' \a a2eff o2eff -> liftEffect do
+    a2eff a
+    o2eff a) $
+    div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
+      div
+        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =
