@@ -48,8 +48,7 @@ import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBrack
 containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br >>> clickable $ A.do
-    div >>> cl "mdc-button__ripple" $
-      empty
+    div >>> cl "mdc-button__ripple" $ empty
     span >>> cl "mdc-button__label" $
       label >>> empty
   where
@@ -60,16 +59,14 @@ filledTextField { floatingLabel } value =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true) >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) $ S.do
-    span >>> cl "mdc-text-field__ripple" $
-      empty
+    span >>> cl "mdc-text-field__ripple" $ empty
     S.do
       (span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
         Removed -> false
         Altered _ -> true)) $
           text # floatingLabel) >>> empty
       textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id
-    span >>> cl "mdc-line-ripple" $
-      empty
+    span >>> cl "mdc-line-ripple" $ empty
     where
       id = unsafePerformEffect uniqueId
 
@@ -83,10 +80,8 @@ checkbox { labelContent, default } checked =
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
-        div >>> cl "mdc-checkbox__mixedmark" $
-          empty
-      div >>> cl "mdc-checkbox__ripple" $
-        empty
+        div >>> cl "mdc-checkbox__mixedmark" $ empty
+      div >>> cl "mdc-checkbox__ripple" $ empty
     label (labelContent >>> empty) # attr "for" id
     where
       id = unsafePerformEffect uniqueId
@@ -98,12 +93,9 @@ radioButton { labelContent, default } value =
     div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit) $ S.do
       Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid # value
       div >>> cl "mdc-radio__background" $ S.do
-        div >>> cl "mdc-radio__outer-circle" $
-          empty
-        div >>> cl "mdc-radio__inner-circle" $
-          empty
-      div >>> cl "mdc-radio__ripple" $
-        empty
+        div >>> cl "mdc-radio__outer-circle" $ empty
+        div >>> cl "mdc-radio__inner-circle" $ empty
+      div >>> cl "mdc-radio__ripple" $ empty
     label (labelContent >>> empty) # attr "for" uid
   where
     uid = unsafePerformEffect uniqueId
@@ -168,8 +160,7 @@ dialog { title } content =
           title >>> empty
         div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $
           content
-    div >>> cl "mdc-dialog__scrim" $
-      empty
+    div >>> cl "mdc-dialog__scrim" $ empty
     where
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
       openMdcComponent comp = liftEffect $ open comp
@@ -187,17 +178,14 @@ confirmationDialog { title, dismiss, confirm } content =
             content
           div >>> cl "mdc-dialog__actions" $ S.do
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ S.do
-              div >>> cl "mdc-button__ripple" $
-                empty
+              div >>> cl "mdc-button__ripple" $ empty
               span >>> cl "mdc-button__label" $
                 dismiss
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> clickable $ S.do
-              div >>> cl "mdc-button__ripple" $
-                empty
+              div >>> cl "mdc-button__ripple" $ empty
               span >>>  cl "mdc-button__label" $
                 confirm
-    div >>> cl "mdc-dialog__scrim" $
-      empty
+    div >>> cl "mdc-dialog__scrim" $ empty
     where
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
