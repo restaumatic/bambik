@@ -12,13 +12,13 @@ import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, fo
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, constant, debouncer', just)
+import Widget (Widget, constant, debouncer', just, value)
 
 order :: Widget Web OrderId Order
 order = (indeterminateLinearProgress # loadOrder) >>> S.do
   elevation20 $ S.do
-    headline6 $
-      text # constant "Order " <> shortId
+    headline6 $ S.do
+      text # constant "Order " <> value >>> shortId
     card S.do
       subtitle1 $
         text # constant "Identifier"
@@ -51,11 +51,11 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
       filledTextField { floatingLabel: constant "Paid" } paid # just # payment
     card $ S.do
       body1 $
-        text # constant "Summary: Order " <> shortId <> constant " (uniquely " <> orderId <> constant ") for " <> firstName >>> customer <> constant " " <> lastName >>> customer <> constant " (formally " <> surname >>> formal >>> customer <> constant " " <> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> paid) >>> slot >>> just >>> payment # slot # debouncer'
-      containedButton { label: text # constant "Submit order " <> shortId } >>> T.do
-        confirmationDialog { title: text # constant "Submit order " <> shortId >>> second <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\order -> Tuple "" order) $ S.do
+        text # constant "Summary: Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
+      containedButton { label: text # constant "Submit order " <> value >>> shortId } >>> T.do
+        confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> second <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\order -> Tuple "" order) $ S.do
           body1 $
             text # constant "Provide authentication token"
           filledTextField { floatingLabel: constant "Auth token" } identity # first
         indeterminateLinearProgress # submitOrder # lcmap (\(Tuple authToken order) -> {authToken, order})
-        snackbar { label: text # constant "Order " <> shortId <> constant " submitted"}
+        snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}

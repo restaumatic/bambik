@@ -48,7 +48,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, debouncer')
+import Widget (Changed(..), New(..), Widget)
 
 foreign import data Node :: Type
 
@@ -73,7 +73,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: forall a . Widget Web String a
+text :: Widget Web String Void
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do

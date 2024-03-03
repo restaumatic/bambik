@@ -23,6 +23,7 @@ module Widget
   , prism
   , projection
   , spy
+  , value
   )
   where
 
@@ -37,7 +38,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -235,6 +236,9 @@ constant a w = wrap do
     { speak: const $ pure unit
     , listen: const $ pure unit
     }
+
+value :: forall a b. WidgetOptics a Void a b
+value = rmap absurd
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
