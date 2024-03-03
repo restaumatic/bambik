@@ -19,6 +19,7 @@ module Widget
   , iso
   , just
   , lens
+  , nothing
   , prism
   , projection
   , spy
@@ -213,10 +214,13 @@ instance Apply m => Alt (Widget m a) where
       }
 
 instance Applicative m => Plus (Widget m a) where
-  empty = wrap $ pure
-    { speak: const $ pure unit
-    , listen: const $ pure unit
-    }
+  empty = nothing
+
+nothing :: forall m a b. Applicative m => Widget m a b
+nothing = wrap $ pure
+  { speak: const $ pure unit
+  , listen: const $ pure unit
+  }
 
 -- optics
 
