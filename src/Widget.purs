@@ -18,10 +18,13 @@ module Widget
   , field
   , iso
   , just
+  , l
   , lens
   , nothing
+  , output
   , prism
   , projection
+  , r
   , spy
   , value
   )
@@ -32,7 +35,7 @@ import Prelude
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Array (fold, null, uncons, (:))
-import Data.Either (Either(..), either)
+import Data.Either (Either(..), blush, either, hush)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
 import Data.Lens as Profunctor
@@ -262,8 +265,16 @@ prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
 constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
 
+-- TODO move to common optics
 just :: forall a. WidgetOptics' a (Maybe a)
 just = constructor "Just" Just identity
+
+l :: forall a b. WidgetOptics' a (Either a b)
+l = constructor "Left" Left blush
+
+r :: forall a b. WidgetOptics' b (Either a b)
+r = constructor "Right" Right hush
+
 
 -- modifiers
 
@@ -311,11 +322,26 @@ effAdapter f w = wrap do
         prop $ New [] t cont
     }
 
-action :: forall a i o. (i -> Aff o) -> WidgetOptics Boolean a i o
+output :: forall i o. (i -> Aff Unit) -> WidgetOptics (Either i i) o i o
+output arr w = wrap do
+  w' <- unwrap w
+  pure
+    { speak: case _ of
+      Removed -> w'.speak Removed
+      Altered (New _ i cont) -> do
+        launchAff_ do
+          liftEffect $ w'.speak $ Altered $ New [] (Left i) cont
+          arr i
+          liftEffect $ w'.speak $ Altered $ New [] (Right i) cont
+    , listen: \prop -> do
+      w'.listen \newi -> prop newi
+    }
+
+action :: forall a i o. (i -> Aff o) -> WidgetOptics (Either i i) a i o
 action arr = action' \i pro post -> do
-  liftEffect $ pro true
+  liftEffect $ pro (Left i)
   o <- arr i
-  liftEffect $ pro false
+  liftEffect $ pro (Right i)
   liftEffect $ post o
 
 action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics a b i o

@@ -4,15 +4,15 @@ module View
 
 import Prelude
 
-import Data.Profunctor (lcmap)
+import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Strong (first, second)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), snd)
 import MDC (body1, card, checkbox, containedButton, confirmationDialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
 import Model (Order, OrderId, address, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, constant, debouncer', just, value)
+import Widget (Widget, constant, debouncer', just, nothing, value)
 
 order :: Widget Web OrderId Order
 order = (indeterminateLinearProgress # loadOrder) >>> S.do
@@ -57,5 +57,7 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
           body1 $
             text # constant "Provide authentication token"
           filledTextField { floatingLabel: constant "Auth token" } identity # first
-        indeterminateLinearProgress # submitOrder # lcmap (\(Tuple authToken order) -> {authToken, order})
-        snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}
+        -- indeterminateLinearProgress # submitOrder # lcmap (\(Tuple authToken order) -> {authToken, order})
+        snackbar { labell: text # constant "Submitting order", labelr: text # constant "Order submitted"} # submitOrder # rmap snd
+        -- # second # lcmap \(Tuple _ order) -> order
+        -- nothing

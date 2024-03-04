@@ -2,13 +2,15 @@ module Model where
 
 import Prelude
 
+import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
+import Data.Tuple (Tuple(..))
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetOptics', WidgetOptics, action, constructor, field, iso)
+import Widget (WidgetOptics, WidgetOptics', action, constructor, field, iso, output)
 
 type Order =
   { orderId :: OrderId
@@ -59,14 +61,14 @@ formal = iso "formal" toFormal toInformal
 
 type AuthToken = String
 
-submitOrder :: forall a . WidgetOptics Boolean a { authToken :: String , order :: Order } Order
-submitOrder = action \{authToken, order} -> do
+submitOrder :: forall a o. WidgetOptics (Either (Tuple AuthToken Order) (Tuple AuthToken Order)) o (Tuple AuthToken Order) o
+submitOrder = output \(Tuple authToken order) -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  pure order
+  pure unit
 
-loadOrder :: forall a . WidgetOptics Boolean a OrderId Order
+loadOrder :: forall a . WidgetOptics (Either OrderId OrderId) a OrderId Order
 loadOrder = action \orderId -> do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)

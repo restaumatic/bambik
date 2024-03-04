@@ -32,7 +32,9 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Control.Plus (empty)
+import Data.Either (Either(..), either)
 import Data.Maybe (Maybe, isNothing, maybe)
+import Data.Profunctor (rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -41,7 +43,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBracket, l, nothing, r)
 
 -- Primitive widgets
 
@@ -193,8 +195,8 @@ confirmationDialog { title, dismiss, confirm } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a a
-snackbar { label } =
+snackbar :: forall a. { labell :: Widget Web a Void, labelr :: Widget Web a Void } -> Widget Web (Either a a) a
+snackbar { labell, labelr } =
   aside >>> cl "mdc-snackbar" >>> effBracket (do
     comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
     pure { beforeInput: case _ of
@@ -205,14 +207,13 @@ snackbar { label } =
       Altered _ -> open comp
     , beforeOutput: mempty
     , afterOutput: mempty
-    }) >>> (action' \a a2eff o2eff -> liftEffect do
-    a2eff a
-    o2eff a) $
+    }) $
     div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
-      div
-        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
+      div A.do
+        labell >>> nothing # cl "mdc-snackbar__label" # attr "aria-atomic" "false" # l # rmap (either identity identity)
+        labelr >>> nothing # cl "mdc-snackbar__label" # attr "aria-atomic" "false" # r # rmap (either identity identity)
 
-indeterminateLinearProgress :: forall a. Widget Web Boolean a
+indeterminateLinearProgress :: forall a. Widget Web (Either a a) Void
 indeterminateLinearProgress =
   div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ T.do
     div >>> cl "mdc-linear-progress__buffer" $ T.do
@@ -229,8 +230,8 @@ indeterminateLinearProgress =
         liftEffect $ setDeterminate comp false
         pure
           { pre: case _ of
-            true -> open comp
-            false -> close comp
+            Left _ -> open comp
+            Right _ -> close comp
           , post: pure }
 
 -- Private
