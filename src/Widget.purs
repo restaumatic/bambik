@@ -57,8 +57,8 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
-  { speak :: Changed i -> Effect Unit
-  , listen :: (New o -> Effect Unit) -> Effect Unit
+  { toUser :: Changed i -> Effect Unit
+  , fromUser :: (New o -> Effect Unit) -> Effect Unit
   })
 
 derive instance Newtype (Widget m i o) _
@@ -98,8 +98,8 @@ derive instance Eq Scope
 
 instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
-    { speak: (_ <<< map contraf) p'.speak
-    , listen: p'.listen <<< lcmap (map cof)
+    { toUser: (_ <<< map contraf) p'.toUser
+    , fromUser: p'.fromUser <<< lcmap (map cof)
     }
 
 instance Applicative m => Strong (Widget m) where
@@ -107,13 +107,13 @@ instance Applicative m => Strong (Widget m) where
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { speak: case _ of
-          Removed -> p'.speak Removed
+      { toUser: case _ of
+          Removed -> p'.toUser Removed
           Altered (New scope ab cont) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ Altered $ New scope (fst ab) cont
-      , listen: \prop -> do
-        p'.listen \u -> do
+            p'.toUser $ Altered $ New scope (fst ab) cont
+      , fromUser: \prop -> do
+        p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
           prop (map (flip Tuple (snd prevab)) u)
       }
@@ -121,13 +121,13 @@ instance Applicative m => Strong (Widget m) where
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { speak: case _ of
-          Removed -> p'.speak Removed
+      { toUser: case _ of
+          Removed -> p'.toUser Removed
           Altered (New scope ab cont) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.speak $ Altered $ New scope (snd ab) cont
-      , listen: \prop -> do
-        p'.listen \u -> do
+            p'.toUser $ Altered $ New scope (snd ab) cont
+      , fromUser: \prop -> do
+        p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
           prop (map (Tuple (fst prevab)) u)
       }
@@ -136,22 +136,22 @@ instance Applicative m => Choice (Widget m) where
   left p = wrap ado
     p' <- unwrap p
     in
-      { speak: case _ of
-        Removed -> p'.speak Removed
-        Altered (New _ (Right _) _) -> p'.speak Removed
-        Altered (New scope (Left a) cont) -> p'.speak $ Altered $ New scope a cont
-      , listen: \prop -> do
-        p'.listen \u -> prop (Left <$> u)
+      { toUser: case _ of
+        Removed -> p'.toUser Removed
+        Altered (New _ (Right _) _) -> p'.toUser Removed
+        Altered (New scope (Left a) cont) -> p'.toUser $ Altered $ New scope a cont
+      , fromUser: \prop -> do
+        p'.fromUser \u -> prop (Left <$> u)
       }
   right p = wrap ado
     p' <- unwrap p
     in
-      { speak: case _ of
-        Removed -> p'.speak Removed
-        Altered (New _ (Left _) _) -> p'.speak Removed
-        Altered (New scope (Right a) cont) -> p'.speak $ Altered $ New scope a cont
-      , listen: \prop -> do
-        p'.listen \u -> prop (Right <$> u)
+      { toUser: case _ of
+        Removed -> p'.toUser Removed
+        Altered (New _ (Left _) _) -> p'.toUser Removed
+        Altered (New scope (Right a) cont) -> p'.toUser $ Altered $ New scope a cont
+      , fromUser: \prop -> do
+        p'.fromUser \u -> prop (Right <$> u)
       }
 
 instance Apply m => Semigroup (Widget m a a) where
@@ -159,15 +159,15 @@ instance Apply m => Semigroup (Widget m a a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { speak: \ch -> p1'.speak ch *> p2'.speak ch
-      , listen: \prop -> (p1'.listen \u -> p2'.speak (Altered u) *> prop u) *> (p2'.listen \u -> p1'.speak (Altered u) *> prop u)
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
+      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser (Altered u) *> prop u) *> (p2'.fromUser \u -> p1'.toUser (Altered u) *> prop u)
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
   mempty = wrap $ pure
-    { speak: mempty
-    , listen: mempty
+    { toUser: mempty
+    , fromUser: mempty
     }
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
@@ -175,12 +175,12 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    liftEffect $ p1'.listen \u -> p2'.speak $ Altered u -- TODO smell: well, it's not an Altered it's rather brand new value/event
+    liftEffect $ p1'.fromUser \u -> p2'.toUser $ Altered u -- TODO smell: well, it's not an Altered it's rather brand new value/event
     pure
-      { speak: \cha -> do
-        p2'.speak Removed -- TODO makes sense?
-        p1'.speak cha
-      , listen: p2'.listen
+      { toUser: \cha -> do
+        p2'.toUser Removed -- TODO makes sense?
+        p1'.toUser cha
+      , fromUser: p2'.fromUser
       }
 
 -- Notice: Widget is not a category
@@ -188,8 +188,8 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --   identity = wrap do
 --     chaAVar <- liftEffect AVar.empty
 --     pure
---       { speak: \cha -> void $ AVar.put cha chaAVar mempty
---       , listen: \prop ->
+--       { toUser: \cha -> void $ AVar.put cha chaAVar mempty
+--       , fromUser: \prop ->
 --         let waitAndPropagate = void $ AVar.take chaAVar case _ of
 --               Left error -> pure unit -- TODO handle error
 --               Right Removed -> pure unit -- ... -- impossible -- TODO: check
@@ -201,8 +201,8 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
-    { speak: p'.speak
-    , listen: p'.listen <<< lcmap (map f)
+    { toUser: p'.toUser
+    , fromUser: p'.fromUser <<< lcmap (map f)
     }
 
 instance Apply m => Alt (Widget m a) where
@@ -210,8 +210,8 @@ instance Apply m => Alt (Widget m a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { speak: \ch -> p1'.speak ch *> p2'.speak ch
-      , listen: \prop -> p1'.listen prop *> p2'.listen prop
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
+      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
       }
 
 instance Applicative m => Plus (Widget m a) where
@@ -219,8 +219,8 @@ instance Applicative m => Plus (Widget m a) where
 
 nothing :: forall m a b. Applicative m => Widget m a b
 nothing = wrap $ pure
-  { speak: const $ pure unit
-  , listen: const $ pure unit
+  { toUser: const $ pure unit
+  , fromUser: const $ pure unit
   }
 
 -- optics
@@ -231,10 +231,10 @@ type WidgetOptics' a s = WidgetOptics a a s s
 constant :: forall a b s t. a -> WidgetOptics a b s t
 constant a w = wrap do
   w' <- unwrap w
-  liftEffect $ w'.speak $ Altered $ New [] a false
+  liftEffect $ w'.toUser $ Altered $ New [] a false
   pure
-    { speak: const $ pure unit
-    , listen: const $ pure unit
+    { toUser: const $ pure unit
+    , fromUser: const $ pure unit
     }
 
 value :: forall a b. WidgetOptics a Void a b
@@ -274,21 +274,21 @@ effBracket :: forall m a b. Monad m => m
   , afterOutput :: New b -> Effect Unit
   } -> Widget m a b -> Widget m a b
 effBracket f w = wrap do
-  { speak, listen } <- unwrap w
+  { toUser, fromUser } <- unwrap w
   { beforeInput, afterInput, beforeOutput, afterOutput } <- f
   pure
-    { speak: \ch -> beforeInput ch *> speak ch *> afterInput ch
-    , listen: \prop -> do
-      listen \u -> beforeOutput u *> prop u *> afterOutput u
+    { toUser: \ch -> beforeInput ch *> toUser ch *> afterInput ch
+    , fromUser: \prop -> do
+      fromUser \u -> beforeOutput u *> prop u *> afterOutput u
     }
 
 spy :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
 spy name w = wrap do
-  { speak, listen } <- unwrap w
+  { toUser, fromUser } <- unwrap w
   pure
-    { speak: \ch -> log' ("< " <> show ch) *> speak ch *> log' ">"
-    , listen: \prop -> do
-      listen \u -> log' ("> " <> show u) *> prop u *> log' "<"
+    { toUser: \ch -> log' ("< " <> show ch) *> toUser ch *> log' ">"
+    , fromUser: \prop -> do
+      fromUser \u -> log' ("> " <> show u) *> prop u *> log' "<"
     }
   where
     log' s = log $ "[WidgetSpy] " <> name <> " " <> s
@@ -297,16 +297,16 @@ spy name w = wrap do
 -- TODO add release parameter?
 effAdapter :: forall m a b s t. Monad m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
 effAdapter f w = wrap do
-  { speak, listen } <- unwrap w
+  { toUser, fromUser } <- unwrap w
   { pre, post } <- f
   pure
-    { speak: case _ of
-      Removed -> speak Removed
+    { toUser: case _ of
+      Removed -> toUser Removed
       Altered (New _ s cont) -> do
         a <- pre s
-        speak $ Altered $ New [] a cont
-    , listen: \prop -> do
-      listen \(New _ b cont) -> do
+        toUser $ Altered $ New [] a cont
+    , fromUser: \prop -> do
+      fromUser \(New _ b cont) -> do
         t <- post b
         prop $ New [] t cont
     }
@@ -323,15 +323,15 @@ action' arr w = wrap do
   oVar <- liftEffect AVar.empty
   w' <- unwrap w
   pure
-    { speak: case _ of
-      Removed -> w'.speak Removed
+    { toUser: case _ of
+      Removed -> w'.toUser Removed
       Altered (New _ i cont) -> do
-        launchAff_ $ arr i (\a -> w'.speak $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
-    , listen: \prop ->
+        launchAff_ $ arr i (\a -> w'.toUser $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
+    , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
-              -- w'.speak $ Altered $ New [] Nothing false
+              -- w'.toUser $ Altered $ New [] Nothing false
               prop $ New [] o false
               waitAndPropagate
       in waitAndPropagate
@@ -339,22 +339,22 @@ action' arr w = wrap do
 
 affAdapter :: forall m a b s t. MonadEffect m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> Widget m a b -> Widget m s t
 affAdapter f w = wrap do
-  { speak, listen } <- unwrap w
+  { toUser, fromUser } <- unwrap w
   { pre, post } <- f
   mInputFiberRef <- liftEffect $ Ref.new Nothing
   mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
-    { speak: case _ of
+    { toUser: case _ of
       Removed -> pure unit -- TODO really?
       Altered news@(New _ _ cont) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")
         newFiber <- forkAff do
           a <- pre news
-          liftEffect $ speak $ Altered $ New [] a cont
+          liftEffect $ toUser $ Altered $ New [] a cont
         liftEffect $ Ref.write (Just newFiber) mInputFiberRef
-    , listen: \prop -> do
-      listen \newb@(New _ _ cont) -> launchAff_ do
+    , fromUser: \prop -> do
+      fromUser \newb@(New _ _ cont) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mOutputFiberRef
         for_ mFiber $ killFiber (error "Obsolete output")
         newFiber <- forkAff do
@@ -378,13 +378,13 @@ debouncer' = debouncer (Milliseconds 300.0)
 
 scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
 scopemap scope p = wrap ado
-  { speak, listen } <- unwrap p
+  { toUser, fromUser } <- unwrap p
   in
-    { speak: \cha -> case zoomIn cha of
+    { toUser: \cha -> case zoomIn cha of
       Nothing -> pure unit
-      Just cha' -> speak cha'
-    , listen: \prop -> do
-      listen $ prop <<< zoomOut
+      Just cha' -> toUser cha'
+    , fromUser: \prop -> do
+      fromUser $ prop <<< zoomOut
     }
   where
     zoomOut :: New b -> New b
