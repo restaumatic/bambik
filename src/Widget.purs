@@ -19,7 +19,6 @@ module Widget
   , iso
   , just
   , lens
-  , nothing
   , prism
   , projection
   , spy
@@ -30,7 +29,7 @@ module Widget
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Plus (class Plus)
+import Control.Plus (class Plus, empty)
 import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
@@ -195,7 +194,10 @@ instance Apply m => Alt (Widget m a) where
       }
 
 instance Applicative m => Plus (Widget m a) where
-  empty = nothing
+  empty = wrap $ pure
+    { toUser: const $ pure unit
+    , fromUser: const $ pure unit
+    }
 
 instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
@@ -208,17 +210,8 @@ instance Apply m => Semigroup (Widget m a a) where
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
-  mempty = wrap $ pure
-    { toUser: mempty
-    , fromUser: mempty
-    }
+  mempty = empty
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
-
-nothing :: forall m a b. Applicative m => Widget m a b
-nothing = wrap $ pure
-  { toUser: const $ pure unit
-  , fromUser: const $ pure unit
-  }
 
 -- optics
 
