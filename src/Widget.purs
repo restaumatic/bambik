@@ -29,7 +29,7 @@ module Widget
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Plus (class Plus, empty)
+import Control.Plus (class Plus)
 import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
