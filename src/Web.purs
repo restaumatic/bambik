@@ -30,7 +30,7 @@ module Web
   , span
   , svg
   , text
-  , textInput
+  , input
   , uniqueId
   )
   where
@@ -100,12 +100,12 @@ html htmlString = wrap do
     , fromUser: const $ pure unit
     }
 
-textInput :: Widget Web String String
-textInput = dynAttr "disabled" "true" (maybe true $ case _ of
+input :: String -> Widget Web String String
+input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true) $ wrap do
   element "input" (pure unit)
-  attribute "type" "text"
+  attribute "type" type_
   node <- gets _.sibling
   pure
     { toUser: case _ of

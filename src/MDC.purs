@@ -39,7 +39,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, textInput, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBracket)
 
@@ -54,6 +54,7 @@ containedButton { label } =
   where
     br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 
+-- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
@@ -65,10 +66,11 @@ filledTextField { floatingLabel } value =
         Removed -> false
         Altered _ -> true)) $
           text # floatingLabel) >>> pzero
-      textInput # value # cl "mdc-text-field__input" # attr "aria-labelledby" id
+      input "text" # value # cl "mdc-text-field__input" # attr "aria-labelledby" id
     span >>> cl "mdc-line-ripple" $ pzero
     where
       id = unsafePerformEffect uniqueId
+
 
 checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' (Maybe a) s -> Widget Web s s
 checkbox { labelContent, default } checked =
