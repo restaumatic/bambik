@@ -28,11 +28,11 @@ module MDC
   )
   where
 
-import Prelude hiding (div)
+import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, unit, (#), ($), (<<<), (>>=), (>>>))
 
 import Control.Monad.State (gets)
-import Data.Profunctor.Zero (pzero)
 import Data.Maybe (Maybe, isNothing, maybe)
+import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
