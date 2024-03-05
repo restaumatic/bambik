@@ -2,7 +2,7 @@ module View
   ( order
   ) where
 
-import Prelude
+import Prelude ((#), ($), (<>), (>>>))
 
 import Data.Profunctor (lcmap)
 import MDC (body1, card, checkbox, containedButton, confirmationDialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
@@ -54,6 +54,6 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
         confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
           body1 $
             text # constant "Provide authentication token"
-          filledTextField { floatingLabel: constant "Auth token" } identity # authToken
+          filledTextField { floatingLabel: constant "Auth token" } authToken
         indeterminateLinearProgress # submitOrder
         snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}
