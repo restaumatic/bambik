@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude (Unit, const, ($))
 
 import Data.Profunctor (lcmap)
 import Effect (Effect)

@@ -1,6 +1,6 @@
 module Model where
 
-import Prelude
+import Prelude (class Show, discard, pure, ($), (<>))
 
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
