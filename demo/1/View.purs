@@ -10,7 +10,7 @@ import Model (Order, OrderId, address, authToken, customer, delivery, dineIn, fi
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, constant, debouncer', just, spy, value)
+import Widget (Widget, constant, debouncer', just, value)
 
 order :: Widget Web OrderId Order
 order = (indeterminateLinearProgress # loadOrder) >>> S.do
@@ -51,7 +51,7 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
       body1 $
         text # constant "Summary: Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
       containedButton { label: text # constant "Submit order " <> value >>> shortId } >>> T.do
-        confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> spy "title new" >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+        confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
           body1 $
             text # constant "Provide authentication token"
           filledTextField { floatingLabel: constant "Auth token" } identity # authToken
