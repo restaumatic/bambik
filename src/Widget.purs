@@ -19,7 +19,6 @@ module Widget
   , iso
   , just
   , lens
-  , nothing
   , prism
   , projection
   , spy
@@ -30,11 +29,10 @@ module Widget
 import Prelude
 
 import Control.Alt (class Alt)
-import Control.Plus (class Plus)
+import Control.Plus (class Plus, empty)
 import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
-import Data.Generic.Rep (class Generic)
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -63,17 +61,6 @@ newtype Widget m i o = Widget (m
 
 derive instance Newtype (Widget m i o) _
 
-data New a = New (Array Scope) a Boolean
-
-instance Show a => Show (New a) where
-  show (New scopes a cont) = "new " <> path <> " of " <> show a <> (if cont then " and expected to change continously" else "")
-    where
-    path
-      | null scopes = "."
-      | otherwise = fold (show <$> scopes)
-
-derive instance Functor New
-
 data Changed a
   = Altered (New a)
   | Removed
@@ -85,9 +72,18 @@ instance Show a => Show (Changed a) where
     Removed -> "Removed"
     Altered ch -> show ch
 
-data Scope = Part String | Variant String
+data New a = New (Array Scope) a Boolean
 
-derive instance Generic Scope _
+instance Show a => Show (New a) where
+  show (New scopes a cont) = "new " <> path <> " of " <> show a <> (if cont then " and expected to change continously" else "")
+    where
+    path
+      | null scopes = "."
+      | otherwise = fold (show <$> scopes)
+
+derive instance Functor New
+
+data Scope = Part String | Variant String
 
 instance Show Scope where
   show = case _ of
@@ -153,24 +149,6 @@ instance Applicative m => Choice (Widget m) where
       , fromUser: \prop -> do
         p'.fromUser \u -> prop (Right <$> u)
       }
-
-instance Apply m => Semigroup (Widget m a a) where
-  append p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser (Altered u) *> prop u) *> (p2'.fromUser \u -> p1'.toUser (Altered u) *> prop u)
-      }
--- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
-
-instance Applicative m => Monoid (Widget m a a) where
-  mempty = wrap $ pure
-    { toUser: mempty
-    , fromUser: mempty
-    }
--- Notice: optic `WidgetOptic m a b c c` is also a Monoid
-
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
@@ -215,13 +193,24 @@ instance Apply m => Alt (Widget m a) where
       }
 
 instance Applicative m => Plus (Widget m a) where
-  empty = nothing
+  empty = wrap $ pure
+    { toUser: const $ pure unit
+    , fromUser: const $ pure unit
+    }
 
-nothing :: forall m a b. Applicative m => Widget m a b
-nothing = wrap $ pure
-  { toUser: const $ pure unit
-  , fromUser: const $ pure unit
-  }
+instance Apply m => Semigroup (Widget m a a) where
+  append p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
+      , fromUser: \prop -> (p1'.fromUser $ p2'.toUser <<< Altered *> prop) *> (p2'.fromUser $ p1'.toUser <<< Altered *> prop)
+      }
+-- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
+
+instance Applicative m => Monoid (Widget m a a) where
+  mempty = empty
+-- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
 
