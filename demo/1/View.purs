@@ -5,8 +5,6 @@ module View
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Strong (first, second)
-import Data.Tuple (Tuple(..))
 import MDC (body1, card, checkbox, containedButton, confirmationDialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
 import Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
 import QualifiedDo.Semigroup as S
