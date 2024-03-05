@@ -59,12 +59,12 @@ formal = iso "formal" toFormal toInformal
 
 type AuthToken = String
 
-submitOrder :: forall a . WidgetOptics Boolean a { authToken :: String , order :: Order } Order
-submitOrder = action \{authToken, order} -> do
-  liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
+submitOrder :: forall a . WidgetOptics Boolean a SubmitOrder Order
+submitOrder = action \{authToken, submittedOrder} -> do
+  liftEffect $ log $ "submitting order " <> submittedOrder.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  pure order
+  pure submittedOrder
 
 loadOrder :: forall a . WidgetOptics Boolean a OrderId Order
 loadOrder = action \orderId -> do
@@ -136,3 +136,12 @@ delivery :: WidgetOptics' { address :: Address } Fulfillment
 delivery = constructor "Delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
+
+type SubmitOrder =
+  { authToken :: String
+  , submittedOrder :: Order
+  }
+
+authToken = field @"authToken"
+
+submittedOrder = field @"submittedOrder"
