@@ -175,10 +175,10 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    liftEffect $ p1'.fromUser \u -> p2'.toUser $ Altered u -- TODO smell: well, it's not an Altered it's rather brand new value/event
+    liftEffect $ p1'.fromUser $ p2'.toUser <<< Altered
     pure
       { toUser: \cha -> do
-        p2'.toUser Removed -- TODO makes sense?
+        p2'.toUser Removed
         p1'.toUser cha
       , fromUser: p2'.fromUser
       }
@@ -191,8 +191,8 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --       { toUser: \cha -> void $ AVar.put cha chaAVar mempty
 --       , fromUser: \prop ->
 --         let waitAndPropagate = void $ AVar.take chaAVar case _ of
---               Left error -> pure unit -- TODO handle error
---               Right Removed -> pure unit -- ... -- impossible -- TODO: check
+--               Left error -> pure unit -- handle error
+--               Right Removed -> ... -- impossible to propagate `Removed`
 --               Right (Altered newa) -> do
 --                 prop newa
 --                 waitAndPropagate
