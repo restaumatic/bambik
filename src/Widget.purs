@@ -181,7 +181,7 @@ instance MonadEffect m => Semigroupoid (Widget m) where
     liftEffect $ p1'.fromUser \u -> p2'.toUser $ Altered u -- TODO smell: well, it's not an Altered it's rather brand new value/event
     pure
       { toUser: \cha -> do
-        p2'.toUser Removed -- TODO makes sense?
+        -- p2'.toUser Removed -- TODO makes sense?
         p1'.toUser cha
       , fromUser: p2'.fromUser
       }
@@ -326,15 +326,15 @@ output :: forall i o. (i -> Aff Unit) -> WidgetOptics (Either i i) o i o
 output arr w = wrap do
   w' <- unwrap w
   pure
-    { speak: case _ of
-      Removed -> w'.speak Removed
+    { toUser: case _ of
+      Removed -> w'.toUser Removed
       Altered (New _ i cont) -> do
         launchAff_ do
-          liftEffect $ w'.speak $ Altered $ New [] (Left i) cont
+          liftEffect $ w'.toUser $ Altered $ New [] (Left i) cont
           arr i
-          liftEffect $ w'.speak $ Altered $ New [] (Right i) cont
-    , listen: \prop -> do
-      w'.listen \newi -> prop newi
+          liftEffect $ w'.toUser $ Altered $ New [] (Right i) cont
+    , fromUser: \prop -> do
+      w'.fromUser \newi -> prop newi
     }
 
 action :: forall a i o. (i -> Aff o) -> WidgetOptics (Either i i) a i o
