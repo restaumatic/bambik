@@ -39,6 +39,7 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
+import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -178,6 +179,12 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --         in waitAndPropagate
 --       }
 
+instance Applicative m => Zero (Widget m) where
+  pzero = wrap $ pure
+    { toUser: const $ pure unit
+    , fromUser: const $ pure unit
+    }
+
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
     { toUser: p'.toUser
@@ -194,10 +201,7 @@ instance Apply m => Alt (Widget m a) where
       }
 
 instance Applicative m => Plus (Widget m a) where
-  empty = wrap $ pure
-    { toUser: const $ pure unit
-    , fromUser: const $ pure unit
-    }
+  empty = pzero
 
 instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
@@ -210,7 +214,7 @@ instance Apply m => Semigroup (Widget m a a) where
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
-  mempty = empty
+  mempty = pzero
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
