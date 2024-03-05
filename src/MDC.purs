@@ -171,11 +171,12 @@ confirmationDialog { title, dismiss, confirm } content =
   div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
-        h2 >>> cl "mdc-dialog__title" >>> attr "id" id $
-          title
         T.do
-          div >>> cl "mdc-dialog__content" >>> attr "id" id' $
-            content
+          S.do
+            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $
+              title
+            div >>> cl "mdc-dialog__content" >>> attr "id" id' $
+              content
           div >>> cl "mdc-dialog__actions" $ S.do
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ S.do
               div >>> cl "mdc-button__ripple" $ empty
