@@ -109,7 +109,7 @@ textInput = dynAttr "disabled" "true" (maybe true $ case _ of
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> pure unit
+    Removed -> setValue node ""
     Altered (New _ newa _) -> do
       setValue node newa
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
@@ -189,7 +189,7 @@ dynClass :: forall a b. String -> (Maybe (Changed a) -> Boolean) -> Widget Web a
 dynClass name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
-  when (pred Nothing) $ liftEffect $ addClass node name
+  liftEffect $ (if pred Nothing then addClass else removeClass) node name
   pure
     { toUser: \mch -> do
     (if pred (Just mch) then addClass else removeClass) node name
