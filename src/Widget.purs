@@ -39,6 +39,7 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
+import Data.Profunctor.Sum (class Sum, psum)
 import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
@@ -179,6 +180,15 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --         in waitAndPropagate
 --       }
 
+instance Apply m => Sum (Widget m) where
+  psum p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
+      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
+      }
+
 instance Applicative m => Zero (Widget m) where
   pzero = wrap $ pure
     { toUser: const $ pure unit
@@ -192,13 +202,7 @@ instance Functor m => Functor (Widget m a) where
     }
 
 instance Apply m => Alt (Widget m a) where
-  alt p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
-      }
+  alt = psum
 
 instance Applicative m => Plus (Widget m a) where
   empty = pzero
