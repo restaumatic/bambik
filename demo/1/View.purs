@@ -3,39 +3,33 @@ module View
   ) where
 
 import Data.Profunctor (lcmap)
-import MDC (body1, card, checkbox, containedButton, confirmationDialog, elevation20, filledTextField, headline6, indeterminateLinearProgress, radioButton, snackbar, subtitle1, subtitle2)
+import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
 import Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
 import Prelude ((#), ($), (<>), (>>>))
-import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
 import Widget (Widget, constant, debouncer', just, value)
 
 order :: Widget Web OrderId Order
-order = (indeterminateLinearProgress # loadOrder) >>> S.do
+order = T.do
+  indeterminateLinearProgress # loadOrder
   elevation20 $ S.do
-    headline6 $ S.do
-      text # constant "Order " <> value >>> shortId
-    card A.do
-      subtitle1 $
-        text # constant "Identifier"
+    caption $ text # constant "Order " <> value >>> debouncer' >>> shortId
+    card S.do
+      caption $ text # constant "Identifier"
       filledTextField { floatingLabel: constant "Short ID" } shortId
       filledTextField { floatingLabel: constant "Unique ID" } orderId
     card >>> customer $ S.do
-      subtitle1 $
-        text # constant "Customer"
-      subtitle2 $
-        text # constant "Informal"
+      caption $ text # constant "Customer"
+      caption $ text # constant "Informal"
       filledTextField { floatingLabel: constant "First name" } firstName
       filledTextField { floatingLabel: constant "Last name" } lastName
-      subtitle2 $
-        text # constant "Formal"
+      caption $ text # constant "Formal"
       filledTextField { floatingLabel: constant "Surname" } surname # formal
       filledTextField { floatingLabel: constant "Forename" } forename # formal
     card >>> fulfillment $ S.do
-      subtitle1 $
-        text # constant "Fulfillment"
+      caption $ text # constant "Fulfillment"
       radioButton { labelContent: text # constant "Dine in", default: { table: "1"} } dineIn
       radioButton { labelContent: text # constant "Takeaway", default: { time: "15:30"} } takeaway
       radioButton { labelContent: text # constant "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
@@ -43,22 +37,17 @@ order = (indeterminateLinearProgress # loadOrder) >>> S.do
         filledTextField { floatingLabel: constant "Table" } table # slot # dineIn
         filledTextField { floatingLabel: constant "Time" } time # slot # takeaway
         filledTextField { floatingLabel: constant "Address" } address # slot # delivery
-    card $ A.do
-      subtitle1 $
-        text # constant "Payment"
+    card S.do
+      caption $ text # constant "Payment"
       filledTextField { floatingLabel: constant "Total" } total
       S.do
         checkbox { labelContent: text # constant "Paid", default: { paid: "0" } } payment
         filledTextField { floatingLabel: constant "Paid" } paid # just # payment
-    card $ S.do
-      subtitle1 $
-        text # constant "Summary"
-      body1 $
-        text # constant "Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
-      containedButton { label: text # constant "Submit order " <> value >>> shortId } >>> T.do
-        confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
-          body1 $
-            text # constant "Authorization required"
-          filledTextField { floatingLabel: constant "Auth token" } authToken
-        indeterminateLinearProgress # submitOrder
-        snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}
+    card S.do
+      body1 $ text # constant "Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
+  containedButton { label: text # constant "Submit order " <> value >>> shortId >>> debouncer' }
+  confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+    body1 $ text # constant "Authorization required"
+    filledTextField { floatingLabel: constant "Auth token" } authToken
+  indeterminateLinearProgress # submitOrder
+  snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}

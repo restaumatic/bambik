@@ -28,14 +28,13 @@ module MDC
   )
   where
 
-import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, unit, (#), ($), (<<<), (>>=), (>>>))
-
 import Control.Monad.State (gets)
 import Data.Maybe (Maybe, isNothing, maybe)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
+import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, unit, (#), ($), (<<<), (>>=), (>>>))
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
@@ -150,8 +149,17 @@ elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px"
 elevation20 :: forall a b. Widget Web a b -> Widget Web a b
 elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
 
-card :: forall a b. Widget Web a b -> Widget Web a b
+card :: forall a b . Widget Web a b -> Widget Web a b
 card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
+
+-- TODO card with primary and other actions
+-- card :: forall a b. { title :: Widget Web a Void } -> Widget Web a b -> Widget Web a b
+-- card { title } w = div >>> cl "mdc-card" >>> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ S.do
+--   div >>> cl "mdc-card__primary-action" $ A.do
+--     div >>> cl "mdc-card__media" >>> cl "mdc-card__media--square" $ div >>> cl "mdc-card__media-content" $ (title >>> pzero)
+--     w
+--     div >>> cl "mdc-card__ripple" $ pzero
+--   -- TODO  card actions
 
 dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
