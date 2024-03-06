@@ -174,26 +174,25 @@ instance MonadEffect m => Semigroupoid (Widget m) where
     liftEffect $ p1'.fromUser $ p2'.toUser <<< Altered
     pure
       { toUser: \cha -> do
-        p2'.toUser Removed
         p1'.toUser cha
+        p2'.toUser Removed
       , fromUser: p2'.fromUser
       }
 
--- Notice: Widget is not a category
--- instance MonadEffect m => Category (Widget m) where
---   identity = wrap do
---     chaAVar <- liftEffect AVar.empty
---     pure
---       { toUser: \cha -> void $ AVar.put cha chaAVar mempty
---       , fromUser: \prop ->
---         let waitAndPropagate = void $ AVar.take chaAVar case _ of
---               Left error -> pure unit -- handle error
---               Right Removed -> ... -- impossible to propagate `Removed`
---               Right (Altered newa) -> do
---                 prop newa
---                 waitAndPropagate
---         in waitAndPropagate
---       }
+instance MonadEffect m => Category (Widget m) where
+  identity = wrap do
+    chaAVar <- liftEffect AVar.empty
+    pure
+      { toUser: \cha -> void $ AVar.put cha chaAVar mempty
+      , fromUser: \prop ->
+        let waitAndPropagate = void $ AVar.take chaAVar case _ of
+              Left error -> pure unit -- TODO handle internal error
+              Right Removed -> pure unit
+              Right (Altered newa) -> do
+                prop newa
+                waitAndPropagate
+        in waitAndPropagate
+      }
 
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
