@@ -152,6 +152,21 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
+instance Apply m => Sum (Widget m) where
+  psum p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
+      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
+      }
+
+instance Applicative m => Zero (Widget m) where
+  pzero = wrap $ pure
+    { toUser: const $ pure unit
+    , fromUser: const $ pure unit
+    }
+
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
@@ -179,21 +194,6 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --                 waitAndPropagate
 --         in waitAndPropagate
 --       }
-
-instance Apply m => Sum (Widget m) where
-  psum p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
-      }
-
-instance Applicative m => Zero (Widget m) where
-  pzero = wrap $ pure
-    { toUser: const $ pure unit
-    , fromUser: const $ pure unit
-    }
 
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
