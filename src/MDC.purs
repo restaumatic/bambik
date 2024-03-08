@@ -35,8 +35,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, unit, (#), ($), (<<<), (>>=), (>>>))
-import QualifiedDo.Alt as A
-import QualifiedDo.Semigroup as S
+import QualifiedDo.SumProfunctor as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
 import Web (button, radioButton) as Web
@@ -46,7 +45,7 @@ import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBrack
 
 containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
 containedButton { label } =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br >>> clickable $ A.do
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br >>> clickable $ S.do
     div >>> cl "mdc-button__ripple" $ pzero
     span >>> cl "mdc-button__label" $
       label >>> pzero
@@ -155,7 +154,7 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 -- TODO card with primary and other actions
 -- card :: forall a b. { title :: Widget Web a Void } -> Widget Web a b -> Widget Web a b
 -- card { title } w = div >>> cl "mdc-card" >>> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ S.do
---   div >>> cl "mdc-card__primary-action" $ A.do
+--   div >>> cl "mdc-card__primary-action" $ S.do
 --     div >>> cl "mdc-card__media" >>> cl "mdc-card__media--square" $ div >>> cl "mdc-card__media-content" $ (title >>> pzero)
 --     w
 --     div >>> cl "mdc-card__ripple" $ pzero
