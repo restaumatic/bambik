@@ -201,19 +201,10 @@ instance Functor m => Functor (Widget m a) where
     , fromUser: p'.fromUser <<< lcmap (map f)
     }
 
-instance Apply m => Alt (Widget m a) where
-  alt = psum
-
-instance Applicative m => Plus (Widget m a) where
-  empty = pzero
-
+-- replace usage of <> with infix `psum`
 instance Apply m => Semigroup (Widget m a a) where
   append = psum
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
-
-instance Applicative m => Monoid (Widget m a a) where
-  mempty = pzero
--- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
 
