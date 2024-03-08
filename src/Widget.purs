@@ -208,13 +208,7 @@ instance Applicative m => Plus (Widget m a) where
   empty = pzero
 
 instance Apply m => Semigroup (Widget m a a) where
-  append p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser (Altered u) *> prop u) *> (p2'.fromUser \u -> p1'.toUser (Altered u) *> prop u)
-      }
+  append = psum
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where

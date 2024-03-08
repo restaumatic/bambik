@@ -312,16 +312,16 @@ h6 = el "h6"
 
 -- Entry point
 
-runWidgetInBody :: forall o. Widget Web Unit o -> Effect Unit
-runWidgetInBody w = do
+runWidgetInBody :: forall a. Widget Web a a -> a -> Effect Unit
+runWidgetInBody w a = do
   node <- documentBody
-  runWidgetInNode node w unit mempty
+  runWidgetInNode node w a
 
-runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
-runWidgetInNode node w i outward = runDomInNode node do
-  { toUser, fromUser } <- unwrap w
-  liftEffect $ fromUser \(New _ mo cont) -> outward mo -- TODO debounce if cont
-  liftEffect $ toUser $ Altered $ New [] i false
+runWidgetInNode :: forall a. Node -> Widget Web a a -> a -> Effect Unit
+runWidgetInNode node w a = do
+  w' <- runDomInNode node $ unwrap w
+  w'.fromUser \new -> w'.toUser $ Altered new
+  w'.toUser $ Altered $ New [] a false
 
 --- private
 
