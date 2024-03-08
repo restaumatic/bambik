@@ -2,20 +2,20 @@ module View
   ( order
   ) where
 
-import Data.Profunctor (lcmap)
+import Data.Profunctor (arr)
 import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
 import Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
 import Prelude ((#), ($), (<>), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, constant, debouncer', just, value)
+import Widget (Widget, constant, debouncer', just, spy, value)
 
 order :: Widget Web OrderId Order
 order = T.do
   indeterminateLinearProgress # loadOrder
   elevation20 $ S.do
-    caption $ text # constant "Order " <> value >>> debouncer' >>> shortId
+    caption $ text # constant "Order " <> debouncer' >>> value >>> shortId
     card S.do
       caption $ text # constant "Identifier"
       filledTextField { floatingLabel: constant "Short ID" } shortId
@@ -46,7 +46,8 @@ order = T.do
     card S.do
       body1 $ text # constant "Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
   containedButton { label: text # constant "Submit order " <> value >>> shortId >>> debouncer' }
-  confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+  arr (\submittedOrder -> { authToken: "", submittedOrder })
+  confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> spy "dialog" $ S.do
     body1 $ text # constant "Authorization required"
     filledTextField { floatingLabel: constant "Auth token" } authToken
   indeterminateLinearProgress # submitOrder

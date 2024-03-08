@@ -96,8 +96,10 @@ derive instance Eq Scope
 
 instance Functor m => Profunctor (Widget m) where
   dimap contraf cof p = wrap $ unwrap p <#> \p' ->
-    { toUser: (_ <<< map contraf) p'.toUser
-    , fromUser: p'.fromUser <<< lcmap (map cof)
+    { toUser: (_ <<< case _ of
+      Removed -> Removed
+      Altered (New _ a cont) -> Altered (New [] (contraf a) cont)) p'.toUser
+    , fromUser: p'.fromUser <<< lcmap (\(New _ a cont) -> New [] (cof a) cont)
     }
 
 instance Applicative m => Strong (Widget m) where
@@ -185,12 +187,13 @@ instance MonadEffect m => Category (Widget m) where
     pure
       { toUser: \cha -> void $ AVar.put cha chaAVar mempty
       , fromUser: \prop ->
-        let waitAndPropagate = void $ AVar.take chaAVar case _ of
-              Left error -> pure unit -- TODO handle internal error
-              Right Removed -> pure unit
-              Right (Altered newa) -> do
-                prop newa
-                waitAndPropagate
+        let waitAndPropagate = void $ AVar.take chaAVar \cha -> do
+              case cha of
+                Left error -> pure unit -- TODO handle internal error
+                Right Removed -> pure unit
+                Right (Altered newa) -> do
+                  prop newa
+              waitAndPropagate
         in waitAndPropagate
       }
 
