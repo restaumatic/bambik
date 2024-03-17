@@ -4,7 +4,7 @@ module View
 
 import Data.Profunctor (lcmap)
 import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
-import Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
+import Model (Order, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
 import Prelude ((#), ($), (<>), (>>>))
 import QualifiedDo.SumProfunctor as S
 import QualifiedDo.Semigroupoid as T
