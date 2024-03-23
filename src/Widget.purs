@@ -149,6 +149,14 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
+-- a >>> terminate -- has an effect of a but stops propagation
+-- a <> terminate == a == terminate <> a 
+terminate :: forall m a b. Applicative m => Widget m a b
+terminate = wrap $ pure
+  { toUser: const $ pure unit
+  , fromUser: const $ pure unit
+  }
+
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
@@ -177,12 +185,6 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --         in waitAndPropagate
 --       }
 
-instance Functor m => Functor (Widget m a) where
-  map f p = wrap $ unwrap p <#> \p' ->
-    { toUser: p'.toUser
-    , fromUser: p'.fromUser <<< lcmap (map f)
-    }
-
 instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
@@ -192,12 +194,6 @@ instance Apply m => Semigroup (Widget m a a) where
       , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser (Altered u) *> prop u) *> (p2'.fromUser \u -> p1'.toUser (Altered u) *> prop u)
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
-
-terminate :: forall m a b. Applicative m => Widget m a b
-terminate = wrap $ pure
-    { toUser: const $ pure unit
-    , fromUser: const $ pure unit
-    }
 
 instance Applicative m => Monoid (Widget m a a) where
   mempty = terminate
