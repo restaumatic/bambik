@@ -22,14 +22,13 @@ module Widget
   , prism
   , projection
   , spy
+  , terminate
   , value
   )
   where
 
 import Prelude
 
-import Control.Alt (class Alt)
-import Control.Plus (class Plus)
 import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
@@ -39,8 +38,6 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
-import Data.Profunctor.Sum (class Sum, psum)
-import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -152,21 +149,6 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Apply m => Sum (Widget m) where
-  psum p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
-      }
-
-instance Applicative m => Zero (Widget m) where
-  pzero = wrap $ pure
-    { toUser: const $ pure unit
-    , fromUser: const $ pure unit
-    }
-
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
@@ -201,12 +183,6 @@ instance Functor m => Functor (Widget m a) where
     , fromUser: p'.fromUser <<< lcmap (map f)
     }
 
-instance Apply m => Alt (Widget m a) where
-  alt = psum
-
-instance Applicative m => Plus (Widget m a) where
-  empty = pzero
-
 instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
@@ -217,8 +193,14 @@ instance Apply m => Semigroup (Widget m a a) where
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
+terminate :: forall m a b. Applicative m => Widget m a b
+terminate = wrap $ pure
+    { toUser: const $ pure unit
+    , fromUser: const $ pure unit
+    }
+
 instance Applicative m => Monoid (Widget m a a) where
-  mempty = pzero
+  mempty = terminate
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
