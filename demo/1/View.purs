@@ -9,7 +9,7 @@ import Prelude ((#), ($), (<>), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, constant, debouncer', just, terminate, value)
+import Widget (Widget, constant, debouncer', just, value)
 
 order :: Widget Web OrderId Order
 order = T.do
@@ -44,7 +44,7 @@ order = T.do
         checkbox { labelContent: text # constant "Paid", default: { paid: "0" } } payment
         filledTextField { floatingLabel: constant "Paid" } paid # just # payment
     card S.do
-      body1 $ text # constant "Order " <> (_ >>> terminate) >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
+      body1 $ text # constant "Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
   containedButton { label: text # constant "Submit order " <> value >>> shortId >>> debouncer' }
   confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
     body1 $ text # constant "Authorization required"

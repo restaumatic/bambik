@@ -22,7 +22,7 @@ module Widget
   , prism
   , projection
   , spy
-  , terminate
+  , devoid
   , value
   )
   where
@@ -149,10 +149,10 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
--- a >>> terminate -- has an effect of a but stops propagation
--- a <> terminate == a == terminate <> a
-terminate :: forall m a b. Applicative m => Widget m a b
-terminate = wrap $ pure
+-- a >>> devoid -- has an effect of a but stops propagation
+-- a <> devoid == a == devoid <> a
+devoid :: forall m a b. Applicative m => Widget m a b
+devoid = wrap $ pure
   { toUser: const $ pure unit
   , fromUser: const $ pure unit
   }
@@ -196,7 +196,7 @@ instance Apply m => Semigroup (Widget m a a) where
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
-  mempty = terminate
+  mempty = devoid
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
@@ -214,7 +214,7 @@ constant a w = wrap do
     }
 
 value :: forall a b. WidgetOptics a Void a b
-value w = w >>> terminate
+value w = w >>> devoid
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
