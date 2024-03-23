@@ -214,7 +214,7 @@ constant a w = wrap do
     }
 
 value :: forall a b. WidgetOptics a Void a b
-value = rmap absurd
+value w = w >>> terminate
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
