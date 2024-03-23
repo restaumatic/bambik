@@ -204,7 +204,7 @@ instance Applicative m => Monoid (Widget m a a) where
 type WidgetOptics a b s t = forall m. MonadEffect m => Widget m a b -> Widget m s t
 type WidgetOptics' a s = WidgetOptics a a s s
 
-constant :: forall a b s t. a -> WidgetOptics a b s t
+constant :: forall a s t. a -> WidgetOptics a Void s t
 constant a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
