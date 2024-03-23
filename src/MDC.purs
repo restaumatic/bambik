@@ -38,7 +38,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics', action', effAdapter, effBracket, devoid)
+import Widget (Changed(..), Widget, WidgetOptics', action', devoid, effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -181,19 +181,22 @@ confirmationDialog { title, dismiss, confirm } content =
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         T.do
           S.do
-            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $
+            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ T.do
               title
+              devoid
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ S.do
               div >>> cl "mdc-button__ripple" $ devoid
-              span >>> cl "mdc-button__label" $
+              span >>> cl "mdc-button__label" $ T.do
                 dismiss
+                devoid
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> clickable $ S.do
-              div >>> cl "mdc-button__ripple" $ devoid
-              span >>>  cl "mdc-button__label" $
+              div >>> cl "mdc-button__ripple" $ (devoid :: Widget Web a a) -- TODO
+              span >>>  cl "mdc-button__label" $ T.do
                 confirm
+                devoid
     div >>> cl "mdc-dialog__scrim" $ devoid
     where
       id = unsafePerformEffect uniqueId

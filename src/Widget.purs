@@ -35,7 +35,7 @@ import Data.Foldable (for_)
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol, reflectSymbol)

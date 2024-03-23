@@ -16,7 +16,7 @@ order = T.do
   indeterminateLinearProgress # loadOrder
   elevation20 $ S.do
     caption $ text # constant "Order " <> value >>> debouncer' >>> shortId
-    card S.do
+    card $ S.do
       caption $ text # constant "Identifier"
       filledTextField { floatingLabel: constant "Short ID" } shortId
       filledTextField { floatingLabel: constant "Unique ID" } orderId
@@ -36,16 +36,17 @@ order = T.do
       filledTextField { floatingLabel: constant "Table" } table # slot >>> dineIn
       filledTextField { floatingLabel: constant "Time" } time # slot >>> takeaway
       filledTextField { floatingLabel: constant "Address" } address # slot >>> delivery
-    card S.do
+    card $ S.do
       caption $ text # constant "Payment"
       filledTextField { floatingLabel: constant "Total" } total
       checkbox { labelContent: text # constant "Paid", default: { paid: "0" } } payment
       filledTextField { floatingLabel: constant "Paid" } paid # just >>> payment
-    card S.do
+    card $ S.do
       body1 $ text # constant "Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
-    containedButton { label: text # constant "Submit order " <> value >>> shortId >>> debouncer' } >>> T.do
-      confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
-        body1 $ text # constant "Authorization required"
-        filledTextField { floatingLabel: constant "Auth token" } authToken
-      indeterminateLinearProgress # submitOrder
-      snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}
+      T.do
+        containedButton { label: text # constant "Submit order " <> value >>> shortId >>> debouncer' }
+        confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+          body1 $ text # constant "Authorization required"
+          filledTextField { floatingLabel: constant "Auth token" } authToken
+        indeterminateLinearProgress # submitOrder
+        snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}
