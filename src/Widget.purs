@@ -1,5 +1,6 @@
 module Widget
   ( Changed(..)
+  , Foo
   , New(..)
   , Scope(..)
   , Widget(..)
@@ -13,6 +14,7 @@ module Widget
   , constructor
   , debouncer
   , debouncer'
+  , devoid
   , effAdapter
   , effBracket
   , field
@@ -22,7 +24,6 @@ module Widget
   , prism
   , projection
   , spy
-  , devoid
   , value
   )
   where
@@ -241,6 +242,36 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 just :: forall a. WidgetOptics' a (Maybe a)
 just = constructor "Just" Just identity
 
+-- non-optics
+
+type Foo m = forall a b. Widget m a b -> Widget m a b
+-- complementary to WidgetOptics
+
+debouncer :: forall m. MonadEffect m => Milliseconds -> Foo m
+debouncer millis = affAdapter $ pure
+  { pre: case _ of
+    (New _ i true) -> delay millis *> pure i
+    (New _ i false) -> pure i
+  , post: \(New _ i _) -> pure i
+  }
+
+debouncer' :: forall m. MonadEffect m => Foo m
+debouncer' = debouncer (Milliseconds 300.0)
+
+spy :: forall m. MonadEffect m => String -> Foo m
+spy name w = wrap do
+  { toUser, fromUser } <- unwrap w
+  pure
+    -- TODO use generic show
+    -- { toUser: \ch -> log' ("< " <> show ch) *> toUser ch *> log' ">"
+    { toUser: \ch -> log' "< " *> toUser ch *> log' ">"
+    , fromUser: \prop -> do
+      -- fromUser \u -> log' ("> " <> show u) *> prop u *> log' "<"
+      fromUser \u -> log' "> " *> prop u *> log' "<"
+    }
+  where
+    log' s = log $ "[WidgetSpy] " <> name <> " " <> s
+
 -- modifiers
 
 effBracket :: forall m a b. Monad m => m
@@ -257,17 +288,6 @@ effBracket f w = wrap do
     , fromUser: \prop -> do
       fromUser \u -> beforeOutput u *> prop u *> afterOutput u
     }
-
-spy :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
-spy name w = wrap do
-  { toUser, fromUser } <- unwrap w
-  pure
-    { toUser: \ch -> log' ("< " <> show ch) *> toUser ch *> log' ">"
-    , fromUser: \prop -> do
-      fromUser \u -> log' ("> " <> show u) *> prop u *> log' "<"
-    }
-  where
-    log' s = log $ "[WidgetSpy] " <> name <> " " <> s
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
@@ -338,17 +358,6 @@ affAdapter f w = wrap do
           liftEffect $ prop $ New [] t cont
         liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
     }
-
-debouncer :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
-debouncer millis = affAdapter $ pure
-  { pre: case _ of
-    (New _ i true) -> delay millis *> pure i
-    (New _ i false) -> pure i
-  , post: \(New _ i _) -> pure i
-  }
-
-debouncer' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
-debouncer' = debouncer (Milliseconds 300.0)
 
 -- private
 

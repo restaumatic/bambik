@@ -38,7 +38,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics', WidgetOptics, action', devoid, effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics, WidgetOptics', Foo, action', devoid, effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -99,59 +99,59 @@ radioButton { labelContent, default } value =
   where
     uid = unsafePerformEffect uniqueId
 
-headline1 :: forall a b. Widget Web a b -> Widget Web a b
+headline1 :: Foo Web
 headline1 w = h1 w # cl "mdc-typography--headline1"
 
-headline2 :: forall a b. Widget Web a b -> Widget Web a b
+headline2 :: Foo Web
 headline2 w = h2 w # cl "mdc-typography--headline2"
 
-headline3 :: forall a b. Widget Web a b -> Widget Web a b
+headline3 :: Foo Web
 headline3 w = h3 w # cl "mdc-typography--headline3"
 
-headline4 :: forall a b. Widget Web a b -> Widget Web a b
+headline4 :: Foo Web
 headline4 w = h4 w # cl "mdc-typography--headline4"
 
-headline5 :: forall a b. Widget Web a b -> Widget Web a b
+headline5 :: Foo Web
 headline5 w = h5 w # cl "mdc-typography--headline5"
 
-headline6 :: forall a b. Widget Web a b -> Widget Web a b
+headline6 :: Foo Web
 headline6 w = h6 w # cl "mdc-typography--headline6"
 
-subtitle1 :: forall a b. Widget Web a b -> Widget Web a b
+subtitle1 :: Foo Web
 subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
-subtitle2 :: forall a b. Widget Web a b -> Widget Web a b
+subtitle2 :: Foo Web
 subtitle2 w = p w # cl "mdc-typography--subtitle2"
 
-button :: forall a b. Widget Web a b -> Widget Web a b
+button :: Foo Web
 button w = span w # cl "mdc-typography--button"
 
-caption :: forall a b. Widget Web a b -> Widget Web a b
+caption :: Foo Web
 caption w = span w # cl "mdc-typography--caption"
 
-overline :: forall a b. Widget Web a b -> Widget Web a b
+overline :: Foo Web
 overline w = span w # cl "mdc-typography--overline"
 
-body1 :: forall a b. Widget Web a b -> Widget Web a b
+body1 :: Foo Web
 body1 w = p w # cl"mdc-typography--body1"
 
-body2 :: forall a b. Widget Web a b -> Widget Web a b
+body2 :: Foo Web
 body2 w = p w # cl"mdc-typography--body2"
 
-elevation1 :: forall a b. Widget Web a b -> Widget Web a b
+elevation1 :: Foo Web
 elevation1 w = div w # cl "mdc-elevation--z1"
 
-elevation10 :: forall a b. Widget Web a b -> Widget Web a b
+elevation10 :: Foo Web
 elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px"
 
-elevation20 :: forall a b. Widget Web a b -> Widget Web a b
+elevation20 :: Foo Web
 elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
 
-card :: forall a b . Widget Web a b -> Widget Web a b
+card :: forall a b . Foo Web
 card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
 -- TODO card with primary and other actions
--- card :: forall a b. { title :: Widget Web a Void } -> Widget Web a b -> Widget Web a b
+-- card :: forall a b. { title :: Widget Web a Void } -> Foo Web
 -- card { title } w = div >>> cl "mdc-card" >>> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ S.do
 --   div >>> cl "mdc-card__primary-action" $ S.do
 --     div >>> cl "mdc-card__media" >>> cl "mdc-card__media--square" $ div >>> cl "mdc-card__media-content" $ (title >>> devoid)
