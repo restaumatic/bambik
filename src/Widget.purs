@@ -246,6 +246,7 @@ just = constructor "Just" Just identity
 
 type Foo m = forall a b. Widget m a b -> Widget m a b
 -- complementary to WidgetOptics
+-- TODO: rename to WidgetExperience? WidgetBehavior?
 
 debouncer :: forall m. MonadEffect m => Milliseconds -> Foo m
 debouncer millis = affAdapter $ pure
