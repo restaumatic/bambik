@@ -71,6 +71,10 @@ derive newtype instance MonadState DocumentBuilderState Web
 uniqueId :: Effect String
 uniqueId = randomElementId
 
+--
+
+type Foo a b s t = Widget Web a b -> Widget Web s t
+
 -- Primitives
 
 text :: Widget Web String Void
@@ -320,7 +324,7 @@ runWidgetInBody w = do
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { toUser, fromUser } <- unwrap w
-  liftEffect $ fromUser \(New _ mo cont) -> outward mo -- TODO debounce if cont
+  liftEffect $ fromUser \(New _ mo _) -> outward mo
   liftEffect $ toUser $ Altered $ New [] i false
 
 --- private
@@ -374,9 +378,6 @@ clazz name = do
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
-
-logIndent :: Ref.Ref Int
-logIndent = unsafePerformEffect $ Ref.new 0
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0

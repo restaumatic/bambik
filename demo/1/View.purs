@@ -30,23 +30,23 @@ order = T.do
       filledTextField { floatingLabel: constant "Forename" } forename # formal
     card >>> fulfillment $ S.do
       caption $ text # constant "Fulfillment"
-      radioButton { labelContent: text # constant "Dine in", default: { table: "1"} } dineIn
-      radioButton { labelContent: text # constant "Takeaway", default: { time: "15:30"} } takeaway
-      radioButton { labelContent: text # constant "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
+      radioButton { labelContent: constant "Dine in", default: { table: "1"} } dineIn
+      radioButton { labelContent: constant "Takeaway", default: { time: "15:30"} } takeaway
+      radioButton { labelContent: constant "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
       filledTextField { floatingLabel: constant "Table" } table # slot >>> dineIn
       filledTextField { floatingLabel: constant "Time" } time # slot >>> takeaway
       filledTextField { floatingLabel: constant "Address" } address # slot >>> delivery
     card $ S.do
       caption $ text # constant "Payment"
       filledTextField { floatingLabel: constant "Total" } total
-      checkbox { labelContent: text # constant "Paid", default: { paid: "0" } } payment
+      checkbox { labelContent: constant "Paid", default: { paid: "0" } } payment
       filledTextField { floatingLabel: constant "Paid" } paid # just >>> payment
     card $ S.do
       body1 $ text # constant "Order " <> value >>> shortId <> constant " (uniquely " <> value >>> orderId <> constant ") for " <> value >>> firstName >>> customer <> constant " " <> value >>> lastName >>> customer <> constant " (formally " <> value >>> surname >>> formal >>> customer <> constant " " <> value >>> forename >>> formal >>> customer <> constant ")" <> constant ", fulfilled as " <> (constant "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (constant "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (constant "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (constant ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
       T.do
-        containedButton { label: text # constant "Submit order " <> value >>> shortId >>> debouncer' }
-        confirmationDialog { title: text # constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: text # constant "No", confirm: text # constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+        containedButton { label: constant "Submit order " <> value >>> shortId >>> debouncer' }
+        confirmationDialog { title: constant "Submit order " <> value >>> shortId >>> submittedOrder <> constant "?", dismiss: constant "No", confirm: constant "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
           body1 $ text # constant "Authorization required"
           filledTextField { floatingLabel: constant "Auth token" } authToken
         indeterminateLinearProgress # submitOrder
-        snackbar { label: text # constant "Order " <> value >>> shortId <> constant " submitted"}
+        snackbar { label: constant "Order " <> value >>> shortId <> constant " submitted"}

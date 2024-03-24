@@ -38,21 +38,21 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics', action', devoid, effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics', WidgetOptics, action', devoid, effAdapter, effBracket)
 
 -- Primitive widgets
 
-containedButton :: forall a b. { label :: Widget Web a b } -> Widget Web a a
+containedButton :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
 containedButton { label } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br >>> clickable $ S.do
     div >>> cl "mdc-button__ripple" $ (devoid :: Widget Web a a) -- TODO
     span >>> cl "mdc-button__label" $
-      label >>> devoid
+      (label text) >>> devoid
   where
     br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 
 -- TODO support input types: email, text, password, number, search, tel, url
-filledTextField :: forall a b. { floatingLabel :: Widget Web String Void -> Widget Web a b } -> WidgetOptics' String a -> Widget Web a a
+filledTextField :: forall a b. { floatingLabel :: WidgetOptics String Void a b } -> WidgetOptics' String a -> Widget Web a a
 filledTextField { floatingLabel } value =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
@@ -62,14 +62,14 @@ filledTextField { floatingLabel } value =
       (span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
         Removed -> false
         Altered _ -> true)) $
-          text # floatingLabel) >>> devoid
+          floatingLabel text) >>> devoid
       input "text" # value # cl "mdc-text-field__input" # attr "aria-labelledby" id
     span >>> cl "mdc-line-ripple" $ devoid
     where
       id = unsafePerformEffect uniqueId
 
 
-checkbox :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' (Maybe a) s -> Widget Web s s
+checkbox :: forall a b s. { labelContent :: WidgetOptics String Void s b, default :: a } -> WidgetOptics' (Maybe a) s -> Widget Web s s
 checkbox { labelContent, default } checked =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-checkbox" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit) $ S.do
@@ -81,12 +81,12 @@ checkbox { labelContent, default } checked =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ devoid
       div >>> cl "mdc-checkbox__ripple" $ devoid
-    label (labelContent >>> devoid) # attr "for" id
+    label (labelContent text >>> devoid) # attr "for" id
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a s c. { labelContent :: Widget Web s c, default :: a } -> WidgetOptics' a s -> Widget Web s s
+radioButton :: forall a b s. { labelContent :: WidgetOptics String Void s b, default :: a } -> WidgetOptics' a s -> Widget Web s s
 radioButton { labelContent, default } value =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit) $ S.do
@@ -95,7 +95,7 @@ radioButton { labelContent, default } value =
         div >>> cl "mdc-radio__outer-circle" $ devoid
         div >>> cl "mdc-radio__inner-circle" $ devoid
       div >>> cl "mdc-radio__ripple" $ devoid
-    label (labelContent >>> devoid) # attr "for" uid
+    label (labelContent text >>> devoid) # attr "for" uid
   where
     uid = unsafePerformEffect uniqueId
 
@@ -159,13 +159,13 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 --     div >>> cl "mdc-card__ripple" $ devoid
 --   -- TODO  card actions
 
-dialog :: forall a b. { title :: Widget Web a b } -> Widget Web a a -> Widget Web a a
+dialog :: forall a b. { title :: WidgetOptics String Void a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $ S.do
       div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $
-          title >>> devoid
+          title text >>> devoid
         div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $
           content
     div >>> cl "mdc-dialog__scrim" $ devoid
@@ -174,7 +174,7 @@ dialog { title } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-confirmationDialog :: forall a. { title :: Widget Web a a, dismiss :: Widget Web a a, confirm :: Widget Web a a } -> Widget Web a a -> Widget Web a a
+confirmationDialog :: forall a b c d. { title :: WidgetOptics String Void a b, dismiss :: WidgetOptics String Void a c, confirm :: WidgetOptics String Void a d } -> Widget Web a a -> Widget Web a a
 confirmationDialog { title, dismiss, confirm } content =
   div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $
@@ -182,7 +182,7 @@ confirmationDialog { title, dismiss, confirm } content =
         T.do
           S.do
             h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ T.do
-              title
+              title text -- TODO text # title doesn't compile, why?
               devoid
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
@@ -190,12 +190,12 @@ confirmationDialog { title, dismiss, confirm } content =
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ S.do
               div >>> cl "mdc-button__ripple" $ devoid
               span >>> cl "mdc-button__label" $ T.do
-                dismiss
+                dismiss text
                 devoid
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> clickable $ S.do
               div >>> cl "mdc-button__ripple" $ (devoid :: Widget Web a a) -- TODO
               span >>>  cl "mdc-button__label" $ T.do
-                confirm
+                confirm text
                 devoid
     div >>> cl "mdc-dialog__scrim" $ devoid
     where
@@ -205,7 +205,7 @@ confirmationDialog { title, dismiss, confirm } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-snackbar :: forall a b. { label :: Widget Web a b } -> Widget Web a a
+snackbar :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
 snackbar { label } =
   aside >>> cl "mdc-snackbar" >>> effBracket (do
     comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
@@ -221,8 +221,8 @@ snackbar { label } =
     a2eff a
     o2eff a) $
     div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
-      div
-        label # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
+      div $
+        label text # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =
