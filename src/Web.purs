@@ -9,7 +9,6 @@ module Web
   , cl
   , clickable
   , div
-  , div'
   , dynAttr
   , dynClass
   , el
@@ -20,6 +19,7 @@ module Web
   , h5
   , h6
   , html
+  , input
   , label
   , p
   , path
@@ -30,7 +30,6 @@ module Web
   , span
   , svg
   , text
-  , input
   , uniqueId
   )
   where
@@ -222,9 +221,6 @@ el tagName = wrap <<< element tagName <<< unwrap
 
 div :: Foo Web
 div = el "div"
-
-div' :: { style :: String } -> Foo Web
-div' { style } w = el "div" w # attr "style" style
 
 span :: Foo Web
 span = el "span"
