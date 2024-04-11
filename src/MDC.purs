@@ -159,6 +159,7 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 --     div >>> cl "mdc-card__ripple" $ devoid
 --   -- TODO  card actions
 
+-- TODO isn't it an ocular?
 dialog :: forall a b. { title :: WidgetOptics String Void a b } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
@@ -216,8 +217,8 @@ snackbar { label } =
     , afterInput: case _ of
       Removed -> mempty
       Altered _ -> open comp
-    , beforeOutput: mempty
-    , afterOutput: mempty
+    , beforeOutput: \_ -> mempty
+    , afterOutput: \_ -> mempty
     }) >>> (action' \a a2eff o2eff -> liftEffect do
     a2eff a
     o2eff a) $
