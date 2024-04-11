@@ -1,5 +1,6 @@
 module Widget
   ( Changed(..)
+  , WidgetOcular
   , New(..)
   , Scope(..)
   , Widget(..)
@@ -13,6 +14,7 @@ module Widget
   , constructor
   , debouncer
   , debouncer'
+  , devoid
   , effAdapter
   , effBracket
   , field
@@ -28,19 +30,16 @@ module Widget
 
 import Prelude
 
-import Control.Alt (class Alt)
-import Control.Plus (class Plus)
 import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
+import Data.Lens (Optic, Optic')
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
-import Data.Profunctor.Sum (class Sum, psum)
-import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -51,6 +50,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
+import Ocular (Ocular)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -152,20 +152,13 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Apply m => Sum (Widget m) where
-  psum p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
-      }
-
-instance Applicative m => Zero (Widget m) where
-  pzero = wrap $ pure
-    { toUser: const $ pure unit
-    , fromUser: const $ pure unit
-    }
+-- a >>> devoid -- has an effect of `a` but stops propagation
+-- a <> devoid == a == devoid <> a
+devoid :: forall m a b. Applicative m => Widget m a b
+devoid = wrap $ pure
+  { toUser: const $ pure unit
+  , fromUser: const $ pure unit
+  }
 
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
@@ -195,18 +188,6 @@ instance MonadEffect m => Semigroupoid (Widget m) where
 --         in waitAndPropagate
 --       }
 
-instance Functor m => Functor (Widget m a) where
-  map f p = wrap $ unwrap p <#> \p' ->
-    { toUser: p'.toUser
-    , fromUser: p'.fromUser <<< lcmap (map f)
-    }
-
-instance Apply m => Alt (Widget m a) where
-  alt = psum
-
-instance Applicative m => Plus (Widget m a) where
-  empty = pzero
-
 instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
@@ -218,15 +199,15 @@ instance Apply m => Semigroup (Widget m a a) where
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
-  mempty = pzero
+  mempty = devoid
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
 
-type WidgetOptics a b s t = forall m. MonadEffect m => Widget m a b -> Widget m s t
-type WidgetOptics' a s = WidgetOptics a a s s
+type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
+type WidgetOptics' a s = forall m. MonadEffect m => Optic' (Widget m) s a
 
-constant :: forall a b s t. a -> WidgetOptics a b s t
+constant :: forall a s t. a -> WidgetOptics a Void s t
 constant a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
@@ -236,7 +217,7 @@ constant a w = wrap do
     }
 
 value :: forall a b. WidgetOptics a Void a b
-value = rmap absurd
+value w = w >>> devoid
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
@@ -263,6 +244,35 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 just :: forall a. WidgetOptics' a (Maybe a)
 just = constructor "Just" Just identity
 
+-- oculars
+
+type WidgetOcular m = Ocular (Widget m)
+
+debouncer :: forall m. MonadEffect m => Milliseconds -> WidgetOcular m
+debouncer millis = affAdapter $ pure
+  { pre: case _ of
+    (New _ i true) -> delay millis *> pure i
+    (New _ i false) -> pure i
+  , post: \(New _ i _) -> pure i
+  }
+
+debouncer' :: forall m. MonadEffect m => WidgetOcular m
+debouncer' = debouncer (Milliseconds 300.0)
+
+spy :: forall m. MonadEffect m => String -> WidgetOcular m
+spy name w = wrap do
+  { toUser, fromUser } <- unwrap w
+  pure
+    -- TODO use generic show
+    -- { toUser: \ch -> log' ("< " <> show ch) *> toUser ch *> log' ">"
+    { toUser: \ch -> log' "< " *> toUser ch *> log' ">"
+    , fromUser: \prop -> do
+      -- fromUser \u -> log' ("> " <> show u) *> prop u *> log' "<"
+      fromUser \u -> log' "> " *> prop u *> log' "<"
+    }
+  where
+    log' s = log $ "[WidgetSpy] " <> name <> " " <> s
+
 -- modifiers
 
 effBracket :: forall m a b. Monad m => m
@@ -279,17 +289,6 @@ effBracket f w = wrap do
     , fromUser: \prop -> do
       fromUser \u -> beforeOutput u *> prop u *> afterOutput u
     }
-
-spy :: forall m a . MonadEffect m => Show a => String -> Widget m a a -> Widget m a a
-spy name w = wrap do
-  { toUser, fromUser } <- unwrap w
-  pure
-    { toUser: \ch -> log' ("< " <> show ch) *> toUser ch *> log' ">"
-    , fromUser: \prop -> do
-      fromUser \u -> log' ("> " <> show u) *> prop u *> log' "<"
-    }
-  where
-    log' s = log $ "[WidgetSpy] " <> name <> " " <> s
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
@@ -360,17 +359,6 @@ affAdapter f w = wrap do
           liftEffect $ prop $ New [] t cont
         liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
     }
-
-debouncer :: forall m a b. MonadEffect m => Milliseconds -> Widget m a b -> Widget m a b
-debouncer millis = affAdapter $ pure
-  { pre: case _ of
-    (New _ i true) -> delay millis *> pure i
-    (New _ i false) -> pure i
-  , post: \(New _ i _) -> pure i
-  }
-
-debouncer' :: forall m a b. MonadEffect m => Widget m a b -> Widget m a b
-debouncer' = debouncer (Milliseconds 300.0)
 
 -- private
 

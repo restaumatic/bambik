@@ -9,7 +9,6 @@ module Web
   , cl
   , clickable
   , div
-  , div'
   , dynAttr
   , dynClass
   , el
@@ -20,6 +19,7 @@ module Web
   , h5
   , h6
   , html
+  , input
   , label
   , p
   , path
@@ -30,7 +30,6 @@ module Web
   , span
   , svg
   , text
-  , input
   , uniqueId
   )
   where
@@ -48,7 +47,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget)
+import Widget (Changed(..), New(..), Widget, WidgetOcular)
 
 foreign import data Node :: Type
 
@@ -154,29 +153,15 @@ radioButton default = dynAttr "disabled" "true" isNothing $ wrap do
     prop $ New [] a false
     }
 
--- Optics
+-- Foos
 
-attr :: forall a b. String -> String -> Widget Web a b -> Widget Web a b
+attr :: String -> String -> WidgetOcular Web
 attr name value w = wrap do
   w' <- unwrap w
   attribute name value
   pure w'
 
-dynAttr :: forall a b. String -> String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
-dynAttr name value pred w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  liftEffect $ updateAttribute node Nothing
-  pure
-    { toUser: \mch -> do
-      updateAttribute node $ Just mch
-      w'.toUser mch
-    , fromUser: w'.fromUser
-    }
-    where
-      updateAttribute node mnewa = if pred mnewa then setAttribute node name value else removeAttribute node name
-
-cl :: forall a b. String -> Widget Web a b -> Widget Web a b
+cl :: String -> WidgetOcular Web
 cl name w = wrap do
   w' <- unwrap w
   clazz name
@@ -185,38 +170,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-dynClass :: forall a b. String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
-dynClass name pred w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  liftEffect $ (if pred Nothing then addClass else removeClass) node name
-  pure
-    { toUser: \mch -> do
-    (if pred (Just mch) then addClass else removeClass) node name
-    w'.toUser mch
-    , fromUser: w'.fromUser
-    }
-
-clickable :: forall a b. Widget Web a b -> Widget Web a a
-clickable w = wrap do
-  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true))
-  node <- gets _.sibling
-  pure
-    { toUser: \occur -> do
-    w'.toUser occur
-    case occur of
-      Removed -> Ref.write (unsafeCoerce unit) aRef
-      Altered (New _ a _) -> Ref.write a aRef
-    , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    a <- Ref.read aRef
-    -- w'.toUser Nothing -- TODO check
-    prop $ New [] a false
-    }
-
-slot :: forall a b. Widget Web a b -> Widget Web a b
+slot :: WidgetOcular Web
 slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
   pure
@@ -262,53 +216,99 @@ slot w = wrap do
 
       pure $ { ensureAttached, ensureDetached, result }
 
-el :: forall a b. String -> Widget Web a b -> Widget Web a b
+el :: String -> WidgetOcular Web
 el tagName = wrap <<< element tagName <<< unwrap
 
-div :: forall a b. Widget Web a b -> Widget Web a b
+div :: WidgetOcular Web
 div = el "div"
 
-div' :: forall a b. { style :: String } -> Widget Web a b -> Widget Web a b
-div' { style } w = el "div" w # attr "style" style
-
-span :: forall a b. Widget Web a b -> Widget Web a b
+span :: WidgetOcular Web
 span = el "span"
 
-aside :: forall a b. Widget Web a b -> Widget Web a b
+aside :: WidgetOcular Web
 aside = el "aside"
 
-label :: forall a b. Widget Web a b -> Widget Web a b
+label :: WidgetOcular Web
 label = el "label"
 
-button :: forall a b. Widget Web a b -> Widget Web a b
+button :: WidgetOcular Web
 button = el "button"
 
-svg :: forall a b. Widget Web a b -> Widget Web a b
+svg :: WidgetOcular Web
 svg = el "svg"
 
-path :: forall a b. Widget Web a b -> Widget Web a b
+path :: WidgetOcular Web
 path = el "path"
 
-p :: forall a b. Widget Web a b -> Widget Web a b
+p :: WidgetOcular Web
 p = el "p"
 
-h1 :: forall a b. Widget Web a b -> Widget Web a b
+h1 :: WidgetOcular Web
 h1 = el "h1"
 
-h2 :: forall a b. Widget Web a b -> Widget Web a b
+h2 :: WidgetOcular Web
 h2 = el "h2"
 
-h3 :: forall a b. Widget Web a b -> Widget Web a b
+h3 :: WidgetOcular Web
 h3 = el "h3"
 
-h4 :: forall a b. Widget Web a b -> Widget Web a b
+h4 :: WidgetOcular Web
 h4 = el "h4"
 
-h5 :: forall a b. Widget Web a b -> Widget Web a b
+h5 :: WidgetOcular Web
 h5 = el "h5"
 
-h6 :: forall a b. Widget Web a b -> Widget Web a b
+h6 :: WidgetOcular Web
 h6 = el "h6"
+
+-- Others TODO: this is smell...
+
+dynAttr :: forall a b. String -> String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
+dynAttr name value pred w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  liftEffect $ updateAttribute node Nothing
+  pure
+    { toUser: \mch -> do
+      updateAttribute node $ Just mch
+      w'.toUser mch
+    , fromUser: w'.fromUser
+    }
+    where
+      updateAttribute node mnewa = if pred mnewa then setAttribute node name value else removeAttribute node name
+
+
+dynClass :: forall a b. String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
+dynClass name pred w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  liftEffect $ (if pred Nothing then addClass else removeClass) node name
+  pure
+    { toUser: \mch -> do
+    (if pred (Just mch) then addClass else removeClass) node name
+    w'.toUser mch
+    , fromUser: w'.fromUser
+    }
+
+clickable :: forall a b. Widget Web a b -> Widget Web a a
+clickable w = wrap do
+  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
+    Altered _ -> false
+    Removed -> true))
+  node <- gets _.sibling
+  pure
+    { toUser: \occur -> do
+    w'.toUser occur
+    case occur of
+      Removed -> Ref.write (unsafeCoerce unit) aRef
+      Altered (New _ a _) -> Ref.write a aRef
+    , fromUser: \prop -> void $ addEventListener "click" node $ const do
+    a <- Ref.read aRef
+    -- w'.toUser Nothing -- TODO check
+    prop $ New [] a false
+    }
+
 
 -- Entry point
 
@@ -320,7 +320,7 @@ runWidgetInBody w = do
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { toUser, fromUser } <- unwrap w
-  liftEffect $ fromUser \(New _ mo cont) -> outward mo -- TODO debounce if cont
+  liftEffect $ fromUser \(New _ mo _) -> outward mo
   liftEffect $ toUser $ Altered $ New [] i false
 
 --- private
@@ -374,9 +374,6 @@ clazz name = do
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
-
-logIndent :: Ref.Ref Int
-logIndent = unsafePerformEffect $ Ref.new 0
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
