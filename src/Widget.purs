@@ -1,6 +1,6 @@
 module Widget
   ( Changed(..)
-  , Foo
+  , WidgetOcular
   , New(..)
   , Scope(..)
   , Widget(..)
@@ -33,6 +33,7 @@ import Prelude
 import Data.Array (fold, null, uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
+import Data.Lens (Optic, Optic')
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -49,6 +50,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
+import Ocular (Ocular)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -150,7 +152,7 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
--- a >>> devoid -- has an effect of a but stops propagation
+-- a >>> devoid -- has an effect of `a` but stops propagation
 -- a <> devoid == a == devoid <> a
 devoid :: forall m a b. Applicative m => Widget m a b
 devoid = wrap $ pure
@@ -202,8 +204,8 @@ instance Applicative m => Monoid (Widget m a a) where
 
 -- optics
 
-type WidgetOptics a b s t = forall m. MonadEffect m => Widget m a b -> Widget m s t
-type WidgetOptics' a s = WidgetOptics a a s s
+type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
+type WidgetOptics' a s = forall m. MonadEffect m => Optic' (Widget m) s a
 
 constant :: forall a s t. a -> WidgetOptics a Void s t
 constant a w = wrap do
@@ -242,13 +244,11 @@ constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap
 just :: forall a. WidgetOptics' a (Maybe a)
 just = constructor "Just" Just identity
 
--- non-optics
+-- oculars
 
-type Foo m = forall a b. Widget m a b -> Widget m a b
--- complementary to WidgetOptics
--- TODO: rename to WidgetExperience? WidgetBehavior? WidgetPresentation?
+type WidgetOcular m = Ocular (Widget m)
 
-debouncer :: forall m. MonadEffect m => Milliseconds -> Foo m
+debouncer :: forall m. MonadEffect m => Milliseconds -> WidgetOcular m
 debouncer millis = affAdapter $ pure
   { pre: case _ of
     (New _ i true) -> delay millis *> pure i
@@ -256,10 +256,10 @@ debouncer millis = affAdapter $ pure
   , post: \(New _ i _) -> pure i
   }
 
-debouncer' :: forall m. MonadEffect m => Foo m
+debouncer' :: forall m. MonadEffect m => WidgetOcular m
 debouncer' = debouncer (Milliseconds 300.0)
 
-spy :: forall m. MonadEffect m => String -> Foo m
+spy :: forall m. MonadEffect m => String -> WidgetOcular m
 spy name w = wrap do
   { toUser, fromUser } <- unwrap w
   pure

@@ -47,7 +47,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, Foo)
+import Widget (Changed(..), New(..), Widget, WidgetOcular)
 
 foreign import data Node :: Type
 
@@ -155,13 +155,13 @@ radioButton default = dynAttr "disabled" "true" isNothing $ wrap do
 
 -- Foos
 
-attr :: String -> String -> Foo Web
+attr :: String -> String -> WidgetOcular Web
 attr name value w = wrap do
   w' <- unwrap w
   attribute name value
   pure w'
 
-cl :: String -> Foo Web
+cl :: String -> WidgetOcular Web
 cl name w = wrap do
   w' <- unwrap w
   clazz name
@@ -170,7 +170,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-slot :: Foo Web
+slot :: WidgetOcular Web
 slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
   pure
@@ -216,49 +216,49 @@ slot w = wrap do
 
       pure $ { ensureAttached, ensureDetached, result }
 
-el :: String -> Foo Web
+el :: String -> WidgetOcular Web
 el tagName = wrap <<< element tagName <<< unwrap
 
-div :: Foo Web
+div :: WidgetOcular Web
 div = el "div"
 
-span :: Foo Web
+span :: WidgetOcular Web
 span = el "span"
 
-aside :: Foo Web
+aside :: WidgetOcular Web
 aside = el "aside"
 
-label :: Foo Web
+label :: WidgetOcular Web
 label = el "label"
 
-button :: Foo Web
+button :: WidgetOcular Web
 button = el "button"
 
-svg :: Foo Web
+svg :: WidgetOcular Web
 svg = el "svg"
 
-path :: Foo Web
+path :: WidgetOcular Web
 path = el "path"
 
-p :: Foo Web
+p :: WidgetOcular Web
 p = el "p"
 
-h1 :: Foo Web
+h1 :: WidgetOcular Web
 h1 = el "h1"
 
-h2 :: Foo Web
+h2 :: WidgetOcular Web
 h2 = el "h2"
 
-h3 :: Foo Web
+h3 :: WidgetOcular Web
 h3 = el "h3"
 
-h4 :: Foo Web
+h4 :: WidgetOcular Web
 h4 = el "h4"
 
-h5 :: Foo Web
+h5 :: WidgetOcular Web
 h5 = el "h5"
 
-h6 :: Foo Web
+h6 :: WidgetOcular Web
 h6 = el "h6"
 
 -- Others TODO: this is smell...

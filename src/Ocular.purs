@@ -13,5 +13,5 @@ import Data.Lens (Optic)
 -- the "inverse" of traditional optics is Ocular:
 type Ocular p = forall a b. Optic p a b a b
 -- or more generally (Mock?):
-type Foo p = forall a b s t. Optic p a b s t
+type Mock p = forall a b s t. Optic p a b s t
 

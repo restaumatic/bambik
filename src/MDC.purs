@@ -38,7 +38,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics, WidgetOptics', Foo, action', devoid, effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOptics, WidgetOptics', WidgetOcular, action', devoid, effAdapter, effBracket)
 
 -- Primitive widgets
 
@@ -99,59 +99,59 @@ radioButton { labelContent, default } value =
   where
     uid = unsafePerformEffect uniqueId
 
-headline1 :: Foo Web
+headline1 :: WidgetOcular Web
 headline1 w = h1 w # cl "mdc-typography--headline1"
 
-headline2 :: Foo Web
+headline2 :: WidgetOcular Web
 headline2 w = h2 w # cl "mdc-typography--headline2"
 
-headline3 :: Foo Web
+headline3 :: WidgetOcular Web
 headline3 w = h3 w # cl "mdc-typography--headline3"
 
-headline4 :: Foo Web
+headline4 :: WidgetOcular Web
 headline4 w = h4 w # cl "mdc-typography--headline4"
 
-headline5 :: Foo Web
+headline5 :: WidgetOcular Web
 headline5 w = h5 w # cl "mdc-typography--headline5"
 
-headline6 :: Foo Web
+headline6 :: WidgetOcular Web
 headline6 w = h6 w # cl "mdc-typography--headline6"
 
-subtitle1 :: Foo Web
+subtitle1 :: WidgetOcular Web
 subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
-subtitle2 :: Foo Web
+subtitle2 :: WidgetOcular Web
 subtitle2 w = p w # cl "mdc-typography--subtitle2"
 
-button :: Foo Web
+button :: WidgetOcular Web
 button w = span w # cl "mdc-typography--button"
 
-caption :: Foo Web
+caption :: WidgetOcular Web
 caption w = span w # cl "mdc-typography--caption"
 
-overline :: Foo Web
+overline :: WidgetOcular Web
 overline w = span w # cl "mdc-typography--overline"
 
-body1 :: Foo Web
+body1 :: WidgetOcular Web
 body1 w = p w # cl"mdc-typography--body1"
 
-body2 :: Foo Web
+body2 :: WidgetOcular Web
 body2 w = p w # cl"mdc-typography--body2"
 
-elevation1 :: Foo Web
+elevation1 :: WidgetOcular Web
 elevation1 w = div w # cl "mdc-elevation--z1"
 
-elevation10 :: Foo Web
+elevation10 :: WidgetOcular Web
 elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px"
 
-elevation20 :: Foo Web
+elevation20 :: WidgetOcular Web
 elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
 
-card :: forall a b . Foo Web
+card :: WidgetOcular Web
 card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
 -- TODO card with primary and other actions
--- card :: forall a b. { title :: Widget Web a Void } -> Foo Web
+-- card :: forall a b. { title :: Widget Web a Void } -> WidgetOcular Web
 -- card { title } w = div >>> cl "mdc-card" >>> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ S.do
 --   div >>> cl "mdc-card__primary-action" $ S.do
 --     div >>> cl "mdc-card__media" >>> cl "mdc-card__media--square" $ div >>> cl "mdc-card__media-content" $ (title >>> devoid)
