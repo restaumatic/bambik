@@ -207,8 +207,8 @@ confirmationDialog { title, dismiss, confirm } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-snackbar :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
-snackbar { label } =
+snackbar :: forall a b c. { label :: WidgetOptics String Void a b } -> Widget Web a c
+snackbar { label } = T.do
   aside >>> cl "mdc-snackbar" >>> effBracket (do
     comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
     pure { beforeInput: case _ of
@@ -220,11 +220,10 @@ snackbar { label } =
     , beforeOutput: \_ -> mempty
     , afterOutput: \_ -> mempty
     }) >>> (action' \a a2eff o2eff -> liftEffect do
-    a2eff a
-    o2eff a) $
     div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
       div $
         label text # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
+  devoid
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =
