@@ -174,7 +174,8 @@ dialog { title } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-confirmationDialog :: forall a b c d. { title :: WidgetOptics String Void a b, dismiss :: WidgetOptics String Void a c, confirm :: WidgetOptics String Void a d } -> Widget Web a a -> Widget Web a a
+-- TODO isn't it an ocular?
+confirmationDialog :: forall a b c d x. { title :: WidgetOptics String Void a b, dismiss :: WidgetOptics String Void a c, confirm :: WidgetOptics String Void a d } -> Widget Web a a -> Widget Web a a
 confirmationDialog { title, dismiss, confirm } content =
   div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $
