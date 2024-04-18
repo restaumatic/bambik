@@ -220,6 +220,8 @@ snackbar { label } = T.do
     , beforeOutput: \_ -> mempty
     , afterOutput: \_ -> mempty
     }) >>> (action' \a a2eff o2eff -> liftEffect do
+    a2eff a
+    o2eff a) $
     div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
       div $
         label text # cl "mdc-snackbar__label" # attr "aria-atomic" "false"

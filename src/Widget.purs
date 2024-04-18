@@ -275,12 +275,12 @@ spy name w = wrap do
 
 -- modifiers
 
-effBracket :: forall m. Monad m => m
-  { beforeInput :: forall a. Changed a -> Effect Unit
-  , afterInput :: forall a. Changed a -> Effect Unit
-  , beforeOutput :: forall b. New b -> Effect Unit
-  , afterOutput :: forall b. New b -> Effect Unit
-  } -> WidgetOcular m
+effBracket :: forall m a b. Monad m => m
+  { beforeInput :: Changed a -> Effect Unit
+  , afterInput :: Changed a -> Effect Unit
+  , beforeOutput :: New b -> Effect Unit
+  , afterOutput :: New b -> Effect Unit
+  } -> Widget m a b -> Widget m a b
 effBracket f w = wrap do
   { toUser, fromUser } <- unwrap w
   { beforeInput, afterInput, beforeOutput, afterOutput } <- f
