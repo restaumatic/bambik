@@ -263,7 +263,7 @@ h6 = el "h6"
 
 -- Others TODO: this is smell...
 
-dynAttr :: forall a b. String -> String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
+dynAttr :: String -> String -> (Maybe (Changed Unit) -> Boolean) -> WidgetOcular Web
 dynAttr name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -275,24 +275,23 @@ dynAttr name value pred w = wrap do
     , fromUser: w'.fromUser
     }
     where
-      updateAttribute node mnewa = if pred mnewa then setAttribute node name value else removeAttribute node name
+      updateAttribute node mnewa = if pred (map (_ $> unit) $ mnewa) then setAttribute node name value else removeAttribute node name
 
-
-dynClass :: forall a b. String -> (Maybe (Changed a) -> Boolean) -> Widget Web a b -> Widget Web a b
+dynClass :: String -> (Maybe (Changed Unit) -> Boolean) -> WidgetOcular Web
 dynClass name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   liftEffect $ (if pred Nothing then addClass else removeClass) node name
   pure
     { toUser: \mch -> do
-    (if pred (Just mch) then addClass else removeClass) node name
+    (if pred (Just (mch $> unit)) then addClass else removeClass) node name
     w'.toUser mch
     , fromUser: w'.fromUser
     }
 
-clickable :: forall a b. Widget Web a b -> Widget Web a a
+clickable :: WidgetOcular Web
 clickable w = wrap do
-  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  bRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true))
@@ -300,13 +299,16 @@ clickable w = wrap do
   pure
     { toUser: \occur -> do
     w'.toUser occur
-    case occur of
-      Removed -> Ref.write (unsafeCoerce unit) aRef
-      Altered (New _ a _) -> Ref.write a aRef
-    , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    a <- Ref.read aRef
-    -- w'.toUser Nothing -- TODO check
-    prop $ New [] a false
+    -- case occur of
+    --   Removed -> Ref.write (unsafeCoerce unit) aRef
+    --   Altered (New _ a _) -> Ref.write a aRef
+    , fromUser: \prop -> do
+    w'.fromUser \(New _ b _) -> do
+      Ref.write b bRef
+    void $ addEventListener "click" node $ const do
+      b <- Ref.read bRef
+      -- w'.toUser Nothing -- TODO check
+      prop $ New [] b false
     }
 
 
