@@ -187,8 +187,8 @@ slot w = wrap do
     parent <- gets _.parent
     slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
     liftEffect do
-      placeholderBefore <- newPlaceholderBefore slotNo
-      placeholderAfter <- newPlaceholderAfter slotNo
+      placeholderBefore <- placeholderBeforeSlot slotNo
+      placeholderAfter <- placeholderAfterSlot slotNo
 
       (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
       appendChild placeholderAfter parent
@@ -215,6 +215,12 @@ slot w = wrap do
             Ref.write (Just documentFragment) detachedDocumentFragmentRef
 
       pure $ { ensureAttached, ensureDetached, result }
+  placeholderBeforeSlot :: Int -> Effect Node
+  placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
+
+  placeholderAfterSlot :: Int -> Effect Node
+  placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
+
 
 el :: String -> WidgetOcular Web
 el tagName = wrap <<< element tagName <<< unwrap
@@ -379,9 +385,3 @@ runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: nod
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
-
-newPlaceholderBefore :: forall a. Show a ⇒ a → Effect Node
-newPlaceholderBefore slotNo = createCommentNode $ "begin component " <> show slotNo
-
-newPlaceholderAfter :: forall a. Show a ⇒ a → Effect Node
-newPlaceholderAfter slotNo = createCommentNode $ "end component " <> show slotNo
