@@ -11,7 +11,7 @@ module Widget
   , action'
   , adapter
   , affAdapter
-  , constant
+  , static
   , constructor
   , debouncer
   , debouncer'
@@ -208,8 +208,8 @@ instance Applicative m => Monoid (Widget m a a) where
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
 type WidgetOptics' a s = forall m. MonadEffect m => Optic' (Widget m) s a
 
-constant :: forall a s t. a -> WidgetOptics a Void s t
-constant a w = wrap do
+static :: forall a s t. a -> WidgetOptics a Void s t
+static a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
   pure
