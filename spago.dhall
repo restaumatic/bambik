@@ -16,7 +16,6 @@ to generate this file without the comments in this block.
   , "arrays"
   , "avar"
   , "console"
-  , "control"
   , "datetime"
   , "effect"
   , "either"

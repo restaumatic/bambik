@@ -31,6 +31,7 @@ module Web
   , runWidgetInNode
   , slot
   , span
+  , stext
   , svg
   , text
   , ul
@@ -51,7 +52,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, WidgetOcular)
+import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic)
 
 foreign import data Node :: Type
 
@@ -92,15 +93,28 @@ text = wrap do
     , fromUser: \_ -> pure unit
     }
 
--- TODO make it Widget Web String a?
-html :: forall a b. String -> Widget Web a b
+stext :: String -> WidgetStatic Web
+stext string = wrap do
+  parentNode <- gets _.parent
+  newNode <- liftEffect $ do
+    node <- createTextNode mempty
+    setTextNodeValue node string
+    appendChild node parentNode
+    pure node
+  modify_ _ { sibling = newNode}
+  pure
+    { toUser: mempty
+    , fromUser: mempty
+    }
+
+html :: String -> WidgetStatic Web
 html htmlString = wrap do
   parent <- gets _.parent
   lastNode <- liftEffect $ appendRawHtml htmlString parent
   modify_ _ { sibling = lastNode}
   pure
-    { toUser: const $ pure unit
-    , fromUser: const $ pure unit
+    { toUser: mempty
+    , fromUser: mempty
     }
 
 input :: String -> Widget Web String String

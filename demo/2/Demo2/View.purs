@@ -4,12 +4,11 @@ module Demo2.View
 
 import Prelude hiding (div)
 
--- import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, a, attr, div, li, p, text, ul)
-import Widget (Widget, constant)
+import Widget (WidgetStatic, constant)
 
-view :: forall a b. Widget Web a b
+view :: WidgetStatic Web
 view =
   div >>> attr "style" "border: 1px solid silver; padding: 30px;" $ T.do
     p $ text # constant "Hello World!"

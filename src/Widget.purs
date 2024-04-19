@@ -1,11 +1,12 @@
 module Widget
   ( Changed(..)
-  , WidgetOcular
   , New(..)
   , Scope(..)
   , Widget(..)
+  , WidgetOcular
   , WidgetOptics
   , WidgetOptics'
+  , WidgetStatic
   , action
   , action'
   , adapter
@@ -50,7 +51,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Ocular (Ocular)
+import Ocular (Ocular, Static)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -154,10 +155,10 @@ instance Applicative m => Choice (Widget m) where
 
 -- a >>> devoid -- has an effect of `a` but stops propagation
 -- a <> devoid == a == devoid <> a
-devoid :: forall m a b. Applicative m => Widget m a b
+devoid :: forall m . Applicative m => WidgetStatic m
 devoid = wrap $ pure
-  { toUser: const $ pure unit
-  , fromUser: const $ pure unit
+  { toUser: mempty
+  , fromUser: mempty
   }
 
 instance MonadEffect m => Semigroupoid (Widget m) where
@@ -247,6 +248,7 @@ just = constructor "Just" Just identity
 -- oculars
 
 type WidgetOcular m = Ocular (Widget m)
+type WidgetStatic m = Static (Widget m)
 
 debouncer :: forall m. MonadEffect m => Milliseconds -> WidgetOcular m
 debouncer millis = affAdapter $ pure
