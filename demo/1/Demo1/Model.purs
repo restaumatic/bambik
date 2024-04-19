@@ -1,4 +1,4 @@
-module Model where
+module Demo1.Model where
 
 import Prelude (class Show, discard, pure, ($), (<>))
 

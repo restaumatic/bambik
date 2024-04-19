@@ -2,6 +2,7 @@ module Web
   ( DocumentBuilderState
   , Node
   , Web
+  , a
   , aside
   , attr
   , button
@@ -21,6 +22,8 @@ module Web
   , html
   , input
   , label
+  , li
+  , ol
   , p
   , path
   , radioButton
@@ -30,6 +33,7 @@ module Web
   , span
   , svg
   , text
+  , ul
   , uniqueId
   )
   where
@@ -249,6 +253,18 @@ path = el "path"
 p :: WidgetOcular Web
 p = el "p"
 
+a :: WidgetOcular Web
+a = el "a"
+
+ul :: WidgetOcular Web
+ul = el "ul"
+
+ol :: WidgetOcular Web
+ol = el "ol"
+
+li :: WidgetOcular Web
+li = el "li"
+
 h1 :: WidgetOcular Web
 h1 = el "h1"
 
@@ -295,9 +311,9 @@ dynClass name pred w = wrap do
     , fromUser: w'.fromUser
     }
 
-clickable :: WidgetOcular Web
+clickable :: forall a b. Widget Web a b -> Widget Web a a
 clickable w = wrap do
-  bRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   w' <- unwrap (w # dynAttr "disabled" "true" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true))
@@ -305,19 +321,14 @@ clickable w = wrap do
   pure
     { toUser: \occur -> do
     w'.toUser occur
-    -- case occur of
-    --   Removed -> Ref.write (unsafeCoerce unit) aRef
-    --   Altered (New _ a _) -> Ref.write a aRef
-    , fromUser: \prop -> do
-    w'.fromUser \(New _ b _) -> do
-      Ref.write b bRef
-    void $ addEventListener "click" node $ const do
-      b <- Ref.read bRef
-      -- w'.toUser Nothing -- TODO check
-      prop $ New [] b false
+    case occur of
+      Removed -> Ref.write (unsafeCoerce unit) aRef
+      Altered (New _ a _) -> Ref.write a aRef
+    , fromUser: \prop -> void $ addEventListener "click" node $ const do
+    a <- Ref.read aRef
+    -- w'.toUser Nothing -- TODO check
+    prop $ New [] a false
     }
-
-
 -- Entry point
 
 runWidgetInBody :: forall o. Widget Web Unit o -> Effect Unit
