@@ -42,7 +42,32 @@ order = T.do
       checkbox { labelContent: static "Paid", default: { paid: "0" } } payment
       filledTextField { floatingLabel: static "Paid" } paid # just >>> payment
     card $ S.do
-      body1 $ text # static "Order " <> value >>> shortId <> static " (uniquely " <> value >>> orderId <> static ") for " <> value >>> firstName >>> customer <> static " " <> value >>> lastName >>> customer <> static " (formally " <> value >>> surname >>> formal >>> customer <> static " " <> value >>> forename >>> formal >>> customer <> static ")" <> static ", fulfilled as " <> (static "dine in at table " <> value >>> table) >>> slot >>> dineIn >>> fulfillment <> (static "takeaway at " <> value >>> time) >>> slot >>> takeaway >>> fulfillment <> (static "delivery to " <> value >>> address) >>> slot >>> delivery >>> fulfillment <> (static ", paid " <> value >>> paid) >>> slot >>> just >>> payment # slot # debouncer'
+      body1 $ text # (S.do
+        static "Order "
+        value >>> shortId
+        static " (uniquely "
+        value >>> orderId
+        static ") for "
+        value >>> firstName >>> customer
+        static " "
+        value >>> lastName >>> customer
+        static " (formally "
+        value >>> surname >>> formal >>> customer
+        static " "
+        value >>> forename >>> formal >>> customer
+        static "), fulfilled as "
+        (S.do
+          static "dine in at table "
+          value >>> table) >>> slot >>> dineIn >>> fulfillment
+        (S.do
+          static "takeaway at "
+          value >>> time) >>> slot >>> takeaway >>> fulfillment
+        (S.do
+          static "delivery to "
+          value >>> address) >>> slot >>> delivery >>> fulfillment
+        (S.do
+          static ", paid "
+          value >>> paid) >>> slot >>> just >>> payment) >>> slot >>> debouncer'
       T.do
         containedButton { label: static "Submit order " <> value >>> shortId >>> debouncer' }
         -- confirmationDialog { title: static "Submit order " <> value >>> shortId >>> submittedOrder <> static "?", dismiss: static "No", confirm: static "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
