@@ -17,4 +17,3 @@ view =
       li $ text # static "Two"
       li $ text # static "Three"
     a >>> attr "href" "https://www.google.com" >>> attr "target" "_blank" $ text # static "Link"
-

@@ -36,7 +36,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, unit, (#), ($), (<<<), (>>=), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, clickable, div, dynClass, h1, h2, h3, h4, h5, h6, html, label, p, span, text, input, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOptics, WidgetOptics', WidgetOcular, action', devoid, effAdapter, effBracket)
 
@@ -44,8 +44,8 @@ import Widget (Changed(..), Widget, WidgetOptics, WidgetOptics', WidgetOcular, a
 
 containedButton :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
 containedButton { label } =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br >>> clickable $ S.do
-    div >>> cl "mdc-button__ripple" $ (devoid :: Widget Web a a) -- TODO
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
+    div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $
       (label text) >>> devoid
   where
@@ -189,13 +189,13 @@ confirmationDialog { title, dismiss, confirm } content =
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
-            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ S.do
+            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ T.do
               div >>> cl "mdc-button__ripple" $ devoid
               span >>> cl "mdc-button__label" $ T.do
                 dismiss text
                 devoid
-            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> clickable $ S.do
-              div >>> cl "mdc-button__ripple" $ (devoid :: Widget Web a a) -- TODO
+            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ T.do
+              div >>> cl "mdc-button__ripple" $ devoid
               span >>>  cl "mdc-button__label" $ T.do
                 confirm text
                 devoid

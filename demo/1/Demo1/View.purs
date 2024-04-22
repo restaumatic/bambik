@@ -3,13 +3,14 @@ module Demo1.View
   ) where
 
 import Data.Profunctor (lcmap)
-import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
 import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
-import Prelude ((#), ($), (<>), (>>>))
+import Effect.Class.Console (debug)
+import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
+import Prelude (const, (#), ($), (<>), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, static, debouncer', just, value)
+import Widget (Widget, action, debouncer', devoid, just, static, value)
 
 order :: Widget Web OrderId Order
 order = T.do
@@ -68,10 +69,12 @@ order = T.do
         (S.do
           static ", paid "
           value >>> paid) >>> slot >>> just >>> payment) >>> slot >>> debouncer'
-      T.do
-        containedButton { label: static "Submit order " <> value >>> shortId >>> debouncer' }
-        -- confirmationDialog { title: static "Submit order " <> value >>> shortId >>> submittedOrder <> static "?", dismiss: static "No", confirm: static "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
-        --   body1 $ text # static "Authorization required"
-        --   filledTextField { floatingLabel: static "Auth token" } authToken
-        -- indeterminateLinearProgress # submitOrder
-        -- snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}
+  T.do
+    containedButton { label: static "Submit order " <> value >>> shortId >>> debouncer' }
+    indeterminateLinearProgress # action (const $ debug "Hello!")
+    devoid
+    -- confirmationDialog { title: static "Submit order " <> value >>> shortId >>> submittedOrder <> static "?", dismiss: static "No", confirm: static "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+    --   body1 $ text # static "Authorization required"
+    --   filledTextField { floatingLabel: static "Auth token" } authToken
+    -- indeterminateLinearProgress # submitOrder
+    -- snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}
