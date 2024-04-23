@@ -5,9 +5,9 @@
   "version": "0.0.1",
   "description": "Profunctor optics for UIs",
   "scripts": {
+    "build": "spago build",
     "demo1": "parcel demo/1/index.html & spago bundle-app -y --main Demo1.Main --to demo/1/output/bundle.js -w -l",
-    "demo2": "parcel demo/2/index.html & spago bundle-app -y --main Demo2.Main --to demo/2/output/bundle.js -w -l",
-    "deploy": "spago bundle-app -y --main Main --to demo/1/output/bundle.js && scp demo/1/index.html pi@erykciepiela.xyz:~/www/bambik/demo/1/index.html && scp demo/1/output/bundle.js pi@erykciepiela.xyz:~/www/bambik/demo/1/output/bundle.js"
+    "demo2": "parcel demo/2/index.html & spago bundle-app -y --main Demo2.Main --to demo/2/output/bundle.js -w -l"
   },
   "author": "Restaumatic.com",
   "dependencies": {
