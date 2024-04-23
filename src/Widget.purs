@@ -70,19 +70,7 @@ data Changed a
 
 derive instance Functor Changed
 
-instance Show a => Show (Changed a) where
-  show = case _ of
-    Removed -> "Removed"
-    Altered ch -> show ch
-
 data New a = New (Array Scope) a Boolean
-
-instance Show a => Show (New a) where
-  show (New scopes a cont) = "new " <> path <> " of " <> show a <> (if cont then " and expected to change continously" else "")
-    where
-    path
-      | null scopes = "."
-      | otherwise = fold (show <$> scopes)
 
 derive instance Functor New
 
@@ -153,14 +141,6 @@ instance Applicative m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
--- a >>> devoid -- has an effect of `a` but stops propagation
--- a <> devoid == a == devoid <> a
-devoid :: forall m . Applicative m => WidgetStatic m
-devoid = wrap $ pure
-  { toUser: mempty
-  , fromUser: mempty
-  }
-
 instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
@@ -202,6 +182,14 @@ instance Apply m => Semigroup (Widget m a a) where
 instance Applicative m => Monoid (Widget m a a) where
   mempty = devoid
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
+
+-- a >>> devoid -- has an effect of `a` but stops propagation
+-- a <> devoid == a == devoid <> a
+devoid :: forall m . Applicative m => WidgetStatic m
+devoid = wrap $ pure
+  { toUser: mempty
+  , fromUser: mempty
+  }
 
 -- optics
 

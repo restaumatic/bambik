@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "description": "Profunctor optics for UIs",
   "scripts": {
-    "build": "spago build",
+    "build": "spago build -w",
     "demo1": "parcel demo/1/index.html & spago bundle-app -y --main Demo1.Main --to demo/1/output/bundle.js -w -l",
     "demo2": "parcel demo/2/index.html & spago bundle-app -y --main Demo2.Main --to demo/2/output/bundle.js -w -l"
   },
