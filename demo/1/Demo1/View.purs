@@ -80,4 +80,4 @@ order = T.do
       body1 $ text # static "Authorization required"
       filledTextField { floatingLabel: "Auth token" } # authToken
     indeterminateLinearProgress # submitOrder
-    snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}
+    -- snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}

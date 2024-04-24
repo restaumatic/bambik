@@ -8,6 +8,7 @@ module MDC
   , checkbox
   , confirmationDialog
   , containedButton
+  , containedCancelButton
   , dialog
   , elevation1
   , elevation10
@@ -37,7 +38,7 @@ import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, uni
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, uniqueId)
-import Web (button, radioButton) as Web
+import Web (button, cancelButton, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
 
 -- Primitive widgets
@@ -45,6 +46,15 @@ import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid,
 containedButton :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
 containedButton { label } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
+    div >>> cl "mdc-button__ripple" $ devoid
+    span >>> cl "mdc-button__label" $
+      (label text) >>> devoid
+  where
+    br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
+
+containedCancelButton :: forall a b c. { label :: WidgetOptics String Void a b } -> Widget Web a c
+containedCancelButton { label } =
+  Web.cancelButton >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $
       (label text) >>> devoid
@@ -184,7 +194,7 @@ confirmationDialog { title, dismiss, confirm } content =
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
-            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ T.do
+            Web.cancelButton >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ T.do
               div >>> cl "mdc-button__ripple" $ devoid
               span >>> cl "mdc-button__label" $ text # static dismiss
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ T.do

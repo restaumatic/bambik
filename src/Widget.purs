@@ -11,7 +11,6 @@ module Widget
   , action'
   , adapter
   , affAdapter
-  , static
   , constructor
   , debouncer
   , debouncer'
@@ -25,6 +24,7 @@ module Widget
   , prism
   , projection
   , spy
+  , static
   , value
   )
   where
@@ -59,14 +59,14 @@ import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
   { toUser :: Changed i -> Effect Unit
-  , fromUser :: (New o -> Effect Unit) -> Effect Unit
+  , fromUser :: (Changed o -> Effect Unit) -> Effect Unit
   })
 
 derive instance Newtype (Widget m i o) _
 
 data Changed a
   = Altered (New a)
-  | Removed
+  | Removed -- TODO rename to: none?
 
 derive instance Functor Changed
 
@@ -145,12 +145,13 @@ instance MonadEffect m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    liftEffect $ p1'.fromUser $ p2'.toUser <<< Altered
     pure
       { toUser: \cha -> do
         p2'.toUser Removed
         p1'.toUser cha
-      , fromUser: p2'.fromUser
+      , fromUser: \prop -> do
+          p1'.fromUser p2'.toUser
+          p2'.fromUser prop
       }
 
 -- Notice: Widget is not a category
@@ -175,7 +176,7 @@ instance Apply m => Semigroup (Widget m a a) where
     p2' <- unwrap p2
     in
       { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser (Altered u) *> prop u) *> (p2'.fromUser \u -> p1'.toUser (Altered u) *> prop u)
+      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser u *> prop u) *> (p2'.fromUser \u -> p1'.toUser u *> prop u)
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
@@ -268,8 +269,8 @@ spy name w = wrap do
 effBracket :: forall m a b. Monad m => m
   { beforeInput :: Changed a -> Effect Unit
   , afterInput :: Changed a -> Effect Unit
-  , beforeOutput :: New b -> Effect Unit
-  , afterOutput :: New b -> Effect Unit
+  , beforeOutput :: Changed b -> Effect Unit
+  , afterOutput :: Changed b -> Effect Unit
   } -> Widget m a b -> Widget m a b
 effBracket f w = wrap do
   { toUser, fromUser } <- unwrap w
@@ -293,9 +294,11 @@ effAdapter f w = wrap do
         a <- pre s
         toUser $ Altered $ New [] a cont
     , fromUser: \prop -> do
-      fromUser \(New _ b cont) -> do
-        t <- post b
-        prop $ New [] t cont
+      fromUser case _ of
+        Altered (New _ b cont) -> do
+          t <- post b
+          prop $ Altered $ New [] t cont
+        Removed -> prop Removed
     }
 
 action :: forall a i o. (i -> Aff o) -> WidgetOptics Boolean a i o
@@ -319,7 +322,7 @@ action' arr w = wrap do
             Left error -> pure unit -- TODO handle error
             Right o -> do
               -- w'.toUser $ Altered $ New [] Nothing false
-              prop $ New [] o false
+              prop $ Altered $ New [] o false -- TODO really?
               waitAndPropagate
       in waitAndPropagate
     }
@@ -341,13 +344,15 @@ affAdapter f w = wrap do
           liftEffect $ toUser $ Altered $ New [] a cont
         liftEffect $ Ref.write (Just newFiber) mInputFiberRef
     , fromUser: \prop -> do
-      fromUser \newb@(New _ _ cont) -> launchAff_ do
-        mFiber <- liftEffect $ Ref.read mOutputFiberRef
-        for_ mFiber $ killFiber (error "Obsolete output")
-        newFiber <- forkAff do
-          t <- post newb
-          liftEffect $ prop $ New [] t cont
-        liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
+      fromUser case _ of
+        Altered newb@(New _ _ cont) -> launchAff_ do
+          mFiber <- liftEffect $ Ref.read mOutputFiberRef
+          for_ mFiber $ killFiber (error "Obsolete output")
+          newFiber <- forkAff do
+            t <- post newb
+            liftEffect $ prop $ Altered $ New [] t cont
+          liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
+        Removed -> prop Removed
     }
 
 -- private
@@ -363,8 +368,9 @@ scopemap scope p = wrap ado
       fromUser $ prop <<< zoomOut
     }
   where
-    zoomOut :: New b -> New b
-    zoomOut (New scopes mb cont) = New (scope : scopes) mb cont
+    zoomOut :: Changed b -> Changed b
+    zoomOut Removed = Removed
+    zoomOut (Altered (New scopes mb cont)) = Altered $ New (scope : scopes) mb cont
 
     zoomIn :: Changed a -> Maybe (Changed a)
     zoomIn Removed = Just Removed
