@@ -38,7 +38,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOptics, WidgetOptics', WidgetOcular, action', devoid, effAdapter, effBracket)
+import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
 
 -- Primitive widgets
 
@@ -52,28 +52,27 @@ containedButton { label } =
     br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 
 -- TODO support input types: email, text, password, number, search, tel, url
-filledTextField :: forall a b. { floatingLabel :: WidgetOptics String Void a b } -> WidgetOptics' String a -> Widget Web a a
-filledTextField { floatingLabel } value =
+filledTextField :: { floatingLabel :: String } -> Widget Web String String
+filledTextField { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true) >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
-      (span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
+      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
         Removed -> false
-        Altered _ -> true)) $
-          floatingLabel text) >>> devoid
-      input "text" # value # cl "mdc-text-field__input" # attr "aria-labelledby" id
+        Altered _ -> true)) $ text # static floatingLabel
+      input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id
     span >>> cl "mdc-line-ripple" $ devoid
     where
       id = unsafePerformEffect uniqueId
 
 
-checkbox :: forall a b s. { labelContent :: WidgetOptics String Void s b, default :: a } -> WidgetOptics' (Maybe a) s -> Widget Web s s
-checkbox { labelContent, default } checked =
+checkbox :: forall a. { labelContent :: String, default :: a } -> Widget Web (Maybe a) (Maybe a)
+checkbox { labelContent, default } =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-checkbox" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit) $ S.do
-      checkboxInput default # checked # cl "mdc-checkbox__native-control" # attr "id" id
+      checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -81,21 +80,21 @@ checkbox { labelContent, default } checked =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ devoid
       div >>> cl "mdc-checkbox__ripple" $ devoid
-    label (labelContent text >>> devoid) # attr "for" id
+    label >>> attr "for" id $ text # static labelContent
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a b s. { labelContent :: WidgetOptics String Void s b, default :: a } -> WidgetOptics' a s -> Widget Web s s
-radioButton { labelContent, default } value =
+radioButton :: forall a . { labelContent :: String, default :: a } -> Widget Web a a
+radioButton { labelContent, default } =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit) $ S.do
-      Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid # value
+      Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
       div >>> cl "mdc-radio__background" $ S.do
         div >>> cl "mdc-radio__outer-circle" $ devoid
         div >>> cl "mdc-radio__inner-circle" $ devoid
       div >>> cl "mdc-radio__ripple" $ devoid
-    label (labelContent text >>> devoid) # attr "for" uid
+    label >>> attr "for" uid $ text # static labelContent
   where
     uid = unsafePerformEffect uniqueId
 
@@ -160,15 +159,13 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 --   -- TODO  card actions
 
 -- TODO isn't it an ocular?
-dialog :: forall a b. { title :: WidgetOptics String Void a b } -> Widget Web a a -> Widget Web a a
+dialog :: forall a. { title :: String } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $ S.do
       div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
-        h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $
-          title text >>> devoid
-        div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $
-          content
+        h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $ text # static title
+        div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ devoid
     where
       initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
@@ -176,29 +173,23 @@ dialog { title } content =
       closeMdcComponent comp = liftEffect $ close comp
 
 -- TODO isn't it an ocular?
-confirmationDialog :: forall a b c d x. { title :: WidgetOptics String Void a b, dismiss :: WidgetOptics String Void a c, confirm :: WidgetOptics String Void a d } -> Widget Web a a -> Widget Web a a
+confirmationDialog :: forall a. { title :: String, dismiss :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
 confirmationDialog { title, dismiss, confirm } content =
   div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         T.do
           S.do
-            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ T.do
-              title text -- TODO text # title doesn't compile, why?
-              devoid
+            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ text # static title
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ T.do
               div >>> cl "mdc-button__ripple" $ devoid
-              span >>> cl "mdc-button__label" $ T.do
-                dismiss text
-                devoid
+              span >>> cl "mdc-button__label" $ text # static dismiss
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ T.do
               div >>> cl "mdc-button__ripple" $ devoid
-              span >>>  cl "mdc-button__label" $ T.do
-                confirm text
-                devoid
+              span >>>  cl "mdc-button__label" $ text # static confirm
     div >>> cl "mdc-dialog__scrim" $ devoid
     where
       id = unsafePerformEffect uniqueId
@@ -207,8 +198,8 @@ confirmationDialog { title, dismiss, confirm } content =
       openMdcComponent comp = liftEffect $ open comp
       closeMdcComponent comp = liftEffect $ close comp
 
-snackbar :: forall a b c. { label :: WidgetOptics String Void a b } -> Widget Web a c
-snackbar { label } = T.do
+snackbar :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
+snackbar { label } =
   aside >>> cl "mdc-snackbar" >>> effBracket (do
     comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
     pure { beforeInput: case _ of
@@ -217,15 +208,14 @@ snackbar { label } = T.do
     , afterInput: case _ of
       Removed -> mempty
       Altered _ -> open comp
-    , beforeOutput: \_ -> mempty
-    , afterOutput: \_ -> mempty
+    , beforeOutput: mempty
+    , afterOutput: mempty
     }) >>> (action' \a a2eff o2eff -> liftEffect do
     a2eff a
     o2eff a) $
     div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
       div $
         label text # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
-  devoid
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =

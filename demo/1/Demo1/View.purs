@@ -19,29 +19,29 @@ order = T.do
     caption $ text # static "Order " <> value >>> debouncer' >>> shortId
     card $ S.do
       caption $ text # static "Identifier"
-      filledTextField { floatingLabel: static "Short ID" } shortId
-      filledTextField { floatingLabel: static "Unique ID" } orderId
+      filledTextField { floatingLabel: "Short ID" } # shortId
+      filledTextField { floatingLabel: "Unique ID" } # orderId
     card >>> customer $ S.do
       caption $ text # static "Customer"
       caption $ text # static "Informal"
-      filledTextField { floatingLabel: static "First name" } firstName
-      filledTextField { floatingLabel: static "Last name" } lastName
+      filledTextField { floatingLabel: "First name" } # firstName
+      filledTextField { floatingLabel: "Last name" } # lastName
       caption $ text # static "Formal"
-      filledTextField { floatingLabel: static "Surname" } surname # formal
-      filledTextField { floatingLabel: static "Forename" } forename # formal
+      filledTextField { floatingLabel: "Surname" } # surname >>> formal
+      filledTextField { floatingLabel: "Forename" } # forename >>> formal
     card >>> fulfillment $ S.do
       caption $ text # static "Fulfillment"
-      radioButton { labelContent: static "Dine in", default: { table: "1"} } dineIn
-      radioButton { labelContent: static "Takeaway", default: { time: "15:30"} } takeaway
-      radioButton { labelContent: static "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } delivery
-      filledTextField { floatingLabel: static "Table" } table # slot >>> dineIn
-      filledTextField { floatingLabel: static "Time" } time # slot >>> takeaway
-      filledTextField { floatingLabel: static "Address" } address # slot >>> delivery
+      radioButton { labelContent: "Dine in", default: { table: "1"} } # dineIn
+      radioButton { labelContent: "Takeaway", default: { time: "15:30"} } # takeaway
+      radioButton { labelContent: "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } # delivery
+      filledTextField { floatingLabel: "Table" } # table >>> slot >>> dineIn
+      filledTextField { floatingLabel: "Time" } # time >>> slot >>> takeaway
+      filledTextField { floatingLabel: "Address" } # address >>> slot >>> delivery
     card $ S.do
       caption $ text # static "Payment"
-      filledTextField { floatingLabel: static "Total" } total
-      checkbox { labelContent: static "Paid", default: { paid: "0" } } payment
-      filledTextField { floatingLabel: static "Paid" } paid # just >>> payment
+      filledTextField { floatingLabel: "Total" } # total
+      checkbox { labelContent: "Paid", default: { paid: "0" } } # payment
+      filledTextField { floatingLabel: "Paid" } # paid >>> just >>> payment
     card $ S.do
       body1 $ text # (S.do
         static "Order "
@@ -71,10 +71,8 @@ order = T.do
           value >>> paid) >>> slot >>> just >>> payment) >>> slot >>> debouncer'
   T.do
     containedButton { label: static "Submit order " <> value >>> shortId >>> debouncer' }
-    indeterminateLinearProgress # action (const $ debug "Hello!")
-    devoid
-    -- confirmationDialog { title: static "Submit order " <> value >>> shortId >>> submittedOrder <> static "?", dismiss: static "No", confirm: static "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
-    --   body1 $ text # static "Authorization required"
-    --   filledTextField { floatingLabel: static "Auth token" } authToken
-    -- indeterminateLinearProgress # submitOrder
+    confirmationDialog { title: "Submit order", dismiss: "No", confirm: "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
+      body1 $ text # static "Authorization required"
+      filledTextField { floatingLabel: "Auth token" } # authToken
+    indeterminateLinearProgress # submitOrder
     -- snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}

@@ -1,14 +1,13 @@
 module Demo1.Model where
 
-import Prelude (class Show, discard, pure, ($), (<>))
-
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetOptics', WidgetOptics, action, constructor, field, iso)
+import Prelude (class Show, discard, pure, ($), (<>))
+import Widget (WidgetOptics, WidgetOptics', action, constructor, field, iso)
 
 type Order =
   { orderId :: OrderId
@@ -90,36 +89,46 @@ derive instance Generic Fulfillment _
 instance Show Fulfillment where
   show = genericShow
 
+orderId :: WidgetOptics' String Order
 orderId = field @"orderId"
 
+shortId :: WidgetOptics' String Order
 shortId = field @"shortId"
 
+customer :: WidgetOptics' NameInformal Order
 customer = field @"customer"
 
+payment :: WidgetOptics' (Maybe Payment) Order
 payment = field @"payment"
 
+firstName :: WidgetOptics' String NameInformal
 firstName = field @"firstName"
 
+lastName :: WidgetOptics' String NameInformal
 lastName = field @"lastName"
 
+forename :: WidgetOptics' String NameFormal
 forename = field @"forename"
 
+surname :: WidgetOptics' String NameFormal
 surname =  field @"surname"
 
+fulfillment :: WidgetOptics' Fulfillment Order
 fulfillment =  field @"fulfillment"
 
+table :: WidgetOptics' Table { table :: Table }
 table =  field @"table"
 
+time :: WidgetOptics' Time { time :: Time }
 time =  field @"time"
 
+address :: WidgetOptics' Address { address :: Address}
 address =  field @"address"
 
-unique = field @"unique"
-
-short = field @"short"
-
+total :: WidgetOptics' String Order
 total = field @"total"
 
+paid :: WidgetOptics' String Payment
 paid = field @"paid"
 
 dineIn :: WidgetOptics' { table :: Table } Fulfillment
