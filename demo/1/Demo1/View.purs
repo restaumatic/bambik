@@ -2,14 +2,20 @@ module Demo1.View
   ( order
   ) where
 
-import Data.Profunctor (lcmap)
-import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
-import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
-import Prelude ((#), ($), (<>), (>>>))
+-- standard stuff
+import Prelude
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
+
+-- framework
+import Data.Profunctor (lcmap)
+import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
 import Web (Web, slot, text)
 import Widget (Widget, debouncer', just, static, value)
+
+-- model
+import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
+
 
 order :: Widget Web OrderId Order
 order = T.do
