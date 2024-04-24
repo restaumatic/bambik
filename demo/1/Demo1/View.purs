@@ -3,14 +3,13 @@ module Demo1.View
   ) where
 
 import Data.Profunctor (lcmap)
-import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
-import Effect.Class.Console (debug)
+import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
 import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
-import Prelude (const, (#), ($), (<>), (>>>))
+import Prelude ((#), ($), (<>), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, action, debouncer', devoid, just, static, value)
+import Widget (Widget, debouncer', just, static, value)
 
 order :: Widget Web OrderId Order
 order = T.do
@@ -75,4 +74,4 @@ order = T.do
       body1 $ text # static "Authorization required"
       filledTextField { floatingLabel: "Auth token" } # authToken
     indeterminateLinearProgress # submitOrder
-    -- snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}
+    snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}
