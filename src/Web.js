@@ -10,6 +10,12 @@ export function documentBody() {
   return document.body;
 }
 
+export function selectedNode(selector) {
+  return function () {
+    return document.querySelector(selector);
+  }
+}
+
 // createTextNode :: String -> IOSync Node
 export function createTextNode(text) {
   return function () {

@@ -29,6 +29,7 @@ module Web
   , radioButton
   , runWidgetInBody
   , runWidgetInNode
+  , runWidgetInSelectedNode
   , slot
   , span
   , svg
@@ -360,6 +361,11 @@ runWidgetInBody w = do
   node <- documentBody
   runWidgetInNode node w unit mempty
 
+runWidgetInSelectedNode :: forall o. String -> Widget Web Unit o -> Effect Unit
+runWidgetInSelectedNode selector w = do
+  node <- selectedNode selector
+  runWidgetInNode node w unit mempty
+
 runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (Maybe o -> Effect Unit) -> Effect Unit
 runWidgetInNode node w i outward = runDomInNode node do
   { toUser, fromUser } <- unwrap w
@@ -376,6 +382,7 @@ foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
 foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import documentBody :: Effect Node
+foreign import selectedNode :: String -> Effect Node
 foreign import createTextNode :: String -> Effect Node
 foreign import createDocumentFragment :: Effect Node
 foreign import createElement :: String -> Effect Node

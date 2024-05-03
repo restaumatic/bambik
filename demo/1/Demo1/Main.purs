@@ -1,11 +1,10 @@
 module Demo1.Main (main) where
 
-import Prelude (Unit, const, ($))
-
 import Data.Profunctor (lcmap)
-import Effect (Effect)
 import Demo1.View (order)
-import Web (runWidgetInBody)
+import Effect (Effect)
+import Prelude (Unit, const, ($))
+import Web (runWidgetInSelectedNode)
 
 main :: Effect Unit
-main = runWidgetInBody $ lcmap (const "45123519") order
+main = runWidgetInSelectedNode "#main" $ lcmap (const "45123519") order
