@@ -33,6 +33,7 @@ module Web
   , span
   , svg
   , text
+  , textArea
   , ul
   , uniqueId
   )
@@ -108,6 +109,23 @@ input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
       value <- getValue node
       prop $ Altered $ New [] value true
     }
+
+textArea :: Widget Web String String
+textArea = dynAttr "disabled" "true" (maybe true $ case _ of
+    Altered _ -> false
+    Removed -> true) $ wrap do
+  element "textArea" (pure unit)
+  node <- gets _.sibling
+  pure
+    { toUser: case _ of
+    Removed -> setValue node ""
+    Altered (New _ newa _) -> do
+      setValue node newa
+    , fromUser: \prop -> void $ addEventListener "input" node $ const do
+      value <- getValue node
+      prop $ Altered $ New [] value true
+    }
+
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
 checkboxInput default = dynAttr "disabled" "true" isNothing $ wrap do

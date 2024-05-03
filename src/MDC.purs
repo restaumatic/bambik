@@ -13,6 +13,7 @@ module MDC
   , elevation1
   , elevation10
   , elevation20
+  , filledTextArea
   , filledTextField
   , headline1
   , headline2
@@ -34,10 +35,10 @@ import Data.Maybe (Maybe, isNothing, maybe)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, unit, (#), ($), (<<<), (>>=), (>>>))
+import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, show, unit, (#), ($), (<<<), (>>=), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, textArea, uniqueId)
 import Web (button, cancelButton, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
 
@@ -77,6 +78,13 @@ filledTextField { floatingLabel } =
     where
       id = unsafePerformEffect uniqueId
 
+filledTextArea :: Int -> Int -> Widget Web String String
+filledTextArea columns rows =
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ S.do
+    span >>> cl "mdc-text-field__ripple" $ devoid
+    span >>> cl "mdc-text-field__resizer" $
+      textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
+    span >>> cl "mdc-line-ripple" $ devoid
 
 checkbox :: forall a. { labelContent :: String, default :: a } -> Widget Web (Maybe a) (Maybe a)
 checkbox { labelContent, default } =

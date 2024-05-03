@@ -3,18 +3,16 @@ module Demo1.View
   ) where
 
 -- standard stuff
+
 import Prelude
+
+import Data.Profunctor (lcmap)
+import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
+import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-
--- framework
-import Data.Profunctor (lcmap)
-import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
 import Web (Web, slot, text)
 import Widget (Widget, debouncer', just, static, value)
-
--- model
-import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, shortId, submitOrder, surname, table, takeaway, time, total)
 
 
 order :: Widget Web OrderId Order
@@ -47,6 +45,8 @@ order = T.do
       filledTextField { floatingLabel: "Total" } # total
       checkbox { labelContent: "Paid", default: { paid: "0" } } # payment
       filledTextField { floatingLabel: "Paid" } # paid >>> just >>> payment
+    card $ S.do
+      filledTextArea 80 120 # remarks
     card $ S.do
       body1 $ text # (S.do
         static "Order "
