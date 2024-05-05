@@ -5,13 +5,16 @@ module Web
   , a
   , aside
   , attr
+  , attribute
   , button
   , cancelButton
   , checkboxInput
   , cl
+  , clazz
   , div
   , dynAttr
   , dynClass
+  , element
   , h1
   , h2
   , h3
@@ -374,6 +377,32 @@ runWidgetInNode node w i outward = runDomInNode node do
     Removed -> outward Nothing
   liftEffect $ toUser $ Altered $ New [] i false
 
+el :: String -> WidgetOcular Web
+el tagName = wrap <<< element tagName <<< unwrap
+
+element :: forall a. String -> Web a -> Web a
+element tagName contents = do
+  newNode <- liftEffect $ createElement tagName
+  parentNode <- gets _.parent
+  liftEffect $ appendChild newNode parentNode
+  modify_ _ { parent = newNode}
+  result <- contents
+  modify_ _ { parent = parentNode, sibling = newNode}
+  pure result
+
+attribute :: String -> String -> Web Unit
+attribute name value = do
+  node <- gets _.sibling
+  liftEffect $ setAttribute node name value
+
+-- read: class
+clazz :: String -> Web Unit
+clazz name = do
+  node <- gets _.sibling
+  liftEffect $ addClass node name
+  pure unit
+
+
 --- private
 
 foreign import data Event :: Type
@@ -401,31 +430,6 @@ foreign import removeClass :: Node -> String -> Effect Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
-
-el :: String -> WidgetOcular Web
-el tagName = wrap <<< element tagName <<< unwrap
-
-element :: forall a. String -> Web a -> Web a
-element tagName contents = do
-  newNode <- liftEffect $ createElement tagName
-  parentNode <- gets _.parent
-  liftEffect $ appendChild newNode parentNode
-  modify_ _ { parent = newNode}
-  result <- contents
-  modify_ _ { parent = parentNode, sibling = newNode}
-  pure result
-
-attribute :: String -> String -> Web Unit
-attribute name value = do
-  node <- gets _.sibling
-  liftEffect $ setAttribute node name value
-
--- read: class
-clazz :: String -> Web Unit
-clazz name = do
-  node <- gets _.sibling
-  liftEffect $ addClass node name
-  pure unit
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
