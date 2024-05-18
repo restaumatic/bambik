@@ -25,22 +25,25 @@ module Widget
   , projection
   , spy
   , static
+  , val
   , value
   )
   where
 
 import Prelude
 
-import Data.Array (fold, null, uncons, (:))
+import Data.Array (uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Lens (Optic, Optic')
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Ord (signum)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
+import Data.String (length)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -186,7 +189,7 @@ instance Applicative m => Monoid (Widget m a a) where
 
 -- a >>> devoid -- has an effect of `a` but stops propagation
 -- a <> devoid == a == devoid <> a
-devoid :: forall m . Applicative m => WidgetStatic m
+devoid :: forall m a b. Applicative m => Widget m a b
 devoid = wrap $ pure
   { toUser: mempty
   , fromUser: mempty
@@ -197,7 +200,7 @@ devoid = wrap $ pure
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
 type WidgetOptics' a s = forall m. MonadEffect m => Optic' (Widget m) s a
 
-static :: forall a s t. a -> WidgetOptics a Void s t
+static :: forall a s. a -> WidgetOptics a Void s s
 static a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
@@ -206,8 +209,11 @@ static a w = wrap do
     , fromUser: const $ pure unit
     }
 
+val :: forall a b c. (a -> b) -> WidgetOptics b Void a c
+val f w = (w # lcmap f) >>> devoid
+
 value :: forall a b. WidgetOptics a Void a b
-value w = w >>> devoid
+value = val identity
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`

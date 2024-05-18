@@ -6,9 +6,9 @@ import Prelude hiding (div)
 
 import QualifiedDo.Semigroupoid as T
 import Web (Web, a, attr, div, li, p, text, ul)
-import Widget (WidgetStatic, static)
+import Widget (Widget, static)
 
-view :: WidgetStatic Web
+view :: forall a. Widget Web a a
 view =
   div >>> attr "style" "border: 1px solid silver; padding: 30px;" $ T.do
     p $ text # static "Hello World!"

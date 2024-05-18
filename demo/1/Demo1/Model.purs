@@ -3,11 +3,12 @@ module Demo1.Model where
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
+import Data.String (length)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Prelude (class Show, discard, pure, ($), (<>))
-import Widget (WidgetOptics, WidgetOptics', action, constructor, field, iso)
+import Prelude (class Show, Void, discard, pure, show, ($), (<<<), (<>))
+import Widget (WidgetOptics, WidgetOptics', action, constructor, field, iso, val)
 
 type Order =
   { orderId :: OrderId
@@ -159,3 +160,6 @@ type SubmitOrder =
 authToken = field @"authToken"
 
 submittedOrder = field @"submittedOrder"
+
+distance :: forall c. WidgetOptics String Void Address c
+distance = val $ show <<< length

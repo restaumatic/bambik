@@ -7,8 +7,8 @@ module Demo1.View
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
-import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, snackbar)
+import Demo1.Model (Order, OrderId, address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
+import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
@@ -39,14 +39,20 @@ order = T.do
       radioButton { labelContent: "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } # delivery
       filledTextField { floatingLabel: "Table" } # table >>> slot >>> dineIn
       filledTextField { floatingLabel: "Time" } # time >>> slot >>> takeaway
-      filledTextField { floatingLabel: "Address" } # address >>> slot >>> delivery
+      address >>> slot >>> delivery $ S.do
+        filledTextField { floatingLabel: "Address" }
+        body1 $ text # S.do
+          static "Distance "
+          distance
+          static " km"
     card $ S.do
       caption $ text # static "Payment"
       filledTextField { floatingLabel: "Total" } # total
       checkbox { labelContent: "Paid", default: { paid: "0" } } # payment
       filledTextField { floatingLabel: "Paid" } # paid >>> just >>> payment
     card $ S.do
-      filledTextArea 80 120 # remarks
+      caption $ text # static "Remarks"
+      filledTextArea 80 3 # remarks
     card $ S.do
       body1 $ text # (S.do
         static "Order "

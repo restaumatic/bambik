@@ -29,6 +29,7 @@ to generate this file without the comments in this block.
   , "qualified-do"
   , "record"
   , "refs"
+  , "strings"
   , "transformers"
   , "tuples"
   , "unsafe-coerce"

@@ -15,6 +15,6 @@ type Ocular p = forall a b. Optic p a b a b
 -- or more generally (Mock?):
 type Mock p = forall a b s t. Optic p a b s t
 
-type Static :: forall k1 k2. (k1 -> k2 -> Type) -> Type
-type Static p = forall a b. p a b
+type Static :: forall k. (k -> k -> Type) -> Type
+type Static p = forall a. p a a
 
