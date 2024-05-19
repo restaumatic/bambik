@@ -81,7 +81,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: Widget Web String Void
+text :: forall a. Widget Web String a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
