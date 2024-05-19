@@ -32,6 +32,7 @@ module Widget
 
 import Prelude
 
+import Control.Alt (class Alt)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
@@ -39,11 +40,10 @@ import Data.Lens (Optic, Optic')
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Ord (signum)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Strong (class Strong)
-import Data.String (length)
+import Data.Profunctor.Sum (class Sum, psum)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -157,6 +157,33 @@ instance MonadEffect m => Semigroupoid (Widget m) where
           p2'.fromUser prop
       }
 
+instance Apply m => Sum (Widget m) where
+  psum p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
+      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
+      }
+
+instance Functor m => Functor (Widget m a) where
+  map f p = wrap $ unwrap p <#> \p' ->
+    { toUser: p'.toUser
+    , fromUser: p'.fromUser <<< lcmap (map f)
+    }
+
+instance Apply m => Alt (Widget m a) where
+  alt = psum
+
+-- instance Applicative m => Plus (Widget m a) where
+--   empty = pzero
+
+-- instance Applicative m => Zero (Widget m) where
+--   pzero = wrap $ pure
+--     { toUser: const $ pure unit
+--     , fromUser: const $ pure unit
+--     }
+
 -- Notice: Widget is not a category
 -- instance MonadEffect m => Category (Widget m) where
 --   identity = wrap do
@@ -200,7 +227,7 @@ devoid = wrap $ pure
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
 type WidgetOptics' a s = forall m. MonadEffect m => Optic' (Widget m) s a
 
-static :: forall a s. a -> WidgetOptics a Void s s
+static :: forall a s t. a -> WidgetOptics a Void s t
 static a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
