@@ -12,78 +12,81 @@ import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton,
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, debouncer', just, static, value)
+import Widget (Widget, debounced, just, static, value)
 
 
 order :: Widget Web OrderId Order
 order = T.do
-  indeterminateLinearProgress # loadOrder
+  loadOrder indeterminateLinearProgress
   elevation20 $ S.do
-    caption $ text # static "Order " <> value >>> debouncer' >>> shortId
+    static "Order " <> shortId <<< debounced <<< value $ caption $ text
     card $ S.do
-      caption $ text # static "Identifier"
-      filledTextField { floatingLabel: "Short ID" } # shortId
-      filledTextField { floatingLabel: "Unique ID" } # orderId
-    card >>> customer $ S.do
-      caption $ text # static "Customer"
-      caption $ text # static "Informal"
-      filledTextField { floatingLabel: "First name" } # firstName
-      filledTextField { floatingLabel: "Last name" } # lastName
-      caption $ text # static "Formal"
-      filledTextField { floatingLabel: "Surname" } # surname >>> formal
-      filledTextField { floatingLabel: "Forename" } # forename >>> formal
-    card >>> fulfillment $ S.do
-      caption $ text # static "Fulfillment"
-      radioButton { labelContent: "Dine in", default: { table: "1"} } # dineIn
-      radioButton { labelContent: "Takeaway", default: { time: "15:30"} } # takeaway
-      radioButton { labelContent: "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } } # delivery
-      filledTextField { floatingLabel: "Table" } # table >>> slot >>> dineIn
-      filledTextField { floatingLabel: "Time" } # time >>> slot >>> takeaway
-      address >>> slot >>> delivery $ S.do
+      static "Identifier" $ caption $ text
+      shortId $ filledTextField { floatingLabel: "Short ID" }
+      orderId $ filledTextField { floatingLabel: "Unique ID" }
+    customer $ card $ S.do
+      static "Customer" $ caption $ text
+      static "Informal" $ caption $ text
+      firstName $ filledTextField { floatingLabel: "First name" }
+      lastName $ filledTextField { floatingLabel: "Last name" }
+      static "Formal" $ caption $ text
+      formal <<< surname $ filledTextField { floatingLabel: "Surname" }
+      formal <<< forename $ filledTextField { floatingLabel: "Forename" }
+    fulfillment $ card $ S.do
+      static "Fulfillment" $ caption $ text
+      dineIn $ radioButton { labelContent: "Dine in", default: { table: "1"} }
+      takeaway $ radioButton { labelContent: "Takeaway", default: { time: "15:30"} }
+      delivery $ radioButton { labelContent: "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } }
+      dineIn <<< slot <<< table $ filledTextField { floatingLabel: "Table" }
+      takeaway <<< slot <<< time $ filledTextField { floatingLabel: "Time" }
+      delivery <<< slot <<< address $ body1 $ S.do
         filledTextField { floatingLabel: "Address" }
-        body1 $ text # S.do
+        (S.do
           static "Distance "
           distance
-          static " km"
+          static " km") $ text
     card $ S.do
-      caption $ text # static "Payment"
-      filledTextField { floatingLabel: "Total" } # total
-      checkbox { labelContent: "Paid", default: { paid: "0" } } # payment
-      filledTextField { floatingLabel: "Paid" } # paid >>> just >>> payment
+      static "Payment" $ caption $ text
+      total $ filledTextField { floatingLabel: "Total" }
+      payment $ checkbox { labelContent: "Paid", default: { paid: "0" } }
+      payment <<< just <<< paid $ filledTextField { floatingLabel: "Paid" }
     card $ S.do
-      caption $ text # static "Remarks"
-      filledTextArea 80 3 # remarks
-    card $ S.do
-      body1 $ text # (S.do
-        static "Order "
-        value >>> shortId
-        static " (uniquely "
-        value >>> orderId
-        static ") for "
-        value >>> firstName >>> customer
-        static " "
-        value >>> lastName >>> customer
-        static " (formally "
-        value >>> surname >>> formal >>> customer
-        static " "
-        value >>> forename >>> formal >>> customer
-        static "), fulfilled as "
-        (S.do
-          static "dine in at table "
-          value >>> table) >>> slot >>> dineIn >>> fulfillment
-        (S.do
-          static "takeaway at "
-          value >>> time) >>> slot >>> takeaway >>> fulfillment
-        (S.do
-          static "delivery to "
-          value >>> address) >>> slot >>> delivery >>> fulfillment
-        (S.do
-          static ", paid "
-          value >>> paid) >>> slot >>> just >>> payment) >>> slot >>> debouncer'
+      static "Remarks" $ caption $ text
+      remarks $ filledTextArea 80 3
+    debounced <<< slot $ body1 $ (S.do
+      static "Summary: Order "
+      shortId <<< value
+      static " (uniquely "
+      orderId <<< value
+      static ") for "
+      customer <<< firstName <<< value
+      static " "
+      customer <<< lastName <<< value
+      static " (formally "
+      customer <<< formal <<< surname <<< value
+      static " "
+      customer <<< formal <<< forename <<< value
+      static "), fulfilled as "
+      fulfillment <<< dineIn <<< slot <<< S.do
+        static "dine in at table "
+        table <<< value
+      fulfillment <<< takeaway <<< slot <<< S.do
+        static "takeaway at "
+        time <<< value
+      fulfillment <<< delivery <<< slot <<< S.do
+        static "delivery to "
+        address <<< S.do
+          value
+          static " ("
+          distance
+          static " km away)"
+      payment <<< just <<< slot <<< S.do
+        static ", paid "
+        paid <<< value) $ text
   T.do
-    containedButton { label: static "Submit order " <> value >>> shortId >>> debouncer' }
+    containedButton { label: static "Submit order " <> debounced <<< shortId <<< value }
     confirmationDialog { title: "Submit order", dismiss: "No", confirm: "Yes" } >>> lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ S.do
-      body1 $ text # static "Authorization required"
-      filledTextField { floatingLabel: "Auth token" } # authToken
-    indeterminateLinearProgress # submitOrder
-    -- snackbar { label: static "Order " <> value >>> shortId <> static " submitted"}
+      static "Authorization required" $ body1 $ text
+      authToken $ filledTextField { floatingLabel: "Auth token" }
+    submitOrder indeterminateLinearProgress
+    -- snackbar { label: static "Order " <> value <<< shortId <> static " submitted"}

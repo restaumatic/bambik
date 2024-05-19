@@ -7,8 +7,8 @@ import Data.String (length)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Prelude (class Show, Void, discard, pure, show, ($), (<<<), (<>))
-import Widget (WidgetOptics, WidgetOptics', action, constructor, field, iso, val)
+import Prelude (class Show, discard, pure, show, ($), (<<<), (<>))
+import Widget (WidgetOptics, WidgetOptics', WidgetOptics'', action, constructor, field, iso, val)
 
 type Order =
   { orderId :: OrderId
@@ -161,5 +161,5 @@ authToken = field @"authToken"
 
 submittedOrder = field @"submittedOrder"
 
-distance :: forall c. WidgetOptics String Void Address c
+distance :: WidgetOptics'' String Address
 distance = val $ show <<< length

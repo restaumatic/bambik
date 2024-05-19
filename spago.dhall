@@ -16,6 +16,7 @@ to generate this file without the comments in this block.
   , "arrays"
   , "avar"
   , "console"
+  , "control"
   , "datetime"
   , "effect"
   , "either"
@@ -35,9 +36,5 @@ to generate this file without the comments in this block.
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
-, sources =
-  [ "src/**/*.purs"
-  , "test/**/*.purs"
-  , "demo/**/*.purs"
-  ]
+, sources = [ "src/**/*.purs", "test/**/*.purs", "demo/**/*.purs" ]
 }
