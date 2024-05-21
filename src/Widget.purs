@@ -227,7 +227,7 @@ devoid = wrap $ pure
 
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
 type WidgetOptics' a s = WidgetOptics a a s s -- data
-type WidgetOptics'' o i = forall x. WidgetOptics o Void i x -- functions
+type WidgetOptics'' o i = forall a b. WidgetOptics o a i b -- functions
 
 static :: forall a s t. a -> WidgetOptics a Void s t
 static a w = wrap do
@@ -239,7 +239,7 @@ static a w = wrap do
     }
 
 val :: forall i o. (i -> o) -> WidgetOptics'' o i
-val f = dimap f absurd
+val f w = lcmap f w >>> devoid
 
 value :: forall a. WidgetOptics'' a a
 value = val identity
