@@ -12,7 +12,7 @@ import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton,
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Web, slot, text)
-import Widget (Widget, debounced, just, static, value)
+import Widget (Widget, debounced, just, spied, static, value)
 
 
 order :: Widget Web OrderId Order
@@ -23,7 +23,7 @@ order = T.do
     shortId $ debounced $ value $ caption $ text
     card S.do
       static "Identifier" $ caption $ text
-      shortId $ filledTextField { floatingLabel: "Short ID" }
+      shortId $ spied "here" $ filledTextField { floatingLabel: "Short ID" }
       orderId $ filledTextField { floatingLabel: "Unique ID" }
     customer $ card S.do
       static "Customer" $ caption $ text

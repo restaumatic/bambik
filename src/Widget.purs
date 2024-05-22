@@ -24,7 +24,7 @@ module Widget
   , lens
   , prism
   , projection
-  , spy
+  , spied
   , static
   , val
   , value
@@ -48,6 +48,8 @@ import Data.Profunctor.Sum (class Sum, psum)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
+import Debug (class DebugWarning, spy)
+import Debug as Debug
 import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
@@ -285,19 +287,16 @@ debounced' millis = affAdapter $ pure
 debounced :: forall m. MonadEffect m => WidgetOcular m
 debounced = debounced' (Milliseconds 300.0)
 
-spy :: forall m. MonadEffect m => String -> WidgetOcular m
-spy name w = wrap do
+spied :: forall m. MonadEffect m => DebugWarning => String -> WidgetOcular m
+spied name w = wrap do
   { toUser, fromUser } <- unwrap w
   pure
-    -- TODO use generic show
-    -- { toUser: \ch -> log' ("< " <> show ch) *> toUser ch *> log' ">"
-    { toUser: \ch -> log' "< " *> toUser ch *> log' ">"
-    , fromUser: \prop -> do
-      -- fromUser \u -> log' ("> " <> show u) *> prop u *> log' "<"
-      fromUser \u -> log' "> " *> prop u *> log' "<"
+    { toUser: \ch -> toUser (spy' "< " ch)
+    , fromUser: \prop -> fromUser \u -> prop (spy' "> " u)
     }
   where
-    log' s = log $ "[WidgetSpy] " <> name <> " " <> s
+    spy' :: forall a. String -> a -> a
+    spy' s x = spy ("[WidgetSpied] " <> name <> " " <> s) x
 
 -- modifiers
 
