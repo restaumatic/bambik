@@ -81,7 +81,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: forall a. Widget Web String a
+text :: forall a s. Show s => Widget Web s a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -93,7 +93,7 @@ text = wrap do
   pure
     { toUser: case _ of
       Removed -> setTextNodeValue node ""
-      Altered (New _ string _) -> setTextNodeValue node string
+      Altered (New _ s _) -> setTextNodeValue node (show s)
     , fromUser: \_ -> pure unit
     }
 
