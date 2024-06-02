@@ -5,8 +5,8 @@ module Widget
   , Widget(..)
   , WidgetOcular
   , WidgetOptics
-  , WidgetOptics'
-  , WidgetOptics''
+  , WidgetROOptics
+  , WidgetRWOptics
   , WidgetStatic
   , action
   , action'
@@ -23,9 +23,9 @@ module Widget
   , just
   , lens
   , prism
+  , projection
   , spied
   , static
-  , projection
   )
   where
 
@@ -47,12 +47,10 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (class DebugWarning, spy)
-import Debug as Debug
 import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Ocular (Ocular, Static)
@@ -226,10 +224,10 @@ devoid = wrap $ pure
 -- optics
 
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
-type WidgetOptics' a s = WidgetOptics a a s s -- read/write
-type WidgetOptics'' o i = forall a. WidgetOptics o Void i a -- read only
+type WidgetRWOptics a s = WidgetOptics a a s s
+type WidgetROOptics a s = forall x. WidgetOptics a Void s x
 
-static :: forall i o. o -> WidgetOptics'' o i
+static :: forall a s. a -> WidgetROOptics a s
 static a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
@@ -241,26 +239,26 @@ static a w = wrap do
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
 
-iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics' a s
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetRWOptics a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-projection :: forall i o. (i -> o) -> WidgetOptics'' o i
+projection :: forall a s. (s -> a) -> WidgetROOptics a s
 projection f = dimap f absurd
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
 -- TODO use Data.Lens.Record.prop
-field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetOptics' a (Record s)
+field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => WidgetRWOptics a (Record s)
 field = scopemap (Part (reflectSymbol (Proxy @l))) >>> Profunctor.lens (get (Proxy @l)) (flip (set (Proxy @l)))
 
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
 prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
-constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetOptics' a s
+constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetRWOptics a s
 constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
 
-just :: forall a. WidgetOptics' a (Maybe a)
+just :: forall a. WidgetRWOptics a (Maybe a)
 just = constructor "Just" Just identity
 
 -- oculars

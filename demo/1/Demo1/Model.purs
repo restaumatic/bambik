@@ -8,7 +8,7 @@ import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Prelude (class Show, discard, pure, show, ($), (<<<), (<>))
-import Widget (WidgetOptics, WidgetOptics', WidgetOptics'', action, constructor, field, iso, projection)
+import Widget (WidgetOptics, WidgetRWOptics, WidgetROOptics, action, constructor, field, iso, projection)
 
 type Order =
   { orderId :: OrderId
@@ -50,7 +50,7 @@ type Time = String
 
 type Address = String
 
-formal :: WidgetOptics' NameFormal NameInformal
+formal :: WidgetRWOptics NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
     toFormal :: NameInformal -> NameFormal
@@ -92,62 +92,62 @@ derive instance Generic Fulfillment _
 instance Show Fulfillment where
   show = genericShow
 
-orderId :: WidgetOptics' String Order
+orderId :: WidgetRWOptics String Order
 orderId = field @"orderId"
 
-shortId :: WidgetOptics' String Order
+shortId :: WidgetRWOptics String Order
 shortId = field @"shortId"
 
-customer :: WidgetOptics' NameInformal Order
+customer :: WidgetRWOptics NameInformal Order
 customer = field @"customer"
 
-payment :: WidgetOptics' (Maybe Payment) Order
+payment :: WidgetRWOptics (Maybe Payment) Order
 payment = field @"payment"
 
-firstName :: WidgetOptics' String NameInformal
+firstName :: WidgetRWOptics String NameInformal
 firstName = field @"firstName"
 
-lastName :: WidgetOptics' String NameInformal
+lastName :: WidgetRWOptics String NameInformal
 lastName = field @"lastName"
 
-forename :: WidgetOptics' String NameFormal
+forename :: WidgetRWOptics String NameFormal
 forename = field @"forename"
 
-surname :: WidgetOptics' String NameFormal
+surname :: WidgetRWOptics String NameFormal
 surname =  field @"surname"
 
-fulfillment :: WidgetOptics' Fulfillment Order
+fulfillment :: WidgetRWOptics Fulfillment Order
 fulfillment =  field @"fulfillment"
 
-table :: WidgetOptics' Table { table :: Table }
+table :: WidgetRWOptics Table { table :: Table }
 table =  field @"table"
 
-time :: WidgetOptics' Time { time :: Time }
+time :: WidgetRWOptics Time { time :: Time }
 time =  field @"time"
 
-address :: WidgetOptics' Address { address :: Address}
+address :: WidgetRWOptics Address { address :: Address}
 address =  field @"address"
 
-remarks :: WidgetOptics' String Order
+remarks :: WidgetRWOptics String Order
 remarks = field @"remarks"
 
-total :: WidgetOptics' String Order
+total :: WidgetRWOptics String Order
 total = field @"total"
 
-paid :: WidgetOptics' String Payment
+paid :: WidgetRWOptics String Payment
 paid = field @"paid"
 
-dineIn :: WidgetOptics' { table :: Table } Fulfillment
+dineIn :: WidgetRWOptics { table :: Table } Fulfillment
 dineIn = constructor "DineIn" DineIn case _ of
   DineIn c -> Just c
   _ -> Nothing
 
-takeaway :: WidgetOptics' { time :: String } Fulfillment
+takeaway :: WidgetRWOptics { time :: String } Fulfillment
 takeaway = constructor "Takeaway" Takeaway case _ of
   Takeaway c -> Just c
   _ -> Nothing
 
-delivery :: WidgetOptics' { address :: Address } Fulfillment
+delivery :: WidgetRWOptics { address :: Address } Fulfillment
 delivery = constructor "Delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
@@ -161,5 +161,5 @@ authToken = field @"authToken"
 
 submittedOrder = field @"submittedOrder"
 
-distance :: WidgetOptics'' String Address
+distance :: WidgetROOptics String Address
 distance = projection $ show <<< length
