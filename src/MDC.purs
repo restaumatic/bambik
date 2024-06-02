@@ -44,12 +44,11 @@ import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid,
 
 -- Primitive widgets
 
-containedButton :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
+containedButton :: forall a b. { label :: Widget Web String Void } -> Widget Web a a
 containedButton { label } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
     div >>> cl "mdc-button__ripple" $ devoid
-    span >>> cl "mdc-button__label" $
-      (label text) >>> devoid
+    span >>> cl "mdc-button__label" $ label
   where
     br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 

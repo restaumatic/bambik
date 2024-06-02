@@ -30,7 +30,7 @@ module Web
   , p
   , path
   , radioButton
-  , runWidgetInBody
+  , body
   , runWidgetInNode
   , runWidgetInSelectedNode
   , slot
@@ -81,7 +81,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: forall a s. Show s => Widget Web s a
+text :: forall a. Widget Web String a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -93,7 +93,7 @@ text = wrap do
   pure
     { toUser: case _ of
       Removed -> setTextNodeValue node ""
-      Altered (New _ s _) -> setTextNodeValue node (show s)
+      Altered (New _ s _) -> setTextNodeValue node s
     , fromUser: \_ -> pure unit
     }
 
@@ -359,8 +359,8 @@ dynClass name pred w = wrap do
 
 -- Entry point
 
-runWidgetInBody :: forall o. Widget Web Unit o -> Effect Unit
-runWidgetInBody w = do
+body :: forall o. Widget Web Unit o -> Effect Unit
+body w = do
   node <- documentBody
   runWidgetInNode node w unit mempty
 

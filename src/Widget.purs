@@ -13,8 +13,8 @@ module Widget
   , adapter
   , affAdapter
   , constructor
-  , debounced'
   , debounced
+  , debounced'
   , devoid
   , effAdapter
   , effBracket
@@ -23,11 +23,9 @@ module Widget
   , just
   , lens
   , prism
-  , projection
   , spied
   , static
-  , val
-  , value
+  , projection
   )
   where
 
@@ -228,10 +226,10 @@ devoid = wrap $ pure
 -- optics
 
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
-type WidgetOptics' a s = WidgetOptics a a s s -- data
-type WidgetOptics'' o i = forall a b. WidgetOptics o a i b -- functions
+type WidgetOptics' a s = WidgetOptics a a s s -- read/write
+type WidgetOptics'' o i = forall a. WidgetOptics o Void i a -- read only
 
-static :: forall a s t. a -> WidgetOptics a Void s t
+static :: forall i o. o -> WidgetOptics'' o i
 static a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
@@ -240,20 +238,14 @@ static a w = wrap do
     , fromUser: const $ pure unit
     }
 
-val :: forall i o. (i -> o) -> WidgetOptics'' o i
-val f w = lcmap f w >>> devoid
-
-value :: forall a. WidgetOptics'' a a
-value = val identity
-
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
 
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics' a s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-projection :: forall a b s. (s -> a) -> WidgetOptics a b s b
-projection f = dimap f identity
+projection :: forall i o. (i -> o) -> WidgetOptics'' o i
+projection f = dimap f absurd
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)

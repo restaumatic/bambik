@@ -8,7 +8,7 @@ import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Prelude (class Show, discard, pure, show, ($), (<<<), (<>))
-import Widget (WidgetOptics, WidgetOptics', WidgetOptics'', action, constructor, field, iso, val)
+import Widget (WidgetOptics, WidgetOptics', WidgetOptics'', action, constructor, field, iso, projection)
 
 type Order =
   { orderId :: OrderId
@@ -162,4 +162,4 @@ authToken = field @"authToken"
 submittedOrder = field @"submittedOrder"
 
 distance :: WidgetOptics'' String Address
-distance = val $ show <<< length
+distance = projection $ show <<< length

@@ -4,7 +4,7 @@ import Prelude (Unit)
 
 import Effect (Effect)
 import Demo2.View (view)
-import Web (runWidgetInBody)
+import Web (body)
 
 main :: Effect Unit
-main = runWidgetInBody view
+main = body view
