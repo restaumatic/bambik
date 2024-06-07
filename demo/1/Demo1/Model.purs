@@ -7,8 +7,8 @@ import Data.String (length)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Prelude (class Show, discard, pure, show, ($), (<<<), (<>))
-import Widget (WidgetOptics, WidgetRWOptics, WidgetROOptics, action, constructor, field, iso, projection)
+import Prelude (class Show, discard, pure, show, ($), (<<<), (<>), (>>>))
+import Widget (WidgetOptics, WidgetROOptics, WidgetRWOptics, action, constructor, field, iso, just, projection)
 
 type Order =
   { orderId :: OrderId
@@ -103,6 +103,9 @@ customer = field @"customer"
 
 payment :: WidgetRWOptics (Maybe Payment) Order
 payment = field @"payment"
+
+payment' :: WidgetRWOptics Payment Order
+payment' = just >>> field @"payment"
 
 firstName :: WidgetRWOptics String NameInformal
 firstName = field @"firstName"

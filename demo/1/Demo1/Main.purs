@@ -2,8 +2,9 @@ module Demo1.Main (main) where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
-import Demo1.Model (address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
+import Demo1.Model (address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, payment', remarks, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton)
 import QualifiedDo.Semigroup as S
@@ -15,7 +16,7 @@ main :: Effect Unit
 main = body $ lcmap (const "45123519") $ T.do
   loadOrder indeterminateLinearProgress
   elevation20 S.do
-    static "Order " text
+    static "Order " $ caption $ text
     shortId $ debounced $ caption $ text
     card S.do
       static "Identifier" $ caption $ text
@@ -45,8 +46,8 @@ main = body $ lcmap (const "45123519") $ T.do
     card S.do
       static "Payment" $ caption $ text
       total $ filledTextField { floatingLabel: "Total" }
-      payment $ checkbox { labelContent: "Paid", default: { paid: "0" } }
-      payment $ just $ paid $ filledTextField { floatingLabel: "Paid" }
+      payment $ checkbox { labelContent: "Paid", uncheckedValue: Nothing, defaultCheckedValue: Just { paid: "0" } }
+      payment' $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       static "Remarks" $ caption $ text
       remarks $ filledTextArea 80 3

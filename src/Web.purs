@@ -131,24 +131,22 @@ textArea = dynAttr "disabled" "true" (maybe true $ case _ of
     }
 
 
-checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
-checkboxInput default = dynAttr "disabled" "true" isNothing $ wrap do
-  aRef <- liftEffect $ Ref.new default
+checkboxInput :: forall a . Eq a => a -> a -> Widget Web a a
+checkboxInput uncheckedValue defaultCheckedValue = dynAttr "disabled" "true" isNothing $ wrap do
+  aRef <- liftEffect $ Ref.new defaultCheckedValue
   element "input" (pure unit)
   attribute "type" "checkbox"
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> pure unit
-    Altered (New _ Nothing _) -> do
-      setChecked node false
-    Altered (New _ (Just newa) _) -> do
-      setChecked node true
+    Removed -> setChecked node false
+    Altered (New _ newa _) -> do
+      setChecked node (newa /= uncheckedValue)
       Ref.write newa aRef
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
-      prop $ Altered $ New [] (if checked then (Just a) else Nothing) false
+      prop $ Altered $ New [] (if checked then a else uncheckedValue) false
     }
 
 radioButton :: forall a. a -> Widget Web a a

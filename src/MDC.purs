@@ -35,7 +35,7 @@ import Data.Maybe (Maybe, isNothing, maybe)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, show, unit, (#), ($), (<<<), (>>=), (>>>))
+import Prelude (class Eq, class Monad, Unit, Void, bind, const, discard, mempty, pure, show, unit, (#), ($), (<<<), (>>=), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, textArea, uniqueId)
@@ -85,11 +85,11 @@ filledTextArea columns rows =
       textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
     span >>> cl "mdc-line-ripple" $ devoid
 
-checkbox :: forall a. { labelContent :: String, default :: a } -> Widget Web (Maybe a) (Maybe a)
-checkbox { labelContent, default } =
+checkbox :: forall a. Eq a => { labelContent :: String, uncheckedValue :: a, defaultCheckedValue :: a } -> Widget Web a a
+checkbox { labelContent, uncheckedValue, defaultCheckedValue } =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-checkbox" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit) $ S.do
-      checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
+      checkboxInput uncheckedValue defaultCheckedValue # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
