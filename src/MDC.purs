@@ -29,13 +29,14 @@ module MDC
   , subtitle2
   )
   where
+import Prelude
 
 import Control.Monad.State (gets)
 import Data.Maybe (Maybe, isNothing, maybe)
+import Data.Profunctor (rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import Prelude (class Monad, Unit, Void, bind, const, discard, mempty, pure, show, unit, (#), ($), (<<<), (>>=), (>>>))
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, textArea, uniqueId)
@@ -85,8 +86,8 @@ filledTextArea columns rows =
       textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
     span >>> cl "mdc-line-ripple" $ devoid
 
-checkbox :: forall a. { labelContent :: String, default :: a } -> Widget Web (Maybe a) (Maybe a)
-checkbox { labelContent, default } =
+checkbox :: forall a. { default :: a } -> Widget Web (Maybe a) Void -> Widget Web (Maybe a) (Maybe a)
+checkbox { default } labelContent =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-checkbox" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit) $ S.do
       checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
@@ -97,13 +98,13 @@ checkbox { labelContent, default } =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ devoid
       div >>> cl "mdc-checkbox__ripple" $ devoid
-    label >>> attr "for" id $ text # static labelContent
+    attr "for" id $ rmap absurd labelContent
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a . { labelContent :: String, default :: a } -> Widget Web a a
-radioButton { labelContent, default } =
+radioButton :: forall a . { default :: a } -> Widget Web a Void -> Widget Web a a
+radioButton { default } labelContent =
   div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
     div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit) $ S.do
       Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
@@ -111,7 +112,7 @@ radioButton { labelContent, default } =
         div >>> cl "mdc-radio__outer-circle" $ devoid
         div >>> cl "mdc-radio__inner-circle" $ devoid
       div >>> cl "mdc-radio__ripple" $ devoid
-    label >>> attr "for" uid $ text # static labelContent
+    attr "for" uid $ rmap absurd labelContent
   where
     uid = unsafePerformEffect uniqueId
 

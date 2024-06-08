@@ -8,7 +8,7 @@ import Effect (Effect)
 import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (body, slot, text)
+import Web (body, label, slot, text)
 import Widget (debounced, just, static)
 
 main :: Effect Unit
@@ -31,9 +31,9 @@ main = body $ lcmap (const "45123519") $ T.do
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
     fulfillment $ card S.do
       static "Fulfillment" $ caption $ text
-      dineIn $ radioButton { labelContent: "Dine in", default: { table: "1"} }
-      takeaway $ radioButton { labelContent: "Takeaway", default: { time: "15:30"} }
-      delivery $ radioButton { labelContent: "Delivery", default: { address: "Mulholland Drive 2001, Los Angeles" } }
+      dineIn $ radioButton { default: { table: "1"} } $ label $ static "Dine in" text
+      takeaway $ radioButton { default: { time: "15:30"} } $ label $ static "Takeaway" text
+      delivery $ radioButton { default: { address: "Mulholland Drive 2001, Los Angeles" } } $ label $ static "Delivery" text
       dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
       takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
       delivery $ slot $ address $ body1 S.do
@@ -45,7 +45,7 @@ main = body $ lcmap (const "45123519") $ T.do
     card S.do
       static "Payment" $ caption $ text
       total $ filledTextField { floatingLabel: "Total" }
-      payment $ checkbox { labelContent: "Paid", default: { paid: "0" } }
+      payment $ checkbox { default: { paid: "0" } } $ label $ static "Paid" text
       payment $ just $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       static "Remarks" $ caption $ text
