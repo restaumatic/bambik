@@ -82,7 +82,7 @@ uniqueId = randomElementId
 -- Primitives
 
 text :: forall a. Widget Web String a
-text = wrap do
+text = slot $ wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode mempty
