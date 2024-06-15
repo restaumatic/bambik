@@ -31,9 +31,9 @@ main = body $ lcmap (const "45123519") $ T.do
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
     fulfillment $ card S.do
       static "Fulfillment" $ caption $ text
-      dineIn $ radioButton { default: { table: "1"} } $ label $ static "Dine in" text
-      takeaway $ radioButton { default: { time: "15:30"} } $ label $ static "Takeaway" text
-      delivery $ radioButton { default: { address: "Mulholland Drive 2001, Los Angeles" } } $ label $ static "Delivery" text
+      radioButton dineIn { table: "1"} $ static "Dine in" $ label $ text
+      radioButton takeaway { time: "15:30"} $ static "Takeaway" $ label $ text
+      radioButton delivery { address: "Mulholland Drive 2001, Los Angeles" } $ static "Delivery" $ label $ text
       dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
       takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
       delivery $ slot $ address $ body1 S.do
@@ -45,7 +45,7 @@ main = body $ lcmap (const "45123519") $ T.do
     card S.do
       static "Payment" $ caption $ text
       total $ filledTextField { floatingLabel: "Total" }
-      payment $ checkbox { default: { paid: "0" } } $ label $ static "Paid" text
+      checkbox payment { paid: "0" } $ static "Paid" $ label $ text
       payment $ just $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       static "Remarks" $ caption $ text
