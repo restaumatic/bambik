@@ -232,9 +232,7 @@ static a w = wrap do
   w' <- unwrap w
   liftEffect $ w'.toUser $ Altered $ New [] a false
   pure
-    { toUser: case _ of
-      Removed -> w'.toUser Removed
-      _ -> w'.toUser $ Altered $ New [] a false
+    { toUser: const $ pure unit
     , fromUser: const $ pure unit
     }
 
