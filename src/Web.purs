@@ -6,6 +6,7 @@ module Web
   , aside
   , attr
   , attribute
+  , body
   , button
   , cancelButton
   , checkboxInput
@@ -30,10 +31,8 @@ module Web
   , p
   , path
   , radioButton
-  , body
   , runWidgetInNode
   , runWidgetInSelectedNode
-  , slot
   , span
   , svg
   , text
@@ -82,7 +81,7 @@ uniqueId = randomElementId
 -- Primitives
 
 text :: forall a. Widget Web String a
-text = slot $ wrap do
+text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode mempty

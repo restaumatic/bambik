@@ -40,14 +40,14 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, slot, span, text, textArea, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, textArea, uniqueId)
 import Web (button, cancelButton, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
 
 -- Primitive widgets
 
-containedButton :: forall a b. { label :: Widget Web String Void } -> Widget Web a a
-containedButton { label } =
+containedButton :: forall a. Widget Web String Void -> Widget Web a a
+containedButton label =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $ label
@@ -65,7 +65,7 @@ containedCancelButton { label } =
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
-filledTextField { floatingLabel } = slot $
+filledTextField { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true) >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) $ S.do

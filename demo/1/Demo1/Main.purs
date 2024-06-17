@@ -8,14 +8,14 @@ import Effect (Effect)
 import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (body, label, slot, text)
+import Web (body, label, text)
 import Widget (debounced, just, static)
 
 main :: Effect Unit
 main = body $ lcmap (const "45123519") $ T.do
   loadOrder indeterminateLinearProgress
   elevation20 S.do
-    static "Order " text
+    static "Order " $ caption $ text
     shortId $ debounced $ caption $ text
     card S.do
       static "Identifier" $ caption $ text
@@ -50,7 +50,7 @@ main = body $ lcmap (const "45123519") $ T.do
     card S.do
       static "Remarks" $ caption $ text
       remarks $ filledTextArea 80 3
-    debounced $ slot $ body1 S.do
+    debounced $ body1 S.do
       static "Summary: Order " $ text
       shortId $ text
       static " (uniquely " $ text
@@ -64,24 +64,24 @@ main = body $ lcmap (const "45123519") $ T.do
       static " " $ text
       customer $ formal $ forename $ text
       static "), fulfilled as " $ text
-      fulfillment $ dineIn $ slot S.do
+      fulfillment $ dineIn S.do
         static "dine in at table " $ text
         table $ text
-      fulfillment $ takeaway $ slot S.do
+      fulfillment $ takeaway S.do
         static "takeaway at " $ text
         time $ text
-      fulfillment $ delivery $ slot S.do
+      fulfillment $ delivery S.do
         static "delivery to " $ text
         address S.do
           text
           static " (" $ text
           distance $ text
           static " km away)" $ text
-      payment $ just $ slot S.do
+      payment $ just S.do
         static ", paid " $ text
         paid $ text
   T.do
-    containedButton { label: static "Submit order " $ text }
+    containedButton $ label $ static "Submit order " $ text
     lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ confirmationDialog { title: "Submit order", dismiss: "No", confirm: "Yes" } S.do
       static "Authorization required" $ body1 $ text
       authToken $ filledTextField { floatingLabel: "Auth token" }
