@@ -3,15 +3,15 @@ module Demo2.Main (main) where
 import Prelude hiding (div)
 
 import Effect (Effect)
-import QualifiedDo.Semigroupoid as T
+import QualifiedDo.Alt as A
 import Web (a, attr, body, div, li, p, text, ul)
 import Widget (static)
 
 main :: Effect Unit
 main = body $
-  div >>> attr "style" "border: 1px solid silver; padding: 30px;" $ T.do
+  div >>> attr "style" "border: 1px solid silver; padding: 30px;" $ A.do
     static "Hello World!" $ p $ text
-    ul $ T.do
+    ul $ A.do
       static "One" $ li $ text
       static "Two" $ li $ text
       static "Three" $ li $ text

@@ -5,7 +5,7 @@ import Prelude
 import Data.Profunctor (lcmap)
 import Demo1.Model (address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
-import MDC (body1, caption, card, checkbox, confirmationDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton)
+import MDC (body1, caption, card, checkbox, simpleDialog, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, text)
@@ -82,7 +82,7 @@ main = body $ lcmap (const "45123519") $ T.do
         paid $ text
   T.do
     containedButton $ label $ static "Submit order " $ text
-    lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ confirmationDialog { title: "Submit order", dismiss: "No", confirm: "Yes" } S.do
+    lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ simpleDialog { title: "Submit order", confirm: "Yes" } S.do
       static "Authorization required" $ body1 $ text
       authToken $ filledTextField { floatingLabel: "Auth token" }
     submitOrder indeterminateLinearProgress

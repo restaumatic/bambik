@@ -6,7 +6,7 @@ module MDC
   , caption
   , card
   , checkbox
-  , confirmationDialog
+  , simpleDialog
   , containedButton
   , containedCancelButton
   , dialog
@@ -40,15 +40,16 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
+import QualifiedDo.Alt as A
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, textArea, uniqueId)
 import Web (button, cancelButton, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
 
 -- Primitive widgets
 
-containedButton :: forall a. Widget Web String Void -> Widget Web a a
+containedButton :: forall a. Widget Web a Void -> Widget Web a a
 containedButton label =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ A.do
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $ label
   where
@@ -192,8 +193,8 @@ dialog { title } content =
       closeMdcComponent comp = liftEffect $ close comp
 
 -- TODO isn't it an ocular?
-confirmationDialog :: forall a. { title :: String, dismiss :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
-confirmationDialog { title, dismiss, confirm } content =
+simpleDialog :: forall a. { title :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
+simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
     div >>> cl "mdc-dialog__container" $
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
@@ -203,10 +204,7 @@ confirmationDialog { title, dismiss, confirm } content =
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
-            Web.cancelButton >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> attr "data-mdc-dialog-action" "close" $ T.do
-              div >>> cl "mdc-button__ripple" $ devoid
-              span >>> cl "mdc-button__label" $ text # static dismiss
-            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ T.do
+            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
               div >>> cl "mdc-button__ripple" $ devoid
               span >>>  cl "mdc-button__label" $ text # static confirm
     div >>> cl "mdc-dialog__scrim" $ devoid
@@ -238,8 +236,8 @@ snackbar { label } =
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =
-  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ T.do
-    div >>> cl "mdc-linear-progress__buffer" $ T.do
+  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
+    div >>> cl "mdc-linear-progress__buffer" $ A.do
       div >>> cl "mdc-linear-progress__buffer-bar" $ devoid
       div >>> cl "mdc-linear-progress__buffer-dots" $ devoid
     div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
