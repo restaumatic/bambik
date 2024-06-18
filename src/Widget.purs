@@ -230,7 +230,6 @@ type WidgetROOptics a s = forall x. WidgetOptics a Void s x
 static :: forall a s. a -> WidgetROOptics a s
 static a w = wrap do
   w' <- unwrap w
-  -- liftEffect $ w'.toUser $ Altered $ New [] a false
   pure
     { toUser: case _ of
       Removed -> w'.toUser Removed

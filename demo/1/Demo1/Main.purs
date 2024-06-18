@@ -82,8 +82,8 @@ main = body $ lcmap (const "45123519") $ T.do
         paid $ text
   T.do
     containedButton $ label $ static "Submit order " $ text
-    lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ simpleDialog { title: "Authorization required", confirm: "Authorize" } S.do
-      authToken $ filledTextField { floatingLabel: "Auth token" }
-    submitOrder indeterminateLinearProgress
+    -- lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ simpleDialog { title: "Authorization required", confirm: "Authorize" } S.do
+    --   authToken $ filledTextField { floatingLabel: "Auth token" }
+    -- submitOrder indeterminateLinearProgress
     -- snackbar { label: static "Order " <> value $ shortId <> static " submitted"}
 

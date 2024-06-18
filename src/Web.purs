@@ -5,17 +5,14 @@ module Web
   , a
   , aside
   , attr
-  , attribute
   , body
   , button
   , cancelButton
   , checkboxInput
   , cl
-  , clazz
   , div
   , dynAttr
   , dynClass
-  , element
   , h1
   , h2
   , h3
@@ -99,9 +96,8 @@ text = slot $ wrap do
 input :: String -> Widget Web String String
 input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
     Altered _ -> false
-    Removed -> true) $ wrap do
+    Removed -> true) $ attr "type" type_ $ wrap do
   element "input" (pure unit)
-  attribute "type" type_
   node <- gets _.sibling
   pure
     { toUser: case _ of
@@ -131,10 +127,9 @@ textArea = dynAttr "disabled" "true" (maybe true $ case _ of
 
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
-checkboxInput default = dynAttr "disabled" "true" isNothing $ wrap do
+checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
-  attribute "type" "checkbox"
   node <- gets _.sibling
   pure
     { toUser: case _ of
@@ -151,10 +146,9 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ wrap do
     }
 
 radioButton :: forall a. a -> Widget Web a a
-radioButton default = dynAttr "disabled" "true" isNothing $ wrap do
+radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
-  attribute "type" "radio"
   node <- gets _.sibling
   pure
     { toUser: case _ of
@@ -227,57 +221,6 @@ cl name w = wrap do
     { toUser: w'.toUser
     , fromUser: w'.fromUser
     }
-
-slot :: WidgetOcular Web
-slot w = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
-  pure
-    { toUser: case _ of
-      Removed -> ensureDetached
-      updated@(Altered _) -> do
-        toUser updated
-        ensureAttached
-    , fromUser: fromUser
-    }
-  where
-  attachable' :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
-  attachable' removePrecedingSiblingNodes dom = do
-    parent <- gets _.parent
-    slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
-    liftEffect do
-      placeholderBefore <- placeholderBeforeSlot slotNo
-      placeholderAfter <- placeholderAfterSlot slotNo
-
-      (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
-      appendChild placeholderAfter parent
-
-      initialDocumentFragment <- createDocumentFragment
-      result <- runDomInNode initialDocumentFragment dom
-
-      detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
-
-      let
-        ensureAttached :: Effect Unit
-        ensureAttached = do
-          detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
-          for_ detachedDocumentFragment \documentFragment -> do
-            removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
-            documentFragment `insertBefore` placeholderAfter
-
-        ensureDetached :: Effect Unit
-        ensureDetached = do
-          detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
-          when (isNothing detachedDocumentFragment) do
-            documentFragment <- createDocumentFragment
-            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
-            Ref.write (Just documentFragment) detachedDocumentFragmentRef
-
-      pure $ { ensureAttached, ensureDetached, result }
-  placeholderBeforeSlot :: Int -> Effect Node
-  placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
-
-  placeholderAfterSlot :: Int -> Effect Node
-  placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 
 div :: WidgetOcular Web
 div = el "div"
@@ -376,8 +319,10 @@ runWidgetInNode node w i outward = runDomInNode node do
     Removed -> outward Nothing
   liftEffect $ toUser $ Altered $ New [] i false
 
+--- private
+
 el :: String -> WidgetOcular Web
-el tagName = wrap <<< element tagName <<< unwrap
+el tagName = slot <<< wrap <<< element tagName <<< unwrap
 
 element :: forall a. String -> Web a -> Web a
 element tagName contents = do
@@ -401,8 +346,58 @@ clazz name = do
   liftEffect $ addClass node name
   pure unit
 
+slot :: WidgetOcular Web
+slot w = wrap do
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
+  pure
+    { toUser: case _ of
+      Removed -> ensureDetached
+      updated@(Altered _) -> do
+        toUser updated
+        ensureAttached
+    , fromUser: fromUser
+    }
+  where
+  attachable' :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
+  attachable' removePrecedingSiblingNodes dom = do
+    parent <- gets _.parent
+    slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+    { ensureAttached, ensureDetached, initialDocumentFragment } <- liftEffect do
+      placeholderBefore <- placeholderBeforeSlot slotNo
+      placeholderAfter <- placeholderAfterSlot slotNo
 
---- private
+      (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
+      appendChild placeholderAfter parent
+
+      initialDocumentFragment <- createDocumentFragment
+      detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
+
+      let
+        ensureAttached :: Effect Unit
+        ensureAttached = do
+          detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
+          for_ detachedDocumentFragment \documentFragment -> do
+            removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+            documentFragment `insertBefore` placeholderAfter
+
+        ensureDetached :: Effect Unit
+        ensureDetached = do
+          detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
+          when (isNothing detachedDocumentFragment) do
+            documentFragment <- createDocumentFragment
+            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
+            Ref.write (Just documentFragment) detachedDocumentFragmentRef
+
+      pure $ { ensureAttached, ensureDetached, initialDocumentFragment }
+    modify_ _ { parent = initialDocumentFragment }
+    result <- dom
+    modify_ _ { parent = parent}
+    pure { ensureAttached, ensureDetached, result }
+  placeholderBeforeSlot :: Int -> Effect Node
+  placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
+
+  placeholderAfterSlot :: Int -> Effect Node
+  placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 
 foreign import data Event :: Type
 foreign import getValue :: Node -> Effect String
