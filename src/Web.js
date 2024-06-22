@@ -240,3 +240,10 @@ export function setTextNodeValue(node) {
     };
   };
 }
+
+// lastChild :: Node -> Effect Node
+export function lastChild(node) {
+  return function () {
+    return node.lastChild;
+  };
+}

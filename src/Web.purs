@@ -21,6 +21,7 @@ module Web
   , h6
   , html
   , img
+  , init
   , input
   , label
   , li
@@ -222,6 +223,31 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> WidgetOcular Web
+init nodeInitializer pre post w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  mCtxRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: case _ of
+      Removed -> w'.toUser Removed
+      altered -> do
+        w'.toUser altered
+        mCtx <- liftEffect $ Ref.read mCtxRef
+        liftEffect $ case mCtx of
+          Nothing -> do
+            ctx <- nodeInitializer node
+            Ref.write (Just ctx) mCtxRef
+          Just ctx -> pre ctx
+    , fromUser: \prop -> do
+      w'.fromUser \change -> do
+        mCtx <- liftEffect $ Ref.read mCtxRef
+        liftEffect $ case mCtx of
+          Nothing -> pure unit -- should never happen
+          Just ctx -> post ctx
+        prop change
+    }
+
 div :: WidgetOcular Web
 div = el "div"
 
@@ -391,7 +417,8 @@ slot w = wrap do
       pure $ { ensureAttached, ensureDetached, initialDocumentFragment }
     modify_ _ { parent = initialDocumentFragment }
     result <- dom
-    modify_ _ { parent = parent}
+    newSibling <- liftEffect $ lastChild initialDocumentFragment
+    modify_ _ { parent = parent, sibling = newSibling}
     pure { ensureAttached, ensureDetached, result }
   placeholderBeforeSlot :: Int -> Effect Node
   placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
@@ -424,6 +451,7 @@ foreign import removeClass :: Node -> String -> Effect Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
+foreign import lastChild :: Node -> Effect Node
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }

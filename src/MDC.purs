@@ -38,10 +38,10 @@ import Data.Profunctor (rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
+import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import QualifiedDo.Alt as A
-import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, input, label, p, span, text, textArea, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, text, textArea, uniqueId)
 import Web (button, cancelButton, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
 
@@ -195,7 +195,7 @@ dialog { title } content =
 -- TODO isn't it an ocular?
 simpleDialog :: forall a. { title :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
 simpleDialog { title, confirm } content =
-  div >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
+  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ S.do
     div >>> cl "mdc-dialog__container" $
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         T.do
@@ -211,9 +211,6 @@ simpleDialog { title, confirm } content =
     where
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
-      initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
-      openMdcComponent comp = liftEffect $ open comp
-      closeMdcComponent comp = liftEffect $ close comp
 
 snackbar :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
 snackbar { label } =
