@@ -49,27 +49,23 @@ import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid,
 
 containedButton :: forall a. Widget Web a Void -> Widget Web a a
 containedButton label =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ A.do
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $ label
-  where
-    br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 
 containedCancelButton :: forall a b c. { label :: WidgetOptics String Void a b } -> Widget Web a c
 containedCancelButton { label } =
-  Web.cancelButton >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> br $ T.do
+  Web.cancelButton >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ T.do
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $
       (label text) >>> devoid
-  where
-    br = bracket (gets _.sibling >>= (liftEffect <<< newComponent material.ripple."MDCRipple")) (const $ pure unit) (const $ pure unit)
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
 filledTextField { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
-    Removed -> true) >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.textField."MDCTextField")) (const $ pure unit) (const $ pure unit) $ S.do
+    Removed -> true) >>> init (newComponent material.textField."MDCTextField") mempty mempty $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
       span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
@@ -90,8 +86,8 @@ filledTextArea columns rows =
 
 checkbox :: forall a s. WidgetOptics (Maybe a) (Maybe a) s s -> a -> Widget Web s Void -> Widget Web s s
 checkbox option default labelContent =
-  div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
-    div >>> cl "mdc-checkbox" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.checkbox."MDCCheckbox")) (const $ pure unit) (const $ pure unit) $ S.do
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
+    div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
       option $ checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
         html """
@@ -107,8 +103,8 @@ checkbox option default labelContent =
 -- TODO add html grouping?
 radioButton :: forall a s. WidgetOptics a a s s -> a -> Widget Web s Void -> Widget Web s s
 radioButton option default labelContent =
-  div >>> cl "mdc-form-field" >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.formField."MDCFormField")) (const $ pure unit) (const $ pure unit) $ S.do
-    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> bracket (gets _.sibling >>= (liftEffect <<< newComponent material.radio."MDCRadio")) (const $ pure unit) (const $ pure unit) $ S.do
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
+    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> init (newComponent material.radio."MDCRadio") mempty mempty $ S.do
       option $ Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
       div >>> cl "mdc-radio__background" $ S.do
         div >>> cl "mdc-radio__outer-circle" $ devoid
@@ -181,16 +177,12 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 -- TODO isn't it an ocular?
 dialog :: forall a. { title :: String } -> Widget Web a a -> Widget Web a a
 dialog { title } content =
-  aside >>> cl "mdc-dialog" >>> bracket initializeMdcDialog openMdcComponent closeMdcComponent $ S.do
+  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ S.do
     div >>> cl "mdc-dialog__container" $ S.do
       div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $ text # static title
         div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ devoid
-    where
-      initializeMdcDialog = gets _.sibling >>= (liftEffect <<< newComponent material.dialog."MDCDialog")
-      openMdcComponent comp = liftEffect $ open comp
-      closeMdcComponent comp = liftEffect $ close comp
 
 -- TODO isn't it an ocular?
 simpleDialog :: forall a. { title :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
@@ -253,18 +245,6 @@ indeterminateLinearProgress =
           , post: pure }
 
 -- Private
-
-bracket :: forall a b c m. Monad m => m c -> (c -> Effect Unit) -> (c -> Effect Unit) -> Widget m a b -> Widget m a b
-bracket afterInit afterInward beforeOutward = effBracket do
-  ctx <- afterInit
-  pure
-    { beforeInput: mempty
-    , afterInput: case _ of
-      Removed -> pure unit -- TODO really?
-      Altered _ -> afterInward ctx
-    , beforeOutput: const $ beforeOutward ctx
-    , afterOutput: mempty
-    }
 
 foreign import data Component :: Type
 foreign import data ComponentClass :: Type
