@@ -238,6 +238,7 @@ init nodeInitializer pre post w = wrap do
           Nothing -> do
             ctx <- nodeInitializer node
             Ref.write (Just ctx) mCtxRef
+            pre ctx
           Just ctx -> pre ctx
     , fromUser: \prop -> do
       w'.fromUser \change -> do
