@@ -43,7 +43,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, text, textArea, uniqueId)
 import Web (button, cancelButton, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, action', devoid, effAdapter, effBracket, static)
+import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
 
 -- Primitive widgets
 
@@ -204,24 +204,12 @@ simpleDialog { title, confirm } content =
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
 
-snackbar :: forall a b. { label :: WidgetOptics String Void a b } -> Widget Web a a
-snackbar { label } =
-  aside >>> cl "mdc-snackbar" >>> effBracket (do
-    comp <- gets _.sibling >>= (liftEffect <<< newComponent material.snackbar."MDCSnackbar")
-    pure { beforeInput: case _ of
-      Removed -> close comp
-      Altered _ -> mempty
-    , afterInput: case _ of
-      Removed -> mempty
-      Altered _ -> open comp
-    , beforeOutput: mempty
-    , afterOutput: mempty
-    }) >>> (action' \a a2eff o2eff -> liftEffect do
-    a2eff a
-    o2eff a) $
-    div >>> attr "role" "status" >>> attr "aria-relevant" "additions" >>> cl "mdc-snackbar__surface" $
-      div $
-        label text # cl "mdc-snackbar__label" # attr "aria-atomic" "false"
+snackbar :: forall a b. Widget Web a b -> Widget Web a b
+snackbar content =
+  aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open close $
+    div >>> cl "mdc-snackbar__surface" >>> attr "role" "status" >>> attr "aria-relevant" "additions" $
+      div >>> cl "mdc-snackbar__label" >>> attr "aria-atomic" "false" $
+        content
 
 indeterminateLinearProgress :: forall a. Widget Web Boolean a
 indeterminateLinearProgress =
