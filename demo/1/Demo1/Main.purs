@@ -86,6 +86,6 @@ main = body $ lcmap (const "45123519") $ T.do
         authToken $ filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
       snackbar $ S.do
-        static "Order " $ text
+        static "Order " text
         shortId text
-        static " submitted" $ text
+        static " submitted" text
