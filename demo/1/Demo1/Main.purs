@@ -3,13 +3,13 @@ module Demo1.Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Demo1.Model (address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, submittedOrder, surname, table, takeaway, time, total)
+import Demo1.Model (address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, text)
-import Widget (debounced, devoid, just, static)
+import Widget (debounced, just, static)
 
 main :: Effect Unit
 main = body $ lcmap (const "45123519") $ T.do
