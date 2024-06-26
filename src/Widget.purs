@@ -1,6 +1,8 @@
 module Widget
   ( Changed(..)
+  , Error
   , New(..)
+  , PropagationStatus
   , Scope(..)
   , Widget(..)
   , WidgetOcular
@@ -17,7 +19,6 @@ module Widget
   , debounced'
   , devoid
   , effAdapter
-  , effBracket
   , field
   , iso
   , just
@@ -60,9 +61,13 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
-  { toUser :: Changed i -> Effect Unit
-  , fromUser :: (Changed o -> Effect Unit) -> Effect Unit
+  { toUser :: Changed i -> Effect PropagationStatus
+  , fromUser :: (Changed o -> Effect PropagationStatus) -> Effect Unit
   })
+
+type PropagationStatus = Maybe Error
+
+type Error = String
 
 derive instance Newtype (Widget m i o) _
 
@@ -149,7 +154,7 @@ instance MonadEffect m => Semigroupoid (Widget m) where
     p2' <- unwrap p2
     pure
       { toUser: \cha -> do
-        p2'.toUser Removed
+        _ <- p2'.toUser Removed
         p1'.toUser cha
       , fromUser: \prop -> do
           p1'.fromUser p2'.toUser
@@ -291,21 +296,6 @@ spied name w = wrap do
 
 -- modifiers
 
-effBracket :: forall m a b. Monad m => m
-  { beforeInput :: Changed a -> Effect Unit
-  , afterInput :: Changed a -> Effect Unit
-  , beforeOutput :: Changed b -> Effect Unit
-  , afterOutput :: Changed b -> Effect Unit
-  } -> Widget m a b -> Widget m a b
-effBracket f w = wrap do
-  { toUser, fromUser } <- unwrap w
-  { beforeInput, afterInput, beforeOutput, afterOutput } <- f
-  pure
-    { toUser: \ch -> beforeInput ch *> toUser ch *> afterInput ch
-    , fromUser: \prop -> do
-      fromUser \u -> beforeOutput u *> prop u *> afterOutput u
-    }
-
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
 effAdapter :: forall m a b s t. Monad m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
@@ -341,13 +331,14 @@ action' arr w = wrap do
     { toUser: case _ of
       Removed -> w'.toUser Removed
       Altered (New _ i cont) -> do
-        launchAff_ $ arr i (\a -> w'.toUser $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
+        launchAff_ $ arr i (\a -> void $ w'.toUser $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
+        pure Nothing
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
               -- w'.toUser $ Altered $ New [] Nothing false
-              prop $ Altered $ New [] o false -- TODO really?
+              void $ prop $ Altered $ New [] o false -- TODO really?
               waitAndPropagate
       in waitAndPropagate
     }
@@ -360,24 +351,31 @@ affAdapter f w = wrap do
   mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: case _ of
-      Removed -> pure unit -- TODO really?
-      Altered news@(New _ _ cont) -> launchAff_ do
-        mFiber <- liftEffect $ Ref.read mInputFiberRef
-        for_ mFiber $ killFiber (error "Obsolete input")
-        newFiber <- forkAff do
-          a <- pre news
-          liftEffect $ toUser $ Altered $ New [] a cont
-        liftEffect $ Ref.write (Just newFiber) mInputFiberRef
+      Removed -> pure Nothing -- TODO really?
+      Altered news@(New _ _ cont) -> do
+        launchAff_ do
+          mFiber <- liftEffect $ Ref.read mInputFiberRef
+          for_ mFiber $ killFiber (error "Obsolete input")
+          newFiber <- forkAff do
+            a <- pre news
+            liftEffect $ toUser $ Altered $ New [] a cont
+          liftEffect $ Ref.write (Just newFiber) mInputFiberRef
+        pure Nothing
+    -- , fromUser: unsafeCoerce unit
     , fromUser: \prop -> do
       fromUser case _ of
-        Altered newb@(New _ _ cont) -> launchAff_ do
-          mFiber <- liftEffect $ Ref.read mOutputFiberRef
-          for_ mFiber $ killFiber (error "Obsolete output")
-          newFiber <- forkAff do
-            t <- post newb
-            liftEffect $ prop $ Altered $ New [] t cont
-          liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
-        Removed -> prop Removed
+        Altered newb@(New _ _ cont) -> do
+          launchAff_ do
+            mFiber <- liftEffect $ Ref.read mOutputFiberRef
+            for_ mFiber $ killFiber (error "Obsolete output")
+            newFiber <- forkAff do
+              t <- post newb
+              liftEffect $ prop $ Altered $ New [] t cont
+            liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
+          pure Nothing
+        Removed -> do
+          void $ prop Removed
+          pure Nothing
     }
 
 -- private
@@ -387,7 +385,7 @@ scopemap scope p = wrap ado
   { toUser, fromUser } <- unwrap p
   in
     { toUser: \cha -> case zoomIn cha of
-      Nothing -> pure unit
+      Nothing -> pure Nothing
       Just cha' -> toUser cha'
     , fromUser: \prop -> do
       fromUser $ prop <<< zoomOut
