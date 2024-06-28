@@ -62,19 +62,26 @@ containedCancelButton { label } =
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
-filledTextField { floatingLabel } =
+filledTextField { floatingLabel } = A.do
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
-    Removed -> true) >>> init (newComponent material.textField."MDCTextField") mempty mempty $ S.do
+    Removed -> true) >>> init (\node -> do
+      comp <- newComponent material.textField."MDCTextField" node
+      useNativeValidation comp false
+      pure comp) mempty (\node _ -> setValid node false) $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
       span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
         Removed -> false
         Altered _ -> true)) $ text # static floatingLabel
-      input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id
+      input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
     span >>> cl "mdc-line-ripple" $ devoid
+  div >>> cl "mdc-text-field-helper-line" $
+    div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> init mdcTextFieldHelperText mempty mempty $
+      static "Error here" $ text
     where
       id = unsafePerformEffect uniqueId
+      helperId = unsafePerformEffect uniqueId
 
 filledTextArea :: Int -> Int -> Widget Web String String
 filledTextArea columns rows =
@@ -187,7 +194,7 @@ dialog { title } content =
 -- TODO isn't it an ocular?
 simpleDialog :: forall a. { title :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
 simpleDialog { title, confirm } content =
-  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ S.do
+  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ S.do
     div >>> cl "mdc-dialog__container" $
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         T.do
@@ -206,7 +213,7 @@ simpleDialog { title, confirm } content =
 
 snackbar :: forall a b. Widget Web a b -> Widget Web a b
 snackbar content =
-  aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open close $
+  aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open (\a propStatus -> close a) $
     div >>> cl "mdc-snackbar__surface" >>> attr "role" "status" >>> attr "aria-relevant" "additions" $
       div >>> cl "mdc-snackbar__label" >>> attr "aria-atomic" "false" $
         content
@@ -242,6 +249,7 @@ foreign import newComponent :: ComponentClass -> Node -> Effect Component
 foreign import setDeterminate :: Component -> Boolean -> Effect Unit
 foreign import material
   :: { textField :: { "MDCTextField" :: ComponentClass }
+    --  , textFieldHelperText :: { "MDCTextFieldHelperText" :: ComponentClass }
      , ripple :: { "MDCRipple" :: ComponentClass }
      , drawer :: { "MDCDrawer" :: ComponentClass }
      , tabBar :: { "MDCTabBar" :: ComponentClass }
@@ -256,3 +264,8 @@ foreign import material
      , linearProgress :: { "MDCLinearProgress" :: ComponentClass }
      }
 
+foreign import mdcTextFieldHelperText :: Node -> Effect Component
+
+foreign import setValid :: Component -> Boolean -> Effect Unit
+
+foreign import useNativeValidation :: Component -> Boolean -> Effect Unit

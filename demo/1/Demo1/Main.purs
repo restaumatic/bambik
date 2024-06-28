@@ -9,17 +9,17 @@ import MDC (body1, caption, card, checkbox, containedButton, elevation20, filled
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, text)
-import Widget (debounced, just, static)
+import Widget (debounced, just, spied, static)
 
 main :: Effect Unit
 main = body $ lcmap (const "45123519") $ T.do
   loadOrder indeterminateLinearProgress
   elevation20 S.do
     static "Order " $ caption text
-    shortId $ debounced $ caption text
+    shortId $ debounced$ caption text
     card S.do
       static "Identifier" $ caption text
-      shortId $ filledTextField { floatingLabel: "Short ID" }
+      shortId $ spied "!!!" $ filledTextField { floatingLabel: "Short ID" }
       orderId $ filledTextField { floatingLabel: "Unique ID" }
     customer $ card S.do
       static "Customer" $ caption text
