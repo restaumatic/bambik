@@ -287,12 +287,18 @@ spied :: forall m. MonadEffect m => DebugWarning => String -> WidgetOcular m
 spied name w = wrap do
   { toUser, fromUser } <- unwrap w
   pure
-    { toUser: \ch -> toUser (spy' "< " ch)
-    , fromUser: \prop -> fromUser \u -> prop (spy' "> " u)
+    { toUser: \change -> do
+      status <- toUser change
+      let x = spy' ("< (" <> show status <> ")") change
+      pure status
+    , fromUser: \prop -> fromUser \change -> do
+      status <- prop change
+      let x = spy' ("> (" <> show status <> ")") change
+      pure status
     }
   where
     spy' :: forall a. String -> a -> a
-    spy' s x = spy ("[WidgetSpied] " <> name <> " " <> s) x
+    spy' text x = spy ("[WidgetSpied] " <> name <> " " <> text) x
 
 -- modifiers
 

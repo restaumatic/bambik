@@ -53,7 +53,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic, devoid)
+import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic, PropagationStatus, devoid)
 
 foreign import data Node :: Type
 
@@ -239,7 +239,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> WidgetOcular Web
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> WidgetOcular Web
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -261,9 +261,11 @@ init nodeInitializer pre post w = wrap do
       w'.fromUser \change -> do
         mCtx <- liftEffect $ Ref.read mCtxRef
         liftEffect $ case mCtx of
-          Nothing -> pure unit -- should never happen
-          Just ctx -> post ctx
-        prop change
+          Nothing -> unsafeCoerce unit -- should never happen
+          Just ctx -> do
+            status <- prop change
+            post ctx status
+            pure status
     }
 
 div :: WidgetOcular Web
