@@ -2,24 +2,24 @@ module Demo1.Main (main) where
 
 import Prelude
 
-import Data.Profunctor (lcmap)
-import Demo1.Model (address, authToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
+import Demo1.Model (address, authorizarion, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
+import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, text)
-import Widget (debounced, just, static)
+import Widget (debounced, devoid, foo, just, spied, static, wo)
 
 main :: Effect Unit
-main = body $ lcmap (const "45123519") $ T.do
+main = body $ order "45123519" $ T.do
   loadOrder indeterminateLinearProgress
   elevation20 S.do
     static "Order " $ caption text
     shortId $ debounced $ caption text
     card S.do
       static "Identifier" $ caption text
-      shortId $ filledTextField { floatingLabel: "Short ID" }
+      shortId $ spied "!!!" $ filledTextField { floatingLabel: "Short ID" }
       orderId $ filledTextField { floatingLabel: "Unique ID" }
     customer $ card S.do
       static "Customer" $ caption text
@@ -82,10 +82,13 @@ main = body $ lcmap (const "45123519") $ T.do
         paid text
     T.do
       containedButton $ label $ static "Submit order " text
-      lcmap (\submittedOrder -> { authToken: "", submittedOrder }) $ simpleDialog { title: "Authorization required", confirm: "Authorize" } S.do
-        authToken $ filledTextField { floatingLabel: "Auth token" }
+      authorizarion $ simpleDialog { title: "Authorization required", confirm: "Authorize" } $ A.do
+        static "Order summary: " $ text
+        text
+        wo "" $ filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
       snackbar $ S.do
         static "Order " text
         shortId text
         static " submitted" text
+  devoid

@@ -53,7 +53,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic, devoid)
+import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic, PropagationStatus, devoid)
 
 foreign import data Node :: Type
 
@@ -89,8 +89,12 @@ text = slot $ wrap do
   node <- gets (_.sibling)
   pure
     { toUser: case _ of
-      Removed -> setTextNodeValue node ""
-      Altered (New _ s _) -> setTextNodeValue node s
+      Removed -> do
+        setTextNodeValue node ""
+        pure Nothing
+      Altered (New _ s _) -> do
+        setTextNodeValue node s
+        pure Nothing
     , fromUser: \_ -> pure unit
     }
 
@@ -102,12 +106,15 @@ input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> setValue node ""
+    Removed -> do
+      setValue node ""
+      pure Nothing
     Altered (New _ newa _) -> do
       setValue node newa
+      pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      prop $ Altered $ New [] value true
+      void $ prop $ Altered $ New [] value true
     }
 
 textArea :: Widget Web String String
@@ -118,12 +125,15 @@ textArea = dynAttr "disabled" "true" (maybe true $ case _ of
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> setValue node ""
+    Removed -> do
+      setValue node ""
+      pure Nothing
     Altered (New _ newa _) -> do
       setValue node newa
+      pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      prop $ Altered $ New [] value true
+      void $ prop $ Altered $ New [] value true
     }
 
 
@@ -134,16 +144,18 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "check
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> pure unit
+    Removed -> pure Nothing
     Altered (New _ Nothing _) -> do
       setChecked node false
+      pure Nothing
     Altered (New _ (Just newa) _) -> do
       setChecked node true
       Ref.write newa aRef
+      pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
-      prop $ Altered $ New [] (if checked then (Just a) else Nothing) false
+      void $ prop $ Altered $ New [] (if checked then (Just a) else Nothing) false
     }
 
 radioButton :: forall a. a -> Widget Web a a
@@ -153,13 +165,16 @@ radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" 
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> setChecked node false
+    Removed -> do
+      setChecked node false
+      pure Nothing
     Altered (New _ newa _) -> do
       setChecked node true
       Ref.write newa aRef
+      pure Nothing
     , fromUser: \prop -> void $ addEventListener "change" node $ const do
     a <- Ref.read aRef
-    prop $ Altered $ New [] a false
+    void $ prop $ Altered $ New [] a false
     }
 
 button :: forall a. Widget Web a Void -> Widget Web a a
@@ -171,14 +186,15 @@ button w = wrap do
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
-    w'.toUser occur
+    status <- w'.toUser occur
     case occur of
       Removed -> Ref.write (unsafeCoerce unit) aRef
       Altered (New _ a _) -> Ref.write a aRef
+    pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.toUser Nothing -- TODO check
-    prop $ Altered $ New [] a false
+    void $ prop $ Altered $ New [] a false
     }
 
 cancelButton :: forall a b. Widget Web a Void -> Widget Web a b
@@ -188,7 +204,7 @@ cancelButton w = wrap do
   pure
     { toUser: w'.toUser
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    prop $ Removed
+    void $ prop $ Removed
     }
 
 -- Statics
@@ -223,7 +239,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> WidgetOcular Web
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> WidgetOcular Web
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -232,7 +248,7 @@ init nodeInitializer pre post w = wrap do
     { toUser: case _ of
       Removed -> w'.toUser Removed
       altered -> do
-        w'.toUser altered
+        status <- w'.toUser altered
         mCtx <- liftEffect $ Ref.read mCtxRef
         liftEffect $ case mCtx of
           Nothing -> do
@@ -240,13 +256,16 @@ init nodeInitializer pre post w = wrap do
             Ref.write (Just ctx) mCtxRef
             pre ctx
           Just ctx -> pre ctx
+        pure status
     , fromUser: \prop -> do
       w'.fromUser \change -> do
         mCtx <- liftEffect $ Ref.read mCtxRef
         liftEffect $ case mCtx of
-          Nothing -> pure unit -- should never happen
-          Just ctx -> post ctx
-        prop change
+          Nothing -> unsafeCoerce unit -- should never happen
+          Just ctx -> do
+            status <- prop change
+            post ctx status
+            pure status
     }
 
 div :: WidgetOcular Web
@@ -328,23 +347,23 @@ dynClass name pred w = wrap do
 
 -- Entry point
 
-body :: forall o. Widget Web Unit o -> Effect Unit
+body :: Widget Web Unit Void -> Effect Unit
 body w = do
   node <- documentBody
-  runWidgetInNode node w unit mempty
+  runWidgetInNode node w
 
-runWidgetInSelectedNode :: forall o. String -> Widget Web Unit o -> Effect Unit
+runWidgetInSelectedNode :: String -> Widget Web Unit Void -> Effect Unit
 runWidgetInSelectedNode selector w = do
   node <- selectedNode selector
-  runWidgetInNode node w unit mempty
+  runWidgetInNode node w
 
-runWidgetInNode :: forall i o. Node -> Widget Web i o -> i -> (Maybe o -> Effect Unit) -> Effect Unit
-runWidgetInNode node w i outward = runDomInNode node do
+runWidgetInNode :: Node -> Widget Web Unit Void -> Effect Unit
+runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
-    Altered (New _ mo _) -> outward $ Just mo
-    Removed -> outward Nothing
-  liftEffect $ toUser $ Altered $ New [] i false
+    Altered (New _ mo _) -> pure Nothing
+    Removed -> pure Nothing
+  void $ liftEffect $ toUser $ Altered $ New [] unit false
 
 --- private
 
@@ -378,10 +397,13 @@ slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
   pure
     { toUser: case _ of
-      Removed -> ensureDetached
+      Removed -> do
+        ensureDetached
+        pure Nothing
       updated@(Altered _) -> do
-        toUser updated
+        status <- toUser updated
         ensureAttached
+        pure status
     , fromUser: fromUser
     }
   where
