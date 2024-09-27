@@ -33,7 +33,7 @@ module MDC
 import Prelude
 
 import Control.Monad.State (gets)
-import Data.Maybe (Maybe, isNothing, maybe)
+import Data.Maybe (Maybe, fromMaybe, isJust, isNothing, maybe)
 import Data.Profunctor (rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -68,17 +68,18 @@ filledTextField { floatingLabel } = A.do
     Removed -> true) >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
-      pure comp) mempty (\node _ -> setValid node false) $ S.do
+      pure comp) mempty (\node validationStatus -> do
+        setValid node (isNothing validationStatus)
+        setContent node (fromMaybe "" validationStatus)) $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
       span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
         Removed -> false
         Altered _ -> true)) $ text # static floatingLabel
       input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
+      div >>> cl "mdc-text-field-helper-line" $
+        div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> attr "aria-hidden" "true" >>> init mdcTextFieldHelperText mempty mempty $ devoid
     span >>> cl "mdc-line-ripple" $ devoid
-  div >>> cl "mdc-text-field-helper-line" $
-    div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> init mdcTextFieldHelperText mempty mempty $
-      static "Error here" $ text
     where
       id = unsafePerformEffect uniqueId
       helperId = unsafePerformEffect uniqueId
@@ -267,5 +268,6 @@ foreign import material
 foreign import mdcTextFieldHelperText :: Node -> Effect Component
 
 foreign import setValid :: Component -> Boolean -> Effect Unit
+foreign import setContent :: Component -> String -> Effect Unit
 
 foreign import useNativeValidation :: Component -> Boolean -> Effect Unit

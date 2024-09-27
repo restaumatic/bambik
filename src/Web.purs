@@ -347,17 +347,17 @@ dynClass name pred w = wrap do
 
 -- Entry point
 
-body :: forall o. Widget Web Unit o -> Effect Unit
+body :: Widget Web Unit Void -> Effect Unit
 body w = do
   node <- documentBody
   runWidgetInNode node w
 
-runWidgetInSelectedNode :: forall o. String -> Widget Web Unit o -> Effect Unit
+runWidgetInSelectedNode :: String -> Widget Web Unit Void -> Effect Unit
 runWidgetInSelectedNode selector w = do
   node <- selectedNode selector
   runWidgetInNode node w
 
-runWidgetInNode :: forall i o. Node -> Widget Web Unit o -> Effect Unit
+runWidgetInNode :: Node -> Widget Web Unit Void -> Effect Unit
 runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
