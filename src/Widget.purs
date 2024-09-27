@@ -368,16 +368,6 @@ effAdapter f w = wrap do
         Removed -> prop Removed
     }
 
-action'' :: forall m i o. Monad m => (i -> Aff o) -> Widget m i o
-action'' a = wrap do
-  pure
-    { toUser: \_ -> pure Nothing
-    , fromUser: \prop -> do
-      propagationStatus <- prop (Altered (New [] Nothing true))
-      pure unit
-    }
-
-
 action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
 action arr = action' \i pro post -> do
   liftEffect $ pro true
