@@ -151,7 +151,8 @@ submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  pure $ Left "Error...."
+  pure $ Left "Service unavailable"
+  -- pure $ Right order
 
 loadOrder :: WidgetOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do

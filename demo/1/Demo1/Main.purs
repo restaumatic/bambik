@@ -87,14 +87,14 @@ main = body $ order "45123519" $ T.do
         text
         authToken $ filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
-      right $ snackbar $ S.do
-        static "Order " text
-        shortId text
-        static " submitted" text
-      -- TODO make this block below reachable, now the block above stops data flow
-      left $ snackbar $ S.do
-        static "Error " text
-        text
+      A.do
+        right $ snackbar $ S.do
+          static "Order " text
+          shortId text
+          static " submitted" text
+        left $ snackbar $ S.do
+          static "Error " text
+          text
       devoid
   devoid
 
