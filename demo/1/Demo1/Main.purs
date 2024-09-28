@@ -2,14 +2,14 @@ module Demo1.Main (main) where
 
 import Prelude
 
-import Demo1.Model (address, authorizarion, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
+import Demo1.Model (address, authToken, authorizarion, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, text)
-import Widget (debounced, devoid, foo, just, spied, static, wo)
+import Widget (debounced, devoid, just, static)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do
@@ -19,7 +19,7 @@ main = body $ order "45123519" $ T.do
     shortId $ debounced $ caption text
     card S.do
       static "Identifier" $ caption text
-      shortId $ spied "!!!" $ filledTextField { floatingLabel: "Short ID" }
+      shortId $ filledTextField { floatingLabel: "Short ID" }
       orderId $ filledTextField { floatingLabel: "Unique ID" }
     customer $ card S.do
       static "Customer" $ caption text
@@ -85,10 +85,11 @@ main = body $ order "45123519" $ T.do
       authorizarion $ simpleDialog { title: "Authorization required", confirm: "Authorize" } $ A.do
         static "Order summary: " $ text
         text
-        wo "" $ filledTextField { floatingLabel: "Auth token" }
+        authToken $ filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
       snackbar $ S.do
         static "Order " text
         shortId text
         static " submitted" text
   devoid
+

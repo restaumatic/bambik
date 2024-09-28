@@ -168,3 +168,6 @@ authorizarion = lens "authorization" (\order -> order.total <> " " <> case order
 
 order :: forall a. OrderId -> WidgetOptics OrderId a Unit a
 order id = lens "order" (const id) (\_ a -> a)
+
+authToken :: forall a. WidgetOptics String String a AuthToken
+authToken = lens "auth token" (const "") (\_ a -> a)

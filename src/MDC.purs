@@ -33,7 +33,7 @@ module MDC
 import Prelude
 
 import Control.Monad.State (gets)
-import Data.Maybe (Maybe, fromMaybe, isJust, isNothing, maybe)
+import Data.Maybe (Maybe, fromMaybe, isNothing, maybe)
 import Data.Profunctor (rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -62,7 +62,7 @@ containedCancelButton { label } =
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
-filledTextField { floatingLabel } = A.do
+filledTextField { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
     Altered _ -> false
     Removed -> true) >>> init (\node -> do

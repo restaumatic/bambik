@@ -394,7 +394,7 @@ clazz name = do
 
 slot :: WidgetOcular Web
 slot w = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable' false $ unwrap w
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
     { toUser: case _ of
       Removed -> do
@@ -407,8 +407,8 @@ slot w = wrap do
     , fromUser: fromUser
     }
   where
-  attachable' :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
-  attachable' removePrecedingSiblingNodes dom = do
+  attachable :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
+  attachable removePrecedingSiblingNodes dom = do
     parent <- gets _.parent
     slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
     { ensureAttached, ensureDetached, initialDocumentFragment } <- liftEffect do
