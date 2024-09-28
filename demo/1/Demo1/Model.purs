@@ -2,12 +2,13 @@ module Demo1.Model where
 
 import Prelude
 
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetROOptics, WidgetRWOptics, WidgetOptics, action, constructor, field, iso, lens, projection)
+import Widget (WidgetOptics, WidgetROOptics, WidgetRWOptics, action, constructor, field, iso, lens, projection)
 
 type Order =
   { orderId :: OrderId
@@ -135,12 +136,22 @@ distance = projection $ show <<< length
 
 -- other optics
 
-submitOrder :: WidgetOptics Boolean Void AuthorizedOrder Order
+
+right = constructor "right" Right (case _ of
+  Left _ -> Nothing
+  Right r -> Just r)
+
+left = constructor "left" Left (case _ of
+  Right _ -> Nothing
+  Left l -> Just l)
+
+
+submitOrder :: WidgetOptics Boolean Void AuthorizedOrder (Either String Order)
 submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  pure order
+  pure $ Left "Error...."
 
 loadOrder :: WidgetOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do
