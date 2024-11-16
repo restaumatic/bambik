@@ -29,19 +29,19 @@ main = body $ order "45123519" $ T.do
       static "Formal" $ caption text
       formal $ surname $ filledTextField { floatingLabel: "Surname" }
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
-    fulfillment $ card S.do
-      static "Fulfillment" $ caption text
-      radioButton dineIn { table: "1"} $ static "Dine in" $ label text
-      radioButton takeaway { time: "15:30"} $ static "Takeaway" $ label text
-      radioButton delivery { address: "Mulholland Drive 2001, Los Angeles" } $ static "Delivery" $ label text
-      dineIn $ table $ filledTextField { floatingLabel: "Table" }
-      takeaway $ time $ filledTextField { floatingLabel: "Time" }
-      delivery $ address S.do
-        filledTextField { floatingLabel: "Address" }
-        body1 $ (S.do
-          static "Distance "
-          distance
-          static " km") text
+    -- fulfillment $ card S.do
+    --   static "Fulfillment" $ caption text
+    --   radioButton dineIn { table: "1"} $ static "Dine in" $ label text
+    --   radioButton takeaway { time: "15:30"} $ static "Takeaway" $ label text
+    --   radioButton delivery { address: "Mulholland Drive 2001, Los Angeles" } $ static "Delivery" $ label text
+    --   dineIn $ table $ filledTextField { floatingLabel: "Table" }
+    --   takeaway $ time $ filledTextField { floatingLabel: "Time" }
+    --   delivery $ address S.do
+    --     filledTextField { floatingLabel: "Address" }
+    --     body1 $ (S.do
+    --       static "Distance "
+    --       distance
+    --       static " km") text
     card S.do
       static "Payment" $ caption text
       total $ filledTextField { floatingLabel: "Total" }

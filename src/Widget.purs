@@ -128,26 +128,35 @@ instance Applicative m => Strong (Widget m) where
           prop (map (Tuple (fst prevab)) u)
       }
 
-instance Applicative m => Choice (Widget m) where
-  left :: forall a b c x . Applicative x => Widget x a b -> Widget x (Either a c) (Either b c)
-  left p = wrap ado
+instance Monad m => Choice (Widget m) where
+  left p = wrap do
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
-    in
+    pure
       { toUser: case _ of
         Removed -> p'.toUser Removed
-        Altered (New _ (Right _) _) -> p'.toUser Removed
+        Altered (New scope (Right c) cont) -> do
+          _ <- p'.toUser Removed -- can propagating removal fail? can we ignore propagation status here?
+          let prop = unsafePerformEffect $ Ref.read propRef
+          prop (Altered (New scope (Right c) cont))
         Altered (New scope (Left a) cont) -> p'.toUser $ Altered $ New scope a cont
       , fromUser: \prop -> do
+        Ref.write prop propRef
         p'.fromUser \u -> prop (Left <$> u)
       }
   right p = wrap ado
     p' <- unwrap p
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
         Removed -> p'.toUser Removed
-        Altered (New _ (Left _) _) -> p'.toUser Removed
+        Altered (New scope (Left c) cont) -> do
+          _ <- p'.toUser Removed -- can propagating removal fail? can we ignore propagation status here?
+          let prop = unsafePerformEffect $ Ref.read propRef
+          prop (Altered (New scope (Left c) cont))
         Altered (New scope (Right a) cont) -> p'.toUser $ Altered $ New scope a cont
       , fromUser: \prop -> do
+        Ref.write prop propRef
         p'.fromUser \u -> prop (Right <$> u)
       }
 
