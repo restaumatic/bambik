@@ -38,14 +38,14 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Data.Array (uncons, (:))
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic, first)
 import Data.Lens as Profunctor
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
-import Data.Profunctor.Choice (class Choice, left)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -223,8 +223,14 @@ instance Apply m => Semigroup (Widget m a a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser u *> prop u) *> (p2'.fromUser \u -> p1'.toUser u *> prop u)
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch -- TODO sum propagation statuses
+      , fromUser: \prop -> do
+        p1'.fromUser \u -> do
+          _ <- p2'.toUser u -- TODO sum propagation statuses
+          prop u
+        p2'.fromUser \u -> do
+          _ <- p1'.toUser u -- TODO sum propagation statuses
+          prop u
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
@@ -321,7 +327,9 @@ prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 type Ctor a s = WidgetOptics (Maybe a) a s s
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
-constructor name construct deconstruct = scopemap (Part name) >>> dimap (\s -> deconstruct s) construct
+constructor name construct deconstruct = dimap deconstruct construct
+-- TODO pass path Info (part/variant)
+-- constructor name construct deconstruct = scopemap (Part name) >>> dimap deconstruct construct
 
 just :: forall a. Ctor a (Maybe a)
 just = constructor "Just" Just identity
