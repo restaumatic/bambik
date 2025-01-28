@@ -1,6 +1,6 @@
 module Widget
   ( Ctor
-  , Error
+  , PropagationError
   , New(..)
   , PropagationStatus
   , Scope(..)
@@ -69,9 +69,9 @@ newtype Widget m i o = Widget (m
   , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
   })
 
-type PropagationStatus = Maybe Error
+type PropagationStatus = Maybe PropagationError
 
-type Error = String
+type PropagationError = String
 
 derive instance Newtype (Widget m i o) _
 
@@ -89,9 +89,9 @@ instance Show Scope where
 derive instance Eq Scope
 
 instance Functor m => Profunctor (Widget m) where
-  dimap contraf cof p = wrap $ unwrap p <#> \p' ->
-    { toUser: (_ <<< map contraf) p'.toUser
-    , fromUser: p'.fromUser <<< lcmap (map cof)
+  dimap pre post p = wrap $ unwrap p <#> \p' ->
+    { toUser: map pre >>> p'.toUser
+    , fromUser: lcmap (map post) >>> p'.fromUser
     }
 
 instance Applicative m => Strong (Widget m) where
@@ -294,7 +294,7 @@ lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b 
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
 -- TODO use Data.Lens.Record.prop
-field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => (a -> Record s -> Maybe Error) -> WidgetRWOptics a (Record s)
+field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => (a -> Record s -> Maybe PropagationError) -> WidgetRWOptics a (Record s)
 field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
   wrap $ do
     wars <- unwrap (first wa)
