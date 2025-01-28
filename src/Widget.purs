@@ -76,7 +76,6 @@ derive instance Newtype (Widget m i o) _
 
 data Changed a
   = Altered (New a)
-  | Removed -- TODO rename to: none?
 
 derive instance Functor Changed
 
@@ -105,7 +104,6 @@ instance Applicative m => Strong (Widget m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          Removed -> p'.toUser Removed
           Altered (New scope ab cont) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
             p'.toUser $ Altered $ New scope (fst ab) cont
@@ -119,7 +117,6 @@ instance Applicative m => Strong (Widget m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          Removed -> p'.toUser Removed
           Altered (New scope ab cont) -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
             p'.toUser $ Altered $ New scope (snd ab) cont
@@ -135,9 +132,7 @@ instance Monad m => Choice (Widget m) where
     p' <- unwrap p
     pure
       { toUser: case _ of
-        Removed -> p'.toUser Removed
         Altered (New scope (Right c) cont) -> do
-          _ <- p'.toUser Removed -- can propagating removal fail? can we ignore propagation status here?
           let prop = unsafePerformEffect $ Ref.read propRef
           prop (Altered (New scope (Right c) cont))
         Altered (New scope (Left a) cont) -> p'.toUser $ Altered $ New scope a cont
@@ -150,9 +145,7 @@ instance Monad m => Choice (Widget m) where
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
-        Removed -> p'.toUser Removed
         Altered (New scope (Left c) cont) -> do
-          _ <- p'.toUser Removed -- can propagating removal fail? can we ignore propagation status here?
           let prop = unsafePerformEffect $ Ref.read propRef
           prop (Altered (New scope (Left c) cont))
         Altered (New scope (Right a) cont) -> p'.toUser $ Altered $ New scope a cont
@@ -167,7 +160,6 @@ instance MonadEffect m => Semigroupoid (Widget m) where
     p2' <- unwrap p2
     pure
       { toUser: \cha -> do
-        _ <- p2'.toUser Removed
         p1'.toUser cha
       , fromUser: \prop -> do
           p1'.fromUser p2'.toUser
@@ -376,7 +368,6 @@ effAdapter f w = wrap do
   { pre, post } <- f
   pure
     { toUser: case _ of
-      Removed -> toUser Removed
       Altered (New _ s cont) -> do
         a <- pre s
         toUser $ Altered $ New [] a cont
@@ -385,7 +376,6 @@ effAdapter f w = wrap do
         Altered (New _ b cont) -> do
           t <- post b
           prop $ Altered $ New [] t cont
-        Removed -> prop Removed
     }
 
 action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
@@ -401,7 +391,6 @@ action' arr w = wrap do
   w' <- unwrap w
   pure
     { toUser: case _ of
-      Removed -> w'.toUser Removed
       Altered (New _ i cont) -> do
         launchAff_ $ arr i (\a -> void $ w'.toUser $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
         pure Nothing
@@ -423,7 +412,6 @@ affAdapter f w = wrap do
   mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: case _ of
-      Removed -> pure Nothing -- TODO really?
       Altered news@(New _ _ cont) -> do
         launchAff_ do
           mFiber <- liftEffect $ Ref.read mInputFiberRef
@@ -445,9 +433,6 @@ affAdapter f w = wrap do
               liftEffect $ prop $ Altered $ New [] t cont
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
           pure Nothing
-        Removed -> do
-          void $ prop Removed
-          pure Nothing
     }
 
 -- private
@@ -464,11 +449,9 @@ scopemap scope p = wrap ado
     }
   where
     zoomOut :: Changed b -> Changed b
-    zoomOut Removed = Removed
     zoomOut (Altered (New scopes mb cont)) = Altered $ New (scope : scopes) mb cont
 
     zoomIn :: Changed a -> Maybe (Changed a)
-    zoomIn Removed = Just Removed
     zoomIn (Altered (New scopes ma cont)) = case uncons scopes of
       Just { head, tail } | head == scope -> Just $ Altered $ New tail ma cont
       Nothing -> Just $ Altered $ New [] ma cont

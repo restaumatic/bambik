@@ -7,7 +7,6 @@ module Web
   , attr
   , body
   , button
-  , cancelButton
   , checkboxInput
   , cl
   , div
@@ -90,9 +89,6 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { toUser: case _ of
-      Removed -> do
-        setTextNodeValue node ""
-        pure Nothing
       Altered (New _ s _) -> do
         setTextNodeValue node s
         pure Nothing
@@ -101,15 +97,11 @@ text = wrap do
 
 input :: String -> Widget Web String String
 input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) $ attr "type" type_ $ wrap do
+    Altered _ -> false) $ attr "type" type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> do
-      setValue node ""
-      pure Nothing
     Altered (New _ newa _) -> do
       setValue node newa
       pure Nothing
@@ -120,15 +112,11 @@ input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
 
 textArea :: Widget Web String String
 textArea = dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) $ wrap do
+    Altered _ -> false) $ wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> do
-      setValue node ""
-      pure Nothing
     Altered (New _ newa _) -> do
       setValue node newa
       pure Nothing
@@ -145,7 +133,6 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "check
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> pure Nothing
     Altered (New _ Nothing _) -> do
       setChecked node false
       pure Nothing
@@ -166,9 +153,6 @@ radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" 
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> do
-      setChecked node false
-      pure Nothing
     Altered (New _ Nothing _) -> do
       setChecked node false
       pure Nothing
@@ -184,31 +168,19 @@ radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" 
 button :: forall a. Widget Web a Void -> Widget Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) $ w)
+    Altered _ -> false) $ w)
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
     status <- w'.toUser occur
     case occur of
-      Removed -> Ref.write (unsafeCoerce unit) aRef
       Altered (New _ a _) -> Ref.write a aRef
     pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.toUser Nothing -- TODO check
     void $ prop $ Altered $ New [] a false
-    }
-
-cancelButton :: forall a b. Widget Web a Void -> Widget Web a b
-cancelButton w = wrap do
-  w' <- unwrap (el "button" w)
-  node <- gets _.sibling
-  pure
-    { toUser: w'.toUser
-    , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    void $ prop $ Removed
     }
 
 -- Statics
@@ -250,7 +222,6 @@ init nodeInitializer pre post w = wrap do
   mCtxRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: case _ of
-      Removed -> w'.toUser Removed
       altered -> do
         status <- w'.toUser altered
         mCtx <- liftEffect $ Ref.read mCtxRef
@@ -366,7 +337,6 @@ runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
     Altered (New _ mo _) -> pure Nothing
-    Removed -> pure Nothing
   void $ liftEffect $ toUser $ Altered $ New [] unit false
 
 --- private
@@ -401,9 +371,6 @@ slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
     { toUser: case _ of
-      Removed -> do
-        ensureDetached
-        pure Nothing
       (Altered (New _ Nothing _)) -> do
         ensureDetached
         pure Nothing

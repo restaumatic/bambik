@@ -8,7 +8,6 @@ module MDC
   , checkbox
   , simpleDialog
   , containedButton
-  , containedCancelButton
   , dialog
   , elevation1
   , elevation10
@@ -42,7 +41,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, text, textArea, uniqueId)
-import Web (button, cancelButton, radioButton) as Web
+import Web (button, radioButton) as Web
 import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
 
 -- Primitive widgets
@@ -53,19 +52,11 @@ containedButton label =
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $ label
 
-containedCancelButton :: forall a b c. { label :: WidgetOptics String Void a b } -> Widget Web a c
-containedCancelButton { label } =
-  Web.cancelButton >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ T.do
-    div >>> cl "mdc-button__ripple" $ devoid
-    span >>> cl "mdc-button__label" $
-      (label text) >>> devoid
-
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
 filledTextField { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) >>> init (\node -> do
+    Altered _ -> false) >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
       pure comp) mempty (\node validationStatus -> do
@@ -74,7 +65,6 @@ filledTextField { floatingLabel } =
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
       span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
-        Removed -> false
         Altered _ -> true)) $ text # static floatingLabel
       input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
       div >>> cl "mdc-text-field-helper-line" $
