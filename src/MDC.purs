@@ -8,7 +8,6 @@ module MDC
   , checkbox
   , simpleDialog
   , containedButton
-  , containedCancelButton
   , dialog
   , elevation1
   , elevation10
@@ -33,8 +32,8 @@ module MDC
 import Prelude
 
 import Control.Monad.State (gets)
-import Data.Maybe (Maybe, fromMaybe, isNothing, maybe)
-import Data.Profunctor (rmap)
+import Data.Maybe (Maybe, fromMaybe, isJust, isNothing)
+import Data.Profunctor (dimap, rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -42,8 +41,8 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, text, textArea, uniqueId)
-import Web (button, cancelButton, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
+import Web (button, radioButton) as Web
+import Widget (Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
 
 -- Primitive widgets
 
@@ -53,19 +52,10 @@ containedButton label =
     div >>> cl "mdc-button__ripple" $ devoid
     span >>> cl "mdc-button__label" $ label
 
-containedCancelButton :: forall a b c. { label :: WidgetOptics String Void a b } -> Widget Web a c
-containedCancelButton { label } =
-  Web.cancelButton >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ T.do
-    div >>> cl "mdc-button__ripple" $ devoid
-    span >>> cl "mdc-button__label" $
-      (label text) >>> devoid
-
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
 filledTextField { floatingLabel } =
-  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) >>> init (\node -> do
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" isNothing >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
       pure comp) mempty (\node validationStatus -> do
@@ -73,9 +63,7 @@ filledTextField { floatingLabel } =
         setContent node (fromMaybe "" validationStatus)) $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
-      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
-        Removed -> false
-        Altered _ -> true)) $ text # static floatingLabel
+      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" isJust $ text # static floatingLabel
       input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
       div >>> cl "mdc-text-field-helper-line" $
         div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> attr "aria-hidden" "true" >>> init mdcTextFieldHelperText mempty mempty $ devoid
@@ -109,16 +97,16 @@ checkbox option default labelContent =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a s. WidgetOptics a a s s -> a -> Widget Web s Void -> Widget Web s s
-radioButton option default labelContent =
-  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
-    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> init (newComponent material.radio."MDCRadio") mempty mempty $ S.do
-      option $ Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
-      div >>> cl "mdc-radio__background" $ S.do
+radioButton :: forall a. a -> Widget Web Unit Void -> Widget Web (Maybe a) a
+radioButton default labelContent =
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
+    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
+      Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
+      div >>> cl "mdc-radio__background" $ A.do
         div >>> cl "mdc-radio__outer-circle" $ devoid
         div >>> cl "mdc-radio__inner-circle" $ devoid
       div >>> cl "mdc-radio__ripple" $ devoid
-    attr "for" uid $ rmap absurd labelContent
+    attr "for" uid $ dimap (const unit) absurd labelContent
   where
     uid = unsafePerformEffect uniqueId
 

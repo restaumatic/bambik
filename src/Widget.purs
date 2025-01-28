@@ -1,5 +1,5 @@
 module Widget
-  ( Changed(..)
+  ( Ctor
   , Error
   , New(..)
   , PropagationStatus
@@ -23,9 +23,11 @@ module Widget
   , foo
   , iso
   , just
+  , left
   , lens
   , prism
   , projection
+  , right
   , spied
   , static
   , wo
@@ -36,14 +38,14 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Data.Array (uncons, (:))
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic, first)
 import Data.Lens as Profunctor
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
-import Data.Profunctor.Choice (class Choice, left)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -63,8 +65,8 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
-  { toUser :: Changed i -> Effect PropagationStatus
-  , fromUser :: (Changed o -> Effect PropagationStatus) -> Effect Unit
+  { toUser :: New i -> Effect PropagationStatus
+  , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
   })
 
 type PropagationStatus = Maybe Error
@@ -72,12 +74,6 @@ type PropagationStatus = Maybe Error
 type Error = String
 
 derive instance Newtype (Widget m i o) _
-
-data Changed a
-  = Altered (New a)
-  | Removed -- TODO rename to: none?
-
-derive instance Functor Changed
 
 data New a = New (Array Scope) a Boolean
 
@@ -104,10 +100,9 @@ instance Applicative m => Strong (Widget m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          Removed -> p'.toUser Removed
-          Altered (New scope ab cont) -> do
+          New scope ab cont -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ Altered $ New scope (fst ab) cont
+            p'.toUser $ New scope (fst ab) cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -118,36 +113,40 @@ instance Applicative m => Strong (Widget m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          Removed -> p'.toUser Removed
-          Altered (New scope ab cont) -> do
+          New scope ab cont -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ Altered $ New scope (snd ab) cont
+            p'.toUser $ New scope (snd ab) cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
           prop (map (Tuple (fst prevab)) u)
       }
 
-instance Applicative m => Choice (Widget m) where
-  left :: forall a b c x . Applicative x => Widget x a b -> Widget x (Either a c) (Either b c)
-  left p = wrap ado
+instance Monad m => Choice (Widget m) where
+  left p = wrap do
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
-    in
+    pure
       { toUser: case _ of
-        Removed -> p'.toUser Removed
-        Altered (New _ (Right _) _) -> p'.toUser Removed
-        Altered (New scope (Left a) cont) -> p'.toUser $ Altered $ New scope a cont
+        New scope (Right c) cont -> do
+          let prop = unsafePerformEffect $ Ref.read propRef
+          prop (New scope (Right c) cont)
+        New scope (Left a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
+        Ref.write prop propRef
         p'.fromUser \u -> prop (Left <$> u)
       }
   right p = wrap ado
     p' <- unwrap p
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
-        Removed -> p'.toUser Removed
-        Altered (New _ (Left _) _) -> p'.toUser Removed
-        Altered (New scope (Right a) cont) -> p'.toUser $ Altered $ New scope a cont
+        New scope (Left c) cont -> do
+          let prop = unsafePerformEffect $ Ref.read propRef
+          prop (New scope (Left c) cont)
+        New scope (Right a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
+        Ref.write prop propRef
         p'.fromUser \u -> prop (Right <$> u)
       }
 
@@ -157,7 +156,6 @@ instance MonadEffect m => Semigroupoid (Widget m) where
     p2' <- unwrap p2
     pure
       { toUser: \cha -> do
-        _ <- p2'.toUser Removed
         p1'.toUser cha
       , fromUser: \prop -> do
           p1'.fromUser p2'.toUser
@@ -212,8 +210,14 @@ instance Apply m => Semigroup (Widget m a a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> (p1'.fromUser \u -> p2'.toUser u *> prop u) *> (p2'.fromUser \u -> p1'.toUser u *> prop u)
+      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch -- TODO sum propagation statuses
+      , fromUser: \prop -> do
+        p1'.fromUser \u -> do
+          _ <- p2'.toUser u -- TODO sum propagation statuses
+          prop u
+        p2'.fromUser \u -> do
+          _ <- p1'.toUser u -- TODO sum propagation statuses
+          prop u
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
@@ -298,7 +302,7 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
       { toUser: \chrs -> wars.toUser $ (map (\rs -> Tuple (get (Proxy @l) rs) rs)) chrs
       , fromUser: \prop -> wars.fromUser $ \chrs -> do
         case chrs of
-          Altered (New _ (Tuple a rs) _) -> case validate a rs of
+          New _ (Tuple a rs) _ -> case validate a rs of
             Just error -> pure $ Just error
             Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
           _ -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
@@ -307,11 +311,25 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
 prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
-constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetRWOptics a s
-constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
+type Ctor a s = WidgetOptics (Maybe a) a s s
 
-just :: forall a. WidgetRWOptics a (Maybe a)
+constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
+constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
+
+-- TODO move to utils?
+just :: forall a. Ctor a (Maybe a)
 just = constructor "Just" Just identity
+
+right :: forall a b. Ctor a (Either b a)
+right = constructor "right" Right (case _ of
+  Left _ -> Nothing
+  Right r -> Just r)
+
+left :: forall a b. Ctor a (Either a b)
+left = constructor "left" Left (case _ of
+  Right _ -> Nothing
+  Left l -> Just l)
+
 
 -- oculars
 
@@ -356,16 +374,14 @@ effAdapter f w = wrap do
   { pre, post } <- f
   pure
     { toUser: case _ of
-      Removed -> toUser Removed
-      Altered (New _ s cont) -> do
+      New _ s cont -> do
         a <- pre s
-        toUser $ Altered $ New [] a cont
+        toUser $ New [] a cont
     , fromUser: \prop -> do
       fromUser case _ of
-        Altered (New _ b cont) -> do
+        New _ b cont -> do
           t <- post b
-          prop $ Altered $ New [] t cont
-        Removed -> prop Removed
+          prop $ New [] t cont
     }
 
 action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
@@ -381,16 +397,15 @@ action' arr w = wrap do
   w' <- unwrap w
   pure
     { toUser: case _ of
-      Removed -> w'.toUser Removed
-      Altered (New _ i cont) -> do
-        launchAff_ $ arr i (\a -> void $ w'.toUser $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
+      New _ i cont -> do
+        launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
         pure Nothing
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
-              -- w'.toUser $ Altered $ New [] Nothing false
-              void $ prop $ Altered $ New [] o false -- TODO really?
+              -- w'.toUser $ New [] Nothing false
+              void $ prop $ New [] o false -- TODO really?
               waitAndPropagate
       in waitAndPropagate
     }
@@ -403,30 +418,26 @@ affAdapter f w = wrap do
   mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: case _ of
-      Removed -> pure Nothing -- TODO really?
-      Altered news@(New _ _ cont) -> do
+      news@(New _ _ cont) -> do
         launchAff_ do
           mFiber <- liftEffect $ Ref.read mInputFiberRef
           for_ mFiber $ killFiber (error "Obsolete input")
           newFiber <- forkAff do
             a <- pre news
-            liftEffect $ toUser $ Altered $ New [] a cont
+            liftEffect $ toUser $ New [] a cont
           liftEffect $ Ref.write (Just newFiber) mInputFiberRef
         pure Nothing
     -- , fromUser: unsafeCoerce unit
     , fromUser: \prop -> do
       fromUser case _ of
-        Altered newb@(New _ _ cont) -> do
+        newb@(New _ _ cont) -> do
           launchAff_ do
             mFiber <- liftEffect $ Ref.read mOutputFiberRef
             for_ mFiber $ killFiber (error "Obsolete output")
             newFiber <- forkAff do
               t <- post newb
-              liftEffect $ prop $ Altered $ New [] t cont
+              liftEffect $ prop $ New [] t cont
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
-          pure Nothing
-        Removed -> do
-          void $ prop Removed
           pure Nothing
     }
 
@@ -436,24 +447,22 @@ scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
 scopemap scope p = wrap ado
   { toUser, fromUser } <- unwrap p
   in
-    { toUser: \cha -> case zoomIn cha of
+    { toUser: \newa -> case zoomIn newa of
       Nothing -> pure Nothing
-      Just cha' -> toUser cha'
+      Just newa' -> toUser newa'
     , fromUser: \prop -> do
-      fromUser $ prop <<< zoomOut
+      fromUser $ zoomOut >>> prop
     }
   where
-    zoomOut :: Changed b -> Changed b
-    zoomOut Removed = Removed
-    zoomOut (Altered (New scopes mb cont)) = Altered $ New (scope : scopes) mb cont
+    zoomOut :: New b -> New b
+    zoomOut (New scopes mb cont) = New (scope : scopes) mb cont
 
-    zoomIn :: Changed a -> Maybe (Changed a)
-    zoomIn Removed = Just Removed
-    zoomIn (Altered (New scopes ma cont)) = case uncons scopes of
-      Just { head, tail } | head == scope -> Just $ Altered $ New tail ma cont
-      Nothing -> Just $ Altered $ New [] ma cont
-      Just { head: Variant _ } -> Just $ Altered $ New [] ma cont -- not matching head but head is twist
+    zoomIn :: New a -> Maybe (New a)
+    zoomIn (New scopes ma cont) = case uncons scopes of
+      Nothing -> Just $ New [] ma cont
+      Just { head, tail } | head == scope -> Just $ New tail ma cont
+      Just { head: Variant _ } -> Just $ New [] ma cont -- not matching head but head is twist
       _ -> case scope of
-        Variant _ -> Just $ Altered $ New [] ma cont -- not matching head but scope is twist
+        Variant _ -> Just $ New [] ma cont -- not matching head but scope is twist
         _ -> Nothing -- otherwise
 

@@ -2,13 +2,13 @@ module Demo1.Main (main) where
 
 import Prelude
 
-import Demo1.Model (address, authToken, authorizarion, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, shortId, submitOrder, surname, table, takeaway, time, total)
+import Demo1.Model (address, authToken, authorizarion, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, serviceOk, serviceUnavailable, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (body, label, text)
+import Web (body, label, text, slot)
 import Widget (debounced, devoid, just, static)
 
 main :: Effect Unit
@@ -31,12 +31,12 @@ main = body $ order "45123519" $ T.do
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
     fulfillment $ card S.do
       static "Fulfillment" $ caption text
-      radioButton dineIn { table: "1"} $ static "Dine in" $ label text
-      radioButton takeaway { time: "15:30"} $ static "Takeaway" $ label text
-      radioButton delivery { address: "Mulholland Drive 2001, Los Angeles" } $ static "Delivery" $ label text
-      dineIn $ table $ filledTextField { floatingLabel: "Table" }
-      takeaway $ time $ filledTextField { floatingLabel: "Time" }
-      delivery $ address S.do
+      dineIn $ radioButton { table: "1"} $ static "Dine in" $ label text
+      takeaway $ radioButton { time: "15:30"} $ static "Takeaway" $ label text
+      delivery $ radioButton { address: "Mulholland Drive 2001, Los Angeles" } $ static "Delivery" $ label text
+      dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
+      takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
+      delivery $ slot $ address S.do
         filledTextField { floatingLabel: "Address" }
         body1 $ (S.do
           static "Distance "
@@ -46,7 +46,7 @@ main = body $ order "45123519" $ T.do
       static "Payment" $ caption text
       total $ filledTextField { floatingLabel: "Total" }
       checkbox payment { paid: "0" } $ static "Paid" $ label text
-      payment $ just $ paid $ filledTextField { floatingLabel: "Paid" }
+      payment $ just $ slot $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       static "Remarks" $ caption text
       remarks $ filledTextArea 80 3
@@ -64,20 +64,20 @@ main = body $ order "45123519" $ T.do
       static " " text
       customer $ formal $ forename text
       static "), fulfilled as " text
-      fulfillment $ dineIn S.do
+      fulfillment $ dineIn $ slot S.do
         static "dine in at table " text
         table text
-      fulfillment $ takeaway S.do
+      fulfillment $ takeaway $ slot S.do
         static "takeaway at " text
         time text
-      fulfillment $ delivery S.do
+      fulfillment $ delivery $ slot S.do
         static "delivery to " text
         address S.do
           text
           static " (" text
           distance text
           static " km away)" text
-      payment $ just S.do
+      payment $ just $ slot S.do
         static ", paid " text
         paid text
     T.do
@@ -87,9 +87,11 @@ main = body $ order "45123519" $ T.do
         text
         authToken $ filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
-      snackbar $ S.do
-        static "Order " text
-        shortId text
-        static " submitted" text
+      A.do
+        serviceOk $ slot $ snackbar $ S.do
+          static "Order submitted" text
+        serviceUnavailable $ slot $ snackbar $ S.do
+          static "Order submission error " text
+      devoid
   devoid
 

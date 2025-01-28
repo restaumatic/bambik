@@ -7,7 +7,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetROOptics, WidgetRWOptics, WidgetOptics, action, constructor, field, iso, lens, projection)
+import Widget (Ctor, WidgetOptics, WidgetROOptics, WidgetRWOptics, action, constructor, field, iso, lens, projection)
 
 type Order =
   { orderId :: OrderId
@@ -105,17 +105,18 @@ total = field @"total" (\str _ -> if null str then Just "Cannot be empty" else N
 paid :: WidgetRWOptics String Payment
 paid = field @"paid" (\_ _ -> Nothing)
 
-dineIn :: WidgetRWOptics { table :: Table } Fulfillment
+
+dineIn :: Ctor { table :: Table } Fulfillment
 dineIn = constructor "DineIn" DineIn case _ of
   DineIn c -> Just c
   _ -> Nothing
 
-takeaway :: WidgetRWOptics { time :: String } Fulfillment
+takeaway :: Ctor { time :: String } Fulfillment
 takeaway = constructor "Takeaway" Takeaway case _ of
   Takeaway c -> Just c
   _ -> Nothing
 
-delivery :: WidgetRWOptics { address :: Address } Fulfillment
+delivery :: Ctor { address :: Address } Fulfillment
 delivery = constructor "Delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
@@ -135,12 +136,25 @@ distance = projection $ show <<< length
 
 -- other optics
 
-submitOrder :: WidgetOptics Boolean Void AuthorizedOrder Order
+data ServiceResult = ServiceOk | ServiceUnavailable
+
+serviceUnavailable :: Ctor Unit ServiceResult
+serviceUnavailable = constructor "ServiceUnavailable" (const ServiceUnavailable) (case _ of
+  ServiceUnavailable -> Just unit
+  _ -> Nothing)
+
+serviceOk :: Ctor Unit ServiceResult
+serviceOk = constructor "ServiceUnavailable" (const ServiceOk) (case _ of
+  ServiceOk -> Just unit
+  _ -> Nothing)
+
+submitOrder :: WidgetOptics Boolean Void AuthorizedOrder ServiceResult
 submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  pure order
+  -- pure $ ServiceUnavailable
+  pure $ ServiceOk
 
 loadOrder :: WidgetOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do

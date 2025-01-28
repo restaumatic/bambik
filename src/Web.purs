@@ -7,7 +7,6 @@ module Web
   , attr
   , body
   , button
-  , cancelButton
   , checkboxInput
   , cl
   , div
@@ -31,6 +30,7 @@ module Web
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
+  , slot
   , span
   , svg
   , text
@@ -44,7 +44,7 @@ import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), isNothing, maybe)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
@@ -53,7 +53,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic, PropagationStatus, devoid)
+import Widget (New(..), PropagationStatus, Widget, WidgetOcular, WidgetStatic, devoid)
 
 foreign import data Node :: Type
 
@@ -79,7 +79,7 @@ uniqueId = randomElementId
 -- Primitives
 
 text :: forall a. Widget Web String a
-text = slot $ wrap do
+text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode mempty
@@ -89,51 +89,38 @@ text = slot $ wrap do
   node <- gets (_.sibling)
   pure
     { toUser: case _ of
-      Removed -> do
-        setTextNodeValue node ""
-        pure Nothing
-      Altered (New _ s _) -> do
+      New _ s _ -> do
         setTextNodeValue node s
         pure Nothing
     , fromUser: \_ -> pure unit
     }
 
 input :: String -> Widget Web String String
-input type_ = dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) $ attr "type" type_ $ wrap do
+input type_ = dynAttr "disabled" "true" isNothing $ attr "type" type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> do
-      setValue node ""
-      pure Nothing
-    Altered (New _ newa _) -> do
+    New _ newa _ -> do
       setValue node newa
       pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      void $ prop $ Altered $ New [] value true
+      void $ prop $ New [] value true
     }
 
 textArea :: Widget Web String String
-textArea = dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) $ wrap do
+textArea = dynAttr "disabled" "true" isNothing $ wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> do
-      setValue node ""
-      pure Nothing
-    Altered (New _ newa _) -> do
+    (New _ newa _) -> do
       setValue node newa
       pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      void $ prop $ Altered $ New [] value true
+      void $ prop $ New [] value true
     }
 
 
@@ -144,67 +131,53 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "check
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> pure Nothing
-    Altered (New _ Nothing _) -> do
+    New _ Nothing _ -> do
       setChecked node false
       pure Nothing
-    Altered (New _ (Just newa) _) -> do
+    New _ (Just newa) _ -> do
       setChecked node true
       Ref.write newa aRef
       pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
-      void $ prop $ Altered $ New [] (if checked then (Just a) else Nothing) false
+      void $ prop $ New [] (if checked then (Just a) else Nothing) false
     }
 
-radioButton :: forall a. a -> Widget Web a a
+radioButton :: forall a. a -> Widget Web (Maybe a) a
 radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    Removed -> do
+    New _ Nothing _ -> do
       setChecked node false
       pure Nothing
-    Altered (New _ newa _) -> do
+    New _ (Just newa) _ -> do
       setChecked node true
       Ref.write newa aRef
       pure Nothing
     , fromUser: \prop -> void $ addEventListener "change" node $ const do
     a <- Ref.read aRef
-    void $ prop $ Altered $ New [] a false
+    void $ prop $ New [] a false
     }
 
 button :: forall a. Widget Web a Void -> Widget Web a a
 button w = wrap do
-  w' <- unwrap (el "button" >>> dynAttr "disabled" "true" (maybe true $ case _ of
-    Altered _ -> false
-    Removed -> true) $ w)
+  w' <- unwrap (el "button" >>> dynAttr "disabled" "true" isNothing $ w)
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
     status <- w'.toUser occur
     case occur of
-      Removed -> Ref.write (unsafeCoerce unit) aRef
-      Altered (New _ a _) -> Ref.write a aRef
+      New _ a _ -> Ref.write a aRef
     pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.toUser Nothing -- TODO check
-    void $ prop $ Altered $ New [] a false
-    }
-
-cancelButton :: forall a b. Widget Web a Void -> Widget Web a b
-cancelButton w = wrap do
-  w' <- unwrap (el "button" w)
-  node <- gets _.sibling
-  pure
-    { toUser: w'.toUser
-    , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    void $ prop $ Removed
+    void $ prop $ New [] a false
     }
 
 -- Statics
@@ -246,7 +219,6 @@ init nodeInitializer pre post w = wrap do
   mCtxRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: case _ of
-      Removed -> w'.toUser Removed
       altered -> do
         status <- w'.toUser altered
         mCtx <- liftEffect $ Ref.read mCtxRef
@@ -319,7 +291,7 @@ h5 = el "h5"
 h6 :: WidgetOcular Web
 h6 = el "h6"
 
-dynAttr :: String -> String -> (Maybe (Changed Unit) -> Boolean) -> WidgetOcular Web
+dynAttr :: String -> String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
 dynAttr name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -333,7 +305,7 @@ dynAttr name value pred w = wrap do
     where
       updateAttribute node mnewa = if pred (map (_ $> unit) $ mnewa) then setAttribute node name value else removeAttribute node name
 
-dynClass :: String -> (Maybe (Changed Unit) -> Boolean) -> WidgetOcular Web
+dynClass :: String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
 dynClass name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -361,14 +333,13 @@ runWidgetInNode :: Node -> Widget Web Unit Void -> Effect Unit
 runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
-    Altered (New _ mo _) -> pure Nothing
-    Removed -> pure Nothing
-  void $ liftEffect $ toUser $ Altered $ New [] unit false
+    New _ mo _ -> pure Nothing
+  void $ liftEffect $ toUser $ New [] unit false
 
 --- private
 
 el :: String -> WidgetOcular Web
-el tagName = slot <<< wrap <<< element tagName <<< unwrap
+el tagName = wrap <<< element tagName <<< unwrap
 
 element :: forall a. String -> Web a -> Web a
 element tagName contents = do
@@ -392,19 +363,19 @@ clazz name = do
   liftEffect $ addClass node name
   pure unit
 
-slot :: WidgetOcular Web
+slot :: forall a b. Widget Web a b -> Widget Web (Maybe a) b
 slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
     { toUser: case _ of
-      Removed -> do
+      (New _ Nothing _) -> do
         ensureDetached
         pure Nothing
-      updated@(Altered _) -> do
-        status <- toUser updated
+      new@(New _ (Just y) _) -> do
+        status <- toUser (new $> y)
         ensureAttached
         pure status
-    , fromUser: fromUser
+    , fromUser
     }
   where
   attachable :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
