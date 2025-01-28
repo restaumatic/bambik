@@ -1,5 +1,6 @@
 module Widget
   ( Ctor
+  , Field
   , PropagationError
   , New(..)
   , PropagationStatus
@@ -7,8 +8,6 @@ module Widget
   , Widget(..)
   , WidgetOcular
   , WidgetOptics
-  , WidgetROOptics
-  , WidgetRWOptics
   , WidgetStatic
   , action
   , action'
@@ -20,7 +19,6 @@ module Widget
   , devoid
   , effAdapter
   , field
-  , foo
   , iso
   , just
   , left
@@ -30,13 +28,13 @@ module Widget
   , right
   , spied
   , static
-  , wo
   )
   where
 
 import Prelude
 
 import Control.Alt (class Alt)
+import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
@@ -48,6 +46,7 @@ import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
+import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -89,12 +88,14 @@ instance Show Scope where
 derive instance Eq Scope
 
 instance Functor m => Profunctor (Widget m) where
-  dimap pre post p = wrap $ unwrap p <#> \p' ->
-    { toUser: map pre >>> p'.toUser
-    , fromUser: lcmap (map post) >>> p'.fromUser
-    }
+  dimap pre post p = wrap ado
+    p' <- unwrap p
+    in
+      { toUser: map pre >>> p'.toUser
+      , fromUser: lcmap (map post) >>> p'.fromUser
+      }
 
-instance Applicative m => Strong (Widget m) where
+instance Functor m => Strong (Widget m) where
   first p = wrap ado
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
@@ -122,11 +123,11 @@ instance Applicative m => Strong (Widget m) where
           prop (map (Tuple (fst prevab)) u)
       }
 
-instance Monad m => Choice (Widget m) where
-  left p = wrap do
+instance Functor m => Choice (Widget m) where
+  left p = wrap ado
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
-    pure
+    in
       { toUser: case _ of
         New scope (Right c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
@@ -150,7 +151,7 @@ instance Monad m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance MonadEffect m => Semigroupoid (Widget m) where
+instance Monad m => Semigroupoid (Widget m) where
   compose p2 p1 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -171,6 +172,12 @@ instance Apply m => Sum (Widget m) where
       , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
       }
 
+instance Applicative m => Zero (Widget m) where
+  pzero = wrap $ pure
+    { toUser: const $ pure Nothing
+    , fromUser: const $ pure unit
+    }
+
 instance Functor m => Functor (Widget m a) where
   map f p = wrap $ unwrap p <#> \p' ->
     { toUser: p'.toUser
@@ -180,30 +187,8 @@ instance Functor m => Functor (Widget m a) where
 instance Apply m => Alt (Widget m a) where
   alt = psum
 
--- instance Applicative m => Plus (Widget m a) where
---   empty = pzero
-
--- instance Applicative m => Zero (Widget m) where
---   pzero = wrap $ pure
---     { toUser: const $ pure unit
---     , fromUser: const $ pure unit
---     }
-
--- Notice: Widget is not a category
--- instance MonadEffect m => Category (Widget m) where
---   identity = wrap do
---     chaAVar <- liftEffect AVar.empty
---     pure
---       { toUser: \cha -> void $ AVar.put cha chaAVar mempty
---       , fromUser: \prop ->
---         let waitAndPropagate = void $ AVar.take chaAVar case _ of
---               Left error -> pure unit -- handle error
---               Right Removed -> ... -- impossible to propagate `Removed`
---               Right (Altered newa) -> do
---                 prop newa
---                 waitAndPropagate
---         in waitAndPropagate
---       }
+instance Applicative m => Plus (Widget m a) where
+  empty = pzero
 
 instance Apply m => Semigroup (Widget m a a) where
   append p1 p2 = wrap ado
@@ -236,65 +221,26 @@ devoid = wrap $ pure
 -- optics
 
 type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
-type WidgetRWOptics a s = WidgetOptics a a s s
-type WidgetROOptics a s = forall t. WidgetOptics a Void s t
-type WidgetWOOptics a b = forall s. WidgetOptics a b s b
 
--- s Void s t
--- Unit t s t
-
-now :: forall s t . WidgetOptics Unit Void s t
-now = wow >>> row
-
-row :: forall s t . WidgetOptics s Void s t
-row = rmap absurd
-
-wow :: forall s t . WidgetOptics Unit t s t
-wow = lcmap (const unit)
-
-stw :: forall a s t . a -> WidgetOptics a t s t
-stw a = lcmap (const a)
-
-static :: forall a s. a -> WidgetROOptics a s
-static a = lcmap (const a) >>> rmap absurd
--- static a w = wrap do
---   w' <- unwrap w
---   pure
---     { toUser: case _ of
---       Removed -> w'.toUser Removed
---       _ -> w'.toUser $ Altered $ New [] a false
---     , fromUser: const $ pure unit
---     }
-
-wo :: forall a b. a -> WidgetWOOptics a b
-wo a = lcmap (const a)
--- wo a w = wrap do
---   w' <- unwrap w
---   pure
---     { toUser: case _ of
---       Removed -> w'.toUser Removed
---       _ -> w'.toUser $ Altered $ New [] a false
---     , fromUser: w'.fromUser
---     }
-
--- foo :: forall a b x . a -> Widget m a b -> Widget m x b
-foo :: forall b805 c806 p807 b809. Profunctor p807 => b805 -> p807 b805 c806 -> p807 b809 c806
-foo a = lcmap (const a)
+static :: forall a s t. a -> WidgetOptics a Void s t
+static a = dimap (const a) absurd
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
 
-iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetRWOptics a s
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics a a s s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-projection :: forall a s. (s -> a) -> WidgetROOptics a s
+projection :: forall a s t. (s -> a) -> WidgetOptics a Void s t
 projection f = dimap f absurd
 
 lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
+type Field a s = WidgetOptics a a s s
+
 -- TODO use Data.Lens.Record.prop
-field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => (a -> Record s -> Maybe PropagationError) -> WidgetRWOptics a (Record s)
+field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
 field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
   wrap $ do
     wars <- unwrap (first wa)
@@ -347,7 +293,7 @@ debounced' millis = affAdapter $ pure
 debounced :: forall m. MonadEffect m => WidgetOcular m
 debounced = debounced' (Milliseconds 300.0)
 
-spied :: forall m. MonadEffect m => DebugWarning => String -> WidgetOcular m
+spied :: forall m. Monad m => DebugWarning => String -> WidgetOcular m
 spied name w = wrap do
   { toUser, fromUser } <- unwrap w
   pure

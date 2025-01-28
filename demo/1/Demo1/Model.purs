@@ -7,7 +7,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (Ctor, WidgetOptics, WidgetROOptics, WidgetRWOptics, action, constructor, field, iso, lens, projection)
+import Widget (Field, Ctor, WidgetOptics, action, constructor, field, iso, lens, projection)
 
 type Order =
   { orderId :: OrderId
@@ -58,51 +58,51 @@ type AuthToken = String
 
 type OrderSummary = String
 
--- WidgetRWOptics
+-- Field
 
-orderId :: WidgetRWOptics String Order
+orderId :: Field String Order
 orderId = field @"orderId" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-shortId :: WidgetRWOptics String Order
+shortId :: Field String Order
 shortId = field @"shortId" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-customer :: WidgetRWOptics NameInformal Order
+customer :: Field NameInformal Order
 customer = field @"customer" (\_ _ -> Nothing)
 
-payment :: WidgetRWOptics (Maybe Payment) Order
+payment :: Field (Maybe Payment) Order
 payment = field @"payment" (\_ _ -> Nothing)
 
-firstName :: WidgetRWOptics String NameInformal
+firstName :: Field String NameInformal
 firstName = field @"firstName" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-lastName :: WidgetRWOptics String NameInformal
+lastName :: Field String NameInformal
 lastName = field @"lastName" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-forename :: WidgetRWOptics String NameFormal
+forename :: Field String NameFormal
 forename = field @"forename" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-surname :: WidgetRWOptics String NameFormal
+surname :: Field String NameFormal
 surname =  field @"surname" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-fulfillment :: WidgetRWOptics Fulfillment Order
+fulfillment :: Field Fulfillment Order
 fulfillment =  field @"fulfillment" (\_ _ -> Nothing)
 
-table :: WidgetRWOptics Table { table :: Table }
+table :: Field Table { table :: Table }
 table =  field @"table" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-time :: WidgetRWOptics Time { time :: Time }
+time :: Field Time { time :: Time }
 time =  field @"time" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-address :: WidgetRWOptics Address { address :: Address}
+address :: Field Address { address :: Address}
 address =  field @"address" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-remarks :: WidgetRWOptics String Order
+remarks :: Field String Order
 remarks = field @"remarks" (\_ _ -> Nothing)
 
-total :: WidgetRWOptics String Order
+total :: Field String Order
 total = field @"total" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
 
-paid :: WidgetRWOptics String Payment
+paid :: Field String Payment
 paid = field @"paid" (\_ _ -> Nothing)
 
 
@@ -121,7 +121,7 @@ delivery = constructor "Delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
 
-formal :: WidgetRWOptics NameFormal NameInformal
+formal :: Field NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
     toFormal :: NameInformal -> NameFormal
@@ -131,7 +131,7 @@ formal = iso "formal" toFormal toInformal
 
 -- WidgetROOptics
 
-distance :: WidgetROOptics String Address
+distance :: forall t. WidgetOptics String Void Address t
 distance = projection $ show <<< length
 
 -- other optics
