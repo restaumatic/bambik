@@ -371,8 +371,8 @@ slot w = wrap do
       (New _ Nothing _) -> do
         ensureDetached
         pure Nothing
-      (New x (Just y) z) -> do
-        status <- toUser (New x y z)
+      new@(New _ (Just y) _) -> do
+        status <- toUser (new $> y)
         ensureAttached
         pure status
     , fromUser

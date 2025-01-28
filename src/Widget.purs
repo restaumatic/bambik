@@ -314,9 +314,7 @@ prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 type Ctor a s = WidgetOptics (Maybe a) a s s
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
-constructor name construct deconstruct = dimap deconstruct construct
--- TODO pass path Info (part/variant)
--- constructor name construct deconstruct = scopemap (Part name) >>> dimap deconstruct construct
+constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
 
 -- TODO move to utils?
 just :: forall a. Ctor a (Maybe a)
@@ -449,11 +447,11 @@ scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
 scopemap scope p = wrap ado
   { toUser, fromUser } <- unwrap p
   in
-    { toUser: \cha -> case zoomIn cha of
+    { toUser: \newa -> case zoomIn newa of
       Nothing -> pure Nothing
-      Just cha' -> toUser cha'
+      Just newa' -> toUser newa'
     , fromUser: \prop -> do
-      fromUser $ prop <<< zoomOut
+      fromUser $ zoomOut >>> prop
     }
   where
     zoomOut :: New b -> New b
@@ -461,8 +459,8 @@ scopemap scope p = wrap ado
 
     zoomIn :: New a -> Maybe (New a)
     zoomIn (New scopes ma cont) = case uncons scopes of
-      Just { head, tail } | head == scope -> Just $ New tail ma cont
       Nothing -> Just $ New [] ma cont
+      Just { head, tail } | head == scope -> Just $ New tail ma cont
       Just { head: Variant _ } -> Just $ New [] ma cont -- not matching head but head is twist
       _ -> case scope of
         Variant _ -> Just $ New [] ma cont -- not matching head but scope is twist
