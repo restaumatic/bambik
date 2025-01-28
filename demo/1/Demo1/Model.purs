@@ -2,7 +2,6 @@ module Demo1.Model where
 
 import Prelude
 
-import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
