@@ -23,9 +23,11 @@ module Widget
   , foo
   , iso
   , just
+  , left
   , lens
   , prism
   , projection
+  , right
   , spied
   , static
   , wo
@@ -316,8 +318,20 @@ constructor name construct deconstruct = dimap deconstruct construct
 -- TODO pass path Info (part/variant)
 -- constructor name construct deconstruct = scopemap (Part name) >>> dimap deconstruct construct
 
+-- TODO move to utils?
 just :: forall a. Ctor a (Maybe a)
 just = constructor "Just" Just identity
+
+right :: forall a b. Ctor a (Either b a)
+right = constructor "right" Right (case _ of
+  Left _ -> Nothing
+  Right r -> Just r)
+
+left :: forall a b. Ctor a (Either a b)
+left = constructor "left" Left (case _ of
+  Right _ -> Nothing
+  Left l -> Just l)
+
 
 -- oculars
 

@@ -8,7 +8,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetOptics, WidgetROOptics, WidgetRWOptics, Ctor, action, constructor, field, iso, lens, projection)
+import Widget (Ctor, WidgetOptics, WidgetROOptics, WidgetRWOptics, action, constructor, field, iso, lens, projection)
 
 type Order =
   { orderId :: OrderId
@@ -137,23 +137,25 @@ distance = projection $ show <<< length
 
 -- other optics
 
+data ServiceResult = ServiceOk | ServiceUnavailable
 
-right = constructor "right" Right (case _ of
-  Left _ -> Nothing
-  Right r -> Just r)
+serviceUnavailable :: Ctor Unit ServiceResult
+serviceUnavailable = constructor "ServiceUnavailable" (const ServiceUnavailable) (case _ of
+  ServiceUnavailable -> Just unit
+  _ -> Nothing)
 
-left = constructor "left" Left (case _ of
-  Right _ -> Nothing
-  Left l -> Just l)
+serviceOk :: Ctor Unit ServiceResult
+serviceOk = constructor "ServiceUnavailable" (const ServiceOk) (case _ of
+  ServiceOk -> Just unit
+  _ -> Nothing)
 
-
-submitOrder :: WidgetOptics Boolean Void AuthorizedOrder (Either String Order)
+submitOrder :: WidgetOptics Boolean Void AuthorizedOrder ServiceResult
 submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  pure $ Left "Service unavailable"
-  -- pure $ Right order
+  -- pure $ ServiceUnavailable
+  pure $ ServiceOk
 
 loadOrder :: WidgetOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do
