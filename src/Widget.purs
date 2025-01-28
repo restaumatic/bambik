@@ -1,5 +1,6 @@
 module Widget
   ( Changed(..)
+  , Ctor
   , Error
   , New(..)
   , PropagationStatus
@@ -26,6 +27,7 @@ module Widget
   , lens
   , prism
   , projection
+  , slot
   , spied
   , static
   , wo
@@ -316,11 +318,24 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
 prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
 prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
-constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> WidgetRWOptics a s
-constructor name construct deconstruct = scopemap (Part name) >>> left >>> dimap (\s -> maybe (Right s) Left (deconstruct s)) (either construct identity)
+type Ctor a s = WidgetOptics (Maybe a) a s s
 
-just :: forall a. WidgetRWOptics a (Maybe a)
+constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
+constructor name construct deconstruct = scopemap (Part name) >>> dimap (\s -> deconstruct s) construct
+
+just :: forall a. Ctor a (Maybe a)
 just = constructor "Just" Just identity
+
+slot :: forall a b. WidgetOptics a b (Maybe a) b
+slot w = wrap do
+  { toUser, fromUser } <- unwrap w
+  pure
+    { toUser: case _ of
+      Removed -> toUser Removed
+      Altered (New _ Nothing cont) -> toUser Removed
+      Altered (New _ (Just a) cont) -> toUser $ Altered $ New [] a cont
+    , fromUser
+    }
 
 -- oculars
 

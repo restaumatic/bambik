@@ -158,7 +158,7 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "check
       void $ prop $ Altered $ New [] (if checked then (Just a) else Nothing) false
     }
 
-radioButton :: forall a. a -> Widget Web a a
+radioButton :: forall a. a -> Widget Web (Maybe a) a
 radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
@@ -168,7 +168,10 @@ radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" 
     Removed -> do
       setChecked node false
       pure Nothing
-    Altered (New _ newa _) -> do
+    Altered (New _ Nothing _) -> do
+      setChecked node false
+      pure Nothing
+    Altered (New _ (Just newa) _) -> do
       setChecked node true
       Ref.write newa aRef
       pure Nothing

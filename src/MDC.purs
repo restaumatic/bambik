@@ -34,7 +34,7 @@ import Prelude
 
 import Control.Monad.State (gets)
 import Data.Maybe (Maybe, fromMaybe, isNothing, maybe)
-import Data.Profunctor (rmap)
+import Data.Profunctor (dimap, rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -109,16 +109,16 @@ checkbox option default labelContent =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a s. WidgetOptics a a s s -> a -> Widget Web s Void -> Widget Web s s
-radioButton option default labelContent =
-  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
-    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> init (newComponent material.radio."MDCRadio") mempty mempty $ S.do
-      option $ Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
-      div >>> cl "mdc-radio__background" $ S.do
+radioButton :: forall a. a -> Widget Web Unit Void -> Widget Web (Maybe a) a
+radioButton default labelContent =
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
+    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
+      Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
+      div >>> cl "mdc-radio__background" $ A.do
         div >>> cl "mdc-radio__outer-circle" $ devoid
         div >>> cl "mdc-radio__inner-circle" $ devoid
       div >>> cl "mdc-radio__ripple" $ devoid
-    attr "for" uid $ rmap absurd labelContent
+    attr "for" uid $ dimap (const unit) absurd labelContent
   where
     uid = unsafePerformEffect uniqueId
 

@@ -8,7 +8,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (WidgetOptics, WidgetROOptics, WidgetRWOptics, action, constructor, field, iso, lens, projection)
+import Widget (WidgetOptics, WidgetROOptics, WidgetRWOptics, Ctor, action, constructor, field, iso, lens, projection)
 
 type Order =
   { orderId :: OrderId
@@ -106,17 +106,18 @@ total = field @"total" (\str _ -> if null str then Just "Cannot be empty" else N
 paid :: WidgetRWOptics String Payment
 paid = field @"paid" (\_ _ -> Nothing)
 
-dineIn :: WidgetRWOptics { table :: Table } Fulfillment
+
+dineIn :: Ctor { table :: Table } Fulfillment
 dineIn = constructor "DineIn" DineIn case _ of
   DineIn c -> Just c
   _ -> Nothing
 
-takeaway :: WidgetRWOptics { time :: String } Fulfillment
+takeaway :: Ctor { time :: String } Fulfillment
 takeaway = constructor "Takeaway" Takeaway case _ of
   Takeaway c -> Just c
   _ -> Nothing
 
-delivery :: WidgetRWOptics { address :: Address } Fulfillment
+delivery :: Ctor { address :: Address } Fulfillment
 delivery = constructor "Delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
