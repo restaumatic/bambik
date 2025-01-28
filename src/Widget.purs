@@ -1,6 +1,5 @@
 module Widget
-  ( Changed(..)
-  , Ctor
+  ( Ctor
   , Error
   , New(..)
   , PropagationStatus
@@ -64,8 +63,8 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Widget m i o = Widget (m
-  { toUser :: Changed i -> Effect PropagationStatus
-  , fromUser :: (Changed o -> Effect PropagationStatus) -> Effect Unit
+  { toUser :: New i -> Effect PropagationStatus
+  , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
   })
 
 type PropagationStatus = Maybe Error
@@ -73,11 +72,6 @@ type PropagationStatus = Maybe Error
 type Error = String
 
 derive instance Newtype (Widget m i o) _
-
-data Changed a
-  = Altered (New a)
-
-derive instance Functor Changed
 
 data New a = New (Array Scope) a Boolean
 
@@ -104,9 +98,9 @@ instance Applicative m => Strong (Widget m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          Altered (New scope ab cont) -> do
+          New scope ab cont -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ Altered $ New scope (fst ab) cont
+            p'.toUser $ New scope (fst ab) cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -117,9 +111,9 @@ instance Applicative m => Strong (Widget m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          Altered (New scope ab cont) -> do
+          New scope ab cont -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ Altered $ New scope (snd ab) cont
+            p'.toUser $ New scope (snd ab) cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -132,10 +126,10 @@ instance Monad m => Choice (Widget m) where
     p' <- unwrap p
     pure
       { toUser: case _ of
-        Altered (New scope (Right c) cont) -> do
+        New scope (Right c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          prop (Altered (New scope (Right c) cont))
-        Altered (New scope (Left a) cont) -> p'.toUser $ Altered $ New scope a cont
+          prop (New scope (Right c) cont)
+        New scope (Left a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
         p'.fromUser \u -> prop (Left <$> u)
@@ -145,10 +139,10 @@ instance Monad m => Choice (Widget m) where
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
-        Altered (New scope (Left c) cont) -> do
+        New scope (Left c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          prop (Altered (New scope (Left c) cont))
-        Altered (New scope (Right a) cont) -> p'.toUser $ Altered $ New scope a cont
+          prop (New scope (Left c) cont)
+        New scope (Right a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
         p'.fromUser \u -> prop (Right <$> u)
@@ -306,7 +300,7 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
       { toUser: \chrs -> wars.toUser $ (map (\rs -> Tuple (get (Proxy @l) rs) rs)) chrs
       , fromUser: \prop -> wars.fromUser $ \chrs -> do
         case chrs of
-          Altered (New _ (Tuple a rs) _) -> case validate a rs of
+          New _ (Tuple a rs) _ -> case validate a rs of
             Just error -> pure $ Just error
             Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
           _ -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
@@ -368,14 +362,14 @@ effAdapter f w = wrap do
   { pre, post } <- f
   pure
     { toUser: case _ of
-      Altered (New _ s cont) -> do
+      New _ s cont -> do
         a <- pre s
-        toUser $ Altered $ New [] a cont
+        toUser $ New [] a cont
     , fromUser: \prop -> do
       fromUser case _ of
-        Altered (New _ b cont) -> do
+        New _ b cont -> do
           t <- post b
-          prop $ Altered $ New [] t cont
+          prop $ New [] t cont
     }
 
 action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
@@ -391,15 +385,15 @@ action' arr w = wrap do
   w' <- unwrap w
   pure
     { toUser: case _ of
-      Altered (New _ i cont) -> do
-        launchAff_ $ arr i (\a -> void $ w'.toUser $ Altered $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
+      New _ i cont -> do
+        launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
         pure Nothing
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
-              -- w'.toUser $ Altered $ New [] Nothing false
-              void $ prop $ Altered $ New [] o false -- TODO really?
+              -- w'.toUser $ New [] Nothing false
+              void $ prop $ New [] o false -- TODO really?
               waitAndPropagate
       in waitAndPropagate
     }
@@ -412,25 +406,25 @@ affAdapter f w = wrap do
   mOutputFiberRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: case _ of
-      Altered news@(New _ _ cont) -> do
+      news@(New _ _ cont) -> do
         launchAff_ do
           mFiber <- liftEffect $ Ref.read mInputFiberRef
           for_ mFiber $ killFiber (error "Obsolete input")
           newFiber <- forkAff do
             a <- pre news
-            liftEffect $ toUser $ Altered $ New [] a cont
+            liftEffect $ toUser $ New [] a cont
           liftEffect $ Ref.write (Just newFiber) mInputFiberRef
         pure Nothing
     -- , fromUser: unsafeCoerce unit
     , fromUser: \prop -> do
       fromUser case _ of
-        Altered newb@(New _ _ cont) -> do
+        newb@(New _ _ cont) -> do
           launchAff_ do
             mFiber <- liftEffect $ Ref.read mOutputFiberRef
             for_ mFiber $ killFiber (error "Obsolete output")
             newFiber <- forkAff do
               t <- post newb
-              liftEffect $ prop $ Altered $ New [] t cont
+              liftEffect $ prop $ New [] t cont
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
           pure Nothing
     }
@@ -448,15 +442,15 @@ scopemap scope p = wrap ado
       fromUser $ prop <<< zoomOut
     }
   where
-    zoomOut :: Changed b -> Changed b
-    zoomOut (Altered (New scopes mb cont)) = Altered $ New (scope : scopes) mb cont
+    zoomOut :: New b -> New b
+    zoomOut (New scopes mb cont) = New (scope : scopes) mb cont
 
-    zoomIn :: Changed a -> Maybe (Changed a)
-    zoomIn (Altered (New scopes ma cont)) = case uncons scopes of
-      Just { head, tail } | head == scope -> Just $ Altered $ New tail ma cont
-      Nothing -> Just $ Altered $ New [] ma cont
-      Just { head: Variant _ } -> Just $ Altered $ New [] ma cont -- not matching head but head is twist
+    zoomIn :: New a -> Maybe (New a)
+    zoomIn (New scopes ma cont) = case uncons scopes of
+      Just { head, tail } | head == scope -> Just $ New tail ma cont
+      Nothing -> Just $ New [] ma cont
+      Just { head: Variant _ } -> Just $ New [] ma cont -- not matching head but head is twist
       _ -> case scope of
-        Variant _ -> Just $ Altered $ New [] ma cont -- not matching head but scope is twist
+        Variant _ -> Just $ New [] ma cont -- not matching head but scope is twist
         _ -> Nothing -- otherwise
 

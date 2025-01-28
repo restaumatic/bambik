@@ -32,7 +32,7 @@ module MDC
 import Prelude
 
 import Control.Monad.State (gets)
-import Data.Maybe (Maybe, fromMaybe, isNothing, maybe)
+import Data.Maybe (Maybe, fromMaybe, isJust, isNothing)
 import Data.Profunctor (dimap, rmap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -42,7 +42,7 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, text, textArea, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Changed(..), Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
+import Widget (Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
 
 -- Primitive widgets
 
@@ -55,8 +55,7 @@ containedButton label =
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
 filledTextField { floatingLabel } =
-  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" (maybe true $ case _ of
-    Altered _ -> false) >>> init (\node -> do
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" isNothing >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
       pure comp) mempty (\node validationStatus -> do
@@ -64,8 +63,7 @@ filledTextField { floatingLabel } =
         setContent node (fromMaybe "" validationStatus)) $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
-      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" (maybe false (case _ of
-        Altered _ -> true)) $ text # static floatingLabel
+      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" isJust $ text # static floatingLabel
       input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
       div >>> cl "mdc-text-field-helper-line" $
         div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> attr "aria-hidden" "true" >>> init mdcTextFieldHelperText mempty mempty $ devoid
