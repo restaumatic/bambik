@@ -8,8 +8,8 @@ import MDC (body1, caption, card, checkbox, containedButton, elevation20, filled
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (body, label, text)
-import Widget (debounced, devoid, just, slot, static)
+import Web (body, label, text, slot)
+import Widget (debounced, devoid, just, static)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do

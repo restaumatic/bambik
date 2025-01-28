@@ -27,7 +27,6 @@ module Widget
   , lens
   , prism
   , projection
-  , slot
   , spied
   , static
   , wo
@@ -333,17 +332,6 @@ constructor name construct deconstruct = dimap deconstruct construct
 
 just :: forall a. Ctor a (Maybe a)
 just = constructor "Just" Just identity
-
-slot :: forall a b. WidgetOptics a b (Maybe a) b
-slot w = wrap do
-  { toUser, fromUser } <- unwrap w
-  pure
-    { toUser: case _ of
-      Removed -> toUser Removed
-      Altered (New _ Nothing cont) -> toUser Removed
-      Altered (New _ (Just a) cont) -> toUser $ Altered $ New [] a cont
-    , fromUser
-    }
 
 -- oculars
 

@@ -31,6 +31,7 @@ module Web
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
+  , slot
   , span
   , svg
   , text
@@ -53,7 +54,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (Changed(..), New(..), Widget, WidgetOcular, WidgetStatic, PropagationStatus, devoid)
+import Widget (Changed(..), New(..), PropagationStatus, Widget, WidgetOcular, WidgetStatic, devoid)
 
 foreign import data Node :: Type
 
@@ -79,7 +80,7 @@ uniqueId = randomElementId
 -- Primitives
 
 text :: forall a. Widget Web String a
-text = slot $ wrap do
+text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode mempty
@@ -371,7 +372,7 @@ runWidgetInNode node w = runDomInNode node do
 --- private
 
 el :: String -> WidgetOcular Web
-el tagName = slot <<< wrap <<< element tagName <<< unwrap
+el tagName = wrap <<< element tagName <<< unwrap
 
 element :: forall a. String -> Web a -> Web a
 element tagName contents = do
@@ -395,7 +396,7 @@ clazz name = do
   liftEffect $ addClass node name
   pure unit
 
-slot :: WidgetOcular Web
+slot :: forall a b. Widget Web a b -> Widget Web (Maybe a) b
 slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
@@ -403,11 +404,14 @@ slot w = wrap do
       Removed -> do
         ensureDetached
         pure Nothing
-      updated@(Altered _) -> do
-        status <- toUser updated
+      (Altered (New _ Nothing _)) -> do
+        ensureDetached
+        pure Nothing
+      (Altered (New x (Just y) z)) -> do
+        status <- toUser (Altered (New x y z))
         ensureAttached
         pure status
-    , fromUser: fromUser
+    , fromUser
     }
   where
   attachable :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
