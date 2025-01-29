@@ -80,7 +80,7 @@ filledTextArea columns rows =
       textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
     span >>> cl "mdc-line-ripple" $ devoid
 
-checkbox :: forall a s. WidgetOptics (Maybe a) (Maybe a) s s -> a -> Widget Web s Void -> Widget Web s s
+checkbox :: forall a s. WidgetOptics Web (Maybe a) (Maybe a) s s -> a -> Widget Web s Void -> Widget Web s s
 checkbox option default labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do

@@ -53,7 +53,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (New(..), PropagationStatus, Widget, WidgetOcular, WidgetStatic, devoid)
+import Widget (New(..), PropagationStatus, Widget, WidgetOcular, devoid)
 
 foreign import data Node :: Type
 
@@ -182,7 +182,7 @@ button w = wrap do
 
 -- Statics
 
-html :: String -> WidgetStatic Web
+html :: forall a. String -> Widget Web a a
 html htmlString = wrap do
   parent <- gets _.parent
   lastNode <- liftEffect $ appendRawHtml htmlString parent
@@ -192,7 +192,7 @@ html htmlString = wrap do
     , fromUser: mempty
     }
 
-img :: String -> WidgetStatic Web
+img :: forall a. String -> Widget Web a a
 img src = el "img" >>> attr "src" src $ devoid
 
 -- Oculars

@@ -1,14 +1,13 @@
 module Widget
   ( Ctor
   , Field
-  , PropagationError
   , New(..)
+  , PropagationError
   , PropagationStatus
   , Scope(..)
   , Widget(..)
   , WidgetOcular
   , WidgetOptics
-  , WidgetStatic
   , action
   , action'
   , adapter
@@ -42,7 +41,7 @@ import Data.Lens (Optic, first)
 import Data.Lens as Profunctor
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
@@ -57,7 +56,7 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Ocular (Ocular, Static)
+import Ocular (Ocular)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
@@ -220,44 +219,42 @@ devoid = wrap $ pure
 
 -- optics
 
-type WidgetOptics a b s t = forall m. MonadEffect m => Optic (Widget m) s t a b
+type WidgetOptics m a b s t = Optic (Widget m) s t a b
 
-static :: forall a s t. a -> WidgetOptics a Void s t
-static a = dimap (const a) absurd
-
-adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
-adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
-
-iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics a a s s
-iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
-
-projection :: forall a s t. (s -> a) -> WidgetOptics a Void s t
+projection :: forall a s t m. Functor m => (s -> a) -> WidgetOptics m a Void s t
 projection f = dimap f absurd
 
-lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
+static :: forall a s t.  forall m. Functor m => a -> WidgetOptics m a Void s t
+static a = projection (const a)
+
+adapter :: forall a b s t m. Functor m => String -> (s -> a) -> (b -> t) -> WidgetOptics m a b s t
+adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
+
+iso :: forall a s m.  Functor m => String -> (s -> a) -> (a -> s) -> WidgetOptics m a a s s
+iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
+
+lens :: forall a b s t m. Functor m => String -> (s -> a) -> (s -> b -> t) -> WidgetOptics m a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
-type Field a s = WidgetOptics a a s s
+type Field a s = forall m. Functor m => WidgetOptics m a a s s
 
--- TODO use Data.Lens.Record.prop
-field :: forall @l s r a . IsSymbol l => Row.Cons l a r s => (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
+-- TODO use Data.Lens.Record.prop?
+field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
 field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
-  wrap $ do
+  wrap $ ado
     wars <- unwrap (first wa)
-    pure
+    in
       { toUser: \chrs -> wars.toUser $ (map (\rs -> Tuple (get (Proxy @l) rs) rs)) chrs
-      , fromUser: \prop -> wars.fromUser $ \chrs -> do
-        case chrs of
-          New _ (Tuple a rs) _ -> case validate a rs of
+      , fromUser: \prop -> wars.fromUser $ \chrs@(New _ (Tuple a rs) _) -> do
+          case validate a rs of
             Just error -> pure $ Just error
             Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
-          _ -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
       }
 
-prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
+prism :: forall a b s t m. Functor m => String -> (b -> t) -> (s -> Either t a) -> WidgetOptics m a b s t
 prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
-type Ctor a s = WidgetOptics (Maybe a) a s s
+type Ctor a s = forall m. Functor m => WidgetOptics m (Maybe a) a s s
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
 constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
@@ -280,7 +277,6 @@ left = constructor "left" Left (case _ of
 -- oculars
 
 type WidgetOcular m = Ocular (Widget m)
-type WidgetStatic m = Static (Widget m)
 
 debounced' :: forall m. MonadEffect m => Milliseconds -> WidgetOcular m
 debounced' millis = affAdapter $ pure
@@ -330,14 +326,14 @@ effAdapter f w = wrap do
           prop $ New [] t cont
     }
 
-action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
+action :: forall i o m.  MonadEffect m => (i -> Aff o) -> WidgetOptics m Boolean Void i o
 action arr = action' \i pro post -> do
   liftEffect $ pro true
   o <- arr i
   liftEffect $ pro false
   liftEffect $ post o
 
-action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics a b i o
+action' :: forall a b i o m. MonadEffect m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics m a b i o
 action' arr w = wrap do
   oVar <- liftEffect AVar.empty
   w' <- unwrap w
@@ -389,7 +385,7 @@ affAdapter f w = wrap do
 
 -- private
 
-scopemap :: forall m a b. Applicative m => Scope -> Widget m a b -> Widget m a b
+scopemap :: forall m a b. Functor m => Scope -> Widget m a b -> Widget m a b
 scopemap scope p = wrap ado
   { toUser, fromUser } <- unwrap p
   in
