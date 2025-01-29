@@ -16,7 +16,7 @@ module Demo1.Model
   , Time
   , address
   , authToken
-  , authorizarion
+  , authorization
   , customer
   , delivery
   , dineIn
@@ -49,9 +49,9 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (Ctor, Field, WidgetOptics, WidgetOptics, action, constructor, field, iso, lens, projection)
+import Widget (Ctor, Field, WidgetOptics, action, constructor, field, iso, lens, projection)
 
 -- data types
 
@@ -179,8 +179,8 @@ formal = iso "formal" toFormal toInformal
 distance :: forall t. WidgetOptics String Void Address t
 distance = projection $ show <<< length
 
-authorizarion :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
-authorizarion = lens "authorization" (\order -> order.total <> " " <> case order.fulfillment of
+authorization :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
+authorization = lens "authorization" (\order -> order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address) (\order authToken -> { authToken, order })
