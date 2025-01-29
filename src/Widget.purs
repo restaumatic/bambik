@@ -1,7 +1,6 @@
 module Widget
   ( Ctor
   , Field
-  , LensoPrism
   , New(..)
   , PropagationError
   , PropagationStatus
@@ -220,29 +219,27 @@ devoid = wrap $ pure
 
 -- optics
 
-type WidgetOptics m a b s t = Optic (Widget m) s t a b
+type WidgetOptics a b s t = forall m. Functor m => Optic (Widget m) s t a b
 
-projection :: forall a s t m. Functor m => (s -> a) -> WidgetOptics m a Void s t
+projection :: forall a s t. (s -> a) -> WidgetOptics a Void s t
 projection f = dimap f absurd
 
-static :: forall a s t.  forall m. Functor m => a -> WidgetOptics m a Void s t
+static :: forall a s t. a -> WidgetOptics a Void s t
 static a = projection (const a)
 
-adapter :: forall a b s t m. Functor m => String -> (s -> a) -> (b -> t) -> WidgetOptics m a b s t
+adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
 
-iso :: forall a s m.  Functor m => String -> (s -> a) -> (a -> s) -> WidgetOptics m a a s s
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics a a s s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-type LensoPrism a b s t = forall m. Functor m => WidgetOptics m a b s t
-
-lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> LensoPrism a b s t
+lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
-prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> LensoPrism a b s t
+prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
 prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
 
-type Field a s = LensoPrism a a s s
+type Field a s = WidgetOptics a a s s
 
 -- TODO use Data.Lens.Record.prop?
 field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
@@ -257,7 +254,7 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
             Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
       }
 
-type Ctor a s = LensoPrism (Maybe a) a s s
+type Ctor a s = WidgetOptics (Maybe a) a s s
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
 constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
@@ -276,6 +273,31 @@ left = constructor "left" Left (case _ of
   Right _ -> Nothing
   Left l -> Just l)
 
+action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
+action arr = action' \i pro post -> do
+  liftEffect $ pro true
+  o <- arr i
+  liftEffect $ pro false
+  liftEffect $ post o
+
+action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics a b i o
+action' arr w = wrap ado
+  let oVar = unsafePerformEffect $ liftEffect AVar.empty
+  w' <- unwrap w
+  in
+    { toUser: case _ of
+      New _ i cont -> do
+        launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
+        pure Nothing
+    , fromUser: \prop ->
+      let waitAndPropagate = void $ AVar.take oVar case _ of
+            Left error -> pure unit -- TODO handle error
+            Right o -> do
+              -- w'.toUser $ New [] Nothing false
+              void $ prop $ New [] o false -- TODO really?
+              waitAndPropagate
+      in waitAndPropagate
+    }
 
 -- oculars
 
@@ -313,6 +335,7 @@ spied name w = wrap do
 
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
+-- TODO is this needed?
 effAdapter :: forall m a b s t. Monad m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
 effAdapter f w = wrap do
   { toUser, fromUser } <- unwrap w
@@ -329,32 +352,7 @@ effAdapter f w = wrap do
           prop $ New [] t cont
     }
 
-action :: forall i o m.  MonadEffect m => (i -> Aff o) -> WidgetOptics m Boolean Void i o
-action arr = action' \i pro post -> do
-  liftEffect $ pro true
-  o <- arr i
-  liftEffect $ pro false
-  liftEffect $ post o
-
-action' :: forall a b i o m. MonadEffect m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics m a b i o
-action' arr w = wrap do
-  oVar <- liftEffect AVar.empty
-  w' <- unwrap w
-  pure
-    { toUser: case _ of
-      New _ i cont -> do
-        launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
-        pure Nothing
-    , fromUser: \prop ->
-      let waitAndPropagate = void $ AVar.take oVar case _ of
-            Left error -> pure unit -- TODO handle error
-            Right o -> do
-              -- w'.toUser $ New [] Nothing false
-              void $ prop $ New [] o false -- TODO really?
-              waitAndPropagate
-      in waitAndPropagate
-    }
-
+-- TODO is this needed?
 affAdapter :: forall m a b s t. MonadEffect m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> Widget m a b -> Widget m s t
 affAdapter f w = wrap do
   { toUser, fromUser } <- unwrap w

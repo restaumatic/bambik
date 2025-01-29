@@ -51,7 +51,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
-import Widget (Ctor, Field, WidgetOptics, LensoPrism, action, constructor, field, iso, lens, projection)
+import Widget (Ctor, Field, WidgetOptics, WidgetOptics, action, constructor, field, iso, lens, projection)
 
 -- data types
 
@@ -176,19 +176,19 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-distance :: forall t. LensoPrism String Void Address t
+distance :: forall t. WidgetOptics String Void Address t
 distance = projection $ show <<< length
 
-authorizarion :: LensoPrism OrderSummary AuthToken Order AuthorizedOrder
+authorizarion :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
 authorizarion = lens "authorization" (\order -> order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address) (\order authToken -> { authToken, order })
 
-order :: forall a. OrderId -> LensoPrism OrderId a Unit a
+order :: forall a. OrderId -> WidgetOptics OrderId a Unit a
 order id = lens "order" (const id) (\_ a -> a)
 
-authToken :: forall a. LensoPrism String String a AuthToken
+authToken :: forall a. WidgetOptics String String a AuthToken
 authToken = lens "auth token" (const "") (\_ a -> a)
 
 serviceUnavailable :: Ctor Unit ServiceResult
@@ -201,9 +201,7 @@ serviceOk = constructor "ServiceUnavailable" (const ServiceOk) (case _ of
   ServiceOk -> Just unit
   _ -> Nothing)
 
--- "actions"
-
-submitOrder :: forall m. MonadEffect m => WidgetOptics m Boolean Void AuthorizedOrder ServiceResult
+submitOrder :: WidgetOptics Boolean Void AuthorizedOrder ServiceResult
 submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
@@ -211,7 +209,7 @@ submitOrder = action \{authToken, order} -> do
   -- pure $ ServiceUnavailable
   pure $ ServiceOk
 
-loadOrder :: forall m. MonadEffect m => WidgetOptics m Boolean Void OrderId Order
+loadOrder :: WidgetOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)
