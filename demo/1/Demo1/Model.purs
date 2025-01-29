@@ -51,7 +51,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
-import Widget (Field, Ctor, WidgetOptics, action, constructor, field, iso, lens, projection)
+import Widget (Ctor, Field, WidgetOptics, LensoPrism, action, constructor, field, iso, lens, projection)
 
 -- data types
 
@@ -176,8 +176,32 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-distance :: forall t m. Functor m => WidgetOptics m String Void Address t
+distance :: forall t. LensoPrism String Void Address t
 distance = projection $ show <<< length
+
+authorizarion :: LensoPrism OrderSummary AuthToken Order AuthorizedOrder
+authorizarion = lens "authorization" (\order -> order.total <> " " <> case order.fulfillment of
+  DineIn { table } -> "dine-in at table " <> table
+  Takeaway { time } -> "takeaway at " <> show time
+  Delivery { address } -> "delivery " <> show address) (\order authToken -> { authToken, order })
+
+order :: forall a. OrderId -> LensoPrism OrderId a Unit a
+order id = lens "order" (const id) (\_ a -> a)
+
+authToken :: forall a. LensoPrism String String a AuthToken
+authToken = lens "auth token" (const "") (\_ a -> a)
+
+serviceUnavailable :: Ctor Unit ServiceResult
+serviceUnavailable = constructor "ServiceUnavailable" (const ServiceUnavailable) (case _ of
+  ServiceUnavailable -> Just unit
+  _ -> Nothing)
+
+serviceOk :: Ctor Unit ServiceResult
+serviceOk = constructor "ServiceUnavailable" (const ServiceOk) (case _ of
+  ServiceOk -> Just unit
+  _ -> Nothing)
+
+-- "actions"
 
 submitOrder :: forall m. MonadEffect m => WidgetOptics m Boolean Void AuthorizedOrder ServiceResult
 submitOrder = action \{authToken, order} -> do
@@ -204,25 +228,3 @@ loadOrder = action \orderId -> do
     , fulfillment: DineIn { table: "1" }
     , remarks: "I'm very hungry"
     }
-
-authorizarion :: forall m. Functor m => WidgetOptics m OrderSummary AuthToken Order AuthorizedOrder
-authorizarion = lens "authorization" (\order -> order.total <> " " <> case order.fulfillment of
-  DineIn { table } -> "dine-in at table " <> table
-  Takeaway { time } -> "takeaway at " <> show time
-  Delivery { address } -> "delivery " <> show address) (\order authToken -> { authToken, order })
-
-order :: forall a m. Functor m => OrderId -> WidgetOptics m OrderId a Unit a
-order id = lens "order" (const id) (\_ a -> a)
-
-authToken :: forall a m. Functor m => WidgetOptics m String String a AuthToken
-authToken = lens "auth token" (const "") (\_ a -> a)
-
-serviceUnavailable :: Ctor Unit ServiceResult
-serviceUnavailable = constructor "ServiceUnavailable" (const ServiceUnavailable) (case _ of
-  ServiceUnavailable -> Just unit
-  _ -> Nothing)
-
-serviceOk :: Ctor Unit ServiceResult
-serviceOk = constructor "ServiceUnavailable" (const ServiceOk) (case _ of
-  ServiceOk -> Just unit
-  _ -> Nothing)

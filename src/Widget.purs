@@ -1,6 +1,7 @@
 module Widget
   ( Ctor
   , Field
+  , LensoPrism
   , New(..)
   , PropagationError
   , PropagationStatus
@@ -233,10 +234,15 @@ adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TO
 iso :: forall a s m.  Functor m => String -> (s -> a) -> (a -> s) -> WidgetOptics m a a s s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-lens :: forall a b s t m. Functor m => String -> (s -> a) -> (s -> b -> t) -> WidgetOptics m a b s t
+type LensoPrism a b s t = forall m. Functor m => WidgetOptics m a b s t
+
+lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> LensoPrism a b s t
 lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
 
-type Field a s = forall m. Functor m => WidgetOptics m a a s s
+prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> LensoPrism a b s t
+prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
+
+type Field a s = LensoPrism a a s s
 
 -- TODO use Data.Lens.Record.prop?
 field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
@@ -251,10 +257,7 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
             Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
       }
 
-prism :: forall a b s t m. Functor m => String -> (b -> t) -> (s -> Either t a) -> WidgetOptics m a b s t
-prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
-
-type Ctor a s = forall m. Functor m => WidgetOptics m (Maybe a) a s s
+type Ctor a s = LensoPrism (Maybe a) a s s
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
 constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
