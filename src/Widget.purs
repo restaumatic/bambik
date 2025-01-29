@@ -233,11 +233,11 @@ adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TO
 iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics a a s s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-lens :: forall a b s t. String -> (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
-lens name getter setter = Profunctor.lens getter setter >>> scopemap (Variant name)
+lens :: forall a b s t. (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
+lens getter setter = Profunctor.lens getter setter
 
-prism :: forall a b s t. String -> (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
-prism name to from = Profunctor.prism to from >>> scopemap (Variant name)
+prism :: forall a b s t. (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
+prism to from = Profunctor.prism to from
 
 type Field a s = WidgetOptics a a s s
 

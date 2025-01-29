@@ -10,7 +10,6 @@ module Demo1.Model
   , OrderId
   , OrderSummary
   , Payment
-  , ServiceResult
   , ShortId
   , Table
   , Time
@@ -32,8 +31,7 @@ module Demo1.Model
   , paid
   , payment
   , remarks
-  , serviceOk
-  , serviceUnavailable
+  , orderSubmissionFailed
   , shortId
   , submitOrder
   , surname
@@ -46,12 +44,13 @@ module Demo1.Model
 
 import Prelude
 
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (Ctor, Field, WidgetOptics, action, constructor, field, iso, lens, projection)
+import Widget (Ctor, Field, WidgetOptics, action, constructor, field, iso, lens, prism, projection)
 
 -- data types
 
@@ -103,8 +102,6 @@ type AuthorizedOrder =
 type AuthToken = String
 
 type OrderSummary = String
-
-data ServiceResult = ServiceOk | ServiceUnavailable
 
 -- Optics
 
@@ -180,34 +177,29 @@ distance :: forall t. WidgetOptics String Void Address t
 distance = projection $ show <<< length
 
 authorization :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
-authorization = lens "authorization" (\order -> order.total <> " " <> case order.fulfillment of
+authorization = lens (\order -> order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address) (\order authToken -> { authToken, order })
 
 order :: forall a. OrderId -> WidgetOptics OrderId a Unit a
-order id = lens "order" (const id) (\_ a -> a)
+order id = lens (const id) (\_ a -> a)
 
 authToken :: forall a. WidgetOptics String String a AuthToken
-authToken = lens "auth token" (const "") (\_ a -> a)
+authToken = lens (const "") (\_ a -> a)
 
-serviceUnavailable :: Ctor Unit ServiceResult
-serviceUnavailable = constructor "ServiceUnavailable" (const ServiceUnavailable) (case _ of
-  ServiceUnavailable -> Just unit
-  _ -> Nothing)
+orderSubmissionFailed :: WidgetOptics Unit Void Boolean Unit
+orderSubmissionFailed = prism absurd case _ of
+  false -> Right unit
+  true -> Left unit
 
-serviceOk :: Ctor Unit ServiceResult
-serviceOk = constructor "ServiceUnavailable" (const ServiceOk) (case _ of
-  ServiceOk -> Just unit
-  _ -> Nothing)
-
-submitOrder :: WidgetOptics Boolean Void AuthorizedOrder ServiceResult
+submitOrder :: WidgetOptics Boolean Void AuthorizedOrder Boolean
 submitOrder = action \{authToken, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authToken
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  -- pure $ ServiceUnavailable
-  pure $ ServiceOk
+  -- pure false
+  pure true
 
 loadOrder :: WidgetOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do
