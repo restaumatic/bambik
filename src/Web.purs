@@ -10,7 +10,7 @@ module Web
   , checkboxInput
   , cl
   , div
-  , dynClass
+  , clDyn
   , h1
   , h2
   , h3
@@ -126,7 +126,7 @@ textArea = wrap do
 
 
 checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
-checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
+checkboxInput default = attrDyn "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling
@@ -166,7 +166,7 @@ radioButton default = attr "type" "radio" $ wrap do
 
 button :: forall a. Widget Web a Void -> Widget Web a a
 button w = wrap do
-  w' <- unwrap (el "button" >>> dynAttr "disabled" "true" isNothing $ w)
+  w' <- unwrap (el "button" >>> attrDyn "disabled" "true" isNothing $ w)
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   node <- gets _.sibling
   pure
@@ -293,8 +293,8 @@ h5 = el "h5"
 h6 :: WidgetOcular Web
 h6 = el "h6"
 
-dynAttr :: String -> String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
-dynAttr name value pred w = wrap do
+attrDyn :: String -> String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
+attrDyn name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   liftEffect $ updateAttribute node Nothing
@@ -307,8 +307,8 @@ dynAttr name value pred w = wrap do
     where
       updateAttribute node mnewa = if pred (map (_ $> unit) $ mnewa) then setAttribute node name value else removeAttribute node name
 
-dynClass :: String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
-dynClass name pred w = wrap do
+clDyn :: String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
+clDyn name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   liftEffect $ (if pred Nothing then addClass else removeClass) node name
