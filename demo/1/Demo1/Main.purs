@@ -51,32 +51,32 @@ main = body $ order "45123519" $ T.do
       caption $ staticText "Remarks"
       remarks $ filledTextArea 80 3
     debounced $ body1 S.do
-      staticText "Summary: Order "
+      static "Summary: Order " text
       shortId text
-      staticText " (uniquely "
+      static " (uniquely " text
       orderId text
-      staticText ") for "
+      static ") for " text
       customer $ firstName text
-      staticText " "
+      static " " text
       customer $ lastName text
-      staticText " (formally "
+      static " (formally " text
       customer $ formal $ surname text
-      staticText " "
+      static " " text
       customer $ formal $ forename text
-      staticText "), fulfilled as "
+      static "), fulfilled as " text
       fulfillment $ dineIn $ slot S.do
-        staticText "dine in at table "
+        static "dine in at table " text
         table text
       fulfillment $ takeaway $ slot S.do
-        staticText "takeaway at "
+        static "takeaway at " text
         time text
       fulfillment $ delivery $ slot S.do
-        staticText "delivery to "
+        static "delivery to " text
         address S.do
           text
-          staticText " ("
+          static " (" text
           distance text
-          staticText " km away)"
+          static " km away)" text
       payment $ just $ slot S.do
         staticText ", paid "
         paid text
