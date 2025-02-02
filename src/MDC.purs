@@ -40,9 +40,9 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, staticText, text, textArea, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
+import Widget (Widget, WidgetOcular, WidgetOptics, devoid, effAdapter)
 
 -- Primitive widgets
 
@@ -176,7 +176,7 @@ dialog { title } content =
   aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ S.do
     div >>> cl "mdc-dialog__container" $ S.do
       div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
-        h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $ text # static title
+        h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $ staticText title
         div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ devoid
 
@@ -188,13 +188,13 @@ simpleDialog { title, confirm } content =
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         T.do
           A.do
-            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ text # static title
+            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ staticText title
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
             Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
               div >>> cl "mdc-button__ripple" $ devoid
-              span >>>  cl "mdc-button__label" $ text # static confirm
+              span >>>  cl "mdc-button__label" $ staticText confirm
     div >>> cl "mdc-dialog__scrim" $ devoid
     where
       id = unsafePerformEffect uniqueId
