@@ -181,13 +181,13 @@ dialog { title } content =
     div >>> cl "mdc-dialog__scrim" $ devoid
 
 -- TODO isn't it an ocular?
-simpleDialog :: forall a. { title :: String, confirm :: String } -> Widget Web a a -> Widget Web a a
+simpleDialog :: forall a b. { title :: String, confirm :: String } -> Widget Web a b -> Widget Web a b
 simpleDialog { title, confirm } content =
-  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ S.do
+  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
       div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
         T.do
-          S.do
+          A.do
             h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ text # static title
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content

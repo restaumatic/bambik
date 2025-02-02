@@ -14,7 +14,6 @@ module Demo1.Model
   , Table
   , Time
   , address
-  -- , authorizationToken
   , authorizationToken
   , customer
   , delivery
@@ -28,12 +27,13 @@ module Demo1.Model
   , loadOrder
   , order
   , orderId
+  , orderSubmissionFailed
   , paid
   , payment
   , remarks
-  , orderSubmissionFailed
   , shortId
   , submitOrder
+  , summary
   , surname
   , table
   , takeaway
@@ -101,9 +101,12 @@ type AuthorizedOrder =
 
 type AuthToken = String
 
-type OrderSummary = String
+type OrderSummary = { summary :: String }
 
 -- Optics
+
+summary :: forall t. WidgetOptics String Void OrderSummary t
+summary = projection (_.summary)
 
 orderId :: Field String Order
 orderId = field @"orderId" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
@@ -177,10 +180,11 @@ distance :: forall t. WidgetOptics String Void Address t
 distance = projection $ show <<< length
 
 authorizationToken :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
-authorizationToken = lens (\order -> order.total <> " " <> case order.fulfillment of
+authorizationToken = lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
-  Delivery { address } -> "delivery " <> show address) (\order authorizationToken -> { authorizationToken, order })
+  Delivery { address } -> "delivery " <> show address }
+  ) (\order authorizationToken -> { authorizationToken, order })
 
 order :: forall a. OrderId -> WidgetOptics OrderId a Unit a
 order id = lens (const id) (\_ a -> a)
