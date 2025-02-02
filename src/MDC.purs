@@ -43,10 +43,11 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOcular, WidgetOptics, effAdapter)
+import Widget (Widget, WidgetOptics, WidgetOcular, effAdapter)
 
--- Primitive widgets
+-- Widgets
 
+-- TODO do not allow arbitrary html as label?
 containedButton :: forall a. Widget Web a Void -> Widget Web a a
 containedButton label =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
@@ -81,8 +82,9 @@ filledTextArea columns rows =
       textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
     span >>> cl "mdc-line-ripple" $ pzero
 
+-- TODO do not allow arbitrary html as label?
 checkbox :: forall a s. WidgetOptics (Maybe a) (Maybe a) s s -> a -> Widget Web s Void -> Widget Web s s
-checkbox option default labelContent =
+checkbox option default label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
       option $ checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
@@ -93,7 +95,7 @@ checkbox option default labelContent =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ pzero
       div >>> cl "mdc-checkbox__ripple" $ pzero
-    attr "for" id $ rmap absurd labelContent
+    attr "for" id $ rmap absurd label
     where
       id = unsafePerformEffect uniqueId
 
@@ -110,6 +112,29 @@ radioButton default labelContent =
     attr "for" uid $ dimap (const unit) absurd labelContent
   where
     uid = unsafePerformEffect uniqueId
+
+indeterminateLinearProgress :: forall a. Widget Web Boolean a
+indeterminateLinearProgress =
+  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
+    div >>> cl "mdc-linear-progress__buffer" $ A.do
+      div >>> cl "mdc-linear-progress__buffer-bar" $ pzero
+      div >>> cl "mdc-linear-progress__buffer-dots" $ pzero
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ pzero
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ pzero
+    where
+      adapter = do
+        comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
+        liftEffect $ close comp
+        liftEffect $ setDeterminate comp false
+        pure
+          { pre: case _ of
+            true -> open comp
+            false -> close comp
+          , post: pure }
+
+-- Oculars
 
 headline1 :: WidgetOcular Web
 headline1 w = h1 w # cl "mdc-typography--headline1"
@@ -172,17 +197,16 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 --   -- TODO  card actions
 
 -- TODO isn't it an ocular?
-dialog :: forall a. { title :: String } -> Widget Web a a -> Widget Web a a
+dialog :: { title :: String } -> WidgetOcular Web
 dialog { title } content =
-  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ S.do
-    div >>> cl "mdc-dialog__container" $ S.do
-      div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
+  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ A.do
+    div >>> cl "mdc-dialog__container" $ A.do
+      div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ A.do
         h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $ staticText title
         div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ pzero
 
--- TODO isn't it an ocular?
-simpleDialog :: forall a b. { title :: String, confirm :: String } -> Widget Web a b -> Widget Web a b
+simpleDialog :: { title :: String, confirm :: String } -> WidgetOcular Web
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
@@ -201,33 +225,12 @@ simpleDialog { title, confirm } content =
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
 
-snackbar :: forall a b. Widget Web a b -> Widget Web a b
+snackbar :: WidgetOcular Web
 snackbar content =
   aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open (\a propStatus -> close a) $
     div >>> cl "mdc-snackbar__surface" >>> attr "role" "status" >>> attr "aria-relevant" "additions" $
       div >>> cl "mdc-snackbar__label" >>> attr "aria-atomic" "false" $
         content
-
-indeterminateLinearProgress :: forall a. Widget Web Boolean a
-indeterminateLinearProgress =
-  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
-    div >>> cl "mdc-linear-progress__buffer" $ A.do
-      div >>> cl "mdc-linear-progress__buffer-bar" $ pzero
-      div >>> cl "mdc-linear-progress__buffer-dots" $ pzero
-    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
-      span >>> cl "mdc-linear-progress__bar-inner" $ pzero
-    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
-      span >>> cl "mdc-linear-progress__bar-inner" $ pzero
-    where
-      adapter = do
-        comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
-        liftEffect $ close comp
-        liftEffect $ setDeterminate comp false
-        pure
-          { pre: case _ of
-            true -> open comp
-            false -> close comp
-          , post: pure }
 
 -- Private
 
@@ -255,8 +258,6 @@ foreign import material
      }
 
 foreign import mdcTextFieldHelperText :: Node -> Effect Component
-
 foreign import setValid :: Component -> Boolean -> Effect Unit
 foreign import setContent :: Component -> String -> Effect Unit
-
 foreign import useNativeValidation :: Component -> Boolean -> Effect Unit
