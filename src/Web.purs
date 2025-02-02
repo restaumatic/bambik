@@ -216,28 +216,16 @@ init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationS
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
-  mCtxRef <- liftEffect $ Ref.new Nothing
+  ctx <- liftEffect $ nodeInitializer node
   pure
-    { toUser: case _ of
-      altered -> do
-        status <- w'.toUser altered
-        mCtx <- liftEffect $ Ref.read mCtxRef
-        liftEffect $ case mCtx of
-          Nothing -> do
-            ctx <- nodeInitializer node
-            Ref.write (Just ctx) mCtxRef
-            pre ctx
-          Just ctx -> pre ctx
-        pure status
+    { toUser: \new -> do
+        pre ctx
+        w'.toUser new
     , fromUser: \prop -> do
       w'.fromUser \change -> do
-        mCtx <- liftEffect $ Ref.read mCtxRef
-        liftEffect $ case mCtx of
-          Nothing -> unsafeCoerce unit -- should never happen
-          Just ctx -> do
-            status <- prop change
-            post ctx status
-            pure status
+        status <- prop change
+        post ctx status
+        pure status
     }
 
 div :: WidgetOcular Web
