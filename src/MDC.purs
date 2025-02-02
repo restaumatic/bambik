@@ -103,7 +103,7 @@ checkbox option default label =
 radioButton :: forall a. a -> Widget Web Unit Void -> Widget Web (Maybe a) a
 radioButton default labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
-    div >>> cl "mdc-radio" >>> dynClass "mdc-radio--disabled" isNothing >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
+    div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
       Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
       div >>> cl "mdc-radio__background" $ A.do
         div >>> cl "mdc-radio__outer-circle" $ pzero

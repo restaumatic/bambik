@@ -10,7 +10,6 @@ module Web
   , checkboxInput
   , cl
   , div
-  , dynAttr
   , dynClass
   , h1
   , h2
@@ -112,7 +111,7 @@ input type_ = attr "type" type_ $ wrap do
     }
 
 textArea :: Widget Web String String
-textArea = dynAttr "disabled" "true" isNothing $ wrap do
+textArea = wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
   pure
@@ -147,7 +146,7 @@ checkboxInput default = dynAttr "disabled" "true" isNothing $ attr "type" "check
     }
 
 radioButton :: forall a. a -> Widget Web (Maybe a) a
-radioButton default = dynAttr "disabled" "true" isNothing $ attr "type" "radio" $ wrap do
+radioButton default = attr "type" "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling

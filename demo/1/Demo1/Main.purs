@@ -2,7 +2,7 @@ module Demo1.Main (main) where
 
 import Prelude
 
-import Demo1.Model (address, authorization, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, orderSubmissionFailed, paid, payment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
+import Demo1.Model (address, authorization, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, normal, order, orderId, orderSubmissionFailed, paid, payment, priorityAssignment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
@@ -83,11 +83,19 @@ main = body $ order "45123519" $ T.do
     T.do
       containedButton $ label $ staticText "Submit order"
       authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ T.do
-        A.do
+        caption A.do
           staticText "Order summary: "
           summary text
         filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
       orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
       snackbar $ staticText "Order submitted"
+    T.do
+      containedButton $ label $ staticText "Assign priority"
+      priorityAssignment $ simpleDialog { title: "Priority assignment", confirm: "Assign" } $ T.do
+        caption $ staticText "Choose one of"
+        S.do
+          high $ radioButton unit $ label $ staticText "High"
+          normal $ radioButton unit $ label $ staticText "Normal"
+          low $ radioButton unit $ label $ staticText "Low"
 

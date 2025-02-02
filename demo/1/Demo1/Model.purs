@@ -10,6 +10,7 @@ module Demo1.Model
   , OrderId
   , OrderSummary
   , Payment
+  , Priority(..)
   , ShortId
   , Table
   , Time
@@ -23,13 +24,18 @@ module Demo1.Model
   , forename
   , formal
   , fulfillment
+  , high
   , lastName
   , loadOrder
+  , low
+  , normal
   , order
   , orderId
   , orderSubmissionFailed
   , paid
   , payment
+  , priority
+  , priorityAssignment
   , remarks
   , shortId
   , submitOrder
@@ -62,7 +68,10 @@ type Order =
   , fulfillment :: Fulfillment
   , remarks :: String
   , total :: String
+  , priority :: Priority
   }
+
+data Priority = Low | Normal | High
 
 type OrderConfirmation =
   { shortId :: ShortId }
@@ -107,6 +116,9 @@ type OrderSummary = { summary :: String }
 
 summary :: forall t. WidgetOptics String Void OrderSummary t
 summary = projection (_.summary)
+
+priority :: Field Priority Order
+priority = field @"priority" (\str _ -> Nothing)
 
 orderId :: Field String Order
 orderId = field @"orderId" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
@@ -168,6 +180,21 @@ delivery = constructor "Delivery" Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
 
+high :: Ctor Unit Priority
+high = constructor "High" (const High) case _ of
+  High -> Just unit
+  _ -> Nothing
+
+normal :: Ctor Unit Priority
+normal = constructor "Normal" (const Normal) case _ of
+  Normal -> Just unit
+  _ -> Nothing
+
+low :: Ctor Unit Priority
+low = constructor "Low" (const Low) case _ of
+  Low -> Just unit
+  _ -> Nothing
+
 formal :: Field NameFormal NameInformal
 formal = iso "formal" toFormal toInformal
   where
@@ -221,4 +248,8 @@ loadOrder = action \orderId -> do
     , payment: Nothing
     , fulfillment: DineIn { table: "1" }
     , remarks: "I'm very hungry"
+    , priority: Normal
     }
+
+priorityAssignment :: WidgetOptics Unit Priority Order Order
+priorityAssignment = lens (\order -> unit) (\order priority -> order { priority = priority })
