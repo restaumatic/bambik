@@ -55,7 +55,7 @@ containedButton label =
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> Widget Web String String
 filledTextField { floatingLabel } =
-  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> dynClass "mdc-text-field--disabled" isNothing >>> init (\node -> do
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
       pure comp) mempty (\node validationStatus -> do

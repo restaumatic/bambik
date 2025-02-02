@@ -96,7 +96,7 @@ text = wrap do
     }
 
 input :: String -> Widget Web String String
-input type_ = dynAttr "disabled" "true" isNothing $ attr "type" type_ $ wrap do
+input type_ = attr "type" type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   pure

@@ -2,7 +2,7 @@ module Demo1.Main (main) where
 
 import Prelude
 
-import Demo1.Model (address, authToken, authorization, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, orderSubmissionFailed, shortId, submitOrder, surname, table, takeaway, time, total)
+import Demo1.Model (address, authorizationToken, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, lastName, loadOrder, order, orderId, paid, payment, remarks, orderSubmissionFailed, shortId, submitOrder, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
@@ -82,10 +82,11 @@ main = body $ order "45123519" $ T.do
         paid text
     T.do
       containedButton $ label $ static "Submit order " text
-      authorization $ simpleDialog { title: "Authorization required", confirm: "Authorize" } $ A.do
-        static "Order summary: " $ text
-        text
-        authToken $ filledTextField { floatingLabel: "Auth token" }
+      authorizationToken $ simpleDialog { title: "Authorization token", confirm: "Authorize" } $ T.do
+        S.do
+          static "Order summary: " $ text
+          text
+        filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
       orderSubmissionFailed $ snackbar $ static "Order submission failed" text
       snackbar $ static "Order submitted" text
