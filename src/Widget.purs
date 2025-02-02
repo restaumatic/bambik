@@ -325,11 +325,11 @@ spied name w = wrap do
   pure
     { toUser: \change -> do
       status <- toUser change
-      let x = spy' ("< (" <> show status <> ")") change
+      let _ = spy' ("< (" <> show status <> ")") change
       pure status
     , fromUser: \prop -> fromUser \change -> do
       status <- prop change
-      let x = spy' ("> (" <> show status <> ")") change
+      let _ = spy' ("> (" <> show status <> ")") change
       pure status
     }
   where
