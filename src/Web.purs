@@ -99,7 +99,6 @@ text = wrap do
 
 staticText :: forall a b. String -> Widget Web a b
 staticText text = wrap do
-  debug $ "staticText" <> text
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode text

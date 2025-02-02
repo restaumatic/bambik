@@ -8,32 +8,32 @@ import MDC (body1, caption, card, checkbox, containedButton, elevation20, filled
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (body, label, text, slot)
+import Web (body, label, slot, staticText, text)
 import Widget (debounced, just, static)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do
   loadOrder indeterminateLinearProgress
   elevation20 S.do
-    static "Order " $ caption text
+    caption $ staticText "Order "
     shortId $ debounced $ caption text
     card S.do
-      static "Identifier" $ caption text
+      caption $ staticText "Identifier"
       shortId $ filledTextField { floatingLabel: "Short ID" }
       orderId $ filledTextField { floatingLabel: "Unique ID" }
     customer $ card S.do
-      static "Customer" $ caption text
-      static "Informal" $ caption text
+      caption $ staticText "Customer"
+      caption $ staticText "Informal"
       firstName $ filledTextField { floatingLabel: "First name" }
       lastName $ filledTextField { floatingLabel: "Last name" }
-      static "Formal" $ caption text
+      caption $ staticText "Formal"
       formal $ surname $ filledTextField { floatingLabel: "Surname" }
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
     fulfillment $ card S.do
-      static "Fulfillment" $ caption text
-      dineIn $ radioButton { table: "1"} $ static "Dine in" $ label text
-      takeaway $ radioButton { time: "15:30"} $ static "Takeaway" $ label text
-      delivery $ radioButton { address: "Mulholland Drive 2001, Los Angeles" } $ static "Delivery" $ label text
+      caption $ staticText "Fulfillment"
+      dineIn $ radioButton { table: "1"} $ label $ staticText "Dine in"
+      takeaway $ radioButton { time: "15:30"} $ label $ staticText "Takeaway"
+      delivery $ radioButton { address: "Mulholland Drive 2001, Los Angeles" } $ label $ staticText "Delivery"
       dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
       takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
       delivery $ slot $ address S.do
@@ -43,51 +43,51 @@ main = body $ order "45123519" $ T.do
           distance
           static " km") text
     card S.do
-      static "Payment" $ caption text
+      caption $ staticText "Payment"
       total $ filledTextField { floatingLabel: "Total" }
-      checkbox payment { paid: "0" } $ static "Paid" $ label text
+      checkbox payment { paid: "0" } $ label $ staticText "Paid"
       payment $ just $ slot $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
-      static "Remarks" $ caption text
+      caption $ staticText "Remarks"
       remarks $ filledTextArea 80 3
     debounced $ body1 S.do
-      static "Summary: Order " text
+      staticText "Summary: Order "
       shortId text
-      static " (uniquely " text
+      staticText " (uniquely "
       orderId text
-      static ") for " text
+      staticText ") for "
       customer $ firstName text
-      static " " text
+      staticText " "
       customer $ lastName text
-      static " (formally " text
+      staticText " (formally "
       customer $ formal $ surname text
-      static " " text
+      staticText " "
       customer $ formal $ forename text
-      static "), fulfilled as " text
+      staticText "), fulfilled as "
       fulfillment $ dineIn $ slot S.do
-        static "dine in at table " text
+        staticText "dine in at table "
         table text
       fulfillment $ takeaway $ slot S.do
-        static "takeaway at " text
+        staticText "takeaway at "
         time text
       fulfillment $ delivery $ slot S.do
-        static "delivery to " text
+        staticText "delivery to "
         address S.do
           text
-          static " (" text
+          staticText " ("
           distance text
-          static " km away)" text
+          staticText " km away)"
       payment $ just $ slot S.do
-        static ", paid " text
+        staticText ", paid "
         paid text
     T.do
-      containedButton $ label $ static "Submit order " text
+      containedButton $ label $ staticText "Submit order"
       authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ T.do
         A.do
-          static "Order summary: " $ text
+          staticText "Order summary: "
           summary text
         filledTextField { floatingLabel: "Auth token" }
       submitOrder indeterminateLinearProgress
-      orderSubmissionFailed $ snackbar $ static "Order submission failed" text
-      snackbar $ static "Order submitted" text
+      orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
+      snackbar $ staticText "Order submitted"
 
