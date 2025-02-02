@@ -26,7 +26,7 @@ module Widget
   , projection
   , right
   , spied
-  , static
+  , constant
   )
   where
 
@@ -224,8 +224,22 @@ type WidgetOptics a b s t = forall m. Functor m => Optic (Widget m) s t a b
 projection :: forall a s t. (s -> a) -> WidgetOptics a Void s t
 projection f = dimap f absurd
 
-static :: forall a s t. a -> WidgetOptics a Void s t
-static a = projection (const a)
+-- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
+constant :: forall a s t. a -> WidgetOptics a Void s t
+constant a w = wrap $ ado
+  w' <- unwrap w
+  let initializedRef = unsafePerformEffect $ Ref.new false
+  in
+    { toUser: \_ -> do
+      initialized <- Ref.read initializedRef
+      case initialized of
+        false -> do
+          Ref.write true initializedRef
+          w'.toUser $ New [] a false
+        true -> do
+          pure Nothing
+    , fromUser: mempty
+    }
 
 adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`

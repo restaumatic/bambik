@@ -9,7 +9,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, slot, staticText, text)
-import Widget (debounced, just, static)
+import Widget (debounced, just, constant)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do
@@ -39,9 +39,9 @@ main = body $ order "45123519" $ T.do
       delivery $ slot $ address S.do
         filledTextField { floatingLabel: "Address" }
         body1 $ (S.do
-          static "Distance "
+          constant "Distance "
           distance
-          static " km") text
+          constant " km") text
     card S.do
       caption $ staticText "Payment"
       total $ filledTextField { floatingLabel: "Total" }
@@ -51,32 +51,32 @@ main = body $ order "45123519" $ T.do
       caption $ staticText "Remarks"
       remarks $ filledTextArea 80 3
     debounced $ body1 S.do
-      static "Summary: Order " text
+      constant "Summary: Order " text
       shortId text
-      static " (uniquely " text
+      constant " (uniquely " text
       orderId text
-      static ") for " text
+      constant ") for " text
       customer $ firstName text
-      static " " text
+      constant " " text
       customer $ lastName text
-      static " (formally " text
+      constant " (formally " text
       customer $ formal $ surname text
-      static " " text
+      constant " " text
       customer $ formal $ forename text
-      static "), fulfilled as " text
+      constant "), fulfilled as " text
       fulfillment $ dineIn $ slot S.do
-        static "dine in at table " text
+        constant "dine in at table " text
         table text
       fulfillment $ takeaway $ slot S.do
-        static "takeaway at " text
+        constant "takeaway at " text
         time text
       fulfillment $ delivery $ slot S.do
-        static "delivery to " text
+        constant "delivery to " text
         address S.do
           text
-          static " (" text
+          constant " (" text
           distance text
-          static " km away)" text
+          constant " km away)" text
       payment $ just $ slot S.do
         staticText ", paid "
         paid text
