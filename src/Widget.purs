@@ -15,7 +15,6 @@ module Widget
   , constructor
   , debounced
   , debounced'
-  , devoid
   , effAdapter
   , field
   , iso
@@ -173,8 +172,8 @@ instance Apply m => Sum (Widget m) where
 
 instance Applicative m => Zero (Widget m) where
   pzero = wrap $ pure
-    { toUser: const $ pure Nothing
-    , fromUser: const $ pure unit
+    { toUser: mempty
+    , fromUser: mempty
     }
 
 instance Functor m => Functor (Widget m a) where
@@ -206,16 +205,8 @@ instance Apply m => Semigroup (Widget m a a) where
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
 instance Applicative m => Monoid (Widget m a a) where
-  mempty = devoid
+  mempty = pzero
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
-
--- a >>> devoid -- has an effect of `a` but stops propagation
--- a <> devoid == a == devoid <> a
-devoid :: forall m a b. Applicative m => Widget m a b
-devoid = wrap $ pure
-  { toUser: mempty
-  , fromUser: mempty
-  }
 
 -- optics
 

@@ -47,6 +47,7 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
+import Data.Profunctor.Zero (pzero)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -55,7 +56,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (New(..), PropagationStatus, Widget, WidgetOcular, devoid)
+import Widget (New(..), PropagationStatus, Widget, WidgetOcular)
 
 foreign import data Node :: Type
 
@@ -208,7 +209,7 @@ html htmlString = wrap do
     }
 
 img :: forall a. String -> Widget Web a a
-img src = el "img" >>> attr "src" src $ devoid
+img src = el "img" >>> attr "src" src $ pzero
 
 -- Oculars
 
