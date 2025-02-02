@@ -32,6 +32,7 @@ module Web
   , runWidgetInSelectedNode
   , slot
   , span
+  , staticText
   , svg
   , text
   , textArea
@@ -49,6 +50,7 @@ import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (debug)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
@@ -92,6 +94,20 @@ text = wrap do
       New _ s _ -> do
         setTextNodeValue node s
         pure Nothing
+    , fromUser: \_ -> pure unit
+    }
+
+staticText :: forall a b. String -> Widget Web a b
+staticText text = wrap do
+  debug $ "staticText" <> text
+  parentNode <- gets _.parent
+  newNode <- liftEffect $ do
+    node <- createTextNode text
+    appendChild node parentNode
+    pure node
+  modify_ _ { sibling = newNode}
+  pure
+    { toUser: const $ pure Nothing
     , fromUser: \_ -> pure unit
     }
 

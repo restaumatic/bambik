@@ -40,7 +40,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, text, textArea, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, div, dynClass, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, staticText, text, textArea, uniqueId)
 import Web (button, radioButton) as Web
 import Widget (Widget, WidgetOcular, WidgetOptics, devoid, effAdapter, static)
 
@@ -63,7 +63,7 @@ filledTextField { floatingLabel } =
         setContent node (fromMaybe "" validationStatus)) $ S.do
     span >>> cl "mdc-text-field__ripple" $ devoid
     S.do
-      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" isJust $ text # static floatingLabel
+      span >>> cl "mdc-floating-label" >>> attr "id" id >>> dynClass "mdc-floating-label--float-above" isJust $ staticText floatingLabel
       input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
       div >>> cl "mdc-text-field-helper-line" $
         div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> attr "aria-hidden" "true" >>> init mdcTextFieldHelperText mempty mempty $ devoid
