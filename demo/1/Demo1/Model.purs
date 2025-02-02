@@ -14,7 +14,7 @@ module Demo1.Model
   , Table
   , Time
   , address
-  , authorizationToken
+  , authorization
   , customer
   , delivery
   , dineIn
@@ -95,7 +95,7 @@ type Time = String
 type Address = String
 
 type AuthorizedOrder =
-  { authorizationToken :: AuthToken
+  { authorization :: AuthToken
   , order :: Order
   }
 
@@ -179,18 +179,18 @@ formal = iso "formal" toFormal toInformal
 distance :: forall t. WidgetOptics String Void Address t
 distance = projection $ show <<< length
 
-authorizationToken :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
-authorizationToken = lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
+authorization :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
+authorization = lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address }
-  ) (\order authorizationToken -> { authorizationToken, order })
+  ) (\order authorization -> { authorization, order })
 
 order :: forall a. OrderId -> WidgetOptics OrderId a Unit a
 order id = lens (const id) (\_ a -> a)
 
--- authorizationToken :: forall a. WidgetOptics String String a AuthToken
--- authorizationToken = lens (const "") (\_ a -> a)
+-- authorization :: forall a. WidgetOptics String String a AuthToken
+-- authorization = lens (const "") (\_ a -> a)
 
 orderSubmissionFailed :: WidgetOptics Unit Void Boolean Unit
 orderSubmissionFailed = prism absurd case _ of
@@ -198,8 +198,8 @@ orderSubmissionFailed = prism absurd case _ of
   true -> Left unit
 
 submitOrder :: WidgetOptics Boolean Void AuthorizedOrder Boolean
-submitOrder = action \{authorizationToken, order} -> do
-  liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authorizationToken
+submitOrder = action \{authorization, order} -> do
+  liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authorization
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
   -- pure false
