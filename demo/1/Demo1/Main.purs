@@ -9,7 +9,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (body, label, slot, staticText, text)
-import Widget (debounced, just, constant)
+import UI (debounced, just, constant)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do

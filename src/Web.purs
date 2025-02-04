@@ -54,7 +54,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Unsafe.Coerce (unsafeCoerce)
-import Widget (New(..), PropagationStatus, Widget, WidgetOcular)
+import UI (New(..), PropagationStatus, UI, UIOcular)
 
 foreign import data Node :: Type
 
@@ -79,7 +79,7 @@ uniqueId = randomElementId
 
 -- Primitives
 
-text :: forall a. Widget Web String a
+text :: forall a. UI Web String a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -96,7 +96,7 @@ text = wrap do
     , fromUser: \_ -> pure unit
     }
 
-input :: String -> Widget Web String String
+input :: String -> UI Web String String
 input type_ = attr "type" type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
@@ -110,7 +110,7 @@ input type_ = attr "type" type_ $ wrap do
       void $ prop $ New [] value true
     }
 
-textArea :: Widget Web String String
+textArea :: UI Web String String
 textArea = wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
@@ -125,7 +125,7 @@ textArea = wrap do
     }
 
 
-checkboxInput :: forall a . a -> Widget Web (Maybe a) (Maybe a)
+checkboxInput :: forall a . a -> UI Web (Maybe a) (Maybe a)
 checkboxInput default = attrDyn "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
@@ -145,7 +145,7 @@ checkboxInput default = attrDyn "disabled" "true" isNothing $ attr "type" "check
       void $ prop $ New [] (if checked then (Just a) else Nothing) false
     }
 
-radioButton :: forall a. a -> Widget Web (Maybe a) a
+radioButton :: forall a. a -> UI Web (Maybe a) a
 radioButton default = attr "type" "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
@@ -164,7 +164,7 @@ radioButton default = attr "type" "radio" $ wrap do
     void $ prop $ New [] a false
     }
 
-button :: forall a. Widget Web a Void -> Widget Web a a
+button :: forall a. UI Web a Void -> UI Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> attrDyn "disabled" "true" isNothing $ w)
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
@@ -183,7 +183,7 @@ button w = wrap do
 
 -- Statics
 
-staticText :: forall a b. String -> Widget Web a b
+staticText :: forall a b. String -> UI Web a b
 staticText text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -196,7 +196,7 @@ staticText text = wrap do
     , fromUser: mempty
     }
 
-html :: forall a. String -> Widget Web a a
+html :: forall a. String -> UI Web a a
 html htmlString = wrap do
   parent <- gets _.parent
   lastNode <- liftEffect $ appendRawHtml htmlString parent
@@ -206,18 +206,18 @@ html htmlString = wrap do
     , fromUser: mempty
     }
 
-img :: forall a. String -> Widget Web a a
+img :: forall a. String -> UI Web a a
 img src = el "img" >>> attr "src" src $ pzero
 
 -- Oculars
 
-attr :: String -> String -> WidgetOcular Web
+attr :: String -> String -> UIOcular Web
 attr name value w = wrap do
   w' <- unwrap w
   attribute name value
   pure w'
 
-cl :: String -> WidgetOcular Web
+cl :: String -> UIOcular Web
 cl name w = wrap do
   w' <- unwrap w
   clazz name
@@ -226,7 +226,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> WidgetOcular Web
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> UIOcular Web
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -242,58 +242,58 @@ init nodeInitializer pre post w = wrap do
         pure status
     }
 
-div :: WidgetOcular Web
+div :: UIOcular Web
 div = el "div"
 
-span :: WidgetOcular Web
+span :: UIOcular Web
 span = el "span"
 
-aside :: WidgetOcular Web
+aside :: UIOcular Web
 aside = el "aside"
 
-label :: WidgetOcular Web
+label :: UIOcular Web
 label = el "label"
 
-svg :: WidgetOcular Web
+svg :: UIOcular Web
 svg = el "svg"
 
-path :: WidgetOcular Web
+path :: UIOcular Web
 path = el "path"
 
-p :: WidgetOcular Web
+p :: UIOcular Web
 p = el "p"
 
-a :: WidgetOcular Web
+a :: UIOcular Web
 a = el "a"
 
-ul :: WidgetOcular Web
+ul :: UIOcular Web
 ul = el "ul"
 
-ol :: WidgetOcular Web
+ol :: UIOcular Web
 ol = el "ol"
 
-li :: WidgetOcular Web
+li :: UIOcular Web
 li = el "li"
 
-h1 :: WidgetOcular Web
+h1 :: UIOcular Web
 h1 = el "h1"
 
-h2 :: WidgetOcular Web
+h2 :: UIOcular Web
 h2 = el "h2"
 
-h3 :: WidgetOcular Web
+h3 :: UIOcular Web
 h3 = el "h3"
 
-h4 :: WidgetOcular Web
+h4 :: UIOcular Web
 h4 = el "h4"
 
-h5 :: WidgetOcular Web
+h5 :: UIOcular Web
 h5 = el "h5"
 
-h6 :: WidgetOcular Web
+h6 :: UIOcular Web
 h6 = el "h6"
 
-attrDyn :: String -> String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
+attrDyn :: String -> String -> (Maybe (New Unit) -> Boolean) -> UIOcular Web
 attrDyn name value pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -307,7 +307,7 @@ attrDyn name value pred w = wrap do
     where
       updateAttribute node mnewa = if pred (map (_ $> unit) $ mnewa) then setAttribute node name value else removeAttribute node name
 
-clDyn :: String -> (Maybe (New Unit) -> Boolean) -> WidgetOcular Web
+clDyn :: String -> (Maybe (New Unit) -> Boolean) -> UIOcular Web
 clDyn name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -321,17 +321,17 @@ clDyn name pred w = wrap do
 
 -- Entry point
 
-body :: forall t. Widget Web Unit t -> Effect Unit
+body :: forall t. UI Web Unit t -> Effect Unit
 body w = do
   node <- documentBody
   runWidgetInNode node w
 
-runWidgetInSelectedNode :: forall t. String -> Widget Web Unit t -> Effect Unit
+runWidgetInSelectedNode :: forall t. String -> UI Web Unit t -> Effect Unit
 runWidgetInSelectedNode selector w = do
   node <- selectedNode selector
   runWidgetInNode node w
 
-runWidgetInNode :: forall t. Node -> Widget Web Unit t -> Effect Unit
+runWidgetInNode :: forall t. Node -> UI Web Unit t -> Effect Unit
 runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
@@ -340,7 +340,7 @@ runWidgetInNode node w = runDomInNode node do
 
 --- private
 
-el :: String -> WidgetOcular Web
+el :: String -> UIOcular Web
 el tagName = wrap <<< element tagName <<< unwrap
 
 element :: forall a. String -> Web a -> Web a
@@ -365,7 +365,7 @@ clazz name = do
   liftEffect $ addClass node name
   pure unit
 
-slot :: forall a b. Widget Web a b -> Widget Web (Maybe a) b
+slot :: forall a b. UI Web a b -> UI Web (Maybe a) b
 slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure

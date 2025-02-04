@@ -1,13 +1,13 @@
-module Widget
+module UI
   ( Ctor
   , Field
   , New(..)
   , PropagationError
   , PropagationStatus
   , Scope(..)
-  , Widget(..)
-  , WidgetOcular
-  , WidgetOptics
+  , UI(..)
+  , UIOcular
+  , UIOptics
   , action
   , action'
   , adapter
@@ -52,7 +52,7 @@ import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Ocular (Ocular)
@@ -61,7 +61,7 @@ import Record (get, set)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
-newtype Widget m i o = Widget (m
+newtype UI m i o = UI (m
   { toUser :: New i -> Effect PropagationStatus
   , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
   })
@@ -70,7 +70,7 @@ type PropagationStatus = Maybe PropagationError
 
 type PropagationError = String
 
-derive instance Newtype (Widget m i o) _
+derive instance Newtype (UI m i o) _
 
 data New a = New (Array Scope) a Boolean
 
@@ -85,7 +85,7 @@ instance Show Scope where
 
 derive instance Eq Scope
 
-instance Functor m => Profunctor (Widget m) where
+instance Functor m => Profunctor (UI m) where
   dimap pre post p = wrap ado
     p' <- unwrap p
     in
@@ -93,7 +93,7 @@ instance Functor m => Profunctor (Widget m) where
       , fromUser: lcmap (map post) >>> p'.fromUser
       }
 
-instance Functor m => Strong (Widget m) where
+instance Functor m => Strong (UI m) where
   first p = wrap ado
     let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
@@ -121,7 +121,7 @@ instance Functor m => Strong (Widget m) where
           prop (map (Tuple (fst prevab)) u)
       }
 
-instance Functor m => Choice (Widget m) where
+instance Functor m => Choice (UI m) where
   left p = wrap ado
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
@@ -149,7 +149,7 @@ instance Functor m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Apply m => Semigroupoid (Widget m) where
+instance Apply m => Semigroupoid (UI m) where
   compose p2 p1 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -161,7 +161,7 @@ instance Apply m => Semigroupoid (Widget m) where
           p2'.fromUser prop
       }
 
-instance Apply m => Sum (Widget m) where
+instance Apply m => Sum (UI m) where
   psum p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -170,25 +170,25 @@ instance Apply m => Sum (Widget m) where
       , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
       }
 
-instance Applicative m => Zero (Widget m) where
+instance Applicative m => Zero (UI m) where
   pzero = wrap $ pure
     { toUser: mempty
     , fromUser: mempty
     }
 
-instance Functor m => Functor (Widget m a) where
+instance Functor m => Functor (UI m a) where
   map f p = wrap $ unwrap p <#> \p' ->
     { toUser: p'.toUser
     , fromUser: p'.fromUser <<< lcmap (map f)
     }
 
-instance Apply m => Alt (Widget m a) where
+instance Apply m => Alt (UI m a) where
   alt = psum
 
-instance Applicative m => Plus (Widget m a) where
+instance Applicative m => Plus (UI m a) where
   empty = pzero
 
-instance Apply m => Semigroup (Widget m a a) where
+instance Apply m => Semigroup (UI m a a) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -204,19 +204,19 @@ instance Apply m => Semigroup (Widget m a a) where
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
 
-instance Applicative m => Monoid (Widget m a a) where
+instance Applicative m => Monoid (UI m a a) where
   mempty = pzero
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
 -- optics
 
-type WidgetOptics a b s t = forall m. Functor m => Optic (Widget m) s t a b
+type UIOptics a b s t = forall m. Functor m => Optic (UI m) s t a b
 
-projection :: forall a s t. (s -> a) -> WidgetOptics a Void s t
+projection :: forall a s t. (s -> a) -> UIOptics a Void s t
 projection f = dimap f absurd
 
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
-constant :: forall a s t. a -> WidgetOptics a Void s t
+constant :: forall a s t. a -> UIOptics a Void s t
 constant a w = wrap $ ado
   w' <- unwrap w
   let initializedRef = unsafePerformEffect $ Ref.new false
@@ -232,19 +232,19 @@ constant a w = wrap $ ado
     , fromUser: mempty
     }
 
-adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> WidgetOptics a b s t
+adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> UIOptics a b s t
 adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
 
-iso :: forall a s. String -> (s -> a) -> (a -> s) -> WidgetOptics a a s s
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> UIOptics a a s s
 iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
 
-lens :: forall a b s t. (s -> a) -> (s -> b -> t) -> WidgetOptics a b s t
+lens :: forall a b s t. (s -> a) -> (s -> b -> t) -> UIOptics a b s t
 lens getter setter = Profunctor.lens getter setter
 
-prism :: forall a b s t. (b -> t) -> (s -> Either t a) -> WidgetOptics a b s t
+prism :: forall a b s t. (b -> t) -> (s -> Either t a) -> UIOptics a b s t
 prism to from = Profunctor.prism to from
 
-type Field a s = WidgetOptics a a s s
+type Field a s = UIOptics a a s s
 
 -- TODO use Data.Lens.Record.prop?
 field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
@@ -259,7 +259,7 @@ field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
             Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
       }
 
-type Ctor a s = WidgetOptics (Maybe a) a s s
+type Ctor a s = UIOptics (Maybe a) a s s
 
 constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
 constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
@@ -278,14 +278,14 @@ left = constructor "left" Left (case _ of
   Right _ -> Nothing
   Left l -> Just l)
 
-action :: forall i o. (i -> Aff o) -> WidgetOptics Boolean Void i o
+action :: forall i o. (i -> Aff o) -> UIOptics Boolean Void i o
 action arr = action' \i pro post -> do
   liftEffect $ pro true
   o <- arr i
   liftEffect $ pro false
   liftEffect $ post o
 
-action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> WidgetOptics a b i o
+action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> UIOptics a b i o
 action' arr w = wrap ado
   let oVar = unsafePerformEffect $ liftEffect AVar.empty
   w' <- unwrap w
@@ -306,9 +306,9 @@ action' arr w = wrap ado
 
 -- oculars
 
-type WidgetOcular m = Ocular (Widget m)
+type UIOcular m = Ocular (UI m)
 
-debounced' :: forall m. MonadEffect m => Milliseconds -> WidgetOcular m
+debounced' :: forall m. Applicative m => Milliseconds -> UIOcular m
 debounced' millis = affAdapter $ pure
   { pre: case _ of
     (New _ i true) -> delay millis *> pure i
@@ -316,10 +316,10 @@ debounced' millis = affAdapter $ pure
   , post: \(New _ i _) -> pure i
   }
 
-debounced :: forall m. MonadEffect m => WidgetOcular m
+debounced :: forall m. Applicative m => UIOcular m
 debounced = debounced' (Milliseconds 300.0)
 
-spied :: forall m. Functor m => DebugWarning => String -> WidgetOcular m
+spied :: forall m. Functor m => DebugWarning => String -> UIOcular m
 spied name w = wrap ado
   { toUser, fromUser } <- unwrap w
   in
@@ -341,7 +341,7 @@ spied name w = wrap ado
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
 -- TODO is this needed?
-effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
+effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> UI m a b -> UI m s t
 effAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
@@ -358,13 +358,13 @@ effAdapter f w = wrap ado
     }
 
 -- TODO is this needed?
-affAdapter :: forall m a b s t. MonadEffect m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> Widget m a b -> Widget m s t
-affAdapter f w = wrap do
+affAdapter :: forall m a b s t. Apply m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> UI m a b -> UI m s t
+affAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
-  mInputFiberRef <- liftEffect $ Ref.new Nothing
-  mOutputFiberRef <- liftEffect $ Ref.new Nothing
-  pure
+  let mInputFiberRef = unsafePerformEffect $ Ref.new Nothing
+  let mOutputFiberRef = unsafePerformEffect $ Ref.new Nothing
+  in
     { toUser: case _ of
       news@(New _ _ cont) -> do
         launchAff_ do
@@ -391,7 +391,7 @@ affAdapter f w = wrap do
 
 -- private
 
-scopemap :: forall m a b. Functor m => Scope -> Widget m a b -> Widget m a b
+scopemap :: forall m a b. Functor m => Scope -> UI m a b -> UI m a b
 scopemap scope p = wrap ado
   { toUser, fromUser } <- unwrap p
   in

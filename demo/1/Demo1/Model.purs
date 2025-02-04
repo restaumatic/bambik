@@ -56,7 +56,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Widget (Ctor, Field, WidgetOptics, action, constructor, field, iso, lens, prism, projection)
+import UI (Ctor, Field, UIOptics, action, constructor, field, iso, lens, prism, projection)
 
 -- data types
 
@@ -114,7 +114,7 @@ type OrderSummary = { summary :: String }
 
 -- Optics
 
-summary :: forall t. WidgetOptics String Void OrderSummary t
+summary :: forall t. UIOptics String Void OrderSummary t
 summary = projection (_.summary)
 
 priority :: Field Priority Order
@@ -203,28 +203,28 @@ formal = iso "formal" toFormal toInformal
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-distance :: forall t. WidgetOptics String Void Address t
+distance :: forall t. UIOptics String Void Address t
 distance = projection $ show <<< length
 
-authorization :: WidgetOptics OrderSummary AuthToken Order AuthorizedOrder
+authorization :: UIOptics OrderSummary AuthToken Order AuthorizedOrder
 authorization = lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address }
   ) (\order authorization -> { authorization, order })
 
-order :: forall a. OrderId -> WidgetOptics OrderId a Unit a
+order :: forall a. OrderId -> UIOptics OrderId a Unit a
 order id = lens (const id) (\_ a -> a)
 
--- authorization :: forall a. WidgetOptics String String a AuthToken
+-- authorization :: forall a. UIOptics String String a AuthToken
 -- authorization = lens (const "") (\_ a -> a)
 
-orderSubmissionFailed :: WidgetOptics Unit Void Boolean Unit
+orderSubmissionFailed :: UIOptics Unit Void Boolean Unit
 orderSubmissionFailed = prism absurd case _ of
   false -> Right unit
   true -> Left unit
 
-submitOrder :: WidgetOptics Boolean Void AuthorizedOrder Boolean
+submitOrder :: UIOptics Boolean Void AuthorizedOrder Boolean
 submitOrder = action \{authorization, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authorization
   delay (Milliseconds 1000.0)
@@ -232,7 +232,7 @@ submitOrder = action \{authorization, order} -> do
   -- pure false
   pure true
 
-loadOrder :: WidgetOptics Boolean Void OrderId Order
+loadOrder :: UIOptics Boolean Void OrderId Order
 loadOrder = action \orderId -> do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)
@@ -251,5 +251,5 @@ loadOrder = action \orderId -> do
     , priority: Normal
     }
 
-priorityAssignment :: WidgetOptics Unit Priority Order Order
+priorityAssignment :: UIOptics Unit Priority Order Order
 priorityAssignment = lens (\order -> unit) (\order priority -> order { priority = priority })

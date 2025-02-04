@@ -43,19 +43,19 @@ import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import Web (Node, Web, aside, attr, checkboxInput, cl, div, clDyn, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
-import Widget (Widget, WidgetOptics, WidgetOcular, effAdapter)
+import UI (UI, UIOptics, UIOcular, effAdapter)
 
 -- Widgets
 
 -- TODO do not allow arbitrary html as label?
-containedButton :: forall a. Widget Web a Void -> Widget Web a a
+containedButton :: forall a. UI Web a Void -> UI Web a a
 containedButton label =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
     div >>> cl "mdc-button__ripple" $ pzero
     span >>> cl "mdc-button__label" $ label
 
 -- TODO support input types: email, text, password, number, search, tel, url
-filledTextField :: { floatingLabel :: String } -> Widget Web String String
+filledTextField :: { floatingLabel :: String } -> UI Web String String
 filledTextField { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
@@ -74,7 +74,7 @@ filledTextField { floatingLabel } =
       id = unsafePerformEffect uniqueId
       helperId = unsafePerformEffect uniqueId
 
-filledTextArea :: Int -> Int -> Widget Web String String
+filledTextArea :: Int -> Int -> UI Web String String
 filledTextArea columns rows =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ S.do
     span >>> cl "mdc-text-field__ripple" $ pzero
@@ -83,7 +83,7 @@ filledTextArea columns rows =
     span >>> cl "mdc-line-ripple" $ pzero
 
 -- TODO do not allow arbitrary html as label?
-checkbox :: forall a s. WidgetOptics (Maybe a) (Maybe a) s s -> a -> Widget Web s Void -> Widget Web s s
+checkbox :: forall a s. UIOptics (Maybe a) (Maybe a) s s -> a -> UI Web s Void -> UI Web s s
 checkbox option default label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
@@ -100,7 +100,7 @@ checkbox option default label =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a. a -> Widget Web Unit Void -> Widget Web (Maybe a) a
+radioButton :: forall a. a -> UI Web Unit Void -> UI Web (Maybe a) a
 radioButton default labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
     div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
@@ -113,7 +113,7 @@ radioButton default labelContent =
   where
     uid = unsafePerformEffect uniqueId
 
-indeterminateLinearProgress :: forall a. Widget Web Boolean a
+indeterminateLinearProgress :: forall a. UI Web Boolean a
 indeterminateLinearProgress =
   div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
     div >>> cl "mdc-linear-progress__buffer" $ A.do
@@ -136,59 +136,59 @@ indeterminateLinearProgress =
 
 -- Oculars
 
-headline1 :: WidgetOcular Web
+headline1 :: UIOcular Web
 headline1 w = h1 w # cl "mdc-typography--headline1"
 
-headline2 :: WidgetOcular Web
+headline2 :: UIOcular Web
 headline2 w = h2 w # cl "mdc-typography--headline2"
 
-headline3 :: WidgetOcular Web
+headline3 :: UIOcular Web
 headline3 w = h3 w # cl "mdc-typography--headline3"
 
-headline4 :: WidgetOcular Web
+headline4 :: UIOcular Web
 headline4 w = h4 w # cl "mdc-typography--headline4"
 
-headline5 :: WidgetOcular Web
+headline5 :: UIOcular Web
 headline5 w = h5 w # cl "mdc-typography--headline5"
 
-headline6 :: WidgetOcular Web
+headline6 :: UIOcular Web
 headline6 w = h6 w # cl "mdc-typography--headline6"
 
-subtitle1 :: WidgetOcular Web
+subtitle1 :: UIOcular Web
 subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
-subtitle2 :: WidgetOcular Web
+subtitle2 :: UIOcular Web
 subtitle2 w = p w # cl "mdc-typography--subtitle2"
 
-button :: WidgetOcular Web
+button :: UIOcular Web
 button w = span w # cl "mdc-typography--button"
 
-caption :: WidgetOcular Web
+caption :: UIOcular Web
 caption w = span w # cl "mdc-typography--caption"
 
-overline :: WidgetOcular Web
+overline :: UIOcular Web
 overline w = span w # cl "mdc-typography--overline"
 
-body1 :: WidgetOcular Web
+body1 :: UIOcular Web
 body1 w = p w # cl"mdc-typography--body1"
 
-body2 :: WidgetOcular Web
+body2 :: UIOcular Web
 body2 w = p w # cl"mdc-typography--body2"
 
-elevation1 :: WidgetOcular Web
+elevation1 :: UIOcular Web
 elevation1 w = div w # cl "mdc-elevation--z1"
 
-elevation10 :: WidgetOcular Web
+elevation10 :: UIOcular Web
 elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px"
 
-elevation20 :: WidgetOcular Web
+elevation20 :: UIOcular Web
 elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
 
-card :: WidgetOcular Web
+card :: UIOcular Web
 card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
 -- TODO card with primary and other actions
--- card :: forall a b. { title :: Widget Web a Void } -> WidgetOcular Web
+-- card :: forall a b. { title :: UI Web a Void } -> UIOcular Web
 -- card { title } w = div >>> cl "mdc-card" >>> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ S.do
 --   div >>> cl "mdc-card__primary-action" $ S.do
 --     div >>> cl "mdc-card__media" >>> cl "mdc-card__media--square" $ div >>> cl "mdc-card__media-content" $ (title >>> pzero)
@@ -197,7 +197,7 @@ card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15p
 --   -- TODO  card actions
 
 -- TODO isn't it an ocular?
-dialog :: { title :: String } -> WidgetOcular Web
+dialog :: { title :: String } -> UIOcular Web
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ A.do
     div >>> cl "mdc-dialog__container" $ A.do
@@ -206,7 +206,7 @@ dialog { title } content =
         div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ pzero
 
-simpleDialog :: { title :: String, confirm :: String } -> WidgetOcular Web
+simpleDialog :: { title :: String, confirm :: String } -> UIOcular Web
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
@@ -225,7 +225,7 @@ simpleDialog { title, confirm } content =
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
 
-snackbar :: WidgetOcular Web
+snackbar :: UIOcular Web
 snackbar content =
   aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open (\a propStatus -> close a) $
     div >>> cl "mdc-snackbar__surface" >>> attr "role" "status" >>> attr "aria-relevant" "additions" $

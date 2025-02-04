@@ -5,7 +5,7 @@ import Prelude hiding (div)
 import Effect (Effect)
 import QualifiedDo.Alt as A
 import Web (a, attr, body, div, li, p, text, ul)
-import Widget (constant)
+import UI (constant)
 
 main :: Effect Unit
 main = body $
