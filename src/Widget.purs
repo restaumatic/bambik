@@ -149,11 +149,11 @@ instance Functor m => Choice (Widget m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Monad m => Semigroupoid (Widget m) where
-  compose p2 p1 = wrap do
+instance Apply m => Semigroupoid (Widget m) where
+  compose p2 p1 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
-    pure
+    in
       { toUser: \cha -> do
         p1'.toUser cha
       , fromUser: \prop -> do
@@ -319,10 +319,10 @@ debounced' millis = affAdapter $ pure
 debounced :: forall m. MonadEffect m => WidgetOcular m
 debounced = debounced' (Milliseconds 300.0)
 
-spied :: forall m. Monad m => DebugWarning => String -> WidgetOcular m
-spied name w = wrap do
+spied :: forall m. Functor m => DebugWarning => String -> WidgetOcular m
+spied name w = wrap ado
   { toUser, fromUser } <- unwrap w
-  pure
+  in
     { toUser: \change -> do
       status <- toUser change
       let _ = spy' ("< (" <> show status <> ")") change
@@ -341,11 +341,11 @@ spied name w = wrap do
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
 -- TODO is this needed?
-effAdapter :: forall m a b s t. Monad m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
-effAdapter f w = wrap do
+effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Widget m a b -> Widget m s t
+effAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
-  pure
+  in
     { toUser: case _ of
       New _ s cont -> do
         a <- pre s
