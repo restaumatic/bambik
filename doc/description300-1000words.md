@@ -5,3 +5,5 @@ They are then behind both “data” and “control” of computation; behind bo
 
 This work presents a way in which user interfaces can be entirely expressed declaratively, in terms of both space (structure) and time (flow), by picking a proper profunctor instance as a building block of UI.
 Semigroupoid, choice profunctor, strong profunctor, sum profunctor and zero profunctor alongside semigroup and monoid instances suffice to enable rich UIs and great UI development experience.
+
+The idea is implemented as a PureScript library for developing web user interfaces.
