@@ -83,7 +83,7 @@ text :: forall a. UI Web String a
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
-    node <- createTextNode mempty
+    node <- createTextNode ""
     appendChild node parentNode
     pure node
   modify_ _ { sibling = newNode}
