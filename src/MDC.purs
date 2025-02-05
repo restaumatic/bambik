@@ -7,7 +7,6 @@ module MDC
   , card
   , checkbox
   , containedButton
-  , containedButtonWithIcon
   , dialog
   , elevation1
   , elevation10
@@ -33,7 +32,7 @@ module MDC
 import Prelude
 
 import Control.Monad.State (gets)
-import Data.Maybe (Maybe, fromMaybe, isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Profunctor (dimap, rmap)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
@@ -48,18 +47,16 @@ import Web (button, radioButton) as Web
 
 -- Widgets
 
-containedButton :: forall a. { label :: String } -> UI Web a a
-containedButton { label } =
+containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
+containedButton { label, icon } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
     div >>> cl "mdc-button__ripple" $ pzero
-    span >>> cl "mdc-button__label" $ staticText label
-
-containedButtonWithIcon :: forall a. { label :: String, icon :: String } -> UI Web a a
-containedButtonWithIcon { label, icon } =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
-    div >>> cl "mdc-button__ripple" $ pzero
-    i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> attr "aria-hidden" "true" $ staticText icon
-    span >>> cl "mdc-button__label" $ staticText label
+    case icon of
+      Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> attr "aria-hidden" "true" $ staticText icon'
+      Nothing -> pzero
+    case label of
+      Just label' -> span >>> cl "mdc-button__label" $ staticText label'
+      Nothing -> pzero
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> UI Web String String
@@ -81,7 +78,7 @@ filledTextField { floatingLabel } =
       id = unsafePerformEffect uniqueId
       helperId = unsafePerformEffect uniqueId
 
-filledTextArea :: { columns :: Int, rows :: Int }-> UI Web String String
+filledTextArea :: { columns :: Int, rows :: Int } -> UI Web String String
 filledTextArea { columns, rows } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ S.do
     span >>> cl "mdc-text-field__ripple" $ pzero

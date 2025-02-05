@@ -2,9 +2,10 @@ module Demo1.Main (main) where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import Demo1.Model (address, authorization, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, normal, order, orderId, orderSubmissionFailed, paid, payment, priorityAssignment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
 import Effect (Effect)
-import MDC (body1, caption, card, checkbox, containedButtonWithIcon, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
+import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
@@ -81,7 +82,7 @@ main = body $ order "45123519" $ T.do
         staticText ", paid "
         paid text
     T.do
-      containedButtonWithIcon { label: "Submit order", icon: "save" }
+      containedButton { label: Just "Submit order", icon: Just "save" }
       authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ T.do
         caption A.do
           staticText "Order summary: "
@@ -91,7 +92,7 @@ main = body $ order "45123519" $ T.do
       orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
       snackbar $ staticText "Order submitted"
     T.do
-      containedButtonWithIcon { label: "Assign priority", icon: "bookmark" }
+      containedButton { label: Just "Assign priority", icon: Just "bookmark" }
       priorityAssignment $ simpleDialog { title: "Priority assignment", confirm: "Assign" } $ T.do
         caption $ staticText "Choose one of"
         S.do
