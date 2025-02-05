@@ -90,9 +90,7 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { toUser: case _ of
-      New _ s _ -> do
-        setTextNodeValue node s
-        pure Nothing
+      New _ s _ -> setTextNodeValue node s
     , fromUser: \_ -> pure unit
     }
 
@@ -102,9 +100,7 @@ input type_ = attr "type" type_ $ wrap do
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    New _ newa _ -> do
-      setValue node newa
-      pure Nothing
+    New _ newa _ -> setValue node newa
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
       void $ prop $ New [] value true
@@ -116,9 +112,7 @@ textArea = wrap do
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    (New _ newa _) -> do
-      setValue node newa
-      pure Nothing
+    (New _ newa _) -> setValue node newa
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
       void $ prop $ New [] value true
@@ -132,13 +126,10 @@ checkboxInput default = attrDyn "disabled" "true" isNothing $ attr "type" "check
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    New _ Nothing _ -> do
-      setChecked node false
-      pure Nothing
+    New _ Nothing _ -> setChecked node false
     New _ (Just newa) _ -> do
       setChecked node true
       Ref.write newa aRef
-      pure Nothing
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
@@ -152,13 +143,10 @@ radioButton default = attr "type" "radio" $ wrap do
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    New _ Nothing _ -> do
-      setChecked node false
-      pure Nothing
+    New _ Nothing _ -> setChecked node false
     New _ (Just newa) _ -> do
       setChecked node true
       Ref.write newa aRef
-      pure Nothing
     , fromUser: \prop -> void $ addEventListener "change" node $ const do
     a <- Ref.read aRef
     void $ prop $ New [] a false
@@ -370,9 +358,7 @@ slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
     { toUser: case _ of
-      (New _ Nothing _) -> do
-        ensureDetached
-        pure Nothing
+      (New _ Nothing _) -> ensureDetached
       new@(New _ (Just y) _) -> do
         status <- toUser (new $> y)
         ensureAttached

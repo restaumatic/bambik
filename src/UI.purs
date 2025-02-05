@@ -62,7 +62,7 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype UI m i o = UI (m
-  { toUser :: New i -> Effect PropagationStatus
+  { toUser :: New i -> Effect Unit
   , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
   })
 
@@ -129,7 +129,8 @@ instance Functor m => Choice (UI m) where
       { toUser: case _ of
         New scope (Right c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          prop (New scope (Right c) cont)
+          _ <- prop (New scope (Right c) cont)
+          pure unit
         New scope (Left a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
@@ -142,7 +143,8 @@ instance Functor m => Choice (UI m) where
       { toUser: case _ of
         New scope (Left c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          prop (New scope (Left c) cont)
+          _ <- prop (New scope (Left c) cont)
+          pure unit
         New scope (Right a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
@@ -157,7 +159,9 @@ instance Apply m => Semigroupoid (UI m) where
       { toUser: \cha -> do
         p1'.toUser cha
       , fromUser: \prop -> do
-          p1'.fromUser p2'.toUser
+          p1'.fromUser \x -> do
+            p2'.toUser x
+            pure Nothing
           p2'.fromUser prop
       }
 
@@ -223,12 +227,9 @@ constant a w = wrap $ ado
   in
     { toUser: \_ -> do
       initialized <- Ref.read initializedRef
-      case initialized of
-        false -> do
-          Ref.write true initializedRef
-          w'.toUser $ New [] a false
-        true -> do
-          pure Nothing
+      when (not initialized) do
+        Ref.write true initializedRef
+        w'.toUser $ New [] a false
     , fromUser: mempty
     }
 
@@ -291,9 +292,7 @@ action' arr w = wrap ado
   w' <- unwrap w
   in
     { toUser: case _ of
-      New _ i cont -> do
-        launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
-        pure Nothing
+      New _ i cont -> launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
@@ -366,16 +365,13 @@ affAdapter f w = wrap ado
   let mOutputFiberRef = unsafePerformEffect $ Ref.new Nothing
   in
     { toUser: case _ of
-      news@(New _ _ cont) -> do
-        launchAff_ do
-          mFiber <- liftEffect $ Ref.read mInputFiberRef
-          for_ mFiber $ killFiber (error "Obsolete input")
-          newFiber <- forkAff do
-            a <- pre news
-            liftEffect $ toUser $ New [] a cont
-          liftEffect $ Ref.write (Just newFiber) mInputFiberRef
-        pure Nothing
-    -- , fromUser: unsafeCoerce unit
+      news@(New _ _ cont) -> launchAff_ do
+        mFiber <- liftEffect $ Ref.read mInputFiberRef
+        for_ mFiber $ killFiber (error "Obsolete input")
+        newFiber <- forkAff do
+          a <- pre news
+          liftEffect $ toUser $ New [] a cont
+        liftEffect $ Ref.write (Just newFiber) mInputFiberRef
     , fromUser: \prop -> do
       fromUser case _ of
         newb@(New _ _ cont) -> do
@@ -396,7 +392,7 @@ scopemap scope p = wrap ado
   { toUser, fromUser } <- unwrap p
   in
     { toUser: \newa -> case zoomIn newa of
-      Nothing -> pure Nothing
+      Nothing -> pure unit
       Just newa' -> toUser newa'
     , fromUser: \prop -> do
       fromUser $ zoomOut >>> prop
