@@ -9,8 +9,8 @@ module Web
   , button
   , checkboxInput
   , cl
-  , div
   , clDyn
+  , div
   , h1
   , h2
   , h3
@@ -18,7 +18,7 @@ module Web
   , h5
   , h6
   , html
-  , img
+  , i
   , init
   , input
   , label
@@ -53,8 +53,8 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import Unsafe.Coerce (unsafeCoerce)
 import UI (New(..), PropagationStatus, UI, UIOcular)
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
 
@@ -194,9 +194,6 @@ html htmlString = wrap do
     , fromUser: mempty
     }
 
-img :: forall a. String -> UI Web a a
-img src = el "img" >>> attr "src" src $ pzero
-
 -- Oculars
 
 attr :: String -> String -> UIOcular Web
@@ -250,6 +247,9 @@ path = el "path"
 
 p :: UIOcular Web
 p = el "p"
+
+i :: UIOcular Web
+i = el "i"
 
 a :: UIOcular Web
 a = el "a"

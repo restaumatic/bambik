@@ -4,15 +4,14 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import QualifiedDo.Alt as A
-import Web (a, attr, body, div, li, p, text, ul)
-import UI (constant)
+import Web (a, attr, body, div, li, p, staticText, ul)
 
 main :: Effect Unit
 main = body $
   div >>> attr "style" "border: 1px solid silver; padding: 30px;" $ A.do
-    constant "Hello World!" $ p $ text
+    p $ staticText "Hello World!"
     ul $ A.do
-      constant "One" $ li $ text
-      constant "Two" $ li $ text
-      constant "Three" $ li $ text
-    constant "Link" $ a >>> attr "href" "https://www.google.com" >>> attr "target" "_blank" $ text
+      li $ staticText "One"
+      li $ staticText "Two"
+      li $ staticText "Three"
+    a >>> attr "href" "https://www.google.com" >>> attr "target" "_blank" $ staticText "Link"

@@ -6,8 +6,8 @@ module MDC
   , caption
   , card
   , checkbox
-  , simpleDialog
   , containedButton
+  , containedButtonWithIcon
   , dialog
   , elevation1
   , elevation10
@@ -23,6 +23,7 @@ module MDC
   , indeterminateLinearProgress
   , overline
   , radioButton
+  , simpleDialog
   , snackbar
   , subtitle1
   , subtitle2
@@ -41,18 +42,24 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (Node, Web, aside, attr, checkboxInput, cl, div, clDyn, h1, h2, h3, h4, h5, h6, html, init, input, label, p, span, staticText, textArea, uniqueId)
-import Web (button, radioButton) as Web
 import UI (UI, UIOptics, UIOcular, effAdapter)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
+import Web (button, radioButton) as Web
 
 -- Widgets
 
--- TODO do not allow arbitrary html as label?
-containedButton :: forall a. UI Web a Void -> UI Web a a
-containedButton label =
+containedButton :: forall a. { label :: String } -> UI Web a a
+containedButton { label } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
     div >>> cl "mdc-button__ripple" $ pzero
-    span >>> cl "mdc-button__label" $ label
+    span >>> cl "mdc-button__label" $ staticText label
+
+containedButtonWithIcon :: forall a. { label :: String, icon :: String } -> UI Web a a
+containedButtonWithIcon { label, icon } =
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
+    div >>> cl "mdc-button__ripple" $ pzero
+    i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> attr "aria-hidden" "true" $ staticText icon
+    span >>> cl "mdc-button__label" $ staticText label
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> UI Web String String
@@ -74,8 +81,8 @@ filledTextField { floatingLabel } =
       id = unsafePerformEffect uniqueId
       helperId = unsafePerformEffect uniqueId
 
-filledTextArea :: Int -> Int -> UI Web String String
-filledTextArea columns rows =
+filledTextArea :: { columns :: Int, rows :: Int }-> UI Web String String
+filledTextArea { columns, rows } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ S.do
     span >>> cl "mdc-text-field__ripple" $ pzero
     span >>> cl "mdc-text-field__resizer" $

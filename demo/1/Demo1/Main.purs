@@ -4,12 +4,12 @@ import Prelude
 
 import Demo1.Model (address, authorization, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, normal, order, orderId, orderSubmissionFailed, paid, payment, priorityAssignment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
 import Effect (Effect)
-import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
+import MDC (body1, caption, card, checkbox, containedButtonWithIcon, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import Web (body, label, slot, staticText, text)
 import UI (debounced, just, constant)
+import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do
@@ -49,7 +49,7 @@ main = body $ order "45123519" $ T.do
       payment $ just $ slot $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       caption $ staticText "Remarks"
-      remarks $ filledTextArea 80 3
+      remarks $ filledTextArea { columns: 80, rows: 3 }
     debounced $ body1 S.do
       constant "Summary: Order " text
       shortId text
@@ -81,7 +81,7 @@ main = body $ order "45123519" $ T.do
         staticText ", paid "
         paid text
     T.do
-      containedButton $ label $ staticText "Submit order"
+      containedButtonWithIcon { label: "Submit order", icon: "save" }
       authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ T.do
         caption A.do
           staticText "Order summary: "
@@ -91,7 +91,7 @@ main = body $ order "45123519" $ T.do
       orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
       snackbar $ staticText "Order submitted"
     T.do
-      containedButton $ label $ staticText "Assign priority"
+      containedButtonWithIcon { label: "Assign priority", icon: "bookmark" }
       priorityAssignment $ simpleDialog { title: "Priority assignment", confirm: "Assign" } $ T.do
         caption $ staticText "Choose one of"
         S.do
