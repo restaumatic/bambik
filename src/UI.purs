@@ -198,13 +198,15 @@ instance Apply m => Semigroup (UI m a a) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch -- TODO sum propagation statuses
+      { toUser: \ch -> do
+        p1'.toUser ch
+        p2'.toUser ch
       , fromUser: \prop -> do
         p1'.fromUser \u -> do
-          _ <- p2'.toUser u -- TODO sum propagation statuses
+          p2'.toUser u
           prop u
         p2'.fromUser \u -> do
-          _ <- p1'.toUser u -- TODO sum propagation statuses
+          p1'.toUser u
           prop u
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
