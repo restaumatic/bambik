@@ -1,15 +1,14 @@
 {
-  "private": true,
   "name": "bambik",
   "displayName": "Bambik",
   "version": "0.0.1",
-  "description": "Profunctor optics for UIs",
+  "description": "Profunctor User Interface",
   "scripts": {
     "build": "spago build -w",
     "demo1": "parcel -p 12341 demo/1/index.html & spago bundle-app --main Demo1.Main --to demo/1/output/bundle.js -w -l",
     "demo2": "parcel -p 12342 demo/2/index.html & spago bundle-app -y --main Demo2.Main --to demo/2/output/bundle.js -w -l"
   },
-  "author": "Restaumatic.com",
+  "author": "Eryk Ciepiela, Restaumatic.com",
   "dependencies": {
     "material-components-web": "^14.0.0"
   },

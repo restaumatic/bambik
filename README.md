@@ -10,139 +10,99 @@ $ npm install && npm run demo1
 
 > (!) Notice: this section is still work in progress.
 
-## 1. From lenses to optics
+## From lenses to optics
 
-Lenses, prisms, traversals etc, under common name of optics, provide a convenient way for navigating through data structures.
+Lenses, prisms, traversals etc., under common name of optics, provide a convenient way for navigating through data structures.
 
-Problem: Concrete (explicit) encoding of optics is heteregenous hence not composable.
+Problem: Concrete (explicit) encoding of optics is heterogeneous hence not composable.
 
-## 2. Profunctor optics
+## Profunctor optics
 
-Profunctor optics encodes optics in homogenous thus composable way.
+Profunctor optics encodes optics in homogeneous thus composable way.
 
 Question: Are profunctor optics expressive enough in navigating through data structures?
 
-## 3. The power of optics
+## The power of optics
 
-  1. Adapter (ChProfunctor) and its sub classes:
+  1. Adapter (Profunctor) and its sub classes:
     1. Iso
     1. Projection and its sub classes:
       1. Constant
-  1. Lens (ChProfunctor+Strong) and its sub classes:
+  1. Lens (Profunctor+Strong) and its sub classes:
     1. Lens' and its sub classes:
       1. Field
-  1. Prism (ChProfunctor+Choice) and its sub classes:
+  1. Prism (Profunctor+Choice) and its sub classes:
     1. Prism' and its sub classes:
       1. Constructor
   1. Null (ProfunctorZero)
 
-Optics describes the structure of data without releaving its representation (data constructors, functions etc)
+Optics describes the structure of data without releaving its representation (data constructors, functions etc).
 
 What if we start using optics instead of representation (data constructors, functions etc)?
 
-Before trying this, let's make one observation.
+## More on profunctor optics
 
-## 4. Invariants - subclass of profunctors
+Profunctor optics [PO] provides a way of encoding optics (adapters, lenses, prisms, affine traversals, traversals etc) whose advantage over alternative encodings (concrete encoding, van Laarhoven encoding [LAAR] and existential encoding [EXIST-OPTICS]) is its inherent composability, both in terms of categorical composition as well as the ability to combine different types of optics e.g. lenses with prismes etc.
 
-When describing the structure of data, profunctors we use are specific class of profunctors where input and output types are the same.
-Invariant optics seems more handy at the cost of expressivity.
-Still, in our case, invariant optics represent reasonable trade-off.
+For fixed types `a`, `b`, `s` and `t`, a function
+```haskell
+Profunctor p => p a b -> p s t
+```
+encodes an optic.
+Notice that this function being polymorphic in `p` can only rely on profunctor's `dimap` function:
 
-Let's pick then invariant optics and use them instead of data representation.
-
-## 5. Representation independence
-
-Suppose we're given with:
-
-```purescript
-module Business (Person, name) where
--- data
-data Person = Person { name :: String }
--- optics
-name :: InvCartesian i => i String -> i Person -- notice no name conflict with name field
+```haskell
+dimap :: Profunctor p => (s -> a) -> (b -> t) -> p a b -> p s t
 ```
 
-and using this module we want to implement function:
+That is, `Profunctor p => p a b -> p s t` can be obtained from a pair of functions: `f :: s -> a` and `g :: b -> t` that we know as the concrete encoding of *adapter* optics.
+It turns out that there's also an inverse function from profunctor encoding to concrete encoding, hence profunctor encoding is isomophic to concrete encoding [PO].
 
-
-```purescript
-printPersonToConsole :: Person -> Effect Unit
+Similarly, for fixed `a`, `b`, `s` and `t`,
+```haskell
+Profunctor p, Strong p => p a b -> p s t
 ```
+function is isomorphic to concrete encoding of lenses which is a pair of functions `get :: s -> a` and `set :: s -> b -> t`.
+Additional constraint, `Strong p`, allows this function to use
 
-Since only `Person` (data type without data constructor) and optics are exported, we only can:
-  * pick invariant, arbirary one but necessarily cartesian (1)
-  * use `String` as usual (2)
-
-Attempt 1:
-
-```purescript
-import Business (Person, name)
-
-printPersonToConsole = Console.log <<< personString
-
-personString :: Person -> String
-personString = impossible
+```haskell
+first :: Strong p => p a b -> p (a, c) (b, c)
+second :: Strong p => p a b -> p (c, a) (c, b)
 ```
+functions, which are necesseary to encode a lens.
 
-Attempt 2:
+`Strong p` denotes a profunctor `p`, whose specific output occurence, in a way, refers to specific input occurence that "caused" the output value, establishing an implicit, logical link from output occurence to input occurence.
 
-```purescript
-import Business (Person, name)
+We can think about it as follows: for fixed `p . Profunctor p, Strong p`, and for all `a` and `b`, `p a b` can be lifted to `p (a, c) (b, c)` for an arbitrary `c`.
+This means that the structure of `p` coveys a context `c` along the manufacturing line from input to output.
+It is like saying: whetever `c` can be attached to the input `a` occurence, and if there is an output `b` occurence, it has attached `c` too.
+How to get the attached `c` value of an arbitrary, unconstrained type if not from the input?
 
--- introducing invariant:
+In profunctor encoding of a lens we use `second :: Profunctor p, Strong p => p Part Part' -> p (Whole, Part) (Whole, Part')`.
+Indeed, we can see `Part'` output occurence is related to `Part` input occurence: the former value is an alteration of the latter value.
+Therefore, `Whole` attached to `Part` on the input can be conveyed along to `Part'` on the output.
+This makes possible to apply `rmap :: Profunctor p => (b -> c) -> p a b -> p a c` on lifted profunctor to turn `(Whole, Part')` into new `Whole'`.
 
-data ConsolePrint a = ...
-instance Invariant ConsolePrint where ...
-instance InvCartesian ConsolePrint where ...
-
-consoleStringPrint :: ConsolePrint String
-consoleStringPrint = ... -- using String as usual (2)
-
-runConsolePrint :: ConsolePrint a -> a -> Effect Unit
-runConsolePrint = ...
-
--- and then:
-
-printPersonToConsole :: Person -> Effect Unit
-printPersonToConsole = runConsolePrint consolePersonPrint -- picking invariant (1)
-  where
-    consolePersonPrint :: ConsolePrint Person
-    consolePersonPrint = name consoleStringPrint
-
+The following function, in turn, for fixed `a`, `b`, `s` and `t`,
+```haskell
+Profunctor p, Choice p => p a b -> p s t
 ```
+is isomorphic to concrete encoding of prisms which is a pair of functions `review :: a -> s` and `preview :: s -> Either b t`.
+Additional constraint, `Choice p`, allows this function to use
+```haskell
+left :: Choice p => p a b -> p (Either a c) (Either b c)
+right :: Choice p => p a b -> p (Either c a) (Either c b)
+```
+functions, which are necessary to encode a prism.
 
-Having done that, we decoupled representation from application, with optics being an "API" between the two.
-Optics specifies what application can and can not do over representated data: application can not do anything beyond optics over the data.
-And vice-versa, data cannot do anything beyond optics over application.
-This sounds like a clear separation between the data and application.
+> Pending: Choice intuition
 
-And what is this `ConsolePrint a` invariant?
-We can interpret it is a representation of `a` in given application: printing to console in this case.
-Does it mean that invariant represents data in a given application?
-Does it mean that optics represents binding between data and its applications?
+The laws of concrete optics encoding (like `get (set s a) == a` for lenses) do not impose additional laws on profunctor encoding over inherent laws of Profunctors, Strong, Choice etc. (like `dimap id id = id`).
 
-## 6. Invariant UI
+Profunctor optics evokes an idea on how to construct optics-based UIs.
+For example, in order for UI to support adapters, lenses and prisms as first-class citizens, UI must instantiate Profunctor, Strong and Choice.
 
-
-InvPlusoid and InvPlus.
-
-## 7. Back to profunctors
-
-As we observed before, invariant optics are less expressive than profunctor optics.
-A component that doesn't produce any output but still consumes input can
-trigger effects on input but no output is made available to other components.
-
-That is not expressible with invariants so let's get back to profunctors.
-
-All invariant optics have their counterparts in profunctor optics (not surprisingly as invariants are special case of profunctors).
-Underlying concepts of InvCartesian, InvCocartesian work in the same way as in invariants (they were in fact ported from profunctors to invariants in the first place).
-
-Is this still the case for InvPlusoid and InvPlus? They were not derived from profunctor world so do they have profunctor counterparts?
-If they don't then we are not able to build anything beyond single component UIs.
-
-Profunctor can only be combinable if their input and output are of the same type.  
-
-# 8. Lifting optics
+## Lifting optics
 
 `Lens a b s t` denotes relation of `a` being part of `s` and `b` being modificator of `s` into `t`.
 In particular, `Lens a a s s ` denotes `a` "is part of" `s` relation.
@@ -155,17 +115,38 @@ profunctor `P` lifts adapter to `P a b -> P s t` function,
 strong profunctor `P` lifts lens to `P a b -> P s t` function,
 choice profunctor `P` lifts prism to `P a b -> P s t` function.
 
-# Lifting other things
-We look for other things `X` can lift, e.g.
-... `X a a -> X (f a) (f a)` function?
+## Optics for data flow
 
-and:
-... `X a a -> X a a -> X a a` function?
-... `X a b -> X b c -> X a c` function?
-... `X a b -> X b a -> X a a` function?
-... `X a a -> X [a] [a]` function?
-... `X a a -> X (Maybe a) (Maybe a)` function?
+> PENDING
 
+## Profunctor Oculars
+
+Polymorphic profunctor transformers work as optics.
+What else profunctors transformers can do?
+
+Profunctor polymorphic transformers (watch the word order) are when we fix an instance of profunctor and it's the transformer itself that is polymorphic.
+
+Let's call then oculars:
+
+```haskell
+instance Profunctor AProfunctor where ...
+
+anOcular :: forall a b . AProfunctor a b -> AProfunctor a b
+```
+
+Oculars are complementary to optics since they can't change with input/output data because of polymorphic input and output, but can change the way it's processed.
+(Optics can change input/output data, but can't change the way they are processed because of polymorphic profunctor).
+
+Optics encode data model.
+Oculars encode presentation.
+
+## References
+
+[LAAR] - Joachim Breitner: CIS 194: Introduction to Haskell (Fall 2016) https://www.cis.upenn.edu/~cis1940/fall16/lectures/14-lenses.html
+
+[EXIST-OPTICS] - Marco Perone: "Existential optics" https://www.tweag.io/blog/2022-05-05-existential-optics/
+
+[PO] - Matthew Pickering, Jeremy Gibbons, and Nicolas Wu: "Profunctor Optics. Modular Data Accessors" - https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
 
 ## TODOs
 
