@@ -1,14 +1,11 @@
-# Short story
 
-Run the demo locally:
+# Abstract
 
-```bash
-$ npm install && npm run demo1
-```
+[Description in 1000 words](/doc/description300-1000words.md)
 
-# Long story
+# The story
 
-> (!) Notice: this section is still work in progress.
+> Notice: this section is still work in progress.
 
 ## From lenses to optics
 
@@ -147,6 +144,17 @@ Oculars encode presentation.
 [EXIST-OPTICS] - Marco Perone: "Existential optics" https://www.tweag.io/blog/2022-05-05-existential-optics/
 
 [PO] - Matthew Pickering, Jeremy Gibbons, and Nicolas Wu: "Profunctor Optics. Modular Data Accessors" - https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
+
+
+# The library
+
+## Demo
+
+Run the demo locally:
+
+```bash
+$ npm install && npm run demo1
+```
 
 ## TODOs
 
