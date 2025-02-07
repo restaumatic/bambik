@@ -1,30 +1,10 @@
 # Short story
 
-See [**live demo**](http://erykciepiela.xyz/bambik/demo/1/). To peek under the hood open dev tools console and watch logs.
-
-To run the demo locally:
+Run the demo locally:
 
 ```bash
 $ npm install && npm run demo1
 ```
-
-## Best practices
-
-  1. Use qualified do for Semigroup and Semigroupoid composition of Widgets so there is one-to-one correspondence of widget and line of code.
-  1. In widget definition read `#` as *of*, so `text # mail # customer` can be read as *text of a mail of a customer*.
-  1. In widget definition read `>>>` as *followed by*, so `dialog >>> save` can be read as *dialog followed by save*.
-  1. General lenses/prisms are less performant than specialied `field`/`constructor`
-  1. Avoid using `Show` instances when textualizing data in business module in order to 1) make business module resilient to changes in `Show` instance implementation, 2) provide tailor-made textualizations
-  1. View modules should not create Widgets just compose them.
-
-## TODOs
-
-  1. Debounced widget input (example: auto-save)
-  1. Full set of first-order MDC components
-  1. Validation
-  1. Collections and Higher-order components (including MDC)
-  1. I18n
-  1. Web Widget live preview
 
 # Long story
 
@@ -185,3 +165,12 @@ and:
 ... `X a b -> X b a -> X a a` function?
 ... `X a a -> X [a] [a]` function?
 ... `X a a -> X (Maybe a) (Maybe a)` function?
+
+
+## TODOs
+
+  1. Full set of first-order MDC components
+  1. Validation
+  1. Collections and Higher-order components (including MDC)
+  1. I18n
+  1. Web UI live preview
