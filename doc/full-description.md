@@ -1,3 +1,5 @@
+> Notice: this document is still work in progess
+
 # Profunctor User Interfaces
 
 ## From lenses to optics
