@@ -1,21 +1,16 @@
 {
-  "name": "bambik",
-  "displayName": "Bambik",
-  "version": "0.0.1",
-  "description": "Profunctor User Interface",
+  "private": true,
   "scripts": {
     "build": "spago build -w",
     "demo1": "parcel -p 12341 demo/1/index.html & spago bundle-app --main Demo1.Main --to demo/1/output/bundle.js -w -l",
     "demo2": "parcel -p 12342 demo/2/index.html & spago bundle-app -y --main Demo2.Main --to demo/2/output/bundle.js -w -l"
   },
-  "author": "Eryk Ciepiela, Restaumatic.com",
   "dependencies": {
     "material-components-web": "^14.0.0"
   },
   "devDependencies": {
+    "purescript": "^0.15.15",
     "spago": "^0.21.0",
-    "purescript": "^0.15.10",
-    "esbuild": "^0.14.38",
     "parcel": "^2.9.3"
   }
 }

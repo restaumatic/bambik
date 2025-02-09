@@ -1,9 +1,9 @@
 
-# Abstract
+# Profunctor User Interfaces
 
-[Description in 1000 words](/doc/description300-1000words.md)
+This is a prototype of the idea of *profunctor user interfaces* for Web/Material Design Component-based UIs written in [PureScript](https://www.purescript.org/).
 
-# The story
+[Read more on the idea](/doc/description300-1000words.md)
 
 > Notice: this section is still work in progress.
 
@@ -116,6 +116,25 @@ choice profunctor `P` lifts prism to `P a b -> P s t` function.
 
 > PENDING
 
+### Pre-Arrows
+
+Pre-Arrows are monoids in the category of profunctors.
+It is simply a restriction of the Arrow class, omitting the `first` operation [NOCM].
+
+```haskell
+class Profunctor a => PreArrow a where
+arr ::(b → c) → a b c
+(≫):: a b c → a c d → a b d
+```
+
+The laws that must hold are
+```haskell
+(a ≫b)≫c = a≫ (b ≫c)
+arr f ≫ a = dimap f id a
+a ≫arr f = dimap id f a
+arr (g ◦ f) = arr f ≫arr g
+```
+
 ## Profunctor Oculars
 
 Polymorphic profunctor transformers work as optics.
@@ -139,11 +158,13 @@ Oculars encode presentation.
 
 ## References
 
-[LAAR] - Joachim Breitner: CIS 194: Introduction to Haskell (Fall 2016) https://www.cis.upenn.edu/~cis1940/fall16/lectures/14-lenses.html
+[LAAR] - Joachim Breitner: CIS 194: Introduction to Haskell (Fall 2016) - https://www.cis.upenn.edu/~cis1940/fall16/lectures/14-lenses.html
 
-[EXIST-OPTICS] - Marco Perone: "Existential optics" https://www.tweag.io/blog/2022-05-05-existential-optics/
+[EXIST-OPTICS] - Marco Perone: "Existential optics" - https://www.tweag.io/blog/2022-05-05-existential-optics/
 
 [PO] - Matthew Pickering, Jeremy Gibbons, and Nicolas Wu: "Profunctor Optics. Modular Data Accessors" - https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
+
+[NOCM] Exequiel Rivas, Mauro Jaskelioff: Notions of Computation as Monoids - https://arxiv.org/abs/1406.4823
 
 
 # The library
