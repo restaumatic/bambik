@@ -86,7 +86,6 @@ filledTextArea { columns, rows } =
       textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
     span >>> cl "mdc-line-ripple" $ pzero
 
--- TODO do not allow arbitrary html as label?
 checkbox :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
 checkbox default label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
@@ -104,7 +103,6 @@ checkbox default label =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
--- TODO do not allow arbitrary html as label?
 radioButton :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) a
 radioButton default labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
