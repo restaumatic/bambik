@@ -3,13 +3,10 @@ import { MDCTextFieldHelperText } from '@material/textfield/helper-text';
 
 export const material = material_;
 
-// :: Node -> Effect Component
 export function mdcTextFieldHelperText(node) {
   return function () {
     const comp = new MDCTextFieldHelperText(node);
-    // comp.getDefaultFoundation().setPersistent(true);
     comp.getDefaultFoundation().setValidation(true);
-    // comp.getDefaultFoundation().setContent("abc");
     return comp;
   }
 }

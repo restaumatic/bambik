@@ -1,4 +1,4 @@
--- MDC implemented with Widgets, dogfooding intentional.
+-- Material Design Components implemented as UI/UIOcular datatypes, dogfooding intentional.
 module MDC
   ( body1
   , body2
@@ -29,11 +29,11 @@ module MDC
   )
   where
 
-import Prelude
+import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
-import Data.Profunctor (dimap, rmap)
+import Data.Profunctor (rmap)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -41,11 +41,11 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import UI (UI, UIOptics, UIOcular, effAdapter)
+import UI (UI, UIOcular, effAdapter)
 import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
 
--- Widgets
+-- UIs
 
 containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
 containedButton { label, icon } =
@@ -137,7 +137,7 @@ indeterminateLinearProgress =
             false -> close comp
           , post: pure }
 
--- Oculars
+-- UIOculars
 
 headline1 :: UIOcular Web
 headline1 w = h1 w # cl "mdc-typography--headline1"
@@ -190,16 +190,6 @@ elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
 card :: UIOcular Web
 card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
--- TODO card with primary and other actions
--- card :: forall a b. { title :: UI Web a Void } -> UIOcular Web
--- card { title } w = div >>> cl "mdc-card" >>> attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ S.do
---   div >>> cl "mdc-card__primary-action" $ S.do
---     div >>> cl "mdc-card__media" >>> cl "mdc-card__media--square" $ div >>> cl "mdc-card__media-content" $ (title >>> pzero)
---     w
---     div >>> cl "mdc-card__ripple" $ pzero
---   -- TODO  card actions
-
--- TODO isn't it an ocular?
 dialog :: { title :: String } -> UIOcular Web
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ A.do
