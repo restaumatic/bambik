@@ -9,12 +9,24 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 # Demo
 
-Run the demo locally:
+In order to run the demo:
 
 ```bash
 $ npm install
+```
+
+Demo of [Material Design Component-based UI](demo/1/Demo1/Main.purs):
+
+```bash
 $ npm run demo1
 ```
+
+Demo of [plain HTML-based UI](demo/2/Demo2/Main.purs):
+
+```bash
+$ npm run demo2
+```
+
 
 # TODOs
 
