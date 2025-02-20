@@ -87,11 +87,11 @@ filledTextArea { columns, rows } =
     span >>> cl "mdc-line-ripple" $ pzero
 
 -- TODO do not allow arbitrary html as label?
-checkbox :: forall a s. UIOptics (Maybe a) (Maybe a) s s -> a -> UI Web s Void -> UI Web s s
-checkbox option default label =
+checkbox :: forall a. a -> UI Web Unit Void -> UI Web (Maybe a) (Maybe a)
+checkbox default label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
-      option $ checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
+      checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -99,11 +99,12 @@ checkbox option default label =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ pzero
       div >>> cl "mdc-checkbox__ripple" $ pzero
-    attr "for" id $ rmap absurd label
+    attr "for" id $ dimap (const unit) absurd label
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
+-- TODO do not allow arbitrary html as label?
 radioButton :: forall a. a -> UI Web Unit Void -> UI Web (Maybe a) a
 radioButton default labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do

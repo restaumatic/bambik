@@ -46,7 +46,7 @@ main = body $ order "45123519" $ T.do
     card S.do
       caption $ staticText "Payment"
       total $ filledTextField { floatingLabel: "Total" }
-      checkbox payment { paid: "0" } $ label $ staticText "Paid"
+      payment $ checkbox { paid: "0" } $ label $ staticText "Paid"
       payment $ just $ slot $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       caption $ staticText "Remarks"
