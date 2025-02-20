@@ -3,8 +3,6 @@ export function randomElementId() {
   return "" + Math.floor(Math.random() * 99999999 + 100000000); // TODO use UUID?
 }
 
-// from former DOM.js
-
 // documentBody :: IOSync Node
 export function documentBody() {
   return document.body;

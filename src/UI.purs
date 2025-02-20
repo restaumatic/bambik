@@ -55,7 +55,7 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Ocular (Ocular)
+import Data.Lens.Extra.Types (Ocular)
 import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
