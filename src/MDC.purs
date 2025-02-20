@@ -87,7 +87,7 @@ filledTextArea { columns, rows } =
     span >>> cl "mdc-line-ripple" $ pzero
 
 -- TODO do not allow arbitrary html as label?
-checkbox :: forall a. a -> UI Web Unit Void -> UI Web (Maybe a) (Maybe a)
+checkbox :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
 checkbox default label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
@@ -99,13 +99,13 @@ checkbox default label =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ pzero
       div >>> cl "mdc-checkbox__ripple" $ pzero
-    attr "for" id $ dimap (const unit) absurd label
+    attr "for" id $ rmap absurd label
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
 -- TODO do not allow arbitrary html as label?
-radioButton :: forall a. a -> UI Web Unit Void -> UI Web (Maybe a) a
+radioButton :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) a
 radioButton default labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
     div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
@@ -114,7 +114,7 @@ radioButton default labelContent =
         div >>> cl "mdc-radio__outer-circle" $ pzero
         div >>> cl "mdc-radio__inner-circle" $ pzero
       div >>> cl "mdc-radio__ripple" $ pzero
-    attr "for" uid $ dimap (const unit) absurd labelContent
+    attr "for" uid $ rmap absurd labelContent
   where
     uid = unsafePerformEffect uniqueId
 
