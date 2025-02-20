@@ -66,7 +66,7 @@ newtype UI m i o = UI (m
   , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
   })
 
--- TODO ValidationStatus/UserInputStatus?
+-- TODO: rename ValidationStatus/UserInputStatus?
 type PropagationStatus = Maybe PropagationError
 
 type PropagationError = String

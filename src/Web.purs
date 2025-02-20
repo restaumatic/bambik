@@ -77,7 +77,7 @@ derive newtype instance MonadState DocumentBuilderState Web
 uniqueId :: Effect String
 uniqueId = randomElementId
 
--- Primitives
+-- UIs
 
 text :: forall a. UI Web String a
 text = wrap do
@@ -169,8 +169,6 @@ button w = wrap do
     void $ prop $ New [] a false
     }
 
--- Statics
-
 staticText :: forall a b. String -> UI Web a b
 staticText text = wrap do
   parentNode <- gets _.parent
@@ -194,7 +192,7 @@ html htmlString = wrap do
     , fromUser: mempty
     }
 
--- Oculars
+-- UIOculars
 
 attr :: String -> String -> UIOcular Web
 attr name value w = wrap do
@@ -307,51 +305,7 @@ clDyn name pred w = wrap do
     , fromUser: w'.fromUser
     }
 
--- Entry point
-
-body :: forall t. UI Web Unit t -> Effect Unit
-body w = do
-  node <- documentBody
-  runWidgetInNode node w
-
-runWidgetInSelectedNode :: forall t. String -> UI Web Unit t -> Effect Unit
-runWidgetInSelectedNode selector w = do
-  node <- selectedNode selector
-  runWidgetInNode node w
-
-runWidgetInNode :: forall t. Node -> UI Web Unit t -> Effect Unit
-runWidgetInNode node w = runDomInNode node do
-  { toUser, fromUser } <- unwrap w
-  liftEffect $ fromUser case _ of
-    New _ mo _ -> pure Nothing
-  void $ liftEffect $ toUser $ New [] unit false
-
---- private
-
-el :: String -> UIOcular Web
-el tagName = wrap <<< element tagName <<< unwrap
-
-element :: forall a. String -> Web a -> Web a
-element tagName contents = do
-  newNode <- liftEffect $ createElement tagName
-  parentNode <- gets _.parent
-  liftEffect $ appendChild newNode parentNode
-  modify_ _ { parent = newNode}
-  result <- contents
-  modify_ _ { parent = parentNode, sibling = newNode}
-  pure result
-
-attribute :: String -> String -> Web Unit
-attribute name value = do
-  node <- gets _.sibling
-  liftEffect $ setAttribute node name value
-
--- read: class
-clazz :: String -> Web Unit
-clazz name = do
-  node <- gets _.sibling
-  liftEffect $ addClass node name
-  pure unit
+-- others
 
 slot :: forall a b. UI Web a b -> UI Web (Maybe a) b
 slot w = wrap do
@@ -407,6 +361,52 @@ slot w = wrap do
 
   placeholderAfterSlot :: Int -> Effect Node
   placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
+
+-- Entry point
+
+body :: forall t. UI Web Unit t -> Effect Unit
+body w = do
+  node <- documentBody
+  runWidgetInNode node w
+
+runWidgetInSelectedNode :: forall t. String -> UI Web Unit t -> Effect Unit
+runWidgetInSelectedNode selector w = do
+  node <- selectedNode selector
+  runWidgetInNode node w
+
+runWidgetInNode :: forall t. Node -> UI Web Unit t -> Effect Unit
+runWidgetInNode node w = runDomInNode node do
+  { toUser, fromUser } <- unwrap w
+  liftEffect $ fromUser case _ of
+    New _ mo _ -> pure Nothing
+  void $ liftEffect $ toUser $ New [] unit false
+
+--- private
+
+el :: String -> UIOcular Web
+el tagName = wrap <<< element tagName <<< unwrap
+
+element :: forall a. String -> Web a -> Web a
+element tagName contents = do
+  newNode <- liftEffect $ createElement tagName
+  parentNode <- gets _.parent
+  liftEffect $ appendChild newNode parentNode
+  modify_ _ { parent = newNode}
+  result <- contents
+  modify_ _ { parent = parentNode, sibling = newNode}
+  pure result
+
+attribute :: String -> String -> Web Unit
+attribute name value = do
+  node <- gets _.sibling
+  liftEffect $ setAttribute node name value
+
+-- read: class
+clazz :: String -> Web Unit
+clazz name = do
+  node <- gets _.sibling
+  liftEffect $ addClass node name
+  pure unit
 
 foreign import data Event :: Type
 foreign import getValue :: Node -> Effect String

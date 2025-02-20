@@ -118,7 +118,7 @@ radioButton default labelContent =
 
 indeterminateLinearProgress :: forall a. UI Web Boolean a
 indeterminateLinearProgress =
-  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "TODO: Example Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
+  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
     div >>> cl "mdc-linear-progress__buffer" $ A.do
       div >>> cl "mdc-linear-progress__buffer-bar" $ pzero
       div >>> cl "mdc-linear-progress__buffer-dots" $ pzero
