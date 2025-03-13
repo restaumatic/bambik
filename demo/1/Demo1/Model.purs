@@ -10,12 +10,15 @@ module Demo1.Model
   , OrderId
   , OrderSummary
   , Payment
+  , PaymentMethod(..)
   , Priority(..)
   , ShortId
   , Table
   , Time
   , address
   , authorization
+  , card
+  , cash
   , customer
   , delivery
   , dineIn
@@ -28,12 +31,14 @@ module Demo1.Model
   , lastName
   , loadOrder
   , low
+  , missing
   , normal
   , order
   , orderId
   , orderSubmissionFailed
   , paid
   , payment
+  , paymentMethod
   , priority
   , priorityAssignment
   , remarks
@@ -56,7 +61,7 @@ import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import UI (Ctor, Field, UIOptics, action, constructor, field, iso, lens, prism, projection)
+import UI (Field, UIO, UIOptics, Ctor, action, constructor, field, iso, lens, prism, projection)
 
 -- data types
 
@@ -90,7 +95,9 @@ type NameFormal =
   , surname :: String
   }
 
-type Payment = { paid :: String }
+type Payment = { method :: PaymentMethod, paid :: String }
+
+data PaymentMethod = Cash | Card
 
 data Fulfillment
   = DineIn { table :: Table }
@@ -129,7 +136,8 @@ shortId = field @"shortId" (\str _ -> if null str then Just "Cannot be empty" el
 customer :: Field NameInformal Order
 customer = field @"customer" (\_ _ -> Nothing)
 
-payment :: Field (Maybe Payment) Order
+-- payment :: Field (Maybe Payment) Order
+payment :: UIO Order Order (Maybe Payment) (Maybe Payment)
 payment = field @"payment" (\_ _ -> Nothing)
 
 firstName :: Field String NameInformal
@@ -253,3 +261,22 @@ loadOrder = action \orderId -> do
 
 priorityAssignment :: UIOptics Unit Priority Order Order
 priorityAssignment = lens (\order -> unit) (\order priority -> order { priority = priority })
+
+paymentMethod :: UIO Payment Payment PaymentMethod PaymentMethod
+paymentMethod = field @"method" (\_ _ -> Nothing)
+
+cash :: Ctor Unit PaymentMethod
+cash = constructor "Cash" (const Cash) case _ of
+  Cash -> Just unit
+  _ -> Nothing
+
+card :: Ctor Unit PaymentMethod
+card = constructor "Card" (const Card) case _ of
+  Card -> Just unit
+  _ -> Nothing
+
+-- TODO: move to commons?
+missing :: forall a. UIO (Maybe a) (Maybe a) Unit a
+missing = prism Just case _ of
+  Just a -> Left (Just a)
+  Nothing -> Right unit

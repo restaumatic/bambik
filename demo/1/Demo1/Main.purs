@@ -3,14 +3,15 @@ module Demo1.Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Demo1.Model (address, authorization, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, normal, order, orderId, orderSubmissionFailed, paid, payment, priorityAssignment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
+import Demo1.Model (Order, PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmissionFailed, paid, payment, paymentMethod, priorityAssignment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
+import Demo1.Model as Model
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import UI (debounced, just, constant)
-import Web (body, label, slot, staticText, text)
+import UI (UI, constant, debounced, just)
+import Web (Web, body, label, slot, staticText, text)
 
 main :: Effect Unit
 main = body $ order "45123519" $ T.do
@@ -46,7 +47,7 @@ main = body $ order "45123519" $ T.do
     card S.do
       caption $ staticText "Payment"
       total $ filledTextField { floatingLabel: "Total" }
-      payment $ checkbox { paid: "0" } $ label $ staticText "Paid"
+      payment $ checkbox { paid: "0", method: Cash } $ label $ staticText "Paid"
       payment $ just $ slot $ paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       caption $ staticText "Remarks"
@@ -100,3 +101,19 @@ main = body $ order "45123519" $ T.do
           normal $ radioButton unit $ label $ staticText "Normal"
           low $ radioButton unit $ label $ staticText "Low"
 
+-- trigerred by print button
+receipt :: UI Web Order Order
+receipt = do
+  payment $ missing $ simpleDialog { title: "Missing payment", confirm: "OK" } T.do
+    caption $ staticText "Choose one of"
+    S.do
+      paymentMethod $ cash $ radioButton unit $ label $ staticText "Cash"
+      paymentMethod $ Model.card $ radioButton unit $ label $ staticText "Card"
+      paid $ filledTextField { floatingLabel: "Paid" }
+
+  -- missingPayment $ dialog -- optional
+  -- -- Order
+  -- cardPayment $ progressBar -- optional, may fail
+  -- -- (Order, Maybe CardPayment)
+  -- confirmReceipt $ dialog $ do
+  --   confirm $ button >>> printReceipt

@@ -6,12 +6,14 @@ module UI
   , PropagationStatus
   , Scope(..)
   , UI(..)
+  , UIO
   , UIOcular
   , UIOptics
   , action
   , action'
   , adapter
   , affAdapter
+  , constant
   , constructor
   , debounced
   , debounced'
@@ -25,7 +27,6 @@ module UI
   , projection
   , right
   , spied
-  , constant
   )
   where
 
@@ -218,6 +219,8 @@ instance Applicative m => Monoid (UI m a a) where
 -- optics
 
 type UIOptics a b s t = forall m. Functor m => Optic (UI m) s t a b
+
+type UIO s t a b = forall m. Functor m => Optic (UI m) s t a b
 
 projection :: forall a s t. (s -> a) -> UIOptics a Void s t
 projection f = dimap f absurd
