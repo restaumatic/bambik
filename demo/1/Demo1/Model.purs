@@ -35,15 +35,16 @@ module Demo1.Model
   , normal
   , order
   , orderId
+  , orderSubmission
   , orderSubmissionFailed
   , paid
   , payment
   , paymentMethod
   , priority
   , priorityAssignment
+  , receiptPrint
   , remarks
   , shortId
-  , submitOrder
   , summary
   , surname
   , table
@@ -232,12 +233,11 @@ orderSubmissionFailed = prism absurd case _ of
   false -> Right unit
   true -> Left unit
 
-submitOrder :: UIOptics Boolean Void AuthorizedOrder Boolean
-submitOrder = action \{authorization, order} -> do
+orderSubmission :: UIOptics Boolean Void AuthorizedOrder Boolean
+orderSubmission = action \{authorization, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authorization
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
-  -- pure false
   pure true
 
 loadOrder :: UIOptics Boolean Void OrderId Order
@@ -280,3 +280,10 @@ missing :: forall a. a -> UIO (Maybe a) (Maybe a) a a
 missing default = prism Just case _ of
   Just a -> Left (Just a)
   Nothing -> Right default
+
+receiptPrint :: UIO Order Order Boolean Void
+receiptPrint = action \order -> do
+  liftEffect $ log $ "printing receipt for order " <> order.orderId
+  delay (Milliseconds 2000.0)
+  liftEffect $ log $ "printed receipt for order " <> order.orderId
+  pure order

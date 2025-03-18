@@ -204,12 +204,12 @@ instance Apply m => Semigroup (UI m a a) where
         p2'.toUser ch
       , fromUser: \prop -> do
         p1'.fromUser \u -> do
-          -- p1'.toUser u
+          p1'.toUser u
           p2'.toUser u
           prop u
         p2'.fromUser \u -> do
           p1'.toUser u
-          -- p2'.toUser u
+          p2'.toUser u
           prop u
       }
 -- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
@@ -331,17 +331,15 @@ spied name w = wrap ado
   { toUser, fromUser } <- unwrap w
   in
     { toUser: \change -> do
-      status <- toUser change
-      let _ = spy' ("< (" <> show status <> ")") change
-      pure status
+      let _ = spy' "showing to user" change
+      toUser change
     , fromUser: \prop -> fromUser \change -> do
-      status <- prop change
-      let _ = spy' ("> (" <> show status <> ")") change
-      pure status
+      let _ = spy' "getting from user" change
+      prop change
     }
   where
-    spy' :: forall a. String -> a -> a
-    spy' text x = spy ("[WidgetSpied] " <> name <> " " <> text) x
+    spy' :: forall a. String -> New a -> a
+    spy' text (New scope a cont) = spy ("Spied UI \"" <> name <> "\" " <> text <> " new value in scope " <> show scope <> " with continuity " <> show cont) a
 
 -- modifiers
 

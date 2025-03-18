@@ -30,8 +30,6 @@ export function setValid(comp) {
 export function setContent(comp) {
   return function (content) {
     return function () {
-      console.log(content);
-      console.log(comp);
       comp.helperTextContent = content;
     }
   }

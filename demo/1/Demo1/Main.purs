@@ -3,14 +3,14 @@ module Demo1.Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmissionFailed, paid, payment, paymentMethod, priorityAssignment, remarks, shortId, submitOrder, summary, surname, table, takeaway, time, total)
+import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priorityAssignment, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
 import Demo1.Model as Model
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import UI (constant, debounced, just, spied)
+import UI (constant, debounced, just)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
@@ -89,10 +89,10 @@ main = body $ order "45123519" $ T.do
           staticText "Order summary: "
           summary text
         filledTextField { floatingLabel: "Auth token" }
-      submitOrder indeterminateLinearProgress
+      orderSubmission indeterminateLinearProgress
       orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
       snackbar $ staticText "Order submitted"
-    spied "1" $ T.do
+    T.do
       containedButton { label: Just "Assign priority", icon: Just "bookmark" }
       priorityAssignment $ simpleDialog { title: "Priority assignment", confirm: "Assign" } $ T.do
         caption $ staticText "Choose one of"
@@ -100,17 +100,11 @@ main = body $ order "45123519" $ T.do
           high $ radioButton unit $ label $ staticText "High"
           normal $ radioButton unit $ label $ staticText "Normal"
           low $ radioButton unit $ label $ staticText "Low"
-    spied "2" $ T.do
+    T.do
       containedButton { label: Just "Receipt", icon: Just "file" }
       payment $ missing { method: Cash, paid: "0.00"} $ simpleDialog { title: "Missing payment", confirm: "OK" } S.do
         caption $ staticText "Choose one of"
         paymentMethod $ cash $ radioButton unit $ label $ staticText "Cash"
         paymentMethod $ Model.card $ radioButton unit $ label $ staticText "Card"
         paid $ filledTextField { floatingLabel: "Paid" }
-
-  -- missingPayment $ dialog -- optional
-  -- -- Order
-  -- cardPayment $ progressBar -- optional, may fail
-  -- -- (Order, Maybe CardPayment)
-  -- confirmReceipt $ dialog $ do
-  --   confirm $ button >>> printReceipt
+      receiptPrint indeterminateLinearProgress
