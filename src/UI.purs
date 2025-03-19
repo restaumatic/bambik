@@ -13,6 +13,8 @@ module UI
   , action'
   , adapter
   , affAdapter
+  , class Foo
+  , foo
   , constant
   , constructor
   , debounced
@@ -37,8 +39,10 @@ import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
+import Data.Generic.Rep (class Generic)
 import Data.Lens (Optic, first)
 import Data.Lens as Profunctor
+import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
@@ -47,6 +51,7 @@ import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
 import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Symbol (reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (class DebugWarning, spy)
@@ -56,9 +61,11 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Data.Lens.Extra.Types (Ocular)
 import Prim.Row as Row
+import Prim.RowList -- (class RowToList, Cons, Nil, RowList(..))
 import Record (get, set)
+import Record as Record
+import Type.Proxy (Proxy(..))
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -390,6 +397,39 @@ affAdapter f w = wrap ado
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
           pure Nothing
     }
+
+class Foo f where
+  foo :: f
+
+instance Foo String where
+  foo = ""
+
+class FooRecord  (rl :: RowList Type) where
+  fooRecord :: Record (RowToList rl)
+
+instance FooRecord Nil where
+  fooRecord = {}
+
+instance (IsSymbol label, Foo a, FooRecord tail) => FooRecord (Cons label a tail) where
+  -- fooRecord = { (reflectSymbol (Proxy :: Proxy label)) : foo | fooRecord :: Record (RowToList tail) }
+  fooRecord = Record.insert (Proxy :: Proxy label) foo fooRecord
+
+-- (RL.RowToList r rl, FooRecord rl)
+
+
+-- instance DecodeRecord RL.Nil where
+--   recordInfo _ = recordInfoNil
+
+-- instance (IsSymbol label, Decode a, DecodeRecord rest) => DecodeRecord (RL.Cons label a rest) where
+--   recordInfo _ = recordInfoCons
+--     (reflectSymbol (Proxy :: Proxy label))
+--     (unsafeDecode :: Foreign -> a)
+--     (recordInfo (Proxy :: Proxy rest))
+
+-- derive instance genericRecord :: Generic (Record r) _
+
+-- instance fooRecord :: (Generic (Record r) rep, RowToList r rl, FooRecord rl) => Foo (Record r) where
+--   foo = fooRecord
 
 -- private
 

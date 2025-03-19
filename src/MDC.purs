@@ -41,7 +41,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import UI (UI, UIOcular, effAdapter)
+import UI (class Default, UI, UIOcular, default, effAdapter)
 import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
 
@@ -103,11 +103,11 @@ checkbox default label =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) a
-radioButton default labelContent =
+radioButton :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) a
+radioButton labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
     div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
-      Web.radioButton default # cl "mdc-radio__native-control" # attr "id" uid
+      Web.radioButton # cl "mdc-radio__native-control" # attr "id" uid
       div >>> cl "mdc-radio__background" $ A.do
         div >>> cl "mdc-radio__outer-circle" $ pzero
         div >>> cl "mdc-radio__inner-circle" $ pzero

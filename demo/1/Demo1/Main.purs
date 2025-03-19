@@ -33,9 +33,9 @@ main = body $ order "45123519" $ T.do
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
     fulfillment $ card S.do
       caption $ staticText "Fulfillment"
-      dineIn $ radioButton { table: "1"} $ label $ staticText "Dine in"
-      takeaway $ radioButton { time: "15:30"} $ label $ staticText "Takeaway"
-      delivery $ radioButton { address: "Mulholland Drive 2001, Los Angeles" } $ label $ staticText "Delivery"
+      dineIn $ radioButton $ label $ staticText "Dine in"
+      takeaway $ radioButton $ label $ staticText "Takeaway"
+      delivery $ radioButton $ label $ staticText "Delivery"
       dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
       takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
       delivery $ slot $ address S.do
@@ -97,14 +97,14 @@ main = body $ order "45123519" $ T.do
       priorityAssignment $ simpleDialog { title: "Priority assignment", confirm: "Assign" } $ T.do
         caption $ staticText "Choose one of"
         S.do
-          high $ radioButton unit $ label $ staticText "High"
-          normal $ radioButton unit $ label $ staticText "Normal"
-          low $ radioButton unit $ label $ staticText "Low"
+          high $ radioButton $ label $ staticText "High"
+          normal $ radioButton $ label $ staticText "Normal"
+          low $ radioButton $ label $ staticText "Low"
     T.do
       containedButton { label: Just "Receipt", icon: Just "file" }
       payment $ missing { method: Cash, paid: "0.00"} $ simpleDialog { title: "Missing payment", confirm: "OK" } S.do
         caption $ staticText "Choose one of"
-        paymentMethod $ cash $ radioButton unit $ label $ staticText "Cash"
-        paymentMethod $ Model.card $ radioButton unit $ label $ staticText "Card"
+        paymentMethod $ cash $ radioButton $ label $ staticText "Cash"
+        paymentMethod $ Model.card $ radioButton $ label $ staticText "Card"
         paid $ filledTextField { floatingLabel: "Paid" }
       receiptPrint indeterminateLinearProgress
