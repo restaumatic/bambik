@@ -32,7 +32,7 @@ class RecordDefault rl r | rl -> r where
 instance ( IsSymbol name
          , Default value
          , Row.Cons name value tailRow row
-         , RecordDefault tailRowList tailRow -- type level recursion is here
+         , RecordDefault tailRowList tailRow
          , Row.Lacks name tailRow
          )
       => RecordDefault (RowList.Cons name value tailRowList) row where
