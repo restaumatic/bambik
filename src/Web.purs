@@ -52,7 +52,8 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import UI (class Foo, New(..), PropagationStatus, UI, UIOcular, foo)
+import UI (New(..), PropagationStatus, UI, UIOcular)
+import Data.Default (class Default, default)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
@@ -135,9 +136,9 @@ checkboxInput default = attrDyn "disabled" "true" isNothing $ attr "type" "check
       void $ prop $ New [] (if checked then (Just a) else Nothing) false
     }
 
-radioButton :: forall a. Foo a => UI Web (Maybe a) a
+radioButton :: forall a. Default a => UI Web (Maybe a) a
 radioButton = attr "type" "radio" $ wrap do
-  aRef <- liftEffect $ Ref.new foo
+  aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling
   pure

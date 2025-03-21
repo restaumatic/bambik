@@ -13,16 +13,12 @@ module UI
   , action'
   , adapter
   , affAdapter
-  , class Foo
-  , class RecordFoo
-  , fooRecord
   , constant
   , constructor
   , debounced
   , debounced'
   , effAdapter
   , field
-  , foo
   , iso
   , just
   , left
@@ -52,7 +48,6 @@ import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
 import Data.Profunctor.Zero (class Zero, pzero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Symbol (reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (class DebugWarning, spy)
@@ -63,10 +58,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
-import Prim.RowList as RowList
 import Record (get, set)
-import Record as Record
-import Type.Proxy (Proxy(..))
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -398,40 +390,6 @@ affAdapter f w = wrap ado
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
           pure Nothing
     }
-
-class Foo f where
-  foo :: f
-
-instance Foo String where
-  foo = ""
-
-instance Foo Unit where
-  foo = unit
-
-instance Foo (Array a) where
-  foo = []
-
-
-class RecordFoo :: forall k. k -> Row Type -> Constraint
-class RecordFoo rl r | rl -> r where
-  fooRecord :: Proxy rl -> Record r
-
-instance ( IsSymbol name
-         , Foo value
-         , Row.Cons name value tailRow row
-         , RecordFoo tailRowList tailRow -- type level recursion is here
-         , Row.Lacks name tailRow
-         )
-      => RecordFoo (RowList.Cons name value tailRowList) row where
-  fooRecord _ = Record.insert (Proxy @name) foo (fooRecord (Proxy @tailRowList))
-
-instance RecordFoo RowList.Nil () where
-  fooRecord _ = {}
-
-instance (RowList.RowToList r rl
-         , RecordFoo rl r)
-        =>  Foo (Record r) where
-  foo = fooRecord (Proxy @rl)
 
 -- private
 

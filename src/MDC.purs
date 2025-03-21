@@ -41,7 +41,8 @@ import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
-import UI (class Foo, UI, UIOcular, effAdapter)
+import UI (UI, UIOcular, effAdapter)
+import Data.Default (class Default)
 import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
 
@@ -87,10 +88,10 @@ filledTextArea { columns, rows } =
     span >>> cl "mdc-line-ripple" $ pzero
 
 checkbox :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
-checkbox foo label =
+checkbox default label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
-      checkboxInput foo # cl "mdc-checkbox__native-control" # attr "id" id
+      checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -103,7 +104,7 @@ checkbox foo label =
       id = unsafePerformEffect uniqueId
 
 -- TODO add html grouping?
-radioButton :: forall a. Foo a => UI Web (Maybe a) Void -> UI Web (Maybe a) a
+radioButton :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) a
 radioButton labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
     div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
