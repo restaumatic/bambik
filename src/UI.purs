@@ -14,13 +14,15 @@ module UI
   , adapter
   , affAdapter
   , class Foo
-  , foo
+  , class RecordFoo
+  , fooRecord
   , constant
   , constructor
   , debounced
   , debounced'
   , effAdapter
   , field
+  , foo
   , iso
   , just
   , left
@@ -39,7 +41,6 @@ import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Generic.Rep (class Generic)
 import Data.Lens (Optic, first)
 import Data.Lens as Profunctor
 import Data.Lens.Extra.Types (Ocular)
@@ -62,7 +63,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row as Row
-import Prim.RowList -- (class RowToList, Cons, Nil, RowList(..))
+import Prim.RowList as RowList
 import Record (get, set)
 import Record as Record
 import Type.Proxy (Proxy(..))
@@ -404,32 +405,33 @@ class Foo f where
 instance Foo String where
   foo = ""
 
-class FooRecord  (rl :: RowList Type) where
-  fooRecord :: Record (RowToList rl)
+instance Foo Unit where
+  foo = unit
 
-instance FooRecord Nil where
-  fooRecord = {}
-
-instance (IsSymbol label, Foo a, FooRecord tail) => FooRecord (Cons label a tail) where
-  -- fooRecord = { (reflectSymbol (Proxy :: Proxy label)) : foo | fooRecord :: Record (RowToList tail) }
-  fooRecord = Record.insert (Proxy :: Proxy label) foo fooRecord
-
--- (RL.RowToList r rl, FooRecord rl)
+instance Foo (Array a) where
+  foo = []
 
 
--- instance DecodeRecord RL.Nil where
---   recordInfo _ = recordInfoNil
+class RecordFoo :: forall k. k -> Row Type -> Constraint
+class RecordFoo rl r | rl -> r where
+  fooRecord :: Proxy rl -> Record r
 
--- instance (IsSymbol label, Decode a, DecodeRecord rest) => DecodeRecord (RL.Cons label a rest) where
---   recordInfo _ = recordInfoCons
---     (reflectSymbol (Proxy :: Proxy label))
---     (unsafeDecode :: Foreign -> a)
---     (recordInfo (Proxy :: Proxy rest))
+instance ( IsSymbol name
+         , Foo value
+         , Row.Cons name value tailRow row
+         , RecordFoo tailRowList tailRow -- type level recursion is here
+         , Row.Lacks name tailRow
+         )
+      => RecordFoo (RowList.Cons name value tailRowList) row where
+  fooRecord _ = Record.insert (Proxy @name) foo (fooRecord (Proxy @tailRowList))
 
--- derive instance genericRecord :: Generic (Record r) _
+instance RecordFoo RowList.Nil () where
+  fooRecord _ = {}
 
--- instance fooRecord :: (Generic (Record r) rep, RowToList r rl, FooRecord rl) => Foo (Record r) where
---   foo = fooRecord
+instance (RowList.RowToList r rl
+         , RecordFoo rl r)
+        =>  Foo (Record r) where
+  foo = fooRecord (Proxy @rl)
 
 -- private
 
