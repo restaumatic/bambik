@@ -56,6 +56,7 @@ module Demo1.Model
 
 import Prelude
 
+import Data.Default (class Default)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (length, null)
@@ -99,6 +100,9 @@ type NameFormal =
 type Payment = { method :: PaymentMethod, paid :: String }
 
 data PaymentMethod = Cash | Card
+
+instance Default PaymentMethod where
+  default = Cash
 
 data Fulfillment
   = DineIn { table :: Table }

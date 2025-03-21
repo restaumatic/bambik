@@ -47,8 +47,12 @@ main = body $ order "45123519" $ T.do
     card S.do
       caption $ staticText "Payment"
       total $ filledTextField { floatingLabel: "Total" }
-      payment $ checkbox { paid: "0", method: Cash } $ label $ staticText "Paid"
-      payment $ just $ slot $ paid $ filledTextField { floatingLabel: "Paid" }
+      payment $ checkbox $ label $ staticText "Paid"
+      payment $ just $ slot S.do
+        paymentMethod S.do
+          cash $ radioButton $ label $ staticText "Cash"
+          Model.card $ radioButton $ label $ staticText "Card"
+        paid $ filledTextField { floatingLabel: "Paid" }
     card S.do
       caption $ staticText "Remarks"
       remarks $ filledTextArea { columns: 80, rows: 3 }

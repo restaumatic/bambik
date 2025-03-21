@@ -119,8 +119,8 @@ textArea = wrap do
     }
 
 
-checkboxInput :: forall a . a -> UI Web (Maybe a) (Maybe a)
-checkboxInput default = attrDyn "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
+checkboxInput :: forall a . Default a => UI Web (Maybe a) (Maybe a)
+checkboxInput = attrDyn "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling

@@ -32,6 +32,7 @@ module MDC
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
+import Data.Default (class Default, default)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Zero (pzero)
@@ -42,7 +43,6 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import UI (UI, UIOcular, effAdapter)
-import Data.Default (class Default)
 import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
 
@@ -87,11 +87,11 @@ filledTextArea { columns, rows } =
       textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
     span >>> cl "mdc-line-ripple" $ pzero
 
-checkbox :: forall a. a -> UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
-checkbox default label =
+checkbox :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
+checkbox label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
-      checkboxInput default # cl "mdc-checkbox__native-control" # attr "id" id
+      checkboxInput # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
         html """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
