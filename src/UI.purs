@@ -224,6 +224,11 @@ type UIOptics a b s t = forall m. Functor m => Optic (UI m) s t a b
 
 type UIO s t a b = forall m. Functor m => Optic (UI m) s t a b
 
+
+-- a▫b -> s▫t
+-- s a▫b t
+type UIO' s a b t = forall m. Functor m => Optic (UI m) s t a b
+
 projection :: forall a s t. (s -> a) -> UIOptics a Void s t
 projection f = dimap f absurd
 
