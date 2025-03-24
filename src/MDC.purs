@@ -32,7 +32,7 @@ module MDC
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.Default (class Default, default)
+import Data.Default (class Default)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Zero (pzero)
@@ -43,14 +43,14 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import UI (UI, UIOcular, effAdapter)
-import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
-import Web (button, radioButton) as Web
+import HTML (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
+import HTML (button, radioButton) as HTML
 
 -- UIs
 
 containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
 containedButton { label, icon } =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
+  HTML.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
     div >>> cl "mdc-button__ripple" $ pzero
     case icon of
       Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> attr "aria-hidden" "true" $ staticText icon'
@@ -108,7 +108,7 @@ radioButton :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) 
 radioButton labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
     div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
-      Web.radioButton # cl "mdc-radio__native-control" # attr "id" uid
+      HTML.radioButton # cl "mdc-radio__native-control" # attr "id" uid
       div >>> cl "mdc-radio__background" $ A.do
         div >>> cl "mdc-radio__outer-circle" $ pzero
         div >>> cl "mdc-radio__inner-circle" $ pzero
@@ -211,7 +211,7 @@ simpleDialog { title, confirm } content =
             div >>> cl "mdc-dialog__content" >>> attr "id" id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
-            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
+            HTML.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
               div >>> cl "mdc-button__ripple" $ pzero
               span >>>  cl "mdc-button__label" $ staticText confirm
     div >>> cl "mdc-dialog__scrim" $ pzero

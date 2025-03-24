@@ -3,8 +3,8 @@ module Demo2.Main (main) where
 import Prelude hiding (div)
 
 import Effect (Effect)
+import HTML (a, attr, body, div, li, p, staticText, ul)
 import QualifiedDo.Alt as A
-import Web (a, attr, body, div, li, p, staticText, ul)
 
 main :: Effect Unit
 main = body $

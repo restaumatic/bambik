@@ -1,4 +1,4 @@
-module Web
+module HTML
   ( DocumentBuilderState
   , Node
   , Web
