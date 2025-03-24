@@ -1,3 +1,11 @@
+## Notation
+
+A▫B - forall p. Profunctor p => p A B
+
+S→A▫B→T
+
+S▫T - forall p. Profunctor p => p A B
+
 ## Plus class
 
 The class
