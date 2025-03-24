@@ -25,6 +25,8 @@ instance Default Unit where
 instance Default (Array a) where
   default = []
 
+
+-- the approach: https://imsaravananm.medium.com/writing-record-instances-and-type-level-recursion-in-purescript-6a2ecc894ed7
 class RecordDefault :: forall k. k -> Row Type -> Constraint
 class RecordDefault rl r | rl -> r where
   defaultRecord :: Proxy rl -> Record r
