@@ -7,11 +7,12 @@ module Data.Default
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
+import Data.Symbol (class IsSymbol)
+import Prim.Row as Row
 import Prim.RowList as RowList
 import Record as Record
 import Type.Proxy (Proxy(..))
-import Data.Symbol (class IsSymbol)
-import Prim.Row as Row
 
 class Default f where
   default :: f
@@ -24,6 +25,33 @@ instance Default Unit where
 
 instance Default (Array a) where
   default = []
+
+instance Default (Maybe a) where
+  default = Nothing
+
+newtype OptIn = OptIn { optIn :: Boolean }
+
+instance Default OptIn where
+  default = OptIn { optIn: false }
+
+newtype OptOut = OptOut { optOut :: Boolean }
+
+instance Default OptOut where
+  default = OptOut { optOut: true }
+
+-- without default
+newtype Foo a = Foo { foo :: Maybe a }
+
+instance Default (Foo a) where
+  default = Foo { foo: Nothing }
+
+-- with default
+newtype Bar a = Bar { bar :: Maybe a }
+
+instance Default a => Default (Bar a) where
+  default = Bar { bar: default }
+
+
 
 class RecordDefault :: forall k. k -> Row Type -> Constraint
 class RecordDefault rl r | rl -> r where
