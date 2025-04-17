@@ -226,8 +226,8 @@ authorization = lens (\order -> { summary: order.total <> " " <> case order.fulf
   Delivery { address } -> "delivery " <> show address }
   ) (\order authorization -> { authorization, order })
 
-order :: forall a. OrderId -> UIOptics OrderId a Unit a
-order id = lens (const id) (\_ a -> a)
+order :: forall a. OrderId -> UIOptics OrderId a Unit Unit
+order id = lens (const id) (\_ _ -> unit)
 
 -- authorization :: forall a. UIOptics String String a AuthToken
 -- authorization = lens (const "") (\_ a -> a)

@@ -1,5 +1,6 @@
 module Web
-  ( DocumentBuilderState
+  ( (:=)
+  , DocumentBuilderState
   , Node
   , Web
   , a
@@ -200,6 +201,8 @@ attr name value w = wrap do
   attribute name value
   pure w'
 
+infixr 10 attr as :=
+
 cl :: String -> UIOcular Web
 cl name w = wrap do
   w' <- unwrap w
@@ -364,7 +367,7 @@ slot w = wrap do
 
 -- Entry point
 
-body :: forall t. UI Web Unit t -> Effect Unit
+body :: UI Web Unit Unit -> Effect Unit
 body w = do
   node <- documentBody
   runWidgetInNode node w
