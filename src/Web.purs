@@ -20,7 +20,7 @@ module Web
   , h4
   , h5
   , h6
-  , html
+  , staticHTML
   , i
   , init
   , input
@@ -185,11 +185,11 @@ staticText text = wrap do
     , fromUser: mempty
     }
 
-html :: forall a. String -> UI Web a a
-html htmlString = wrap do
+staticHTML :: forall a b. String -> UI Web a b
+staticHTML html = wrap do
   parent <- gets _.parent
-  lastNode <- liftEffect $ appendRawHtml htmlString parent
-  modify_ _ { sibling = lastNode}
+  newNode <- liftEffect $ appendRawHtml html parent
+  modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
     , fromUser: mempty

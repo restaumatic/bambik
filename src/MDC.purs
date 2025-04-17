@@ -32,7 +32,7 @@ module MDC
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.Default (class Default, default)
+import Data.Default (class Default)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Zero (pzero)
@@ -43,7 +43,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import UI (UI, UIOcular, effAdapter)
-import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, html, i, init, input, label, p, span, staticText, textArea, uniqueId)
+import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, staticHTML, i, init, input, label, p, span, staticText, textArea, uniqueId)
 import Web (button, radioButton) as Web
 
 -- UIs
@@ -93,7 +93,7 @@ checkbox label =
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
       checkboxInput # cl "mdc-checkbox__native-control" # attr "id" id
       div >>> cl "mdc-checkbox__background" $ S.do
-        html """
+        staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
@@ -103,7 +103,7 @@ checkbox label =
     where
       id = unsafePerformEffect uniqueId
 
--- TODO add html grouping?
+-- TODO add staticHTML grouping?
 radioButton :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) a
 radioButton labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
