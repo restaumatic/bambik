@@ -1,11 +1,13 @@
 module Web
   ( (:=)
+  , (:=>)
   , DocumentBuilderState
   , Node
   , Web
   , a
   , aside
   , attr
+  , attrDyn
   , body
   , button
   , checkboxInput
@@ -121,7 +123,7 @@ textArea = wrap do
 
 
 checkboxInput :: forall a . Default a => UI Web (Maybe a) (Maybe a)
-checkboxInput = attrDyn "disabled" "true" isNothing $ attr "type" "checkbox" $ wrap do
+checkboxInput = "disabled" :=> (_ $> "true") $ "type" := "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling
@@ -155,7 +157,7 @@ radioButton = attr "type" "radio" $ wrap do
 
 button :: forall a. UI Web a Void -> UI Web a a
 button w = wrap do
-  w' <- unwrap (el "button" >>> attrDyn "disabled" "true" isNothing $ w)
+  w' <- unwrap (el "button" >>> "disabled" :=> (_ $> "true") $ w)
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   node <- gets _.sibling
   pure
@@ -282,8 +284,8 @@ h5 = el "h5"
 h6 :: UIOcular Web
 h6 = el "h6"
 
-attrDyn :: String -> String -> (Maybe (New Unit) -> Boolean) -> UIOcular Web
-attrDyn name value pred w = wrap do
+attrDyn :: String -> (Maybe (New Unit) -> Maybe String) -> UIOcular Web
+attrDyn name valueFunction w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   liftEffect $ updateAttribute node Nothing
@@ -294,7 +296,11 @@ attrDyn name value pred w = wrap do
     , fromUser: w'.fromUser
     }
     where
-      updateAttribute node mnewa = if pred (map (_ $> unit) $ mnewa) then setAttribute node name value else removeAttribute node name
+      updateAttribute node mnewa = case valueFunction (map (_ $> unit) $ mnewa) of
+        Just value -> setAttribute node name value
+        Nothing -> removeAttribute node name
+
+infixr 10 attrDyn as :=>
 
 clDyn :: String -> (Maybe (New Unit) -> Boolean) -> UIOcular Web
 clDyn name pred w = wrap do
