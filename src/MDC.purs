@@ -43,7 +43,7 @@ import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as S
 import QualifiedDo.Semigroupoid as T
 import UI (UI, UIOcular, effAdapter)
-import Web (Node, Web, aside, attr, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, staticHTML, i, init, input, label, p, span, staticText, textArea, uniqueId)
+import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, textArea, uniqueId, (:=))
 import Web (button, radioButton) as Web
 
 -- UIs
@@ -53,7 +53,7 @@ containedButton { label, icon } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
     div >>> cl "mdc-button__ripple" $ pzero
     case icon of
-      Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> attr "aria-hidden" "true" $ staticText icon'
+      Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon'
       Nothing -> pzero
     case label of
       Just label' -> span >>> cl "mdc-button__label" $ staticText label'
@@ -70,10 +70,10 @@ filledTextField { floatingLabel } =
         setContent node (fromMaybe "" validationStatus)) $ S.do
     span >>> cl "mdc-text-field__ripple" $ pzero
     S.do
-      span >>> cl "mdc-floating-label" >>> attr "id" id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel
-      input "text" # cl "mdc-text-field__input" # attr "aria-labelledby" id # attr "aria-controls" helperId # attr "aria-describedby" helperId
+      span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel
+      input "text" # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId
       div >>> cl "mdc-text-field-helper-line" $
-        div >>> cl "mdc-text-field-helper-text" >>> attr "id" helperId >>> attr "aria-hidden" "true" >>> init mdcTextFieldHelperText mempty mempty $ pzero
+        div >>> cl "mdc-text-field-helper-text" >>> "id" := helperId >>> "aria-hidden" := "true" >>> init mdcTextFieldHelperText mempty mempty $ pzero
     span >>> cl "mdc-line-ripple" $ pzero
     where
       id = unsafePerformEffect uniqueId
@@ -84,14 +84,14 @@ filledTextArea { columns, rows } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ S.do
     span >>> cl "mdc-text-field__ripple" $ pzero
     span >>> cl "mdc-text-field__resizer" $
-      textArea # cl "mdc-text-field__input" >>> attr "rows" (show rows) >>> attr "columns" (show columns) >>> attr "aria-label" "Label"
+      textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label"
     span >>> cl "mdc-line-ripple" $ pzero
 
 checkbox :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
 checkbox label =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
     div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
-      checkboxInput # cl "mdc-checkbox__native-control" # attr "id" id
+      checkboxInput # cl "mdc-checkbox__native-control" # "id" := id
       div >>> cl "mdc-checkbox__background" $ S.do
         staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -99,7 +99,7 @@ checkbox label =
           </svg>""" -- Without raw HTML it doesn't work
         div >>> cl "mdc-checkbox__mixedmark" $ pzero
       div >>> cl "mdc-checkbox__ripple" $ pzero
-    attr "for" id $ rmap absurd label
+    "for" := id $ rmap absurd label
     where
       id = unsafePerformEffect uniqueId
 
@@ -108,18 +108,18 @@ radioButton :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) 
 radioButton labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
     div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
-      Web.radioButton # cl "mdc-radio__native-control" # attr "id" uid
+      Web.radioButton # cl "mdc-radio__native-control" # "id" := uid
       div >>> cl "mdc-radio__background" $ A.do
         div >>> cl "mdc-radio__outer-circle" $ pzero
         div >>> cl "mdc-radio__inner-circle" $ pzero
       div >>> cl "mdc-radio__ripple" $ pzero
-    attr "for" uid $ rmap absurd labelContent
+    "for" := uid $ rmap absurd labelContent
   where
     uid = unsafePerformEffect uniqueId
 
 indeterminateLinearProgress :: forall a. UI Web Boolean a
 indeterminateLinearProgress =
-  div >>> attr "role" "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> attr "aria-label" "Progress Bar" >>> attr "aria-valuemin" "0" >>> attr "aria-valuemax" "1" >>> attr "aria-valuenow" "0" >>> effAdapter adapter $ A.do
+  div >>> "role" := "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" >>> effAdapter adapter $ A.do
     div >>> cl "mdc-linear-progress__buffer" $ A.do
       div >>> cl "mdc-linear-progress__buffer-bar" $ pzero
       div >>> cl "mdc-linear-progress__buffer-dots" $ pzero
@@ -183,35 +183,35 @@ elevation1 :: UIOcular Web
 elevation1 w = div w # cl "mdc-elevation--z1"
 
 elevation10 :: UIOcular Web
-elevation10 w = div w # cl "mdc-elevation--z10" # attr "style" "padding: 25px"
+elevation10 w = div w # cl "mdc-elevation--z10" # "style" := "padding: 25px"
 
 elevation20 :: UIOcular Web
-elevation20 w = div w # cl "mdc-elevation--z20" # attr "style" "padding: 25px"
+elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 
 card :: UIOcular Web
-card w = div w # cl "mdc-card" # attr "style" "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
+card w = div w # cl "mdc-card" # "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
 dialog :: { title :: String } -> UIOcular Web
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ A.do
     div >>> cl "mdc-dialog__container" $ A.do
-      div >>> cl "mdc-dialog__surface" >>> attr "role" "alertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ A.do
-        h2 >>> cl "mdc-dialog__title" >>> attr "id" "my-dialog-title" $ staticText title
-        div >>> cl "mdc-dialog__content" >>> attr "id" "my-dialog-content" $ content
+      div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ A.do
+        h2 >>> cl "mdc-dialog__title" >>> "id" := "my-dialog-title" $ staticText title
+        div >>> cl "mdc-dialog__content" >>> "id" := "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ pzero
 
 simpleDialog :: { title :: String, confirm :: String } -> UIOcular Web
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
-      div >>> cl "mdc-dialog__surface" >>> attr "role" "altertdialog" >>> attr "aria-modal" "true" >>> attr "aria-labelledby" "my-dialog-title" >>> attr "aria-describedby" "my-dialog-content" $ S.do
+      div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ S.do
         T.do
           A.do
-            h2 >>> cl "mdc-dialog__title" >>> attr "id" id $ staticText title
-            div >>> cl "mdc-dialog__content" >>> attr "id" id' $
+            h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title
+            div >>> cl "mdc-dialog__content" >>> "id" := id' $
               content
           div >>> cl "mdc-dialog__actions" $ S.do
-            Web.button >>> attr "type" "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
+            Web.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
               div >>> cl "mdc-button__ripple" $ pzero
               span >>>  cl "mdc-button__label" $ staticText confirm
     div >>> cl "mdc-dialog__scrim" $ pzero
@@ -222,8 +222,8 @@ simpleDialog { title, confirm } content =
 snackbar :: UIOcular Web
 snackbar content =
   aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open (\a propStatus -> close a) $
-    div >>> cl "mdc-snackbar__surface" >>> attr "role" "status" >>> attr "aria-relevant" "additions" $
-      div >>> cl "mdc-snackbar__label" >>> attr "aria-atomic" "false" $
+    div >>> cl "mdc-snackbar__surface" >>> "role" := "status" >>> "aria-relevant" := "additions" $
+      div >>> cl "mdc-snackbar__label" >>> "aria-atomic" := "false" $
         content
 
 -- Private

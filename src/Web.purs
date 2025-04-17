@@ -98,7 +98,7 @@ text = wrap do
     }
 
 input :: String -> UI Web String String
-input type_ = attr "type" type_ $ wrap do
+input type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   pure
@@ -140,7 +140,7 @@ checkboxInput = "disabled" :=> (_ $> "true") $ "type" := "checkbox" $ wrap do
     }
 
 radioButton :: forall a. Default a => UI Web (Maybe a) a
-radioButton = attr "type" "radio" $ wrap do
+radioButton = "type" := "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling
