@@ -155,6 +155,7 @@ radioButton = "type" := "radio" $ wrap do
     void $ prop $ New [] a false
     }
 
+-- TODO disable button after click?
 button :: forall a. UI Web a Void -> UI Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
