@@ -3,12 +3,12 @@ module Demo1.Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priorityAssignment, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
+import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, priorityAssignment, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
 import Demo1.Model as Model
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
-import QualifiedDo.Semigroup as S
+import QualifiedDo.Semigroup as Form
 import QualifiedDo.Semigroupoid as T
 import UI (constant, debounced, just)
 import Web (body, label, slot, staticText, text)
@@ -16,14 +16,14 @@ import Web (body, label, slot, staticText, text)
 main :: Effect Unit
 main = body $ order "45123519" $ T.do
   loadOrder indeterminateLinearProgress
-  elevation20 S.do
+  elevation20 Form.do
     caption $ staticText "Order "
     shortId $ debounced $ caption text
-    card S.do
+    card Form.do
       caption $ staticText "Identifier"
       shortId $ filledTextField { floatingLabel: "Short ID" }
       orderId $ filledTextField { floatingLabel: "Unique ID" }
-    customer $ card S.do
+    customer $ card Form.do
       caption $ staticText "Customer"
       caption $ staticText "Informal"
       firstName $ filledTextField { floatingLabel: "First name" }
@@ -31,32 +31,34 @@ main = body $ order "45123519" $ T.do
       caption $ staticText "Formal"
       formal $ surname $ filledTextField { floatingLabel: "Surname" }
       formal $ forename $ filledTextField { floatingLabel: "Forename" }
-    fulfillment $ card S.do
+    fulfillment $ card Form.do
       caption $ staticText "Fulfillment"
       dineIn $ radioButton $ label $ staticText "Dine in"
       takeaway $ radioButton $ label $ staticText "Takeaway"
       delivery $ radioButton $ label $ staticText "Delivery"
       dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
       takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
-      delivery $ slot $ address S.do
+      delivery $ slot $ address Form.do
         filledTextField { floatingLabel: "Address" }
-        body1 $ (S.do
+        body1 $ (Form.do
           constant "Distance "
           distance
           constant " km") text
-    card S.do
+    total $ card Form.do
+      caption $ staticText "Total"
+      filledTextField { floatingLabel: "Total" }
+    payment $ card Form.do
       caption $ staticText "Payment"
-      total $ filledTextField { floatingLabel: "Total" }
-      payment $ checkbox $ label $ staticText "Paid"
-      payment $ just $ slot S.do
-        paymentMethod S.do
+      checkbox $ label $ staticText "Paid"
+      just $ slot Form.do
+        paymentMethod Form.do
           cash $ radioButton $ label $ staticText "Cash"
           Model.card $ radioButton $ label $ staticText "Card"
         paid $ filledTextField { floatingLabel: "Paid" }
-    card S.do
+    remarks $ card Form.do
       caption $ staticText "Remarks"
-      remarks $ filledTextArea { columns: 80, rows: 3 }
-    debounced $ body1 S.do
+      filledTextArea { columns: 80, rows: 3 }
+    debounced $ body1 A.do
       constant "Summary: Order " text
       shortId text
       constant " (uniquely " text
@@ -70,20 +72,20 @@ main = body $ order "45123519" $ T.do
       constant " " text
       customer $ formal $ forename text
       constant "), fulfilled as " text
-      fulfillment $ dineIn $ slot S.do
+      fulfillment $ dineIn $ slot A.do
         constant "dine in at table " text
         table text
-      fulfillment $ takeaway $ slot S.do
+      fulfillment $ takeaway $ slot A.do
         constant "takeaway at " text
         time text
-      fulfillment $ delivery $ slot S.do
+      fulfillment $ delivery $ slot A.do
         constant "delivery to " text
-        address S.do
+        address A.do
           text
           constant " (" text
           distance text
           constant " km away)" text
-      payment $ just $ slot S.do
+      payment $ just $ slot A.do
         staticText ", paid "
         paid text
     T.do
@@ -98,16 +100,15 @@ main = body $ order "45123519" $ T.do
       snackbar $ staticText "Order submitted"
     T.do
       containedButton { label: Just "Assign priority", icon: Just "bookmark" }
-      priorityAssignment $ simpleDialog { title: "Priority assignment", confirm: "Assign" } $ T.do
-        caption $ staticText "Choose one of"
-        S.do
-          high $ radioButton $ label $ staticText "High"
-          normal $ radioButton $ label $ staticText "Normal"
-          low $ radioButton $ label $ staticText "Low"
+      priority $ simpleDialog { title: "Priority", confirm: "OK" } $ Form.do
+        caption $ staticText "Choose one of: "
+        high $ radioButton $ label $ staticText "High"
+        normal $ radioButton $ label $ staticText "Normal"
+        low $ radioButton $ label $ staticText "Low"
     T.do
       containedButton { label: Just "Receipt", icon: Just "file" }
-      payment $ missing { method: Cash, paid: "0.00"} $ simpleDialog { title: "Missing payment", confirm: "OK" } S.do
-        caption $ staticText "Choose one of"
+      payment $ missing { method: Cash, paid: "0.00"} $ simpleDialog { title: "Missing payment", confirm: "OK" } Form.do
+        caption $ staticText "Choose one of: "
         paymentMethod $ cash $ radioButton $ label $ staticText "Cash"
         paymentMethod $ Model.card $ radioButton $ label $ staticText "Card"
         paid $ filledTextField { floatingLabel: "Paid" }

@@ -40,7 +40,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
-import QualifiedDo.Semigroup as S
+import QualifiedDo.Semigroup as Form
 import QualifiedDo.Semigroupoid as T
 import UI (UI, UIOcular, effAdapter)
 import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, textArea, uniqueId, (:=))
@@ -67,32 +67,30 @@ filledTextField { floatingLabel } =
       useNativeValidation comp false
       pure comp) mempty (\node validationStatus -> do
         setValid node (isNothing validationStatus)
-        setContent node (fromMaybe "" validationStatus)) $ S.do
+        setContent node (fromMaybe "" validationStatus)) $ Form.do
     span >>> cl "mdc-text-field__ripple" $ pzero
-    S.do
-      span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel
-      input "text" # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId
-      div >>> cl "mdc-text-field-helper-line" $
-        div >>> cl "mdc-text-field-helper-text" >>> "id" := helperId >>> "aria-hidden" := "true" >>> init mdcTextFieldHelperText mempty mempty $ pzero
+    span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel
+    input "text" # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId
+    div >>> cl "mdc-text-field-helper-line" $
+      div >>> cl "mdc-text-field-helper-text" >>> "id" := helperId >>> "aria-hidden" := "true" >>> init mdcTextFieldHelperText mempty mempty $ pzero
     span >>> cl "mdc-line-ripple" $ pzero
-    where
-      id = unsafePerformEffect uniqueId
-      helperId = unsafePerformEffect uniqueId
+  where
+    id = unsafePerformEffect uniqueId
+    helperId = unsafePerformEffect uniqueId
 
 filledTextArea :: { columns :: Int, rows :: Int } -> UI Web String String
 filledTextArea { columns, rows } =
-  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ S.do
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ A.do
     span >>> cl "mdc-text-field__ripple" $ pzero
-    span >>> cl "mdc-text-field__resizer" $
-      textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label"
+    span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label"
     span >>> cl "mdc-line-ripple" $ pzero
 
 checkbox :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
 checkbox label =
-  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ S.do
-    div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ S.do
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
+    div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ A.do
       checkboxInput # cl "mdc-checkbox__native-control" # "id" := id
-      div >>> cl "mdc-checkbox__background" $ S.do
+      div >>> cl "mdc-checkbox__background" $ A.do
         staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
@@ -204,16 +202,14 @@ simpleDialog :: { title :: String, confirm :: String } -> UIOcular Web
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
-      div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ S.do
-        T.do
-          A.do
-            h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title
-            div >>> cl "mdc-dialog__content" >>> "id" := id' $
-              content
-          div >>> cl "mdc-dialog__actions" $ S.do
-            Web.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
-              div >>> cl "mdc-button__ripple" $ pzero
-              span >>>  cl "mdc-button__label" $ staticText confirm
+      div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ T.do
+        A.do
+          h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title
+          div >>> cl "mdc-dialog__content" >>> "id" := id' $ content
+        div >>> cl "mdc-dialog__actions" $
+          Web.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
+            div >>> cl "mdc-button__ripple" $ pzero
+            span >>>  cl "mdc-button__label" $ staticText confirm
     div >>> cl "mdc-dialog__scrim" $ pzero
     where
       id = unsafePerformEffect uniqueId
