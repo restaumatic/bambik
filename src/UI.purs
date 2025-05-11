@@ -167,6 +167,18 @@ instance Apply m => Semigroupoid (UI m) where
           p2'.fromUser prop
       }
 
+instance Applicative m => Category (UI m) where
+  identity = wrap  ado
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    in
+      { toUser: \ch -> do
+        let prop = unsafePerformEffect $ Ref.read propRef
+        _ <- prop ch
+        pure unit
+      , fromUser: \prop -> do
+        Ref.write prop propRef
+      }
+
 instance Apply m => Sum (UI m) where
   psum p1 p2 = wrap ado
     p1' <- unwrap p1
@@ -188,11 +200,11 @@ instance Functor m => Functor (UI m a) where
     , fromUser: p'.fromUser <<< lcmap (map f)
     }
 
-instance Apply m => Alt (UI m a) where
-  alt = psum
+-- instance Apply m => Alt (UI m a) where
+--   alt = psum
 
-instance Applicative m => Plus (UI m a) where
-  empty = pzero
+-- instance Applicative m => Plus (UI m a) where
+--   empty = pzero
 
 instance Apply m => Semigroup (UI m a a) where
   append p1 p2 = wrap ado
