@@ -14,6 +14,7 @@ import Data.Void (absurd)
 -- generalization of `Control.Plus.Plus`
 -- Having `pzero` is equivalent to having `p Unit Void`
 class Sum p <= Zero p where
+  -- takes whatever, does noting
   pzero :: forall a b. p a b -- such that `psum pzero p == p == psum p pzero`
 
 -- private
