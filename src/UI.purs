@@ -200,11 +200,11 @@ instance Functor m => Functor (UI m a) where
     , fromUser: p'.fromUser <<< lcmap (map f)
     }
 
--- instance Apply m => Alt (UI m a) where
---   alt = psum
+instance Apply m => Alt (UI m a) where
+  alt = psum
 
--- instance Applicative m => Plus (UI m a) where
---   empty = pzero
+instance Applicative m => Plus (UI m a) where
+  empty = pzero
 
 instance Apply m => Semigroup (UI m a a) where
   append p1 p2 = wrap ado
