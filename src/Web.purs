@@ -123,7 +123,7 @@ textArea = wrap do
 
 
 checkboxInput :: forall a . Default a => UI Web (Maybe a) (Maybe a)
-checkboxInput = "disabled" :=> (_ $> "true") $ "type" := "checkbox" $ wrap do
+checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   element "input" (pure unit)
   node <- gets _.sibling
@@ -157,7 +157,7 @@ radioButton = "type" := "radio" $ wrap do
 
 button :: forall a. UI Web a Void -> UI Web a a
 button w = wrap do
-  w' <- unwrap (el "button" >>> "disabled" :=> (_ $> "true") $ w)
+  w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
   aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   node <- gets _.sibling
   pure
