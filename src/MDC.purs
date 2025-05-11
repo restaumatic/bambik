@@ -41,7 +41,7 @@ import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as Form
-import QualifiedDo.Semigroupoid as T
+import QualifiedDo.Semigroupoid as Flow
 import UI (UI, UIOcular, effAdapter)
 import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, textArea, uniqueId, (:=))
 import Web (button, radioButton) as Web
@@ -202,7 +202,7 @@ simpleDialog :: { title :: String, confirm :: String } -> UIOcular Web
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
-      div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ T.do
+      div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ Flow.do
         A.do
           h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title
           div >>> cl "mdc-dialog__content" >>> "id" := id' $ content

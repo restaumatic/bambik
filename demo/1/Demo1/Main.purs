@@ -3,18 +3,18 @@ module Demo1.Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, priorityAssignment, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
+import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
 import Demo1.Model as Model
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
 import QualifiedDo.Semigroup as Form
-import QualifiedDo.Semigroupoid as T
+import QualifiedDo.Semigroupoid as Flow
 import UI (constant, debounced, just)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
-main = body $ order "45123519" $ T.do
+main = body $ order "45123519" $ Flow.do
   loadOrder indeterminateLinearProgress
   elevation20 Form.do
     caption $ staticText "Order "
@@ -88,9 +88,9 @@ main = body $ order "45123519" $ T.do
       payment $ just $ slot A.do
         staticText ", paid "
         paid text
-    T.do
+    Flow.do
       containedButton { label: Just "Submit order", icon: Just "save" }
-      authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ T.do
+      authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ Flow.do
         caption A.do
           staticText "Order summary: "
           summary text
@@ -98,14 +98,14 @@ main = body $ order "45123519" $ T.do
       orderSubmission indeterminateLinearProgress
       orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
       snackbar $ staticText "Order submitted"
-    T.do
+    Flow.do
       containedButton { label: Just "Assign priority", icon: Just "bookmark" }
       priority $ simpleDialog { title: "Priority", confirm: "OK" } $ Form.do
         caption $ staticText "Choose one of: "
         high $ radioButton $ label $ staticText "High"
         normal $ radioButton $ label $ staticText "Normal"
         low $ radioButton $ label $ staticText "Low"
-    T.do
+    Flow.do
       containedButton { label: Just "Receipt", icon: Just "file" }
       payment $ missing { method: Cash, paid: "0.00"} $ simpleDialog { title: "Missing payment", confirm: "OK" } Form.do
         caption $ staticText "Choose one of: "
