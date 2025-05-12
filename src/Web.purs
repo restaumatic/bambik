@@ -46,6 +46,7 @@ module Web
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
+import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
@@ -56,7 +57,6 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import UI (New(..), PropagationStatus, UI, UIOcular)
-import Data.Default (class Default, default)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
@@ -170,6 +170,7 @@ button w = wrap do
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.toUser Nothing -- TODO check
+    -- setAttribute node "disabled" "true" -- TODO re-think
     void $ prop $ New [] a false
     }
 
