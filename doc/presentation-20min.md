@@ -1,16 +1,8 @@
 70 sentences?
 
-# Problem
-
-# State of the Art
-
-FRP - unidirectional binding
-
-# Solution
-
-or:
-
 # Introduction
+
+## Profunctors
 
 ## Profunctor optics
 
@@ -56,9 +48,7 @@ If so, can we build application framework based on profunctors in PureScript?
 Given PureScript is a web language - can we build a web framework based on profunctors?
 Can profunctors provide a basis for fully declarative, reactive web application framework?
 
-
-
-## Arrow notation
+## Plumbing with profunctor optics instead of arrow notation
 
 Arrow (`proc`) notation is not widely used as compared to Monad do notation.
 Arrow notation is controversial?
