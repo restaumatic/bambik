@@ -1,19 +1,44 @@
-70 sentences?
+---
+marp: true
+---
 
-# Introduction
+<!-- 7 slides -->
+<!-- 70 sentences? -->
 
-## Profunctors
+# Profunctor User Interfaces
 
+Eryk Ciepiela
+
+---
+# Profunctors
+
+```
+class Profunctor p where
+  dimap :: (s -> a) -> (b -> t) -> p a b -> p s t
+```
+
+Laws:
+
+```
+dimap id id = id
+dimap (f'· f) (g · g') = dimap f g · dimap f' g'
+```
+---
 ## Profunctor optics
 
-## Arrows as profunctors
 
+---
+## Profunctor arrows
+
+---
 ## Profunctors is a common fabric for data and computation structure
 
-Arrow is a notion of computation.
+An Arrow is a notion of computation.
 Optics are functional references - data accesors.
-And both are, or can be, based on profunctors.
 
+Both are, or can be, based on profunctors.
+
+---
 ## Profunctors as a fabric for optics was discovered late
 
 When optics were first discovered they didn't mention profunctors.
@@ -22,6 +47,7 @@ Chronologically, there was
   * van Laarhoven encoding proposed in 2009 (https://www.twanvl.nl/blog/haskell/cps-functional-references)
   * profunctor encoding published in 2017 (https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf)
 
+---
 ## Profunctors as a fabric for arrows is not mainstream
 
 Haskell `arrows` package from 2001 predates the `profunctors` package founded in 2011.
@@ -30,34 +56,38 @@ The `Control.Arrow` module made it to the `base` package in 2005.
 That's why the `Arrow` class is not, and is not likely to be in the future, a subclass of the `Profunctor` class in Haskell.
 That's why even a theoretical controvery about "arrow - strong profunctor category correspondence" is not fully resolved in the community.
 
+---
 ## Profunctor encoding of optics is the default one in Purescript
 
 Profunctors in Haskell were about 10 years late.
 They were late in optics and arrows domains.
 Optics in PureScript ecosystem, however, are based on profunctors.
 
+---
 ## Profunctor encoding of arrows is the default one in Purescript
 
 Luckily, in a sense, PureScript hadn't got arrows earlier than profunctors.
 And once it had got profunctors, arrows were deemed no longer necessary.
 Strong profunctor category is a synonym for an arrow in PureScript ecosystem.
 
+---
 # Profunctors as a basis for application frameworks in Purescript?
 
 If so, can we build application framework based on profunctors in PureScript?
 Given PureScript is a web language - can we build a web framework based on profunctors?
 Can profunctors provide a basis for fully declarative, reactive web application framework?
 
+---
 ## Plumbing with profunctor optics instead of arrow notation
 
 Arrow (`proc`) notation is not widely used as compared to Monad do notation.
 Arrow notation is controversial?
 With profunctor categories and profunctor optics we don't need dedicated notation nor syntactic sugar.
 What's needed is PureScript's `QualifiedDo` feature (https://jordanmartinez.github.io/purescript-jordans-reference-site/content/11-Syntax/06-Modifying-Do-Ado-Syntax-Sugar/src/13-Qualified-Do-ps.html).
-This enables do blocks for `Semigroups`, `Semigroupoids` and `Alt` typeclasses (https://pursuit.purescript.org/packages/purescript-qualified-do/2.2.0).
+This enables `do` blocks for `Semigroups`, `Semigroupoids` and `Alt` typeclasses (https://pursuit.purescript.org/packages/purescript-qualified-do/2.2.0).
 Necessary plumbing of profunctors is done via profunctor optics.
 
-
+---
 
 
 Arrow = Strong Profunctor Category
