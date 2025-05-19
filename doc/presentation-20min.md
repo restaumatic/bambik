@@ -1,9 +1,11 @@
 ---
 marp: true
+paginate: true
 ---
 
 <!-- 7 slides -->
 <!-- 70 sentences? -->
+<!-- The screen ratio for slides is 16:9  -->
 
 # Profunctor User Interfaces
 
@@ -15,20 +17,116 @@ Eryk Ciepiela
 ```
 class Profunctor p where
   dimap :: (s -> a) -> (b -> t) -> p a b -> p s t
-```
 
-Laws:
-
+-- such that:
+-- dimap id id = id
+-- dimap (f'. f) (g . g') = dimap f g . dimap f' g'
 ```
-dimap id id = id
-dimap (f'· f) (g · g') = dimap f g · dimap f' g'
-```
----
-## Profunctor optics
-
 
 ---
-## Profunctor arrows
+## Profunctors encode optics
+
+Adapter `(s -> a, b -> t)`
+isomorphic to `forall a. Profunctor p => p a b -> p s t`
+
+Lens `(s -> a, s -> b -> t)`
+isomorphic to `forall a. CartesianProfunctor p => p a b -> p s t`
+
+Prism `(s -> Either t a, b -> t)`
+isomorphic to `forall a. CocartesianProfunctor p => p a b -> p s t` etc.
+
+Isomorphism - polymorphic profunctor modifiers are equivalent to optics
+
+Polymorphism - not specific to any profunctor instance
+
+Composition - function composition
+
+> "Profunctor Optics. Modular Data Accessors" by Matthew Pickering, Jeremy Gibbons, and Nicolas Wu
+
+---
+### Adapter is a polymorphic profunctor modifier
+
+![height:350px](resources/adapter.svg)
+
+> "Don't fear the profunctor optics" by Jesús López-González, https://github.com/hablapps/DontFearTheProfunctorOptics
+
+---
+### Lens is a polymorphic profunctor modifier
+
+<!-- `(s -> a, s -> b -> t)` as
+`forall a. CartesianProfunctor p => p a b -> p s t` -->
+
+```
+class Profunctor p => CartesianProfunctor p where
+  first  :: p a b -> p (a, c) (b, c)
+
+-- such that:
+-- dimap (\(x, y) -> x) id = dimap id (\(x, y) -> x) . first
+-- dimap (mapSnd f) id . first = dimap id (mapSnd f) . first
+-- first . first = dimap assoc unassoc . first
+```
+
+![height:350px](resources/lens.svg)
+
+<!-- > "Don't fear the profunctor optics" by Jesús López-González, https://github.com/hablapps/DontFearTheProfunctorOptics -->
+
+---
+### Prism is a polymorphic profunctor modifier
+
+```
+class Profunctor p => CocartesianProfunctor p where
+  left  :: p a b -> p (Either a c) (Either b c)
+
+-- such that:
+-- dimap id Left = dimap Left id . left
+-- dimap (mapRight f) id . left = dimap id (mapRight f) . left
+-- left . left ≡ dimap assoc unassoc . left
+```
+
+![height:350px](resources/prism.svg)
+
+---
+### Polymorphic profunctor modifiers compose as functions
+
+```
+fulfillment . delivery . address . street
+  :: forall p.
+     CartesianProfunctor p =>
+     CocartesianProfunctor p =>
+     p Street Street ->
+     p Order Order
+```
+Lenses `fulfillment` and `street` involved
+Prisms `delivery` and `address` involved
+Constraints of `CartesianProfunctor` and `CocartesianProfunctor` add
+
+---
+## Profunctors encode arrow-like computations
+
+For `ArrowChoice` plus `dimap`, minus `arr`, minus `id`
+
+* Introducing `dimap`
+  * enables _data plumbing_ as second-class citizen
+  * excludes some instances - should not be the case for a type denoting a computation?
+* Eliminating `arr`
+  * disables _data plumbing_ as first-class citizen - should not be the case either?
+  * includes more instances
+* Eliminating `id`
+  * disables _no-op_ as first-class citizen - should not be the case either?
+  * includes more instances
+
+---
+## Profunctors encode arrow-like computations and optics
+
+```
+class CartesianProfunctor a, CocartesianProfunctor a, Semigroupoid a =>
+  ArrowLike a
+```
+
+* computations: disabled power vs. enabled instances as compared to arrows trade-off
+* optics: not disabled - requires `first`/`left`, not `arr` nor `id`
+* `dimap`, `left`, `second`, `.` required
+* `lmap`, `rmap`, `second`, `right`, `***`, `+++` derivable
 
 ---
 ## Profunctors is a common fabric for data and computation structure
@@ -48,26 +146,32 @@ Chronologically, there was
   * profunctor encoding published in 2017 (https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf)
 
 ---
-## Profunctors as a fabric for arrows is not mainstream
+## Profunctors as a fabric for arrows is not Haskell mainstream
 
 Haskell `arrows` package from 2001 predates the `profunctors` package founded in 2011.
+
 The `Control.Arrow` module made it to the `base` package in 2005.
 `profunctors` is not in the `base` to this day.
+
 That's why the `Arrow` class is not, and is not likely to be in the future, a subclass of the `Profunctor` class in Haskell.
-That's why even a theoretical controvery about "arrow - strong profunctor category correspondence" is not fully resolved in the community.
+
 
 ---
 ## Profunctor encoding of optics is the default one in Purescript
 
 Profunctors in Haskell were about 10 years late.
+
 They were late in optics and arrows domains.
+
 Optics in PureScript ecosystem, however, are based on profunctors.
 
 ---
 ## Profunctor encoding of arrows is the default one in Purescript
 
 Luckily, in a sense, PureScript hadn't got arrows earlier than profunctors.
-And once it had got profunctors, arrows were deemed no longer necessary.
+
+Once it had got profunctors, arrows were deemed no longer necessary.
+
 Strong profunctor category is a synonym for an arrow in PureScript ecosystem.
 
 ---
@@ -90,112 +194,45 @@ Necessary plumbing of profunctors is done via profunctor optics.
 ---
 
 
-Arrow = Strong Profunctor Category
-ArrowChoice = Strong/Choice Profunctor Category
-
-Let's take ArrowChoice:
-
-first :: a b c -> a (b, d) (c, d) (from Arrow)
-left :: a b c -> a (Either b d) (Either c d) (from ArrowChoice)
-  - gives also because of being semigroupoid: (+++) :: a b c -> a b' c' -> a (Either b b') (Either c c')
-
-For data flow suffices the `Arrow`+`ArrowChoice`-`id`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`Semigroupoid`:
+<!--
+For data flow suffices that the `Arrow`+`ArrowChoice`-`id`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`Semigroupoid`:
   dimap :: (a -> b) -> (c -> d) -> p b c -> p a d (from Profunctor)
   first :: a b c -> a (b, d) (c, d) (from StrongProfunctor)
   left :: a b c -> a (Either b d) (Either c d) (from ChoiceProfunctor)
   (>>>) :: a b c -> a c d -> a b d (from Semigroupoid)
-with all profunctor laws https://hackage.haskell.org/package/profunctors-5.6.2/docs/Data-Profunctor.html and associativity law
 
-1. Profunctor laws
-dimap id id = id
-dimap (f' · f) (g · g') = dimap f g · dimap f' g'
-=> of course they hold
-
-2. Strong profunctor laws
-
-first ≡ dimap swap swap . second -- ok
-lmap fst ≡ rmap fst . first -- ok
-lmap (second f) . first ≡ rmap (second f) . first -- no idea what's that
-first . first ≡ dimap assoc unassoc . first where -- ok
-  assoc ((a,b),c) = (a,(b,c))
-  unassoc (a,(b,c)) = ((a,b),c)
-
-second ≡ dimap swap swap . first -- ok
-lmap snd ≡ rmap snd . second -- ok
-lmap (first f) . second ≡ rmap (first f) . second -- no idea what's that
-second . second ≡ dimap unassoc assoc . second where -- ok
-  assoc ((a,b),c) = (a,(b,c))
-  unassoc (a,(b,c)) = ((a,b),c)
-
-3. choice profunctor laws
-
-left ≡ dimap swapE swapE . right where -- ok
-  swapE :: Either a b -> Either b a
-  swapE = either Right Left
-rmap Left ≡ lmap Left . left -- ok
-lmap (right f) . left ≡ rmap (right f) . left -- no idea what's that
-left . left ≡ dimap assocE unassocE . left where -- ok
-  assocE :: Either (Either a b) c -> Either a (Either b c)
-  assocE (Left (Left a)) = Left a
-  assocE (Left (Right b)) = Right (Left b)
-  assocE (Right c) = Right (Right c)
-  unassocE :: Either a (Either b c) -> Either (Either a b) c
-  unassocE (Left a) = Left (Left a)
-  unassocE (Right (Left b)) = Left (Right b)
-  unassocE (Right (Right c)) = Right c
-
-right ≡ dimap swapE swapE . left where -- ok
-  swapE :: Either a b -> Either b a
-  swapE = either Right Left
-rmap Right ≡ lmap Right . right -- ok
-lmap (left f) . right ≡ rmap (left f) . right -- no idea what's that
-right . right ≡ dimap unassocE assocE . right where -- ok
-  assocE :: Either (Either a b) c -> Either a (Either b c)
-  assocE (Left (Left a)) = Left a
-  assocE (Left (Right b)) = Right (Left b)
-  assocE (Right c) = Right (Right c)
-  unassocE :: Either a (Either b c) -> Either (Either a b) c
-  unassocE (Left a) = Left (Left a)
-  unassocE (Right (Left b)) = Left (Right b)
-  unassocE (Right (Right c)) = Right c
-
-4. Semiegoupoing laws
+Semigroupoing law:
 p a b >>> (p b c >>> p c d) ≡ (p a b >>> p b c) >>> p c d
 
 you can get (+++) :: ArrowChoice a => a b c -> a b' c' -> a (Either b b') (Either c c') from left having arr
-you can get (+++) :: ProfunctorChoice a => a b c -> a b' c' -> a (Either b b') (Either c c') from left/right/bimap/>>>
+you can get (+++) :: ProfunctorChoice a => a b c -> a b' c' -> a (Either b b') (Either c c') from left/bimap/>>>
 but getting left from (+++) requires id
 you can get (***) :: Arrow a => a b c -> a b' c' -> a (b,b') (c,c') from first having arr
-you can get (***) :: ProfunctorStrong a => a b c -> a b' c' -> a (b,b') (c,c') from first/second/bimap/>>>
+you can get (***) :: ProfunctorStrong a => a b c -> a b' c' -> a (b,b') (c,c') from first/bimap/>>>
 but getting first from (***) requires id
 
 Or maybe:
 For data flow suffices the `Arrow`+`ArrowChoice`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`Category`
-But do we really need `Category.id` while we can:
+
+But do we really need `Category.id`?
+We can have an id from pzero:
 
 id :: forall p a. Choice p => Zero p => p a a
 id = dimap Right (either absurd identity) (left pzero)
+
+Or we can have an id from pone:
+
+id :: forall p a. Strong p => One p => p a a
+id = dimap (\a -> Tuple unit a) (\(Tuple _ a) -> a) (first pone)
 
 So maybe:
 For data flow suffices the `Arrow`+`ArrowChoice`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`SumProfunctor`+`ZeroProfunctor`
-and then:
-
-id :: forall p a. Choice p => Zero p => p a a
-id = dimap Right (either absurd identity) (left pzero)
-
-it's like an id from pzero.
+with id as above
 
 So, having `left` makes `id` not needed? With `left` we can do skipping steps. For what else than `left` we would need `id`?
 Having `id` on the other hand is dangerous when `mappending` (infinite update loop).
 
-
-
-
-
-Adapter = Profunctor modifier (that converts inputs and outputs)
-Lens = Strong Profunctor modifier (that zooms)
-Prism = Choice Profunctor modifier (that handles cases)
-
+-->
 
 # References
 
@@ -212,13 +249,23 @@ Modular data accessors
 https://arxiv.org/pdf/1703.10857
 
 
-
-# Notions
+<!-- # Notions
 Functional References
 In functional programming, "functional references" (often called "optics") are abstractions that provide a composable way to access and modify parts of immutable data structures.
 
 Key Characteristics
 Immutability-friendly: They work with immutable data, creating new versions rather than modifying in place
 Compositional: Can be combined to access deeply nested structures
-First-class: Can be passed as arguments, returned from functions, etc.
+First-class: Can be passed as arguments, returned from functions, etc. -->
+
+
+
+<!-- (.) :: p b c -> p a b -> p a c
+
+for fixed p as P it looks like an optic:
+
+a
+  a
+  b
+c -->
 
