@@ -3,7 +3,7 @@ marp: true
 paginate: true
 ---
 
-<!-- 7 slides -->
+<!-- 7 slides
 <!-- 70 sentences? -->
 <!-- The screen ratio for slides is 16:9  -->
 
@@ -106,44 +106,48 @@ Constraints of `CartesianProfunctor` and `CocartesianProfunctor` add
 For `ArrowChoice` plus `dimap`, minus `arr`, minus `id`
 
 * Introducing `dimap`
-  * enables _data plumbing_ as second-class citizen
+  * enables "data plumbing" between arrows
   * excludes some instances - should not be the case for a type denoting a computation?
 * Eliminating `arr`
-  * disables _data plumbing_ as first-class citizen - should not be the case either?
+  * disables "data plumbing" as first-class citizen - should not be the case either?
   * includes more instances
 * Eliminating `id`
   * disables _no-op_ as first-class citizen - should not be the case either?
   * includes more instances
 
 ---
-## Profunctors encode arrow-like computations and optics
+## Profunctors encode arrow-like computations
 
 ```
 class CartesianProfunctor a, CocartesianProfunctor a, Semigroupoid a =>
   ArrowLike a
 ```
 
-* computations: disabled power vs. enabled instances as compared to arrows trade-off
-* optics: not disabled - requires `first`/`left`, not `arr` nor `id`
+* disabled power vs. enabled more instances as compared to arrows
+* simpler laws as compared to arrows
 * `dimap`, `left`, `second`, `.` required
 * `lmap`, `rmap`, `second`, `right`, `***`, `+++` derivable
 
 ---
-## Profunctors is a common fabric for data and computation structure
+## Profunctors are a common fabric for data and computation structure
 
-An Arrow is a notion of computation.
-Optics are functional references - data accesors.
+Arrow-like structures computations
 
-Both are, or can be, based on profunctors.
+Optics structure data
+
+All based on profunctors
 
 ---
-## Profunctors as a fabric for optics was discovered late
+## Profunctors as a fabric for optics were discovered late
 
 When optics were first discovered they didn't mention profunctors.
 Chronologically, there was
   * concrete (explicit) encoding,
-  * van Laarhoven encoding proposed in 2009 (https://www.twanvl.nl/blog/haskell/cps-functional-references)
-  * profunctor encoding published in 2017 (https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf)
+  * van Laarhoven encoding proposed in 2009
+  * profunctor encoding published in 2017
+
+> "CPS functional references" by Twan Van Laarhoven https://www.twanvl.nl/blog/haskell/cps-functional-references
+> "Profunctor Optics. Modular Data Accessors" by Matthew Pickering, Jeremy Gibbons, and Nicolas
 
 ---
 ## Profunctors as a fabric for arrows is not Haskell mainstream
@@ -155,6 +159,7 @@ The `Control.Arrow` module made it to the `base` package in 2005.
 
 That's why the `Arrow` class is not, and is not likely to be in the future, a subclass of the `Profunctor` class in Haskell.
 
+> "Generalising Monads to Arrows" by John Hughes
 
 ---
 ## Profunctor encoding of optics is the default one in Purescript
@@ -165,21 +170,28 @@ They were late in optics and arrows domains.
 
 Optics in PureScript ecosystem, however, are based on profunctors.
 
+> Package `purescript-profunctor-lenses` https://pursuit.purescript.org/packages/purescript-profunctor-lenses
+
 ---
 ## Profunctor encoding of arrows is the default one in Purescript
 
 Luckily, in a sense, PureScript hadn't got arrows earlier than profunctors.
 
-Once it had got profunctors, arrows were deemed no longer necessary.
+Once it had got profunctors, arrows were deemed no longer necessa
+In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for an arrow.
 
-Strong profunctor category is a synonym for an arrow in PureScript ecosystem.
+> Package `purescript-profunctor` https://pursuit.purescript.org/packages/purescript-profunctor
 
 ---
 # Profunctors as a basis for application frameworks in Purescript?
 
 If so, can we build application framework based on profunctors in PureScript?
-Given PureScript is a web language - can we build a web framework based on profunctors?
+Given PureScript is a web language - can we build a web framework basedprofunctors?
 Can profunctors provide a basis for fully declarative, reactive web application framework?
+
+- only implementations of `dimap`, `left`, `second`, `>>>` required for a building block
+- optics polymorphism - sepraration of business data structure and presentation
+- data plumbing logic only in optics not in presentation - no `arr`
 
 ---
 ## Plumbing with profunctor optics instead of arrow notation
@@ -187,13 +199,11 @@ Can profunctors provide a basis for fully declarative, reactive web application 
 Arrow (`proc`) notation is not widely used as compared to Monad do notation.
 Arrow notation is controversial?
 With profunctor categories and profunctor optics we don't need dedicated notation nor syntactic sugar.
-What's needed is PureScript's `QualifiedDo` feature (https://jordanmartinez.github.io/purescript-jordans-reference-site/content/11-Syntax/06-Modifying-Do-Ado-Syntax-Sugar/src/13-Qualified-Do-ps.html).
+What's needed is PureScript's `QualifiedDo` feature (https://jordanmartinez.github.io/purescript-jordans-reference-site/content/11-Syn06-Modifying-Do-Ado-Syntax-Sugar/src/13-Qualified-Do-ps.html).
 This enables `do` blocks for `Semigroups`, `Semigroupoids` and `Alt` typeclasses (https://pursuit.purescript.org/packages/purescript-qualified-do/2.2.0).
 Necessary plumbing of profunctors is done via profunctor optics.
 
 ---
-
-
 <!--
 For data flow suffices that the `Arrow`+`ArrowChoice`-`id`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`Semigroupoid`:
   dimap :: (a -> b) -> (c -> d) -> p b c -> p a d (from Profunctor)
@@ -232,12 +242,10 @@ with id as above
 So, having `left` makes `id` not needed? With `left` we can do skipping steps. For what else than `left` we would need `id`?
 Having `id` on the other hand is dangerous when `mappending` (infinite update loop).
 
--->
-
 # References
 
 Guillaume Boisseau
-St Anne’s College
+St Anne’s Col
 University of Oxford
 A thesis submitted for the degree of
 MSc in Computer Science
@@ -246,7 +254,7 @@ https://arxiv.org/pdf/2001.11816
 - "isomorphism" optics encoding, similar to existentional optics encoding?
 
 Modular data accessors
-https://arxiv.org/pdf/1703.10857
+https://arxiv.org/pdf/1703.10857 -->
 
 
 <!-- # Notions
@@ -256,11 +264,7 @@ In functional programming, "functional references" (often called "optics") are a
 Key Characteristics
 Immutability-friendly: They work with immutable data, creating new versions rather than modifying in place
 Compositional: Can be combined to access deeply nested structures
-First-class: Can be passed as arguments, returned from functions, etc. -->
-
-
-
-<!-- (.) :: p b c -> p a b -> p a c
+First-class: Can be passed as arguments, returned from functions, etc.
 
 for fixed p as P it looks like an optic:
 
