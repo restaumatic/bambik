@@ -8,13 +8,13 @@ import Demo1.Model as Model
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
 import QualifiedDo.Alt as A
-import QualifiedDo.Semigroup as Form
+import Data.Profunctor.Endo as Form
 import QualifiedDo.Semigroupoid as Flow
 import UI (constant, debounced, just)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
-main = body $ order "45123519" $ Flow.do
+main = body $ order "45123519" Flow.do
   loadOrder indeterminateLinearProgress
   elevation20 Form.do
     caption $ staticText "Order "
@@ -40,10 +40,10 @@ main = body $ order "45123519" $ Flow.do
       takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
       delivery $ slot $ address Form.do
         filledTextField { floatingLabel: "Address" }
-        body1 $ (Form.do
-          constant "Distance "
-          distance
-          constant " km") text
+        body1 Form.do
+          constant "Distance " $ text
+          distance text
+          constant " km" $ text
     total $ card Form.do
       caption $ staticText "Total"
       filledTextField { floatingLabel: "Total" }
@@ -58,7 +58,7 @@ main = body $ order "45123519" $ Flow.do
     remarks $ card Form.do
       caption $ staticText "Remarks"
       filledTextArea { columns: 80, rows: 3 }
-    debounced $ body1 A.do
+    debounced $ body1 Form.do
       constant "Summary: Order " text
       shortId text
       constant " (uniquely " text
@@ -72,25 +72,25 @@ main = body $ order "45123519" $ Flow.do
       constant " " text
       customer $ formal $ forename text
       constant "), fulfilled as " text
-      fulfillment $ dineIn $ slot A.do
+      fulfillment $ dineIn $ slot Form.do
         constant "dine in at table " text
         table text
-      fulfillment $ takeaway $ slot A.do
+      fulfillment $ takeaway $ slot Form.do
         constant "takeaway at " text
         time text
-      fulfillment $ delivery $ slot A.do
+      fulfillment $ delivery $ slot Form.do
         constant "delivery to " text
-        address A.do
+        address Form.do
           text
           constant " (" text
           distance text
           constant " km away)" text
-      payment $ just $ slot A.do
+      payment $ just $ slot Form.do
         staticText ", paid "
         paid text
     Flow.do
       containedButton { label: Just "Submit order", icon: Just "save" }
-      authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } $ Flow.do
+      authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } Flow.do
         caption A.do
           staticText "Order summary: "
           summary text
@@ -100,7 +100,7 @@ main = body $ order "45123519" $ Flow.do
       snackbar $ staticText "Order submitted"
     Flow.do
       containedButton { label: Just "Assign priority", icon: Just "bookmark" }
-      priority $ simpleDialog { title: "Priority", confirm: "OK" } $ Form.do
+      priority $ simpleDialog { title: "Priority", confirm: "OK" } Form.do
         caption $ staticText "Choose one of: "
         high $ radioButton $ label $ staticText "High"
         normal $ radioButton $ label $ staticText "Normal"

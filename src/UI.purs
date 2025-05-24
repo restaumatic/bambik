@@ -44,6 +44,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice)
+import Data.Profunctor.Endo (class Endo, endoCompose)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum, psum)
 import Data.Profunctor.Zero (class Zero, pzero)
@@ -230,7 +231,25 @@ instance Applicative m => Monoid (UI m a a) where
   mempty = pzero
 -- Notice: optic `WidgetOptic m a b c c` is also a Monoid
 
--- optics
+instance Applicative m => Endo (UI m) where
+  endoId = pzero
+  endoCompose p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \ch -> do
+        p1'.toUser ch
+        p2'.toUser ch
+      , fromUser: \prop -> do
+        p1'.fromUser \u -> do
+          p1'.toUser u
+          p2'.toUser u
+          prop u
+        p2'.fromUser \u -> do
+          p1'.toUser u
+          p2'.toUser u
+          prop u
+      }
 
 type UIOptics a b s t = forall m. Functor m => Optic (UI m) s t a b
 

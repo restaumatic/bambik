@@ -22,7 +22,6 @@ module MDC
   , indeterminateLinearProgress
   , overline
   , radioButton
-  , simpleDialog
   , snackbar
   , subtitle1
   , subtitle2
@@ -40,7 +39,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import QualifiedDo.Alt as A
-import QualifiedDo.Semigroup as Form
+import Data.Profunctor.Endo as Form
 import QualifiedDo.Semigroupoid as Flow
 import UI (UI, UIOcular, effAdapter)
 import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, textArea, uniqueId, (:=))
@@ -80,17 +79,17 @@ filledTextField { floatingLabel } =
 
 filledTextArea :: { columns :: Int, rows :: Int } -> UI Web String String
 filledTextArea { columns, rows } =
-  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ A.do
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ Form.do
     span >>> cl "mdc-text-field__ripple" $ pzero
     span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label"
     span >>> cl "mdc-line-ripple" $ pzero
 
 checkbox :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
 checkbox label =
-  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
-    div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ A.do
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ Form.do
+    div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ Form.do
       checkboxInput # cl "mdc-checkbox__native-control" # "id" := id
-      div >>> cl "mdc-checkbox__background" $ A.do
+      div >>> cl "mdc-checkbox__background" $ Form.do
         staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
