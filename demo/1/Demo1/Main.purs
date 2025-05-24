@@ -3,62 +3,61 @@ module Demo1.Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
-import Demo1.Model as Model
-import Effect (Effect)
-import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
-import Data.Profunctor.Sum as A
 import Data.Profunctor.Endo as Form
+import Data.Profunctor.Sum as A
+import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
+import Effect (Effect)
+import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
 import UI (constant, debounced, just)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
 main = body $ order "45123519" Flow.do
-  loadOrder indeterminateLinearProgress
-  elevation20 Form.do
-    caption $ staticText "Order "
-    shortId $ debounced $ caption text
-    card Form.do
-      caption $ staticText "Identifier"
-      shortId $ filledTextField { floatingLabel: "Short ID" }
-      orderId $ filledTextField { floatingLabel: "Unique ID" }
-    customer $ card Form.do
-      caption $ staticText "Customer"
-      caption $ staticText "Informal"
-      firstName $ filledTextField { floatingLabel: "First name" }
-      lastName $ filledTextField { floatingLabel: "Last name" }
-      caption $ staticText "Formal"
-      formal $ surname $ filledTextField { floatingLabel: "Surname" }
-      formal $ forename $ filledTextField { floatingLabel: "Forename" }
-    fulfillment $ card Form.do
-      caption $ staticText "Fulfillment"
-      dineIn $ radioButton $ label $ staticText "Dine in"
-      takeaway $ radioButton $ label $ staticText "Takeaway"
-      delivery $ radioButton $ label $ staticText "Delivery"
-      dineIn $ slot $ table $ filledTextField { floatingLabel: "Table" }
-      takeaway $ slot $ time $ filledTextField { floatingLabel: "Time" }
+  loadOrder MDC.indeterminateLinearProgress
+  MDC.elevation20 Form.do
+    MDC.caption $ staticText "Order "
+    shortId $ debounced $ MDC.caption text
+    MDC.card Form.do
+      MDC.caption $ staticText "Identifier"
+      shortId $ MDC.filledTextField { floatingLabel: "Short ID" }
+      orderId $ MDC.filledTextField { floatingLabel: "Unique ID" }
+    customer $ MDC.card Form.do
+      MDC.caption $ staticText "Customer"
+      MDC.caption $ staticText "Informal"
+      firstName $ MDC.filledTextField { floatingLabel: "First name" }
+      lastName $ MDC.filledTextField { floatingLabel: "Last name" }
+      MDC.caption $ staticText "Formal"
+      formal $ surname $ MDC.filledTextField { floatingLabel: "Surname" }
+      formal $ forename $ MDC.filledTextField { floatingLabel: "Forename" }
+    fulfillment $ MDC.card Form.do
+      MDC.caption $ staticText "Fulfillment"
+      dineIn $ MDC.radioButton $ label $ staticText "Dine in"
+      takeaway $ MDC.radioButton $ label $ staticText "Takeaway"
+      delivery $ MDC.radioButton $ label $ staticText "Delivery"
+      dineIn $ slot $ table $ MDC.filledTextField { floatingLabel: "Table" }
+      takeaway $ slot $ time $ MDC.filledTextField { floatingLabel: "Time" }
       delivery $ slot $ address Form.do
-        filledTextField { floatingLabel: "Address" }
-        body1 Form.do
+        MDC.filledTextField { floatingLabel: "Address" }
+        MDC.body1 Form.do
           constant "Distance " $ text
           distance text
           constant " km" $ text
-    total $ card Form.do
-      caption $ staticText "Total"
-      filledTextField { floatingLabel: "Total" }
-    payment $ card Form.do
-      caption $ staticText "Payment"
-      checkbox $ label $ staticText "Paid"
+    total $ MDC.card Form.do
+      MDC.caption $ staticText "Total"
+      MDC.filledTextField { floatingLabel: "Total" }
+    payment $ MDC.card Form.do
+      MDC.caption $ staticText "Payment"
+      MDC.checkbox $ label $ staticText "Paid"
       just $ slot Form.do
         paymentMethod Form.do
-          cash $ radioButton $ label $ staticText "Cash"
-          Model.card $ radioButton $ label $ staticText "Card"
-        paid $ filledTextField { floatingLabel: "Paid" }
-    remarks $ card Form.do
-      caption $ staticText "Remarks"
-      filledTextArea { columns: 80, rows: 3 }
-    debounced $ body1 Form.do
+          cash $ MDC.radioButton $ label $ staticText "Cash"
+          card $ MDC.radioButton $ label $ staticText "Card"
+        paid $ MDC.filledTextField { floatingLabel: "Paid" }
+    remarks $ MDC.card Form.do
+      MDC.caption $ staticText "Remarks"
+      MDC.filledTextArea { columns: 80, rows: 3 }
+    debounced $ MDC.body1 Form.do
       constant "Summary: Order " text
       shortId text
       constant " (uniquely " text
@@ -89,27 +88,27 @@ main = body $ order "45123519" Flow.do
         staticText ", paid "
         paid text
     Flow.do
-      containedButton { label: Just "Submit order", icon: Just "save" }
-      authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } Flow.do
-        caption A.do
+      MDC.containedButton { label: Just "Submit order", icon: Just "save" }
+      authorization $ MDC.simpleDialog { title: "Authorization", confirm: "Authorize" } Flow.do
+        MDC.caption A.do
           staticText "Order summary: "
           summary text
-        filledTextField { floatingLabel: "Auth token" }
-      orderSubmission indeterminateLinearProgress
-      orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
-      snackbar $ staticText "Order submitted"
+        MDC.filledTextField { floatingLabel: "Auth token" }
+      orderSubmission MDC.indeterminateLinearProgress
+      orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
+      MDC.snackbar $ staticText "Order submitted"
     Flow.do
-      containedButton { label: Just "Assign priority", icon: Just "bookmark" }
-      priority $ simpleDialog { title: "Priority", confirm: "OK" } Form.do
-        caption $ staticText "Choose one of: "
-        high $ radioButton $ label $ staticText "High"
-        normal $ radioButton $ label $ staticText "Normal"
-        low $ radioButton $ label $ staticText "Low"
+      MDC.containedButton { label: Just "Assign priority", icon: Just "bookmark" }
+      priority $ MDC.simpleDialog { title: "Priority", confirm: "OK" } Form.do
+        MDC.caption $ staticText "Choose one of: "
+        high $ MDC.radioButton $ label $ staticText "High"
+        normal $ MDC.radioButton $ label $ staticText "Normal"
+        low $ MDC.radioButton $ label $ staticText "Low"
     Flow.do
-      containedButton { label: Just "Receipt", icon: Just "file" }
-      payment $ missing { method: Cash, paid: "0.00"} $ simpleDialog { title: "Missing payment", confirm: "OK" } Form.do
-        caption $ staticText "Choose one of: "
-        paymentMethod $ cash $ radioButton $ label $ staticText "Cash"
-        paymentMethod $ Model.card $ radioButton $ label $ staticText "Card"
-        paid $ filledTextField { floatingLabel: "Paid" }
-      receiptPrint indeterminateLinearProgress
+      MDC.containedButton { label: Just "Receipt", icon: Just "file" }
+      payment $ missing { method: Cash, paid: "0.00"} $ MDC.simpleDialog { title: "Missing payment", confirm: "OK" } Form.do
+        MDC.caption $ staticText "Choose one of: "
+        paymentMethod $ cash $ MDC.radioButton $ label $ staticText "Cash"
+        paymentMethod $ card $ MDC.radioButton $ label $ staticText "Card"
+        paid $ MDC.filledTextField { floatingLabel: "Paid" }
+      receiptPrint MDC.indeterminateLinearProgress
