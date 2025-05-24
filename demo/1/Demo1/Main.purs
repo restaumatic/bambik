@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Form
-import Data.Profunctor.Sum as A
+import Data.Profunctor.Sum as View
 import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC as MDC
@@ -57,7 +57,7 @@ main = body $ order "45123519" Flow.do
     remarks $ MDC.card Form.do
       MDC.caption $ staticText "Remarks"
       MDC.filledTextArea { columns: 80, rows: 3 }
-    debounced $ MDC.body1 Form.do
+    debounced $ MDC.body1 View.do
       constant "Summary: Order " text
       shortId text
       constant " (uniquely " text
@@ -71,26 +71,26 @@ main = body $ order "45123519" Flow.do
       constant " " text
       customer $ formal $ forename text
       constant "), fulfilled as " text
-      fulfillment $ dineIn $ slot Form.do
+      fulfillment $ dineIn $ slot View.do
         constant "dine in at table " text
         table text
-      fulfillment $ takeaway $ slot Form.do
+      fulfillment $ takeaway $ slot View.do
         constant "takeaway at " text
         time text
-      fulfillment $ delivery $ slot Form.do
+      fulfillment $ delivery $ slot View.do
         constant "delivery to " text
-        address Form.do
+        address View.do
           text
           constant " (" text
           distance text
           constant " km away)" text
-      payment $ just $ slot Form.do
+      payment $ just $ slot View.do
         staticText ", paid "
         paid text
     Flow.do
       MDC.containedButton { label: Just "Submit order", icon: Just "save" }
       authorization $ MDC.simpleDialog { title: "Authorization", confirm: "Authorize" } Flow.do
-        MDC.caption A.do
+        MDC.caption View.do
           staticText "Order summary: "
           summary text
         MDC.filledTextField { floatingLabel: "Auth token" }
