@@ -22,6 +22,7 @@ module MDC
   , indeterminateLinearProgress
   , overline
   , radioButton
+  , simpleDialog
   , snackbar
   , subtitle1
   , subtitle2
@@ -38,7 +39,7 @@ import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import QualifiedDo.Alt as A
+import Data.Profunctor.Sum as A
 import Data.Profunctor.Endo as Form
 import QualifiedDo.Semigroupoid as Flow
 import UI (UI, UIOcular, effAdapter)

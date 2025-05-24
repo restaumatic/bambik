@@ -1,7 +1,6 @@
 module Data.Profunctor.Endo
   ( class Endo
-  , endoId
-  , endoCompose
+  , pendo
   , bind
   , discard
   )
@@ -11,11 +10,13 @@ import Data.Profunctor (class Profunctor)
 import Data.Unit (Unit, unit)
 
 class Profunctor p <= Endo p where
-  endoCompose :: forall a. p a a -> p a a -> p a a
-  endoId :: forall a. p a a -- such that `endoCompose endoId p ~ p ~ endoCompose p endoId`
+  pendo :: forall a. p a a -> p a a -> p a a
+  -- such that `pendo p (pendo q r) == pendo (pendo p q) r`
+  -- TODO: should we mention that:
+  -- if Zero p then `pendo pzero p ~ p ~ pendo p pzero`
 
+-- qualified do notation for `Endo` profunctors
 bind ∷ ∀ k a. Endo k ⇒ k a a → (k a a → k a a) → k a a
-bind a b = a `endoCompose` b a
-
+bind a b = a `pendo` b a
 discard ∷ ∀ k a. Endo k ⇒ k a a → (Unit → k a a ) → k a a
-discard a b = a `endoCompose` b unit
+discard a b = a `pendo` b unit

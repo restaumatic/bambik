@@ -32,8 +32,6 @@ module UI
 
 import Prelude
 
-import Control.Alt (class Alt)
-import Control.Plus (class Plus)
 import Data.Array (uncons, (:))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
@@ -44,10 +42,10 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Endo (class Endo, endoCompose)
+import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
-import Data.Profunctor.Sum (class Sum, psum)
-import Data.Profunctor.Zero (class Zero, pzero)
+import Data.Profunctor.Sum (class Sum)
+import Data.Profunctor.Zero (class Zero)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -168,6 +166,7 @@ instance Apply m => Semigroupoid (UI m) where
           p2'.fromUser prop
       }
 
+-- TODO: not sure abot this instance, it is not really a category?
 instance Applicative m => Category (UI m) where
   identity = wrap  ado
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
@@ -195,45 +194,8 @@ instance Applicative m => Zero (UI m) where
     , fromUser: mempty
     }
 
-instance Functor m => Functor (UI m a) where
-  map f p = wrap $ unwrap p <#> \p' ->
-    { toUser: p'.toUser
-    , fromUser: p'.fromUser <<< lcmap (map f)
-    }
-
-instance Apply m => Alt (UI m a) where
-  alt = psum
-
-instance Applicative m => Plus (UI m a) where
-  empty = pzero
-
-instance Apply m => Semigroup (UI m a a) where
-  append p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> do
-        p1'.toUser ch
-        p2'.toUser ch
-      , fromUser: \prop -> do
-        p1'.fromUser \u -> do
-          p1'.toUser u
-          p2'.toUser u
-          prop u
-        p2'.fromUser \u -> do
-          p1'.toUser u
-          p2'.toUser u
-          prop u
-      }
--- Notice: optic `WidgetOptic m a b c c` is also a Semigroup
-
-instance Applicative m => Monoid (UI m a a) where
-  mempty = pzero
--- Notice: optic `WidgetOptic m a b c c` is also a Monoid
-
 instance Applicative m => Endo (UI m) where
-  endoId = pzero
-  endoCompose p1 p2 = wrap ado
+  pendo p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
     in

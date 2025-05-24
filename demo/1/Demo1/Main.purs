@@ -7,7 +7,7 @@ import Demo1.Model (PaymentMethod(..), address, authorization, cash, customer, d
 import Demo1.Model as Model
 import Effect (Effect)
 import MDC (body1, caption, card, checkbox, containedButton, elevation20, filledTextArea, filledTextField, indeterminateLinearProgress, radioButton, simpleDialog, snackbar)
-import QualifiedDo.Alt as A
+import Data.Profunctor.Sum as A
 import Data.Profunctor.Endo as Form
 import QualifiedDo.Semigroupoid as Flow
 import UI (constant, debounced, just)
