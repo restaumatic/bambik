@@ -194,7 +194,7 @@ instance Applicative m => Zero (UI m) where
     , fromUser: mempty
     }
 
-instance Applicative m => Endo (UI m) where
+instance Apply m => Endo (UI m) where
   pendo p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
