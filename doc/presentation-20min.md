@@ -85,7 +85,7 @@ class Profunctor p => CocartesianProfunctor p where
 ![height:350px](resources/prism.svg)
 
 ---
-### Polymorphic profunctor modifiers compose as functions
+### Polymorphic profunctor modifiers compose as functions do
 
 ```
 fulfillment . delivery . address . street
@@ -176,21 +176,37 @@ Optics in PureScript ecosystem, however, are based on profunctors.
 
 Luckily, in a sense, PureScript hadn't got arrows earlier than profunctors.
 
-Once it had got profunctors, arrows were deemed no longer necessa
+Once it had got profunctors, arrows were deemed no longer necessary.
+
 In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for an arrow.
 
 > Package `purescript-profunctor` https://pursuit.purescript.org/packages/purescript-profunctor
 
 ---
-# Profunctors as a basis for application frameworks in Purescript?
+# Can profunctors be a basis for UI frameworks?
 
-If so, can we build application framework based on profunctors in PureScript?
-Given PureScript is a web language - can we build a web framework basedprofunctors?
-Can profunctors provide a basis for fully declarative, reactive web application framework?
+E.g. PureScript Web UI framework?
 
-- only implementations of `dimap`, `left`, `second`, `>>>` required for a building block
-- optics polymorphism - sepraration of business data structure and presentation
-- data plumbing logic only in optics not in presentation - no `arr`
+It would be:
+
+- Declarative/reactive owing to composition 
+- Separating business and presentation owing to optics and the lack of `arr`
+- Requiring only a basic building block that supports `dimap`, `left`, `second`, `>>>`, ...
+
+---
+## Basic Block
+
+```
+newtype UI m i o = UI (m
+  { toUser :: New i -> Effect Unit
+  , fromUser :: (New o -> Effect Unit) -> Effect Unit
+  })
+
+instance Functor m => Profunctor (UI m)
+instance Functor m => Strong (UI m)
+instance Functor m => Choice (UI m)
+instance Apply m => Semigroupoid (UI m)
+```
 
 ---
 ## Plumbing with profunctor optics instead of arrow notation
