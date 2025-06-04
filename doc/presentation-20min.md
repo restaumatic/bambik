@@ -1,9 +1,8 @@
 ---
 marp: true
 paginate: true
+theme: default
 ---
-
-<!-- 7 slides
 <!-- 70 sentences? -->
 <!-- The screen ratio for slides is 16:9  -->
 
