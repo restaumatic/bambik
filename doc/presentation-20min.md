@@ -194,18 +194,142 @@ It would be:
 - Requiring only a basic building block that supports `dimap`, `left`, `second`, `>>>`, ...
 
 ---
-## Basic Block
+## `UI` is generic basic building block
+
 
 ```
 newtype UI m i o = UI (m
-  { toUser :: New i -> Effect Unit
+  { toUser   :: New i                  -> Effect Unit
   , fromUser :: (New o -> Effect Unit) -> Effect Unit
   })
 
-instance Functor m => Profunctor (UI m)
-instance Functor m => Strong (UI m)
-instance Functor m => Choice (UI m)
-instance Apply m => Semigroupoid (UI m)
+instance Functor m     => Profunctor   (UI m)
+instance Functor m     => Strong       (UI m) -- cartesian profunctor
+instance Functor m     => Choice       (UI m) -- cocartesian profunctor
+instance Apply m       => Semigroupoid (UI m) -- category sans identity
+instance Apply m       => Endo         (UI m) -- see below
+instance Apply m       => Sum          (UI m) -- see below
+instance Applicative m => Zero         (UI m) -- see below
+```
+
+> Prototype of the idea of profunctor user interfaces for PureScript Web UIs  https://github.com/restaumatic/bambik
+
+
+---
+## `Endo`, `Sum` and `Zero` typeclasses are missing in `purescript-profunctor` package but are useful
+
+```
+class Profunctor p <= Endo p where
+  pendo :: forall a. p a a -> p a a -> p a a
+  -- such that `pendo p (pendo q r) == pendo (pendo p q) r`
+
+class Profunctor p <= Sum p where
+  psum :: forall a b . p a b -> p a b -> p a b
+  -- such that `psum a (psum b c) == psum (psum a b) c
+
+class Sum p <= Zero p where
+  pzero :: forall a b. p a b
+  -- such that `psum pzero p == p == psum p pzero`
+```
+
+> Prototype of the idea of profunctor user interfaces for PureScript Web UIs  https://github.com/restaumatic/bambik
+
+---
+## `UI Web` is basic building block for Web UI
+
+```
+newtype Web a = Web (StateT DocumentBuilderState Effect a)
+
+text       :: forall a. UI Web String a
+
+textInput  :: UI Web String String
+
+button     :: forall a. UI Web a a
+
+p          :: forall a b. UI Web a b -> UI Web a b
+
+div        :: forall a b. UI Web a b -> UI Web a b
+
+staticText :: forall a b. String -> UI Web a b
+```
+
+> Prototype of the idea of profunctor user interfaces for PureScript Web UIs  https://github.com/restaumatic/bambik
+
+---
+## Plain HTML is possible with `UI Web`
+
+```
+helloWorld :: forall a b. UI Web a b
+helloWorld =
+  div Sum.do
+    p $ staticText "Hello World!"
+    ul Sum.do
+      li $ staticText "One"
+      li $ staticText "Two"
+      li $ staticText "Three"
+    a >>> "href" := "https://www.google.com" $ staticText "Search for me!"
+    staticHTML "<hr/>"
+```
+
+> `Sum.do` is `Sum` profunctor `psum` composition powered by PureScript *qualified do* feature
+
+---
+## Material Design Components are possible with `UI Web`
+
+```
+filledTextField :: { floatingLabel :: String } -> UI Web String String
+
+containedButton :: forall a. { label :: String } -> UI Web a a
+
+card :: forall a b. UI Web a b -> UI Web a b
+
+caption :: forall a b. UI Web a b -> UI Web a b
+
+submitName :: UI Web String String
+submitName = Semigroupoid.do
+  card Sum.do
+    caption $ staticText "Identifier"
+    filledTextField { floatingLabel: "Name" }
+  containedButton { label: "Submit" }
+```
+
+> `Semigroupoid.do` is `Semigroupoid` composition `>>>` from `purescript-qualified-do` package
+
+---
+## Optics are possible with `UI`
+
+```
+shortId  :: forall p. Strong p => p String String -> p Order Order
+uniqueId :: forall p. Strong p => p String String -> p Order Order
+
+identifierForm :: Web UI Order Order
+identifierForm =
+  card Endo.do
+    caption $ staticText "Identifier"
+    shortId $ filledTextField { floatingLabel: "Short ID" }
+    orderId $ filledTextField { floatingLabel: "Unique ID" }
+```
+
+> `Endo.do` is `Endo` profunctor `pendo` composition powered by PureScript *qualified do* feature
+
+---
+## Data flow is possible with `UI`
+
+```
+authorization :: forall p :: Strong p => p OrderSummary AuthToken -> p Order AuthorizedOrder
+orderSubmission :: p Boolean Void -> p AuthorizedOrder Boolean
+orderSubmissionFailed :: forall p :: Choice p => p Unit Void -> p Boolean Unit
+
+submitOrder = Semigroupoid.do
+  containedButton { label: "Submit order" }
+  authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } Sum.do
+    caption Sum.do
+      staticText "Order summary: "
+      summary text
+    filledTextField { floatingLabel: "Authorization token" }
+  orderSubmission indeterminateLinearProgress
+  orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
+  MDC.snackbar $ staticText "Order submitted"
 ```
 
 ---
