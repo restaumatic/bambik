@@ -122,7 +122,7 @@ class CartesianProfunctor a, CocartesianProfunctor a, Semigroupoid a =>
   ArrowLike a
 ```
 
-* disabled power vs. enabled more instances as compared to arrows
+* disabled power vs.. enabled more instances as compared to arrows
 * simpler laws as compared to arrows
 * `dimap`, `left`, `second`, `.` required
 * `lmap`, `rmap`, `second`, `right`, `***`, `+++` derivable
@@ -189,7 +189,7 @@ E.g. PureScript Web UI framework?
 
 - Declarative/reactive owing to composition
 - Separating business and presentation owing to optics
-- Requiring only a basic building block that supports `dimap`, `left`, `second`, `>>>`, ...
+- Requiring only a basic building block that supports `dimap`, `left`, `first`, `>>>`, ...
 
 ---
 ## `UI` is the generic basic building block
@@ -214,7 +214,7 @@ instance Applicative m => Zero         (UI m) -- see below
 
 
 ---
-## `Endo`, `Sum` and `Zero` typeclasses are missing in `purescript-profunctor` package but are useful
+## `Endo`, `Sum` and `Zero` typeclasses are missing in `purescript-profunctor` package but they are useful
 
 ```
 class Profunctor p <= Endo p where
@@ -286,7 +286,7 @@ caption :: forall a b. UI Web a b -> UI Web a b
 submitName :: UI Web String String
 submitName = Semigroupoid.do
   card Sum.do
-    caption $ staticText "Identifier"
+    caption $ staticText "What is your name?"
     filledTextField { floatingLabel: "Name" }
   containedButton { label: "Submit" }
 ```
@@ -294,11 +294,11 @@ submitName = Semigroupoid.do
 > `Semigroupoid.do` is `Semigroupoid` composition `>>>` from `purescript-qualified-do` package
 
 ---
-## Optics are possible with `UI`
+## Data structures are enabled by `Endo.do`
 
 ```
-shortId  :: forall p. Strong p => p String String -> p Order Order
-uniqueId :: forall p. Strong p => p String String -> p Order Order
+shortId  :: Lens Order Order String String
+uniqueId :: Lens Order Order String String
 
 identifierForm :: Web UI Order Order
 identifierForm =
@@ -311,17 +311,14 @@ identifierForm =
 > `Endo.do` is `Endo` profunctor `pendo` composition powered by PureScript *qualified do* feature
 
 ---
-## Data flow is possible with `UI`
+## Data flows are enabled by `Semigroupoid.do` and `Sum.do`
 
 ```
-authorization :: forall p :: Strong p => p OrderSummary AuthToken
-  -> p Order AuthorizedOrder
-orderSubmission :: forall p :: String p => p Boolean Void -
-  > p AuthorizedOrder Boolean
-orderSubmissionFailed :: forall p :: Choice p => p Unit Void
-  -> p Boolean Unit
+authorization :: Lens Order AuthorizedOrder OrderSummary AuthToken
+orderSubmission :: Lens AuthorizedOrder Boolean Boolean Void
+orderSubmissionFailed :: Prism Boolean Unit Unit Void
 
-submitOrder :: Strong p => Choice p => p Order Void
+submitOrder :: Web UI Order Void
 submitOrder = Semigroupoid.do
   containedButton { label: "Submit order" }
   authorization $ simpleDialog { title: "Authorization" } Sum.do
@@ -330,31 +327,33 @@ submitOrder = Semigroupoid.do
       summary text
     filledTextField { floatingLabel: "Authorization token" }
   orderSubmission indeterminateLinearProgress
-  orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
-  MDC.snackbar $ staticText "Order submitted"
+  orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
+  snackbar $ staticText "Order submitted"
 ```
 ---
-## Business/design separation is possible with optics
+## "Business" and "design" are orthogonal optics
 
-Given
+Dealing with business, design is transparent:
+
+```
+type Lens s t a b    = forall p. Strong p => Optic p s t a b
+type Prism s t a b   = forall p. Choice p => Optic p s t a b
+-- etc.
+```
+
+Dealing with design, business is transparent:
+
+```
+type Ocular p        = forall a b. Optic p a b a b
+```
+
+Where
 ```
 type Optic p s t a b = p a b -> p s t
 ```
 
-```
-type Lens s t a b  = forall p. Strong p => Optic p s t a b
-type Prism s t a b = forall p. Choice p => Optic p s t a b
-(...)
-```
-
-deal with business, design is transparent
-
-`type Ocular p      = forall a b. Optic p a b a b`
-
-deals with design, business is transparent
-
 ---
-## Business/design separation is possible with optics
+## "Business" vs. "design" separation is clear with optics
 
 ```
 module Business where
@@ -363,8 +362,8 @@ lastName  :: Lens String String Person Person
 ```
 ```
 module Design where
-textInput :: UI TheDesignSystem String String
-panel     :: Ocular (UI TheDesignSystem)
+textInput :: UI Web String String
+card     :: Ocular (UI Web)
 ```
 ```
 module UI where
@@ -372,7 +371,7 @@ import Business
 import Design
 personForm :: UI TheDesignSystem Person Person
 personForm =
-  panel Endo.do
+  card Endo.do
     firstName textInput
     lastName textInput
 ```
