@@ -358,20 +358,18 @@ deals with design, business is transparent
 
 ```
 module Business where
-
 firstName :: Lens String String Person Person
 lastName  :: Lens String String Person Person
-
+```
+```
 module Design where
-
 textInput :: UI TheDesignSystem String String
 panel     :: Ocular (UI TheDesignSystem)
-
+```
+```
 module UI where
-
 import Business
 import Design
-
 personForm :: UI TheDesignSystem Person Person
 personForm =
   panel Endo.do
