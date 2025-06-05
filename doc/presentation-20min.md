@@ -183,18 +183,16 @@ In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for
 > Package `purescript-profunctor` https://pursuit.purescript.org/packages/purescript-profunctor
 
 ---
-# Can profunctors be a basis for UI frameworks?
+# Are profunctors suitable for UI frameworks?
 
 E.g. PureScript Web UI framework?
 
-It would be:
-
-- Declarative/reactive owing to composition 
-- Separating business and presentation owing to optics and the lack of `arr`
+- Declarative/reactive owing to composition
+- Separating business and presentation owing to optics
 - Requiring only a basic building block that supports `dimap`, `left`, `second`, `>>>`, ...
 
 ---
-## `UI` is generic basic building block
+## `UI` is the generic basic building block
 
 
 ```
@@ -235,7 +233,7 @@ class Sum p <= Zero p where
 > Prototype of the idea of profunctor user interfaces for PureScript Web UIs  https://github.com/restaumatic/bambik
 
 ---
-## `UI Web` is basic building block for Web UI
+## `UI Web` is the basic building block for Web UI
 
 ```
 newtype Web a = Web (StateT DocumentBuilderState Effect a)
@@ -316,13 +314,17 @@ identifierForm =
 ## Data flow is possible with `UI`
 
 ```
-authorization :: forall p :: Strong p => p OrderSummary AuthToken -> p Order AuthorizedOrder
-orderSubmission :: p Boolean Void -> p AuthorizedOrder Boolean
-orderSubmissionFailed :: forall p :: Choice p => p Unit Void -> p Boolean Unit
+authorization :: forall p :: Strong p => p OrderSummary AuthToken
+  -> p Order AuthorizedOrder
+orderSubmission :: forall p :: String p => p Boolean Void -
+  > p AuthorizedOrder Boolean
+orderSubmissionFailed :: forall p :: Choice p => p Unit Void
+  -> p Boolean Unit
 
+submitOrder :: Strong p => Choice p => p Order Void
 submitOrder = Semigroupoid.do
   containedButton { label: "Submit order" }
-  authorization $ simpleDialog { title: "Authorization", confirm: "Authorize" } Sum.do
+  authorization $ simpleDialog { title: "Authorization" } Sum.do
     caption Sum.do
       staticText "Order summary: "
       summary text
@@ -330,6 +332,51 @@ submitOrder = Semigroupoid.do
   orderSubmission indeterminateLinearProgress
   orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
   MDC.snackbar $ staticText "Order submitted"
+```
+---
+## Business/design separation is possible with optics
+
+Given
+```
+type Optic p s t a b = p a b -> p s t
+```
+
+```
+type Lens s t a b  = forall p. Strong p => Optic p s t a b
+type Prism s t a b = forall p. Choice p => Optic p s t a b
+(...)
+```
+
+deal with business, design is transparent
+
+`type Ocular p      = forall a b. Optic p a b a b`
+
+deals with design, business is transparent
+
+---
+## Business/design separation is possible with optics
+
+```
+module Business where
+
+firstName :: Lens String String Person Person
+lastName  :: Lens String String Person Person
+
+module Design where
+
+textInput :: UI TheDesignSystem String String
+panel     :: Ocular (UI TheDesignSystem)
+
+module UI where
+
+import Business
+import Design
+
+personForm :: UI TheDesignSystem Person Person
+personForm =
+  panel Endo.do
+    firstName textInput
+    lastName textInput
 ```
 
 ---
