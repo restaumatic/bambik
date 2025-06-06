@@ -41,7 +41,6 @@ module Demo1.Model
   , payment
   , paymentMethod
   , priority
-  , priorityAssignment
   , receiptPrint
   , remarks
   , shortId
@@ -260,9 +259,6 @@ loadOrder = action \orderId -> do
     , priority: Normal
     }
 
-priorityAssignment :: Lens Order Order Unit Priority
-priorityAssignment = lens (\order -> unit) (\order priority -> order { priority = priority })
-
 paymentMethod :: Field PaymentMethod Payment
 paymentMethod = field @"method" (\_ _ -> Nothing)
 
@@ -277,7 +273,7 @@ card = constructor (const Card) case _ of
   _ -> Nothing
 
 -- TODO: move to commons?
-missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a 
+missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a
 missing default = prism Just case _ of
   Just a -> Left (Just a)
   Nothing -> Right default
