@@ -277,7 +277,7 @@ card = constructor (const Card) case _ of
   _ -> Nothing
 
 -- TODO: move to commons?
-missing :: forall a. a -> Field a (Maybe a)
+missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a 
 missing default = prism Just case _ of
   Just a -> Left (Just a)
   Nothing -> Right default
