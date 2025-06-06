@@ -41,7 +41,6 @@ module Demo1.Model
   , payment
   , paymentMethod
   , priority
-  , priorityAssignment
   , receiptPrint
   , remarks
   , shortId
@@ -262,9 +261,6 @@ loadOrder = action \orderId -> do
     , remarks: "I'm very hungry"
     , priority: Normal
     }
-
-priorityAssignment :: UIOptics Unit Priority Order Order
-priorityAssignment = lens (\order -> unit) (\order priority -> order { priority = priority })
 
 paymentMethod :: UIO Payment Payment PaymentMethod PaymentMethod
 paymentMethod = field @"method" (\_ _ -> Nothing)
