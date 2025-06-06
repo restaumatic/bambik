@@ -58,12 +58,13 @@ import Prelude
 
 import Data.Default (class Default)
 import Data.Either (Either(..))
+import Data.Lens (Iso, Lens, Prism, iso, lens, prism)
 import Data.Maybe (Maybe(..))
 import Data.String (length, null)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import UI (Field, UIO, UIOptics, Ctor, action, constructor, field, iso, lens, prism, projection)
+import UI (Field, UIOptics, action, constructor, field, projection)
 
 -- data types
 
@@ -126,7 +127,7 @@ type OrderSummary = { summary :: String }
 
 -- Optics
 
-summary :: forall t. UIOptics String Void OrderSummary t
+summary :: forall t. Iso OrderSummary t String Void
 summary = projection (_.summary)
 
 priority :: Field Priority Order
@@ -141,8 +142,7 @@ shortId = field @"shortId" (\str _ -> if null str then Just "Cannot be empty" el
 customer :: Field NameInformal Order
 customer = field @"customer" (\_ _ -> Nothing)
 
--- payment :: Field (Maybe Payment) Order
-payment :: UIO Order Order (Maybe Payment) (Maybe Payment)
+payment :: Field (Maybe Payment) Order
 payment = field @"payment" (\_ _ -> Nothing)
 
 firstName :: Field String NameInformal
@@ -178,61 +178,58 @@ total = field @"total" (\str _ -> if null str then Just "Cannot be empty" else N
 paid :: Field String Payment
 paid = field @"paid" (\_ _ -> Nothing)
 
-dineIn :: Ctor { table :: Table } Fulfillment
-dineIn = constructor "DineIn" DineIn case _ of
+dineIn :: Iso Fulfillment Fulfillment (Maybe { table :: Table }) { table :: Table }
+dineIn = constructor DineIn case _ of
   DineIn c -> Just c
   _ -> Nothing
 
-takeaway :: Ctor { time :: String } Fulfillment
-takeaway = constructor "Takeaway" Takeaway case _ of
+takeaway :: Iso Fulfillment Fulfillment (Maybe { time :: Time }) { time :: Time }
+takeaway = constructor Takeaway case _ of
   Takeaway c -> Just c
   _ -> Nothing
 
-delivery :: Ctor { address :: Address } Fulfillment
-delivery = constructor "Delivery" Delivery case _ of
+delivery :: Iso Fulfillment Fulfillment (Maybe { address :: Address }) { address :: Address }
+delivery = constructor Delivery case _ of
   Delivery c -> Just c
   _ -> Nothing
 
-high :: Ctor Unit Priority
-high = constructor "High" (const High) case _ of
+high :: Iso Priority Priority (Maybe Unit) Unit
+high = constructor (const High) case _ of
   High -> Just unit
   _ -> Nothing
 
-normal :: Ctor Unit Priority
-normal = constructor "Normal" (const Normal) case _ of
+normal :: Iso Priority Priority (Maybe Unit) Unit
+normal = constructor (const Normal) case _ of
   Normal -> Just unit
   _ -> Nothing
 
-low :: Ctor Unit Priority
-low = constructor "Low" (const Low) case _ of
+low :: Iso Priority Priority (Maybe Unit) Unit
+low = constructor (const Low) case _ of
   Low -> Just unit
   _ -> Nothing
 
 formal :: Field NameFormal NameInformal
-formal = iso "formal" toFormal toInformal
+formal = iso toFormal toInformal
   where
     toFormal :: NameInformal -> NameFormal
     toFormal { firstName, lastName } = { forename: firstName, surname: lastName }
     toInformal :: NameFormal -> NameInformal
     toInformal { forename, surname } = { firstName: forename, lastName: surname }
 
-distance :: forall t. UIOptics String Void Address t
+distance :: forall t. Iso Address t String Void
 distance = projection $ show <<< length
 
-authorization :: UIOptics OrderSummary AuthToken Order AuthorizedOrder
+authorization :: Lens Order AuthorizedOrder OrderSummary AuthToken
 authorization = lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address }
   ) (\order authorization -> { authorization, order })
 
-order :: forall a. OrderId -> UIOptics OrderId a Unit Unit
+order :: forall a. OrderId -> Lens Unit Unit OrderId a
 order id = lens (const id) (\_ _ -> unit)
 
--- authorization :: forall a. UIOptics String String a AuthToken
--- authorization = lens (const "") (\_ a -> a)
-
-orderSubmissionFailed :: UIOptics Unit Void Boolean Unit
+orderSubmissionFailed :: Prism Boolean Unit Unit Void
 orderSubmissionFailed = prism absurd case _ of
   false -> Right unit
   true -> Left unit
@@ -263,29 +260,29 @@ loadOrder = action \orderId -> do
     , priority: Normal
     }
 
-priorityAssignment :: UIOptics Unit Priority Order Order
+priorityAssignment :: Lens Order Order Unit Priority
 priorityAssignment = lens (\order -> unit) (\order priority -> order { priority = priority })
 
-paymentMethod :: UIO Payment Payment PaymentMethod PaymentMethod
+paymentMethod :: Field PaymentMethod Payment
 paymentMethod = field @"method" (\_ _ -> Nothing)
 
-cash :: Ctor Unit PaymentMethod
-cash = constructor "Cash" (const Cash) case _ of
+cash :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
+cash = constructor (const Cash) case _ of
   Cash -> Just unit
   _ -> Nothing
 
-card :: Ctor Unit PaymentMethod
-card = constructor "Card" (const Card) case _ of
+card :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
+card = constructor (const Card) case _ of
   Card -> Just unit
   _ -> Nothing
 
 -- TODO: move to commons?
-missing :: forall a. a -> UIO (Maybe a) (Maybe a) a a
+missing :: forall a. a -> Field a (Maybe a)
 missing default = prism Just case _ of
   Just a -> Left (Just a)
   Nothing -> Right default
 
-receiptPrint :: UIO Order Order Boolean Void
+receiptPrint :: UIOptics Boolean Void Order Order
 receiptPrint = action \order -> do
   liftEffect $ log $ "printing receipt for order " <> order.orderId
   delay (Milliseconds 2000.0)

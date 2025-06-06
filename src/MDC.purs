@@ -1,4 +1,4 @@
--- Material Design Components implemented as UI/UIOcular datatypes, dogfooding intentional.
+-- Material Design Components implemented as UI Web/UIOcular (UI Web) datatypes, dogfooding intentional.
 module MDC
   ( body1
   , body2
@@ -33,16 +33,17 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Data.Default (class Default)
+import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Profunctor (rmap)
+import Data.Profunctor.Endo as Form
+import Data.Profunctor.Sum as A
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
-import Data.Profunctor.Sum as A
-import Data.Profunctor.Endo as Form
 import QualifiedDo.Semigroupoid as Flow
-import UI (UI, UIOcular, effAdapter)
+import UI (UI, effAdapter)
 import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, textArea, uniqueId, (:=))
 import Web (button, radioButton) as Web
 
@@ -138,58 +139,58 @@ indeterminateLinearProgress =
 
 -- UIOculars
 
-headline1 :: UIOcular Web
+headline1 :: Ocular (UI Web)
 headline1 w = h1 w # cl "mdc-typography--headline1"
 
-headline2 :: UIOcular Web
+headline2 :: Ocular (UI Web)
 headline2 w = h2 w # cl "mdc-typography--headline2"
 
-headline3 :: UIOcular Web
+headline3 :: Ocular (UI Web)
 headline3 w = h3 w # cl "mdc-typography--headline3"
 
-headline4 :: UIOcular Web
+headline4 :: Ocular (UI Web)
 headline4 w = h4 w # cl "mdc-typography--headline4"
 
-headline5 :: UIOcular Web
+headline5 :: Ocular (UI Web)
 headline5 w = h5 w # cl "mdc-typography--headline5"
 
-headline6 :: UIOcular Web
+headline6 :: Ocular (UI Web)
 headline6 w = h6 w # cl "mdc-typography--headline6"
 
-subtitle1 :: UIOcular Web
+subtitle1 :: Ocular (UI Web)
 subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
-subtitle2 :: UIOcular Web
+subtitle2 :: Ocular (UI Web)
 subtitle2 w = p w # cl "mdc-typography--subtitle2"
 
-button :: UIOcular Web
+button :: Ocular (UI Web)
 button w = span w # cl "mdc-typography--button"
 
-caption :: UIOcular Web
+caption :: Ocular (UI Web)
 caption w = span w # cl "mdc-typography--caption"
 
-overline :: UIOcular Web
+overline :: Ocular (UI Web)
 overline w = span w # cl "mdc-typography--overline"
 
-body1 :: UIOcular Web
+body1 :: Ocular (UI Web)
 body1 w = p w # cl"mdc-typography--body1"
 
-body2 :: UIOcular Web
+body2 :: Ocular (UI Web)
 body2 w = p w # cl"mdc-typography--body2"
 
-elevation1 :: UIOcular Web
+elevation1 :: Ocular (UI Web)
 elevation1 w = div w # cl "mdc-elevation--z1"
 
-elevation10 :: UIOcular Web
+elevation10 :: Ocular (UI Web)
 elevation10 w = div w # cl "mdc-elevation--z10" # "style" := "padding: 25px"
 
-elevation20 :: UIOcular Web
+elevation20 :: Ocular (UI Web)
 elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 
-card :: UIOcular Web
+card :: Ocular (UI Web)
 card w = div w # cl "mdc-card" # "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;"
 
-dialog :: { title :: String } -> UIOcular Web
+dialog :: { title :: String } -> Ocular (UI Web)
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ A.do
     div >>> cl "mdc-dialog__container" $ A.do
@@ -198,7 +199,7 @@ dialog { title } content =
         div >>> cl "mdc-dialog__content" >>> "id" := "my-dialog-content" $ content
     div >>> cl "mdc-dialog__scrim" $ pzero
 
-simpleDialog :: { title :: String, confirm :: String } -> UIOcular Web
+simpleDialog :: { title :: String, confirm :: String } -> Ocular (UI Web)
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
     div >>> cl "mdc-dialog__container" $
@@ -215,7 +216,7 @@ simpleDialog { title, confirm } content =
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
 
-snackbar :: UIOcular Web
+snackbar :: Ocular (UI Web)
 snackbar content =
   aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open (\a propStatus -> close a) $
     div >>> cl "mdc-snackbar__surface" >>> "role" := "status" >>> "aria-relevant" := "additions" $
