@@ -10,7 +10,6 @@ module UI
   , debounced
   , debounced'
   , effAdapter
-  , projection
   , spied
   )
   where
@@ -19,11 +18,11 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Lens (Iso, Optic)
+import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
@@ -184,9 +183,6 @@ instance Apply m => Endo (UI m) where
           p2'.toUser u
           prop u
       }
-
-projection :: forall a s t. (s -> a) -> Iso s t a Void
-projection f = dimap f absurd
 
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
 constant :: forall a s t m. Functor m => a -> Optic (UI m) s t a Void

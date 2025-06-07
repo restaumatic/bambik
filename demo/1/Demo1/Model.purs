@@ -56,14 +56,13 @@ import Prelude
 
 import Data.Default (class Default)
 import Data.Either (Either(..))
-import Data.Lens (Iso, Lens, Prism, Optic, iso, lens, prism)
-import Data.Lens.Extra.Commons (constructor, field)
+import Data.Lens (Iso, Lens, Prism, iso, lens, prism)
+import Data.Lens.Extra.Commons (constructor, field, projection)
 import Data.Maybe (Maybe(..))
 import Data.String (length)
-import Effect.Aff (Milliseconds(..), delay)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import UI (UI, action, projection)
 
 -- data types
 
@@ -246,15 +245,17 @@ card = constructor (const Card) case _ of
   Card -> Just unit
   _ -> Nothing
 
-orderSubmission :: forall m. Functor m => Optic (UI m) AuthorizedOrder Boolean Boolean Void
-orderSubmission = action \{authorization, order} -> do
+-- asynchronous actions
+
+orderSubmission :: AuthorizedOrder -> Aff Boolean
+orderSubmission {authorization, order} = do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authorization
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
   pure true
 
-loadOrder :: forall m. Functor m => Optic (UI m) OrderId Order Boolean Void
-loadOrder = action \orderId -> do
+loadOrder :: OrderId -> Aff Order
+loadOrder orderId = do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "loaded order"
@@ -272,8 +273,8 @@ loadOrder = action \orderId -> do
     , priority: Normal
     }
 
-receiptPrint :: forall m. Functor m => Optic (UI m)Order Order  Boolean Void
-receiptPrint = action \order -> do
+receiptPrint :: Order -> Aff Order
+receiptPrint order = do
   liftEffect $ log $ "printing receipt for order " <> order.orderId
   delay (Milliseconds 2000.0)
   liftEffect $ log $ "printed receipt for order " <> order.orderId

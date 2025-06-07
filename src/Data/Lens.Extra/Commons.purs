@@ -8,6 +8,7 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap)
 import Data.Symbol (class IsSymbol)
+import Data.Void (Void, absurd)
 import Prim.Row as Row
 import Type.Prelude (Proxy(..))
 
@@ -17,6 +18,9 @@ field = prop (Proxy :: Proxy l)
 
 constructor :: forall a s. (a -> s) -> (s -> Maybe a) -> Iso s s (Maybe a) a
 constructor construct deconstruct w = dimap deconstruct construct w
+
+projection :: forall a s t. (s -> a) -> Iso s t a Void
+projection f = dimap f absurd
 
 missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a
 missing default = prism Just case _ of

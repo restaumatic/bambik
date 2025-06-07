@@ -10,12 +10,12 @@ import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, custo
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
-import UI (constant, debounced)
+import UI (action, constant, debounced)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
 main = body $ order "45123519" Flow.do
-  loadOrder MDC.indeterminateLinearProgress
+  action loadOrder $ MDC.indeterminateLinearProgress
   MDC.elevation20 Form.do
     MDC.caption $ staticText "Order "
     shortId $ debounced $ MDC.caption text
@@ -95,7 +95,7 @@ main = body $ order "45123519" Flow.do
           staticText "Order summary: "
           summary text
         MDC.filledTextField { floatingLabel: "Auth token" }
-      orderSubmission MDC.indeterminateLinearProgress
+      action orderSubmission $ MDC.indeterminateLinearProgress
       orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
       MDC.snackbar $ staticText "Order submitted"
     Flow.do
@@ -112,4 +112,4 @@ main = body $ order "45123519" Flow.do
         paymentMethod $ cash $ MDC.radioButton $ label $ staticText "Cash"
         paymentMethod $ card $ MDC.radioButton $ label $ staticText "Card"
         paid $ MDC.filledTextField { floatingLabel: "Paid" }
-      receiptPrint MDC.indeterminateLinearProgress
+      action receiptPrint $ MDC.indeterminateLinearProgress
