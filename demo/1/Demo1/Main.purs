@@ -2,19 +2,20 @@ module Demo1.Main (main) where
 
 import Prelude
 
+import Data.Lens.Extra.Commons (just, missing)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Form
 import Data.Profunctor.Sum as View
-import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
+import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
-import UI (constant, debounced, just)
+import UI (action, constant, debounced)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit
 main = body $ order "45123519" Flow.do
-  loadOrder MDC.indeterminateLinearProgress
+  action loadOrder $ MDC.indeterminateLinearProgress
   MDC.elevation20 Form.do
     MDC.caption $ staticText "Order "
     shortId $ debounced $ MDC.caption text
@@ -94,7 +95,7 @@ main = body $ order "45123519" Flow.do
           staticText "Order summary: "
           summary text
         MDC.filledTextField { floatingLabel: "Auth token" }
-      orderSubmission MDC.indeterminateLinearProgress
+      action orderSubmission $ MDC.indeterminateLinearProgress
       orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
       MDC.snackbar $ staticText "Order submitted"
     Flow.do
@@ -111,4 +112,4 @@ main = body $ order "45123519" Flow.do
         paymentMethod $ cash $ MDC.radioButton $ label $ staticText "Cash"
         paymentMethod $ card $ MDC.radioButton $ label $ staticText "Card"
         paid $ MDC.filledTextField { floatingLabel: "Paid" }
-      receiptPrint MDC.indeterminateLinearProgress
+      action receiptPrint $ MDC.indeterminateLinearProgress
