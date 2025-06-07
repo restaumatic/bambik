@@ -123,7 +123,7 @@ type AuthToken = String
 
 type OrderSummary = { summary :: String }
 
--- Optics
+-- optics
 
 summary :: forall t. Iso OrderSummary t String Void
 summary = projection (_.summary)
