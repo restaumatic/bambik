@@ -1,23 +1,16 @@
 module UI
-  ( Field
-  , New(..)
+  ( New(..)
   , PropagationError
   , PropagationStatus
   , UI(..)
-  , UIOptics
   , action
   , action'
   , affAdapter
   , constant
-  , constructor
   , debounced
   , debounced'
   , effAdapter
-  , field
-  , just
-  , left
   , projection
-  , right
   , spied
   )
   where
@@ -26,7 +19,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Lens (Optic, Iso, first)
+import Data.Lens (Iso, Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -36,7 +29,6 @@ import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
-import Data.Symbol (class IsSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (class DebugWarning, spy)
@@ -46,7 +38,6 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -194,13 +185,11 @@ instance Apply m => Endo (UI m) where
           prop u
       }
 
-type UIOptics a b s t = forall m. Functor m => Optic (UI m) s t a b
-
 projection :: forall a s t. (s -> a) -> Iso s t a Void
 projection f = dimap f absurd
 
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
-constant :: forall a s t. a -> UIOptics a Void s t
+constant :: forall a s t m. Functor m => a -> Optic (UI m) s t a Void
 constant a w = wrap $ ado
   w' <- unwrap w
   let initializedRef = unsafePerformEffect $ Ref.new false
@@ -213,46 +202,14 @@ constant a w = wrap $ ado
     , fromUser: mempty
     }
 
-type Field a s = UIOptics a a s s
-
--- TODO use Data.Lens.Record.prop?
-field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
-field validate wa =
-  wrap $ ado
-    wars <- unwrap (first wa)
-    in
-      { toUser: \chrs -> wars.toUser $ (map (\rs -> Tuple (get (Proxy @l) rs) rs)) chrs
-      , fromUser: \prop -> wars.fromUser $ \chrs@(New (Tuple a rs) _) -> do
-          case validate a rs of
-            Just error -> pure $ Just error
-            Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
-      }
-
-constructor :: forall a s. (a -> s) -> (s -> Maybe a) -> Iso s s (Maybe a) a
-constructor construct deconstruct w = dimap deconstruct construct w
-
--- TODO move to utils?
-just :: forall a. Iso (Maybe a) (Maybe a) (Maybe a) a
-just = constructor Just identity
-
-right :: forall a b. Iso (Either b a) (Either b a) (Maybe a) a
-right = constructor Right (case _ of
-  Left _ -> Nothing
-  Right r -> Just r)
-
-left :: forall a b. Iso (Either b a) (Either b a) (Maybe b) b
-left = constructor Left (case _ of
-  Right _ -> Nothing
-  Left l -> Just l)
-
-action :: forall i o. (i -> Aff o) -> UIOptics Boolean Void i o
+action :: forall i o m. Functor m => (i -> Aff o) -> Optic (UI m) i o Boolean Void
 action arr = action' \i pro post -> do
   liftEffect $ pro true
   o <- arr i
   liftEffect $ pro false
   liftEffect $ post o
 
-action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> UIOptics a b i o
+action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (UI m) i o a b
 action' arr w = wrap ado
   let oVar = unsafePerformEffect $ liftEffect AVar.empty
   w' <- unwrap w

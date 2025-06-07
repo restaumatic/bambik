@@ -2,14 +2,15 @@ module Demo1.Main (main) where
 
 import Prelude
 
+import Data.Lens.Extra.Commons (just, missing)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Form
 import Data.Profunctor.Sum as View
-import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, missing, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
+import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, forename, formal, fulfillment, high, lastName, loadOrder, low, normal, order, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, surname, table, takeaway, time, total)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
-import UI (constant, debounced, just)
+import UI (constant, debounced)
 import Web (body, label, slot, staticText, text)
 
 main :: Effect Unit

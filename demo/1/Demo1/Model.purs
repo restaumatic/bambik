@@ -31,7 +31,6 @@ module Demo1.Model
   , lastName
   , loadOrder
   , low
-  , missing
   , normal
   , order
   , orderId
@@ -57,13 +56,14 @@ import Prelude
 
 import Data.Default (class Default)
 import Data.Either (Either(..))
-import Data.Lens (Iso, Lens, Prism, iso, lens, prism)
+import Data.Lens (Iso, Lens, Prism, Optic, iso, lens, prism)
+import Data.Lens.Extra.Commons (constructor, field)
 import Data.Maybe (Maybe(..))
-import Data.String (length, null)
+import Data.String (length)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import UI (Field, UIOptics, action, constructor, field, projection)
+import UI (UI, action, projection)
 
 -- data types
 
@@ -129,53 +129,53 @@ type OrderSummary = { summary :: String }
 summary :: forall t. Iso OrderSummary t String Void
 summary = projection (_.summary)
 
-priority :: Field Priority Order
-priority = field @"priority" (\str _ -> Nothing)
+priority :: Lens Order Order Priority Priority
+priority = field @"priority"
 
-orderId :: Field String Order
-orderId = field @"orderId" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+orderId :: Lens Order Order String String
+orderId = field @"orderId"
 
-shortId :: Field String Order
-shortId = field @"shortId" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+shortId :: Lens Order Order String String 
+shortId = field @"shortId"
 
-customer :: Field NameInformal Order
-customer = field @"customer" (\_ _ -> Nothing)
+customer :: Lens Order Order NameInformal NameInformal 
+customer = field @"customer"
 
-payment :: Field (Maybe Payment) Order
-payment = field @"payment" (\_ _ -> Nothing)
+payment :: Lens Order Order (Maybe Payment) (Maybe Payment)
+payment = field @"payment"
 
-firstName :: Field String NameInformal
-firstName = field @"firstName" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+firstName :: Lens NameInformal NameInformal String String
+firstName = field @"firstName"
 
-lastName :: Field String NameInformal
-lastName = field @"lastName" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+lastName :: Lens NameInformal NameInformal String String
+lastName = field @"lastName"
 
-forename :: Field String NameFormal
-forename = field @"forename" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+forename :: Lens NameFormal NameFormal String String
+forename = field @"forename"
 
-surname :: Field String NameFormal
-surname =  field @"surname" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+surname :: Lens NameFormal NameFormal String String
+surname =  field @"surname"
 
-fulfillment :: Field Fulfillment Order
-fulfillment =  field @"fulfillment" (\_ _ -> Nothing)
+fulfillment :: Lens Order Order Fulfillment Fulfillment 
+fulfillment =  field @"fulfillment"
 
-table :: Field Table { table :: Table }
-table =  field @"table" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+table :: Lens { table :: Table } { table :: Table } Table Table
+table =  field @"table"
 
-time :: Field Time { time :: Time }
-time =  field @"time" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+time :: Lens { time :: Time } { time :: Time } Time Time
+time =  field @"time"
 
-address :: Field Address { address :: Address}
-address =  field @"address" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+address :: Lens { address :: Address} { address :: Address} Address Address
+address =  field @"address"
 
-remarks :: Field String Order
-remarks = field @"remarks" (\_ _ -> Nothing)
+remarks :: Lens Order Order String String
+remarks = field @"remarks"
 
-total :: Field String Order
-total = field @"total" (\str _ -> if null str then Just "Cannot be empty" else Nothing)
+total :: Lens Order Order String String
+total = field @"total"
 
-paid :: Field String Payment
-paid = field @"paid" (\_ _ -> Nothing)
+paid :: Lens Payment Payment String String
+paid = field @"paid"
 
 dineIn :: Iso Fulfillment Fulfillment (Maybe { table :: Table }) { table :: Table }
 dineIn = constructor DineIn case _ of
@@ -207,7 +207,7 @@ low = constructor (const Low) case _ of
   Low -> Just unit
   _ -> Nothing
 
-formal :: Field NameFormal NameInformal
+formal :: Iso NameInformal NameInformal NameFormal NameFormal
 formal = iso toFormal toInformal
   where
     toFormal :: NameInformal -> NameFormal
@@ -233,14 +233,27 @@ orderSubmissionFailed = prism absurd case _ of
   false -> Right unit
   true -> Left unit
 
-orderSubmission :: UIOptics Boolean Void AuthorizedOrder Boolean
+paymentMethod :: Lens Payment Payment PaymentMethod PaymentMethod
+paymentMethod = field @"method"
+
+cash :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
+cash = constructor (const Cash) case _ of
+  Cash -> Just unit
+  _ -> Nothing
+
+card :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
+card = constructor (const Card) case _ of
+  Card -> Just unit
+  _ -> Nothing
+
+orderSubmission :: forall m. Functor m => Optic (UI m) AuthorizedOrder Boolean Boolean Void
 orderSubmission = action \{authorization, order} -> do
   liftEffect $ log $ "submitting order " <> order.orderId <> " with auth token " <> authorization
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "submitted order"
   pure true
 
-loadOrder :: UIOptics Boolean Void OrderId Order
+loadOrder :: forall m. Functor m => Optic (UI m) OrderId Order Boolean Void
 loadOrder = action \orderId -> do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)
@@ -259,26 +272,7 @@ loadOrder = action \orderId -> do
     , priority: Normal
     }
 
-paymentMethod :: Field PaymentMethod Payment
-paymentMethod = field @"method" (\_ _ -> Nothing)
-
-cash :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
-cash = constructor (const Cash) case _ of
-  Cash -> Just unit
-  _ -> Nothing
-
-card :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
-card = constructor (const Card) case _ of
-  Card -> Just unit
-  _ -> Nothing
-
--- TODO: move to commons?
-missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a
-missing default = prism Just case _ of
-  Just a -> Left (Just a)
-  Nothing -> Right default
-
-receiptPrint :: UIOptics Boolean Void Order Order
+receiptPrint :: forall m. Functor m => Optic (UI m)Order Order  Boolean Void
 receiptPrint = action \order -> do
   liftEffect $ log $ "printing receipt for order " <> order.orderId
   delay (Milliseconds 2000.0)
