@@ -48,7 +48,6 @@ import Prelude
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
@@ -57,7 +56,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import UI (New(..), PropagationStatus, UI)
+import UI (New(..), PropagationStatus, UI, UIOcular)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
@@ -94,7 +93,7 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { toUser: case _ of
-      New s _ -> setTextNodeValue node s
+      New _ s _ -> setTextNodeValue node s
     , fromUser: \_ -> pure unit
     }
 
@@ -104,10 +103,10 @@ input type_ = "type" := type_ $ wrap do
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    New newa _ -> setValue node newa
+    New _ newa _ -> setValue node newa
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      void $ prop $ New value true
+      void $ prop $ New [] value true
     }
 
 textArea :: UI Web String String
@@ -116,10 +115,10 @@ textArea = wrap do
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    (New newa _) -> setValue node newa
+    (New _ newa _) -> setValue node newa
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       value <- getValue node
-      void $ prop $ New value true
+      void $ prop $ New [] value true
     }
 
 
@@ -130,14 +129,14 @@ checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothi
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    New Nothing _ -> setChecked node false
-    New (Just newa) _ -> do
+    New _ Nothing _ -> setChecked node false
+    New _ (Just newa) _ -> do
       setChecked node true
       Ref.write newa aRef
     , fromUser: \prop -> void $ addEventListener "input" node $ const do
       checked <- getChecked node
       a <- Ref.read aRef
-      void $ prop $ New (if checked then (Just a) else Nothing) false
+      void $ prop $ New [] (if checked then (Just a) else Nothing) false
     }
 
 radioButton :: forall a. Default a => UI Web (Maybe a) a
@@ -147,13 +146,13 @@ radioButton = "type" := "radio" $ wrap do
   node <- gets _.sibling
   pure
     { toUser: case _ of
-    New Nothing _ -> setChecked node false
-    New (Just newa) _ -> do
+    New _ Nothing _ -> setChecked node false
+    New _ (Just newa) _ -> do
       setChecked node true
       Ref.write newa aRef
     , fromUser: \prop -> void $ addEventListener "change" node $ const do
     a <- Ref.read aRef
-    void $ prop $ New a false
+    void $ prop $ New [] a false
     }
 
 -- TODO disable button after click?
@@ -166,13 +165,13 @@ button w = wrap do
     { toUser: \occur -> do
     status <- w'.toUser occur
     case occur of
-      New a _ -> Ref.write a aRef
+      New _ a _ -> Ref.write a aRef
     pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.toUser Nothing -- TODO check
     -- setAttribute node "disabled" "true" -- TODO re-think
-    void $ prop $ New a false
+    void $ prop $ New [] a false
     }
 
 staticText :: forall a b. String -> UI Web a b
@@ -200,7 +199,7 @@ staticHTML html = wrap do
 
 -- UIOculars
 
-attr :: String -> String -> Ocular (UI Web)
+attr :: String -> String -> UIOcular Web
 attr name value w = wrap do
   w' <- unwrap w
   attribute name value
@@ -208,7 +207,7 @@ attr name value w = wrap do
 
 infixr 10 attr as :=
 
-cl :: String -> Ocular (UI Web)
+cl :: String -> UIOcular Web
 cl name w = wrap do
   w' <- unwrap w
   clazz name
@@ -217,7 +216,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> Ocular (UI Web)
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> UIOcular Web
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -233,61 +232,61 @@ init nodeInitializer pre post w = wrap do
         pure status
     }
 
-div :: Ocular (UI Web)
+div :: UIOcular Web
 div = el "div"
 
-span :: Ocular (UI Web)
+span :: UIOcular Web
 span = el "span"
 
-aside :: Ocular (UI Web)
+aside :: UIOcular Web
 aside = el "aside"
 
-label :: Ocular (UI Web)
+label :: UIOcular Web
 label = el "label"
 
-svg :: Ocular (UI Web)
+svg :: UIOcular Web
 svg = el "svg"
 
-path :: Ocular (UI Web)
+path :: UIOcular Web
 path = el "path"
 
-p :: Ocular (UI Web)
+p :: UIOcular Web
 p = el "p"
 
-i :: Ocular (UI Web)
+i :: UIOcular Web
 i = el "i"
 
-a :: Ocular (UI Web)
+a :: UIOcular Web
 a = el "a"
 
-ul :: Ocular (UI Web)
+ul :: UIOcular Web
 ul = el "ul"
 
-ol :: Ocular (UI Web)
+ol :: UIOcular Web
 ol = el "ol"
 
-li :: Ocular (UI Web)
+li :: UIOcular Web
 li = el "li"
 
-h1 :: Ocular (UI Web)
+h1 :: UIOcular Web
 h1 = el "h1"
 
-h2 :: Ocular (UI Web)
+h2 :: UIOcular Web
 h2 = el "h2"
 
-h3 :: Ocular (UI Web)
+h3 :: UIOcular Web
 h3 = el "h3"
 
-h4 :: Ocular (UI Web)
+h4 :: UIOcular Web
 h4 = el "h4"
 
-h5 :: Ocular (UI Web)
+h5 :: UIOcular Web
 h5 = el "h5"
 
-h6 :: Ocular (UI Web)
+h6 :: UIOcular Web
 h6 = el "h6"
 
-attrDyn :: String -> (Maybe (New Unit) -> Maybe String) -> Ocular (UI Web)
+attrDyn :: String -> (Maybe (New Unit) -> Maybe String) -> UIOcular Web
 attrDyn name valueFunction w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -305,7 +304,7 @@ attrDyn name valueFunction w = wrap do
 
 infixr 10 attrDyn as :=>
 
-clDyn :: String -> (Maybe (New Unit) -> Boolean) -> Ocular (UI Web)
+clDyn :: String -> (Maybe (New Unit) -> Boolean) -> UIOcular Web
 clDyn name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -324,8 +323,8 @@ slot w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
     { toUser: case _ of
-      (New Nothing _) -> ensureDetached
-      new@(New (Just y) _) -> do
+      (New _ Nothing _) -> ensureDetached
+      new@(New _ (Just y) _) -> do
         status <- toUser (new $> y)
         ensureAttached
         pure status
@@ -390,12 +389,12 @@ runWidgetInNode :: forall t. Node -> UI Web Unit t -> Effect Unit
 runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
-    New mo _ -> pure Nothing
-  void $ liftEffect $ toUser $ New unit false
+    New _ mo _ -> pure Nothing
+  void $ liftEffect $ toUser $ New [] unit false
 
 --- private
 
-el :: String -> Ocular (UI Web)
+el :: String -> UIOcular Web
 el tagName = wrap <<< element tagName <<< unwrap
 
 element :: forall a. String -> Web a -> Web a

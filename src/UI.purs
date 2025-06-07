@@ -1,33 +1,52 @@
 module UI
-  ( New(..)
+  ( Ctor
+  , Field
+  , New(..)
   , PropagationError
   , PropagationStatus
+  , Scope(..)
   , UI(..)
+  , UIO
+  , UIOcular
+  , UIOptics
   , action
   , action'
+  , adapter
   , affAdapter
   , constant
+  , constructor
   , debounced
   , debounced'
   , effAdapter
+  , field
+  , iso
+  , just
+  , left
+  , lens
+  , prism
+  , projection
+  , right
   , spied
   )
   where
 
 import Prelude
 
+import Data.Array (uncons, (:))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
-import Data.Lens (Optic)
+import Data.Lens (Optic, first)
+import Data.Lens as Profunctor
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (class DebugWarning, spy)
@@ -37,6 +56,7 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
+import Prim.Row as Row
 import Record (get, set)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -53,9 +73,18 @@ type PropagationError = String
 
 derive instance Newtype (UI m i o) _
 
-data New a = New a Boolean
+data New a = New (Array Scope) a Boolean
 
 derive instance Functor New
+
+data Scope = Part String | Variant String
+
+instance Show Scope where
+  show = case _ of
+    Part s -> "." <> s
+    Variant s -> "?" <> s
+
+derive instance Eq Scope
 
 instance Functor m => Profunctor (UI m) where
   dimap pre post p = wrap ado
@@ -71,9 +100,9 @@ instance Functor m => Strong (UI m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          New ab cont -> do
+          New scope ab cont -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ New (fst ab) cont
+            p'.toUser $ New scope (fst ab) cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -84,9 +113,9 @@ instance Functor m => Strong (UI m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          New ab cont -> do
+          New scope ab cont -> do
             let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ New (snd ab) cont
+            p'.toUser $ New scope (snd ab) cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let prevab = unsafePerformEffect $ Ref.read lastab
@@ -99,11 +128,11 @@ instance Functor m => Choice (UI m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-        New (Right c) cont -> do
+        New scope (Right c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New (Right c) cont)
+          _ <- prop (New scope (Right c) cont)
           pure unit
-        New (Left a) cont -> p'.toUser $ New a cont
+        New scope (Left a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
         p'.fromUser \u -> prop (Left <$> u)
@@ -113,11 +142,11 @@ instance Functor m => Choice (UI m) where
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
-        New (Left c) cont -> do
+        New scope (Left c) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New (Left c) cont)
+          _ <- prop (New scope (Left c) cont)
           pure unit
-        New (Right a) cont -> p'.toUser $ New a cont
+        New scope (Right a) cont -> p'.toUser $ New scope a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
         p'.fromUser \u -> prop (Right <$> u)
@@ -184,8 +213,15 @@ instance Apply m => Endo (UI m) where
           prop u
       }
 
+type UIOptics a b s t = forall m. Functor m => Optic (UI m) s t a b
+
+type UIO s t a b = forall m. Functor m => Optic (UI m) s t a b
+
+projection :: forall a s t. (s -> a) -> UIOptics a Void s t
+projection f = dimap f absurd
+
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
-constant :: forall a s t m. Functor m => a -> Optic (UI m) s t a Void
+constant :: forall a s t. a -> UIOptics a Void s t
 constant a w = wrap $ ado
   w' <- unwrap w
   let initializedRef = unsafePerformEffect $ Ref.new false
@@ -194,48 +230,96 @@ constant a w = wrap $ ado
       initialized <- Ref.read initializedRef
       when (not initialized) do
         Ref.write true initializedRef
-        w'.toUser $ New a false
+        w'.toUser $ New [] a false
     , fromUser: mempty
     }
 
-action :: forall i o m. Functor m => (i -> Aff o) -> Optic (UI m) i o Boolean Void
+adapter :: forall a b s t. String -> (s -> a) -> (b -> t) -> UIOptics a b s t
+adapter name mapin mapout = dimap mapin mapout >>> scopemap (Variant name) -- TODO not sure about `Variant name`
+
+iso :: forall a s. String -> (s -> a) -> (a -> s) -> UIOptics a a s s
+iso name mapin mapout = dimap mapin mapout >>> scopemap (Variant name)
+
+lens :: forall a b s t. (s -> a) -> (s -> b -> t) -> UIOptics a b s t
+lens getter setter = Profunctor.lens getter setter
+
+prism :: forall a b s t. (b -> t) -> (s -> Either t a) -> UIOptics a b s t
+prism to from = Profunctor.prism to from
+
+type Field a s = UIOptics a a s s
+
+-- TODO use Data.Lens.Record.prop?
+field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  (a -> Record s -> Maybe PropagationError) -> Field a (Record s)
+field validate wa = scopemap (Part (reflectSymbol (Proxy @l))) $
+  wrap $ ado
+    wars <- unwrap (first wa)
+    in
+      { toUser: \chrs -> wars.toUser $ (map (\rs -> Tuple (get (Proxy @l) rs) rs)) chrs
+      , fromUser: \prop -> wars.fromUser $ \chrs@(New _ (Tuple a rs) _) -> do
+          case validate a rs of
+            Just error -> pure $ Just error
+            Nothing -> prop $ map (\(Tuple a rs) -> set (Proxy @l) a rs) chrs
+      }
+
+type Ctor a s = UIOptics (Maybe a) a s s
+
+constructor :: forall a s. String -> (a -> s) -> (s -> Maybe a) -> Ctor a s
+constructor name construct deconstruct w = scopemap (Variant name) $ dimap deconstruct construct w
+
+-- TODO move to utils?
+just :: forall a. Ctor a (Maybe a)
+just = constructor "Just" Just identity
+
+right :: forall a b. Ctor a (Either b a)
+right = constructor "right" Right (case _ of
+  Left _ -> Nothing
+  Right r -> Just r)
+
+left :: forall a b. Ctor a (Either a b)
+left = constructor "left" Left (case _ of
+  Right _ -> Nothing
+  Left l -> Just l)
+
+action :: forall i o. (i -> Aff o) -> UIOptics Boolean Void i o
 action arr = action' \i pro post -> do
   liftEffect $ pro true
   o <- arr i
   liftEffect $ pro false
   liftEffect $ post o
 
-action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (UI m) i o a b
+action' :: forall a b i o. (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> UIOptics a b i o
 action' arr w = wrap ado
   let oVar = unsafePerformEffect $ liftEffect AVar.empty
   w' <- unwrap w
   in
     { toUser: case _ of
-      New i cont -> launchAff_ $ arr i (\a -> void $ w'.toUser $ New a cont) (\o -> void $ AVar.put o oVar mempty)
+      New _ i cont -> launchAff_ $ arr i (\a -> void $ w'.toUser $ New [] a cont) (\o -> void $ AVar.put o oVar mempty)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
               -- w'.toUser $ New [] Nothing false
-              void $ prop $ New o false -- TODO really?
+              void $ prop $ New [] o false -- TODO really?
               waitAndPropagate
       in waitAndPropagate
     }
 
 -- oculars
 
-debounced' :: forall m. Applicative m => Milliseconds -> Ocular (UI m)
+type UIOcular m = Ocular (UI m)
+
+debounced' :: forall m. Applicative m => Milliseconds -> UIOcular m
 debounced' millis = affAdapter $ pure
   { pre: case _ of
-    (New i true) -> delay millis *> pure i
-    (New i false) -> pure i
-  , post: \(New i _) -> pure i
+    (New _ i true) -> delay millis *> pure i
+    (New _ i false) -> pure i
+  , post: \(New _ i _) -> pure i
   }
 
-debounced :: forall m. Applicative m => Ocular (UI m)
+debounced :: forall m. Applicative m => UIOcular m
 debounced = debounced' (Milliseconds 300.0)
 
-spied :: forall m. Functor m => DebugWarning => String -> Ocular (UI m)
+spied :: forall m. Functor m => DebugWarning => String -> UIOcular m
 spied name w = wrap ado
   { toUser, fromUser } <- unwrap w
   in
@@ -248,7 +332,7 @@ spied name w = wrap ado
     }
   where
     spy' :: forall a. String -> New a -> a
-    spy' text (New a cont) = spy ("Spied UI \"" <> name <> "\" " <> text <> " new value with continuity " <> show cont) a
+    spy' text (New scope a cont) = spy ("Spied UI \"" <> name <> "\" " <> text <> " new value in scope " <> show scope <> " with continuity " <> show cont) a
 
 -- modifiers
 
@@ -261,14 +345,14 @@ effAdapter f w = wrap ado
   { pre, post } <- f
   in
     { toUser: case _ of
-      New s cont -> do
+      New _ s cont -> do
         a <- pre s
-        toUser $ New a cont
+        toUser $ New [] a cont
     , fromUser: \prop -> do
       fromUser case _ of
-        New b cont -> do
+        New _ b cont -> do
           t <- post b
-          prop $ New t cont
+          prop $ New [] t cont
     }
 
 -- TODO is this needed?
@@ -280,22 +364,48 @@ affAdapter f w = wrap ado
   let mOutputFiberRef = unsafePerformEffect $ Ref.new Nothing
   in
     { toUser: case _ of
-      news@(New _ cont) -> launchAff_ do
+      news@(New _ _ cont) -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")
         newFiber <- forkAff do
           a <- pre news
-          liftEffect $ toUser $ New a cont
+          liftEffect $ toUser $ New [] a cont
         liftEffect $ Ref.write (Just newFiber) mInputFiberRef
     , fromUser: \prop -> do
       fromUser case _ of
-        newb@(New _ cont) -> do
+        newb@(New _ _ cont) -> do
           launchAff_ do
             mFiber <- liftEffect $ Ref.read mOutputFiberRef
             for_ mFiber $ killFiber (error "Obsolete output")
             newFiber <- forkAff do
               t <- post newb
-              liftEffect $ prop $ New t cont
+              liftEffect $ prop $ New [] t cont
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
           pure Nothing
     }
+
+-- private
+
+scopemap :: forall m a b. Functor m => Scope -> UI m a b -> UI m a b
+scopemap scope p = wrap ado
+  { toUser, fromUser } <- unwrap p
+  in
+    { toUser: \newa -> case zoomIn newa of
+      Nothing -> pure unit
+      Just newa' -> toUser newa'
+    , fromUser: \prop -> do
+      fromUser $ zoomOut >>> prop
+    }
+  where
+    zoomOut :: New b -> New b
+    zoomOut (New scopes mb cont) = New (scope : scopes) mb cont
+
+    zoomIn :: New a -> Maybe (New a)
+    zoomIn (New scopes ma cont) = case uncons scopes of
+      Nothing -> Just $ New [] ma cont
+      Just { head, tail } | head == scope -> Just $ New tail ma cont
+      Just { head: Variant _ } -> Just $ New [] ma cont -- not matching head but head is twist
+      _ -> case scope of
+        Variant _ -> Just $ New [] ma cont -- not matching head but scope is twist
+        _ -> Nothing -- otherwise
+

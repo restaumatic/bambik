@@ -13,8 +13,10 @@ to generate this file without the comments in this block.
 { name = "my-project"
 , dependencies =
   [ "aff"
+  , "arrays"
   , "avar"
   , "console"
+  , "control"
   , "datetime"
   , "debug"
   , "effect"
@@ -32,7 +34,6 @@ to generate this file without the comments in this block.
   , "strings"
   , "transformers"
   , "tuples"
-  , "typelevel-prelude"
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
