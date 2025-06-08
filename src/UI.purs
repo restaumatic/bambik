@@ -37,8 +37,6 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Record (get, set)
-import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype UI m i o = UI (m
@@ -184,6 +182,8 @@ instance Apply m => Endo (UI m) where
           prop u
       }
 
+-- Optics
+
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
 constant :: forall a s t m. Functor m => a -> Optic (UI m) s t a Void
 constant a w = wrap $ ado
@@ -222,40 +222,10 @@ action' arr w = wrap ado
       in waitAndPropagate
     }
 
--- oculars
-
-debounced' :: forall m. Applicative m => Milliseconds -> Ocular (UI m)
-debounced' millis = affAdapter $ pure
-  { pre: case _ of
-    (New i true) -> delay millis *> pure i
-    (New i false) -> pure i
-  , post: \(New i _) -> pure i
-  }
-
-debounced :: forall m. Applicative m => Ocular (UI m)
-debounced = debounced' (Milliseconds 300.0)
-
-spied :: forall m. Functor m => DebugWarning => String -> Ocular (UI m)
-spied name w = wrap ado
-  { toUser, fromUser } <- unwrap w
-  in
-    { toUser: \change -> do
-      let _ = spy' "showing to user" change
-      toUser change
-    , fromUser: \prop -> fromUser \change -> do
-      let _ = spy' "getting from user" change
-      prop change
-    }
-  where
-    spy' :: forall a. String -> New a -> a
-    spy' text (New a cont) = spy ("Spied UI \"" <> name <> "\" " <> text <> " new value with continuity " <> show cont) a
-
--- modifiers
-
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
 -- TODO is this needed?
-effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> UI m a b -> UI m s t
+effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Optic (UI m) s t a b
 effAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
@@ -272,7 +242,7 @@ effAdapter f w = wrap ado
     }
 
 -- TODO is this needed?
-affAdapter :: forall m a b s t. Apply m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> UI m a b -> UI m s t
+affAdapter :: forall m a b s t. Apply m => m { pre :: New s -> Aff a, post ::  New b -> Aff t} -> Optic (UI m) s t a b
 affAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
@@ -299,3 +269,31 @@ affAdapter f w = wrap ado
             liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
           pure Nothing
     }
+
+-- Oculars
+
+debounced' :: forall m. Applicative m => Milliseconds -> Ocular (UI m)
+debounced' millis = affAdapter $ pure
+  { pre: case _ of
+    (New i true) -> delay millis *> pure i
+    (New i false) -> pure i
+  , post: \(New i _) -> pure i
+  }
+
+debounced :: forall m. Applicative m => Ocular (UI m)
+debounced = debounced' (Milliseconds 300.0)
+
+spied :: forall m. Functor m => DebugWarning => String -> Ocular (UI m)
+spied name w = wrap ado
+  { toUser, fromUser } <- unwrap w
+  in
+    { toUser: \change -> do
+      let _ = spy' "showing to user" change
+      toUser change
+    , fromUser: \prop -> fromUser \change -> do
+      let _ = spy' "getting from user" change
+      prop change
+    }
+  where
+    spy' :: forall a. String -> New a -> a
+    spy' text (New a cont) = spy ("Spied UI \"" <> name <> "\" " <> text <> " new value with continuity " <> show cont) a
