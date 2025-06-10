@@ -3,9 +3,9 @@
 
 This is a prototype of the idea of *profunctor user interfaces* for Web/Material Design Component-based UIs written in [PureScript](https://www.purescript.org/).
 
-[Read short description of the idea](/doc/description300-1000words.md)
+[1000 characters-long description of the idea](/doc/description-1000characters.md)
 
-[Read full description of the idea](/doc/full-description.md)
+[20 minutes-long presentation of the idea](/doc/presentation-20min.md)
 
 # Demo
 
