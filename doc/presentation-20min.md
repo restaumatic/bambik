@@ -380,82 +380,28 @@ personForm =
 ```
 
 ---
-## Plumbing with profunctor optics instead of arrow notation
+## Building complex UI is easy 
 
-Arrow (`proc`) notation is not widely used as compared to Monad do notation.
-Arrow notation is controversial?
-With profunctor categories and profunctor optics we don't need dedicated notation nor syntactic sugar.
-What's needed is PureScript's `QualifiedDo` feature (https://jordanmartinez.github.io/purescript-jordans-reference-site/content/11-Syn06-Modifying-Do-Ado-Syntax-Sugar/src/13-Qualified-Do-ps.html).
-This enables `do` blocks for `Semigroups`, `Semigroupoids` and `Alt` typeclasses (https://pursuit.purescript.org/packages/purescript-qualified-do/2.2.0).
-Necessary plumbing of profunctors is done via profunctor optics.
+It involves only:
+  * design system basic building blocks and oculars
+  * business lenses, prisms etc
+  * composition of building blocks with `Endo.do`, `Sum.do`, `Semigroupoid.do` blocks
+  * `$` operator, `(` and `)` 
+
+as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/1/) ([code](https://github.com/restaumatic/bambik/blob/main/demo/1/Demo1/Main.purs)).
 
 ---
-<!--
-For data flow suffices that the `Arrow`+`ArrowChoice`-`id`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`Semigroupoid`:
-  dimap :: (a -> b) -> (c -> d) -> p b c -> p a d (from Profunctor)
-  first :: a b c -> a (b, d) (c, d) (from StrongProfunctor)
-  left :: a b c -> a (Either b d) (Either c d) (from ChoiceProfunctor)
-  (>>>) :: a b c -> a c d -> a b d (from Semigroupoid)
+# Profunctors are suitable for UIs
 
-Semigroupoing law:
-p a b >>> (p b c >>> p c d) ≡ (p a b >>> p b c) >>> p c d
+  * At least for specific classes of UIs
+  * Both for dealing with data structures and data flow
+  * Clearly separates business and design 
+  * Declarative, reactive
+  * Provides easy and scalable mental model
+  * Offers simple API
+  * More research and development is needed
 
-you can get (+++) :: ArrowChoice a => a b c -> a b' c' -> a (Either b b') (Either c c') from left having arr
-you can get (+++) :: ProfunctorChoice a => a b c -> a b' c' -> a (Either b b') (Either c c') from left/bimap/>>>
-but getting left from (+++) requires id
-you can get (***) :: Arrow a => a b c -> a b' c' -> a (b,b') (c,c') from first having arr
-you can get (***) :: ProfunctorStrong a => a b c -> a b' c' -> a (b,b') (c,c') from first/bimap/>>>
-but getting first from (***) requires id
+---
+# Thank you!
 
-Or maybe:
-For data flow suffices the `Arrow`+`ArrowChoice`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`Category`
-
-But do we really need `Category.id`?
-We can have an id from pzero:
-
-id :: forall p a. Choice p => Zero p => p a a
-id = dimap Right (either absurd identity) (left pzero)
-
-Or we can have an id from pone:
-
-id :: forall p a. Strong p => One p => p a a
-id = dimap (\a -> Tuple unit a) (\(Tuple _ a) -> a) (first pone)
-
-So maybe:
-For data flow suffices the `Arrow`+`ArrowChoice`-`arr`+`dimap` which is `Profunctor`+`StrongProfunctor`+`ChoiceProfunctor`+`SumProfunctor`+`ZeroProfunctor`
-with id as above
-
-So, having `left` makes `id` not needed? With `left` we can do skipping steps. For what else than `left` we would need `id`?
-Having `id` on the other hand is dangerous when `mappending` (infinite update loop).
-
-# References
-
-Guillaume Boisseau
-St Anne’s Col
-University of Oxford
-A thesis submitted for the degree of
-MSc in Computer Science
-Trinity 2017
-https://arxiv.org/pdf/2001.11816
-- "isomorphism" optics encoding, similar to existentional optics encoding?
-
-Modular data accessors
-https://arxiv.org/pdf/1703.10857 -->
-
-
-<!-- # Notions
-Functional References
-In functional programming, "functional references" (often called "optics") are abstractions that provide a composable way to access and modify parts of immutable data structures.
-
-Key Characteristics
-Immutability-friendly: They work with immutable data, creating new versions rather than modifying in place
-Compositional: Can be combined to access deeply nested structures
-First-class: Can be passed as arguments, returned from functions, etc.
-
-for fixed p as P it looks like an optic:
-
-a
-  a
-  b
-c -->
-
+Eryk Ciepiela
