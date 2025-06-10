@@ -32,7 +32,6 @@ module Demo1.Model
   , loadOrder
   , low
   , normal
-  , order
   , orderId
   , orderSubmission
   , orderSubmissionFailed
@@ -224,9 +223,6 @@ authorization = lens (\order -> { summary: order.total <> " " <> case order.fulf
   Delivery { address } -> "delivery " <> show address }
   ) (\order authorization -> { authorization, order })
 
-order :: forall a. OrderId -> Lens Unit Unit OrderId a
-order id = lens (const id) (\_ _ -> unit)
-
 orderSubmissionFailed :: Prism Boolean Unit Unit Void
 orderSubmissionFailed = prism absurd case _ of
   false -> Right unit
@@ -254,8 +250,8 @@ orderSubmission {authorization, order} = do
   liftEffect $ log $ "submitted order"
   pure true
 
-loadOrder :: OrderId -> Aff Order
-loadOrder orderId = do
+loadOrder :: Unit -> Aff Order
+loadOrder _ = do
   liftEffect $ log $ "loading order"
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "loaded order"

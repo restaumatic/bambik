@@ -376,7 +376,7 @@ slot w = wrap do
 
 -- Entry point
 
-body :: UI Web Unit Unit -> Effect Unit
+body :: forall a . UI Web Unit a -> Effect Unit
 body w = do
   node <- documentBody
   runWidgetInNode node w
