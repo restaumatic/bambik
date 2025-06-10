@@ -130,7 +130,7 @@ class CartesianProfunctor a, CocartesianProfunctor a, Semigroupoid a =>
 ---
 ## Profunctors are a common fabric for data and computation structure
 
-Arrow-like structures computations
+Arrows structure computations
 
 Optics structure data
 
@@ -187,9 +187,11 @@ In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for
 
 E.g. PureScript Web UI framework?
 
-- Declarative/reactive owing to composition
+- Declarative/reactive owing to composablity of profunctors
 - Separating business and presentation owing to optics
 - Requiring only a basic building block that supports `dimap`, `left`, `first`, `>>>`, ...
+
+> `>>> :: Semigroupoid p => p a b -> p b c -> p a c` - PureScript couterpart of `.` in Haskell
 
 ---
 ## `UI` is the generic basic building block
@@ -370,7 +372,7 @@ card      :: Ocular (UI Web)
 module UI where
 import Business
 import Design
-personForm :: UI TheDesignSystem Person Person
+personForm :: UI Web Person Person
 personForm =
   card Endo.do
     firstName textInput
