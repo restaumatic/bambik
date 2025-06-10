@@ -17,20 +17,17 @@ main :: Effect Unit
 main = body $ order "45123519" Flow.do
   action loadOrder $ MDC.indeterminateLinearProgress
   MDC.elevation20 Form.do
-    MDC.caption $ staticText "Order "
-    shortId $ debounced $ MDC.caption text
+    MDC.headline6 View.do 
+      staticText "Order "
+      shortId $ debounced $ text
     MDC.card Form.do
       MDC.caption $ staticText "Identifier"
       shortId $ MDC.filledTextField { floatingLabel: "Short ID" }
       orderId $ MDC.filledTextField { floatingLabel: "Unique ID" }
     customer $ MDC.card Form.do
       MDC.caption $ staticText "Customer"
-      MDC.caption $ staticText "Informal"
       firstName $ MDC.filledTextField { floatingLabel: "First name" }
       lastName $ MDC.filledTextField { floatingLabel: "Last name" }
-      MDC.caption $ staticText "Formal"
-      formal $ surname $ MDC.filledTextField { floatingLabel: "Surname" }
-      formal $ forename $ MDC.filledTextField { floatingLabel: "Forename" }
     fulfillment $ MDC.card Form.do
       MDC.caption $ staticText "Fulfillment"
       dineIn $ MDC.radioButton $ label $ staticText "Dine in"
@@ -67,11 +64,7 @@ main = body $ order "45123519" Flow.do
       customer $ firstName text
       constant " " text
       customer $ lastName text
-      constant " (formally " text
-      customer $ formal $ surname text
-      constant " " text
-      customer $ formal $ forename text
-      constant "), fulfilled as " text
+      constant ", fulfilled as " text
       fulfillment $ dineIn $ slot View.do
         constant "dine in at table " text
         table text

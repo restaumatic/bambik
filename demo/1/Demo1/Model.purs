@@ -260,16 +260,16 @@ loadOrder orderId = do
   delay (Milliseconds 1000.0)
   liftEffect $ log $ "loaded order"
   pure
-    { orderId
+    { orderId: "4617821"
     , shortId: "7"
     , customer:
-      { firstName: "David"
-      , lastName: "Lynch"
+      { firstName: "John"
+      , lastName: "Doe"
       }
     , total: "12.30"
     , payment: Nothing
-    , fulfillment: DineIn { table: "1" }
-    , remarks: "I'm very hungry"
+    , fulfillment: Takeaway { time: "8:30" }
+    , remarks: "Very spicy, please!"
     , priority: Normal
     }
 
