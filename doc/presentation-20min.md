@@ -183,7 +183,7 @@ In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for
 > Package `purescript-profunctor` https://pursuit.purescript.org/packages/purescript-profunctor
 
 ---
-# Are profunctors suitable for UI frameworks?
+# Are profunctors suitable for UIs?
 
 E.g. PureScript Web UI framework?
 
@@ -236,7 +236,7 @@ class Sum p <= Zero p where
 ## `UI Web` is the basic building block for Web UI
 
 ```
-newtype Web a = Web (StateT DocumentBuilderState Effect a)
+newtype Web a = Web (StateT DOM Effect a)
 
 text       :: forall a. UI Web String a
 
@@ -269,7 +269,7 @@ helloWorld =
     staticHTML "<hr/>"
 ```
 
-> `Sum.do` is `Sum` profunctor `psum` composition powered by PureScript *qualified do* feature
+> `Sum.do` does `psum :: forall a b . Sum p => p a b -> p a b -> p a b` composition powered by PureScript *qualified do* feature
 
 ---
 ## Material Design Components are possible with `UI Web`
@@ -291,7 +291,7 @@ submitName = Semigroupoid.do
   containedButton { label: "Submit" }
 ```
 
-> `Semigroupoid.do` is `Semigroupoid` composition `>>>` from `purescript-qualified-do` package
+> `Semigroupoid.do` does `>>> :: forall a b c . Semigroupoid p => p a b -> p b c -> p a c` composition via PureScript *qualified do* feature
 
 ---
 ## Data structures are enabled by `Endo.do`
@@ -308,7 +308,7 @@ identifierForm =
     orderId $ filledTextField { floatingLabel: "Unique ID" }
 ```
 
-> `Endo.do` is `Endo` profunctor `pendo` composition powered by PureScript *qualified do* feature
+> `Endo.do` does `pendo :: forall a. Endo p => p a a > p a a -> p a a` composition via PureScript *qualified do* feature
 
 ---
 ## Data flows are enabled by `Semigroupoid.do` and `Sum.do`
@@ -333,23 +333,24 @@ submitOrder = Semigroupoid.do
 ---
 ## "Business" and "design" are orthogonal optics
 
+Recap:
+
+```
+type Optic p s t a b = p a b -> p s t
+```
+
 Dealing with business, design is transparent:
 
 ```
-type Lens s t a b    = forall p. Strong p => Optic p s t a b
-type Prism s t a b   = forall p. Choice p => Optic p s t a b
+type Lens s t a b    = forall p.   Strong p => Optic p s t a b
+type Prism s t a b   = forall p.   Choice p => Optic p s t a b
 -- etc.
 ```
 
 Dealing with design, business is transparent:
 
 ```
-type Ocular p        = forall a b. Optic p a b a b
-```
-
-Where
-```
-type Optic p s t a b = p a b -> p s t
+type Ocular p        = forall a b.             Optic p a b a b
 ```
 
 ---
@@ -363,7 +364,7 @@ lastName  :: Lens String String Person Person
 ```
 module Design where
 textInput :: UI Web String String
-card     :: Ocular (UI Web)
+card      :: Ocular (UI Web)
 ```
 ```
 module UI where

@@ -1,7 +1,7 @@
 module Web
   ( (:=)
   , (:=>)
-  , DocumentBuilderState
+  , DOM
   , Node
   , Web
   , a
@@ -63,9 +63,9 @@ import Unsafe.Coerce (unsafeCoerce)
 foreign import data Node :: Type
 
 -- Builds Web Document keeping track of parent/last sibling node
-newtype Web a = Web (StateT DocumentBuilderState Effect a) -- TODO rename to DocumentBuilder?
+newtype Web a = Web (StateT DOM Effect a) -- TODO rename to DocumentBuilder?
 
-type DocumentBuilderState =
+type DOM =
   { parent :: Node
   , sibling :: Node -- last sibling
   }
@@ -76,7 +76,7 @@ derive newtype instance Applicative Web
 derive newtype instance Bind Web
 derive newtype instance Monad Web
 derive newtype instance MonadEffect Web
-derive newtype instance MonadState DocumentBuilderState Web
+derive newtype instance MonadState DOM Web
 
 uniqueId :: Effect String
 uniqueId = randomElementId
