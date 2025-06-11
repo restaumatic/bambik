@@ -122,7 +122,7 @@ class CartesianProfunctor a, CocartesianProfunctor a, Semigroupoid a =>
   ArrowLike a
 ```
 
-* disabled power vs.. enabled more instances as compared to arrows
+* disabled power vs. enabled more instances as compared to arrows
 * simpler laws as compared to arrows
 * `dimap`, `left`, `second`, `.` required
 * `lmap`, `rmap`, `second`, `right`, `***`, `+++` derivable
