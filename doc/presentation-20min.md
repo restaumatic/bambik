@@ -136,6 +136,8 @@ Optics structure data
 
 All based on profunctors
 
+Why it's technically not true in the Haskell ecosystem?
+
 ---
 ## Profunctors as a fabric for optics were discovered late
 
@@ -185,19 +187,20 @@ In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for
 ---
 # Are profunctors suitable for UIs?
 
-E.g. PureScript Web UI framework?
+Recap: Profunctors model both data structures and data flow
+
+Can profunctors model UIs?
 
 - Declarative/reactive owing to composablity of profunctors
 - Separating business and presentation owing to optics
-- Requiring only a basic building block that supports `dimap`, `left`, `first`, `>>>`, ...
+- Requiring only a basic building block that supports `dimap`, `left`, `first`, `.` etc
+- Viable alternative to Functional Reactive Programming, Virtual Dom, The Elm Architecture, ...?
 
-> `>>> :: Semigroupoid p => p a b -> p b c -> p a c` - PureScript counterpart of `.` in Haskell
+**PureScript Web UI framework?**
 
 ---
 ## `UI` is the generic basic building block
 
-
-```
 newtype UI m i o = UI (m
   { toUser   :: New i                  -> Effect Unit
   , fromUser :: (New o -> Effect Unit) -> Effect Unit
