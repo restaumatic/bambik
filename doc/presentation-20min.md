@@ -125,7 +125,7 @@ class CartesianProfunctor a, CocartesianProfunctor a, Semigroupoid a =>
 * disabled power vs. enabled more instances as compared to arrows
 * simpler laws as compared to arrows
 * `dimap`, `left`, `second`, `.` required
-* `lmap`, `rmap`, `second`, `right`, `***`, `+++` derivable
+* `lmap`, `rmap`, `second`, `right`, `***`, `+++` derived
 
 ---
 ## Profunctors are a common fabric for data and computation structure
