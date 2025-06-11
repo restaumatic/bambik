@@ -187,7 +187,7 @@ In PureScript ecosystem, cartesian (strong) profunctor category is a synonym for
 ---
 # Are profunctors suitable for UIs?
 
-Recap: Profunctors model both data structures and data flow
+Recap: profunctors model both data structures and data flow
 
 Can profunctors model UIs?
 
@@ -196,7 +196,7 @@ Can profunctors model UIs?
 - Requiring only a basic building block that supports `dimap`, `left`, `first`, `.` etc
 - Viable alternative to Functional Reactive Programming, Virtual Dom, The Elm Architecture, ...?
 
-**PureScript Web UI framework?**
+**PureScript Web UI framework based on profunctors?**
 
 ---
 ## `UI` is the generic basic building block
