@@ -368,19 +368,19 @@ firstName :: Lens String String Person Person
 lastName  :: Lens String String Person Person
 ```
 ```
-module Design where
-textInput :: UI Web String String
+module MDC where
+textField :: UI Web String String
 card      :: Ocular (UI Web)
 ```
 ```
 module UI where
 import Business
-import Design
+import qualified MDC
 personForm :: UI Web Person Person
 personForm =
-  card Endo.do
-    firstName textInput
-    lastName textInput
+  MDC.card Endo.do
+    firstName MDC.textField
+    lastName MDC.textField
 ```
 
 ---
