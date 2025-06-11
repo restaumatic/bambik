@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "build": "spago build -w",
-    "presentation": "marp doc/presentation-20min.md --pdf && marp doc/presentation-20min.md",
+    "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "demo1": "parcel -p 12341 demo/1/index.html & spago bundle-app --main Demo1.Main --to demo/1/output/bundle.js -w -l",
     "demo2": "parcel -p 12342 demo/2/index.html & spago bundle-app --main Demo2.Main --to demo/2/output/bundle.js -w -l",
     "deploy-demo1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
