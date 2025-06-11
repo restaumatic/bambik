@@ -291,10 +291,10 @@ caption :: forall a b. UI Web a b -> UI Web a b
 
 submitName :: UI Web String String
 submitName = Semigroupoid.do
-  card Sum.do
-    caption $ staticText "What is your name?"
-    filledTextField { floatingLabel: "Name" }
-  containedButton { label: "Submit" }
+  MDC.card Sum.do
+    MDC.caption $ staticText "What is your name?"
+    MDC.filledTextField { floatingLabel: "Name" }
+  MDC.containedButton { label: "Submit" }
 ```
 
 > `Semigroupoid.do` does `>>> :: forall a b c . Semigroupoid p => p a b -> p b c -> p a c` composition via PureScript *qualified do* feature
@@ -308,10 +308,10 @@ uniqueId :: Lens Order Order String String
 
 identifierForm :: Web UI Order Order
 identifierForm =
-  card Endo.do
-    caption $ staticText "Identifier"
-    shortId $ filledTextField { floatingLabel: "Short ID" }
-    orderId $ filledTextField { floatingLabel: "Unique ID" }
+  MDC.card Endo.do
+    MDC.caption $ staticText "Identifier"
+    shortId $ MDC.filledTextField { floatingLabel: "Short ID" }
+    orderId $ MDC.filledTextField { floatingLabel: "Unique ID" }
 ```
 
 > `Endo.do` does `pendo :: forall a. Endo p => p a a > p a a -> p a a` composition via PureScript *qualified do* feature
@@ -326,15 +326,15 @@ orderSubmissionFailed :: Prism Boolean Unit Unit Void
 
 submitOrder :: Web UI Order Void
 submitOrder = Semigroupoid.do
-  containedButton { label: "Submit order" }
-  authorization $ simpleDialog { title: "Authorization" } Sum.do
-    caption Sum.do
+  MDC.containedButton { label: "Submit order" }
+  authorization $ MDC.simpleDialog { title: "Authorization" } Sum.do
+    MDC.caption Sum.do
       staticText "Order summary: "
       summary text
-    filledTextField { floatingLabel: "Authorization token" }
-  orderSubmission indeterminateLinearProgress
-  orderSubmissionFailed $ snackbar $ staticText "Order submission failed"
-  snackbar $ staticText "Order submitted"
+    MDC.filledTextField { floatingLabel: "Authorization token" }
+  orderSubmission MDC.indeterminateLinearProgress
+  orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
+  MDC.snackbar $ staticText "Order submitted"
 ```
 ---
 ## "Business" and "design" are orthogonal optics
