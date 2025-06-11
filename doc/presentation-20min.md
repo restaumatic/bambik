@@ -163,7 +163,7 @@ That's why the `Arrow` class is not, and is not likely to be in the future, a su
 > "Generalising Monads to Arrows" by John Hughes
 
 ---
-## Profunctor encoding of optics is the default one in Purescript
+## Profunctor encoding of optics is the default one in PureScript
 
 Profunctors in Haskell were about 10 years late.
 
@@ -174,7 +174,7 @@ Optics in PureScript ecosystem, however, are based on profunctors.
 > Package `purescript-profunctor-lenses` https://pursuit.purescript.org/packages/purescript-profunctor-lenses
 
 ---
-## Profunctor encoding of arrows is the default one in Purescript
+## Profunctor encoding of arrows is the default one in PureScript
 
 Luckily, in a sense, PureScript hadn't got arrows earlier than profunctors.
 
