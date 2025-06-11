@@ -386,7 +386,7 @@ It involves only:
   * design system basic building blocks and oculars
   * business lenses, prisms etc
   * composition of building blocks with `Endo.do`, `Sum.do`, `Semigroupoid.do` blocks
-  * `$` operator, `(` and `)` 
+  * `>>>`, `pempty`, `$`, `(` and `)`
 
 as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/1/) ([code](https://github.com/restaumatic/bambik/blob/main/demo/1/Demo1/Main.purs)).
 
