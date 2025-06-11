@@ -191,7 +191,7 @@ E.g. PureScript Web UI framework?
 - Separating business and presentation owing to optics
 - Requiring only a basic building block that supports `dimap`, `left`, `first`, `>>>`, ...
 
-> `>>> :: Semigroupoid p => p a b -> p b c -> p a c` - PureScript couterpart of `.` in Haskell
+> `>>> :: Semigroupoid p => p a b -> p b c -> p a c` - PureScript counterpart of `.` in Haskell
 
 ---
 ## `UI` is the generic basic building block
