@@ -201,6 +201,7 @@ Can profunctors model UIs?
 ---
 ## `UI` is the generic basic building block
 
+```
 newtype UI m i o = UI (m
   { toUser   :: New i                  -> Effect Unit
   , fromUser :: (New o -> Effect Unit) -> Effect Unit
