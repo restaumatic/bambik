@@ -1,4 +1,4 @@
-module Demo2.Main (main) where
+module Main (main) where
 
 import Prelude hiding (div)
 

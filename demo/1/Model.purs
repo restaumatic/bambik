@@ -1,4 +1,4 @@
-module Demo1.Model
+module Model
   ( Address
   , AuthToken
   , AuthorizedOrder

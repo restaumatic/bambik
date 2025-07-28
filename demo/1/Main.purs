@@ -1,4 +1,4 @@
-module Demo1.Main (main) where
+module Main (main) where
 
 import Prelude
 
@@ -6,7 +6,7 @@ import Data.Lens.Extra.Commons (just, missing)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Endo
 import Data.Profunctor.Sum as Sum
-import Demo1.Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, fulfillment, high, lastName, loadOrder, low, normal, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, table, takeaway, time, total)
+import Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, fulfillment, high, lastName, loadOrder, low, normal, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, table, takeaway, time, total)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
