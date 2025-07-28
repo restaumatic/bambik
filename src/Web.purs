@@ -171,7 +171,7 @@ button w = wrap do
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
     a <- Ref.read aRef
     -- w'.toUser Nothing -- TODO check
-    -- setAttribute node "disabled" "true" -- TODO re-think
+    setAttribute node "disabled" "true" -- TODO re-think
     void $ prop $ New a false
     }
 

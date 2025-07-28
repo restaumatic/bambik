@@ -2,10 +2,10 @@ module Data.Lens.Extra.Commons where
 
 import Control.Category (identity)
 import Data.Either (Either(..))
-import Data.Function (flip)
+import Data.Function (const, flip)
 import Data.Lens (Iso, Prism, Lens, prism)
 import Data.Lens.Record (prop)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (dimap)
 import Data.Symbol (class IsSymbol)
 import Data.Void (Void, absurd)
@@ -27,8 +27,17 @@ missing default = prism Just case _ of
   Just a -> Left (Just a)
   Nothing -> Right default
 
+missing' :: forall a. a -> Prism (Maybe a) a (Maybe a) a
+missing' default = prism identity case _ of
+  Just a -> Left a
+  Nothing -> Right (Just default)
+
+
 just :: forall a. Iso (Maybe a) (Maybe a) (Maybe a) a
 just = flip dimap Just identity
+
+nothing :: forall a. a -> Iso (Maybe a) (Maybe a) (Maybe a) a
+nothing default p = dimap (maybe (Just default) (const Nothing)) Just p
 
 right :: forall a b. Iso (Either b a) (Either b a) (Maybe a) a
 right = flip dimap Right (case _ of

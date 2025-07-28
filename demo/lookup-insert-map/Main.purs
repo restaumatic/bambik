@@ -13,10 +13,37 @@ module Main (main) where
 
 import Prelude hiding (div)
 
-import Effect (Effect)
+import Data.Lens.Extra.Commons (just, missing, missing', nothing)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Sum as Sum
-import Web (body, div, p, staticText)
+import Data.Profunctor.Zero (pzero)
+import Effect (Effect)
+import Effect.Aff (Milliseconds(..), delay)
+import MDC (filledTextField)
+import MDC as MDC
+import QualifiedDo.Semigroupoid as Semigroupoid
+import UI (action)
+import Web (body, div, p, slot, staticText, text)
 
 main :: Effect Unit
-main = body $ div Sum.do
-  p $ staticText "Lookup/insert map demo"
+main = body $ div $ Semigroupoid.do
+    p $ staticText "Lookup/insert map demo"
+    MDC.filledTextField { floatingLabel: "Key" }
+    MDC.containedButton { label: Just "Lookup", icon: Nothing }
+    action (\key -> do
+      delay (Milliseconds 1000.0)
+      pure $ case key of
+        "A" -> Just "GXHJK"
+        "B" -> Just "OJAKL"
+        "C" -> Just "HUQOO"
+        _ -> Nothing) $ MDC.indeterminateLinearProgress
+    -- Sum.do
+    nothing "" $ slot Semigroupoid.do
+      filledTextField { floatingLabel: "Create Value" }
+      MDC.containedButton { label: Just "Insert", icon: Nothing }
+      action (\value -> pure value) $ MDC.indeterminateLinearProgress
+    slot $ text
+    -- missing "" $ filledTextField { floatingLabel: "Value" }
+    -- p $ text
+    pzero
+
