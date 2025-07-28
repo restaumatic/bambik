@@ -5,6 +5,7 @@
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "demo1": "parcel -p 1234 demo/index.html & spago bundle-app --main Main --to demo/output/bundle.js -w -l --path demo/1/**/*.purs",
     "demo2": "parcel -p 1234 demo/index.html & spago bundle-app --main Main --to demo/output/bundle.js -w -l --path demo/2/**/*.purs",
+    "demo-lookup-insert-map": "parcel -p 1234 demo/index.html & spago bundle-app --to demo/output/bundle.js -w -l --path demo/lookup-insert-map/**/*.purs",
     "deploy-demo1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo2": "scp -r demo/2/ xyz:/var/www/html/bambik/demo/"
   },
