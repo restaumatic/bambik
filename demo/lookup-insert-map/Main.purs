@@ -13,37 +13,56 @@ module Main (main) where
 
 import Prelude hiding (div)
 
-import Data.Lens.Extra.Commons (just, missing, missing', nothing)
+import Data.Lens.Extra.Commons (field, nothing)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor.Endo as Endo
 import Data.Profunctor.Sum as Sum
-import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay)
 import MDC (filledTextField)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (action)
-import Web (body, div, p, slot, staticText, text)
+import UI (Action, action)
+import Web (body, p, slot, staticText, text)
 
 main :: Effect Unit
-main = body $ div $ Semigroupoid.do
-    p $ staticText "Lookup/insert map demo"
-    MDC.filledTextField { floatingLabel: "Key" }
-    MDC.containedButton { label: Just "Lookup", icon: Nothing }
-    action (\key -> do
-      delay (Milliseconds 1000.0)
-      pure $ case key of
-        "A" -> Just "GXHJK"
-        "B" -> Just "OJAKL"
-        "C" -> Just "HUQOO"
-        _ -> Nothing) $ MDC.indeterminateLinearProgress
-    -- Sum.do
-    nothing "" $ slot Semigroupoid.do
-      filledTextField { floatingLabel: "Create Value" }
-      MDC.containedButton { label: Just "Insert", icon: Nothing }
-      action (\value -> pure value) $ MDC.indeterminateLinearProgress
-    slot $ text
-    -- missing "" $ filledTextField { floatingLabel: "Value" }
-    -- p $ text
-    pzero
+main = body $ MDC.elevation10 $ Semigroupoid.do
+  MDC.subtitle1 $ staticText "Lookup/insert map demo"
+  p $ MDC.caption $ staticText "Provide a map key. For keys 'a', 'b' and 'c' the values are present in the map. For other keys provide a value that will be inserted to the map. Ultimately, the value will be displayed in the card below. "
+  MDC.filledTextField { floatingLabel: "Key" }
+  MDC.containedButton { label: Just "Lookup", icon: Nothing }
+  lookup MDC.indeterminateLinearProgress
+  Endo.do
+    Semigroupoid.do
+      field @"mvalue" $ nothing "" $ slot $ Semigroupoid.do
+        filledTextField { floatingLabel: "Value" }
+        MDC.containedButton { label: Just "Insert", icon: Nothing }
+      insert MDC.indeterminateLinearProgress
+    field @"mvalue" $ slot $ MDC.card $ Sum.do
+      MDC.subtitle2 $ staticText "Value "
+      MDC.caption $ text
 
+type Key = String
+type Value = String
+
+type LookupResult =
+  { key :: Key
+  , mvalue :: Maybe Value
+  }
+
+lookup :: Action Key LookupResult Boolean Void
+lookup = action \key -> do
+  delay $ Milliseconds 300.0
+  pure
+    { key
+    , mvalue: case key of
+      "a" -> Just "GXHJK"
+      "b" -> Just "OJAKL"
+      "c" -> Just "HUQOO"
+      _ -> Nothing
+    }
+
+insert :: Action LookupResult LookupResult Boolean Void
+insert = action \{ key, mvalue } -> do
+  delay (Milliseconds 1000.0)
+  pure { key, mvalue }

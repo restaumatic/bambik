@@ -1,5 +1,6 @@
 module UI
-  ( New(..)
+  ( Action
+  , New(..)
   , PropagationError
   , PropagationStatus
   , UI(..)
@@ -198,7 +199,9 @@ constant a w = wrap $ ado
     , fromUser: mempty
     }
 
-action :: forall i o m. Functor m => (i -> Aff o) -> Optic (UI m) i o Boolean Void
+type Action s t a b = forall m. Functor m => Optic (UI m) s t a b
+
+action :: forall s t. (s -> Aff t) -> Action s t Boolean Void
 action arr = action' \i pro post -> do
   liftEffect $ pro true
   o <- arr i
