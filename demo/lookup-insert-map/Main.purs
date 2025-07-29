@@ -9,12 +9,15 @@ module Main (main) where
 
 import Prelude hiding (div)
 
-import Data.Lens.Extra.Commons (field, nothing)
+import Data.Default (class Default)
+import Data.Lens (Iso)
+import Data.Lens.Extra.Commons (constructor, field, nothing)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Endo
 import Data.Profunctor.Sum as Sum
+import Data.Profunctor.Zero (pzero)
 import Data.Traversable (for_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -27,46 +30,72 @@ import MDC (filledTextField)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (Action, action)
-import Web (body, p, slot, staticText, text)
+import Web (body, label, p, slot, staticText, text)
 
 main :: Effect Unit
-main = body $ MDC.elevation10 $ Semigroupoid.do
-  MDC.subtitle1 $ staticText "Lookup/insert map demo"
-  p $ MDC.caption $ staticText "Provide a map key. For keys 'a', 'b' and 'c' the values are already present in the map. For other keys provide a value that will be inserted to the map. Ultimately, the value will be displayed in the card below. "
-  MDC.filledTextField { floatingLabel: "Key" }
-  MDC.containedButton { label: Just "Lookup", icon: Nothing }
-  lookup MDC.indeterminateLinearProgress
+main = body $ MDC.elevation10 $ 
   Endo.do
-    Semigroupoid.do
-      field @"mvalue" $ nothing "" $ slot $ Semigroupoid.do
-        filledTextField { floatingLabel: "Value" }
-        MDC.containedButton { label: Just "Insert", icon: Nothing }
-      insert MDC.indeterminateLinearProgress
-    field @"mvalue" $ slot $ MDC.card $ Sum.do
-      MDC.subtitle2 $ staticText "Value "
-      MDC.caption $ text
+    MDC.subtitle1 $ staticText "UberDirect Organization API demo"
+    MDC.card $ Endo.do
+      glovo $ MDC.radioButton $ label $ staticText "Glovo"
+      uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
+    glovo $ slot $ MDC.card $ MDC.caption $ staticText "Some Glovo-specific stuff"
+    uberDirect $ slot $ Endo.do
+      p $ MDC.caption $ staticText "Provide restaurant id. For ids 'a', 'b' and 'c' integration ids are already present in the map. For other ids provide a value that will be registered. Ultimately, the integration id will be displayed in the card below. "
+      field @"restaurantId" Semigroupoid.do
+        MDC.filledTextField { floatingLabel: "Restaurant ID" }
+        MDC.containedButton { label: Just "Lookup", icon: Nothing }
+        lookup MDC.indeterminateLinearProgress
+        Endo.do
+          Semigroupoid.do
+            field @"mIntegrationId" $ nothing "" $ slot $ Semigroupoid.do
+              filledTextField { floatingLabel: "Integration ID" }
+              MDC.containedButton { label: Just "Insert", icon: Nothing }
+            insert MDC.indeterminateLinearProgress
+          field @"mIntegrationId" $ slot $ Sum.do
+            MDC.card $ Sum.do
+              staticText "Integration ID: "
+              text
+            MDC.card $ MDC.caption $ staticText "Some further stuff about UberDirect integration"
+        pzero
 
-type Key = String
-type Value = String
+type RestaurantId = String
+
+type IntegrationId = String
+
+data Integration = UberDirect { restaurantId :: RestaurantId, integrationId :: IntegrationId } | Glovo
+
+instance Default Integration where
+  default = Glovo
+
+uberDirect :: Iso Integration Integration (Maybe { restaurantId :: RestaurantId, integrationId :: IntegrationId }) { restaurantId :: RestaurantId, integrationId :: IntegrationId }
+uberDirect = constructor UberDirect case _ of
+  UberDirect c -> Just c
+  _ -> Nothing
+
+glovo :: Iso Integration Integration (Maybe Unit) Unit
+glovo = constructor (const Glovo) case _ of
+  UberDirect c -> Nothing
+  _ -> Just unit
 
 type LookupResult =
-  { key :: Key
-  , mvalue :: Maybe Value
+  { restaurantId :: RestaurantId
+  , mIntegrationId :: Maybe IntegrationId
   }
 
-lookup :: Action Key LookupResult Boolean Void
-lookup = action \key -> do
+lookup :: Action RestaurantId LookupResult Boolean Void
+lookup = action \restaurantId -> do
   delay $ Milliseconds 300.0
-  mvalue <- liftEffect $ Ref.read mapRef <#> Map.lookup key
-  pure { key, mvalue }
+  mIntegrationId <- liftEffect $ Ref.read mapRef <#> Map.lookup restaurantId
+  pure { restaurantId, mIntegrationId }
 
 insert :: Action LookupResult LookupResult Boolean Void
-insert = action \{ key, mvalue } -> do
+insert = action \{ restaurantId, mIntegrationId } -> do
   delay (Milliseconds 300.0)
-  for_ mvalue \value -> liftEffect $ Ref.modify_ (Map.insert key value) mapRef
-  pure { key, mvalue }
+  for_ mIntegrationId \value -> liftEffect $ Ref.modify_ (Map.insert restaurantId value) mapRef
+  pure { restaurantId, mIntegrationId }
 
-mapRef :: Ref (Map Key Value)
+mapRef :: Ref (Map RestaurantId IntegrationId)
 mapRef = unsafePerformEffect $ Ref.new $ Map.fromFoldable
   [ Tuple "a" "GXHJK" 
   , Tuple "b" "OJAKL" 

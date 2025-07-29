@@ -376,7 +376,7 @@ slot w = wrap do
 
 -- Entry point
 
-body :: forall a . UI Web Unit a -> Effect Unit
+body :: forall a b. Default a => UI Web a b -> Effect Unit
 body w = do
   node <- documentBody
   runWidgetInNode node w
@@ -386,12 +386,12 @@ runWidgetInSelectedNode selector w = do
   node <- selectedNode selector
   runWidgetInNode node w
 
-runWidgetInNode :: forall t. Node -> UI Web Unit t -> Effect Unit
+runWidgetInNode :: forall a t. Default a => Node -> UI Web a t -> Effect Unit
 runWidgetInNode node w = runDomInNode node do
   { toUser, fromUser } <- unwrap w
   liftEffect $ fromUser case _ of
     New mo _ -> pure Nothing
-  void $ liftEffect $ toUser $ New unit false
+  void $ liftEffect $ toUser $ New default false
 
 --- private
 
