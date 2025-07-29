@@ -41,20 +41,20 @@ main = body $ MDC.elevation10 $
       uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
     glovo $ slot $ MDC.card $ MDC.caption $ staticText "Some Glovo-specific stuff"
     uberDirect $ slot $ Endo.do
-      p $ MDC.caption $ staticText "Provide restaurant id. For ids 'a', 'b' and 'c' integration ids are already present in the map. For other ids provide a value that will be registered. Ultimately, the integration id will be displayed in the card below. "
-      field @"restaurantId" Semigroupoid.do
+      field @"restaurantId" $ MDC.card Semigroupoid.do
+        p $ MDC.caption $ staticText "Provide restaurant ID. For ids 'a', 'b' and 'c' organization IDs are already generated. For other IDs an organization IDs will be generated. Ultimately, the organization ID will be displayed in the card below."
         MDC.filledTextField { floatingLabel: "Restaurant ID" }
-        MDC.containedButton { label: Just "Lookup", icon: Nothing }
+        MDC.containedButton { label: Just "Lookup organization ID", icon: Nothing }
         lookup MDC.indeterminateLinearProgress
         Endo.do
           Semigroupoid.do
-            field @"mIntegrationId" $ nothing "" $ slot $ Semigroupoid.do
-              filledTextField { floatingLabel: "Integration ID" }
-              MDC.containedButton { label: Just "Insert", icon: Nothing }
-            insert MDC.indeterminateLinearProgress
+            field @"mIntegrationId" $ nothing "" $ slot $ MDC.card Endo.do
+              MDC.caption $ staticText "No organization ID found"
+              MDC.containedButton { label: Just "Generate organization ID", icon: Nothing }
+            generate MDC.indeterminateLinearProgress
           field @"mIntegrationId" $ slot $ Sum.do
             MDC.card $ Sum.do
-              staticText "Integration ID: "
+              staticText "Organization ID: "
               text
             MDC.card $ MDC.caption $ staticText "Some further stuff about UberDirect integration"
         pzero
@@ -89,11 +89,12 @@ lookup = action \restaurantId -> do
   mIntegrationId <- liftEffect $ Ref.read mapRef <#> Map.lookup restaurantId
   pure { restaurantId, mIntegrationId }
 
-insert :: Action LookupResult LookupResult Boolean Void
-insert = action \{ restaurantId, mIntegrationId } -> do
+generate :: Action LookupResult LookupResult Boolean Void
+generate = action \{ restaurantId, mIntegrationId } -> do
   delay (Milliseconds 300.0)
-  for_ mIntegrationId \value -> liftEffect $ Ref.modify_ (Map.insert restaurantId value) mapRef
-  pure { restaurantId, mIntegrationId }
+  let generatedIntegrationId = "GEN-" <> restaurantId
+  liftEffect $ Ref.modify_ (Map.insert restaurantId generatedIntegrationId) mapRef
+  pure { restaurantId, mIntegrationId: Just generatedIntegrationId }
 
 mapRef :: Ref (Map RestaurantId IntegrationId)
 mapRef = unsafePerformEffect $ Ref.new $ Map.fromFoldable
