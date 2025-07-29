@@ -10,11 +10,19 @@ module Main (main) where
 import Prelude hiding (div)
 
 import Data.Lens.Extra.Commons (field, nothing)
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Endo
 import Data.Profunctor.Sum as Sum
+import Data.Traversable (for_)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay)
+import Effect.Class (liftEffect)
+import Effect.Ref (Ref)
+import Effect.Ref as Ref
+import Effect.Unsafe (unsafePerformEffect)
 import MDC (filledTextField)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,7 +32,7 @@ import Web (body, p, slot, staticText, text)
 main :: Effect Unit
 main = body $ MDC.elevation10 $ Semigroupoid.do
   MDC.subtitle1 $ staticText "Lookup/insert map demo"
-  p $ MDC.caption $ staticText "Provide a map key. For keys 'a', 'b' and 'c' the values are present in the map. For other keys provide a value that will be inserted to the map. Ultimately, the value will be displayed in the card below. "
+  p $ MDC.caption $ staticText "Provide a map key. For keys 'a', 'b' and 'c' the values are already present in the map. For other keys provide a value that will be inserted to the map. Ultimately, the value will be displayed in the card below. "
   MDC.filledTextField { floatingLabel: "Key" }
   MDC.containedButton { label: Just "Lookup", icon: Nothing }
   lookup MDC.indeterminateLinearProgress
@@ -49,16 +57,18 @@ type LookupResult =
 lookup :: Action Key LookupResult Boolean Void
 lookup = action \key -> do
   delay $ Milliseconds 300.0
-  pure
-    { key
-    , mvalue: case key of
-      "a" -> Just "GXHJK"
-      "b" -> Just "OJAKL"
-      "c" -> Just "HUQOO"
-      _ -> Nothing
-    }
+  mvalue <- liftEffect $ Ref.read mapRef <#> Map.lookup key
+  pure { key, mvalue }
 
 insert :: Action LookupResult LookupResult Boolean Void
 insert = action \{ key, mvalue } -> do
-  delay (Milliseconds 1000.0)
+  delay (Milliseconds 300.0)
+  for_ mvalue \value -> liftEffect $ Ref.modify_ (Map.insert key value) mapRef
   pure { key, mvalue }
+
+mapRef :: Ref (Map Key Value)
+mapRef = unsafePerformEffect $ Ref.new $ Map.fromFoldable
+  [ Tuple "a" "GXHJK" 
+  , Tuple "b" "OJAKL" 
+  , Tuple "c" "HUQOO" 
+  ]
