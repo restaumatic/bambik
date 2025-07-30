@@ -5,7 +5,7 @@ import Data.Either (Either(..))
 import Data.Function (const, flip)
 import Data.Lens (Iso, Prism, Lens, prism)
 import Data.Lens.Record (prop)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor (dimap)
 import Data.Symbol (class IsSymbol)
 import Data.Void (Void, absurd)
@@ -38,6 +38,9 @@ just = flip dimap Just identity
 
 nothing :: forall a. a -> Iso (Maybe a) (Maybe a) (Maybe a) a
 nothing default p = dimap (maybe (Just default) (const Nothing)) Just p
+
+withDefault :: forall a. a -> Iso (Maybe a) (Maybe a) a a
+withDefault default p = dimap (fromMaybe default) Just p
 
 right :: forall a b. Iso (Either b a) (Either b a) (Maybe a) a
 right = flip dimap Right (case _ of
