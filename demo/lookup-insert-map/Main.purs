@@ -11,7 +11,7 @@ import Prelude hiding (div)
 
 import Data.Default (class Default)
 import Data.Lens (Iso, Lens, lens)
-import Data.Lens.Extra.Commons (constructor, field, input, just, missing'', output)
+import Data.Lens.Extra.Commons (constructor, field, input, just, nothing, output)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -52,11 +52,11 @@ uberDirectForm = MDC.card $ Form.do
           text
         MDC.containedButton { label: Just "Use found organization ID", icon: Nothing }
       Flow.do
-        field @"mOrganizationId" $ missing'' $ variant $ Form.do
+        field @"mOrganizationId" $ nothing $ variant $ Form.do
           MDC.caption $ staticText "No organization ID found"
           MDC.containedButton { label: Just "Generate organization ID", icon: Nothing }
         generate MDC.indeterminateLinearProgress
-      field @"mOrganizationId" $ missing'' $ variant $ Form.do
+      field @"mOrganizationId" $ nothing $ variant $ Form.do
         MDC.containedButton { label: Just "I'll provide already generated organization ID below", icon: Nothing }
   organizationIdInput $ MDC.filledTextField { floatingLabel: "Organization ID" }
   MDC.subtitle2 $ staticText "Preview "

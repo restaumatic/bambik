@@ -37,8 +37,8 @@ missing default = prism Just case _ of
 missing' :: forall a. Default a => Iso (Maybe a) (Maybe a) a a
 missing' = dimap (fromMaybe default) Just
 
-missing'' :: forall a. Default a => Iso (Maybe a) (Maybe a) (Maybe a) a
-missing'' = dimap (case _ of 
+nothing :: forall a. Default a => Iso (Maybe a) (Maybe a) (Maybe a) a
+nothing = dimap (case _ of 
   Nothing -> Just default
   _ -> Nothing) Just
 
