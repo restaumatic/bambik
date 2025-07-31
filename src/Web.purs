@@ -338,6 +338,7 @@ transient ui = wrap do
         prop x
     }
 
+-- rename to variant?
 conditional :: forall a b. UI Web a b -> UI Web (Maybe a) b
 conditional w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
