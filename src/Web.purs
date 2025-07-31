@@ -13,6 +13,7 @@ module Web
   , checkboxInput
   , cl
   , clDyn
+  , conditional
   , div
   , h1
   , h2
@@ -20,7 +21,6 @@ module Web
   , h4
   , h5
   , h6
-  , staticHTML
   , i
   , init
   , input
@@ -32,12 +32,13 @@ module Web
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
-  , slot
   , span
+  , staticHTML
   , staticText
   , svg
   , text
   , textArea
+  , transient
   , ul
   , uniqueId
   )
@@ -49,6 +50,7 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
+import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
@@ -319,8 +321,25 @@ clDyn name pred w = wrap do
 
 -- others
 
-slot :: forall a b. UI Web a b -> UI Web (Maybe a) b
-slot w = wrap do
+-- Transient UI elements that appear temporarily and then disappear, for small content short focused interactions as opposed to long-term use or complex content. 
+-- It wraps provided UI element with the following behaviour:
+--   - when fed with a value (when `toUser` is called) it's ensured it's appearing
+--   - when emiting a value (when `fromUser` is called) it disappears
+transient :: Ocular (UI Web)
+transient ui = wrap do
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap ui
+  pure
+    { toUser: \new -> do
+        status <- toUser new
+        ensureAttached
+        pure status
+    , fromUser: \prop -> fromUser \x -> do
+        ensureDetached
+        prop x
+    }
+
+conditional :: forall a b. UI Web a b -> UI Web (Maybe a) b
+conditional w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
   pure
     { toUser: case _ of
@@ -331,48 +350,48 @@ slot w = wrap do
         pure status
     , fromUser
     }
-  where
-  attachable :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
-  attachable removePrecedingSiblingNodes dom = do
-    parent <- gets _.parent
-    slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
-    { ensureAttached, ensureDetached, initialDocumentFragment } <- liftEffect do
-      placeholderBefore <- placeholderBeforeSlot slotNo
-      placeholderAfter <- placeholderAfterSlot slotNo
 
-      (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
-      appendChild placeholderAfter parent
+attachable :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
+attachable removePrecedingSiblingNodes dom = do
+  parent <- gets _.parent
+  slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
+  { ensureAttached, ensureDetached, initialDocumentFragment } <- liftEffect do
+    placeholderBefore <- placeholderBeforeSlot slotNo
+    placeholderAfter <- placeholderAfterSlot slotNo
 
-      initialDocumentFragment <- createDocumentFragment
-      detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
+    (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
+    appendChild placeholderAfter parent
 
-      let
-        ensureAttached :: Effect Unit
-        ensureAttached = do
-          detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
-          for_ detachedDocumentFragment \documentFragment -> do
-            removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
-            documentFragment `insertBefore` placeholderAfter
+    initialDocumentFragment <- createDocumentFragment
+    detachedDocumentFragmentRef <- Ref.new $ Just initialDocumentFragment
 
-        ensureDetached :: Effect Unit
-        ensureDetached = do
-          detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
-          when (isNothing detachedDocumentFragment) do
-            documentFragment <- createDocumentFragment
-            moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
-            Ref.write (Just documentFragment) detachedDocumentFragmentRef
+    let
+      ensureAttached :: Effect Unit
+      ensureAttached = do
+        detachedDocumentFragment <- Ref.modify' (\documentFragment -> { state: Nothing, value: documentFragment}) detachedDocumentFragmentRef
+        for_ detachedDocumentFragment \documentFragment -> do
+          removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
+          documentFragment `insertBefore` placeholderAfter
 
-      pure $ { ensureAttached, ensureDetached, initialDocumentFragment }
-    modify_ _ { parent = initialDocumentFragment }
-    result <- dom
-    newSibling <- liftEffect $ lastChild initialDocumentFragment
-    modify_ _ { parent = parent, sibling = newSibling}
-    pure { ensureAttached, ensureDetached, result }
-  placeholderBeforeSlot :: Int -> Effect Node
-  placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
+      ensureDetached :: Effect Unit
+      ensureDetached = do
+        detachedDocumentFragment <- Ref.read detachedDocumentFragmentRef
+        when (isNothing detachedDocumentFragment) do
+          documentFragment <- createDocumentFragment
+          moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
+          Ref.write (Just documentFragment) detachedDocumentFragmentRef
 
-  placeholderAfterSlot :: Int -> Effect Node
-  placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
+    pure $ { ensureAttached, ensureDetached, initialDocumentFragment }
+  modify_ _ { parent = initialDocumentFragment }
+  result <- dom
+  newSibling <- liftEffect $ lastChild initialDocumentFragment
+  modify_ _ { parent = parent, sibling = newSibling}
+  pure { ensureAttached, ensureDetached, result }
+placeholderBeforeSlot :: Int -> Effect Node
+placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
+
+placeholderAfterSlot :: Int -> Effect Node
+placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 
 -- Entry point
 

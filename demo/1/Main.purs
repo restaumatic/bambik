@@ -11,7 +11,7 @@ import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (action, constant, debounced)
-import Web (body, label, slot, staticText, text)
+import Web (body, label, conditional, staticText, text)
 
 main :: Effect Unit
 main = body Semigroupoid.do
@@ -33,9 +33,9 @@ main = body Semigroupoid.do
       dineIn $ MDC.radioButton $ label $ staticText "Dine in"
       takeaway $ MDC.radioButton $ label $ staticText "Takeaway"
       delivery $ MDC.radioButton $ label $ staticText "Delivery"
-      dineIn $ slot $ table $ MDC.filledTextField { floatingLabel: "Table" }
-      takeaway $ slot $ time $ MDC.filledTextField { floatingLabel: "Time" }
-      delivery $ slot $ address Endo.do
+      dineIn $ conditional $ table $ MDC.filledTextField { floatingLabel: "Table" }
+      takeaway $ conditional $ time $ MDC.filledTextField { floatingLabel: "Time" }
+      delivery $ conditional $ address Endo.do
         MDC.filledTextField { floatingLabel: "Address" }
         MDC.body1 Endo.do
           constant "Distance " $ text
@@ -47,7 +47,7 @@ main = body Semigroupoid.do
     payment $ MDC.card Endo.do
       MDC.caption $ staticText "Payment"
       MDC.checkbox $ label $ staticText "Paid"
-      just $ slot Endo.do
+      just $ conditional Endo.do
         paymentMethod Endo.do
           cash $ MDC.radioButton $ label $ staticText "Cash"
           card $ MDC.radioButton $ label $ staticText "Card"
@@ -65,20 +65,20 @@ main = body Semigroupoid.do
       constant " " text
       customer $ lastName text
       constant ", fulfilled as " text
-      fulfillment $ dineIn $ slot Sum.do
+      fulfillment $ dineIn $ conditional Sum.do
         constant "dine in at table " text
         table text
-      fulfillment $ takeaway $ slot Sum.do
+      fulfillment $ takeaway $ conditional Sum.do
         constant "takeaway at " text
         time text
-      fulfillment $ delivery $ slot Sum.do
+      fulfillment $ delivery $ conditional Sum.do
         constant "delivery to " text
         address Sum.do
           text
           constant " (" text
           distance text
           constant " km away)" text
-      payment $ just $ slot Sum.do
+      payment $ just $ conditional Sum.do
         staticText ", paid "
         paid text
     Semigroupoid.do

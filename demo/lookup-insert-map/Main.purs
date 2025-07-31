@@ -10,16 +10,13 @@ module Main (main) where
 import Prelude hiding (div)
 
 import Data.Default (class Default)
-import Data.Lens (Iso)
-import Data.Lens.Extra.Commons (constructor, field, nothing, withDefault)
+import Data.Lens (Iso, Lens, lens)
+import Data.Lens.Extra.Commons (constructor, field, input, just, missing'', output)
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
-import Data.Profunctor.Endo as Endo
-import Data.Profunctor.Sum as Sum
-import Data.Profunctor.Zero (pzero)
-import Data.String.Regex.Flags as ENdo
-import Data.Traversable (for_)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Profunctor.Endo as Form
+import Data.Profunctor.Sum as View
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay)
@@ -28,53 +25,60 @@ import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import MDC as MDC
-import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (Action, UI, action, constant)
-import Web (Web, body, label, p, slot, staticText, text)
+import QualifiedDo.Semigroupoid as Flow
+import UI (Action, UI, action, debounced)
+import Web (Web, body, conditional, label, staticText, text, transient)
 
 main :: Effect Unit
-main = body $ MDC.elevation10 $ Endo.do
+main = body $ MDC.elevation10 $ Form.do
   MDC.subtitle1 $ staticText "Integration form"
-  MDC.card $ Endo.do
-    glovo $ MDC.radioButton $ label $ staticText "Glovo"
-    uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
-  MDC.card $ Endo.do
-    glovo $ slot $ glovoForm 
-    uberDirect $ slot $ uberDirectForm 
+  glovo $ MDC.radioButton $ label $ staticText "Glovo"
+  uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
+  glovo $ conditional $ glovoForm 
+  uberDirect $ conditional $ uberDirectForm 
 
 glovoForm :: UI Web Unit Unit
-glovoForm = staticText "Some Glovo-specific stuff"
+glovoForm = MDC.card $ staticText "Some Glovo-specific stuff"
 
 uberDirectForm :: UI Web UberDirectForm UberDirectForm
-uberDirectForm = Endo.do
-  -- field @"restaurantId" $ MDC.filledTextField { floatingLabel: "Restaurant ID" }
-  -- field @"organizationId" $ MDC.filledTextField { floatingLabel: "Organization ID" }
-  -- Semigroupoid.do 
-  --   MDC.containedButton { label: Just "Lookup organization ID", icon: Nothing }
-  --   lookup' MDC.indeterminateLinearProgress
-  field @"restaurantId" $ Semigroupoid.do
-    p $ MDC.caption $ staticText "Provide restaurant ID. For ids 'a', 'b' and 'c' organization IDs are already generated. For other IDs an organization IDs will be generated. Ultimately, the organization ID will be displayed in the card below."
+uberDirectForm = MDC.card $ Form.do
+  restaurantIdInput $ Flow.do
     MDC.filledTextField { floatingLabel: "Restaurant ID" }
-    MDC.containedButton { label: Just "Lookup organization ID", icon: Nothing }
-    lookup MDC.indeterminateLinearProgress
-    Endo.do
-      Semigroupoid.do
-        field @"mOrganizationId" $ nothing "" $ slot $ MDC.card Endo.do
+    debounced $ organizationIdLookup MDC.indeterminateLinearProgress
+    transient $ Form.do
+      field @"mOrganizationId" $ just $ conditional $ Form.do
+        MDC.caption $ Form.do
+          staticText "Found organization ID: "
+          text
+        MDC.containedButton { label: Just "Use found organization ID", icon: Nothing }
+      Flow.do
+        field @"mOrganizationId" $ missing'' $ conditional $ Form.do
           MDC.caption $ staticText "No organization ID found"
           MDC.containedButton { label: Just "Generate organization ID", icon: Nothing }
         generate MDC.indeterminateLinearProgress
-      field @"mOrganizationId" $ withDefault "" $ MDC.filledTextField { floatingLabel: "Organization ID" }
-        -- MDC.card $ Sum.do
-        --   staticText "Organization ID: "
-        --   text
-      Endo.do
-        field @"restaurantId" $ MDC.caption Sum.do
-          constant "Restaurant ID: " $ text
-          text
-        field @"mOrganizationId" $ withDefault "None" $ MDC.caption Sum.do
-          constant "Organization ID: " $ text
-          text
-    pzero
+      Flow.do
+        field @"mOrganizationId" $ missing'' $ conditional $ Form.do
+          MDC.containedButton { label: Just "I'll provide already generated organization ID below", icon: Nothing }
+  organizationIdInput $ MDC.filledTextField { floatingLabel: "Organization ID" }
+  MDC.subtitle2 $ staticText "Preview "
+  restaurantIdOutput $ MDC.caption View.do
+    staticText "Restaurant ID: "
+    text
+  organizationIdOutput $ MDC.caption View.do
+    staticText "Organization ID: "
+    text
+
+restaurantIdInput :: Lens UberDirectForm UberDirectForm RestaurantId LookupResult
+restaurantIdInput = lens (_.restaurantId) (\form { restaurantId, mOrganizationId} -> form { restaurantId = restaurantId, organizationId = fromMaybe form.organizationId mOrganizationId })
+
+restaurantIdOutput :: forall a. Lens UberDirectForm a RestaurantId Void
+restaurantIdOutput = output @"restaurantId"
+
+organizationIdInput :: Lens UberDirectForm UberDirectForm OrganizationId OrganizationId
+organizationIdInput = input @"organizationId"
+
+organizationIdOutput :: forall a. Lens UberDirectForm a OrganizationId Void
+organizationIdOutput = output @"organizationId"
 
 type RestaurantId = String
 
@@ -94,16 +98,16 @@ uberDirect = constructor UberDirect case _ of
 
 glovo :: Iso Integration Integration (Maybe Unit) Unit
 glovo = constructor (const Glovo) case _ of
-  UberDirect c -> Nothing
-  _ -> Just unit
+  Glovo -> Just unit
+  _ -> Nothing
 
 type LookupResult =
   { restaurantId :: RestaurantId
   , mOrganizationId :: Maybe OrganizationId
   }
 
-lookup :: Action RestaurantId LookupResult Boolean Void
-lookup = action \restaurantId -> do
+organizationIdLookup :: Action RestaurantId LookupResult Boolean Void
+organizationIdLookup = action \restaurantId -> do
   delay $ Milliseconds 300.0
   mOrganizationId <- liftEffect $ Ref.read mapRef <#> Map.lookup restaurantId
   pure { restaurantId, mOrganizationId }
