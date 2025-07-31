@@ -27,15 +27,15 @@ import Effect.Unsafe (unsafePerformEffect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
 import UI (Action, UI, action, debounced)
-import Web (Web, body, conditional, label, staticText, text, transient)
+import Web (Web, body, variant, label, staticText, text, transient)
 
 main :: Effect Unit
 main = body $ MDC.elevation10 $ Form.do
   MDC.subtitle1 $ staticText "Integration form"
   glovo $ MDC.radioButton $ label $ staticText "Glovo"
   uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
-  glovo $ conditional $ glovoForm 
-  uberDirect $ conditional $ uberDirectForm 
+  glovo $ variant $ glovoForm 
+  uberDirect $ variant $ uberDirectForm 
 
 glovoForm :: UI Web Unit Unit
 glovoForm = MDC.card $ staticText "Some Glovo-specific stuff"
@@ -46,19 +46,18 @@ uberDirectForm = MDC.card $ Form.do
     MDC.filledTextField { floatingLabel: "Restaurant ID" }
     debounced $ organizationIdLookup MDC.indeterminateLinearProgress
     transient $ Form.do
-      field @"mOrganizationId" $ just $ conditional $ Form.do
+      field @"mOrganizationId" $ just $ variant $ Form.do
         MDC.caption $ Form.do
           staticText "Found organization ID: "
           text
         MDC.containedButton { label: Just "Use found organization ID", icon: Nothing }
       Flow.do
-        field @"mOrganizationId" $ missing'' $ conditional $ Form.do
+        field @"mOrganizationId" $ missing'' $ variant $ Form.do
           MDC.caption $ staticText "No organization ID found"
           MDC.containedButton { label: Just "Generate organization ID", icon: Nothing }
         generate MDC.indeterminateLinearProgress
-      Flow.do
-        field @"mOrganizationId" $ missing'' $ conditional $ Form.do
-          MDC.containedButton { label: Just "I'll provide already generated organization ID below", icon: Nothing }
+      field @"mOrganizationId" $ missing'' $ variant $ Form.do
+        MDC.containedButton { label: Just "I'll provide already generated organization ID below", icon: Nothing }
   organizationIdInput $ MDC.filledTextField { floatingLabel: "Organization ID" }
   MDC.subtitle2 $ staticText "Preview "
   restaurantIdOutput $ MDC.caption View.do
