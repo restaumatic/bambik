@@ -332,13 +332,10 @@ transient ui = wrap do
   pure
     { toUser: \new -> do
         status <- toUser new
-        log "attaching transient UI"
         ensureAttached
         pure status
     , fromUser: \prop -> fromUser \x -> do
-        log "detaching transient UI"
         ensureDetached
-        log "detached transient UI"
         prop x
     }
 
