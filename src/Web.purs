@@ -327,7 +327,7 @@ clDyn name pred w = wrap do
 --   - when emiting a value (when `fromUser` is called) it disappears
 transient :: Ocular (UI Web)
 transient ui = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap ui
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap ui
   pure
     { toUser: \new -> do
         status <- toUser new
@@ -341,7 +341,7 @@ transient ui = wrap do
 -- rename to variant?
 conditional :: forall a b. UI Web a b -> UI Web (Maybe a) b
 conditional w = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable false $ unwrap w
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
     { toUser: case _ of
       (New Nothing _) -> ensureDetached
@@ -352,15 +352,15 @@ conditional w = wrap do
     , fromUser
     }
 
-attachable :: forall r. Boolean -> Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
-attachable removePrecedingSiblingNodes dom = do
+attachable :: forall r. Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
+attachable dom = do
   parent <- gets _.parent
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   { ensureAttached, ensureDetached, initialDocumentFragment } <- liftEffect do
     placeholderBefore <- placeholderBeforeSlot slotNo
     placeholderAfter <- placeholderAfterSlot slotNo
 
-    (if removePrecedingSiblingNodes then insertAsFirstChild else appendChild) placeholderBefore parent
+    appendChild placeholderBefore parent
     appendChild placeholderAfter parent
 
     initialDocumentFragment <- createDocumentFragment
