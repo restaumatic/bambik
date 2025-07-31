@@ -13,7 +13,7 @@ module Web
   , checkboxInput
   , cl
   , clDyn
-  , conditional
+  , variant
   , div
   , h1
   , h2
@@ -56,6 +56,7 @@ import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
@@ -331,16 +332,18 @@ transient ui = wrap do
   pure
     { toUser: \new -> do
         status <- toUser new
+        log "attaching transient UI"
         ensureAttached
         pure status
     , fromUser: \prop -> fromUser \x -> do
+        log "detaching transient UI"
         ensureDetached
+        log "detached transient UI"
         prop x
     }
 
--- rename to variant?
-conditional :: forall a b. UI Web a b -> UI Web (Maybe a) b
-conditional w = wrap do
+variant :: forall a b. UI Web a b -> UI Web (Maybe a) b
+variant w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
     { toUser: case _ of
