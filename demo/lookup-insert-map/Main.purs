@@ -47,16 +47,16 @@ uberDirectForm = MDC.card $ Form.do
     debounced $ organizationIdLookup MDC.indeterminateLinearProgress
     transient $ Form.do
       field @"mOrganizationId" $ just $ variant $ Form.do
-        MDC.caption $ Form.do
+        MDC.caption $ View.do
           staticText "Found organization ID: "
           text
         MDC.containedButton { label: Just "Use found organization ID", icon: Nothing }
       Flow.do
-        field @"mOrganizationId" $ nothing $ variant $ Form.do
+        field @"mOrganizationId" $ nothing $ variant $ View.do
           MDC.caption $ staticText "No organization ID found"
           MDC.containedButton { label: Just "Generate organization ID", icon: Nothing }
         generate MDC.indeterminateLinearProgress
-      field @"mOrganizationId" $ nothing $ variant $ Form.do
+      field @"mOrganizationId" $ nothing $ variant $ View.do
         MDC.containedButton { label: Just "I'll provide already generated organization ID below", icon: Nothing }
   organizationIdInput $ MDC.filledTextField { floatingLabel: "Organization ID" }
   MDC.subtitle2 $ staticText "Preview "
