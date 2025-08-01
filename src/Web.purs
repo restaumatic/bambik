@@ -50,13 +50,11 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
-import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
@@ -396,22 +394,24 @@ placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 
 -- Entry point
 
-body :: forall a b. Default a => UI Web a b -> Effect Unit
-body w = do
+body :: forall @a. Default a => UI Web a Void -> Effect Unit
+body ui = do
   node <- documentBody
-  runWidgetInNode node w
+  runWidgetInNode node default mempty ui
 
-runWidgetInSelectedNode :: forall t. String -> UI Web Unit t -> Effect Unit
-runWidgetInSelectedNode selector w = do
+runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
+runWidgetInSelectedNode selector initial callback ui = do
   node <- selectedNode selector
-  runWidgetInNode node w
+  runWidgetInNode node initial callback ui
 
-runWidgetInNode :: forall a t. Default a => Node -> UI Web a t -> Effect Unit
-runWidgetInNode node w = runDomInNode node do
-  { toUser, fromUser } <- unwrap w
+runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
+runWidgetInNode node initial callback ui = runDomInNode node do
+  { toUser, fromUser } <- unwrap ui
   liftEffect $ fromUser case _ of
-    New mo _ -> pure Nothing
-  void $ liftEffect $ toUser $ New default false
+    New b _ -> do
+      callback b
+      pure Nothing
+  void $ liftEffect $ toUser $ New initial false
 
 --- private
 

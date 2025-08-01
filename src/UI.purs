@@ -52,7 +52,7 @@ type PropagationError = String
 
 derive instance Newtype (UI m i o) _
 
-data New a = New a Boolean
+data New a = New a Boolean -- Boolean value denotes whether the value is likely to be replaced soon (e.g. via text user input)
 
 derive instance Functor New
 

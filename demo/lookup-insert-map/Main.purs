@@ -27,15 +27,19 @@ import Effect.Unsafe (unsafePerformEffect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
 import UI (Action, UI, action, debounced)
-import Web (Web, body, variant, label, staticText, text, transient)
+import Web (Web, body, label, staticText, text, transient, variant)
 
 main :: Effect Unit
-main = body $ MDC.elevation10 $ Form.do
-  MDC.subtitle1 $ staticText "Integration form"
-  glovo $ MDC.radioButton $ label $ staticText "Glovo"
-  uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
-  glovo $ variant $ glovoForm 
-  uberDirect $ variant $ uberDirectForm 
+main = body $ MDC.elevation10 $ Flow.do 
+  Form.do
+    MDC.subtitle1 $ staticText "Integration form"
+    glovo $ MDC.radioButton $ label $ staticText "Glovo"
+    uberDirect $ MDC.radioButton $ label $ staticText "UberDirect"
+    glovo $ variant $ glovoForm 
+    uberDirect $ variant $ uberDirectForm
+  MDC.containedButton { label: Just "Save", icon: Nothing }
+  MDC.snackbar $ staticText "Saved"
+
 
 glovoForm :: UI Web Unit Unit
 glovoForm = MDC.card $ staticText "Some Glovo-specific stuff"

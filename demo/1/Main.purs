@@ -6,17 +6,17 @@ import Data.Lens.Extra.Commons (just, missing)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Endo as Endo
 import Data.Profunctor.Sum as Sum
-import Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, fulfillment, high, lastName, loadOrder, low, normal, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, table, takeaway, time, total)
 import Effect (Effect)
 import MDC as MDC
+import Model (PaymentMethod(..), address, authorization, card, cash, customer, delivery, dineIn, distance, firstName, fulfillment, high, lastName, loadOrder, low, normal, orderId, orderSubmission, orderSubmissionFailed, paid, payment, paymentMethod, priority, receiptPrint, remarks, shortId, summary, table, takeaway, time, total)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (action, constant, debounced)
 import Web (body, label, variant, staticText, text)
 
 main :: Effect Unit
-main = body Semigroupoid.do
+main = body $ MDC.elevation20 Semigroupoid.do
   action loadOrder $ MDC.indeterminateLinearProgress
-  MDC.elevation20 Endo.do
+  Endo.do
     MDC.headline6 Sum.do 
       staticText "Order "
       shortId $ debounced $ text
@@ -82,16 +82,6 @@ main = body Semigroupoid.do
         staticText ", paid "
         paid text
     Semigroupoid.do
-      MDC.containedButton { label: Just "Submit order", icon: Just "save" }
-      authorization $ MDC.simpleDialog { title: "Authorization", confirm: "Authorize" } Semigroupoid.do
-        MDC.caption Sum.do
-          staticText "Order summary: "
-          summary text
-        MDC.filledTextField { floatingLabel: "Auth token" }
-      action orderSubmission $ MDC.indeterminateLinearProgress
-      orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
-      MDC.snackbar $ staticText "Order submitted"
-    Semigroupoid.do
       MDC.containedButton { label: Just "Assign priority", icon: Just "bookmark" }
       priority $ MDC.simpleDialog { title: "Priority", confirm: "OK" } Endo.do
         MDC.caption $ staticText "Choose one of: "
@@ -106,3 +96,12 @@ main = body Semigroupoid.do
         paymentMethod $ card $ MDC.radioButton $ label $ staticText "Card"
         paid $ MDC.filledTextField { floatingLabel: "Paid" }
       action receiptPrint $ MDC.indeterminateLinearProgress
+  MDC.containedButton { label: Just "Submit order", icon: Just "save" }
+  authorization $ MDC.simpleDialog { title: "Authorization", confirm: "Authorize" } Semigroupoid.do
+    MDC.caption Sum.do
+      staticText "Order summary: "
+      summary text
+    MDC.filledTextField { floatingLabel: "Auth token" }
+  action orderSubmission $ MDC.indeterminateLinearProgress
+  orderSubmissionFailed $ MDC.snackbar $ staticText "Order submission failed"
+  MDC.snackbar $ staticText "Order submitted"
