@@ -11,6 +11,7 @@ module UI
   , debounced
   , debounced'
   , effAdapter
+  , fix
   , spied
   )
   where
@@ -283,6 +284,16 @@ debounced' millis = affAdapter $ pure
 
 debounced :: forall m. Applicative m => Ocular (UI m)
 debounced = debounced' (Milliseconds 300.0)
+
+fix :: forall m a. Functor m => UI m a a -> UI m a a
+fix ui = wrap ado
+  { toUser, fromUser } <- unwrap ui
+  in
+    { toUser: toUser
+    , fromUser: \prop -> fromUser \change -> do
+      toUser change
+      prop change
+    }
 
 spied :: forall m. Functor m => DebugWarning => String -> Ocular (UI m)
 spied name w = wrap ado

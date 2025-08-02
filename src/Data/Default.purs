@@ -19,6 +19,9 @@ class Default f where
 instance Default String where
   default = ""
 
+instance Default Int where
+  default = 0
+
 instance Default Unit where
   default = unit
 
