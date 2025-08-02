@@ -22,6 +22,9 @@ instance Default String where
 instance Default Int where
   default = 0
 
+instance Default Number where
+  default = 0.0
+
 instance Default Unit where
   default = unit
 
