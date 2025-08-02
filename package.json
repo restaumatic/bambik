@@ -5,10 +5,8 @@
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "demo1": "parcel -p 1234 demo/1/index.html & spago bundle-app --main Main --to demo/1/bundle.js -w -l --path demo/1/**/*.purs",
     "demo2": "parcel -p 1234 demo/2/index.html & spago bundle-app --main Main --to demo/2/bundle.js -w -l --path demo/2/**/*.purs",
-    "demo-lookup-insert-map": "parcel -p 1234 demo/lookup-insert-map/index.html & spago bundle-app --main Main --to demo/lookup-insert-map/bundle.js -w -l --path demo/lookup-insert-map/**/*.purs",
     "deploy-demo1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo2": "scp -r demo/2/ xyz:/var/www/html/bambik/demo/",
-    "deploy-demo-lookup-insert-map": "scp -r demo/lookup-insert-map/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
     "material-components-web": "^14.0.0"
