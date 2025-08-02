@@ -84,7 +84,7 @@ uniqueId = randomElementId
 
 -- UIs
 
-text :: forall a. UI Web String a
+text :: forall a b. Show a => UI Web a b
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -95,7 +95,7 @@ text = wrap do
   node <- gets (_.sibling)
   pure
     { toUser: case _ of
-      New s _ -> setTextNodeValue node s
+      New s _ -> setTextNodeValue node (show s)
     , fromUser: \_ -> pure unit
     }
 
