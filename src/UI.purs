@@ -174,12 +174,10 @@ instance Apply m => Endo (UI m) where
         p2'.toUser ch
       , fromUser: \prop -> do
         p1'.fromUser \u -> do
-          p1'.toUser u
           p2'.toUser u
           prop u
         p2'.fromUser \u -> do
           p1'.toUser u
-          p2'.toUser u
           prop u
       }
 
