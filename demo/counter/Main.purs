@@ -5,18 +5,14 @@ import Prelude
 import Data.Lens (Lens, Iso, lens)
 import Data.Lens.Extra.Commons (projection)
 import Data.Profunctor.Sum as View
-import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
-import QualifiedDo.Semigroupoid as Flow
-import UI (fix)
+import UI (looped)
 import Web (body, button, staticText, text)
 
 main :: Effect Unit
-main = body $ Flow.do 
-  fix $ View.do
-    counter text
-    count $ button $ staticText "Count"
-  pzero
+main = body $ looped $ View.do
+  counter text
+  count $ button $ staticText "Count"
 
 counter :: forall t. Iso Int t String Void
 counter = projection show

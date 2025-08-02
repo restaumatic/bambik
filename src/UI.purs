@@ -12,6 +12,7 @@ module UI
   , debounced'
   , effAdapter
   , fix
+  , looped
   , spied
   )
   where
@@ -293,6 +294,16 @@ fix ui = wrap ado
     , fromUser: \prop -> fromUser \change -> do
       toUser change
       prop change
+    }
+
+looped :: forall m a b. Functor m => UI m a a -> UI m a b
+looped ui = wrap ado
+  { toUser, fromUser } <- unwrap ui
+  in
+    { toUser: toUser
+    , fromUser: \_ -> fromUser \change -> do
+      toUser change
+      pure Nothing
     }
 
 spied :: forall m. Functor m => DebugWarning => String -> Ocular (UI m)
