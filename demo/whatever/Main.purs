@@ -3,23 +3,27 @@ module Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Data.Profunctor.Endo as Form
 import Data.Profunctor.Sum as View
+import Data.Whatever (Whatever, byDefault, whateverFirstName)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
 import UI (UI)
 import Web (Web, body, staticText, text)
-import Data.Whatever (Whatever, whateverFirstName)
 
 main :: Effect Unit
-main = body design 
+main = body subscription
 
-design :: UI Web Whatever Void
-design = Flow.do
+subscription :: UI Web Whatever Void
+subscription = Flow.do
   View.do 
     staticText "Welcome, "
-    whateverFirstName $ text
-    staticText ". do you want to enter?"
+    whateverFirstName $ text -- `whateverFirstName` -> `firstName :: Iso s s String Void`
+    staticText ". do you want to subscribe?"
     MDC.containedButton { icon: Nothing, label: Just "Yes" }
+  MDC.simpleDialog { title: "Subscription", confirm: "Subscribe"} Form.do
+    staticText "Please enter your data:"
+    byDefault "" $ MDC.filledTextField { floatingLabel: "Phone Number" } -- `byDefault` -> `phoneNumber :: String -> Lens' s String`
+    byDefault "" $ MDC.filledTextField { floatingLabel: "Address" } -- `byDefault ""` -> `address :: String -> Lens' s String`
   MDC.snackbar $ staticText "Great!"
-  staticText "Thank you for using Bambik!"
