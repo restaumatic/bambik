@@ -95,17 +95,17 @@ instance Functor m => StrongLike (UI m) where
 
 instance Functor m => ChoiceLike (UI m) where
   leftlike p = wrap ado
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let tPropRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { toUser: case _ of
         New (Right t) cont -> do
-          let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New t cont)
+          let tProp = unsafePerformEffect $ Ref.read tPropRef
+          _ <- tProp (New t cont)
           pure unit
         New (Left a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
-        Ref.write prop propRef
+        Ref.write prop tPropRef
         p'.fromUser \u -> prop u
       }
   rightlike p = wrap ado
