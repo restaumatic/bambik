@@ -55,9 +55,10 @@ import Prelude
 
 import Data.Default (class Default)
 import Data.Either (Either(..))
-import Data.Lens (Iso, Lens, Prism, iso, lens, prism)
-import Data.Lens.Extra.Commons (constructor, field, projection)
+import Data.Lens (Iso, Prism, iso, lens, prism)
+import Data.Lens.Extra.Commons (LensLike, constructor, field, projection)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor.StrongLike as StrongLike
 import Data.String (length)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
@@ -127,52 +128,52 @@ type OrderSummary = { summary :: String }
 summary :: forall t. Iso OrderSummary t String Void
 summary = projection (_.summary)
 
-priority :: Lens Order Order Priority Priority
+priority :: LensLike Order Order Priority Priority
 priority = field @"priority"
 
-orderId :: Lens Order Order String String
+orderId :: LensLike Order Order String String
 orderId = field @"orderId"
 
-shortId :: Lens Order Order String String 
+shortId :: LensLike Order Order String String 
 shortId = field @"shortId"
 
-customer :: Lens Order Order NameInformal NameInformal 
+customer :: LensLike Order Order NameInformal NameInformal 
 customer = field @"customer"
 
-payment :: Lens Order Order (Maybe Payment) (Maybe Payment)
+payment :: LensLike Order Order (Maybe Payment) (Maybe Payment)
 payment = field @"payment"
 
-firstName :: Lens NameInformal NameInformal String String
+firstName :: LensLike NameInformal NameInformal String String
 firstName = field @"firstName"
 
-lastName :: Lens NameInformal NameInformal String String
+lastName :: LensLike NameInformal NameInformal String String
 lastName = field @"lastName"
 
-forename :: Lens NameFormal NameFormal String String
+forename :: LensLike NameFormal NameFormal String String
 forename = field @"forename"
 
-surname :: Lens NameFormal NameFormal String String
+surname :: LensLike NameFormal NameFormal String String
 surname =  field @"surname"
 
-fulfillment :: Lens Order Order Fulfillment Fulfillment 
+fulfillment :: LensLike Order Order Fulfillment Fulfillment 
 fulfillment =  field @"fulfillment"
 
-table :: Lens { table :: Table } { table :: Table } Table Table
+table :: LensLike { table :: Table } { table :: Table } Table Table
 table =  field @"table"
 
-time :: Lens { time :: Time } { time :: Time } Time Time
+time :: LensLike { time :: Time } { time :: Time } Time Time
 time =  field @"time"
 
-address :: Lens { address :: Address} { address :: Address} Address Address
+address :: LensLike { address :: Address} { address :: Address} Address Address
 address =  field @"address"
 
-remarks :: Lens Order Order String String
+remarks :: LensLike Order Order String String
 remarks = field @"remarks"
 
-total :: Lens Order Order String String
+total :: LensLike Order Order String String
 total = field @"total"
 
-paid :: Lens Payment Payment String String
+paid :: LensLike Payment Payment String String
 paid = field @"paid"
 
 dineIn :: Iso Fulfillment Fulfillment (Maybe { table :: Table }) { table :: Table }
@@ -216,19 +217,19 @@ formal = iso toFormal toInformal
 distance :: forall t. Iso Address t String Void
 distance = projection $ show <<< length
 
-authorization :: Lens Order AuthorizedOrder OrderSummary AuthToken
-authorization = lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
+authorization :: LensLike Order AuthorizedOrder OrderSummary AuthToken
+authorization = StrongLike.lens (\order -> { summary: order.total <> " " <> case order.fulfillment of
   DineIn { table } -> "dine-in at table " <> table
   Takeaway { time } -> "takeaway at " <> show time
   Delivery { address } -> "delivery " <> show address }
-  ) (\order authorization -> { authorization, order })
+  ) (\authorization order -> { authorization, order })
 
 orderSubmissionFailed :: Prism Boolean Unit Unit Void
 orderSubmissionFailed = prism absurd case _ of
   false -> Right unit
   true -> Left unit
 
-paymentMethod :: Lens Payment Payment PaymentMethod PaymentMethod
+paymentMethod :: LensLike Payment Payment PaymentMethod PaymentMethod
 paymentMethod = field @"method"
 
 cash :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit

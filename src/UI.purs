@@ -27,6 +27,7 @@ import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
+import Data.Profunctor.StrongLike (class ChoiceLike, class StrongLike)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
@@ -64,62 +65,62 @@ instance Functor m => Profunctor (UI m) where
       , fromUser: lcmap (map post) >>> p'.fromUser
       }
 
-instance Functor m => Strong (UI m) where
-  first p = wrap ado
-    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+instance Functor m => StrongLike (UI m) where
+  firstlike p = wrap ado
+    let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { toUser: case _ of
-          New ab cont -> do
-            let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ New (fst ab) cont
+          New s cont -> do
+            let _ = unsafePerformEffect $ Ref.write s lasts
+            p'.toUser $ New s cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
-          let prevab = unsafePerformEffect $ Ref.read lastab
-          prop (map (flip Tuple (snd prevab)) u)
+          let s = unsafePerformEffect $ Ref.read lasts
+          prop (map (flip Tuple s) u)
       }
-  second p = wrap ado
-    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+  secondlike p = wrap ado
+    let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { toUser: case _ of
-          New ab cont -> do
-            let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ New (snd ab) cont
+          New s cont -> do
+            let _ = unsafePerformEffect $ Ref.write s lasts
+            p'.toUser $ New s cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
-          let prevab = unsafePerformEffect $ Ref.read lastab
-          prop (map (Tuple (fst prevab)) u)
+          let s = unsafePerformEffect $ Ref.read lasts
+          prop (map (Tuple s) u)
       }
 
-instance Functor m => Choice (UI m) where
-  left p = wrap ado
+instance Functor m => ChoiceLike (UI m) where
+  leftlike p = wrap ado
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { toUser: case _ of
-        New (Right c) cont -> do
+        New (Right t) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New (Right c) cont)
+          _ <- prop (New t cont)
           pure unit
         New (Left a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
-        p'.fromUser \u -> prop (Left <$> u)
+        p'.fromUser \u -> prop u
       }
-  right p = wrap ado
+  rightlike p = wrap ado
     p' <- unwrap p
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
-        New (Left c) cont -> do
+        New (Left t) cont -> do
           let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New (Left c) cont)
+          _ <- prop (New t cont)
           pure unit
         New (Right a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
-        p'.fromUser \u -> prop (Right <$> u)
+        p'.fromUser \u -> prop u
       }
 
 instance Apply m => Semigroupoid (UI m) where
