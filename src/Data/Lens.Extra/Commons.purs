@@ -12,6 +12,7 @@ import Data.Profunctor (dimap)
 import Data.Profunctor.StrongLike as StrongLike
 import Data.Symbol (class IsSymbol)
 import Data.Symbol (class IsSymbol)
+import Data.Tuple (Tuple(..))
 import Prim.Row as Row
 import Prim.Row as Row
 import Record (get)
@@ -32,7 +33,7 @@ prop'
   => Row.Cons l b r r2
   => Proxy l
   -> LensLike (Record r1) (Record r2) a b
-prop' l = StrongLike.lens (get l) ((set l))
+prop' l = StrongLike.lens (get l) (\(Tuple x y) -> set l x y)
 
 input :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  LensLike (Record s) (Record s) a a
 input = field @l
@@ -46,10 +47,11 @@ constructor construct deconstruct w = dimap deconstruct construct w
 projection :: forall a s t. (s -> a) -> Iso s t a Void
 projection f = dimap f absurd
 
-missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a
-missing default = StrongLike.prism Just case _ of
-  Just a -> Left (Just a)
-  Nothing -> Right default
+-- TODO 
+-- missing :: forall a. a -> Prism (Maybe a) (Maybe a) a a
+-- missing default = StrongLike.prism Just case _ of
+--   Just a -> Left (Just a)
+--   Nothing -> Right default
 
 missing' :: forall a. Default a => Iso (Maybe a) (Maybe a) a a
 missing' = dimap (fromMaybe default) Just
