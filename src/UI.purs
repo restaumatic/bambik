@@ -24,12 +24,14 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
+import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.StrongLike (class ChoiceLike, class StrongLike)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst, snd)
 import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -63,6 +65,64 @@ instance Functor m => Profunctor (UI m) where
       , fromUser: lcmap (map post) >>> p'.fromUser
       }
 
+instance Functor m => Strong (UI m) where
+  first p = wrap ado
+    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+          New ab cont -> do
+            let _ = unsafePerformEffect $ Ref.write ab lastab
+            p'.toUser $ New (fst ab) cont
+      , fromUser: \prop -> do
+        p'.fromUser \u -> do
+          let prevab = unsafePerformEffect $ Ref.read lastab
+          prop (map (flip Tuple (snd prevab)) u)
+      }
+  second p = wrap ado
+    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+          New ab cont -> do
+            let _ = unsafePerformEffect $ Ref.write ab lastab
+            p'.toUser $ New (snd ab) cont
+      , fromUser: \prop -> do
+        p'.fromUser \u -> do
+          let prevab = unsafePerformEffect $ Ref.read lastab
+          prop (map (Tuple (fst prevab)) u)
+      }
+
+instance Functor m => Choice (UI m) where
+  left p = wrap ado
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+        New (Right c) cont -> do
+          let prop = unsafePerformEffect $ Ref.read propRef
+          _ <- prop (New (Right c) cont)
+          pure unit
+        New (Left a) cont -> p'.toUser $ New a cont
+      , fromUser: \prop -> do
+        Ref.write prop propRef
+        p'.fromUser \u -> prop (Left <$> u)
+      }
+  right p = wrap ado
+    p' <- unwrap p
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    in
+      { toUser: case _ of
+        New (Left c) cont -> do
+          let prop = unsafePerformEffect $ Ref.read propRef
+          _ <- prop (New (Left c) cont)
+          pure unit
+        New (Right a) cont -> p'.toUser $ New a cont
+      , fromUser: \prop -> do
+        Ref.write prop propRef
+        p'.fromUser \u -> prop (Right <$> u)
+      }
+
 instance Functor m => StrongLike (UI m) where
   firstlike p = wrap ado
     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
@@ -71,7 +131,7 @@ instance Functor m => StrongLike (UI m) where
       { toUser: case _ of
           New s cont -> do
             let _ = unsafePerformEffect $ Ref.write s lasts
-            p'.toUser $ New s cont
+            p'.toUser $ New unit cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let s = unsafePerformEffect $ Ref.read lasts
@@ -84,7 +144,7 @@ instance Functor m => StrongLike (UI m) where
       { toUser: case _ of
           New s cont -> do
             let _ = unsafePerformEffect $ Ref.write s lasts
-            p'.toUser $ New s cont
+            p'.toUser $ New unit cont
       , fromUser: \prop -> do
         p'.fromUser \u -> do
           let s = unsafePerformEffect $ Ref.read lasts
@@ -104,7 +164,6 @@ instance Functor m => ChoiceLike (UI m) where
         New (Left a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
         Ref.write prop tPropRef
-        p'.fromUser \u -> prop u
       }
   rightlike p = wrap ado
     p' <- unwrap p
@@ -118,7 +177,6 @@ instance Functor m => ChoiceLike (UI m) where
         New (Right a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
         Ref.write prop propRef
-        p'.fromUser \u -> prop u
       }
 
 instance Apply m => Semigroupoid (UI m) where

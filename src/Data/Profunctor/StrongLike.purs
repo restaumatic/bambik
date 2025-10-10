@@ -11,6 +11,7 @@ import Data.Tuple (Tuple(..))
 
 class Profunctor p <= StrongLike p where
   firstlike :: forall s b . p Unit b -> p s (Tuple b s) -- b introduced, s preserved
+  secondlike :: forall s b . p Unit b -> p s (Tuple s b) -- b introduced, s preserved
 
 -- Is StrongLike a generalization of Strong?
 -- can we turn:
@@ -19,7 +20,7 @@ class Profunctor p <= StrongLike p where
 -- forall s b . p a b -> p (Tuple a s) (Tuple b s)
 -- ?
 
--- StrongLike is enough to encode half-lenses (a.k.a. introducer) as there is an isomorphism between
+-- StrongLike is enough to encode a half-lens (a.k.a. introductor) as there is an isomorphism between
 -- `Tuple b s -> t` and `forall StrongLike p. p Unit b -> p s t`.
 
 halflens :: forall s t b. (Tuple b s -> t) -> (forall p. StrongLike p => p Unit b -> p s t)
@@ -33,6 +34,7 @@ halflens' = halflens
 -- Add to profunctors package? 
 instance StrongLike (->) where
   firstlike f s = Tuple (f unit) s
+  secondlike f s = Tuple s (f unit)
 
 halflensDecode :: forall s t b. (forall p. StrongLike p => p Unit b -> p s t) -> Tuple b s -> t
 halflensDecode f (Tuple b s) = f (const b) s
@@ -41,10 +43,11 @@ halflensDecode f (Tuple b s) = f (const b) s
 
 class Profunctor p <= ChoiceLike p where
   leftlike :: forall t a. p a Void -> p (Either a t) t -- a eliminated, t preserved
+  rightlike :: forall t a. p a Void -> p (Either t a) t -- a eliminated, t preserved
 
 -- Is ChoiceLike a generalization of Choice?
 
--- ChoiceLike is enough to encode half-prisms (a.k.a. eliminators) as there is an isomorphism between:
+-- ChoiceLike is enough to encode a half-prism (a.k.a. eliminator) as there is an isomorphism between:
 -- `s -> Either a t` and `forall ChoiceLike p. p a Void -> p s t`.
 
 halfprism :: forall s t a. (s -> Either a t) -> (forall p. ChoiceLike p => p a Void -> p s t)
@@ -64,7 +67,8 @@ instance Profunctor (Callback r) where
   dimap f g r = wrap \br -> (unwrap r) (br <<< g) <<< f
 
 instance ChoiceLike (Callback r) where
-  leftlike r = wrap $ either ((unwrap r) absurd)
+  leftlike r = wrap $ either (unwrap r absurd)
+  rightlike r = wrap $ flip either (unwrap r absurd)
 
 halfprismDecode :: forall s t a. (forall p. ChoiceLike p => p a Void -> p s t) -> s -> Either a t
 halfprismDecode f = unwrap (f (Callback (const Left))) Right
