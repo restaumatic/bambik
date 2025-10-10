@@ -18,7 +18,9 @@ class Profunctor p <= StrongLike p where
 -- forall s b . p a b -> p (Tuple a s) (Tuple b s)
 -- ?
 
--- StrongLike is enough to encode a half-lens (a.k.a. introductor) as there is an isomorphism between
+-- Half-lens (a.k.a. introductor) is similar to a lens but it only introduces a part so it's only one function: `Tuple s b -> t`
+
+-- StrongLike is enough to encode a half-lens as there is an isomorphism between
 -- `Tuple b s -> t` and `forall StrongLike p. p Unit b -> p s t`.
 
 halflens :: forall s t b. (Tuple b s -> t) -> (forall p. StrongLike p => p Unit b -> p s t)

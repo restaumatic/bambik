@@ -14,7 +14,9 @@ class Profunctor p <= ChoiceLike p where
 
 -- Is ChoiceLike a generalization of Choice?
 
--- ChoiceLike is enough to encode a half-prism (a.k.a. eliminator) as there is an isomorphism between:
+-- Half-prism (a.k.a. eliminator) is similar to a prism but it only eliminates a variant, so it's only one function: `s -> Either a t`
+
+-- ChoiceLike is enough to encode a half-prism as there is an isomorphism between:
 -- `s -> Either a t` and `forall ChoiceLike p. p a Void -> p s t`.
 
 halfprism :: forall s t a. (s -> Either a t) -> (forall p. ChoiceLike p => p a Void -> p s t)
