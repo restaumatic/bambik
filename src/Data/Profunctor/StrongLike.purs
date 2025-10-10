@@ -2,9 +2,7 @@ module Data.Profunctor.StrongLike where
 
 import Prelude
 
-import Data.Either (Either(..), either)
-import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor (class Profunctor, rmap)
 import Data.Tuple (Tuple(..))
 
 -- StrongLike
