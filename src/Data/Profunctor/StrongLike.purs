@@ -30,7 +30,7 @@ halflens introduce = firstlike >>> rmap introduce
 halflens' :: forall s b. (Tuple b s -> s) -> (forall p. StrongLike p => p Unit b -> p s s)
 halflens' = halflens
 
--- Useful StringLike instance for decoding half-lenses
+-- Useful StrongLike instance for decoding half-lenses
 -- Add to profunctors package? 
 instance StrongLike (->) where
   firstlike f s = Tuple (f unit) s
