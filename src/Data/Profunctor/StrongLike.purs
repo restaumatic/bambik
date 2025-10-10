@@ -3,18 +3,19 @@ module Data.Profunctor.StrongLike where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor.Choice (class Choice)
 import Data.Tuple (Tuple(..))
+import Effect.Exception.Unsafe (unsafeThrow)
 
 -- StrongLike
 
 class Profunctor p <= StrongLike p where
   firstlike :: forall s b . p Unit b -> p s (Tuple b s) -- b introduced, s preserved
-  secondlike :: forall s b . p Unit b -> p s (Tuple s b)  -- b introduced, s preserved
 
 instance StrongLike (->) where
   firstlike f s = Tuple (f unit) s
-  secondlike f s = Tuple s (f unit)
 
 -- what about dual `forall a b . p (Tuple a b) b -> p a b`? It's not trivial.
 
@@ -57,12 +58,28 @@ halffield = halflens
 
 class Profunctor p <= ChoiceLike p where
   -- leftlike :: forall t a. p Unit Unit -> p (Either Unit t) (Either Unit t) -- a eliminated, t preserved
-  leftlike :: forall t a. p a Unit -> p (Either a t) (Either a t) -- a eliminated, t preserved
+  leftlike :: forall t a. p a Void -> p (Either a t) t -- a eliminated, t preserved
 
-instance ChoiceLike (->) where
-  leftlike a2u aort = case aort of
-    Left a -> Left a
-    Right t -> Right t
+-- instance ChoiceLike (->) where
+--   leftlike a2u aort = case aort of
+--     Left a -> Left a
+--     Right t -> Right t
+
+newtype R :: forall k. Type -> Type -> k -> Type
+newtype R r a b = R (a -> r)
+
+derive instance Newtype (R r a b) _
+
+instance Profunctor (R r) where
+  dimap f _ r = wrap (unwrap r <<< f)
+
+instance ChoiceLike (R r) where
+  leftlike (R a2r) = R (case _ of
+    Left a -> a2r a
+    Right t -> unsafeThrow "TODO"
+  )
+
+-- (a -> r) -> (Either a t -> r) and let r = Either a t
 
 -- ChoiceLike is a generalization of Choice
 
@@ -78,11 +95,11 @@ instance ChoiceLike (->) where
 -- Compare to `prism :: forall s t a b. (b -> t) -> (s -> Either t a) -> Prism s t a b` from `profunctor-lenses` library.
 
 -- matcher? eliminator?
-halfprism :: forall s t a. (s -> Either a t) -> (forall p. ChoiceLike p => p a Unit -> p s (Either a t))
+halfprism :: forall s t a. (s -> Either a t) -> (forall p. ChoiceLike p => p a Void -> p s t)
 halfprism match = leftlike >>> lcmap match
 
-halfprismInv :: forall s t a. (forall p. ChoiceLike p => p a Unit -> p s (Either a t)) -> s -> Either a t -- (a -> Unit) -> (s -> (Either Unit t)), s
-halfprismInv f s = f (const unit) s
+halfprismInv :: forall s t a. (forall p. ChoiceLike p => p a Void -> p s t) -> s -> Either a t -- (a -> Either a t) -> (s -> Either a t)
+halfprismInv f s = unwrap (f (R Left)) s
 
 -- ctorMatcher? 
 -- halfctor :: forall p s t a. ChoiceLike p => (s -> Either a t) -> p a Void -> p s t
