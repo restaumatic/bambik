@@ -24,7 +24,9 @@ halfprism eliminate = leftlike >>> lcmap eliminate
 
 -- Does it have any sense/application?
 halfprism' :: forall t a. (t -> Either a t) ->(forall p. ChoiceLike p => p a Void -> p t t)
-halfprism' = halfprism 
+halfprism' = halfprism
+
+-- Half-prism does not encode a full prism (a constructor in particular) as it does not allow to set variant b of t.
 
 -- Useful ChoiceLike instance for decoding half-prisms
 -- Add to profunctors package? 
