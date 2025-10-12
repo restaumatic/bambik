@@ -2,8 +2,13 @@ module Data.Profunctor.StrongLike where
 
 import Prelude
 
+import Data.Lens (Optic)
 import Data.Profunctor (class Profunctor, rmap)
+import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
+import Prim.Row (class Cons, class Lacks)
+import Record (insert, set)
+import Type.Prelude (Proxy(..))
 
 -- StrongLike
 
@@ -32,8 +37,13 @@ halflens' = halflens
 
 -- Half-lens does not encode a full lens (a field in particular) as it does not allow to extract the b part from s.
 
+type HalfLens s t b = forall p. StrongLike p => Optic p s t Unit b
+
+field :: forall @l s r a. IsSymbol l => Cons l a r s => Lacks l r => HalfLens (Record r) (Record s) a
+field = halflens (\(Tuple b s) -> insert (Proxy @l) b s)
+
 -- Useful StrongLike instance for decoding half-lenses
--- Add to profunctors package? 
+-- Add to profunctors package?
 instance StrongLike (->) where
   firstlike f s = Tuple (f unit) s
   secondlike f s = Tuple s (f unit)

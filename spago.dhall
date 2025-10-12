@@ -14,10 +14,12 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "aff"
   , "avar"
+  , "console"
   , "datetime"
   , "debug"
   , "effect"
   , "either"
+  , "exceptions"
   , "foldable-traversable"
   , "foreign-object"
   , "functors"
@@ -29,10 +31,12 @@ to generate this file without the comments in this block.
   , "qualified-do"
   , "record"
   , "refs"
+  , "strings"
   , "transformers"
   , "tuples"
   , "typelevel-prelude"
   , "unsafe-coerce"
+  , "variant"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
