@@ -17,13 +17,13 @@ import Web (body, label, staticText, text)
 
 main :: Effect Unit
 main = body @(Record ()) $ Semigroupoid.do
-  StrongLike.field @"firstName" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "First name" }
-  StrongLike.field @"lastName" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Last name" }
+  StrongLike.field @"productName" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Product name" }
+  StrongLike.field @"quantity" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Quantity" }
   debounced $ Sum.do
     constant "Hello, " text
-    field @"firstName" $ text
+    field @"productName" $ text
     constant " " $ text
-    field @"lastName" $ text
+    field @"quantity" $ text
     constant "!" $ text
     MDC.containedButton { icon: Nothing, label: Just "Enter" }
   pzero

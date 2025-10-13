@@ -7,7 +7,7 @@ import Data.Profunctor (class Profunctor, rmap)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Prim.Row (class Cons, class Lacks)
-import Record (insert, set)
+import Record (insert)
 import Type.Prelude (Proxy(..))
 
 -- StrongLike
