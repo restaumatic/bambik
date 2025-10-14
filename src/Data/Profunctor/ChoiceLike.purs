@@ -35,9 +35,8 @@ halfprism eliminate = leftlike >>> lcmap eliminate
 halfprism' :: forall t a. (t -> Either a t) -> HalfPrism t t a
 halfprism' = halfprism
 
--- TODO: rename to `newCtor`?
-ctor :: forall @l s t a. IsSymbol l => Cons l a t s => HalfPrism (Variant s) (Variant t) a
-ctor = halfprism (on (Proxy @l) Left Right)
+newVariant :: forall @l s t a. IsSymbol l => Cons l a t s => HalfPrism (Variant s) (Variant t) a
+newVariant = halfprism (on (Proxy @l) Left Right)
 
 -- There is no: `instance StrongLike (->)` as it would require (a -> Void)
 

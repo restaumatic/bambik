@@ -35,9 +35,8 @@ halflens introduce = firstlike >>> rmap introduce
 halflens' :: forall s b. (Tuple b s -> s) -> HalfLens s s b
 halflens' = halflens
 
--- TODO: rename to `newField`?
-field :: forall @l s r a. IsSymbol l => Cons l a r s => Lacks l r => HalfLens (Record r) (Record s) a
-field = halflens (\(Tuple b s) -> insert (Proxy @l) b s)
+newProperty :: forall @l s r a. IsSymbol l => Cons l a r s => Lacks l r => HalfLens (Record r) (Record s) a
+newProperty = halflens (\(Tuple b s) -> insert (Proxy @l) b s)
 
 instance StrongLike (->) where
   firstlike f s = Tuple (f unit) s

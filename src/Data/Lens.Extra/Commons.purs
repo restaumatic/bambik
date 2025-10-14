@@ -1,4 +1,16 @@
-module Data.Lens.Extra.Commons where
+module Data.Lens.Extra.Commons
+  ( constructor
+  , property
+  , input
+  , just
+  , left
+  , missing
+  , missing'
+  , nothing
+  , projection
+  , right
+  )
+  where
 
 import Prelude
 
@@ -14,11 +26,11 @@ import Record (get)
 import Type.Prelude (Proxy(..))
 
 -- This is just `Data.Lens.Record.prop` but with a type signature allowing for type annotations
-field :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) (Record s) a a
-field = prop (Proxy :: Proxy l)
+property :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) (Record s) a a
+property = prop (Proxy :: Proxy l)
 
 input :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) (Record s) a a
-input = field @l
+input = property @l
 
 output :: forall @l s r a t. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) t a Void
 output = let l = (Proxy :: Proxy l) in lens (get l) (\_ x -> absurd x)
