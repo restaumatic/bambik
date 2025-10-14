@@ -4,10 +4,10 @@ import Prelude
 
 import Data.Lens (Optic)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (class Profunctor, rmap)
+import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Profunctor.Cont (Cont(..))
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst, snd)
 import Prim.Row (class Cons, class Lacks)
 import Record (insert)
 import Type.Proxy (Proxy(..))
@@ -18,7 +18,13 @@ class Profunctor p <= StrongLike p where
   firstlike :: forall s b . p Unit b -> p s (Tuple b s) -- b introduced, s preserved
   secondlike :: forall s b . p Unit b -> p s (Tuple s b) -- b introduced, s preserved
 
--- TODO: Is StrongLike a generalization of Strong or vice-versa?
+-- StrongLike is neither isomorphic nor subclass not superclass of Strong:
+
+-- strongLikeToStrong :: forall p s b. Profunctor p => (p Unit b -> p s (Tuple b s)) -> p b b -> p (Tuple b s) (Tuple b s)
+-- strongLikeToStrong = impossible
+
+-- strongToStrongLike :: forall p s b. Profunctor p => (p b b -> p (Tuple b s) (Tuple b s)) -> p Unit b -> p s (Tuple b s)
+-- strongToStrongLike = impossible
 
 -- Half-lens (a.k.a. introductor) is similar to a lens but it only introduces a part so it's only one function: `Tuple s b -> t`
 -- Half-lens does not encode a full lens (a field in particular) as it does not allow to extract the b part from s.

@@ -18,7 +18,13 @@ class Profunctor p <= ChoiceLike p where
   leftlike :: forall t a. p a Void -> p (Either a t) t -- a eliminated, t preserved
   rightlike :: forall t a. p a Void -> p (Either t a) t -- a eliminated, t preserved
 
--- Is ChoiceLike a generalization of Choice?
+-- ChoiceLike is neither isomorphic nor subclass not superclass of Choice:
+
+-- choiceLikeToChoice :: forall p s b. Profunctor p => (p a Void -> p (Either a t) t) -> p a a -> p (Either a t) (Either a t)
+-- choiceLikeToChoice = impossible
+
+-- choiceToChoiceLike :: forall p s b. Profunctor p => (p a a -> p (Either a t) (Either a t)) -> p a Void -> p (Either a t) t
+-- choiceToChoiceLike = impossible
 
 -- Half-prism (a.k.a. eliminator) is similar to a prism but it only eliminates a variant, so it's only one function: `s -> Either a t`
 -- Half-prism does not encode a full prism (a constructor in particular) as it does not allow to set variant b of t.
