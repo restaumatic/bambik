@@ -10,10 +10,9 @@ import Data.Profunctor.Sum as Sum
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
-import QualifiedDo.Semigroup as Semigroup
 import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (constant, debounced)
-import Web (body, label, staticText, text)
+import Web (body, text)
 
 main :: Effect Unit
 main = body @(Record ()) $ Semigroupoid.do
