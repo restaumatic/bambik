@@ -4,10 +4,10 @@ import Prelude
 
 import Data.Lens (Optic)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor (class Profunctor, rmap)
 import Data.Profunctor.Cont (Cont(..))
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple (Tuple(..))
 import Prim.Row (class Cons, class Lacks)
 import Record (insert)
 import Type.Proxy (Proxy(..))
