@@ -13,14 +13,14 @@ import Record (delete, get)
 import Type.Prelude (Proxy(..))
 
 class Profunctor p <= ElimPropP p where
-  liftElimProp :: forall s a. p a s -> p (Tuple a s) s -- a eliminated, s preserved
+  liftElimProp :: forall s e. p e s -> p (Tuple e s) s -- e eliminated, s preserved
 
 -- TODO: relation with Strong
 
--- `ElimPropO s t a` encodes `s -> Tuple a t`
-type ElimPropO s t a = forall p. ElimPropP p => Optic p s t a t
+-- `ElimPropO s t e` encodes `s -> Tuple e t`
+type ElimPropO s t e = forall p. ElimPropP p => Optic p s t e t
 
-elimProp :: forall s t a. (s -> Tuple a t) -> ElimPropO s t a
+elimProp :: forall s t e. (s -> Tuple e t) -> ElimPropO s t e
 elimProp eliminate = liftElimProp >>> lcmap eliminate
 
 -- TODO: inverse
