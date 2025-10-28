@@ -17,15 +17,14 @@ class Profunctor p <= ElimPropP p where
 
 -- TODO: relation with Strong
 
--- `ElimPropO s t e` encodes `s -> Tuple e t`
-type ElimPropO s t e = forall p. ElimPropP p => Optic p s t e t
+-- `forall p. ElimPropP p => Optic p s t e t` encodes `s -> Tuple e t`
 
-elimProp :: forall s t e. (s -> Tuple e t) -> ElimPropO s t e
+elimProp :: forall s t e. (s -> Tuple e t) -> (forall p. ElimPropP p => Optic p s t e t)
 elimProp eliminate = liftElimProp >>> lcmap eliminate
 
 -- TODO: elimPropInv
 
-elimProp' :: forall @l t s e. IsSymbol l => Cons l e s t => Lacks l s => ElimPropO (Record t) (Record s) e
+elimProp' :: forall @l t s e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimPropP p => Optic p (Record s) (Record t) e (Record t))
 elimProp' = elimProp (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
 
 instance ElimPropP (->) where
