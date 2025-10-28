@@ -23,12 +23,12 @@ import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.ElimVarP (class ElimVarP)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
-import Data.Profunctor.IntroPropP (class IntroPropP, introProp)
+import Data.Profunctor.IntroPropP (class IntroPropP)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
@@ -137,13 +137,13 @@ instance Functor m => IntroPropP (UI m) where
             -- p'.toUser $ New unit cont -- TODO: needed?
             let prop = unsafePerformEffect $ Ref.read propRef
             let mb = unsafePerformEffect $ Ref.read mlastb
-            maybe (pure unit) (\b -> void $ prop (New (Tuple b s) cont)) mb
+            maybe (pure unit) (\b -> void $ prop (New (Tuple s b) cont)) mb
       , fromUser: \prop -> do
         Ref.write prop propRef
         p'.fromUser \(New b cont) -> do
           let s = unsafePerformEffect $ Ref.read lasts
           let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
-          prop (New (Tuple b s) cont)
+          prop (New (Tuple s b) cont)
       }
 
 instance Functor m => ElimVarP (UI m) where
