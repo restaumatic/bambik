@@ -13,7 +13,7 @@ import Record (delete, get)
 import Type.Prelude (Proxy(..))
 
 class Profunctor p <= ElimPropP p where
-  liftElimProp :: forall t a. p a t -> p (Tuple a t) t -- a eliminated, t preserved
+  liftElimProp :: forall s a. p a s -> p (Tuple a s) s -- a eliminated, s preserved
 
 -- TODO: relation with Strong
 
