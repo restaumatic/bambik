@@ -5,7 +5,7 @@ import Prelude
 import Data.Lens.Extra.Commons (property)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
-import Data.Profunctor.StrongLike (newProperty)
+import Data.Profunctor.IntroPropP (introProp')
 import Data.Profunctor.Sum as Sum
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
@@ -16,8 +16,8 @@ import Web (body, text)
 
 main :: Effect Unit
 main = body @(Record ()) $ Semigroupoid.do
-  newProperty @"productName" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Product name" }
-  newProperty @"quantity" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Quantity" }
+  introProp' @"productName" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Product name" }
+  introProp' @"quantity" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Quantity" }
   debounced $ Sum.do
     constant "Hello, " text
     property @"productName" $ text

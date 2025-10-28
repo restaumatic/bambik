@@ -23,12 +23,12 @@ import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.ChoiceLike (class ChoiceLike)
+import Data.Profunctor.ElimVarP (class ElimVarP)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Strong (class Strong)
-import Data.Profunctor.StrongLike (class StrongLike)
+import Data.Profunctor.IntroPropP (class IntroPropP, introProp)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
@@ -124,8 +124,8 @@ instance Functor m => Choice (UI m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Functor m => StrongLike (UI m) where
-  firstlike p = wrap ado
+instance Functor m => IntroPropP (UI m) where
+  liftIntroProp p = wrap ado
     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     let mlastb = unsafePerformEffect $ Ref.new Nothing
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
@@ -145,29 +145,9 @@ instance Functor m => StrongLike (UI m) where
           let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
           prop (New (Tuple b s) cont)
       }
-  secondlike p = wrap ado
-    let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    let mlastb = unsafePerformEffect $ Ref.new Nothing
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    p' <- unwrap p
-    in
-      { toUser: case _ of
-          New s cont -> do
-            let _ = unsafePerformEffect $ Ref.write s lasts
-            -- p'.toUser $ New unit cont -- TODO: needed?
-            let prop = unsafePerformEffect $ Ref.read propRef
-            let mb = unsafePerformEffect $ Ref.read mlastb
-            maybe (pure unit) (\b -> void $ prop (New (Tuple s b) cont)) mb
-      , fromUser: \prop -> do
-        Ref.write prop propRef
-        p'.fromUser \(New b cont) -> do
-          let s = unsafePerformEffect $ Ref.read lasts
-          let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
-          prop (New (Tuple s b) cont)
-      }
 
-instance Functor m => ChoiceLike (UI m) where
-  leftlike p = wrap ado
+instance Functor m => ElimVarP (UI m) where
+  liftElimVar p = wrap ado
     let tPropRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
@@ -179,19 +159,6 @@ instance Functor m => ChoiceLike (UI m) where
         New (Left a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
         Ref.write prop tPropRef
-      }
-  rightlike p = wrap ado
-    p' <- unwrap p
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    in
-      { toUser: case _ of
-        New (Left t) cont -> do
-          let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New t cont)
-          pure unit
-        New (Right a) cont -> p'.toUser $ New a cont
-      , fromUser: \prop -> do
-        Ref.write prop propRef
       }
 
 instance Apply m => Semigroupoid (UI m) where
