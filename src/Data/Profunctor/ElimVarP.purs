@@ -5,7 +5,6 @@ import Prelude
 import Data.Either (Either(..), either)
 import Data.Lens (Optic)
 import Data.Newtype (unwrap, wrap)
-import Data.Number (e)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Cont (Cont(..))
 import Data.Symbol (class IsSymbol)
@@ -32,8 +31,8 @@ type ElimVarO s t e = forall p. ElimVarP p => Optic p s t e t
 elimVar :: forall s t e. (s -> Either e t) -> ElimVarO s t e
 elimVar eliminate = liftElimVar >>> lcmap eliminate
 
-elimVarInverse :: forall s t e. ElimVarO s t e -> s -> Either e t
-elimVarInverse f = unwrap (f (Cont (const Left))) Right
+elimVarInv :: forall s t e. ElimVarO s t e -> s -> Either e t
+elimVarInv f = unwrap (f (Cont (const Left))) Right
 
 elimVar' :: forall @l s t a. IsSymbol l => Cons l a t s => Lacks l t => ElimVarO (Variant s) (Variant t) a
 elimVar' = elimVar (on (Proxy @l) Left Right)

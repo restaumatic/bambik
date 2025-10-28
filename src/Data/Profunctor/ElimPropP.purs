@@ -23,9 +23,7 @@ type ElimPropO s t e = forall p. ElimPropP p => Optic p s t e t
 elimProp :: forall s t e. (s -> Tuple e t) -> ElimPropO s t e
 elimProp eliminate = liftElimProp >>> lcmap eliminate
 
--- TODO: inverse
--- eliminatePropertyInverse :: forall s t a. ElimPropO s t a -> s -> Tuple a t
--- eliminatePropertyInverse f s = ...
+-- TODO: elimPropInv
 
 elimProp' :: forall @l t s a. IsSymbol l => Cons l a s t => Lacks l s => ElimPropO (Record t) (Record s) a
 elimProp' = elimProp (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))

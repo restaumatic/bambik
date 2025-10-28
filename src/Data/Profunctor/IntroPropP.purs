@@ -28,8 +28,8 @@ type IntroPropO s t i = forall p. IntroPropP p => Optic p s t s i
 introProp :: forall s t i. (Tuple s i -> t) -> IntroPropO s t i
 introProp introduce = liftIntroProp >>> rmap introduce
 
-introPropInverse :: forall s t i. IntroPropO s t i -> Tuple i s -> t
-introPropInverse f (Tuple b s) = unwrap (f (Cont (\g _ -> g b))) identity s
+introPropInv :: forall s t i. IntroPropO s t i -> Tuple i s -> t
+introPropInv f (Tuple b s) = unwrap (f (Cont (\g _ -> g b))) identity s
 
 introProp' :: forall @l t s a. IsSymbol l => Cons l a s t => Lacks l s => IntroPropO (Record s) (Record t) a
 introProp' = introProp (\(Tuple s b) -> insert (Proxy @l) b s)
