@@ -25,7 +25,7 @@ elimProp eliminate = liftElimProp >>> lcmap eliminate
 
 -- TODO: elimPropInv
 
-elimProp' :: forall @l t s a. IsSymbol l => Cons l a s t => Lacks l s => ElimPropO (Record t) (Record s) a
+elimProp' :: forall @l t s e. IsSymbol l => Cons l e s t => Lacks l s => ElimPropO (Record t) (Record s) e
 elimProp' = elimProp (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
 
 instance ElimPropP (->) where

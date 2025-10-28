@@ -31,7 +31,7 @@ introProp introduce = liftIntroProp >>> rmap introduce
 introPropInv :: forall s t i. IntroPropO s t i -> Tuple i s -> t
 introPropInv f (Tuple b s) = unwrap (f (Cont (\g _ -> g b))) identity s
 
-introProp' :: forall @l t s a. IsSymbol l => Cons l a s t => Lacks l s => IntroPropO (Record s) (Record t) a
+introProp' :: forall @l t s i. IsSymbol l => Cons l i s t => Lacks l s => IntroPropO (Record s) (Record t) i
 introProp' = introProp (\(Tuple s b) -> insert (Proxy @l) b s)
 
 instance IntroPropP (->) where

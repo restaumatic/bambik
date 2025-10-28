@@ -34,7 +34,7 @@ elimVar eliminate = liftElimVar >>> lcmap eliminate
 elimVarInv :: forall s t e. ElimVarO s t e -> s -> Either e t
 elimVarInv f = unwrap (f (Cont (const Left))) Right
 
-elimVar' :: forall @l s t a. IsSymbol l => Cons l a t s => Lacks l t => ElimVarO (Variant s) (Variant t) a
+elimVar' :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => ElimVarO (Variant s) (Variant t) e
 elimVar' = elimVar (on (Proxy @l) Left Right)
 
 instance ElimVarP (->) where
