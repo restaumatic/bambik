@@ -25,16 +25,15 @@ class Profunctor p <= ElimVarP p where
 -- Half-prism (a.k.a. eliminator) is similar to a prism but it only eliminates a variant, so it's only one function: `s -> Either a t`
 -- Half-prism does not encode a full prism (a constructor in particular) as it does not allow to set variant b of t.
 
--- `ElimVarO s t e` encodes `s -> Either e t`
-type ElimVarO s t e = forall p. ElimVarP p => Optic p s t e t
+-- `forall p. ElimVarP p => Optic p s t e t` encodes `s -> Either e t`
 
-elimVar :: forall s t e. (s -> Either e t) -> ElimVarO s t e
+elimVar :: forall s t e. (s -> Either e t) -> (forall p. ElimVarP p => Optic p s t e t)
 elimVar eliminate = liftElimVar >>> lcmap eliminate
 
-elimVarInv :: forall s t e. ElimVarO s t e -> s -> Either e t
+elimVarInv :: forall s t e. (forall p. ElimVarP p => Optic p s t e t) -> s -> Either e t
 elimVarInv f = unwrap (f (Cont (const Left))) Right
 
-elimVar' :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => ElimVarO (Variant s) (Variant t) e
+elimVar' :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimVarP p => Optic p (Variant s) (Variant t) e (Variant t))
 elimVar' = elimVar (on (Proxy @l) Left Right)
 
 instance ElimVarP (->) where
