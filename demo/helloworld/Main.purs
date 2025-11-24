@@ -6,14 +6,12 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.EditPropP (property)
 import Data.Profunctor.IntroPropP (newProperty)
-import Data.Profunctor.OutputP (constant, function, output, output', static)
-import Data.Profunctor.Sum as Sum
+import Data.Profunctor.OutputP (constant, function, output')
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (debounced)
-import Web (body, staticText, text)
+import Web (body, text)
 
 main :: Effect Unit
 main = body @(Record ()) $ Semigroupoid.do
