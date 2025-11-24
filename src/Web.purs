@@ -50,7 +50,8 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Lens.Record (prop)
+import Data.Maybe (Maybe(..), isJust, isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
@@ -103,12 +104,19 @@ input :: String -> UI Web String String
 input type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new $ Nothing
   pure
-    { toUser: case _ of
-    New newa _ -> setValue node newa
-    , fromUser: \prop -> void $ addEventListener "input" node $ const do
-      value <- getValue node
-      void $ prop $ New value true
+    { toUser: \(New newa _) -> do
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> do
+        setValue node newa
+        void $ prop $ New newa false
+    , fromUser: \prop -> do
+      Ref.write (Just prop) mPropRef
+      void $ addEventListener "input" node $ const do
+        Ref.write Nothing mPropRef
+        value <- getValue node
+        void $ prop $ New value true
     }
 
 textArea :: UI Web String String
@@ -407,10 +415,9 @@ runWidgetInSelectedNode selector initial callback ui = do
 runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
 runWidgetInNode node initial callback ui = runDomInNode node do
   { toUser, fromUser } <- unwrap ui
-  liftEffect $ fromUser case _ of
-    New b _ -> do
-      callback b
-      pure Nothing
+  liftEffect $ fromUser \(New b _) -> do
+    callback b
+    pure Nothing
   void $ liftEffect $ toUser $ New initial false
 
 --- private

@@ -25,10 +25,12 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
+import Data.Profunctor.EditPropP (class EditPropP, liftEditProp)
 import Data.Profunctor.ElimVarP (class ElimVarP)
 import Data.Profunctor.Endo (class Endo)
-import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.IntroPropP (class IntroPropP)
+import Data.Profunctor.OutputP (class OutputP)
+import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
@@ -42,6 +44,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Unsafe.Coerce (unsafeCoerce)
 
+-- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit)) 
 newtype UI m i o = UI (m
   { toUser :: New i -> Effect Unit
   , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
@@ -134,7 +137,7 @@ instance Functor m => IntroPropP (UI m) where
       { toUser: case _ of
           New s cont -> do
             let _ = unsafePerformEffect $ Ref.write s lasts
-            -- p'.toUser $ New unit cont -- TODO: needed?
+            p'.toUser $ New unit cont -- TODO: needed?
             let prop = unsafePerformEffect $ Ref.read propRef
             let mb = unsafePerformEffect $ Ref.read mlastb
             maybe (pure unit) (\b -> void $ prop (New (Tuple s b) cont)) mb
@@ -144,6 +147,38 @@ instance Functor m => IntroPropP (UI m) where
           let s = unsafePerformEffect $ Ref.read lasts
           let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
           prop (New (Tuple s b) cont)
+      }
+
+instance Functor m => OutputP (UI m) where
+  liftOutputP p = wrap ado
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+          New (Tuple s o) cont -> do
+            p'.toUser $ New o cont
+            prop <- Ref.read propRef
+            void $ prop (New s cont)
+      , fromUser: \prop -> do
+        Ref.write prop propRef
+        p'.fromUser \(New void cont) -> prop (New (absurd void) cont)
+      }
+
+instance Functor m => EditPropP (UI m) where
+  liftEditProp p = wrap ado
+    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let lastSRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: \n@(New (Tuple s e) cont) -> do
+            p'.toUser $ New e cont
+            Ref.write s lastSRef
+            prop <- Ref.read propRef
+            void $ prop n
+      , fromUser: \prop -> do
+        Ref.write prop propRef
+        s <- Ref.read lastSRef
+        p'.fromUser \(New e cont) -> prop (New (Tuple s e) cont)
       }
 
 instance Functor m => ElimVarP (UI m) where

@@ -37,6 +37,6 @@ instance IntroVarP (->) where
   liftIntroVar f s = Right (f s)
 
 instance IntroVarP (Cont r) where
-  -- :: [(b -> r) -> (Unit -> r)] -> (Either b s -> r) -> s -> r
-  -- s may be Void
+  -- :: [(i -> r) -> (s -> r)] -> (Either s i -> r) -> s -> r
+  -- notice: s may be Void
   liftIntroVar _ = wrap \bs2r s -> bs2r (Left s)

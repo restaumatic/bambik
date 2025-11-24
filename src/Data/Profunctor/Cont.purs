@@ -29,13 +29,17 @@ instance Choice (Cont r) where
     Right a -> unwrap r (\b -> db2r (Right b)) a
     Left d -> db2r (Left d)
 
-edit :: forall r a b. (a -> b) -> Cont r a b
-edit a2b = wrap (\b2r -> a2b >>> b2r)
+run :: forall a b. Cont b a b -> a -> b
+run cont a = unwrap cont identity a
 
-introduce :: forall r b. b -> Cont r Unit b
-introduce b = edit (const b)
+introduce :: forall r a b. (a -> b) -> Cont r a b
+introduce a2b = wrap (\b2r -> a2b >>> b2r)
 
--- a.k.a. "handle"?
+introduce' :: forall r a b. b -> Cont r a b
+introduce' b = introduce (const b)
+
 eliminate :: forall a r. (a -> r) -> Cont r a Void
 eliminate a2r = wrap (\_ a -> a2r a)
 
+eliminate' :: forall a . Cont a a Void
+eliminate' = eliminate identity

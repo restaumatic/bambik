@@ -1,6 +1,5 @@
 module Data.Lens.Extra.Commons
   ( constructor
-  , property
   , input
   , just
   , left
@@ -8,7 +7,10 @@ module Data.Lens.Extra.Commons
   , missing'
   , nothing
   , projection
+  , property
   , right
+  , variant
+  , variant'
   )
   where
 
@@ -16,14 +18,22 @@ import Prelude
 
 import Data.Default (class Default, default)
 import Data.Either (Either(..))
-import Data.Lens (Iso, Lens, Prism, lens, prism)
+import Data.Lens (Iso, Lens, Prism, lens, prism, prism')
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (dimap)
 import Data.Symbol (class IsSymbol)
+import Data.Variant (Variant, inj, on)
 import Prim.Row as Row
 import Record (get)
 import Type.Prelude (Proxy(..))
+
+variant :: forall @l s r a. IsSymbol l => Row.Cons l a r s => Prism (Variant s) (Variant s) a a
+variant = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (const Nothing))
+
+variant' :: forall @l s r a. IsSymbol l => Row.Cons l a r s => (Variant r -> a) -> Prism (Variant s) (Variant s) a a
+variant' f = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (Just <<< f))
+
 
 -- This is just `Data.Lens.Record.prop` but with a type signature allowing for type annotations
 property :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) (Record s) a a

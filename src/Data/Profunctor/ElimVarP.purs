@@ -13,7 +13,8 @@ import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= ElimVarP p where
-  liftElimVar :: forall s e. p e s -> p (Either e s) s -- e eliminated, s preserved
+  -- liftElimVar :: forall s e. p e s -> p (Either e s) s -- e eliminated, s preserved
+  liftElimVar :: forall s e. p e Void -> p (Either e s) s -- e eliminated, s preserved
 
 -- ElimVarP is not a subclass of Choice:
 -- choiceLikeToChoice :: forall p. Profunctor p => (forall a t. p a t -> p (Either a t) t)) -> (forall a b c. p a b -> p (Either a c) (Either b c))
@@ -27,19 +28,19 @@ class Profunctor p <= ElimVarP p where
 
 -- `forall p. ElimVarP p => Optic p s t e t` encodes `s -> Either e t`
 
-elimVar :: forall s t e. (s -> Either e t) -> (forall p. ElimVarP p => Optic p s t e t)
+elimVar :: forall s t e. (s -> Either e t) -> (forall p. ElimVarP p => Optic p s t e Void)
 elimVar eliminate = liftElimVar >>> lcmap eliminate
 
-elimVarInv :: forall s t e. (forall p. ElimVarP p => Optic p s t e t) -> s -> Either e t
+elimVarInv :: forall s t e. (forall p. ElimVarP p => Optic p s t e Void) -> s -> Either e t
 elimVarInv f = unwrap (f (Cont (const Left))) Right
 
-elimVar' :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimVarP p => Optic p (Variant s) (Variant t) e (Variant t))
+elimVar' :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimVarP p => Optic p (Variant s) (Variant t) e Void)
 elimVar' = elimVar (on (Proxy @l) Left Right)
 
-instance ElimVarP (->) where
-  liftElimVar f = either f identity
+-- instance ElimVarP (->) where
+--   liftElimVar f = either f identity
 
 -- Useful instance for decoding half-prisms
 instance ElimVarP (Cont r) where
-  liftElimVar r = wrap $ \t2r aort -> either (unwrap r t2r) t2r aort
+  liftElimVar r = wrap $ either (unwrap r absurd)
 
