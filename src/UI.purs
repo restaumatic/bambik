@@ -168,17 +168,21 @@ instance Functor m => EditPropP (UI m) where
   liftEditProp p = wrap ado
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     let lastSRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let lastERef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
-      { toUser: \n@(New (Tuple s e) cont) -> do
-            p'.toUser $ New e cont
-            Ref.write s lastSRef
-            prop <- Ref.read propRef
-            void $ prop n
+      { toUser: \(New (Tuple s e) cont) -> do
+        p'.toUser $ New e cont
+        Ref.write s lastSRef
+        e' <- Ref.read lastERef
+        prop <- Ref.read propRef
+        void $ prop (New (Tuple s e') cont)
       , fromUser: \prop -> do
         Ref.write prop propRef
-        s <- Ref.read lastSRef
-        p'.fromUser \(New e cont) -> prop (New (Tuple s e) cont)
+        p'.fromUser \(New e cont) -> do
+          s <- Ref.read lastSRef
+          Ref.write e lastERef
+          prop (New (Tuple s e) cont)
       }
 
 instance Functor m => ElimVarP (UI m) where
