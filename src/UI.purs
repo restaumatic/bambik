@@ -151,17 +151,16 @@ instance Functor m => IntroPropP (UI m) where
 
 instance Functor m => OutputP (UI m) where
   liftOutputP p = wrap ado
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let sRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
       { toUser: case _ of
           New (Tuple s o) cont -> do
             p'.toUser $ New o cont
-            prop <- Ref.read propRef
-            void $ prop (New s cont)
+            Ref.write s sRef
       , fromUser: \prop -> do
-        Ref.write prop propRef
-        p'.fromUser \(New void cont) -> prop (New (absurd void) cont)
+        s <- Ref.read sRef
+        p'.fromUser \(New _ cont) -> prop (New s cont)
       }
 
 instance Functor m => EditPropP (UI m) where

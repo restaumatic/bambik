@@ -24,8 +24,8 @@ introProp introduce = liftIntroProp >>> rmap (uncurry introduce)
 introPropInv :: forall s t i. (forall p. IntroPropP p => Optic p s t s i) -> s -> i -> t
 introPropInv f s i = run (f (introduce' i)) s
 
-newProperty :: forall p @l t s i. IsSymbol l => Cons l i s t => Lacks l s => IntroPropP p => Optic p (Record s) (Record t) Unit i
-newProperty = introProp \s i -> insert (Proxy @l) i s
+input :: forall p @l t s i. IsSymbol l => Cons l i s t => Lacks l s => IntroPropP p => Optic p (Record s) (Record t) (Record ()) i
+input = (introProp \s i -> insert (Proxy @l) i s) <<< lcmap (\_ -> {})
 
 instance IntroPropP (->) where
   liftIntroProp f s = Tuple s (f unit)

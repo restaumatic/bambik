@@ -7,7 +7,7 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst, snd)
 import Prim.Row (class Cons)
-import Record (get, set)
+import Record (get, insert, set)
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= EditPropP p where
@@ -28,8 +28,9 @@ editProp f = editProp' (f >>> fst) (f >>> snd)
 -- editPropInv :: forall s e. (forall p. EditPropP p => Optic p s s e e) -> (s -> Tuple e (e -> s))
 -- editPropInv f s i = run (f (introduce' i)) s
 
-property :: forall p @l r s e. IsSymbol l => Cons l e r s => EditPropP p => Optic p (Record s) (Record s) e e
-property = editProp' (get (Proxy @l)) (flip (set (Proxy @l)))
+edit :: forall p @l r s e. IsSymbol l => Cons l e r s => EditPropP p => Optic p (Record s) (Record s) e e
+edit = editProp' (get (Proxy @l)) (flip (set (Proxy @l)))
+
 
 instance EditPropP (->) where
   liftEditProp f (Tuple s e) = Tuple s (f e)

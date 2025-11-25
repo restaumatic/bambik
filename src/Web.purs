@@ -53,6 +53,7 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Data.Newtype (unwrap, wrap)
+import Data.String.Regex.Flags (dotAll)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -85,7 +86,7 @@ uniqueId = randomElementId
 
 -- UIs
 
-text :: forall a. UI Web String a
+text :: UI Web String (Record ())
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -94,10 +95,14 @@ text = wrap do
     pure node
   modify_ _ { sibling = newNode}
   node <- gets (_.sibling)
+  propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
     { toUser: case _ of
-      New s _ -> setTextNodeValue node s
-    , fromUser: \_ -> pure unit
+      New s _ -> do
+        setTextNodeValue node s
+        prop <- Ref.read propRef
+        void $ prop $ New {} false
+    , fromUser: \prop -> Ref.write prop propRef
     }
 
 input :: String -> UI Web String String
