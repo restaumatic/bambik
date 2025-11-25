@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.EditPropP (edit)
 import Data.Profunctor.IntroPropP (input)
-import Data.Profunctor.ElimPropP (constant, output)
+import Data.Profunctor.ReadP (constant, output)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
@@ -41,13 +41,14 @@ main = body @(Record ()) $ lcmap (\_ -> { foo: "foo" }) $ Semigroupoid.do
   -- edit @"product" $ output @"remarks" $ text -- smell, it's not edit
 
   output @"product" $ Semigroupoid.do
+    constant "Product name: " $ text
     output @"name" $ text
+    constant ", Product remarks: " $ text
     output @"remarks" $ text
     -- output @"aaa" $ text
 
   -- constant ", Quantity: " $ text
   -- output @"quantity" $ text
-  -- constant ", Price: " $ text
   -- output @"price" $ text
   -- constant ", function: " $ text
   -- function (\_ -> "2") $ text

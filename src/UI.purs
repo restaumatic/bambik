@@ -29,7 +29,7 @@ import Data.Profunctor.EditPropP (class EditPropP, liftEditProp)
 import Data.Profunctor.ElimVarP (class ElimVarP)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.IntroPropP (class IntroPropP)
-import Data.Profunctor.ElimPropP (class ElimPropP)
+import Data.Profunctor.ReadP (class ReadP, liftRead)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
@@ -149,8 +149,8 @@ instance Functor m => IntroPropP (UI m) where
           prop (New (Tuple s b) cont)
       }
 
-instance Functor m => ElimPropP (UI m) where
-  liftElimProp p = wrap ado
+instance Functor m => ReadP (UI m) where
+  liftRead p = wrap ado
     let sRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in
