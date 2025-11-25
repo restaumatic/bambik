@@ -3,12 +3,10 @@ module Data.Profunctor.ElimPropP where
 import Prelude
 
 import Data.Lens (Optic)
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.Cont (Cont(..))
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..), fst)
-import Effect.Exception.Unsafe (unsafeThrow)
+import Data.Tuple (Tuple(..), fst, snd)
 import Prim.Row (class Cons, class Lacks)
 import Record (delete, get)
 import Type.Prelude (Proxy(..))
@@ -21,19 +19,22 @@ class Profunctor p <= ElimPropP p where
 elimProp :: forall s t o. (s -> Tuple t o) -> (forall p. ElimPropP p => Optic p s t o Unit)
 elimProp eliminate = liftElimProp >>> lcmap eliminate
 
--- TODO:
 elimPropInv :: forall s t o. (forall p. ElimPropP p => Optic p s t o Unit) -> s -> Tuple t o
-elimPropInv f s = unsafeThrow "TODO"
-
+elimPropInv f = unwrap (f (Writer (Tuple unit)))
 
 output :: forall @l o s t. IsSymbol l => Cons l o t s => Lacks l t => (forall p. ElimPropP p => Optic p (Record s) (Record t) o (Record ()))
 output = rmap (const unit) >>> elimProp \s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s)
 
-instance ElimPropP (->) where
-  liftElimProp _ (Tuple s _) = s
+-- useful ElimPropP instance
+newtype Writer r a b = Writer (a -> Tuple b r)
 
-instance ElimPropP (Cont r) where
-  liftElimProp _ =  wrap \f (Tuple s _) -> f s
+derive instance Newtype (Writer r a b) _
+
+instance Profunctor (Writer r) where
+  dimap f g w = wrap \a' -> let (Tuple b r) = unwrap w (f a') in Tuple (g b) r
+
+instance ElimPropP (Writer r) where
+  liftElimProp (Writer f) = Writer \(Tuple s o) -> Tuple s (snd (f o))
 
 -- ElimPropP is not a subclass of Strong
 -- ElimPropP is a superclass of Strong:
