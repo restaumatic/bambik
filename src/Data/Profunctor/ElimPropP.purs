@@ -8,10 +8,10 @@ import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Profunctor.Cont (Cont(..))
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst)
-import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Lacks)
 import Record (delete, get)
 import Type.Prelude (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= ElimPropP p where
   liftElimProp :: forall s o. p o Unit -> p (Tuple s o) s -- o output, s preseved
@@ -23,10 +23,14 @@ class Profunctor p <= ElimPropP p where
 elimProp :: forall s t o. (s -> Tuple t o) -> (forall p. ElimPropP p => Optic p s t o Unit)
 elimProp eliminate = liftElimProp >>> lcmap eliminate
 
--- TODO:
--- uses `instance ElimPropP (Cont r)`, instance ElimPropP (->)` is useless here
+-- uses `instance ElimPropP (Cont r)`, `instance ElimPropP (->)` is useful for extracting t
+-- Note: Due to the Cont instance ignoring its input, extracting o requires unsafeCoerce
+-- This is a limitation of the current profunctor encoding
 elimPropInv :: forall s t o. (forall p. ElimPropP p => Optic p s t o Unit) -> (s -> Tuple t o)
-elimPropInv f s = unsafeThrow "TODO" -- TODO unwrap (f (Cont \_ -> identity)) (unsafeCoerce unit) s -- TODO `unsafeCoerce unit`` is a smell
+elimPropInv f s = 
+  let t = f (const unit) s  -- Extract t using the function instance
+      o = unwrap (f (Cont \_ -> identity)) (unsafeCoerce unit) s  -- Extract o using Cont (requires unsafeCoerce)
+  in Tuple t o
 
 output :: forall @l o s t. IsSymbol l => Cons l o t s => Lacks l t => (forall p. ElimPropP p => Optic p (Record s) (Record t) o (Record ()))
 output = rmap (const unit) >>> elimProp \s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s)
@@ -53,3 +57,4 @@ constant :: forall p s a. ElimPropP p => a -> Optic p s s a Unit
 constant a = function (const a)
 
 -- so it's "user read" with `p a Unit`
+
