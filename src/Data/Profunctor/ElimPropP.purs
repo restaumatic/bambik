@@ -28,8 +28,8 @@ elimProp eliminate = liftElimProp >>> lcmap eliminate
 -- This is a limitation of the current profunctor encoding
 elimPropInv :: forall s t o. (forall p. ElimPropP p => Optic p s t o Unit) -> (s -> Tuple t o)
 elimPropInv f s = 
-  let t = f (const unit) s  -- Extract t using the function instance
-      o = unwrap (f (Cont \_ -> identity)) (unsafeCoerce unit) s  -- Extract o using Cont (requires unsafeCoerce)
+  let t = f (const unit) s  -- Uses (->) instance: liftElimProp _ (Tuple s _) = s
+      o = unwrap (f (Cont \_ -> identity)) (unsafeCoerce unit :: t -> o) s  -- Uses Cont instance (unsafeCoerce needed due to encoding limitation)
   in Tuple t o
 
 output :: forall @l o s t. IsSymbol l => Cons l o t s => Lacks l t => (forall p. ElimPropP p => Optic p (Record s) (Record t) o (Record ()))
