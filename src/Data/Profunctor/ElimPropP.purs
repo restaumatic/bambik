@@ -22,11 +22,10 @@ class Profunctor p <= ElimPropP p where
 
 elimProp :: forall s t o. (s -> Tuple t o) -> (forall p. ElimPropP p => Optic p s t o Unit)
 elimProp eliminate = liftElimProp >>> lcmap eliminate
-
 -- TODO:
--- uses `instance ElimPropP (Cont r)`, instance ElimPropP (->)` is useless here
 elimPropInv :: forall s t o. (forall p. ElimPropP p => Optic p s t o Unit) -> (s -> Tuple t o)
-elimPropInv f s = unsafeThrow "TODO" -- TODO unwrap (f (Cont \_ -> identity)) (unsafeCoerce unit) s -- TODO `unsafeCoerce unit`` is a smell
+elimPropInv f s = unsafeThrow "TODO"
+
 
 output :: forall @l o s t. IsSymbol l => Cons l o t s => Lacks l t => (forall p. ElimPropP p => Optic p (Record s) (Record t) o (Record ()))
 output = rmap (const unit) >>> elimProp \s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s)
