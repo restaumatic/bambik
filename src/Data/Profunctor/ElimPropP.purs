@@ -16,8 +16,6 @@ import Type.Prelude (Proxy(..))
 class Profunctor p <= ElimPropP p where
   liftElimProp :: forall s o. p o Unit -> p (Tuple s o) s -- o output, s preseved
 
--- `forall p. ElimPropP p => Optic p s t o Unit` encodes `s -> o`
--- TODO: or rather:
 -- `forall p. ElimPropP p => Optic p s t o Unit` encodes `s -> (Tuple t o)`?
 
 elimProp :: forall s t o. (s -> Tuple t o) -> (forall p. ElimPropP p => Optic p s t o Unit)
