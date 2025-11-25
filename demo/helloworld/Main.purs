@@ -2,18 +2,15 @@ module Main (main) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.EditPropP (edit)
-import Data.Profunctor.IntroPropP (input)
+import Data.Profunctor.WriteP (input)
 import Data.Profunctor.ReadP (constant, output)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
-import Prim.Row (class Lacks)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (UI)
-import Web (Web, body, text)
+import Web (body, text)
 
 main :: Effect Unit
 main = body @(Record ()) $ lcmap (\_ -> { foo: "foo" }) $ Semigroupoid.do

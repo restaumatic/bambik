@@ -16,7 +16,7 @@ class Profunctor p <= ReadP p where
 
 -- `forall p. ReadP p => Optic p s t r Unit` encodes `s -> Tuple t r`?
 
-read :: forall s t r. (s -> Tuple t r) -> (forall p. ReadP p => Optic p s t r Unit)
+read :: forall p s t r. ReadP p => (s -> Tuple t r) -> Optic p s t r Unit
 read r = liftRead >>> lcmap r
 
 readInv :: forall s t r. (forall p. ReadP p => Optic p s t r Unit) -> s -> Tuple t r

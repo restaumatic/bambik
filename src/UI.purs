@@ -28,10 +28,10 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.EditPropP (class EditPropP, liftEditProp)
 import Data.Profunctor.ElimVarP (class ElimVarP)
 import Data.Profunctor.Endo (class Endo)
-import Data.Profunctor.IntroPropP (class IntroPropP)
 import Data.Profunctor.ReadP (class ReadP, liftRead)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
+import Data.Profunctor.WriteP (class WriteP, liftWrite)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -127,8 +127,8 @@ instance Functor m => Choice (UI m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Functor m => IntroPropP (UI m) where
-  liftIntroProp p = wrap ado
+instance Functor m => WriteP (UI m) where
+  liftWrite p = wrap ado
     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     let mlastb = unsafePerformEffect $ Ref.new Nothing
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
