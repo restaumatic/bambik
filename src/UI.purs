@@ -155,8 +155,8 @@ instance Functor m => ReadP (UI m) where
     p' <- unwrap p
     in
       { toUser: case _ of
-          New (Tuple s o) cont -> do
-            p'.toUser $ New o cont
+          New (Tuple r s) cont -> do
+            p'.toUser $ New r cont
             Ref.write s sRef
       , fromUser: \prop -> do
         s <- Ref.read sRef
