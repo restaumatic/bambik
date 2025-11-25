@@ -22,6 +22,7 @@ class Profunctor p <= ElimPropP p where
 
 elimProp :: forall s t o. (s -> Tuple t o) -> (forall p. ElimPropP p => Optic p s t o Unit)
 elimProp eliminate = liftElimProp >>> lcmap eliminate
+
 -- TODO:
 elimPropInv :: forall s t o. (forall p. ElimPropP p => Optic p s t o Unit) -> (s -> Tuple t o)
 elimPropInv f s = unsafeThrow "TODO"
