@@ -10,6 +10,7 @@ import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, case_, on)
 import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= ElimVarP p where
   liftElimVar :: forall s w. p w Void -> p (Either w s) s -- w written, s preserved
@@ -37,3 +38,10 @@ elimVarInv optic = unwrap (optic (ElimVar Left))
 handle :: forall @l p s t e. ElimVarP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) e (Variant ())
 handle = rmap case_ >>> elimVar (on (Proxy @l) Left Right)
 
+-- otherwise :: forall @l p s t e. ElimVarP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) (Variant s) (Variant t)
+-- otherwise = rmap case_ >>> elimVar (on (Proxy @l) Left Right)
+
+
+-- TODO: we need kind of `p (Variant s) (Variant ())` so we need it. Or do we? Without that we enforce exhaustive pattern match which is maybe good.
+otherwise :: forall p a. p a Void
+otherwise = unsafeCoerce unit

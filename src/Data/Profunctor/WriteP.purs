@@ -10,6 +10,7 @@ import Data.Tuple (Tuple(..), fst)
 import Prim.Row (class Cons, class Lacks)
 import Record (delete, get)
 import Type.Prelude (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= WriteP p where
   liftWrite :: forall s w. p w Unit -> p (Tuple w s) s -- w written, s preseved
@@ -58,3 +59,6 @@ writeAll = writeProjection identity
 writeConstant :: forall p s a. WriteP p => a -> Optic p s s a (Record ())
 writeConstant a = writeProjection (const a)
 
+-- TODO: we need kind of `p (Record s) (Record ())` so we need it. Or do we? Without that we enforce exhaustive pattern match which is maybe good.
+otherwise :: forall p a. p a Unit
+otherwise = unsafeCoerce unit
