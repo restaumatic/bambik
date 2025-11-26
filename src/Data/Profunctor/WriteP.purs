@@ -6,46 +6,48 @@ import Data.Lens (Optic)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple (Tuple(..), fst)
 import Prim.Row (class Cons, class Lacks)
-import Record (insert)
-import Type.Proxy (Proxy(..))
+import Record (delete, get)
+import Type.Prelude (Proxy(..))
 
 class Profunctor p <= WriteP p where
-  liftWrite :: forall s w. p Unit w -> p s (Tuple s w) -- w written, s preserved
+  liftWrite :: forall s w. p w Unit -> p (Tuple w s) s -- w written, s preseved
 
 -- WriteP is a superclass of Strong but not vice versa:
-strongToIntroPropP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a) (Tuple c b)) -> (forall s w. p Unit w -> p s (Tuple s w))
-strongToIntroPropP second = second >>> lcmap (\s -> Tuple s unit)
+strongToWriteP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a) (Tuple c b)) -> (forall s r. p r Unit -> p (Tuple s r) s)
+strongToWriteP second = second >>> rmap fst
 
 -- useful WriteP instance
-newtype Reader r a b = Reader (Tuple a r -> b)
+newtype Writer w a b = Writer (a -> Tuple w b)
 
-derive instance Newtype (Reader r a b) _
+derive instance Newtype (Writer w a b) _
 
-instance Profunctor (Reader r) where
-  dimap f g w = wrap \a'r -> g (unwrap w (Tuple (f (fst a'r)) (snd a'r)))
+instance Profunctor (Writer w) where
+  dimap f g w = wrap \a' -> g <$> unwrap w (f a')
 
-instance WriteP (Reader r) where
-  liftWrite f = wrap \(Tuple s r) -> Tuple s (unwrap f (Tuple unit r))
+instance WriteP (Writer w) where
+  liftWrite f = wrap \(Tuple r s) -> Tuple (fst (unwrap f r)) s
 
--- `forall p. WriteP p => Optic p s t Unit w` encodes `Tuple s w -> t`
+-- `forall p. WriteP p => Optic p s t w Unit` encodes `s -> Tuple w t`
 
-write :: forall p s t w. WriteP p => (Tuple s w -> t) -> Optic p s t Unit w
-write w = liftWrite >>> rmap w
+write :: forall p s t w. WriteP p => (s -> Tuple w t) -> Optic p s t w Unit
+write f = liftWrite >>> lcmap f
 
--- uses `instance WriteP (Reader r)`
-writeInv :: forall s t w. (forall p. WriteP p => Optic p s t Unit w) -> Tuple s w -> t
-writeInv o = unwrap (o (Reader snd))
+-- uses `instance WriteP (Writer w)`
+writeInv :: forall s t w. (forall p. WriteP p => Optic p s t w Unit) -> s -> Tuple w t
+writeInv o = unwrap (o (Writer (\x -> Tuple x unit)))
 
--- write and insert
-input :: forall p @l i s t. IsSymbol l => Cons l i s t => Lacks l s => WriteP p => Optic p (Record s) (Record t) (Record ()) i
-input = lcmap (const {}) >>> write \(Tuple s i) -> insert (Proxy @l) i s
+-- write a field and delete it from a record
+output :: forall @l w s t p. IsSymbol l => WriteP p => Cons l w t s => Lacks l t => Optic p (Record s) (Record t) w (Record ())
+output = rmap (const unit) >>> write \s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)
 
-overwrite :: forall s t p. WriteP p => Optic p s t Unit t
-overwrite = write \(Tuple _ t) -> t
+writeProjection :: forall p s a . WriteP p => (s -> a) -> Optic p s s a (Record ())
+writeProjection f = rmap (const unit) >>> write \s -> Tuple (f s) s
 
--- write but don't insert
-ignore :: forall t w p. WriteP p => Optic p t t Unit w
-ignore = write \(Tuple s _) -> s
+writeAll :: forall p s . WriteP p => Optic p s s s (Record ())
+writeAll = writeProjection identity
+
+writeConstant :: forall p s a. WriteP p => a -> Optic p s s a (Record ())
+writeConstant a = writeProjection (const a)
 

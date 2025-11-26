@@ -31,7 +31,7 @@ import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.ReadP (class ReadP, liftRead)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
-import Data.Profunctor.WriteP (class WriteP, liftWrite)
+import Data.Profunctor.WriteP (class WriteP)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -127,8 +127,8 @@ instance Functor m => Choice (UI m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Functor m => WriteP (UI m) where
-  liftWrite p = wrap ado
+instance Functor m => ReadP (UI m) where
+  liftRead p = wrap ado
     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     let mlastb = unsafePerformEffect $ Ref.new Nothing
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
@@ -149,8 +149,8 @@ instance Functor m => WriteP (UI m) where
           prop (New (Tuple s b) cont)
       }
 
-instance Functor m => ReadP (UI m) where
-  liftRead p = wrap ado
+instance Functor m => WriteP (UI m) where
+  liftWrite p = wrap ado
     let sRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in

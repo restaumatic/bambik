@@ -4,8 +4,8 @@ import Prelude
 
 import Data.Profunctor (lcmap)
 import Data.Profunctor.EditPropP (edit)
-import Data.Profunctor.WriteP (input)
-import Data.Profunctor.ReadP (constant, output)
+import Data.Profunctor.ReadP (input)
+import Data.Profunctor.WriteP (writeConstant, output)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
@@ -32,25 +32,25 @@ main = body @(Record ()) $ lcmap (\_ -> { foo: "foo" }) $ Semigroupoid.do
   --     edit @"address" $ MDC.filledTextField { floatingLabel: "Address" }
   --   variant' @"dinein" (\_ -> {table: "a table"}) $ Semigroupoid.do
   --     edit @"table" $ MDC.filledTextField { floatingLabel: "Table" }
-  -- constant "Product name: " $ text
+  -- writeConstant "Product name: " $ text
   -- edit @"product" $ output @"name" $ text -- smell, it's not edit
-  -- constant ", Product remarks: " $ text
+  -- writeConstant ", Product remarks: " $ text
   -- edit @"product" $ output @"remarks" $ text -- smell, it's not edit
 
   output @"product" $ Semigroupoid.do
-    constant "Product name: " $ text
+    writeConstant "Product name: " $ text
     output @"name" $ text
-    constant ", Product remarks: " $ text
+    writeConstant ", Product remarks: " $ text
     output @"remarks" $ text
     -- output @"aaa" $ text
 
-  -- constant ", Quantity: " $ text
+  -- writeConstant ", Quantity: " $ text
   -- output @"quantity" $ text
   -- output @"price" $ text
-  -- constant ", function: " $ text
+  -- writeConstant ", function: " $ text
   -- function (\_ -> "2") $ text
   -- MDC.containedButton { icon: Nothing, label: Just "Enter" }
-  -- constant "Thank you for your order!" $ text
+  -- writeConstant "Thank you for your order!" $ text
   pzero
 
 -- variant notation? | takeaway: { code: "317" } |
