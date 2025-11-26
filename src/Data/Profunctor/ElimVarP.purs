@@ -4,44 +4,36 @@ import Prelude
 
 import Data.Either (Either(..), either)
 import Data.Lens (Optic)
-import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap)
-import Data.Profunctor.Cont (Cont(..))
+import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (Variant, on)
+import Data.Variant (Variant, case_, on)
 import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
 
--- TODO: it should be somehow write-releated (as WriteP is)
 class Profunctor p <= ElimVarP p where
-  -- liftElimVar :: forall s e. p e s -> p (Either e s) s -- e eliminated, s preserved
-  liftElimVar :: forall s e. p e Void -> p (Either e s) s -- e eliminated, s preserved
+  liftElimVar :: forall s w. p w Void -> p (Either w s) s -- w written, s preserved
 
--- ElimVarP is not a subclass of Choice:
--- choiceLikeToChoice :: forall p. Profunctor p => (forall a t. p a t -> p (Either a t) t)) -> (forall a b c. p a b -> p (Either a c) (Either b c))
--- choiceLikeToChoice = impossible
--- ElimVarP is a superclass of Choice:
--- choiceToChoiceLike :: forall p. Profunctor p => (forall s b. a b c -> p (Either a c) (Either b c)) -> (forall a t. p a t -> p (Either a t) t)
--- choiceToChoiceLike = TODO...
+-- TODO: check ElimVarP relation to Choice
 
--- Half-prism (a.k.a. eliminator) is similar to a prism but it only eliminates a variant, so it's only one function: `s -> Either a t`
--- Half-prism does not encode a full prism (a constructor in particular) as it does not allow to set variant b of t.
+-- useful ElimVarP instance
+newtype ElimVar r a b = ElimVar (a -> Either r b)
 
--- `forall p. ElimVarP p => Optic p s t e t` encodes `s -> Either e t`
+derive instance Newtype (ElimVar r a b) _
 
-elimVar :: forall s t e. (s -> Either e t) -> (forall p. ElimVarP p => Optic p s t e Void)
-elimVar eliminate = liftElimVar >>> lcmap eliminate
+instance Profunctor (ElimVar r) where
+  dimap f g h = wrap (\a -> g <$> unwrap h (f a))
 
-elimVarInv :: forall s t e. (forall p. ElimVarP p => Optic p s t e Void) -> s -> Either e t
-elimVarInv f = unwrap (f (Cont (const Left))) Right
+instance ElimVarP (ElimVar r) where
+  liftElimVar h = wrap $ either (Left <<< either identity absurd <<< unwrap h) Right
 
-elimVar' :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimVarP p => Optic p (Variant s) (Variant t) e Void)
-elimVar' = elimVar (on (Proxy @l) Left Right)
+-- `forall p. ElimVarP p => Optic p s t w Void` encodes `s -> Either w t` using `instance ElimVarP (ElimVar r)`:
+elimVar :: forall s t w. (s -> Either w t) -> (forall p. ElimVarP p => Optic p s t w Void)
+elimVar f = liftElimVar >>> lcmap f
 
--- instance ElimVarP (->) where
---   liftElimVar f = either f identity
+elimVarInv :: forall s t w. (forall p. ElimVarP p => Optic p s t w Void) -> s -> Either w t
+elimVarInv optic = unwrap (optic (ElimVar Left))
 
--- Useful instance for decoding half-prisms
-instance ElimVarP (Cont r) where
-  liftElimVar r = wrap $ either (unwrap r absurd)
+handle :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimVarP p => Optic p (Variant s) (Variant t) e (Variant ()))
+handle = rmap case_ >>> elimVar (on (Proxy @l) Left Right)
 

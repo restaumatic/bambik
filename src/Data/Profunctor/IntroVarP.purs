@@ -29,7 +29,7 @@ instance IntroVarP (IntroVar r) where
 
 -- `forall p. IntroVarP p => Optic p s t Void r` encodes `Either s r -> t` using `instance IntroVarP (IntroVar r)`:
 introVar :: forall s t r. (Either s r -> t) -> (forall p. IntroVarP p => Optic p s t Void r)
-introVar introduce = liftIntroVar >>> rmap introduce
+introVar f = liftIntroVar >>> rmap f
 
 introVarInv :: forall s t r. (forall p. IntroVarP p => Optic p s t Void r) -> (Either s r -> t)
 introVarInv optic = unwrap (optic (IntroVar (either absurd identity)))
