@@ -12,6 +12,7 @@ import Data.Variant (Variant, on)
 import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
 
+-- TODO: it should be somehow write-releated (as WriteP is)
 class Profunctor p <= ElimVarP p where
   -- liftElimVar :: forall s e. p e s -> p (Either e s) s -- e eliminated, s preserved
   liftElimVar :: forall s e. p e Void -> p (Either e s) s -- e eliminated, s preserved
