@@ -29,12 +29,10 @@ instance Profunctor (Reader r) where
 instance ReadP (Reader r) where
   liftRead f = wrap \(Tuple s r) -> Tuple s (unwrap f (Tuple unit r))
 
--- `forall p. ReadP p => Optic p s t Unit r` encodes `Tuple s r -> t`
-
+-- `forall p. ReadP p => Optic p s t Unit r` encodes `Tuple s r -> t` using `instance ReadP (Reader r)`:
 read :: forall p s t r. ReadP p => (Tuple s r -> t) -> Optic p s t Unit r
 read f = liftRead >>> rmap f
 
--- uses `instance ReadP (Reader r)`
 readInv :: forall s t r. (forall p. ReadP p => Optic p s t Unit r) -> Tuple s r -> t
 readInv o = unwrap (o (Reader snd))
 

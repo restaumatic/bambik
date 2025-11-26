@@ -29,12 +29,10 @@ instance Profunctor (Writer w) where
 instance WriteP (Writer w) where
   liftWrite f = wrap \(Tuple r s) -> Tuple (fst (unwrap f r)) s
 
--- `forall p. WriteP p => Optic p s t w Unit` encodes `s -> Tuple w t`
-
+-- `forall p. WriteP p => Optic p s t w Unit` encodes `s -> Tuple w t` using `instance WriteP (Writer w)`:
 write :: forall p s t w. WriteP p => (s -> Tuple w t) -> Optic p s t w Unit
 write f = liftWrite >>> lcmap f
 
--- uses `instance WriteP (Writer w)`
 writeInv :: forall s t w. (forall p. WriteP p => Optic p s t w Unit) -> s -> Tuple w t
 writeInv o = unwrap (o (Writer (\x -> Tuple x unit)))
 
