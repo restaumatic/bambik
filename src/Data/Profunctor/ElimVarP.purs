@@ -34,6 +34,6 @@ elimVar f = liftElimVar >>> lcmap f
 elimVarInv :: forall s t w. (forall p. ElimVarP p => Optic p s t w Void) -> s -> Either w t
 elimVarInv optic = unwrap (optic (ElimVar Left))
 
-handle :: forall @l s t e. IsSymbol l => Cons l e t s => Lacks l t => (forall p. ElimVarP p => Optic p (Variant s) (Variant t) e (Variant ()))
+handle :: forall @l p s t e. ElimVarP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) e (Variant ())
 handle = rmap case_ >>> elimVar (on (Proxy @l) Left Right)
 
