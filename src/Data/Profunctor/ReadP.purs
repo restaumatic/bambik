@@ -14,11 +14,27 @@ import Type.Prelude (Proxy(..))
 class Profunctor p <= ReadP p where
   liftRead :: forall s r. p r Unit -> p (Tuple r s) s -- r read, s preseved
 
--- `forall p. ReadP p => Optic p s t r Unit` encodes `s -> Tuple r t`?
+-- ReadP is a superclass of Strong but not vice versa:
+strongToReadP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a) (Tuple c b)) -> (forall s r. p r Unit -> p (Tuple s r) s)
+strongToReadP second = second >>> rmap fst
+
+-- useful ReadP instance
+newtype Writer w a b = Writer (a -> Tuple w b)
+
+derive instance Newtype (Writer w a b) _
+
+instance Profunctor (Writer r) where
+  dimap f g w = wrap \a' -> g <$> unwrap w (f a')
+
+instance ReadP (Writer r) where
+  liftRead f = wrap \(Tuple r s) -> Tuple (fst (unwrap f r)) s
+
+-- `forall p. ReadP p => Optic p s t r Unit` encodes `s -> Tuple r t`
 
 read :: forall p s t r. ReadP p => (s -> Tuple r t) -> Optic p s t r Unit
 read r = liftRead >>> lcmap r
 
+-- uses `instance ReadP (Writer w)`
 readInv :: forall s t r. (forall p. ReadP p => Optic p s t r Unit) -> s -> Tuple r t
 readInv o = unwrap (o (Writer (\x -> Tuple x unit)))
 
@@ -33,19 +49,3 @@ function f = rmap (const unit) >>> read \s -> Tuple (f s) s
 -- fake read
 constant :: forall p s a. ReadP p => a -> Optic p s s a (Record ())
 constant a = function (const a)
-
--- useful ReadP instance
-newtype Writer w a b = Writer (a -> Tuple w b)
-
-derive instance Newtype (Writer w a b) _
-
-instance Profunctor (Writer r) where
-  dimap f g w = wrap \a' -> g <$> unwrap w (f a')
-
-instance ReadP (Writer r) where
-  liftRead (Writer f) = Writer \(Tuple r s) -> Tuple (fst (f r)) s
-
--- ReadP is not a subclass of Strong
--- ReadP is a superclass of Strong:
-strongToReadP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a) (Tuple c b)) -> (forall s r. p r Unit -> p (Tuple s r) s)
-strongToReadP second = second >>> rmap fst
