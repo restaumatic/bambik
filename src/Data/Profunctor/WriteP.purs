@@ -29,6 +29,15 @@ instance Profunctor (Writer w) where
 instance WriteP (Writer w) where
   liftWrite f = wrap \(Tuple r s) -> Tuple (fst (unwrap f r)) s
 
+instance Semigroup w => Semigroupoid (Writer w) where
+  compose g f = wrap \a ->
+    let Tuple w1 b = unwrap f a
+        Tuple w2 c = unwrap g b
+    in Tuple (w1 <> w2) c
+
+instance Monoid w => Category (Writer w) where
+  identity = wrap \x -> Tuple mempty x
+
 -- `forall p. WriteP p => Optic p s t w Unit` encodes `s -> Tuple w t` using `instance WriteP (Writer w)`:
 write :: forall p s t w. WriteP p => (s -> Tuple w t) -> Optic p s t w Unit
 write f = liftWrite >>> lcmap f

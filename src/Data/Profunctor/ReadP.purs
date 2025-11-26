@@ -29,6 +29,12 @@ instance Profunctor (Reader r) where
 instance ReadP (Reader r) where
   liftRead f = wrap \(Tuple s r) -> Tuple s (unwrap f (Tuple unit r))
 
+instance Semigroupoid (Reader r) where
+  compose g f = wrap \ar -> unwrap g (Tuple (unwrap f ar) (snd ar))
+
+instance Category (Reader r) where
+  identity = wrap fst
+
 -- `forall p. ReadP p => Optic p s t Unit r` encodes `Tuple s r -> t` using `instance ReadP (Reader r)`:
 read :: forall p s t r. ReadP p => (Tuple s r -> t) -> Optic p s t Unit r
 read f = liftRead >>> rmap f
