@@ -19,6 +19,8 @@ strongToReadP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a)
 strongToReadP second = second >>> lcmap (\s -> Tuple s unit)
 
 -- useful ReadP instance
+-- Reader r is a Kliesli arrow for the Reader r monad
+-- Reader r is a co-Kliesli arrow for the Product comonad (TODO: check)
 newtype Reader r a b = Reader (Tuple a r -> b)
 
 derive instance Newtype (Reader r a b) _

@@ -25,10 +25,10 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.EditPropP (class EditPropP, liftEditProp)
-import Data.Profunctor.ElimVarP (class ElimVarP)
+import Data.Profunctor.EditPropP (class EditPropP)
+import Data.Profunctor.ExceptP (class ExceptP)
 import Data.Profunctor.Endo (class Endo)
-import Data.Profunctor.ReadP (class ReadP, liftRead)
+import Data.Profunctor.ReadP (class ReadP)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.WriteP (class WriteP)
@@ -184,8 +184,8 @@ instance Functor m => EditPropP (UI m) where
           prop (New (Tuple s e) cont)
       }
 
-instance Functor m => ElimVarP (UI m) where
-  liftElimVar p = wrap ado
+instance Functor m => ExceptP (UI m) where
+  liftExcept p = wrap ado
     let tPropRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     p' <- unwrap p
     in

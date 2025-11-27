@@ -20,6 +20,7 @@ strongToWriteP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a
 strongToWriteP second = second >>> rmap fst
 
 -- useful WriteP instance
+-- Writer w is a Kliesli arrow for the Writer w monad
 newtype Writer w a b = Writer (a -> Tuple w b)
 
 derive instance Newtype (Writer w a b) _
