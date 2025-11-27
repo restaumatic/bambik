@@ -2,7 +2,9 @@ module Data.Profunctor.ExceptP where
 
 import Prelude
 
+import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..), either)
+import Data.Int (base36)
 import Data.Lens (Optic)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
@@ -17,31 +19,37 @@ class Profunctor p <= ExceptP p where
 
 -- TODO: check ExceptP relation to Choice
 
--- useful ExceptP instance
--- `Except r` is a Kleisli arrow for `Except r`
-newtype Except r a b = Except (a -> Either r b)
+-- ExceptP is related to a Kleisli arrow for except monad called `Except r`
+newtype Except w a b = Except (a -> Either w b)
 
-derive instance Newtype (Except r a b) _
+derive instance Newtype (Except w a b) _
 
-instance Profunctor (Except r) where
+instance Profunctor (Except w) where
   dimap f g h = wrap (\a -> g <$> unwrap h (f a))
 
-instance ExceptP (Except r) where
+instance ExceptP (Except w) where
+  liftExcept :: forall s x. Except w x Void -> Except w (Either x s) s -- it's like using Except to make an optic on Except?!
   liftExcept h = wrap $ either (Left <<< either identity absurd <<< unwrap h) Right
 
--- `forall p. ExceptP p => Optic p s t w Void` encodes `s -> Either w t` using `instance ExceptP (Except r)`:
-elimVar :: forall s t w. (s -> Either w t) -> (forall p. ExceptP p => Optic p s t w Void)
-elimVar f = liftExcept >>> lcmap f
+-- additionally
+instance Semigroupoid (Except w) where
+  compose g f = wrap \a ->
+    case unwrap f a of
+      Left w -> Left w
+      Right b -> unwrap g b
 
-elimVarInv :: forall s t w. (forall p. ExceptP p => Optic p s t w Void) -> s -> Either w t
-elimVarInv optic = unwrap (optic (Except Left))
+instance Category (Except w) where
+  identity = wrap Right
+
+-- `forall p. ExceptP p => Optic p a b w Void` is isomorphic to `Except w a b`
+elimVar :: forall p w a b. ExceptP p => Except w a b -> Optic p a b w Void
+elimVar f = liftExcept >>> lcmap (unwrap f)
+
+elimVarInv :: forall w a b. (forall p. ExceptP p => Optic p a b w Void) -> Except w a b
+elimVarInv optic = optic (Except Left)
 
 handle :: forall @l p s t e. ExceptP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) e (Variant ())
-handle = rmap case_ >>> elimVar (on (Proxy @l) Left Right)
-
--- otherwise :: forall @l p s t e. ExceptP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) (Variant s) (Variant t)
--- otherwise = rmap case_ >>> elimVar (on (Proxy @l) Left Right)
-
+handle = rmap case_ >>> elimVar (wrap (on (Proxy @l) Left Right))
 
 -- TODO: we need kind of `p (Variant s) (Variant ())` so we need it. Or do we? Without that we enforce exhaustive pattern match which is maybe good.
 otherwise :: forall p a. p a Void

@@ -15,12 +15,12 @@ import Unsafe.Coerce (unsafeCoerce)
 class Profunctor p <= WriteP p where
   liftWrite :: forall s w. p w Unit -> p (Tuple w s) s -- w written, s preseved
 
+-- WriteP is different than String profunctor
 -- WriteP is a superclass of Strong but not vice versa:
 strongToWriteP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a) (Tuple c b)) -> (forall s r. p r Unit -> p (Tuple s r) s)
 strongToWriteP second = second >>> rmap fst
 
--- useful WriteP instance
--- Writer w is a Kliesli arrow for the Writer w monad
+-- WriteP is related to a Kleisli arrow for the writer monad called `Writer w`
 newtype Writer w a b = Writer (a -> Tuple w b)
 
 derive instance Newtype (Writer w a b) _
@@ -29,8 +29,10 @@ instance Profunctor (Writer w) where
   dimap f g w = wrap \a' -> g <$> unwrap w (f a')
 
 instance WriteP (Writer w) where
+  liftWrite :: forall s x. Writer w x Unit -> Writer w (Tuple x s) s -- it's like using Writer to make an optic on Writer?!
   liftWrite f = wrap \(Tuple r s) -> Tuple (fst (unwrap f r)) s
 
+-- additionally
 instance Semigroup w => Semigroupoid (Writer w) where
   compose g f = wrap \a ->
     let Tuple w1 b = unwrap f a
@@ -40,19 +42,19 @@ instance Semigroup w => Semigroupoid (Writer w) where
 instance Monoid w => Category (Writer w) where
   identity = wrap \x -> Tuple mempty x
 
--- `forall p. WriteP p => Optic p s t w Unit` encodes `s -> Tuple w t` using `instance WriteP (Writer w)`:
-write :: forall p s t w. WriteP p => (s -> Tuple w t) -> Optic p s t w Unit
-write f = liftWrite >>> lcmap f
+-- `forall p. WriteP p => Optic p a b w Unit` is isomorphic to `Writer w a b`
+write :: forall w p a b. WriteP p => Writer w a b -> Optic p a b w Unit
+write f = liftWrite >>> lcmap (unwrap f)
 
-writeInv :: forall s t w. (forall p. WriteP p => Optic p s t w Unit) -> s -> Tuple w t
-writeInv o = unwrap (o (Writer (\x -> Tuple x unit)))
+writeInv :: forall w a b. (forall p. WriteP p => Optic p a b w Unit) -> Writer w a b
+writeInv o = o (Writer (\x -> Tuple x unit))
 
 -- write a field and delete it from a record
 output :: forall @l w s t p. IsSymbol l => WriteP p => Cons l w t s => Lacks l t => Optic p (Record s) (Record t) w (Record ())
-output = rmap (const unit) >>> write \s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)
+output = rmap (const unit) >>> write (wrap \s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
 
 writeProjection :: forall p s a . WriteP p => (s -> a) -> Optic p s s a (Record ())
-writeProjection f = rmap (const unit) >>> write \s -> Tuple (f s) s
+writeProjection f = rmap (const unit) >>> write (wrap \s -> Tuple (f s) s)
 
 writeAll :: forall p s . WriteP p => Optic p s s s (Record ())
 writeAll = writeProjection identity
