@@ -35,6 +35,7 @@ class Profunctor p <= YP p where
 class Profunctor p <= ZP p where
   liftZ :: forall a. p a Unit -> p a Void
 
+-- for button I want: p Void Unit -> p a a or p Unit Unit -> p a a if we want to activate button?
 
 -- introduce property to product (tuple, Record)
 -- p Void a -> p Unit a -- introduce property cases (in particular single case: `Variant a`) -> introduce property
@@ -111,6 +112,8 @@ orderInput = S.do
       textInput @"amount"
       textInput @"cardNumber"
   saveOrder
+  -- button @"saveOrder" $ saveOrder
+  -- button @"saveAndPrintOrder" $ saveOrder 
   snackbar @"networkError" S.do
     textOutput @"message"
   snackbar @"invalidOrder" S.do
