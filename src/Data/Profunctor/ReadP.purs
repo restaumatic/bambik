@@ -21,7 +21,6 @@ import Type.Proxy (Proxy(..))
 -- read from user, input interaction, input, focusable, openable, linear, step by step, one after another, all of, dynamic
 -- Composing case record from properties
 class Profunctor p <= ReadP p where
-  -- beginCaseRecordProperties :: p Void Unit -- first line in pick/select
   liftRead :: forall s r. p Unit r -> p s (Tuple s r) -- r read, s preserved, Unit for passing control flow
 
 class Profunctor p <= FormP p where

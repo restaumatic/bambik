@@ -19,7 +19,6 @@ import Unsafe.Coerce (unsafeCoerce)
 -- Decomposing case record to properties
 class Profunctor p <= WriteP p where
   liftWrite :: forall s w. p w Unit -> p (Tuple w s) s -- w written, s preserved, Unit for passing control flow
-  -- endCaseRecordProperties :: p Unit Void -- last line in case'
 
 -- liftWrite (button "OK" :: UI Web Unit -{activates on new data}- Unit ) :: UI Web s s
 -- liftWrite (infoDialog "Close" :: UI Web Unit Unit) :: UI Web s s

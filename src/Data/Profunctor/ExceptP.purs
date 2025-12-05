@@ -5,9 +5,9 @@ import Prelude
 import Data.Either (Either(..), either)
 import Data.Lens (Optic)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (Variant, case_, on)
+import Data.Variant (Variant, on)
 import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -19,7 +19,6 @@ import Unsafe.Coerce (unsafeCoerce)
 -- Decomposing property variant to cases
 class Profunctor p <= ExceptP p where
   liftExcept :: forall s w. p w Void -> p (Either w s) s -- w written, s preserved
-  -- endPropertyVariantCases :: p Void Unit -- last line in output
 
 -- liftExcept (view :: UI Web View Void) :: UI Web (Either View s) s
 --   removes case
