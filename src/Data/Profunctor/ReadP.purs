@@ -2,12 +2,10 @@ module Data.Profunctor.ReadP where
 
 import Prelude
 
-import Data.Array.ST (pop)
 import Data.Either (Either(..))
 import Data.Lens (Optic)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.Cont (eliminate)
 import Data.Profunctor.ExceptP (class ExceptP, liftExcept)
 import Data.Profunctor.IntroVarO (class IntroVarP, liftIntroVar)
 import Data.Profunctor.WriteP (class WriteP, liftWrite)
