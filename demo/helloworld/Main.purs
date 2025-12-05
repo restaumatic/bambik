@@ -5,7 +5,7 @@ import Prelude
 import Data.Profunctor (lcmap)
 import Data.Profunctor.EditPropP (edit)
 import Data.Profunctor.ReadP (input)
-import Data.Profunctor.WriteP (writeConstant, output)
+import Data.Profunctor.WriteP (output)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
@@ -15,7 +15,7 @@ import Web (body, text)
 main :: Effect Unit
 main = body @(Record ()) $ lcmap (\_ -> { foo: "foo" }) $ Semigroupoid.do
   edit @"foo" $ MDC.filledTextField { floatingLabel: "Foo" }
-  output @"foo" $ text
+  -- output @"foo" $ text
   input @"day" $ lcmap (const "1") $ MDC.filledTextField { floatingLabel: "Text" }
   input @"product" $ MDC.card $ Semigroupoid.do
     input @"name" $ lcmap (const "") $ MDC.filledTextField { floatingLabel: "Name" }
@@ -37,11 +37,11 @@ main = body @(Record ()) $ lcmap (\_ -> { foo: "foo" }) $ Semigroupoid.do
   -- writeConstant ", Product remarks: " $ text
   -- edit @"product" $ output @"remarks" $ text -- smell, it's not edit
 
-  output @"product" $ Semigroupoid.do
-    writeConstant "Product name: " $ text
-    output @"name" $ text
-    writeConstant ", Product remarks: " $ text
-    output @"remarks" $ text
+  -- output @"product" $ Semigroupoid.do
+    -- writeConstant "Product name: " $ text
+    -- output @"name" $ text
+    -- writeConstant ", Product remarks: " $ text
+    -- output @"remarks" $ text
     -- output @"aaa" $ text
 
   -- writeConstant ", Quantity: " $ text

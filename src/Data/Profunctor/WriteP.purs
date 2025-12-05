@@ -7,13 +7,24 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst)
+import Data.Variant (Variant)
 import Prim.Row (class Cons, class Lacks)
 import Record (delete, get)
 import Type.Prelude (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
+-- write to user, output interaction, output, closeable
+-- event-based?
+-- controls data flow?
+-- Decomposing case record to properties
 class Profunctor p <= WriteP p where
-  liftWrite :: forall s w. p w Unit -> p (Tuple w s) s -- w written, s preseved
+  liftWrite :: forall s w. p w Unit -> p (Tuple w s) s -- w written, s preserved, Unit for passing control flow
+  -- endCaseRecordProperties :: p Unit Void -- last line in case'
+
+-- liftWrite (button "OK" :: UI Web Unit -{activates on new data}- Unit ) :: UI Web s s
+-- liftWrite (infoDialog "Close" :: UI Web Unit Unit) :: UI Web s s
+-- liftWrite (reservationDialog :: UI Web Reservation Unit) :: UI Web (Tuple Reservation s) s
+--   shrinks record
 
 -- WriteP is different than String profunctor
 -- WriteP is a superclass of Strong but not vice versa:
@@ -21,6 +32,7 @@ strongToWriteP :: forall p. Profunctor p => (forall a b c. p a b -> p (Tuple c a
 strongToWriteP second = second >>> rmap fst
 
 -- WriteP is related to a Kleisli arrow for the writer monad called `Writer w`
+-- data-dependent?
 newtype Writer w a b = Writer (a -> Tuple w b)
 
 derive instance Newtype (Writer w a b) _
@@ -50,17 +62,24 @@ writeInv :: forall w a b. (forall p. WriteP p => Optic p a b w Unit) -> Writer w
 writeInv o = o (Writer (\x -> Tuple x unit))
 
 -- write a field and delete it from a record
-output :: forall @l w s t p. IsSymbol l => WriteP p => Cons l w t s => Lacks l t => Optic p (Record s) (Record t) w (Record ())
+output :: forall @l w s t p. IsSymbol l => WriteP p => Cons l w t s => Lacks l t => Optic p (Record s) (Record t) w Unit
 output = rmap (const unit) >>> write (wrap \s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
 
-writeProjection :: forall p s a . WriteP p => (s -> a) -> Optic p s s a (Record ())
-writeProjection f = rmap (const unit) >>> write (wrap \s -> Tuple (f s) s)
+outputCases :: forall @l cases s t p. IsSymbol l => WriteP p => Cons l (Variant cases) t s => Lacks l t => Optic p (Record s) (Record t) (Variant cases) Unit
+outputCases = write (wrap \s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
 
-writeAll :: forall p s . WriteP p => Optic p s s s (Record ())
-writeAll = writeProjection identity
+outputCase' :: forall @l l' w' cases s t p. IsSymbol l => WriteP p => Cons l (Variant cases) t s => Cons l' w' () cases => Lacks l t => Optic p (Record s) (Record t) (Variant cases) Unit
+outputCase' = write (wrap \s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
 
-writeConstant :: forall p s a. WriteP p => a -> Optic p s s a (Record ())
-writeConstant a = writeProjection (const a)
+
+-- writeProjection :: forall p s a . WriteP p => (s -> a) -> Optic p s s a (Record ())
+-- writeProjection f = rmap (const unit) >>> write (wrap \s -> Tuple (f s) s)
+
+-- writeAll :: forall p s . WriteP p => Optic p s s s (Record ())
+-- writeAll = writeProjection identity
+
+-- writeConstant :: forall p s a. WriteP p => a -> Optic p s s a (Record ())
+-- writeConstant a = writeProjection (const a)
 
 -- TODO: we need kind of `p (Record s) (Record ())` so we need it. Or do we? Without that we enforce exhaustive pattern match which is maybe good.
 otherwise :: forall p a. p a Unit

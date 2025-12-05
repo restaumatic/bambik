@@ -2,9 +2,7 @@ module Data.Profunctor.ExceptP where
 
 import Prelude
 
-import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..), either)
-import Data.Int (base36)
 import Data.Lens (Optic)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap, rmap)
@@ -14,8 +12,21 @@ import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
+-- case, scenario
+-- accepts only `p w Void` that does not perform any observable effect
+-- effectless? final?
+-- data-dependent?
+-- Decomposing property variant to cases
 class Profunctor p <= ExceptP p where
   liftExcept :: forall s w. p w Void -> p (Either w s) s -- w written, s preserved
+  -- endPropertyVariantCases :: p Void Unit -- last line in output
+
+-- liftExcept (view :: UI Web View Void) :: UI Web (Either View s) s
+--   removes case
+
+-- if you want to project anything you have to be in variant case, cases are records and have fields
+
+-- p Void Void -> p s s -- static is no-op write
 
 -- TODO: check ExceptP relation to Choice
 
@@ -41,15 +52,24 @@ instance Semigroupoid (Except w) where
 instance Category (Except w) where
   identity = wrap Right
 
--- `forall p. ExceptP p => Optic p a b w Void` is isomorphic to `Except w a b`
-elimVar :: forall p w a b. ExceptP p => Except w a b -> Optic p a b w Void
-elimVar f = liftExcept >>> lcmap (unwrap f)
+-- `ExceptP p => Optic p a b w Void` is isomorphic to `Except w a b`
+except :: forall p w a b. ExceptP p => Except w a b -> Optic p a b w Void
+except f = liftExcept >>> lcmap (unwrap f)
 
-elimVarInv :: forall w a b. (forall p. ExceptP p => Optic p a b w Void) -> Except w a b
-elimVarInv optic = optic (Except Left)
+exceptInv :: forall w a b. (forall p. ExceptP p => Optic p a b w Void) -> Except w a b
+exceptInv optic = optic (Except Left)
 
-handle :: forall @l p s t e. ExceptP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) e (Variant ())
-handle = rmap case_ >>> elimVar (wrap (on (Proxy @l) Left Right))
+-- a -> Either w a
+if' :: forall p w a. ExceptP p => Except w a a -> Optic p a a w Void
+if' f = except f
+
+never :: forall p a. ExceptP p => Optic p a a Void Void
+never = except (Except \a -> Right a)
+
+case' :: forall @l p s t e. ExceptP p => IsSymbol l => Cons l e t s => Lacks l t => Optic p (Variant s) (Variant t) e Void
+case' = except (wrap (on (Proxy @l) Left Right))
+
+
 
 -- TODO: we need kind of `p (Variant s) (Variant ())` so we need it. Or do we? Without that we enforce exhaustive pattern match which is maybe good.
 otherwise :: forall p a. p a Void

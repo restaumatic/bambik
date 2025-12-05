@@ -26,9 +26,9 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.EditPropP (class EditPropP)
-import Data.Profunctor.ExceptP (class ExceptP)
 import Data.Profunctor.Endo (class Endo)
-import Data.Profunctor.ReadP (class ReadP)
+import Data.Profunctor.ExceptP (class ExceptP)
+import Data.Profunctor.ReadP (class ReadP, firstProperty, nextProperty)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.WriteP (class WriteP)
@@ -128,7 +128,8 @@ instance Functor m => Choice (UI m) where
       }
 
 instance Functor m => ReadP (UI m) where
-  liftRead p = wrap ado
+  firstProperty = unsafeCoerce unit
+  nextProperty p = wrap ado
     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     let mlastb = unsafePerformEffect $ Ref.new Nothing
     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
