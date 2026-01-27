@@ -14,17 +14,17 @@ data Foo a b = Foo
 instance Profunctor Foo where
   dimap _ _ Foo = Foo
 
-instance RecordsToRecords.RecordsToRecords Foo where
-  recordsToRecords Foo Foo = Foo
+instance RecordsToRecords.ProductToProduct Foo where
+  productToProduct Foo Foo = Foo
 
-instance RecordsToVariants.RecordsToVariants Foo where
-  recordsToVariants Foo Foo = Foo
+instance RecordsToVariants.ProductToSum Foo where
+  productToSum Foo Foo = Foo
 
-instance VariantsToRecords.VariantsToRecords Foo where
-  variantsToRecords Foo Foo = Foo
+instance VariantsToRecords.SumToProduct Foo where
+  sumToProduct Foo Foo = Foo
 
-instance VariantsToVariants.VariantsToVariants Foo where
-  variantsToVariants Foo Foo = Foo
+instance VariantsToVariants.SumToSum Foo where
+  sumToSum Foo Foo = Foo
 
 -- Basic examples from each module
 
@@ -68,7 +68,7 @@ recordsToVariantsLarge :: Foo
   (Variant ( success :: Int , invalidCredentials :: String , expired :: Boolean, exit :: Unit ))
 recordsToVariantsLarge = RecordsToVariants.do
   (Foo :: Foo (Record ( "username" :: String, "password" :: String )) (Variant ( "success" :: Int, "invalidCredentials" :: String )))
-  (Foo :: Foo (Record ( "password" :: String )) (Variant ( "invalidCredentials" :: String )))
+  (Foo :: Foo (Record ( "username" :: String, "password" :: String )) (Variant ( "invalidCredentials" :: String )))
   (Foo :: Foo (Record ( "password2" :: String )) (Variant ( "invalidCredentials" :: String )))
   (Foo :: Foo (Record ( "token" :: String )) (Variant ( "expired" :: Boolean )))
   (Foo :: Foo (Record ( "token2" :: String )) (Variant ())) -- ignoring "token2"
