@@ -28,7 +28,7 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.EditPropP (class EditPropP)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.ExceptP (class ExceptP)
-import Data.Profunctor.ReadP (class ReadP, firstProperty, nextProperty)
+import Data.Profunctor.ReadP (class ReadP) --, firstProperty, nextProperty)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.WriteP (class WriteP)
@@ -127,28 +127,28 @@ instance Functor m => Choice (UI m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
-instance Functor m => ReadP (UI m) where
-  firstProperty = unsafeCoerce unit
-  nextProperty p = wrap ado
-    let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    let mlastb = unsafePerformEffect $ Ref.new Nothing
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    p' <- unwrap p
-    in
-      { toUser: case _ of
-          New s cont -> do
-            let _ = unsafePerformEffect $ Ref.write s lasts
-            p'.toUser $ New unit cont -- TODO: needed?
-            let prop = unsafePerformEffect $ Ref.read propRef
-            let mb = unsafePerformEffect $ Ref.read mlastb
-            maybe (pure unit) (\b -> void $ prop (New (Tuple s b) cont)) mb
-      , fromUser: \prop -> do
-        Ref.write prop propRef
-        p'.fromUser \(New b cont) -> do
-          let s = unsafePerformEffect $ Ref.read lasts
-          let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
-          prop (New (Tuple s b) cont)
-      }
+-- instance Functor m => ReadP (UI m) where
+--   firstProperty = unsafeCoerce unit
+--   nextProperty p = wrap ado
+--     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+--     let mlastb = unsafePerformEffect $ Ref.new Nothing
+--     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+--     p' <- unwrap p
+--     in
+--       { toUser: case _ of
+--           New s cont -> do
+--             let _ = unsafePerformEffect $ Ref.write s lasts
+--             p'.toUser $ New unit cont -- TODO: needed?
+--             let prop = unsafePerformEffect $ Ref.read propRef
+--             let mb = unsafePerformEffect $ Ref.read mlastb
+--             maybe (pure unit) (\b -> void $ prop (New (Tuple s b) cont)) mb
+--       , fromUser: \prop -> do
+--         Ref.write prop propRef
+--         p'.fromUser \(New b cont) -> do
+--           let s = unsafePerformEffect $ Ref.read lasts
+--           let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
+--           prop (New (Tuple s b) cont)
+--       }
 
 instance Functor m => WriteP (UI m) where
   liftWrite p = wrap ado

@@ -21,7 +21,7 @@ import Record (delete, get, insert)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Data.Profunctor.RecordsToVariants as RecordsToVariants
+import Data.Profunctor.RowToRow.RecordToVariant as RecordToVariant
 
 -- read from user, input interaction, input, focusable, openable, linear, step by step, one after another, all of, dynamic
 -- Composing case record from properties
@@ -260,44 +260,44 @@ exampleHandling = S.do
 -- business :: p (Record requestParameters) (Variant responses)
 
 -- orderInput :: forall k1002 s1007 t1139. Semigroupoid k1002 => ReadP k1002 => FormP k1002 => IntroVarP k1002 => XP k1002 => Sum k1002 => ExceptP k1002 => ZP k1002 => WriteP k1002 => YP k1002 => k1002 (Record ("property1" :: String | s1007)) (Variant ("case1" :: String | t1139))
-orderInput = S.do
-  inputForm @"fulfillment" S.do
-    tab @"dinein" S.do
-      textInput @"time"
-      textInput @"table"
-    tab @"takeaway" S.do
-      textInput @"time"
-      textInput @"phone"
-    tab @"delivery" S.do
-      textInput @"time"
-      textInput @"address"
-  inputForm @"payment" S.do
-    tab @"cash" S.do
-      textInput @"amount"
-    tab @"tab" S.do
-      textInput @"amount"
-      textInput @"cardNumber"
-  Sum.do
-    S.do
-      button \{fulfillment, payment, authToken} -> mock @(Variant invalidOrder, orderSaved, networkError)
-      -- button
-      -- consume @"authToken" @String
-      -- consume @"fulfillment"
-      -- someAction
-      snackbar @"invalidOrder" S.do
-        textOutput @"message"
-      snackbar @"orderSaved" S.do
-        textOutput @"id"
-    S.do
-      button
-      consume @"printerConnectionPool"
-      someAction
-      snackbar @"invalidOrder" S.do
-        textOutput @"message"
-      snackbar @"printerError" S.do
-        textOutput @"message"
-      snackbar @"orderSaved" S.do
-        textOutput @"id"
+-- orderInput = S.do
+--   inputForm @"fulfillment" S.do
+--     tab @"dinein" S.do
+--       textInput @"time"
+--       textInput @"table"
+--     tab @"takeaway" S.do
+--       textInput @"time"
+--       textInput @"phone"
+--     tab @"delivery" S.do
+--       textInput @"time"
+--       textInput @"address"
+--   inputForm @"payment" S.do
+--     tab @"cash" S.do
+--       textInput @"amount"
+--     tab @"tab" S.do
+--       textInput @"amount"
+--       textInput @"cardNumber"
+--   Sum.do
+--     S.do
+--       -- button \{fulfillment, payment, authToken} -> mock @(Variant invalidOrder, orderSaved, networkError)
+--       -- button
+--       -- consume @"authToken" @String
+--       -- consume @"fulfillment"
+--       -- someAction
+--       snackbar @"invalidOrder" S.do
+--         textOutput @"message"
+--       snackbar @"orderSaved" S.do
+--         textOutput @"id"
+--     S.do
+--       button
+--       consume @"printerConnectionPool"
+--       someAction
+--       snackbar @"invalidOrder" S.do
+--         textOutput @"message"
+--       snackbar @"printerError" S.do
+--         textOutput @"message"
+--       snackbar @"orderSaved" S.do
+--         textOutput @"id"
 
 someAction :: forall p r v. p (Record r) (Variant v)
 someAction = unsafeThrow "some action"
