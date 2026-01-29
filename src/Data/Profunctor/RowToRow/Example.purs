@@ -10,103 +10,103 @@ import Data.Unit (Unit)
 import Data.Variant (Variant)
 import Effect.Exception.Unsafe (unsafeThrow)
 
-data Foo :: forall k1 k2. k1 -> k2 -> Type
-data Foo a b = Foo
+data MyRowToRowProfunctor :: forall k1 k2. k1 -> k2 -> Type
+data MyRowToRowProfunctor a b = MyRowToRowProfunctor
 
-instance Profunctor Foo where
-  dimap _ _ Foo = Foo
+instance Profunctor MyRowToRowProfunctor where
+  dimap _ _ MyRowToRowProfunctor = MyRowToRowProfunctor
 
-instance RecordToRecord.RecordToRecord Foo where
-  recordToRecord Foo Foo = Foo
+instance RecordToRecord.RecordToRecord MyRowToRowProfunctor where
+  recordToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
-instance RecordToVariant.RecordToVariant Foo where
-  recordToVariant Foo Foo = Foo
+instance RecordToVariant.RecordToVariant MyRowToRowProfunctor where
+  recordToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
-instance VariantToRecord.VariantToRecord Foo where
-  variantToRecord Foo Foo = Foo
+instance VariantToRecord.VariantToRecord MyRowToRowProfunctor where
+  variantToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
-instance VariantToVariant.VariantToVariant Foo where
-  variantToVariant Foo Foo = Foo
+instance VariantToVariant.VariantToVariant MyRowToRowProfunctor where
+  variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
 -- A button named by `name`, from a dynamic `r` to an event `name`
-button :: forall @name r. IsSymbol name => Foo (Record r) (Variant ( name :: Record r ))
+button :: forall @name r. IsSymbol name => MyRowToRowProfunctor (Record r) (Variant ( name :: Record r ))
 button = unsafeThrow "not implemented"
 
 -- Basic examples from each module
 
-recordsToRecordsExample :: Foo (Record ( field1 :: String , field2 :: Boolean )) (Record ( field3 :: Int , field4 :: Number ))
+recordsToRecordsExample :: MyRowToRowProfunctor (Record ( field1 :: String , field2 :: Boolean )) (Record ( field3 :: Int , field4 :: Number ))
 recordsToRecordsExample = RecordToRecord.do
-  (Foo :: Foo (Record ( "field1" :: String )) (Record ( "field3" :: Int )))
-  (Foo :: Foo (Record ( "field2" :: Boolean )) (Record ( "field4" :: Number )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "field1" :: String )) (Record ( "field3" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "field2" :: Boolean )) (Record ( "field4" :: Number )))
 
-recordsToVariantsExample :: Foo (Record ( field1 :: String , field2 :: Boolean )) (Variant ( case1 :: Int , case2 :: Number ))
+recordsToVariantsExample :: MyRowToRowProfunctor (Record ( field1 :: String , field2 :: Boolean )) (Variant ( case1 :: Int , case2 :: Number ))
 recordsToVariantsExample = RecordToVariant.do
-  (Foo :: Foo (Record ( "field1" :: String )) (Variant ( "case1" :: Int )))
-  (Foo :: Foo (Record ( "field2" :: Boolean )) (Variant ( "case2" :: Number )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "field1" :: String )) (Variant ( "case1" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "field2" :: Boolean )) (Variant ( "case2" :: Number )))
 
-variantsToRecordsExample :: Foo (Variant ( case1 :: String , case2 :: Boolean )) (Record ( field1 :: Int , field2 :: Number ))
+variantsToRecordsExample :: MyRowToRowProfunctor (Variant ( case1 :: String , case2 :: Boolean )) (Record ( field1 :: Int , field2 :: Number ))
 variantsToRecordsExample = VariantToRecord.do
-  (Foo :: Foo (Variant ( "case1" :: String )) (Record ( "field1" :: Int )))
-  (Foo :: Foo (Variant ( "case2" :: Boolean )) (Record ( "field2" :: Number )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "case1" :: String )) (Record ( "field1" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "case2" :: Boolean )) (Record ( "field2" :: Number )))
 
-variantsToVariantsExample :: Foo (Variant ( case1 :: String , case2 :: Boolean )) (Variant ( case3 :: Int , case4 :: Number ))
+variantsToVariantsExample :: MyRowToRowProfunctor (Variant ( case1 :: String , case2 :: Boolean )) (Variant ( case3 :: Int , case4 :: Number ))
 variantsToVariantsExample = VariantToVariant.do
-  (Foo :: Foo (Variant ( "case1" :: String )) (Variant ( "case3" :: Int )))
-  (Foo :: Foo (Variant ( "case2" :: Boolean )) (Variant ( "case4" :: Number )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "case1" :: String )) (Variant ( "case3" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "case2" :: Boolean )) (Variant ( "case4" :: Number )))
 
 -- Larger compositions
 
-recordsToRecordsLarge :: Foo
+recordsToRecordsLarge :: MyRowToRowProfunctor
   (Record ( name :: String , age :: Int , email :: String , active :: Boolean, note :: String ))
   (Record ( id :: Int , created :: String , updated :: String , version :: Number, versionSimple :: Number, note :: String, badge :: String ))
 recordsToRecordsLarge = RecordToRecord.do
-  (Foo :: Foo (Record ( "name" :: String, "age" :: Int )) (Record ( "id" :: Int )))
-  (Foo :: Foo (Record ( "age" :: Int )) (Record ( "created" :: String )))
-  (Foo :: Foo (Record ()) (Record ( "note" :: String )))
-  -- (Foo :: Foo (Record ()) (Record ( "note" :: String ))) -- does not compile "note" already exists
-  (Foo :: Foo (Record ( "email" :: String )) (Record ( "updated" :: String )))
-  (Foo :: Foo (Record ( "active" :: Boolean )) (Record ( "version" :: Number, "versionSimple" :: Number)))
-  (Foo :: Foo (Record ( "note" :: String )) (Record ())) -- ignoring "note"
-  (Foo :: Foo (Record ()) (Record ("badge" :: String))) -- constant "badge"
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "name" :: String, "age" :: Int )) (Record ( "id" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "age" :: Int )) (Record ( "created" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ()) (Record ( "note" :: String )))
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ()) (Record ( "note" :: String ))) -- does not compile "note" already exists
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "email" :: String )) (Record ( "updated" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "active" :: Boolean )) (Record ( "version" :: Number, "versionSimple" :: Number)))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "note" :: String )) (Record ())) -- ignoring "note"
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ()) (Record ("badge" :: String))) -- constant "badge"
 
-recordsToVariantsLarge :: Foo
+recordsToVariantsLarge :: MyRowToRowProfunctor
   (Record ( username :: String , password :: String , password2 :: String, token :: String, token2 :: String ))
   (Variant ( success :: Int , invalidCredentials :: String , expired :: Boolean, exit :: Unit ))
 recordsToVariantsLarge = RecordToVariant.do
-  (Foo :: Foo (Record ( "username" :: String, "password" :: String )) (Variant ( "success" :: Int, "invalidCredentials" :: String )))
-  (Foo :: Foo (Record ( "username" :: String, "password" :: String )) (Variant ( "invalidCredentials" :: String )))
-  (Foo :: Foo (Record ( "password2" :: String )) (Variant ( "invalidCredentials" :: String )))
-  (Foo :: Foo (Record ( "token" :: String )) (Variant ( "expired" :: Boolean )))
-  (Foo :: Foo (Record ( "token2" :: String )) (Variant ())) -- ignoring "token2"
-  (Foo :: Foo (Record ()) (Variant (exit :: Unit)))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "username" :: String, "password" :: String )) (Variant ( "success" :: Int, "invalidCredentials" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "username" :: String, "password" :: String )) (Variant ( "invalidCredentials" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "password2" :: String )) (Variant ( "invalidCredentials" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "token" :: String )) (Variant ( "expired" :: Boolean )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "token2" :: String )) (Variant ())) -- ignoring "token2"
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ()) (Variant (exit :: Unit)))
 
-variantsToVariantsLarge :: Foo
+variantsToVariantsLarge :: MyRowToRowProfunctor
   (Variant ( click :: Int , hover :: String , hover2 :: String, scroll :: Number, press :: Number ))
   (Variant ( navigate :: String , highlight :: Boolean , resize :: Int, resize2 :: Int ))
 variantsToVariantsLarge = VariantToVariant.do
-  (Foo :: Foo (Variant ( "click" :: Int )) (Variant ( "navigate" :: String )))
-  (Foo :: Foo (Variant ( "hover" :: String, "hover2" :: String )) (Variant ( "highlight" :: Boolean, "navigate" :: String )))
-  -- (Foo :: Foo (Variant ( "click" :: Int )) (Variant ( "highlight" :: Boolean ))) -- does not compile "click" already handled
-  (Foo :: Foo (Variant ( "scroll" :: Number )) (Variant ( "resize" :: Int, "resize2" :: Int, "navigate" :: String )))
-  (Foo :: Foo (Variant ( "press" :: Number )) (Variant ())) -- ignoring "press"
-  (Foo :: Foo (Variant ()) (Variant ("navigate" :: String))) -- will be never chosen
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "click" :: Int )) (Variant ( "navigate" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "hover" :: String, "hover2" :: String )) (Variant ( "highlight" :: Boolean, "navigate" :: String )))
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "click" :: Int )) (Variant ( "highlight" :: Boolean ))) -- does not compile "click" already handled
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "scroll" :: Number )) (Variant ( "resize" :: Int, "resize2" :: Int, "navigate" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "press" :: Number )) (Variant ())) -- ignoring "press"
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ()) (Variant ("navigate" :: String))) -- will be never chosen
 
-variantsToRecordsLarge :: Foo
+variantsToRecordsLarge :: MyRowToRowProfunctor
   (Variant ( get :: String , post :: String , delete :: Int ))
   (Record ( status :: Int , body :: String , headers :: String ))
 variantsToRecordsLarge = VariantToRecord.do
-  (Foo :: Foo (Variant ( "get" :: String )) (Record ( "status" :: Int, "body" :: String )))
-  -- (Foo :: Foo (Variant ( "post" :: String )) (Record ( "body" :: String ))) -- does not compile, "body" already exists
-  (Foo :: Foo (Variant ( "delete" :: Int )) (Record ( "headers" :: String )))
-  (Foo :: Foo (Variant ( "post" :: String )) (Record ())) -- ignoring "post"
-  -- (Foo :: Foo (Variant ()) (Record ("headers" :: String))) -- will be never chosen
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "get" :: String )) (Record ( "status" :: Int, "body" :: String )))
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "post" :: String )) (Record ( "body" :: String ))) -- does not compile, "body" already exists
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "delete" :: Int )) (Record ( "headers" :: String )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "post" :: String )) (Record ())) -- ignoring "post"
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ()) (Record ("headers" :: String))) -- will be never chosen
 
 -- Single field/case examples
 
-singleRecordToRecord :: Foo (Record ( only :: String )) (Record ( result :: Int ))
+singleRecordToRecord :: MyRowToRowProfunctor (Record ( only :: String )) (Record ( result :: Int ))
 singleRecordToRecord = RecordToRecord.do
-  (Foo :: Foo (Record ( "only" :: String )) (Record ( "result" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "only" :: String )) (Record ( "result" :: Int )))
 
-singleVariantToVariant :: Foo (Variant ( input :: String )) (Variant ( output :: Int ))
+singleVariantToVariant :: MyRowToRowProfunctor (Variant ( input :: String )) (Variant ( output :: Int ))
 singleVariantToVariant = VariantToVariant.do
-  (Foo :: Foo (Variant ( "input" :: String )) (Variant ( "output" :: Int )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "input" :: String )) (Variant ( "output" :: Int )))
