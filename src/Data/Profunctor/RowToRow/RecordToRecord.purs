@@ -3,12 +3,16 @@ module Data.Profunctor.RowToRow.RecordToRecord
   , recordToRecord
   , class RecordToRecord
   , discard
+  , RR
   )
   where
 
 import Data.Profunctor (class Profunctor)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Nub, class Union)
+
+type RR :: (Type -> Type -> Type) -> Symbol -> Symbol -> Type -> Type -> Type
+type RR p la lb a b = p (Record (la :: a)) (Record (lb :: b))
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord :: forall a b c d ac i o. Union a c ac => Nub ac i => Union b d o => p (Record a) (Record b) -> p (Record c) (Record d) -> p (Record i) (Record o)
