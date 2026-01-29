@@ -3,16 +3,20 @@ module Data.Profunctor.RowToRow.VariantToRecord
   , variantToRecord
   , class VariantToRecord
   , discard
+  , VariantToRecordPrim
   )
   where
 
 import Data.Profunctor (class Profunctor)
 import Data.Unit (Unit, unit)
 import Data.Variant (Variant)
-import Prim.Row (class Union)
+import Prim.Row (class Cons, class Union)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord :: forall a b c d i o. Union a c i => Union b d o => p (Variant a) (Record b) -> p (Variant c) (Record d) -> p (Variant i) (Record o)
+
+type VariantToRecordPrim :: (Type -> Type -> Type) -> Symbol -> Type -> Row Type -> Type
+type VariantToRecordPrim p propname proptype r = forall v. Cons propname proptype () v => p (Variant r) (Record v)
 
 bind ∷ ∀ f a b c d i o. VariantToRecord f ⇒ Union a c i ⇒ Union b d o ⇒ f (Variant a) (Record b) → (f (Variant a) (Record b) → f (Variant c) (Record d)) → f (Variant i) (Record o)
 bind first cont = variantToRecord first (cont first)

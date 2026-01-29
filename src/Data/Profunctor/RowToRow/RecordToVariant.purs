@@ -1,5 +1,5 @@
 module Data.Profunctor.RowToRow.RecordToVariant
-  ( RecordCase
+  ( RecordToVariantPrim
   , bind
   , class RecordToVariant
   , discard
@@ -15,8 +15,8 @@ import Prim.Row (class Cons, class Nub, class Union)
 class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall a b c d ac bd i o. Union a c ac => Nub ac i => Union b d bd => Nub bd o => p (Record a) (Variant b) -> p (Record c) (Variant d) -> p (Record i) (Variant o)
 
-type RecordCase :: (Type -> Type -> Type) -> Symbol -> Row Type -> Type
-type RecordCase p casename r = forall @casename v. Cons casename (Record r) () v => p (Record r) (Variant v)
+type RecordToVariantPrim :: (Type -> Type -> Type) -> Symbol -> Type -> Row Type -> Type
+type RecordToVariantPrim p casename casetype r = forall v. Cons casename casetype () v => p (Record r) (Variant v)
 
 bind ∷ ∀ f a b c d ac bd i o. RecordToVariant f ⇒ Union a c ac ⇒ Nub ac i ⇒ Union b d bd ⇒ Nub bd o ⇒ f (Record a) (Variant b) → (f (Record a) (Variant b) → f (Record c) (Variant d)) → f (Record i) (Variant o)
 bind first cont = recordToVariant first (cont first)

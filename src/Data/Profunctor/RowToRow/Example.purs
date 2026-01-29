@@ -2,15 +2,13 @@ module Data.Profunctor.RowToRow.Example where
 
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.RowToRow.RecordToRecord as RecordToRecord
-import Data.Profunctor.RowToRow.RecordToVariant (RecordCase)
+import Data.Profunctor.RowToRow.RecordToVariant (RecordToVariantPrim)
 import Data.Profunctor.RowToRow.RecordToVariant as RecordToVariant
 import Data.Profunctor.RowToRow.VariantToRecord as VariantToRecord
 import Data.Profunctor.RowToRow.VariantToVariant as VariantToVariant
-import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit)
 import Data.Variant (Variant)
 import Effect.Exception.Unsafe (unsafeThrow)
-import Prim.Row (class Cons)
 
 data MyRowToRowProfunctor :: forall k1 k2. k1 -> k2 -> Type
 data MyRowToRowProfunctor a b = MyRowToRowProfunctor
@@ -31,7 +29,7 @@ instance VariantToVariant.VariantToVariant MyRowToRowProfunctor where
   variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
 -- A button named by `name`, from a dynamic `r` to an event `name`
-button :: forall casename r. RecordCase MyRowToRowProfunctor casename r
+button :: forall @casename r. RecordToVariantPrim MyRowToRowProfunctor casename (Record r) r
 button = unsafeThrow "not implemented"
 
 -- see inferred type

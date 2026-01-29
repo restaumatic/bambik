@@ -4,18 +4,22 @@ module Data.Profunctor.RowToRow.RecordToRecord
   , class RecordToRecord
   , discard
   , RR
+  , RecordToRecordPrim
   )
   where
 
 import Data.Profunctor (class Profunctor)
 import Data.Unit (Unit, unit)
-import Prim.Row (class Nub, class Union)
+import Prim.Row (class Cons, class Nub, class Union)
 
 type RR :: (Type -> Type -> Type) -> Symbol -> Symbol -> Type -> Type -> Type
 type RR p la lb a b = p (Record (la :: a)) (Record (lb :: b))
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord :: forall a b c d ac i o. Union a c ac => Nub ac i => Union b d o => p (Record a) (Record b) -> p (Record c) (Record d) -> p (Record i) (Record o)
+
+type RecordToRecordPrim :: (Type -> Type -> Type) -> Symbol -> Type -> Row Type -> Type
+type RecordToRecordPrim p propname proptype r = forall v. Cons propname proptype () r => p (Record v) (Record r)
 
 bind ∷ ∀ f a b c d ac i o. RecordToRecord f ⇒ Union a c ac ⇒ Nub ac i ⇒ Union b d o ⇒ f (Record a) (Record b) → (f (Record a) (Record b) → f (Record c) (Record d)) → f (Record i) (Record o)
 bind first cont = recordToRecord first (cont first)
