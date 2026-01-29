@@ -9,6 +9,7 @@ import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit)
 import Data.Variant (Variant)
 import Effect.Exception.Unsafe (unsafeThrow)
+import Prim.Row (class Cons)
 
 data MyRowToRowProfunctor :: forall k1 k2. k1 -> k2 -> Type
 data MyRowToRowProfunctor a b = MyRowToRowProfunctor
@@ -29,8 +30,13 @@ instance VariantToVariant.VariantToVariant MyRowToRowProfunctor where
   variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
 -- A button named by `name`, from a dynamic `r` to an event `name`
-button :: forall @name r. IsSymbol name => MyRowToRowProfunctor (Record r) (Variant ( name :: Record r ))
+button :: forall @name r v. IsSymbol name => Cons name (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 button = unsafeThrow "not implemented"
+
+-- see inferred type
+foo = RecordToVariant.do
+  button @"save"
+  button @"delete"
 
 -- Basic examples from each module
 
