@@ -14,7 +14,6 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "aff"
   , "avar"
-  , "console"
   , "datetime"
   , "debug"
   , "effect"
@@ -22,7 +21,6 @@ to generate this file without the comments in this block.
   , "exceptions"
   , "foldable-traversable"
   , "foreign-object"
-  , "functors"
   , "maybe"
   , "newtype"
   , "prelude"
