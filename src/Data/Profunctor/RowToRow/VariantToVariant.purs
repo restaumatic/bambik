@@ -3,20 +3,16 @@ module Data.Profunctor.RowToRow.VariantToVariant
   , variantToVariant
   , class VariantToVariant
   , discard
-  , VariantToVariantPrim
   )
   where
 
 import Data.Profunctor (class Profunctor)
 import Data.Unit (Unit, unit)
 import Data.Variant (Variant)
-import Prim.Row (class Cons, class Nub, class Union)
+import Prim.Row (class Nub, class Union)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall a b c d ac i o. Union a c ac => Nub ac i => Union b d o => p (Variant a) (Variant b) -> p (Variant c) (Variant d) -> p (Variant i) (Variant o)
-
-type VariantToVariantPrim :: (Type -> Type -> Type) -> Symbol -> Type -> Row Type -> Type
-type VariantToVariantPrim p casename casetype r = forall v. Cons casename casetype () v => p (Variant r) (Variant v)
 
 bind ∷ ∀ f a b c d ac i o. VariantToVariant f ⇒ Union a c ac ⇒ Nub ac i ⇒ Union b d o ⇒ f (Variant a) (Variant b) → (f (Variant a) (Variant b) → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
 bind first cont = variantToVariant first (cont first)

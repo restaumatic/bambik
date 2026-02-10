@@ -8,16 +8,7 @@ Bambik is a prototype PureScript library implementing **Profunctor User Interfac
 
 ## Build Commands
 
-```bash
-npm install              # Install dependencies
-npm run build            # Watch mode compilation (spago build -w)
-npm run demo-1           # Run MDC demo on localhost:1234
-npm run demo-2           # Run plain HTML demo
-npm run demo-helloworld  # Run hello world demo
-npm run presentation     # Generate presentation PDF/HTML
-```
-
-Note: Demos run Parcel bundler + Spago in watch mode concurrently.
+Do `export PATH=$PATH:/node_modules/.bin` and then `spago build`.
 
 ## Architecture
 
