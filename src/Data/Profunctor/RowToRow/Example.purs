@@ -29,7 +29,7 @@ data MyData = MyData
 
 recordToRecordExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
 recordToRecordExample = RecordToRecord.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Record ( "out2" :: MyData ))) -- out can depend on multiple ins
@@ -38,7 +38,7 @@ recordToRecordExample = RecordToRecord.do
 
 recordToVariantExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
 recordToVariantExample = RecordToVariant.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData )) (Variant ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Variant ( "out2" :: MyData ))) -- out can depend on multiple ins
@@ -47,7 +47,7 @@ recordToVariantExample = RecordToVariant.do
 
 variantToVariantExample :: MyRowToRowProfunctor
   (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
 variantToVariantExample = VariantToVariant.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData )) (Variant ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData, "in2" :: MyData )) (Variant ( "out2" :: MyData ))) -- out can depend on multiple ins
@@ -56,7 +56,7 @@ variantToVariantExample = VariantToVariant.do
 
 variantToRecordExample :: MyRowToRowProfunctor
   (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
 variantToRecordExample = VariantToRecord.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData )) (Record ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData, "in2" :: MyData )) (Record ( "out2" :: MyData ))) -- out can depend on multiple ins
