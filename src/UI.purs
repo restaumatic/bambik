@@ -21,17 +21,13 @@ import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.EditPropP (class EditPropP)
 import Data.Profunctor.Endo (class Endo)
-import Data.Profunctor.ExceptP (class ExceptP)
-import Data.Profunctor.ReadP (class ReadP) --, firstProperty, nextProperty)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
-import Data.Profunctor.WriteP (class WriteP)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -42,6 +38,11 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
+import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
+import Record.Unsafe.Union (unsafeUnion)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit)) 
@@ -127,79 +128,6 @@ instance Functor m => Choice (UI m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
--- instance Functor m => ReadP (UI m) where
---   firstProperty = unsafeCoerce unit
---   nextProperty p = wrap ado
---     let lasts = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
---     let mlastb = unsafePerformEffect $ Ref.new Nothing
---     let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
---     p' <- unwrap p
---     in
---       { toUser: case _ of
---           New s cont -> do
---             let _ = unsafePerformEffect $ Ref.write s lasts
---             p'.toUser $ New unit cont -- TODO: needed?
---             let prop = unsafePerformEffect $ Ref.read propRef
---             let mb = unsafePerformEffect $ Ref.read mlastb
---             maybe (pure unit) (\b -> void $ prop (New (Tuple s b) cont)) mb
---       , fromUser: \prop -> do
---         Ref.write prop propRef
---         p'.fromUser \(New b cont) -> do
---           let s = unsafePerformEffect $ Ref.read lasts
---           let _ = unsafePerformEffect $ Ref.write (Just b) mlastb
---           prop (New (Tuple s b) cont)
---       }
-
-instance Functor m => WriteP (UI m) where
-  liftWrite p = wrap ado
-    let sRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    p' <- unwrap p
-    in
-      { toUser: case _ of
-          New (Tuple r s) cont -> do
-            p'.toUser $ New r cont
-            Ref.write s sRef
-      , fromUser: \prop -> do
-        s <- Ref.read sRef
-        p'.fromUser \(New _ cont) -> prop (New s cont)
-      }
-
-instance Functor m => EditPropP (UI m) where
-  liftEditProp p = wrap ado
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    let lastSRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    let lastERef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    p' <- unwrap p
-    in
-      { toUser: \(New (Tuple s e) cont) -> do
-        p'.toUser $ New e cont
-        Ref.write s lastSRef
-        e' <- Ref.read lastERef
-        prop <- Ref.read propRef
-        void $ prop (New (Tuple s e') cont)
-      , fromUser: \prop -> do
-        Ref.write prop propRef
-        p'.fromUser \(New e cont) -> do
-          s <- Ref.read lastSRef
-          Ref.write e lastERef
-          prop (New (Tuple s e) cont)
-      }
-
-instance Functor m => ExceptP (UI m) where
-  liftExcept p = wrap ado
-    let tPropRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
-    p' <- unwrap p
-    in
-      { toUser: case _ of
-        New (Right t) cont -> do
-          let tProp = unsafePerformEffect $ Ref.read tPropRef
-          _ <- tProp (New t cont)
-          pure unit
-        New (Left a) cont -> p'.toUser $ New a cont
-      , fromUser: \prop -> do
-        Ref.write prop tPropRef
-      }
-
 instance Apply m => Semigroupoid (UI m) where
   compose p2 p1 = wrap ado
     p1' <- unwrap p1
@@ -257,6 +185,77 @@ instance Apply m => Endo (UI m) where
         p2'.fromUser \u -> do
           p1'.toUser u
           prop u
+      }
+
+instance Apply m => RecordToRecord (UI m) where
+  recordToRecord p1 p2 = wrap ado
+    let lastRec = unsafePerformEffect $ Ref.new (unsafeCoerce {})
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \new@(New rec _) -> do
+            let _ = unsafePerformEffect $ Ref.write rec lastRec
+            p1'.toUser $ unsafeCoerce new
+            p2'.toUser $ unsafeCoerce new
+      , fromUser: \prop -> do
+          p1'.fromUser \(New partial cont) -> do
+            let prev = unsafePerformEffect $ Ref.read lastRec
+            let merged = unsafeUnion partial prev
+            let _ = unsafePerformEffect $ Ref.write merged lastRec
+            prop $ unsafeCoerce $ New merged cont
+          p2'.fromUser \(New partial cont) -> do
+            let prev = unsafePerformEffect $ Ref.read lastRec
+            let merged = unsafeUnion partial prev
+            let _ = unsafePerformEffect $ Ref.write merged lastRec
+            prop $ unsafeCoerce $ New merged cont
+      }
+
+instance Apply m => RecordToVariant (UI m) where
+  recordToVariant p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \new -> do
+          p1'.toUser $ unsafeCoerce new
+          p2'.toUser $ unsafeCoerce new
+      , fromUser: \prop -> do
+          p1'.fromUser (\u -> prop (unsafeCoerce u))
+          p2'.fromUser (\u -> prop (unsafeCoerce u))
+      }
+
+instance Apply m => VariantToRecord (UI m) where
+  variantToRecord p1 p2 = wrap ado
+    let lastRec = unsafePerformEffect $ Ref.new (unsafeCoerce {})
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \new -> do
+          p1'.toUser $ unsafeCoerce new
+          p2'.toUser $ unsafeCoerce new
+      , fromUser: \prop -> do
+          p1'.fromUser \(New partial cont) -> do
+            let prev = unsafePerformEffect $ Ref.read lastRec
+            let merged = unsafeUnion partial prev
+            let _ = unsafePerformEffect $ Ref.write merged lastRec
+            prop $ unsafeCoerce $ New merged cont
+          p2'.fromUser \(New partial cont) -> do
+            let prev = unsafePerformEffect $ Ref.read lastRec
+            let merged = unsafeUnion partial prev
+            let _ = unsafePerformEffect $ Ref.write merged lastRec
+            prop $ unsafeCoerce $ New merged cont
+      }
+
+instance Apply m => VariantToVariant (UI m) where
+  variantToVariant p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \new -> do
+          p1'.toUser $ unsafeCoerce new
+          p2'.toUser $ unsafeCoerce new
+      , fromUser: \prop -> do
+          p1'.fromUser (\u -> prop (unsafeCoerce u))
+          p2'.fromUser (\u -> prop (unsafeCoerce u))
       }
 
 -- Optics
