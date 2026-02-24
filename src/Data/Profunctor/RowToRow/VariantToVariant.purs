@@ -9,13 +9,15 @@ module Data.Profunctor.RowToRow.VariantToVariant
 import Data.Profunctor (class Profunctor)
 import Data.Unit (Unit, unit)
 import Data.Variant (Variant)
-import Prim.Row (class Nub, class Union)
+import Data.Variant.Internal (class VariantTags)
+import Prim.Row (class Union)
+import Prim.RowList (class RowToList)
 
 class Profunctor p <= VariantToVariant p where
-  variantToVariant :: forall a b c d ac i o. Union a c ac => Nub ac i => Union b d o => p (Variant a) (Variant b) -> p (Variant c) (Variant d) -> p (Variant i) (Variant o)
+  variantToVariant :: forall a al b c cl d i o. Union a c i => Union c a i => RowToList a al => VariantTags al => RowToList c cl => VariantTags cl => Union b d o => p (Variant a) (Variant b) -> p (Variant c) (Variant d) -> p (Variant i) (Variant o)
 
-bind ∷ ∀ f a b c d ac i o. VariantToVariant f ⇒ Union a c ac ⇒ Nub ac i ⇒ Union b d o ⇒ f (Variant a) (Variant b) → (f (Variant a) (Variant b) → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
+bind ∷ ∀ f a al b c cl d i o. VariantToVariant f ⇒ Union a c i ⇒ Union c a i ⇒ RowToList a al ⇒ VariantTags al ⇒ RowToList c cl ⇒ VariantTags cl ⇒ Union b d o ⇒ f (Variant a) (Variant b) → (f (Variant a) (Variant b) → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
 bind first cont = variantToVariant first (cont first)
 
-discard ∷ ∀ f a b c d ac i o. VariantToVariant f ⇒ Union a c ac ⇒ Nub ac i ⇒ Union b d o ⇒ f (Variant a) (Variant b) → (Unit → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
+discard ∷ ∀ f a al b c cl d i o. VariantToVariant f ⇒ Union a c i ⇒ Union c a i ⇒ RowToList a al ⇒ VariantTags al ⇒ RowToList c cl ⇒ VariantTags cl ⇒ Union b d o ⇒ f (Variant a) (Variant b) → (Unit → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
 discard first cont = bind first (\_ -> cont unit)

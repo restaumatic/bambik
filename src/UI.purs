@@ -43,6 +43,7 @@ import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Record.Unsafe.Union (unsafeUnion)
+import Data.Variant (contract)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit)) 
@@ -229,9 +230,9 @@ instance Apply m => VariantToRecord (UI m) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { toUser: \new -> do
-          p1'.toUser $ unsafeCoerce new
-          p2'.toUser $ unsafeCoerce new
+      { toUser: \(New v cont) -> do
+          for_ (contract v :: Maybe _) \v1 -> p1'.toUser $ New v1 cont
+          for_ (contract v :: Maybe _) \v2 -> p2'.toUser $ New v2 cont
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
             let prev = unsafePerformEffect $ Ref.read lastRec
@@ -250,9 +251,9 @@ instance Apply m => VariantToVariant (UI m) where
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { toUser: \new -> do
-          p1'.toUser $ unsafeCoerce new
-          p2'.toUser $ unsafeCoerce new
+      { toUser: \(New v cont) -> do
+          for_ (contract v :: Maybe _) \v1 -> p1'.toUser $ New v1 cont
+          for_ (contract v :: Maybe _) \v2 -> p2'.toUser $ New v2 cont
       , fromUser: \prop -> do
           p1'.fromUser (\u -> prop (unsafeCoerce u))
           p2'.fromUser (\u -> prop (unsafeCoerce u))
