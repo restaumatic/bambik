@@ -50,14 +50,18 @@ instance Semigroupoid MyRowToRowProfunctor where
 
 data MyData = MyData
 
+-- rule of thumb:
+-- disjoint variants in inputs
+-- disjoint records on outputs
+
 recordToRecordExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
   (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
 recordToRecordExample = RecordToRecord.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Record ( "out2" :: MyData ))) -- out can depend on multiple ins
-  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- outs cannot be duplicated
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData)) (Record ( "out3" :: MyData ))) -- all ins and outs must be covered
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out fields must be disjoint 
 
 recordToVariantExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
@@ -65,15 +69,15 @@ recordToVariantExample :: MyRowToRowProfunctor
 recordToVariantExample = RecordToVariant.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData )) (Variant ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Variant ( "out2" :: MyData ))) -- out can depend on multiple ins
-  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData )) (Variant ( "out1" :: MyData ))) -- outs cannot be duplicated
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData )) (Variant ( "out3" :: MyData ))) -- all ins and outs must be covered
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData )) (Variant ( "out1" :: MyData ))) -- out fields can be duplicated
 
 variantToVariantExample :: MyRowToRowProfunctor
   (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
   (Variant ( out1 :: MyData , out2 :: MyData, out3 :: MyData )) -- notice that this type signature can be inferred from the expression
 variantToVariantExample = VariantToVariant.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData )) (Variant ( "out1" :: MyData )))
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in2" :: MyData, "in3" :: MyData )) (Variant ( "out2" :: MyData, "out3" :: MyData )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in2" :: MyData, "in3" :: MyData )) (Variant ( "out1" :: MyData, "out2" :: MyData, "out3" :: MyData )))
 
 variantToRecordExample :: MyRowToRowProfunctor
   (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
