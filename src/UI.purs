@@ -26,11 +26,16 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
+import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
+import Data.Variant (contract, expand)
 import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -38,12 +43,8 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
-import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
+import Prim.Row (class Union)
 import Record.Unsafe.Union (unsafeUnion)
-import Data.Variant (contract, expand)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit)) 
@@ -188,6 +189,10 @@ instance Apply m => Endo (UI m) where
           prop u
       }
 
+-- move to records library?
+project :: forall r s t. Union s t r => Record r -> Record s
+project = unsafeCoerce
+
 instance Apply m => RecordToRecord (UI m) where
   recordToRecord p1 p2 = wrap ado
     let lastRec = unsafePerformEffect $ Ref.new (unsafeCoerce {})
@@ -196,19 +201,19 @@ instance Apply m => RecordToRecord (UI m) where
     in
       { toUser: \new@(New rec _) -> do
             let _ = unsafePerformEffect $ Ref.write rec lastRec
-            p1'.toUser $ unsafeCoerce new -- projection
-            p2'.toUser $ unsafeCoerce new -- projection
+            p1'.toUser $ map project new
+            p2'.toUser $ map project new
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
             let prev = unsafePerformEffect $ Ref.read lastRec
-            let merged = unsafeUnion partial prev
+            let merged = unsafeUnion partial prev -- TODO make it safe?
             let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ unsafeCoerce $ New merged cont
+            prop $ New (unsafeCoerce merged) cont
           p2'.fromUser \(New partial cont) -> do
             let prev = unsafePerformEffect $ Ref.read lastRec
-            let merged = unsafeUnion partial prev
+            let merged = unsafeUnion partial prev -- TODO make it safe?
             let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ unsafeCoerce $ New merged cont
+            prop $ New (unsafeCoerce merged) cont
       }
 
 instance Apply m => RecordToVariant (UI m) where
@@ -217,8 +222,8 @@ instance Apply m => RecordToVariant (UI m) where
     p2' <- unwrap p2
     in
       { toUser: \new -> do
-          p1'.toUser $ unsafeCoerce new -- projection
-          p2'.toUser $ unsafeCoerce new -- projection
+          p1'.toUser $ map project new
+          p2'.toUser $ map project new
       , fromUser: \prop -> do
           p1'.fromUser (\u -> prop (map expand u))
           p2'.fromUser (\u -> prop (map expand u))
@@ -238,12 +243,12 @@ instance Apply m => VariantToRecord (UI m) where
             let prev = unsafePerformEffect $ Ref.read lastRec
             let merged = unsafeUnion partial prev
             let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ unsafeCoerce $ New merged cont
+            prop $ New (unsafeCoerce merged) cont
           p2'.fromUser \(New partial cont) -> do
             let prev = unsafePerformEffect $ Ref.read lastRec
             let merged = unsafeUnion partial prev
             let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ unsafeCoerce $ New merged cont
+            prop $ New (unsafeCoerce merged) cont
       }
 
 instance Apply m => VariantToVariant (UI m) where
