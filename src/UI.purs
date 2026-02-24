@@ -43,7 +43,7 @@ import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Record.Unsafe.Union (unsafeUnion)
-import Data.Variant (contract)
+import Data.Variant (contract, expand)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit)) 
@@ -196,8 +196,8 @@ instance Apply m => RecordToRecord (UI m) where
     in
       { toUser: \new@(New rec _) -> do
             let _ = unsafePerformEffect $ Ref.write rec lastRec
-            p1'.toUser $ unsafeCoerce new
-            p2'.toUser $ unsafeCoerce new
+            p1'.toUser $ unsafeCoerce new -- projection
+            p2'.toUser $ unsafeCoerce new -- projection
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
             let prev = unsafePerformEffect $ Ref.read lastRec
@@ -217,11 +217,11 @@ instance Apply m => RecordToVariant (UI m) where
     p2' <- unwrap p2
     in
       { toUser: \new -> do
-          p1'.toUser $ unsafeCoerce new
-          p2'.toUser $ unsafeCoerce new
+          p1'.toUser $ unsafeCoerce new -- projection
+          p2'.toUser $ unsafeCoerce new -- projection
       , fromUser: \prop -> do
-          p1'.fromUser (\u -> prop (unsafeCoerce u))
-          p2'.fromUser (\u -> prop (unsafeCoerce u))
+          p1'.fromUser (\u -> prop (map expand u))
+          p2'.fromUser (\u -> prop (map expand u))
       }
 
 instance Apply m => VariantToRecord (UI m) where
@@ -255,8 +255,8 @@ instance Apply m => VariantToVariant (UI m) where
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser $ New v1 cont
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser $ New v2 cont
       , fromUser: \prop -> do
-          p1'.fromUser (\u -> prop (unsafeCoerce u))
-          p2'.fromUser (\u -> prop (unsafeCoerce u))
+          p1'.fromUser (\u -> prop (map expand u))
+          p2'.fromUser (\u -> prop (map expand u))
       }
 
 -- Optics
