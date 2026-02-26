@@ -44,6 +44,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Union)
+import Record (union) as Record
 import Record.Unsafe.Union (unsafeUnion)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -195,25 +196,27 @@ project = unsafeCoerce
 
 instance Apply m => RecordToRecord (UI m) where
   recordToRecord p1 p2 = wrap ado
-    let lastRec = unsafePerformEffect $ Ref.new (unsafeCoerce {})
+    let p1Last = unsafePerformEffect $ Ref.new Nothing
+    let p2Last = unsafePerformEffect $ Ref.new Nothing
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
-      { toUser: \new@(New rec _) -> do
-            let _ = unsafePerformEffect $ Ref.write rec lastRec
+      { toUser: \new -> do
             p1'.toUser $ map project new
             p2'.toUser $ map project new
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
-            let prev = unsafePerformEffect $ Ref.read lastRec
-            let merged = unsafeUnion partial prev -- TODO make it safe?
-            let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ New (unsafeCoerce merged) cont
+            let _ = unsafePerformEffect $ Ref.write (Just partial) p1Last
+            let mp2 = unsafePerformEffect $ Ref.read p2Last
+            case mp2 of
+              Nothing -> pure Nothing
+              Just p2val -> prop $ New (Record.union partial p2val) cont
           p2'.fromUser \(New partial cont) -> do
-            let prev = unsafePerformEffect $ Ref.read lastRec
-            let merged = unsafeUnion partial prev -- TODO make it safe?
-            let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ New (unsafeCoerce merged) cont
+            let _ = unsafePerformEffect $ Ref.write (Just partial) p2Last
+            let mp1 = unsafePerformEffect $ Ref.read p1Last
+            case mp1 of
+              Nothing -> pure Nothing
+              Just p1val -> prop $ New (Record.union p1val partial) cont
       }
 
 instance Apply m => RecordToVariant (UI m) where
