@@ -14,45 +14,72 @@ module Data.Profunctor.RowToRow.Example
 import Prelude
 
 import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.RowToRow.RecordToRecord (withDefault)
+import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord, withDefault)
 import Data.Profunctor.RowToRow.RecordToRecord as RecordToRecord
+import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.RowToRow.RecordToVariant as RecordToVariant
+import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToRecord as VariantToRecord
+import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.RowToRow.VariantToVariant as VariantToVariant
+import Data.Profunctor.RowToRow.RowToRow (class RowToRow)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, inj)
 import Prim.Row (class Cons)
 import Prim.RowList as RL
-import Type.Proxy (Proxy(..))
 import QualifiedDo.Semigroupoid as Semigroupoid
+import Type.Proxy (Proxy(..))
 
 data MyRowToRowProfunctor :: forall k1 k2. k1 -> k2 -> Type
 data MyRowToRowProfunctor a b = MyRowToRowProfunctor
 
+-- Here's a profunctor
 instance Profunctor MyRowToRowProfunctor where
   dimap _ _ MyRowToRowProfunctor = MyRowToRowProfunctor
 
-instance RecordToRecord.RecordToRecord MyRowToRowProfunctor where
-  recordToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
-
-instance RecordToVariant.RecordToVariant MyRowToRowProfunctor where
-  recordToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
-
-instance VariantToRecord.VariantToRecord MyRowToRowProfunctor where
-  variantToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
-
-instance VariantToVariant.VariantToVariant MyRowToRowProfunctor where
-  variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
-
+-- It's also a semigroupoid
 instance Semigroupoid MyRowToRowProfunctor where
   compose MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
+-- And here's the thing, it's a row-to-row profunctor
+instance RecordToRecord MyRowToRowProfunctor where
+  recordToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
 
-data MyData = MyData
+instance RecordToVariant MyRowToRowProfunctor where
+  recordToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+
+instance VariantToRecord MyRowToRowProfunctor where
+  variantToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+
+instance VariantToVariant MyRowToRowProfunctor where
+  variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+
+instance RowToRow MyRowToRowProfunctor
+
+-- here's some data type, let's take the minimal and most trivial data type with no values possible - it doesn't matter.  
+data MyData
 
 -- rule of thumb:
--- disjoint variants in inputs
+-- disjoint variants in inputs 
 -- disjoint records on outputs
+
+
+-- "Disjoint variants in inputs"                                                                                                                             
+--   When the input is a Variant, the two composed profunctors must handle non-overlapping cases. Look at VariantToRecord and VariantToVariant — their input   
+--   constraints are:                                                                                                                                          
+--   Union a c i => Union c a i                                                                                                                                
+--   No Nub — so a and c must partition i with no overlap. Each variant case goes to exactly one handler. This makes sense: a variant holds one value at a     
+--   time, so routing must be unambiguous.                                                                                                                   
+-- "Disjoint records on outputs"                                                                                                                             
+--   When the output is a Record, the two composed profunctors must produce non-overlapping fields. Look at RecordToRecord and VariantToRecord — their output  
+--   constraints are:                                                                                                                                        
+--   Union b d o                                                                                                                                               
+--   Again no Nub — b and d must be disjoint. Each profunctor contributes distinct fields. This makes sense: every field in a record must be produced exactly  
+--   once.                                                                                                                                                   
+-- "Overlapping records on inputs" (RecordToRecord, RecordToVariant): Union a c ac => Nub ac i — the Nub permits overlap. Multiple profunctors can read the same record  
+--   field. Fine, because all fields are always present.                                                                                                     
+-- "Overlapping variants on outputs" (RecordToVariant, VariantToVariant): Union b d bd => Nub bd o — Nub again permits overlap. Multiple profunctors can produce the same
+--   variant case. Fine, because a variant is "one of" — multiple sources can offer the same case.  
 
 recordToRecordExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
