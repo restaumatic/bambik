@@ -14,10 +14,14 @@ import Prim.Row (class Union)
 import Prim.RowList (class RowToList)
 
 class Profunctor p <= VariantToRecord p where
-  variantToRecord :: forall a al b c cl d i o. Union a c i => Union c a i => RowToList a al => VariantTags al => RowToList c cl => VariantTags cl => Union b d o => p (Variant a) (Record b) -> p (Variant c) (Record d) -> p (Variant i) (Record o)
+  variantToRecord :: forall i1 i1l o1 i2 i2l o2 i o.
+    Union i1 i2 i => Union i2 i1 i => -- i1 and i2 partition i (disjoint inputs)
+    Union o1 o2 o => Union o2 o1 o => -- o1 and o2 partition o (disjoint outputs)
+    RowToList i1 i1l => VariantTags i1l => RowToList i2 i2l => VariantTags i2l => -- runtime tag dispatch
+    p (Variant i1) (Record o1) -> p (Variant i2) (Record o2) -> p (Variant i) (Record o)
 
-bind ∷ ∀ f a al b c cl d i o. VariantToRecord f ⇒ Union a c i ⇒ Union c a i ⇒ RowToList a al ⇒ VariantTags al ⇒ RowToList c cl ⇒ VariantTags cl ⇒ Union b d o ⇒ f (Variant a) (Record b) → (f (Variant a) (Record b) → f (Variant c) (Record d)) → f (Variant i) (Record o)
+bind ∷ ∀ f i1 i1l o1 i2 i2l o2 i o. VariantToRecord f ⇒ Union i1 i2 i ⇒ Union i2 i1 i ⇒ RowToList i1 i1l ⇒ VariantTags i1l ⇒ RowToList i2 i2l ⇒ VariantTags i2l ⇒ Union o1 o2 o ⇒ Union o2 o1 o ⇒ f (Variant i1) (Record o1) → (f (Variant i1) (Record o1) → f (Variant i2) (Record o2)) → f (Variant i) (Record o)
 bind first cont = variantToRecord first (cont first)
 
-discard ∷ ∀ f a al b c cl d i o. VariantToRecord f ⇒ Union a c i ⇒ Union c a i ⇒ RowToList a al ⇒ VariantTags al ⇒ RowToList c cl ⇒ VariantTags cl ⇒ Union b d o ⇒ f (Variant a) (Record b) → (Unit → f (Variant c) (Record d)) → f (Variant i) (Record o)
+discard ∷ ∀ f i1 i1l o1 i2 i2l o2 i o. VariantToRecord f ⇒ Union i1 i2 i ⇒ Union i2 i1 i ⇒ RowToList i1 i1l ⇒ VariantTags i1l ⇒ RowToList i2 i2l ⇒ VariantTags i2l ⇒ Union o1 o2 o ⇒ Union o2 o1 o ⇒ f (Variant i1) (Record o1) → (Unit → f (Variant i2) (Record o2)) → f (Variant i) (Record o)
 discard first cont = bind first (\_ -> cont unit)

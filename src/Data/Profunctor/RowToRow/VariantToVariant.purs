@@ -14,10 +14,15 @@ import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
 
 class Profunctor p <= VariantToVariant p where
-  variantToVariant :: forall a al b bx c cl d dx bd i o. Union a c i => Union c a i => RowToList a al => VariantTags al => RowToList c cl => VariantTags cl => Union b d bd => Nub bd o => Union b bx o => Union d dx o => p (Variant a) (Variant b) -> p (Variant c) (Variant d) -> p (Variant i) (Variant o)
-
-bind ∷ ∀ f a al b bx c cl d dx bd i o. VariantToVariant f ⇒ Union a c i ⇒ Union c a i ⇒ RowToList a al ⇒ VariantTags al ⇒ RowToList c cl ⇒ VariantTags cl ⇒ Union b d bd ⇒ Nub bd o ⇒ Union b bx o ⇒ Union d dx o ⇒ f (Variant a) (Variant b) → (f (Variant a) (Variant b) → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
+  variantToVariant :: forall i1 i1l o1 bx i2 i2l o2 dx o12 i o. 
+    Union i1 i2 i => Union i2 i1 i => -- i1 and i2 partition i (disjoint inputs)
+    Union o1 o2 o12 => Nub o12 o =>   -- o is deduped union of o1 and o2 (overlapping outputs)
+    Union o1 bx o => Union o2 dx o => -- expansion evidence: o1 ⊆ o, o2 ⊆ o
+    RowToList i1 i1l => VariantTags i1l => RowToList i2 i2l => VariantTags i2l => -- runtime tag dispatch
+    p (Variant i1) (Variant o1) -> p (Variant i2) (Variant o2) -> p (Variant i) (Variant o)
+                                                             
+bind ∷ ∀ f i1 i1l o1 o1x i2 i2l o2 o2x o12 i o. VariantToVariant f ⇒ Union i1 i2 i ⇒ Union i2 i1 i ⇒ RowToList i1 i1l ⇒ VariantTags i1l ⇒ RowToList i2 i2l ⇒ VariantTags i2l ⇒ Union o1 o2 o12 ⇒ Nub o12 o ⇒ Union o1 o1x o ⇒ Union o2 o2x o ⇒ f (Variant i1) (Variant o1) → (f (Variant i1) (Variant o1) → f (Variant i2) (Variant o2)) → f (Variant i) (Variant o)
 bind first cont = variantToVariant first (cont first)
 
-discard ∷ ∀ f a al b bx c cl d dx bd i o. VariantToVariant f ⇒ Union a c i ⇒ Union c a i ⇒ RowToList a al ⇒ VariantTags al ⇒ RowToList c cl ⇒ VariantTags cl ⇒ Union b d bd ⇒ Nub bd o ⇒ Union b bx o ⇒ Union d dx o ⇒ f (Variant a) (Variant b) → (Unit → f (Variant c) (Variant d)) → f (Variant i) (Variant o)
+discard ∷ ∀ f i1 i1l o1 o1x i2 i2l o2 o2x o12 i o. VariantToVariant f ⇒ Union i1 i2 i ⇒ Union i2 i1 i ⇒ RowToList i1 i1l ⇒ VariantTags i1l ⇒ RowToList i2 i2l ⇒ VariantTags i2l ⇒ Union o1 o2 o12 ⇒ Nub o12 o ⇒ Union o1 o1x o ⇒ Union o2 o2x o ⇒ f (Variant i1) (Variant o1) → (Unit → f (Variant i2) (Variant o2)) → f (Variant i) (Variant o)
 discard first cont = bind first (\_ -> cont unit)
