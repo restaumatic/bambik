@@ -64,22 +64,22 @@ data MyData
 -- disjoint records on outputs
 
 
--- "Disjoint variants in inputs"                                                                                                                             
---   When the input is a Variant, the two composed profunctors must handle non-overlapping cases. Look at VariantToRecord and VariantToVariant — their input   
---   constraints are:                                                                                                                                          
---   Union a c i => Union c a i                                                                                                                                
---   No Nub — so a and c must partition i with no overlap. Each variant case goes to exactly one handler. This makes sense: a variant holds one value at a     
---   time, so routing must be unambiguous.                                                                                                                   
--- "Disjoint records on outputs"                                                                                                                             
---   When the output is a Record, the two composed profunctors must produce non-overlapping fields. Look at RecordToRecord and VariantToRecord — their output  
---   constraints are:                                                                                                                                        
---   Union b d o                                                                                                                                               
---   Again no Nub — b and d must be disjoint. Each profunctor contributes distinct fields. This makes sense: every field in a record must be produced exactly  
---   once.                                                                                                                                                   
--- "Overlapping records on inputs" (RecordToRecord, RecordToVariant): Union a c ac => Nub ac i — the Nub permits overlap. Multiple profunctors can read the same record  
---   field. Fine, because all fields are always present.                                                                                                     
--- "Overlapping variants on outputs" (RecordToVariant, VariantToVariant): Union b d bd => Nub bd o — Nub again permits overlap. Multiple profunctors can produce the same
---   variant case. Fine, because a variant is "one of" — multiple sources can offer the same case.  
+-- "Disjoint variants in inputs" (VariantToRecord, VariantToVariant):
+--   Union i1 i2 i => Union i2 i1 i
+--   No Nub — i1 and i2 must partition i with no overlap. Each variant case goes to exactly one handler.
+--   A variant holds one value at a time, so routing must be unambiguous.
+-- "Disjoint records on outputs" (RecordToRecord, VariantToRecord):
+--   Union o1 o2 o => Union o2 o1 o
+--   No Nub — o1 and o2 must be disjoint. Each profunctor contributes distinct fields.
+--   Every field in a record must be produced exactly once.
+-- "Overlapping records on inputs" (RecordToRecord, RecordToVariant):
+--   Union i1 i2 i12 => Nub i12 i => Union i1 i1x i => Union i2 i2x i
+--   Nub permits overlap. Multiple profunctors can read the same record field.
+--   Fine, because all fields are always present.
+-- "Overlapping variants on outputs" (RecordToVariant, VariantToVariant):
+--   Union o1 o2 o12 => Nub o12 o => Union o1 o1x o => Union o2 o2x o
+--   Nub permits overlap. Multiple profunctors can produce the same variant case.
+--   Fine, because a variant is "one of" — multiple sources can offer the same case.
 
 recordToRecordExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
