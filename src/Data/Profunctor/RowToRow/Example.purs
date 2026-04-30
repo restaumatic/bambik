@@ -13,22 +13,21 @@ module Data.Profunctor.RowToRow.Example
 
 import Prelude
 
-import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord, withDefault)
+import Data.Profunctor (class Profunctor)
+import Data.Profunctor.RowToRow.Default (withRecordDefault, withRecordOutputDefault)
+import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.RowToRow.RecordToRecord as RecordToRecord
 import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.RowToRow.RecordToVariant as RecordToVariant
+import Data.Profunctor.RowToRow.RowToRow (class RowToRow)
 import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToRecord as VariantToRecord
 import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.RowToRow.VariantToVariant as VariantToVariant
-import Data.Profunctor.RowToRow.RowToRow (class RowToRow)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (Variant, inj)
+import Data.Variant (Variant)
 import Prim.Row (class Cons)
-import Prim.RowList as RL
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 data MyRowToRowProfunctor :: forall k1 k2. k1 -> k2 -> Type
 data MyRowToRowProfunctor a b = MyRowToRowProfunctor
@@ -115,6 +114,9 @@ variantToRecordExample = VariantToRecord.do
 
 -- Single field/case examples
 
+text :: forall @l r . IsSymbol l => Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
+text = MyRowToRowProfunctor
+
 textInput :: forall @l r . IsSymbol l => Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
 textInput = MyRowToRowProfunctor
 
@@ -133,11 +135,12 @@ icon = MyRowToRowProfunctor
 
 ui = Semigroupoid.do
   RecordToRecord.do -- inputs inclusive, outputs exclusive
+    text @"message" `withRecordOutputDefault` "foo!"
     textOutput @"code"
-    textInput @"name" `withDefault` ""
-    textInput @"phonePrefix" `withDefault` "+48"
-    textInput @"phoneSuffix" `withDefault` ""
-    checkbox @"subscribe" `withDefault` false
+    textInput @"name" `withRecordDefault` ""
+    textInput @"phonePrefix" `withRecordDefault` "+48"
+    textInput @"phoneSuffix" `withRecordDefault` ""
+    checkbox @"subscribe" `withRecordDefault` false
   RecordToVariant.do -- inputs inclusive, outputs inclusive 
     button @"submitMonthly"
     button @"submitYearly"
@@ -149,12 +152,3 @@ ui = Semigroupoid.do
   -- VariantToRecord.do -- inputs exclusive, outputs exclusive
   --   MyRowToRowProfunctor
   --   MyRowToRowProfunctor
-
-
-
--- TODO what is that?
-whatisthat :: forall l p a r o. RL.RowToList r (RL.Cons l a RL.Nil) => IsSymbol l => Cons l a () r => Profunctor p => p (Variant r) o -> a -> p (Variant ()) o
-whatisthat p default = lcmap (const (inj (Proxy :: Proxy l) default)) p
-
-whatisthat2 :: forall l p a r i. RL.RowToList r (RL.Cons l a RL.Nil) => IsSymbol l => Cons l a () r => Profunctor p => p i (Variant ()) -> a -> p i (Variant r)
-whatisthat2 p default = rmap (const (inj (Proxy :: Proxy l) default)) p
