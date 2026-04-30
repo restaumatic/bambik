@@ -60,25 +60,25 @@ instance RowToRow MyRowToRowProfunctor
 data MyData
 
 -- rule of thumb:
--- disjoint variants in inputs 
--- disjoint records on outputs
+-- exclusive variants in inputs
+-- exclusive records on outputs
 
 
--- "Disjoint variants in inputs" (VariantToRecord, VariantToVariant):
+-- "Exclusive variants in inputs" (VariantToRecord, VariantToVariant):
 --   Union i1 i2 i => Union i2 i1 i
---   No Nub — i1 and i2 must partition i with no overlap. Each variant case goes to exactly one handler.
+--   No Nub — i1 and i2 must partition i exclusively. Each variant case goes to exactly one handler.
 --   A variant holds one value at a time, so routing must be unambiguous.
--- "Disjoint records on outputs" (RecordToRecord, VariantToRecord):
+-- "Exclusive records on outputs" (RecordToRecord, VariantToRecord):
 --   Union o1 o2 o => Union o2 o1 o
---   No Nub — o1 and o2 must be disjoint. Each profunctor contributes distinct fields.
+--   No Nub — o1 and o2 must be exclusive. Each profunctor contributes distinct fields.
 --   Every field in a record must be produced exactly once.
--- "Overlapping records on inputs" (RecordToRecord, RecordToVariant):
+-- "Inclusive records on inputs" (RecordToRecord, RecordToVariant):
 --   Union i1 i2 i12 => Nub i12 i => Union i1 i1x i => Union i2 i2x i
---   Nub permits overlap. Multiple profunctors can read the same record field.
+--   Nub permits inclusion. Multiple profunctors can read the same record field.
 --   Fine, because all fields are always present.
--- "Overlapping variants on outputs" (RecordToVariant, VariantToVariant):
+-- "Inclusive variants on outputs" (RecordToVariant, VariantToVariant):
 --   Union o1 o2 o12 => Nub o12 o => Union o1 o1x o => Union o2 o2x o
---   Nub permits overlap. Multiple profunctors can produce the same variant case.
+--   Nub permits inclusion. Multiple profunctors can produce the same variant case.
 --   Fine, because a variant is "one of" — multiple sources can offer the same case.
 
 recordToRecordExample :: MyRowToRowProfunctor
@@ -88,7 +88,7 @@ recordToRecordExample = RecordToRecord.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out depends on in
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Record ( "out2" :: MyData ))) -- out can depend on multiple ins
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData)) (Record ( "out3" :: MyData ))) -- all ins and outs must be covered
-  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out fields must be disjoint 
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out fields must be exclusive
 
 recordToVariantExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
@@ -127,18 +127,28 @@ textOutput = MyRowToRowProfunctor
 button :: forall @l r v. IsSymbol l => Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 button = MyRowToRowProfunctor
 
+icon :: forall @l r v. IsSymbol l => Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+icon = MyRowToRowProfunctor
+
 
 ui = Semigroupoid.do
-  RecordToRecord.do
+  RecordToRecord.do -- inputs inclusive, outputs exclusive
     textOutput @"code"
     textInput @"name" `withDefault` ""
     textInput @"phonePrefix" `withDefault` "+48"
     textInput @"phoneSuffix" `withDefault` ""
     checkbox @"subscribe" `withDefault` false
-  RecordToVariant.do
+  RecordToVariant.do -- inputs inclusive, outputs inclusive 
     button @"submitMonthly"
     button @"submitYearly"
-  -- VariantToVariant.do
+    button @"submit"
+    icon @"submit"
+  -- VariantToVariant.do -- inputs exclusive, outputs inclusive
+  --   MyRowToRowProfunctor
+  --   MyRowToRowProfunctor
+  -- VariantToRecord.do -- inputs exclusive, outputs exclusive
+  --   MyRowToRowProfunctor
+  --   MyRowToRowProfunctor
 
 
 

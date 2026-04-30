@@ -13,9 +13,9 @@ import Prim.Row (class Nub, class Union)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall i1 o1 o1x i2 o2 o2x i12 o12 i o i1x i2x.
-    Union i1 i2 i12 => Nub i12 i =>     -- i is deduped union of i1 and i2 (overlapping inputs)
+    Union i1 i2 i12 => Nub i12 i =>     -- i is deduped union of i1 and i2 (inclusive inputs)
     Union i1 i1x i => Union i2 i2x i => -- projection evidence: i1 ⊆ i, i2 ⊆ i
-    Union o1 o2 o12 => Nub o12 o =>     -- o is deduped union of o1 and o2 (overlapping outputs)
+    Union o1 o2 o12 => Nub o12 o =>     -- o is deduped union of o1 and o2 (inclusive outputs)
     Union o1 o1x o => Union o2 o2x o => -- expansion evidence: o1 ⊆ o, o2 ⊆ o
     p (Record i1) (Variant o1) -> p (Record i2) (Variant o2) -> p (Record i) (Variant o)
 

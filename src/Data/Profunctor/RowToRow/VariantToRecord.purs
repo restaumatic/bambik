@@ -15,8 +15,8 @@ import Prim.RowList (class RowToList)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord :: forall i1 i1l o1 i2 i2l o2 i o.
-    Union i1 i2 i => Union i2 i1 i => -- i1 and i2 partition i (disjoint inputs)
-    Union o1 o2 o => Union o2 o1 o => -- o1 and o2 partition o (disjoint outputs)
+    Union i1 i2 i => Union i2 i1 i => -- i1 and i2 partition i (exclusive inputs)
+    Union o1 o2 o => Union o2 o1 o => -- o1 and o2 partition o (exclusive outputs)
     RowToList i1 i1l => VariantTags i1l => RowToList i2 i2l => VariantTags i2l => -- runtime tag dispatch
     p (Variant i1) (Record o1) -> p (Variant i2) (Record o2) -> p (Variant i) (Record o)
 
