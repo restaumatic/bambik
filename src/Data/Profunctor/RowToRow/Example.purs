@@ -24,7 +24,6 @@ import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToRecord as VariantToRecord
 import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.RowToRow.VariantToVariant as VariantToVariant
-import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -114,22 +113,22 @@ variantToRecordExample = VariantToRecord.do
 
 -- Single field/case examples
 
-text :: forall @l r . IsSymbol l => Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
+text :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
 text = MyRowToRowProfunctor
 
-textInput :: forall @l r . IsSymbol l => Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
+textInput :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
 textInput = MyRowToRowProfunctor
 
-checkbox :: forall @l r . IsSymbol l => Cons l Boolean () r => MyRowToRowProfunctor (Record r) (Record r)
+checkbox :: forall @l r. Cons l Boolean () r => MyRowToRowProfunctor (Record r) (Record r)
 checkbox = MyRowToRowProfunctor
 
-textOutput :: forall @l r . IsSymbol l => Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
+textOutput :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
 textOutput = MyRowToRowProfunctor
 
-button :: forall @l r v. IsSymbol l => Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+button :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 button = MyRowToRowProfunctor
 
-icon :: forall @l r v. IsSymbol l => Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 icon = MyRowToRowProfunctor
 
 
