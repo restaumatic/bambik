@@ -8,18 +8,25 @@ module Data.Profunctor.RowToRow.Example
   , textOutput
   , variantToRecordExample
   , variantToVariantExample
+  , widenRecordInputExample
+  , narrowVariantInputExample
+  , narrowRecordOutputExample
+  , widenVariantOutputExample
+  , variantInputAsMaybeRecordExample
+  , variantOutputAsMaybeRecordExample
   )
   where
 
 import Prelude
 
+import Data.Maybe (Maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.RowToRow.Default (withRecordDefault, withRecordOutputDefault)
 import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.RowToRow.RecordToRecord as RecordToRecord
 import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.RowToRow.RecordToVariant as RecordToVariant
-import Data.Profunctor.RowToRow.RowToRow (class RowToRow)
+import Data.Profunctor.RowToRow.RowToRow (class RowToRow, narrowRecordOutput, narrowVariantInput, variantInputAsMaybeRecord, variantOutputAsMaybeRecord, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToRecord as VariantToRecord
 import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
@@ -131,6 +138,44 @@ button = MyRowToRowProfunctor
 icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 icon = MyRowToRowProfunctor
 
+
+-- Unary row-to-row combinator examples.
+--
+-- Each example pins the inferred type to confirm the row reshaping
+-- works in both Record-to-* and *-to-Record/Variant directions.
+
+widenRecordInputExample :: MyRowToRowProfunctor
+  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData , extra :: MyData ))
+  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+widenRecordInputExample = widenRecordInput recordToRecordExample
+
+narrowVariantInputExample :: MyRowToRowProfunctor
+  (Variant ( in1 :: MyData , in2 :: MyData ))
+  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+narrowVariantInputExample = narrowVariantInput variantToRecordExample
+
+narrowRecordOutputExample :: MyRowToRowProfunctor
+  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
+  (Record ( out1 :: MyData , out2 :: MyData ))
+narrowRecordOutputExample = narrowRecordOutput recordToRecordExample
+
+widenVariantOutputExample :: MyRowToRowProfunctor
+  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
+  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData , extra :: MyData ))
+widenVariantOutputExample = widenVariantOutput recordToVariantExample
+
+variantInputAsMaybeRecordExample :: MyRowToRowProfunctor
+  (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
+  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+variantInputAsMaybeRecordExample = variantInputAsMaybeRecord
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor
+    (Record ( in1 :: Maybe MyData , in2 :: Maybe MyData , in3 :: Maybe MyData ))
+    (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )))
+
+variantOutputAsMaybeRecordExample :: MyRowToRowProfunctor
+  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
+  (Record ( out1 :: Maybe MyData , out2 :: Maybe MyData , out3 :: Maybe MyData ))
+variantOutputAsMaybeRecordExample = variantOutputAsMaybeRecord recordToVariantExample
 
 ui = Semigroupoid.do
   RecordToRecord.do -- inputs inclusive, outputs exclusive

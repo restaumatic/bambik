@@ -28,6 +28,7 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.RowToRow.RowToRow (widenRecordInput, widenVariantOutput)
 import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
@@ -35,7 +36,7 @@ import Data.Profunctor.Sum (class Sum)
 import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
-import Data.Variant (contract, expand)
+import Data.Variant (contract)
 import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -43,7 +44,6 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Prim.Row (class Union)
 import Record (union) as Record
 import Record.Unsafe.Union (unsafeUnion)
 import Unsafe.Coerce (unsafeCoerce)
@@ -190,20 +190,16 @@ instance Apply m => Endo (UI m) where
           prop u
       }
 
--- move to records library?
-project :: forall r s t. Union s t r => Record r -> Record s
-project = unsafeCoerce
-
 instance Apply m => RecordToRecord (UI m) where
   recordToRecord p1 p2 = wrap ado
     let p1Last = unsafePerformEffect $ Ref.new Nothing
     let p2Last = unsafePerformEffect $ Ref.new Nothing
-    p1' <- unwrap p1
-    p2' <- unwrap p2
+    p1' <- unwrap (widenRecordInput p1)
+    p2' <- unwrap (widenRecordInput p2)
     in
       { toUser: \new -> do
-            p1'.toUser $ map project new
-            p2'.toUser $ map project new
+            p1'.toUser new
+            p2'.toUser new
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
             let _ = unsafePerformEffect $ Ref.write (Just partial) p1Last
@@ -221,15 +217,15 @@ instance Apply m => RecordToRecord (UI m) where
 
 instance Apply m => RecordToVariant (UI m) where
   recordToVariant p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
+    p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
+    p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
     in
       { toUser: \new -> do
-          p1'.toUser $ map project new
-          p2'.toUser $ map project new
+          p1'.toUser new
+          p2'.toUser new
       , fromUser: \prop -> do
-          p1'.fromUser (\u -> prop (map expand u))
-          p2'.fromUser (\u -> prop (map expand u))
+          p1'.fromUser prop
+          p2'.fromUser prop
       }
 
 instance Apply m => VariantToRecord (UI m) where
@@ -256,15 +252,15 @@ instance Apply m => VariantToRecord (UI m) where
 
 instance Apply m => VariantToVariant (UI m) where
   variantToVariant p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
+    p1' <- unwrap (widenVariantOutput p1)
+    p2' <- unwrap (widenVariantOutput p2)
     in
       { toUser: \(New v cont) -> do
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser $ New v1 cont
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser $ New v2 cont
       , fromUser: \prop -> do
-          p1'.fromUser (\u -> prop (map expand u))
-          p2'.fromUser (\u -> prop (map expand u))
+          p1'.fromUser prop
+          p2'.fromUser prop
       }
 
 -- Optics
