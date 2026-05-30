@@ -1,11 +1,26 @@
 module Data.Profunctor.RowToRow.Example
   ( MyData(..)
   , MyRowToRowProfunctor
+  , badge
+  , button
   , checkbox
+  , dropdown
+  , eventLog
+  , icon
+  , image
+  , link
+  , menuItem
+  , modal
+  , notification
+  , outlet
+  , rating
   , recordToRecordExample
   , recordToVariantExample
+  , searchBar
+  , slider
+  , statusBar
+  , text
   , textInput
-  , textOutput
   , variantToRecordExample
   , variantToVariantExample
   , widenRecordInputExample
@@ -14,6 +29,7 @@ module Data.Profunctor.RowToRow.Example
   , widenVariantOutputExample
   , variantInputAsMaybeRecordExample
   , variantOutputAsMaybeRecordExample
+  , wizardStep
   )
   where
 
@@ -118,7 +134,7 @@ variantToRecordExample = VariantToRecord.do
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData )) (Record ( "out1" :: MyData )))
   (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in2" :: MyData, "in3" :: MyData )) (Record ( "out2" :: MyData, "out3" :: MyData )))
 
--- Single field/case examples
+-- Record-to-record (model in, optionally captures field)
 
 text :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
 text = MyRowToRowProfunctor
@@ -129,14 +145,59 @@ textInput = MyRowToRowProfunctor
 checkbox :: forall @l r. Cons l Boolean () r => MyRowToRowProfunctor (Record r) (Record r)
 checkbox = MyRowToRowProfunctor
 
-textOutput :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
-textOutput = MyRowToRowProfunctor
+slider :: forall @l r. Cons l Number () r => MyRowToRowProfunctor (Record r) (Record r)
+slider = MyRowToRowProfunctor
+
+dropdown :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Record r) (Record r)
+dropdown = MyRowToRowProfunctor
+
+image :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
+image = MyRowToRowProfunctor
+
+badge :: forall @l r. Cons l Int () r => MyRowToRowProfunctor (Record r) (Record ())
+badge = MyRowToRowProfunctor
+
+-- Record-to-variant (model in, fires event case)
 
 button :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 button = MyRowToRowProfunctor
 
 icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 icon = MyRowToRowProfunctor
+
+link :: forall @l r v. Cons l String () v => MyRowToRowProfunctor (Record r) (Variant v)
+link = MyRowToRowProfunctor
+
+menuItem :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+menuItem = MyRowToRowProfunctor
+
+-- Variant-to-record (sum-shaped model in, optionally captures field)
+
+statusBar :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
+statusBar = MyRowToRowProfunctor
+
+eventLog :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
+eventLog = MyRowToRowProfunctor
+
+outlet :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
+outlet = MyRowToRowProfunctor
+
+searchBar :: forall @l v r. Cons l String () r => MyRowToRowProfunctor (Variant v) (Record r)
+searchBar = MyRowToRowProfunctor
+
+rating :: forall @l v r. Cons l Int () r => MyRowToRowProfunctor (Variant v) (Record r)
+rating = MyRowToRowProfunctor
+
+-- Variant-to-variant (sum-shaped model in, fires event case)
+
+notification :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+notification = MyRowToRowProfunctor
+
+modal :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+modal = MyRowToRowProfunctor
+
+wizardStep :: forall @l v w. Cons l (Record ()) () w => MyRowToRowProfunctor (Variant v) (Variant w)
+wizardStep = MyRowToRowProfunctor
 
 
 -- Unary row-to-row combinator examples.
@@ -180,7 +241,7 @@ variantOutputAsMaybeRecordExample = variantOutputAsMaybeRecord recordToVariantEx
 ui = Semigroupoid.do
   RecordToRecord.do -- inputs inclusive, outputs exclusive
     text @"message" `withRecordOutputDefault` "foo!"
-    textOutput @"code"
+    text @"code"
     textInput @"name" `withRecordDefault` ""
     textInput @"phonePrefix" `withRecordDefault` "+48"
     textInput @"phoneSuffix" `withRecordDefault` ""
