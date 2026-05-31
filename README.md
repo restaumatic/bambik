@@ -7,6 +7,8 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 [20 minutes-long presentation of the idea](/doc/presentation-20min.md)
 
+[Row profunctors over records and variants (design note)](/doc/row-profunctors.md)
+
 # Demo
 
 In order to run the demo:
