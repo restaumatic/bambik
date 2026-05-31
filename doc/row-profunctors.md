@@ -50,7 +50,7 @@ The canonical signatures sit side-by-side:
 
 ```purescript
 -- Row-to-row: binary merge of two complete row-shaped sub-profunctors.
--- src/Data/Profunctor/Row/RecordToRecord.purs:13
+-- src/Data/Profunctor/Row/RecordToRecord.purs:36
 class Profunctor p <= RecordToRecord p where
   recordToRecord ::
     forall i1 o1 i2 o2 i12 i1x i2x i o.
@@ -213,13 +213,13 @@ The four row-to-row classes are the 2×2 of `{Record, Variant}` input × `{Recor
 |---|---|---|
 | `recordToRecord` | `InclusiveRows` (Record-in) | `ExclusiveRows` (Record-out) |
 | `recordToVariant` | `InclusiveRows` (Record-in) | `InclusiveRows` (Variant-out) |
-| `variantToRecord` | `ExclusiveRows`+`Dispatchable` (Variant-in) | `ExclusiveRows` (Record-out) |
-| `variantToVariant` | `ExclusiveRows`+`Dispatchable` (Variant-in) | `InclusiveRows` (Variant-out) |
+| `variantToRecord` | `ExclusiveRows`+`DispatchableVariants` (Variant-in) | `ExclusiveRows` (Record-out) |
+| `variantToVariant` | `ExclusiveRows`+`DispatchableVariants` (Variant-in) | `InclusiveRows` (Variant-out) |
 
 The rule (input position is contravariant, so each kind imposes *opposite* disciplines in/out):
 
 - **Record** ⇒ `InclusiveRows` when input (**share**, `Δ` — fields coexist, feed both branches) / `ExclusiveRows` when output (**disjoin** — concatenate non-colliding fields).
-- **Variant** ⇒ `ExclusiveRows`+`Dispatchable` when input (**dispatch** — route the one live case) / `InclusiveRows` when output (**merge**, `∇` — branches may emit overlapping cases).
+- **Variant** ⇒ `ExclusiveRows`+`DispatchableVariants` when input (**dispatch** — route the one live case) / `InclusiveRows` when output (**merge**, `∇` — branches may emit overlapping cases).
 
 So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed classes are uniform:
 
@@ -349,7 +349,7 @@ The repository implements this in `Data.Profunctor.Row.*`. Focus and merge are s
 Source locations cited in this document (★ = pre-refactor, see note above):
 
 - Row-to-row classes:
-  - `src/Data/Profunctor/Row/RecordToRecord.purs:13`
+  - `src/Data/Profunctor/Row/RecordToRecord.purs:36`
   - `src/Data/Profunctor/Row/RecordToVariant.purs`
   - `src/Data/Profunctor/Row/VariantToRecord.purs`
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
