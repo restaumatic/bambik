@@ -28,7 +28,9 @@ newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o ->
 - **src/UI.purs** - Core UI profunctor type with all profunctor class instances (Strong, Choice, Endo, Sum, Zero)
 - **src/Web.purs** - DOM monad (`Web = StateT DOM Effect`) and primitive elements (`text`, `input`, `button`, `div`, etc.)
 - **src/MDC.purs** - Material Design Component wrappers as oculars
-- **src/Data/Profunctor/** - Profunctor building blocks (Endo, Sum, Zero, ReadP, WriteP, ExceptP, etc.)
+- **src/Data/Profunctor/** - Profunctor building blocks (Endo, Sum, Zero, Product, ProductToSum, etc.)
+- **src/Data/Profunctor/HalfOptic/** - Single-field/single-case "half-optics", organized as the 2×2×pin (product/sum × introduce/eliminate, + edit/focus) from `doc/row-to-row-vs-half-lens.md`. The **product** row (`Property.purs`: `introduceProperty`, `eliminateProperty`, `edit`) is just `Strong` (`first`/`second`), so it works on `UI`. On the **sum** row (`Case.purs`), `eliminateCase` and `focusCase` fold onto `Choice` (`left`/`right`); only `introduceCase` keeps a dedicated class `IntroVarP` (`IntroVarP.purs`), which is incomparable to `Choice` because its source emits a case the input never carries. `edit`/`focusCase` reuse the lens/prism in `src/Data/Lens.Extra/Commons.purs`.
+- **src/Data/Profunctor/RowToRow/** - The n-ary, labeled counterpart of the half-optics: `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant` binary row merges.
 
 ### Composition Patterns
 

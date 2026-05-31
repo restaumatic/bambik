@@ -11,6 +11,8 @@ Both families exist on purpose, both are used in real demos, and they produce th
 
 Row-to-row and half-lens are **dual construction strategies for the same family of profunctor values**. Row-to-row composes *complete sub-shapes by binary merge*; half-lens composes *atomic single-field cells by linear chaining*. Same target, different traversal. Neither subsumes the other at the typeclass level, but the values they produce coincide, and idiomatic UI code uses them as complementary tools at different scales of composition.
 
+At the **primitive level** (see "The primitive level: half-optics as pinned `second'`" below) the relation is sharper still: each half-optic is `second'`/`liftIntroVar` with one slot pinned to a monoidal unit (`Unit` for products, `Void` for sums), and row-to-row's input/output disciplines (`InclusiveRows`/`ExclusiveRows`) are the same `Δ`/`∇` operations un-pinned and labeled.
+
 ## What they share
 
 | | |
@@ -86,6 +88,8 @@ They are syntactic markers of the boundary where row structure ends and bare val
 - Row-to-row needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `RowToRow` aggregator in `src/Data/Profunctor/RowToRow/RowToRow.purs:33`). Each is one method with a heavy row-constraint signature.
 - Half-lens needs more, smaller classes — `IntroVarP`, `ExceptP`, `ReadP`, `WriteP`, `EditPropP`, plus the composition-style `Endo`, `Sum`, `Zero`, `One`, `Product`, `ProductToSum`. Each method is structurally simpler.
 
+These half-lens classes are not arbitrary: as "The primitive level" part shows, `ReadP`/`WriteP`/`IntroVarP`/`ExceptP` are the four corners of one `Strong`/`Choice` fanout with a unit-pinned slot, and `FormP`/`XP`/`YP`/`ZP` are the boundary adaptors between `Unit` and `Void`. The "not interchangeable at the typeclass level" verdict softens once `ReadP` is read as a *unit-pinned weakening of `Strong`* — see that part for where the equivalence does and does not hold.
+
 ### 6. Type-inference cost
 
 - Row-to-row: each merge node solves a non-trivial row-union problem (`InclusiveRows` on input, `ExclusiveRows` on output). Inferrer must unify rows from both arguments. Error messages carry the full solved-row terms.
@@ -108,7 +112,148 @@ At the **typeclass level**, neither implements the other polymorphically, becaus
 - Row-to-row can't reach inside an opaque `p (Record i1) (Record o1)` argument to find its per-field atoms (the typeclass dictionary is parametric in the row shape, not in the row contents — there is no `RowList`-driven value-level recursion available without further machinery).
 - Half-lens can't fuse a row of atoms into one binary merge without iterating field-by-field, which still requires `RowToList`-driven dispatch and additional capabilities (e.g. `FormP`, `XP`, `YP`, `ZP` in `src/Data/Profunctor/ReadP.purs`).
 
-The relation lives at the **value-coincidence level**: the profunctor values denote the same thing, even though the typeclass machinery describing how to *build* them is not interchangeable.
+The relation lives at the **value-coincidence level**: the profunctor values denote the same thing, even though the typeclass machinery describing how to *build* them is not interchangeable. But that "not interchangeable" is a statement about the *current* typeclass signatures, not about the constructions themselves — at the **primitive level** (next part) the relation is much sharper, and turns on a single design choice in the half-optic signatures.
+
+## The primitive level: half-optics as pinned `second'`
+
+The whole half-optic family is built from four primitives, and each is the Strong/Choice fanout operation with one slot **pinned to a monoidal unit**. Seeing the pin is the key to the row-to-row relation.
+
+### The read primitive, and the `p Unit r` vs `p s r` question
+
+```purescript
+-- src/Data/Profunctor/ReadP.purs:29 — current
+liftRead :: forall s r. p Unit r -> p s (Tuple s r)   -- "r read, s preserved, Unit for control flow"
+```
+
+The source's *input* is pinned to `Unit`: the introduced value cannot see the accumulator `s`. The natural generalization unpins it:
+
+```purescript
+liftReadCtx :: forall s r. p s r -> p s (Tuple s r)   -- the introduced value may read s
+```
+
+`liftReadCtx` is **exactly `second'`** (i.e. it is *equivalent* to `Strong`, not merely derivable from it):
+
+```purescript
+-- forward: Strong ⇒ liftReadCtx, precompose the diagonal Δ
+liftReadCtx f = lcmap (\s -> Tuple s s) (second' f)
+
+-- back: liftReadCtx ⇒ Strong, feed the whole input and project the redundant copy away
+second' f = liftReadCtx (lcmap snd f) # rmap (\(Tuple (Tuple c _) b) -> Tuple c b)
+```
+
+The current `liftRead` **cannot** reach `second'`: its source input is fixed to `Unit`, so it can never receive the focus value to transform. That is precisely the file's own claim — *"ReadP is a superclass of Strong but not vice versa"* ([ReadP.purs:316](../src/Data/Profunctor/ReadP.purs#L316)), witnessed by `strongToReadP` ([:317](../src/Data/Profunctor/ReadP.purs#L317)). So:
+
+> **current `liftRead` (`p Unit r`) ⊊ Strong** — and that gap *is* "the half". **`liftReadCtx` (`p s r`) = Strong**, full strength.
+
+### The comonoid framing
+
+Both shapes are `second'` precomposed with a **comonoid map** on the Cartesian input `s` (a comonoid has copy `Δ : s → s×s` and discard `! : s → Unit`):
+
+| primitive | precomposed map | source sees input? | strength |
+|---|---|---|---|
+| `liftRead` (current) | `s ↦ (s, !s)` — **discard** | no (`Unit`) | **⊊ Strong** |
+| `liftReadCtx` (proposed) | `s ↦ (s, s)` — **copy / Δ** | yes (full `s`) | **= Strong** |
+
+The entire design is "`second'` parameterized by which comonoid operation feeds it." Discard → context-free half-lens; copy → full Strong.
+
+### Four primitives: a 2×2×pin
+
+The eliminate primitives are the **transposes** (arrows reversed) of the introduce primitives, and the sum primitives are the product primitives with `(Unit, Tuple)` swapped for `(Void, Either)`:
+
+```purescript
+-- introduce / read (grow output)              -- eliminate / write (consume input)
+liftRead     :: p Unit r -> p s (Tuple  s r)   liftWrite  :: p w Unit -> p (Tuple  w s) s
+liftIntroVar :: p Void r -> p s (Either s r)   liftExcept :: p w Void -> p (Either w s) s
+```
+
+|  | introduce / read (grow output) | eliminate / write (consume input) |
+|---|---|---|
+| **product** (×, `Tuple`, Strong) | `liftRead : p Unit r → p s (s×r)` — pin source **input** = `Unit` | `liftWrite : p w Unit → p (w×s) s` — pin sink **output** = `Unit` |
+| **sum** (+, `Either`, Choice) | `liftIntroVar : p Void r → p s (s+r)` — pin source **input** = `Void` | `liftExcept : p w Void → p (w+s) s` — pin sink **output** = `Void` |
+
+- **Columns** are transposes (`liftWrite = liftRead`ᵀ, `liftExcept = liftIntroVar`ᵀ); the comments mirror — *"r read, s preserved"* ↔ *"w written, s preserved"* ([WriteP.purs:20](../src/Data/Profunctor/WriteP.purs#L20), [ExceptP.purs:20](../src/Data/Profunctor/ExceptP.purs#L20)).
+- **Rows** are product ↔ coproduct.
+- **Pin position** flips with the column: read pins the source *input*; write pins the sink *output*.
+- The isos confirm the pins: `ReadP ↔ Reader r` / `WriteP ↔ Writer w` use `Unit` ([ReadP.purs:346](../src/Data/Profunctor/ReadP.purs#L346), [WriteP.purs:56](../src/Data/Profunctor/WriteP.purs#L56)); `IntroVarP ↔ IntroVar r` / `ExceptP ↔ Except w` use `Void` ([IntroVarP.purs:58](../src/Data/Profunctor/IntroVarP.purs#L58), [ExceptP.purs:54](../src/Data/Profunctor/ExceptP.purs#L54)).
+
+### Product upgradable, sum forced
+
+The `Unit`-pinned product primitives are proper weakenings of Strong (`strongToReadP`, `strongToWriteP` witness both directions of the "superclass of Strong" claim). Unpinning them recovers full Strong:
+
+- `liftReadCtx :: p s r -> p s (s×r)` — the introduced field may **read** the accumulator.
+- `liftWriteCtx :: p w s -> p (w×s) s` — the consuming step may **rewrite** the surviving state instead of emit-and-vanish. This is the read-*and*-write power, i.e. **`EditPropP`** ([src/Data/Profunctor/EditPropP.purs](../src/Data/Profunctor/EditPropP.purs)).
+
+The `Void`-pinned **sum** primitives admit no such `p s r` upgrade: when one variant case is active, all others are absent (mutual exclusion), so the introduced case has no sibling to read and the eliminated case exits with no surviving continuation. `Void` is **forced by case-exclusivity**, not an artifact.
+
+But "no `p s r` upgrade" is a different question from "derivable from `Choice`", and here the two sum primitives part ways. `liftExcept` *is* `Choice`-derivable — `liftExcept f = rmap (either absurd identity) (left f)` — exactly as the `Unit`-pinned `liftWrite` is `Strong`-derivable; the `Void` lands in `left`'s untouched output slot and `absurd` discharges it. `liftIntroVar` is **not**: `Choice`'s `right` only fires its branch on a `Right` *input*, but the introduced case is never an input — the source emits it spontaneously — so no faithful `Choice` term has its shape. Hence the eliminate/focus sum half-optics fold onto `Choice` (`left`/`right`), and only **sum-introduce** (`IntroVarP`) is genuinely irreducible — incomparable to `Choice`, not merely weaker.
+
+## The four row classes as one discipline rule
+
+The four row-to-row classes are the 2×2 of `{Record, Variant}` input × `{Record, Variant}` output, and **each side's constraint is a function of that side's row-kind alone**:
+
+| class | input | output |
+|---|---|---|
+| `recordToRecord` | `InclusiveRows` (Record-in) | `ExclusiveRows` (Record-out) |
+| `recordToVariant` | `InclusiveRows` (Record-in) | `InclusiveRows` (Variant-out) |
+| `variantToRecord` | `ExclusiveRows`+`Dispatchable` (Variant-in) | `ExclusiveRows` (Record-out) |
+| `variantToVariant` | `ExclusiveRows`+`Dispatchable` (Variant-in) | `InclusiveRows` (Variant-out) |
+
+The rule (input position is contravariant, so each kind imposes *opposite* disciplines in/out):
+
+- **Record** ⇒ `InclusiveRows` when input (**share**, `Δ` — fields coexist, feed both branches) / `ExclusiveRows` when output (**disjoin** — concatenate non-colliding fields).
+- **Variant** ⇒ `ExclusiveRows`+`Dispatchable` when input (**dispatch** — route the one live case) / `InclusiveRows` when output (**merge**, `∇` — branches may emit overlapping cases).
+
+So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed classes are uniform:
+
+- **`recordToVariant` = Inclusive/Inclusive** — the **form → event** shape (read shared form, merge emitted events); the type of the business atoms `saveOrder` / `someAction` ([ReadP.purs:137](../src/Data/Profunctor/ReadP.purs#L137), [:302](../src/Data/Profunctor/ReadP.purs#L302)).
+- **`variantToRecord` = Exclusive/Exclusive** — the **event → display** shape (dispatch on which response occurred, fill disjoint fields).
+
+### Only diagonals have half-optics
+
+`introduceProperty ≡ recordToRecord identity (oneField …)` and `introduceCase ≡ variantToVariant identity (oneCase …)` both pin the **left operand to `identity`** — a `p a a`, which only typechecks when input and output are the **same kind**. The mixed classes' operands have *different* kinds (`p (Record …) (Variant …)`), so **no `identity` can sit there**.
+
+> Only the two **diagonal** classes admit `identity`, so only they collapse to single-field half-optics. The two **mixed** classes are **irreducibly binary** — crossing the product/sum boundary is exactly what an opaque business profunctor (`saveOrder`, `someAction`) does atomically, composed in with `>>>`.
+
+## Half = exactly one row-discipline
+
+A full `recordToRecord` does two things: **decompose** its input (`InclusiveRows`) and **assemble** its output (`ExclusiveRows`). Each half-optic isolates exactly one:
+
+- **introduce** = the **output-assembly** half (grow one field/case; input passes through).
+- **eliminate** = the **input-decomposition** half (split off one field/case; output passes through).
+
+Concretely, `eliminateProperty` rides the input split — `lcmap \prop -> Tuple (get l prop) (delete l prop)` ([ReadP.purs:90](../src/Data/Profunctor/ReadP.purs#L90)); `eliminateCase` rides the input dispatch — `lcmap (on l Left Right)` ([:98](../src/Data/Profunctor/ReadP.purs#L98)).
+
+This sharpens the earlier *"half-lens = degenerate row-to-row with identity"*: under the **`p s r`** shape it is literally exact — `introduceProperty l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)`, with the one-field operand a genuine record-reading sub-profunctor. Under the current `p Unit r` shape the operand is a context-free source `p Void prop` that cannot read the record, so the equation only holds after laundering through `Void`/`FormP` (next section) — the symptom of the strength mismatch (row-to-row is Strong-strength, the current half-optic is not).
+
+## The `FormP` / `XP` / `YP` / `ZP` quartet
+
+The four boundary adaptors classify cleanly by **which map they require** between the unit (`Unit`, terminal) and the co-unit (`Void`, initial):
+
+| class | signature | needs | verdict |
+|---|---|---|---|
+| `FormP` | `p Void r → p Unit r` (input) | `Unit → Void` — **impossible** | **genuine** (used by `introduceProperty`) |
+| `ZP` | `p a Unit → p a Void` (output) | `Unit → Void` — **impossible** | **genuine** (used by `eliminateCase`) |
+| `XP` | `p Unit a → p Void a` (input) | `Void → Unit` = `absurd` | free, `= lcmap absurd` (`introduceCase`) |
+| `YP` | `p a Void → p a Unit` (output) | `Void → Unit` = `absurd` | free, `= rmap absurd` (`eliminateProperty`) |
+
+The only **genuine** capabilities are `FormP` and `ZP` — the two that must conjure the impossible `Unit → Void`. `FormP` fabricates an output from no input (a **source**); `ZP` fabricates the no-return of a **diverging sink**. They split by row-kind, which settles removability:
+
+- **`FormP` (product)** is dissolved by the `p s r` generalization — the source reads `s` instead of fabricating from `Void`, so no `Void`/`Unit` laundering is needed (a source becomes a `p s r` that ignores `s`, and `lcmap (const _)` is free).
+- **`ZP` (sum)** is **forced** by case-exclusivity, the exact mirror of `XP`/`liftIntroVar`'s irreducible `Void`.
+- `eliminateProperty` (product-write) needs only the free `YP`; the `p w s` / edit upgrade adds expressiveness but removes no crutch.
+
+## What the `p s r` proposal would change
+
+The context-reading question — *can the introduced/edited thing see the accumulator?* — is decided by the **input kind alone**:
+
+| | output: Record (disjoin) | output: Variant (merge) |
+|---|---|---|
+| **input: Record (share)** — `p s r` ✓, `FormP` removable | `recordToRecord` — has half-optic | `recordToVariant` — no half-optic |
+| **input: Variant (dispatch)** — `Void` forced | `variantToRecord` — no half-optic | `variantToVariant` — has half-optic |
+
+So `p s r`'s reach is **exactly the two Record-*input* classes**. Adopting it would make the product half-optic an exact `identity`-pinned `recordToRecord`, unify the half-optic and row-to-row input-sharing under one Strong fanout, and retire `FormP`.
+
+The cost: `ReadP` would stop being *weaker* than `Strong` (it would *be* `Strong`), and the clean `Reader r` iso — which depends on the focus input being `Unit` — would degrade toward `Asker` (reader-with-context, [ReadP.purs:325](../src/Data/Profunctor/ReadP.purs#L325)). Because the core `UI m` is already `Strong` ([UI.purs:76](../src/UI.purs#L76)), the weaker `p Unit r` buys nothing *for `UI`*; the only thing it protects is the ability to give `ReadP` to a profunctor that is *not* `Strong`. This part is analysis of the trade-off, not a recommendation to change the code.
 
 ## When to use which (in this codebase)
 
@@ -162,11 +307,22 @@ The framework is bilingual on purpose. Pick the granularity that matches the sen
 
 ## One-line summary
 
-> Row-to-row and half-lens are dual construction strategies for the same family of `Record`/`Variant`-shaped profunctors. Row-to-row builds by **binary merge of complete sub-shapes**; half-lens builds by **linear chaining of single-field atoms**. The empty-row placeholders (`Variant ()`, `Record ()`) in half-lens types are not entities or events but markers for "no row structure here — bare value attaches here." Neither family subsumes the other at the typeclass level, but their value-level denotations coincide.
+> Row-to-row and half-lens are dual construction strategies for the same family of `Record`/`Variant`-shaped profunctors. Row-to-row builds by **binary merge of complete sub-shapes**; half-lens builds by **linear chaining of single-field atoms**. The empty-row placeholders (`Variant ()`, `Record ()`) in half-lens types are not entities or events but markers for "no row structure here — bare value attaches here." At the primitive level each half-optic is `second'`/`liftIntroVar` with one slot pinned to a monoidal **unit** — `Unit` (terminal) for products, `Void` (initial) for sums; the product pins are weakenings of `Strong` that `p s r`/`p w s` upgrade to full strength (read → edit), while the sum pins are **forced by case-exclusivity**. Neither family subsumes the other at the typeclass level, but their value-level denotations coincide, and under the `p s r` shape the half-optic becomes an exact `identity`-pinned row-to-row.
+
+## Materialized in code
+
+The repository now implements this view (adopting the `p s r`/`p w s` shape), in the `Data.Profunctor.HalfOptic.*` namespace that mirrors `Data.Profunctor.RowToRow.*`:
+
+- **Product row = `Strong`** ([src/Data/Profunctor/HalfOptic/Property.purs](../src/Data/Profunctor/HalfOptic/Property.purs)): `introduceProperty`/`eliminateProperty` carry only a `Strong p` constraint (`second`/`first` + `insert`/`delete`), and `edit` reuses the standard field lens `Data.Lens.Extra.Commons.property`. Because `UI` is `Strong`, these work on `UI` directly — the former bespoke `ReadP`/`WriteP`/`FormP`/`EditPropP` classes are gone.
+- **Sum row = `Choice`** ([Case.purs](../src/Data/Profunctor/HalfOptic/Case.purs)) — *almost*. Two of the three sum operations fold onto `Choice`, mirroring the product side's `Strong`: `eliminateCase` uses `left` (`Choice ⇒ ExceptP`, so there is **no `ExceptP` class** — `liftExcept f = rmap (either absurd identity) (left f)`), and `focusCase` is the `Choice` prism (`right`, via `Commons.variant`). The exception is `introduceCase`: its source `p Void case` has no input for `Choice` to dispatch on (the new case fires spontaneously), so `Choice ⇏ IntroVarP`. `IntroVarP` ([IntroVarP.purs](../src/Data/Profunctor/HalfOptic/IntroVarP.purs)) is therefore *incomparable* to `Choice` and is the **one genuinely irreducible class** — abstract (no in-repo instance yet; a real `UI` instance would inhabit it).
+- **Adaptor quartet** ([HalfOptic.purs](../src/Data/Profunctor/HalfOptic.purs)): `FormP` dissolved (the `p s r` shape removes it), the free `XP`/`YP` were inlined as `lcmap`/`rmap absurd`, and the genuine `ZP` was sidestepped (`eliminateCase` takes a `Void` handler directly).
+- **Tests**: [test/Main.purs](../test/Main.purs) exercises both rows on `(->)` — the product combinators `edit`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the half-lens = identity-pinned row-to-row claim) and the `Choice` sum combinators `focusCase`/`eliminateCase`.
+
+> Note: the `file:line` citations below that point at `ReadP.purs`/`WriteP.purs`/`EditPropP.purs` and the `p Unit r`/`FormP` shapes describe the **pre-refactor** design that motivated this note. That code has been superseded (it lives in git history); the analysis above stands as the rationale for the current `HalfOptic.*` layout.
 
 ## References
 
-Source locations cited in this document:
+Source locations cited in this document (★ = pre-refactor, see note above):
 
 - Row-to-row classes:
   - `src/Data/Profunctor/RowToRow/RecordToRecord.purs:13`
@@ -176,12 +332,12 @@ Source locations cited in this document:
   - Umbrella aggregator: `src/Data/Profunctor/RowToRow/RowToRow.purs:33`
 - Row-to-row examples: `src/Data/Profunctor/RowToRow/Example.purs`
 - Default single-field lifts: `src/Data/Profunctor/RowToRow/Default.purs`
-- Half-lens primitives:
-  - `src/Data/Profunctor/ReadP.purs:28` (`ReadP`), `:52` (`introduceProperty`), `:77` (`introduceCase`)
-  - `src/Data/Profunctor/WriteP.purs:20` (`WriteP`)
-  - `src/Data/Profunctor/IntroVarP.purs:22` (`IntroVarP`)
-  - `src/Data/Profunctor/ExceptP.purs:20` (`ExceptP`)
-  - `src/Data/Profunctor/EditPropP.purs:13` (`EditPropP`)
+- Half-optic primitives (current):
+  - `src/Data/Profunctor/HalfOptic/Property.purs` (`introduceProperty`, `eliminateProperty`, `edit` — all `Strong`)
+  - `src/Data/Profunctor/HalfOptic/Case.purs` (`introduceCase` via `IntroVarP`; `eliminateCase`/`focusCase` via `Choice` `left`/`right`)
+  - `src/Data/Profunctor/HalfOptic/IntroVarP.purs` (`IntroVarP` — the one irreducible class)
+  - Umbrella + 2×2×pin doc: `src/Data/Profunctor/HalfOptic.purs`
+- ★ Pre-refactor half-lens primitives (git history): `ReadP.purs` (`ReadP`/`FormP`/`XP`/`YP`/`ZP`, `introduceProperty`, `introduceCase`), `WriteP.purs` (`WriteP`), `EditPropP.purs` (`EditPropP`)
 - Composition-style classes: `src/Data/Profunctor/Endo.purs:12`, `src/Data/Profunctor/Sum.purs:13`, `src/Data/Profunctor/Zero.purs`, `src/Data/Profunctor/One.purs`, `src/Data/Profunctor/Product.purs`, `src/Data/Profunctor/ProductToSum.purs:15`
 - Row constraints: `src/Type/Row/Constraints.purs`
 - Half-lens usage example: `demo/1/Main.purs`
