@@ -9,17 +9,17 @@
 -- |   * `introduceProperty` — introduce (grow): `second` + insert. The source `p (Record s) prop`
 -- |     may **read the accumulator** (the `p s r` shape); a context-free source just ignores it.
 -- |   * `eliminateProperty`  — eliminate (consume): transpose of introduce, `first` + delete.
--- |   * `edit`               — edit an existing field: the standard `Strong` field lens,
+-- |   * `editProperty`       — edit an existing field: the standard `Strong` field lens,
 -- |     reused from `Data.Lens.Extra.Commons.property` (this is what `EditPropP` was).
 -- |
 -- | Sum-side counterparts live in `Data.Profunctor.HalfOptic.Case`.
 module Data.Profunctor.HalfOptic.Property
   ( introduceProperty
   , eliminateProperty
-  , edit
+  , editProperty
   ) where
 
-import Data.Lens (Lens)
+import Data.Lens (Lens, Optic)
 import Data.Lens.Extra.Commons (property) as Commons
 import Data.Profunctor (dimap)
 import Data.Profunctor.Strong (class Strong, first, second)
@@ -37,8 +37,7 @@ introduceProperty
   => Cons l prop s t
   => Lacks l s
   => Strong p
-  => p (Record s) prop
-  -> p (Record s) (Record t)
+  => Optic p (Record s) (Record t) (Record s) prop
 introduceProperty f =
   dimap (\s -> Tuple s s) (\(Tuple s p) -> insert (Proxy @l) p s) (second f)
 
@@ -50,15 +49,14 @@ eliminateProperty
   => Cons l prop t s
   => Lacks l t
   => Strong p
-  => p prop x
-  -> p (Record s) (Record t)
+  => Optic p (Record s) (Record t) prop x
 eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)
 
 -- | Edit an existing field in place — the standard `Strong` field lens (formerly `EditPropP`).
-edit
+editProperty
   :: forall @l s r a
    . IsSymbol l
   => Cons l a r s
   => Lens (Record s) (Record s) a a
-edit = Commons.property @l
+editProperty = Commons.property @l

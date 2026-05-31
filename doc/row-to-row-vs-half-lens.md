@@ -12,7 +12,7 @@ They produce the **same profunctor values** from different angles; this note exp
 
 The punchline the code embodies: **half-optics are mostly just `Strong` and `Choice`.**
 
-- **Product** (`Record`) half-optics — `introduceProperty`, `eliminateProperty`, `edit` — are plain **`Strong`** (`first`/`second`). `edit` is literally the field lens.
+- **Product** (`Record`) half-optics — `introduceProperty`, `eliminateProperty`, `editProperty` — are plain **`Strong`** (`first`/`second`). `editProperty` is literally the field lens.
 - **Sum** (`Variant`) half-optics — `eliminateCase` (`left`) and `focusCase` (`right`, a prism) — are plain **`Choice`**. The lone exception is `introduceCase`: it injects a case the input never carries, which `Choice` cannot express, so it keeps the one dedicated class, `IntroVarP`.
 - A half-optic is an **identity-pinned** row-to-row merge; a row-to-row merge is an **iterated** half-optic. Same values, two granularities: a single field/case vs a labeled n-ary block.
 
@@ -326,10 +326,10 @@ The framework is bilingual on purpose. Pick the granularity that matches the sen
 
 The repository now implements this view (adopting the `p s r`/`p w s` shape), in the `Data.Profunctor.HalfOptic.*` namespace that mirrors `Data.Profunctor.RowToRow.*`:
 
-- **Product row = `Strong`** ([src/Data/Profunctor/HalfOptic/Property.purs](../src/Data/Profunctor/HalfOptic/Property.purs)): `introduceProperty`/`eliminateProperty` carry only a `Strong p` constraint (`second`/`first` + `insert`/`delete`), and `edit` reuses the standard field lens `Data.Lens.Extra.Commons.property`. Because `UI` is `Strong`, these work on `UI` directly — the former bespoke `ReadP`/`WriteP`/`FormP`/`EditPropP` classes are gone.
+- **Product row = `Strong`** ([src/Data/Profunctor/HalfOptic/Property.purs](../src/Data/Profunctor/HalfOptic/Property.purs)): `introduceProperty`/`eliminateProperty` carry only a `Strong p` constraint (`second`/`first` + `insert`/`delete`), and `editProperty` reuses the standard field lens `Data.Lens.Extra.Commons.property`. Because `UI` is `Strong`, these work on `UI` directly — the former bespoke `ReadP`/`WriteP`/`FormP`/`EditPropP` classes are gone.
 - **Sum row = `Choice`** ([Case.purs](../src/Data/Profunctor/HalfOptic/Case.purs)) — *almost*. Two of the three sum operations fold onto `Choice`, mirroring the product side's `Strong`: `eliminateCase` uses `left` (`Choice ⇒ ExceptP`, so there is **no `ExceptP` class** — `liftExcept f = rmap (either absurd identity) (left f)`), and `focusCase` is the `Choice` prism (`right`, via `Commons.variant`). The exception is `introduceCase`: its source `p Void case` has no input for `Choice` to dispatch on (the new case fires spontaneously), so `Choice ⇏ IntroVarP`. `IntroVarP` ([IntroVarP.purs](../src/Data/Profunctor/HalfOptic/IntroVarP.purs)) is therefore *incomparable* to `Choice` and is the **one genuinely irreducible class** — abstract (no in-repo instance yet; a real `UI` instance would inhabit it).
 - **Adaptor quartet** ([HalfOptic.purs](../src/Data/Profunctor/HalfOptic.purs)): `FormP` dissolved (the `p s r` shape removes it), the free `XP`/`YP` were inlined as `lcmap`/`rmap absurd`, and the genuine `ZP` was sidestepped (`eliminateCase` takes a `Void` handler directly).
-- **Tests**: [test/Main.purs](../test/Main.purs) exercises both rows on `(->)` — the product combinators `edit`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the half-lens = identity-pinned row-to-row claim) and the `Choice` sum combinators `focusCase`/`eliminateCase`.
+- **Tests**: [test/Main.purs](../test/Main.purs) exercises both rows on `(->)` — the product combinators `editProperty`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the half-lens = identity-pinned row-to-row claim) and the `Choice` sum combinators `focusCase`/`eliminateCase`.
 
 > Note: the `file:line` citations below that point at `ReadP.purs`/`WriteP.purs`/`EditPropP.purs` and the `p Unit r`/`FormP` shapes describe the **pre-refactor** design that motivated this note. That code has been superseded (it lives in git history); the analysis above stands as the rationale for the current `HalfOptic.*` layout.
 
@@ -346,7 +346,7 @@ Source locations cited in this document (★ = pre-refactor, see note above):
 - Row-to-row examples: `src/Data/Profunctor/RowToRow/Example.purs`
 - Default single-field lifts: `src/Data/Profunctor/RowToRow/Default.purs`
 - Half-optic primitives (current):
-  - `src/Data/Profunctor/HalfOptic/Property.purs` (`introduceProperty`, `eliminateProperty`, `edit` — all `Strong`)
+  - `src/Data/Profunctor/HalfOptic/Property.purs` (`introduceProperty`, `eliminateProperty`, `editProperty` — all `Strong`)
   - `src/Data/Profunctor/HalfOptic/Case.purs` (`introduceCase` via `IntroVarP`; `eliminateCase`/`focusCase` via `Choice` `left`/`right`)
   - `src/Data/Profunctor/HalfOptic/IntroVarP.purs` (`IntroVarP` — the one irreducible class)
   - Umbrella + 2×2×pin doc: `src/Data/Profunctor/HalfOptic.purs`

@@ -26,7 +26,7 @@ import Prelude
 import Data.Either (Either(..), either)
 import Data.Lens (Optic, Prism)
 import Data.Lens.Extra.Commons (variant) as Commons
-import Data.Profunctor (dimap, lcmap, rmap)
+import Data.Profunctor (dimap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.HalfOptic.IntroVarP (class IntroVarP, liftIntroVar)
 import Data.Symbol (class IsSymbol)
@@ -34,23 +34,22 @@ import Data.Variant (Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
 
--- | Introduce a new case `l` from a static source, preserving the existing cases.
--- | The only sum half-optic that is *not* `Choice` — `liftIntroVar` injects a case that
--- | the input never carries, which `Choice`'s input dispatch cannot do. The free `Unit→Void`
--- | step is the inlined `lcmap absurd`.
+-- | Introduce a new case `l` from a spontaneous source, preserving the existing cases.
+-- | The only sum half-optic that is *not* `Choice`: `liftIntroVar` injects a case the input
+-- | never carries, which `Choice`'s input dispatch cannot do.
 introduceCase
   :: forall p @l case_ s t r
    . IsSymbol l
   => Cons l case_ s t
   => Union s r t
   => IntroVarP p
-  => Optic p (Variant s) (Variant t) (Record ()) case_
+  => Optic p (Variant s) (Variant t) Void case_
 introduceCase src =
   rmap
     (case _ of
        Left vars -> expand vars
        Right i -> inj (Proxy @l) i)
-    (liftIntroVar (lcmap absurd src))
+    (liftIntroVar src)
 
 -- | Eliminate the case `l` via a diverging handler `p case Void`, preserving the rest.
 -- | Folds onto `Choice`: `left` runs the handler on the routed `Left` case (its `Void`
@@ -60,8 +59,7 @@ eliminateCase
    . IsSymbol l
   => Cons l case_ t s
   => Choice p
-  => p case_ Void
-  -> p (Variant s) (Variant t)
+  => Optic p (Variant s) (Variant t) case_ Void
 eliminateCase handler =
   dimap (on (Proxy @l) Left Right) (either absurd identity) (left handler)
 

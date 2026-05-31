@@ -7,7 +7,7 @@
 -- |
 -- | ```
 -- |                introduce (grow output)      eliminate (consume input)     edit / focus
--- |  product   introduceProperty  (Strong)   eliminateProperty  (Strong)   edit       (Strong lens, first/second)
+-- |  product   introduceProperty  (Strong)   eliminateProperty  (Strong)   editProperty (Strong lens, first/second)
 -- |  (Record)  ── transpose ───────────────────────────────────┘
 -- |  sum       introduceCase   (IntroVarP)   eliminateCase    (Choice)     focusCase  (Choice prism, left/right)
 -- |  (Variant) ── transpose ───────────────────────────────────┘
@@ -15,7 +15,7 @@
 -- |
 -- | **Product row = `Strong`** (`first`/`second`). Under the `p s r`/`p w s` shape the pin
 -- | is the copy (`Δ`), which is full `Strong`; so `introduceProperty`/`eliminateProperty`
--- | carry only `Strong`, and `edit` is the standard field lens
+-- | carry only `Strong`, and `editProperty` is the standard field lens
 -- | (`Data.Lens.Extra.Commons.property`). Because `UI` is `Strong`, these work on `UI`.
 -- |
 -- | **Sum row = `Choice`** (`left`/`right`) — *almost*. `eliminateCase` folds onto `Choice`
@@ -35,6 +35,6 @@ module Data.Profunctor.HalfOptic
   , module IntroVarP
   ) where
 
-import Data.Profunctor.HalfOptic.Property (edit, eliminateProperty, introduceProperty) as Property
+import Data.Profunctor.HalfOptic.Property (editProperty, eliminateProperty, introduceProperty) as Property
 import Data.Profunctor.HalfOptic.Case (eliminateCase, focusCase, introduceCase) as Case
 import Data.Profunctor.HalfOptic.IntroVarP (class IntroVarP, liftIntroVar) as IntroVarP

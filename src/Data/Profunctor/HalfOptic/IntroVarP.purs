@@ -17,7 +17,10 @@
 -- |
 -- | Its transpose, sum-eliminate, behaves oppositely: it *does* fold onto `Choice` (via
 -- | `left`), which is why there is no `ExceptP` class — see `HalfOptic.Case.eliminateCase`.
-module Data.Profunctor.HalfOptic.IntroVarP where
+module Data.Profunctor.HalfOptic.IntroVarP
+  ( class IntroVarP
+  , liftIntroVar
+  ) where
 
 import Data.Either (Either)
 import Data.Profunctor (class Profunctor)

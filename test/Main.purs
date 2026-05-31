@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Lens (over, set, view)
 import Data.Profunctor.HalfOptic.Case (eliminateCase, focusCase)
-import Data.Profunctor.HalfOptic.Property (edit, eliminateProperty, introduceProperty)
+import Data.Profunctor.HalfOptic.Property (editProperty, eliminateProperty, introduceProperty)
 import Data.Variant (Variant, inj)
 import Effect (Effect)
 import Effect.Exception (throw)
@@ -19,10 +19,10 @@ main :: Effect Unit
 main = do
   -- == Product side = Strong. All three combinators run on the `(->)` profunctor. ==
 
-  -- `edit` is the standard field lens (formerly EditPropP) — get / set / over.
-  assertEqual "edit/view" 7 (view (edit @"foo") { foo: 7, bar: "x" })
-  assertEqual "edit/set" { foo: 9, bar: "x" } (set (edit @"foo") 9 { foo: 7, bar: "x" })
-  assertEqual "edit/over" { foo: 14, bar: "x" } (over (edit @"foo") (_ * 2) { foo: 7, bar: "x" })
+  -- `editProperty` is the standard field lens (formerly EditPropP) — get / set / over.
+  assertEqual "edit/view" 7 (view (editProperty @"foo") { foo: 7, bar: "x" })
+  assertEqual "edit/set" { foo: 9, bar: "x" } (set (editProperty @"foo") 9 { foo: 7, bar: "x" })
+  assertEqual "edit/over" { foo: 14, bar: "x" } (over (editProperty @"foo") (_ * 2) { foo: 7, bar: "x" })
 
   -- `introduceProperty` grows the record; the source reads the accumulator (the `p s r` shape).
   assertEqual "introduceProperty"
