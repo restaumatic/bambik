@@ -5,8 +5,8 @@ import Prelude
 import Data.Lens (over, set, view)
 import Data.Profunctor.RowToRow.Case (editCase, eliminateCase)
 import Data.Profunctor.RowToRow.Property (editProperty, eliminateProperty, introduceProperty)
-import Data.Profunctor.RowToRow.RowChoice (focusCase)
-import Data.Profunctor.RowToRow.RowStrong (focusField)
+import Data.Profunctor.RowToRow.RowChoice (focusVariant)
+import Data.Profunctor.RowToRow.RowStrong (focusRecord)
 import Data.Variant (Variant, inj)
 import Effect (Effect)
 import Effect.Exception (throw)
@@ -19,17 +19,18 @@ assertEqual msg expected actual =
 
 main :: Effect Unit
 main = do
-  -- == RowStrong: row-typed Strong (focus a field). Runs on `(->)`. ==
+  -- == RowStrong: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
 
-  -- editProperty = focusField specialized type-preserving — get / set / over.
+  -- focusRecord: rows on both sides. Here a one-field sub-record { a } is transformed
+  -- (Int -> String) while the complement { b } is carried unchanged.
+  assertEqual "focusRecord"
+    { a: "5", b: true }
+    (focusRecord (\(r :: { a :: Int }) -> { a: show r.a }) { a: 5, b: true })
+
+  -- editProperty = the value-level single-field lens — get / set / over.
   assertEqual "editProperty/view" 7 (view (editProperty @"foo") { foo: 7, bar: "x" })
   assertEqual "editProperty/set" { foo: 9, bar: "x" } (set (editProperty @"foo") 9 { foo: 7, bar: "x" })
   assertEqual "editProperty/over" { foo: 14, bar: "x" } (over (editProperty @"foo") (_ * 2) { foo: 7, bar: "x" })
-
-  -- focusField, type-changing: the field's type changes a -> b, the rest is carried.
-  assertEqual "focusField/type-changing"
-    { a: "5", b: true }
-    (focusField (Proxy :: Proxy "a") show { a: 5, b: true })
 
   -- introduceProperty grows the record; the source reads the accumulator (the `p s r` shape).
   assertEqual "introduceProperty"
@@ -41,25 +42,28 @@ main = do
     { a: 1 }
     (eliminateProperty @"b" (const unit) { a: 1, b: 101 })
 
-  -- introduce-then-eliminate round-trips (half-optic = identity-pinned recordToRecord).
+  -- introduce-then-eliminate round-trips (focus = identity-pinned merge).
   assertEqual "introduce >>> eliminate = id"
     { a: 1 }
     (eliminateProperty @"b" (const unit) (introduceProperty @"b" (\r -> r.a + 100) { a: 1 }))
 
-  -- == RowChoice: row-typed Choice (focus a case). Runs on `(->)`. ==
+  -- == RowChoice: row-typed Choice, focus a sub-variant carrying the rest. On `(->)`. ==
 
-  -- editCase = focusCase specialized type-preserving — over the matching case only.
+  -- focusVariant: dispatch on the sub-variant { x }, carry the complement { y }.
+  assertEqual "focusVariant/sub-case carried"
+    (inj (Proxy @"x") 5 :: Variant (x :: Int, y :: String))
+    (focusVariant (identity :: Variant (x :: Int) -> Variant (x :: Int)) (inj (Proxy @"x") 5))
+  assertEqual "focusVariant/rest-case carried"
+    (inj (Proxy @"y") "a" :: Variant (x :: Int, y :: String))
+    (focusVariant (identity :: Variant (x :: Int) -> Variant (x :: Int)) (inj (Proxy @"y") "a"))
+
+  -- editCase = the value-level single-case prism — over the matching case only.
   assertEqual "editCase/match"
     (inj (Proxy @"x") 10 :: Variant (x :: Int, y :: String))
     (over (editCase @"x") (_ * 2) (inj (Proxy @"x") 5))
   assertEqual "editCase/miss"
     (inj (Proxy @"y") "a" :: Variant (x :: Int, y :: String))
     (over (editCase @"x") (_ * 2) (inj (Proxy @"y") "a"))
-
-  -- focusCase, type-changing: the case payload changes a -> b, other cases carried.
-  assertEqual "focusCase/type-changing"
-    (inj (Proxy @"x") "5" :: Variant (x :: String, y :: Boolean))
-    (focusCase (Proxy :: Proxy "x") show (inj (Proxy @"x") 5 :: Variant (x :: Int, y :: Boolean)))
 
   -- eliminateCase (RowChoice via `left`): survivors pass through (eliminated case is Void).
   let elim = eliminateCase @"gone" (identity :: Void -> Void) :: Variant (gone :: Void, keep :: Int) -> Variant (keep :: Int)

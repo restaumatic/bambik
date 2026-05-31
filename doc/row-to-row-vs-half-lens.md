@@ -13,9 +13,9 @@ They produce the **same profunctor values** from different angles; this note exp
 
 The punchline the code embodies: **the focus combinators are mostly just `Strong` and `Choice`, relabeled to rows.**
 
-- **`RowStrong`** (`focusField`) and **`RowChoice`** (`focusCase`) are the row-typed `Strong`/`Choice` — focus one labeled field/case, carry the rest. Each is *equivalent* to its positional original (generic `instance Strong p => RowStrong p`, `Choice p => RowChoice p`), so every `Strong`/`Choice` profunctor — including `UI` — is one for free.
-- **Product** (`Record`) combinators — `introduceProperty`, `eliminateProperty`, `editProperty` — rest on `RowStrong` (`first`/`second` + insert/delete; `editProperty` *is* `focusField`).
-- **Sum** (`Variant`) combinators — `eliminateCase`, `editCase` — rest on `RowChoice` (`left`; `editCase` *is* `focusCase`). The lone exception is `introduceCase`: it injects a case the input never carries, which `Choice` cannot express, so it rests on the one bespoke class, `IntroVarP`.
+- **`RowStrong`** (`focusRecord`) and **`RowChoice`** (`focusVariant`) are the row-typed `Strong`/`Choice` — they operate on rows on **both sides**, embedding a whole **sub-Record/sub-Variant** profunctor (`p (Record sub) (Record sub')`) into a bigger row and carrying the complement. Each is *equivalent* to its positional original (generic `instance Strong p => RowStrong p`, `Choice p => RowChoice p`), so every `Strong`/`Choice` profunctor — including `UI` — is one for free.
+- **Product** (`Record`) combinators — `introduceProperty`, `eliminateProperty`, `editProperty` — rest on `RowStrong` (`first`/`second` + insert/delete; `editProperty` is the value-level single-field lens).
+- **Sum** (`Variant`) combinators — `eliminateCase`, `editCase` — rest on `RowChoice` (`left`; `editCase` is the value-level single-case prism). The lone exception is `introduceCase`: it injects a case the input never carries, which `Choice` cannot express, so it rests on the one bespoke class, `IntroVarP`.
 - A focus/grow combinator is an **identity-pinned** merge; a merge is an **iterated** focus. Same values, two granularities — kept as independent module groups.
 
 See ["Materialized in code"](#materialized-in-code) for the module layout.
@@ -199,7 +199,7 @@ liftIntroVar :: p Void r -> p s (Either s r)   liftExcept :: p w Void -> p (Eith
 The `Unit`-pinned product primitives are proper weakenings of Strong (`strongToReadP`, `strongToWriteP` witness both directions of the "superclass of Strong" claim). Unpinning them recovers full Strong:
 
 - `liftReadCtx :: p s r -> p s (s×r)` — the introduced field may **read** the accumulator.
-- `liftWriteCtx :: p w s -> p (w×s) s` — the consuming step may **rewrite** the surviving state instead of emit-and-vanish. This is the read-*and*-write power — the field lens, now `editProperty`/`focusField` ([RowToRow/Property.purs](../src/Data/Profunctor/RowToRow/Property.purs), [RowToRow/RowStrong.purs](../src/Data/Profunctor/RowToRow/RowStrong.purs); formerly the `EditPropP` class).
+- `liftWriteCtx :: p w s -> p (w×s) s` — the consuming step may **rewrite** the surviving state instead of emit-and-vanish. This is the read-*and*-write power — the field lens, now `editProperty` (and the sub-record `RowStrong.focusRecord`) ([RowToRow/Property.purs](../src/Data/Profunctor/RowToRow/Property.purs), [RowToRow/RowStrong.purs](../src/Data/Profunctor/RowToRow/RowStrong.purs); formerly the `EditPropP` class).
 
 The `Void`-pinned **sum** primitives admit no such `p s r` upgrade: when one variant case is active, all others are absent (mutual exclusion), so the introduced case has no sibling to read and the eliminated case exits with no surviving continuation. `Void` is **forced by case-exclusivity**, not an artifact.
 
@@ -335,12 +335,12 @@ The framework is bilingual on purpose. Pick the granularity that matches the sen
 
 The repository implements this in `Data.Profunctor.RowToRow.*`, as two **independent groups** — focus and merge:
 
-- **`RowStrong`** ([RowToRow/RowStrong.purs](../src/Data/Profunctor/RowToRow/RowStrong.purs)) — `class Strong p <= RowStrong p` with `focusField :: Proxy l -> p a b -> p (Record s) (Record t)`, the row-typed `first`/`second`. The generic `instance Strong p => RowStrong p` defines it as the record lens `Data.Lens.Record.prop`, so `RowStrong p` is interchangeable with `Strong p`.
-- **`RowChoice`** ([RowToRow/RowChoice.purs](../src/Data/Profunctor/RowToRow/RowChoice.purs)) — `class Choice p <= RowChoice p` with `focusCase`, the row-typed `left`/`right`; generic `instance Choice p => RowChoice p` built from `left`.
-- **Combinators** — `introduceProperty`/`eliminateProperty`/`editProperty` ([Property.purs](../src/Data/Profunctor/RowToRow/Property.purs), on `RowStrong`) and `introduceCase`/`eliminateCase`/`editCase` ([Case.purs](../src/Data/Profunctor/RowToRow/Case.purs), on `RowChoice`). `editProperty`/`editCase` are `focusField`/`focusCase` at a type-preserving focus. Because the classes have generic instances, all of these work on `UI` directly.
+- **`RowStrong`** ([RowToRow/RowStrong.purs](../src/Data/Profunctor/RowToRow/RowStrong.purs)) — `class Strong p <= RowStrong p` with `focusRecord :: p (Record sub) (Record sub') -> p (Record s) (Record t)` (`ExclusiveRows sub rest s`, `ExclusiveRows sub' rest t`), the row-typed `first`/`second`. The generic `instance Strong p => RowStrong p` splits `s` into `(sub, rest)`, runs the argument on `sub` via `first`, and re-merges, so `RowStrong p` is interchangeable with `Strong p`.
+- **`RowChoice`** ([RowToRow/RowChoice.purs](../src/Data/Profunctor/RowToRow/RowChoice.purs)) — `class Choice p <= RowChoice p` with `focusVariant :: p (Variant sub) (Variant sub') -> p (Variant s) (Variant t)`, the row-typed `left`/`right`; the generic `instance Choice p => RowChoice p` dispatches via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
+- **Combinators** — `introduceProperty`/`eliminateProperty`/`editProperty` ([Property.purs](../src/Data/Profunctor/RowToRow/Property.purs), on `RowStrong`) and `introduceCase`/`eliminateCase`/`editCase` ([Case.purs](../src/Data/Profunctor/RowToRow/Case.purs), on `RowChoice`/`IntroVarP`). `editProperty`/`editCase` are the value-level single field/case lens/prism (`Commons.property`/`variant`). Because the classes have generic instances, all of these work on `UI` directly.
 - **`IntroVarP`** ([RowToRow/IntroVarP.purs](../src/Data/Profunctor/RowToRow/IntroVarP.purs)) — the one irreducible class: sum-introduce, `Void`-pinned, *incomparable* to `Choice` (its source emits a case the input never carries). `introduceCase` rests on it. Abstract — no in-repo instance yet; a real `UI` instance would inhabit it.
 - **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant` are unchanged and kept **independent** of the focus group (no cross-imports either way).
-- **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusField`/`editProperty`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusCase`/`editCase`/`eliminateCase`.
+- **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`editProperty`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`editCase`/`eliminateCase`.
 
 > Note: the `file:line` citations below that point at `ReadP.purs`/`WriteP.purs`/`EditPropP.purs` and the `p Unit r`/`FormP` shapes describe the **pre-refactor** design that motivated this note. That code has been superseded (it lives in git history); the analysis above stands as the rationale for the current `RowToRow.*` focus layout.
 
@@ -357,7 +357,7 @@ Source locations cited in this document (★ = pre-refactor, see note above):
 - Row-to-row examples: `src/Data/Profunctor/RowToRow/Example.purs`
 - Default single-field lifts: `src/Data/Profunctor/RowToRow/Default.purs`
 - Row focus profunctors (current):
-  - `src/Data/Profunctor/RowToRow/RowStrong.purs` (`class RowStrong`, `focusField`); `.../RowChoice.purs` (`class RowChoice`, `focusCase`)
+  - `src/Data/Profunctor/RowToRow/RowStrong.purs` (`class RowStrong`, `focusRecord`); `.../RowChoice.purs` (`class RowChoice`, `focusVariant`)
   - `src/Data/Profunctor/RowToRow/Property.purs` (`introduceProperty`, `eliminateProperty`, `editProperty`)
   - `src/Data/Profunctor/RowToRow/Case.purs` (`introduceCase` via `IntroVarP`; `eliminateCase`/`editCase` via `RowChoice`)
   - `src/Data/Profunctor/RowToRow/IntroVarP.purs` (`IntroVarP` — the one irreducible class)

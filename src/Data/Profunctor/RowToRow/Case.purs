@@ -3,10 +3,13 @@
 -- |
 -- |   * `eliminateCase` — shrink: consume a case via a diverging `p case Void` handler,
 -- |     built on `RowChoice` (i.e. `Choice`'s `left`); the survivors pass through.
--- |   * `editCase`       — focus an existing case in place: `RowChoice`'s `focusCase`
--- |     specialized to type-preserving, i.e. the standard variant prism.
+-- |   * `editCase`       — focus an existing case in place: the standard variant prism
+-- |     (`Data.Lens.Extra.Commons.variant`), the value-level single-case convenience.
 -- |   * `introduceCase`  — grow: inject a new case from a spontaneous source. This is the
 -- |     one operation outside `Choice`, so it rests on `IntroVarP` rather than `RowChoice`.
+-- |
+-- | For focusing a whole **sub-variant** with a `Variant → Variant` profunctor, see
+-- | `RowChoice.focusVariant`.
 module Data.Profunctor.RowToRow.Case
   ( introduceCase
   , eliminateCase
@@ -17,10 +20,11 @@ import Prelude
 
 import Data.Either (Either(..), either)
 import Data.Lens (Optic, Prism)
+import Data.Lens.Extra.Commons (variant) as Commons
 import Data.Profunctor (dimap, rmap)
 import Data.Profunctor.Choice (left)
 import Data.Profunctor.RowToRow.IntroVarP (class IntroVarP, liftIntroVar)
-import Data.Profunctor.RowToRow.RowChoice (class RowChoice, focusCase)
+import Data.Profunctor.RowToRow.RowChoice (class RowChoice)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
@@ -54,11 +58,10 @@ eliminateCase
 eliminateCase handler =
   dimap (on (Proxy @l) Left Right) (either absurd identity) (left handler)
 
--- | Focus an existing case in place — `RowChoice`'s `focusCase` at a type-preserving focus.
+-- | Focus an existing case in place — the standard `Choice` prism.
 editCase
-  :: forall @l s r rx a
+  :: forall @l s r a
    . IsSymbol l
   => Cons l a r s
-  => Union r rx s
   => Prism (Variant s) (Variant s) a a
-editCase = focusCase (Proxy @l)
+editCase = Commons.variant @l

@@ -1,33 +1,44 @@
--- | Row-typed `Strong`: focus a single **named field** `l`, transforming it `a -> b`
--- | while carrying the rest of the row `r` unchanged.
+-- | Row-typed `Strong`: focus a **sub-record** `sub`, transforming it while carrying the
+-- | complement `rest` of the row unchanged. Operates on rows on **both sides** — the
+-- | argument is itself a `Record → Record` profunctor:
 -- |
--- | The labeled analogue of `Strong`'s `first`/`second`: one label-indexed method replaces
--- | the two positional ones, and the rest-row `r` plays the role of the carried complement
--- | `c`. It is *equivalent* to `Strong` — every `Strong` is a `RowStrong` (the generic
--- | instance below) and `focusField` is just the standard record lens
--- | `Data.Lens.Record.prop`. So `RowStrong p` is, as a constraint, interchangeable with
--- | `Strong p`; it exists to give the row-native focus primitive the rest of the
--- | row-profunctor code is written against.
+-- | ```
+-- | focusRecord :: p (Record sub) (Record sub') -> p (Record s) (Record t)
+-- |              -- where s = sub ∪ rest,  t = sub' ∪ rest   (ExclusiveRows)
+-- | ```
+-- |
+-- | The labeled analogue of `Strong`'s `first`/`second`: instead of carrying a positional
+-- | complement `c`, it carries the complement *row* `rest`, split off by `ExclusiveRows`.
+-- | Equivalent to `Strong` (generic instance below): split `s` into `(sub, rest)`, run the
+-- | argument on `sub` via `first`, and re-merge `sub'` with `rest`.
 module Data.Profunctor.RowToRow.RowStrong
   ( class RowStrong
-  , focusField
+  , focusRecord
   ) where
 
-import Data.Lens.Record (prop)
-import Data.Profunctor.Strong (class Strong)
-import Data.Symbol (class IsSymbol)
-import Prim.Row (class Cons)
-import Type.Proxy (Proxy)
+import Data.Profunctor (dimap)
+import Data.Profunctor.Strong (class Strong, first)
+import Data.Tuple (Tuple(..))
+import Prim.Row (class Union)
+import Record (union) as Record
+import Type.Row.Constraints (class ExclusiveRows)
+import Unsafe.Coerce (unsafeCoerce)
 
 class Strong p <= RowStrong p where
-  focusField
-    :: forall l a b r s t
-     . IsSymbol l
-    => Cons l a r s
-    => Cons l b r t
-    => Proxy l
-    -> p a b
+  focusRecord
+    :: forall sub sub' rest s t
+     . ExclusiveRows sub rest s
+    => ExclusiveRows sub' rest t
+    => p (Record sub) (Record sub')
     -> p (Record s) (Record t)
 
 instance Strong p => RowStrong p where
-  focusField l = prop l
+  focusRecord g =
+    dimap (\s -> Tuple (pick s) (pick s))
+          (\(Tuple sub' rest) -> Record.union sub' rest)
+          (first g)
+
+-- Project a sub-record out of a wider record. Sound because PureScript records are JS
+-- objects and `Union narrow extra wider` witnesses `narrow ⊆ wider`.
+pick :: forall narrow extra wider. Union narrow extra wider => Record wider -> Record narrow
+pick = unsafeCoerce

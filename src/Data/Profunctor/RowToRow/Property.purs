@@ -1,13 +1,14 @@
--- | Single-field row profunctors over `Record`s, built on `RowStrong` (i.e. on `Strong`).
+-- | Single-field row profunctors over `Record`s.
 -- |
 -- |   * `introduceProperty` — grow: add a field computed from the whole record (`second` +
 -- |     insert; the source `p (Record s) prop` may read the accumulator — the `p s r` shape).
 -- |   * `eliminateProperty`  — shrink: drop a field, feeding its value to a sink (`first` +
 -- |     delete). The transpose of `introduceProperty`.
--- |   * `editProperty`        — edit an existing field in place: `RowStrong`'s `focusField`
--- |     specialized to type-preserving, i.e. the standard field lens.
+-- |   * `editProperty`        — edit an existing field in place: the standard field lens
+-- |     (`Data.Lens.Extra.Commons.property`), the value-level single-field convenience.
 -- |
--- | Sum-side counterparts live in `Data.Profunctor.RowToRow.Case`.
+-- | For focusing a whole **sub-record** with a `Record → Record` profunctor, see
+-- | `RowStrong.focusRecord`. Sum-side counterparts live in `Data.Profunctor.RowToRow.Case`.
 module Data.Profunctor.RowToRow.Property
   ( introduceProperty
   , eliminateProperty
@@ -15,8 +16,9 @@ module Data.Profunctor.RowToRow.Property
   ) where
 
 import Data.Lens (Lens, Optic)
+import Data.Lens.Extra.Commons (property) as Commons
 import Data.Profunctor (dimap)
-import Data.Profunctor.RowToRow.RowStrong (class RowStrong, focusField)
+import Data.Profunctor.RowToRow.RowStrong (class RowStrong)
 import Data.Profunctor.Strong (first, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), snd)
@@ -48,10 +50,10 @@ eliminateProperty
 eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)
 
--- | Edit an existing field in place — `RowStrong`'s `focusField` at a type-preserving focus.
+-- | Edit an existing field in place — the standard `Strong` field lens.
 editProperty
   :: forall @l s r a
    . IsSymbol l
   => Cons l a r s
   => Lens (Record s) (Record s) a a
-editProperty = focusField (Proxy @l)
+editProperty = Commons.property @l
