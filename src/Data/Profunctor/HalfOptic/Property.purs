@@ -6,9 +6,9 @@
 -- | these combinators carry only a `Strong p` constraint — and since `UI` is `Strong`, they
 -- | work directly on `UI`.
 -- |
--- |   * `introduceProperty` — introduce (grow): `second'` + insert. The source `p (Record s) prop`
+-- |   * `introduceProperty` — introduce (grow): `second` + insert. The source `p (Record s) prop`
 -- |     may **read the accumulator** (the `p s r` shape); a context-free source just ignores it.
--- |   * `eliminateProperty`  — eliminate (consume): transpose of introduce, `first'` + delete.
+-- |   * `eliminateProperty`  — eliminate (consume): transpose of introduce, `first` + delete.
 -- |   * `edit`               — edit an existing field: the standard `Strong` field lens,
 -- |     reused from `Data.Lens.Extra.Commons.property` (this is what `EditPropP` was).
 -- |
@@ -43,7 +43,7 @@ introduceProperty f =
   dimap (\s -> Tuple s s) (\(Tuple s p) -> insert (Proxy @l) p s) (second f)
 
 -- | Eliminate the field `l :: prop`, feeding its value to a sink and keeping the rest.
--- | The transpose of `introduceProperty`: `first'` + `delete`.
+-- | The transpose of `introduceProperty`: `first` + `delete`.
 eliminateProperty
   :: forall p @l prop s t x
    . IsSymbol l
