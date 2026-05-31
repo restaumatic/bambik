@@ -4,13 +4,13 @@
 -- | (the field lens, formerly `EditPropP`) works directly on `UI`. The old `input`/`output`
 -- | (`ReadP`/`WriteP`) combinators were removed; field-filling is now `editProperty` over a
 -- | seeded record. To introduce a brand-new field from a source, use
--- | `Data.Profunctor.HalfOptic.Property.introduceProperty`.
+-- | `Data.Profunctor.RowToRow.Property.introduceProperty`.
 module Main (main) where
 
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.HalfOptic.Property (editProperty)
+import Data.Profunctor.RowToRow.Property (editProperty)
 import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
