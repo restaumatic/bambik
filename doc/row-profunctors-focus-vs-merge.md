@@ -77,7 +77,7 @@ Row-to-row consumes two row-shaped arguments at once. Half-lens consumes one ato
 
 ### 2. Where atoms enter
 
-- **Row-to-row**: atoms (text inputs, click sources) live *outside* the framework. To enter the combinators they must first be lifted into single-field rows. `src/Data/Profunctor/RowToRow/Default.purs` provides exactly those single-field lifts via `dimap`. Once lifted, atoms are indistinguishable from any other row-shaped value.
+- **Row-to-row**: atoms (text inputs, click sources) live *outside* the framework. To enter the combinators they must first be lifted into single-field rows. `src/Data/Profunctor/RowToRow/Default.purs` provides single-field seed/default/tag adapters (`withRecordDefault`, `tagVariantInput`, …, via `lcmap`/`rmap`) for that boundary. Once lifted, atoms are indistinguishable from any other row-shaped value.
 - **Half-lens**: the atom-to-row lift is *built into* each primitive. `introduceProperty` directly accepts a `p (Variant ()) prop` and emits a row-shaped result. No external lift step is needed.
 
 ### 3. The empty-row placeholders
@@ -302,7 +302,7 @@ This reads as "this form has these fields, here, one per line." It is the right 
 ### Row-to-row style — `src/Data/Profunctor/RowToRow/Example.purs`
 
 ```purescript
--- src/Data/Profunctor/RowToRow/Example.purs:89-95
+-- src/Data/Profunctor/RowToRow/Example.purs:105-113
 recordToRecordExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
   (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
@@ -365,4 +365,4 @@ Source locations cited in this document (★ = pre-refactor, see note above):
 - Composition-style classes: `src/Data/Profunctor/Endo.purs:12`, `src/Data/Profunctor/Sum.purs:13`, `src/Data/Profunctor/Zero.purs`, `src/Data/Profunctor/One.purs`, `src/Data/Profunctor/Product.purs`, `src/Data/Profunctor/ProductToSum.purs:15`
 - Row constraints: `src/Type/Row/Constraints.purs`
 - Half-lens usage example: `demo/1/Main.purs`
-- Core UI type and binary combinator instances: `src/UI.purs` (binary instances around lines 197–268)
+- Core UI type and binary combinator instances: `src/UI.purs` (binary instances around lines 193–265)

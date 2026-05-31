@@ -35,6 +35,8 @@ class Strong p <= RowStrong p where
 instance Strong p => RowStrong p where
   focusRecord g =
     dimap (\s -> Tuple (pick s) (pick s))
+          -- `Record.union` is left-biased and does not nub; safe here only because
+          -- `ExclusiveRows sub' rest t` guarantees `sub'` and `rest` are disjoint.
           (\(Tuple sub' rest) -> Record.union sub' rest)
           (first g)
 

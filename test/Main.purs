@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Data.Lens (over, set, view)
+import Data.Lens.Extra.Commons (variant) as Commons
 import Data.Profunctor.RowToRow.Case (editCase, eliminateCase)
 import Data.Profunctor.RowToRow.Property (editProperty, eliminateProperty, introduceProperty)
 import Data.Profunctor.RowToRow.RowChoice (focusVariant)
@@ -26,6 +27,11 @@ main = do
   assertEqual "focusRecord"
     { a: "5", b: true }
     (focusRecord (\(r :: { a :: Int }) -> { a: show r.a }) { a: 5, b: true })
+
+  -- multi-field sub-record { a, c } transformed, complement { b } carried.
+  assertEqual "focusRecord/multi-field"
+    { a: 50, c: 2, b: "x" }
+    (focusRecord (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
 
   -- editProperty = the value-level single-field lens — get / set / over.
   assertEqual "editProperty/view" 7 (view (editProperty @"foo") { foo: 7, bar: "x" })
@@ -56,6 +62,11 @@ main = do
   assertEqual "focusVariant/rest-case carried"
     (inj (Proxy @"y") "a" :: Variant (x :: Int, y :: String))
     (focusVariant (identity :: Variant (x :: Int) -> Variant (x :: Int)) (inj (Proxy @"y") "a"))
+
+  -- transforming the focused sub-case (not identity), complement carried.
+  assertEqual "focusVariant/transform sub-case"
+    (inj (Proxy @"x") 6 :: Variant (x :: Int, y :: String))
+    (focusVariant (over (Commons.variant @"x") (_ + 1) :: Variant (x :: Int) -> Variant (x :: Int)) (inj (Proxy @"x") 5))
 
   -- editCase = the value-level single-case prism — over the matching case only.
   assertEqual "editCase/match"
