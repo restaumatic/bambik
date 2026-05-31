@@ -1,5 +1,5 @@
-module Data.Profunctor.RowToRow.RowToRow
-  ( class RowToRow
+module Data.Profunctor.Row
+  ( class Row
   , pickRecord
   , variantToMaybeRecord
   , class MaybeifyRow
@@ -16,10 +16,10 @@ module Data.Profunctor.RowToRow.RowToRow
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.RowToRow.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.RowToRow.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.RowToRow.VariantToRecord (class VariantToRecord)
-import Data.Profunctor.RowToRow.VariantToVariant (class VariantToVariant)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, expand)
 import Data.Variant.Internal (VariantCase, VariantRep(..))
@@ -30,7 +30,7 @@ import Record.Unsafe (unsafeSet) as Record
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
-class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant p) <= RowToRow p
+class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant p) <= Row p
 
 -- =====================================================================
 -- Primitive value-level row reshapings.

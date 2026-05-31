@@ -1,4 +1,4 @@
-module Data.Profunctor.RowToRow.Default
+module Data.Profunctor.Row.Default
   ( withRecordDefault
   , withRecordOutputDefault
   , tagVariantInput

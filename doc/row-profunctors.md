@@ -2,32 +2,32 @@
 
 bambik builds profunctor UIs over `Record`-shaped (**product** — all fields present at once)
 and `Variant`-shaped (**sum** — mutually exclusive cases) types. Two complementary families
-of **row profunctors** do this, both under [`src/Data/Profunctor/RowToRow/`](../src/Data/Profunctor/RowToRow/):
+of **row profunctors** do this, both under [`src/Data/Profunctor/Row/`](../src/Data/Profunctor/Row/):
 
-- **Focus** — `RowStrong`/`RowChoice`, the row-typed `Strong`/`Choice`: zoom into **one** labeled field or case, carrying the rest of the row. The single-field/single-case combinators (`introduceProperty`, `editCase`, …) build on them.
+- **Focus** — `StrongRecordToRecord`/`ChoiceVariantToVariant`, the row-typed `Strong`/`Choice`: zoom into a **sub**-record/sub-variant, carrying the rest of the row. The single-field/single-case combinators (`introduceProperty`, `editCase`, …) build on them.
 - **Merge** — `recordToRecord`/`variantToVariant`/…: binary merges of **complete** row-shaped sub-profunctors. N-ary, tree-shaped.
 
-They produce the **same profunctor values** from different angles; this note explains the relationship — and the rationale behind the current `RowStrong`/`RowChoice` layout.
+They produce the **same profunctor values** from different angles; this note explains the relationship — and the rationale behind the current focus/merge layout. The focus class now lives *alongside* the merge class of the same row-kind: `StrongRecordToRecord` in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), `ChoiceVariantToVariant` in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs).
 
 ## The idea in one screen
 
 The punchline the code embodies: **the focus combinators are mostly just `Strong` and `Choice`, relabeled to rows.**
 
-- **`RowStrong`** (`focusRecord`) and **`RowChoice`** (`focusVariant`) are the row-typed `Strong`/`Choice` — they operate on rows on **both sides**, embedding a whole **sub-Record/sub-Variant** profunctor (`p (Record sub) (Record sub')`) into a bigger row and carrying the complement. Each is *equivalent* to its positional original (generic `instance Strong p => RowStrong p`, `Choice p => RowChoice p`), so every `Strong`/`Choice` profunctor — including `UI` — is one for free.
-- **Product** (`Record`) combinators — `introduceProperty`, `eliminateProperty`, `editProperty` — rest on `RowStrong` (`first`/`second` + insert/delete; `editProperty` is the value-level single-field lens).
-- **Sum** (`Variant`) combinators — `eliminateCase`, `editCase` — rest on `RowChoice` (`left`; `editCase` is the value-level single-case prism). There is one operation that *would* fall outside `Choice` — introducing a *fresh* case from a spontaneous source (a case the input never carries; see the rationale below) — but in this codebase that is built via the `Sum`/`VariantToVariant` composition path from widgets that emit variants, not a dedicated focus combinator.
-- A focus/grow combinator is an **identity-pinned** merge; a merge is an **iterated** focus. Same values, two granularities — kept as independent module groups.
+- **`StrongRecordToRecord`** (`focusRecord`) and **`ChoiceVariantToVariant`** (`focusVariant`) are the row-typed `Strong`/`Choice` — they operate on rows on **both sides**, embedding a whole **sub-Record/sub-Variant** profunctor (`p (Record sub) (Record sub')`) into a bigger row and carrying the complement. Each is *equivalent* to its positional original (generic `instance Strong p => StrongRecordToRecord p`, `Choice p => ChoiceVariantToVariant p`), so every `Strong`/`Choice` profunctor — including `UI` — is one for free.
+- **Product** (`Record`) combinators — `introduceProperty`, `eliminateProperty`, `editProperty` — rest on `StrongRecordToRecord` (`first`/`second` + insert/delete; `editProperty` is the value-level single-field lens).
+- **Sum** (`Variant`) combinators — `eliminateCase`, `editCase` — rest on `ChoiceVariantToVariant` (`left`; `editCase` is the value-level single-case prism). There is one operation that *would* fall outside `Choice` — introducing a *fresh* case from a spontaneous source (a case the input never carries; see the rationale below) — but in this codebase that is built via the `Sum`/`VariantToVariant` composition path from widgets that emit variants, not a dedicated focus combinator.
+- A focus/grow combinator is an **identity-pinned** merge; a merge is an **iterated** focus. Same values, two granularities — and since they share a row-kind, each focus class now sits in the same module as its merge class (`StrongRecordToRecord` with `RecordToRecord`, `ChoiceVariantToVariant` with `VariantToVariant`).
 
 See ["Materialized in code"](#materialized-in-code) for the module layout.
 
 ## How to read the rest
 
 Everything between here and "Materialized in code" is the **design rationale**, written *before*
-the `RowStrong`/`RowChoice` refactor. It starts from the original, unit/void-pinned primitive
+the focus-class refactor. It starts from the original, unit/void-pinned primitive
 shapes (`p Unit r`, the `ReadP`/`WriteP`/`FormP` classes — what this note historically called
 "half-optics") and derives why the code landed on the `Strong`/`Choice` design above. So code
 shown as "current" / "the file's claim" in those sections is **pre-refactor** (it lives in git
-history); the present-day API is the `RowToRow.*` modules summarized above. The payoff is
+history); the present-day API is the `Row.*` modules summarized above. The payoff is
 understanding *why* the structure is what it is — especially why the sum side is
 almost-but-not-quite `Choice`.
 
@@ -50,7 +50,7 @@ The canonical signatures sit side-by-side:
 
 ```purescript
 -- Row-to-row: binary merge of two complete row-shaped sub-profunctors.
--- src/Data/Profunctor/RowToRow/RecordToRecord.purs:13
+-- src/Data/Profunctor/Row/RecordToRecord.purs:13
 class Profunctor p <= RecordToRecord p where
   recordToRecord ::
     forall i1 o1 i2 o2 i12 i1x i2x i o.
@@ -77,7 +77,7 @@ Row-to-row consumes two row-shaped arguments at once. Half-lens consumes one ato
 
 ### 2. Where atoms enter
 
-- **Row-to-row**: atoms (text inputs, click sources) live *outside* the framework. To enter the combinators they must first be lifted into single-field rows. `src/Data/Profunctor/RowToRow/Default.purs` provides single-field seed/default/tag adapters (`withRecordDefault`, `tagVariantInput`, …, via `lcmap`/`rmap`) for that boundary. Once lifted, atoms are indistinguishable from any other row-shaped value.
+- **Row-to-row**: atoms (text inputs, click sources) live *outside* the framework. To enter the combinators they must first be lifted into single-field rows. `src/Data/Profunctor/Row/Default.purs` provides single-field seed/default/tag adapters (`withRecordDefault`, `tagVariantInput`, …, via `lcmap`/`rmap`) for that boundary. Once lifted, atoms are indistinguishable from any other row-shaped value.
 - **Half-lens**: the atom-to-row lift is *built into* each primitive. `introduceProperty` directly accepts a `p (Variant ()) prop` and emits a row-shaped result. No external lift step is needed.
 
 ### 3. The empty-row placeholders
@@ -103,7 +103,7 @@ They are syntactic markers of the boundary where row structure ends and bare val
 
 ### 5. Typeclass surface on `p`
 
-- Row-to-row needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `RowToRow` aggregator in `src/Data/Profunctor/RowToRow/RowToRow.purs:33`). Each is one method with a heavy row-constraint signature.
+- Row-to-row needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `Row` aggregator in `src/Data/Profunctor/Row.purs:33`). Each is one method with a heavy row-constraint signature.
 - Half-lens needs more, smaller classes — `IntroVarP`, `ExceptP`, `ReadP`, `WriteP`, `EditPropP`, plus the composition-style `Endo`, `Sum`, `Zero`, `One`, `Product`, `ProductToSum`. Each method is structurally simpler.
 
 These half-lens classes are not arbitrary: as "The primitive level" part shows, `ReadP`/`WriteP`/`IntroVarP`/`ExceptP` are the four corners of one `Strong`/`Choice` fanout with a unit-pinned slot, and `FormP`/`XP`/`YP`/`ZP` are the boundary adaptors between `Unit` and `Void`. The "not interchangeable at the typeclass level" verdict softens once `ReadP` is read as a *unit-pinned weakening of `Strong`* — see that part for where the equivalence does and does not hold.
@@ -199,7 +199,7 @@ liftIntroVar :: p Void r -> p s (Either s r)   liftExcept :: p w Void -> p (Eith
 The `Unit`-pinned product primitives are proper weakenings of Strong (`strongToReadP`, `strongToWriteP` witness both directions of the "superclass of Strong" claim). Unpinning them recovers full Strong:
 
 - `liftReadCtx :: p s r -> p s (s×r)` — the introduced field may **read** the accumulator.
-- `liftWriteCtx :: p w s -> p (w×s) s` — the consuming step may **rewrite** the surviving state instead of emit-and-vanish. This is the read-*and*-write power — the field lens, now `editProperty` (and the sub-record `RowStrong.focusRecord`) ([RowToRow/Property.purs](../src/Data/Profunctor/RowToRow/Property.purs), [RowToRow/RowStrong.purs](../src/Data/Profunctor/RowToRow/RowStrong.purs); formerly the `EditPropP` class).
+- `liftWriteCtx :: p w s -> p (w×s) s` — the consuming step may **rewrite** the surviving state instead of emit-and-vanish. This is the read-*and*-write power — the field lens, now `editProperty` (and the sub-record `RecordToRecord.focusRecord`) ([Row/RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs); formerly the `EditPropP` class).
 
 The `Void`-pinned **sum** primitives admit no such `p s r` upgrade: when one variant case is active, all others are absent (mutual exclusion), so the introduced case has no sibling to read and the eliminated case exits with no surviving continuation. `Void` is **forced by case-exclusivity**, not an artifact.
 
@@ -299,10 +299,10 @@ Each line is an *atomic widget composed with a half-lens* (`shortId`, `firstName
 
 This reads as "this form has these fields, here, one per line." It is the right style at the **leaf level** — when you start from atomic widgets.
 
-### Row-to-row style — `src/Data/Profunctor/RowToRow/Example.purs`
+### Row-to-row style — `src/Data/Profunctor/Row/Example.purs`
 
 ```purescript
--- src/Data/Profunctor/RowToRow/Example.purs:105-113
+-- src/Data/Profunctor/Row/Example.purs:105-113
 recordToRecordExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
   (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
@@ -333,33 +333,32 @@ The framework is bilingual on purpose. Pick the granularity that matches the sen
 
 ## Materialized in code
 
-The repository implements this in `Data.Profunctor.RowToRow.*`, as two **independent groups** — focus and merge:
+The repository implements this in `Data.Profunctor.Row.*`. Focus and merge are still two distinct disciplines, but the focus class for each row-kind now **lives in the same module as its merge class** (they share the row-kind and its constraints):
 
-- **`RowStrong`** ([RowToRow/RowStrong.purs](../src/Data/Profunctor/RowToRow/RowStrong.purs)) — `class Strong p <= RowStrong p` with `focusRecord :: p (Record sub) (Record sub') -> p (Record s) (Record t)` (`ExclusiveRows sub rest s`, `ExclusiveRows sub' rest t`), the row-typed `first`/`second`. The generic `instance Strong p => RowStrong p` splits `s` into `(sub, rest)`, runs the argument on `sub` via `first`, and re-merges, so `RowStrong p` is interchangeable with `Strong p`.
-- **`RowChoice`** ([RowToRow/RowChoice.purs](../src/Data/Profunctor/RowToRow/RowChoice.purs)) — `class Choice p <= RowChoice p` with `focusVariant :: p (Variant sub) (Variant sub') -> p (Variant s) (Variant t)`, the row-typed `left`/`right`; the generic `instance Choice p => RowChoice p` dispatches via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
-- **Combinators** — `introduceProperty`/`eliminateProperty`/`editProperty` ([Property.purs](../src/Data/Profunctor/RowToRow/Property.purs), on `RowStrong`) and `eliminateCase`/`editCase` ([Case.purs](../src/Data/Profunctor/RowToRow/Case.purs), on `RowChoice`). `editProperty`/`editCase` are the value-level single field/case lens/prism (`Commons.property`/`variant`). Because the classes have generic instances, all of these work on `UI` directly.
+- **`StrongRecordToRecord`** (in [Row/RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), alongside `RecordToRecord`) — `class Strong p <= StrongRecordToRecord p` with `focusRecord :: p (Record sub) (Record sub') -> p (Record s) (Record t)` (`ExclusiveRows sub rest s`, `ExclusiveRows sub' rest t`), the row-typed `first`/`second`. The generic `instance Strong p => StrongRecordToRecord p` splits `s` into `(sub, rest)`, runs the argument on `sub` via `first`, and re-merges, so `StrongRecordToRecord p` is interchangeable with `Strong p`.
+- **`ChoiceVariantToVariant`** (in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), alongside `VariantToVariant`) — `class Choice p <= ChoiceVariantToVariant p` with `focusVariant :: p (Variant sub) (Variant sub') -> p (Variant s) (Variant t)`, the row-typed `left`/`right`; the generic `instance Choice p => ChoiceVariantToVariant p` dispatches via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
+- **Combinators** — `introduceProperty`/`eliminateProperty`/`editProperty` (in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), on `StrongRecordToRecord`) and `eliminateCase`/`editCase` (in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), on `ChoiceVariantToVariant`) — each single-field/case combinator sits in the same module as the merge + focus class it builds on. `editProperty`/`editCase` are the value-level single field/case lens/prism (`Commons.property`/`variant`). Because the classes have generic instances, all of these work on `UI` directly.
 - **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) is *not* a dedicated combinator here: there was no inhabitant for it, and in practice it's built via the `Sum`/`VariantToVariant` composition path. (An earlier `IntroVarP` class materialized it but carried no instances and went unused; removed.)
-- **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant` are unchanged and kept **independent** of the focus group (no cross-imports either way).
+- **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant` are unchanged; the two diagonal modules now additionally host their focus class.
 - **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`editProperty`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`editCase`/`eliminateCase`.
 
-> Note: the `file:line` citations below that point at `ReadP.purs`/`WriteP.purs`/`EditPropP.purs` and the `p Unit r`/`FormP` shapes describe the **pre-refactor** design that motivated this note. That code has been superseded (it lives in git history); the analysis above stands as the rationale for the current `RowToRow.*` focus layout.
+> Note: the `file:line` citations below that point at `ReadP.purs`/`WriteP.purs`/`EditPropP.purs` and the `p Unit r`/`FormP` shapes describe the **pre-refactor** design that motivated this note. That code has been superseded (it lives in git history); the analysis above stands as the rationale for the current `Row.*` focus layout.
 
 ## References
 
 Source locations cited in this document (★ = pre-refactor, see note above):
 
 - Row-to-row classes:
-  - `src/Data/Profunctor/RowToRow/RecordToRecord.purs:13`
-  - `src/Data/Profunctor/RowToRow/RecordToVariant.purs`
-  - `src/Data/Profunctor/RowToRow/VariantToRecord.purs`
-  - `src/Data/Profunctor/RowToRow/VariantToVariant.purs`
-  - Umbrella aggregator: `src/Data/Profunctor/RowToRow/RowToRow.purs:33`
-- Row-to-row examples: `src/Data/Profunctor/RowToRow/Example.purs`
-- Default single-field lifts: `src/Data/Profunctor/RowToRow/Default.purs`
+  - `src/Data/Profunctor/Row/RecordToRecord.purs:13`
+  - `src/Data/Profunctor/Row/RecordToVariant.purs`
+  - `src/Data/Profunctor/Row/VariantToRecord.purs`
+  - `src/Data/Profunctor/Row/VariantToVariant.purs`
+  - Umbrella aggregator: `src/Data/Profunctor/Row.purs:33`
+- Row-to-row examples: `src/Data/Profunctor/Row/Example.purs`
+- Default single-field lifts: `src/Data/Profunctor/Row/Default.purs`
 - Row focus profunctors (current):
-  - `src/Data/Profunctor/RowToRow/RowStrong.purs` (`class RowStrong`, `focusRecord`); `.../RowChoice.purs` (`class RowChoice`, `focusVariant`)
-  - `src/Data/Profunctor/RowToRow/Property.purs` (`introduceProperty`, `eliminateProperty`, `editProperty`)
-  - `src/Data/Profunctor/RowToRow/Case.purs` (`eliminateCase`/`editCase`, via `RowChoice`)
+  - `src/Data/Profunctor/Row/RecordToRecord.purs` (`class StrongRecordToRecord`, `focusRecord`); `.../VariantToVariant.purs` (`class ChoiceVariantToVariant`, `focusVariant`)
+  - `introduceProperty`/`eliminateProperty`/`editProperty` live in `RecordToRecord.purs`; `eliminateCase`/`editCase` live in `VariantToVariant.purs` (each beside the merge + focus class it builds on)
 - ★ Pre-refactor half-lens primitives (git history): `ReadP.purs` (`ReadP`/`FormP`/`XP`/`YP`/`ZP`, `introduceProperty`, `introduceCase`), `WriteP.purs` (`WriteP`), `EditPropP.purs` (`EditPropP`)
 - Composition-style classes: `src/Data/Profunctor/Endo.purs:12`, `src/Data/Profunctor/Sum.purs:13`, `src/Data/Profunctor/Zero.purs`, `src/Data/Profunctor/One.purs`, `src/Data/Profunctor/Product.purs`, `src/Data/Profunctor/ProductToSum.purs:15`
 - Row constraints: `src/Type/Row/Constraints.purs`
