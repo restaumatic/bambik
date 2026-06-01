@@ -1,10 +1,9 @@
 -- | Illustrative only — this demo is NOT part of `spago build` (sources are `src`/`test`).
 -- |
--- | Since the product half-optics now fold onto `Strong` and `UI` is `Strong`, `editProperty`
--- | (the field lens, formerly `EditPropP`) works directly on `UI`. The old `input`/`output`
--- | (`ReadP`/`WriteP`) combinators were removed; field-filling is now `editProperty` over a
--- | seeded record. To introduce a brand-new field from a source, use
--- | `Data.Profunctor.Row.RecordToRecord.introduceProperty`.
+-- | The product single-field combinators rest on `StrongRecordToRecord` (the row-typed
+-- | `Strong`), and `UI` is `Strong`, so `editProperty` (the field lens) works directly on `UI`.
+-- | Field-filling is `editProperty` over a seeded record. To introduce a brand-new field from a
+-- | source, use `Data.Profunctor.Row.RecordToRecord.introduceProperty`.
 module Main (main) where
 
 import Prelude
