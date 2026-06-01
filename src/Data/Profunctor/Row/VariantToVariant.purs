@@ -6,7 +6,11 @@
 -- |     sub-variant, carrying the complement (`left`/`right`, relabeled to rows).
 -- |   * `eliminateCase`/`editCase` — the single-case **combinators** built on
 -- |     `ChoiceVariantToVariant`. (Introducing a *fresh* case is the one operation outside
--- |     `Choice`; it's built via the `Sum`/`variantToVariant` path, not a focus combinator.)
+-- |     `Choice`: `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
+-- |     branch — but an introduced case has no input selector, so it can never be emitted by
+-- |     `left`/`right`, even given a producer. Contrast `Strong`'s ungated `second`, which
+-- |     always emits its field, hence `introduceProperty` exists and `introduceCase` cannot.
+-- |     Built instead via the `Sum`/`variantToVariant` path, not a focus combinator.)
 module Data.Profunctor.Row.VariantToVariant
   ( bind
   , variantToVariant

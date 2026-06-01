@@ -133,12 +133,14 @@ widenVariantOutput = rmap expand
 --                  `focusVariant`) threads it across, needing strength.
 -- `focusRecord` is itself a widen that *also* threads the complement, so
 -- the contrast with `widenRecordToVariant` is the complement axis, not
--- direction. The through-threading focus does not exist for mixed kinds
--- (a product complement has no image in a sum one), so the mixed shapes
--- get only the complement-free reshape below. The opposite direction in
--- each (narrowing `Record → Variant`, widening `Variant → Record`) needs
--- defaults/fallbacks and is the irreducible binary merge instead.
--- See doc/row-profunctors.md, "Reshape vs focus: two axes, not a trio".
+-- direction. The through-threading focus does not exist for mixed kinds:
+-- `Strong` applies its argument unconditionally, `Choice` only on a gated
+-- input branch, so a complement can be carried only when input and output
+-- share that conditionality (the diagonals). Crossing it forces a
+-- conversion that costs defaults (fill the product a sum left empty,
+-- `Variant → Record`) or fallback (collapse a product into the sum's one
+-- slot, `Record → Variant`) — the irreducible binary merge instead.
+-- See doc/row-profunctors.md, "The break, sharpened: unconditional vs gated".
 -- ---------------------------------------------------------------------
 
 -- Widen both sides at once: `sub → s` on input, `subO → t` on output.
