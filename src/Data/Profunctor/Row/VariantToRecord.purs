@@ -53,9 +53,15 @@ discard first cont = bind first (\_ -> cont unit)
 -- | `pickRecord` drops the `restOut` output fields (discard-out). Equal to
 -- | `narrowVariantInput ∘ narrowRecordOutput` from `Data.Profunctor.Row`.
 -- |
--- | The direction is **reversed** from `widenRecordToVariant`: that one widens (`sub →
--- | wider`) for free, this one narrows (`wider → sub`). The reason is variance — `Variant →
--- | Record` sits on the narrow/narrow free side of both row disciplines, the mirror of
+-- | Like `widenRecordToVariant` this is a *reshape*, not a *focus*: it carries no complement
+-- | across the boundary (pure `dimap`, `Profunctor`-only), as opposed to the focuses
+-- | `focusRecord`/`focusVariant`, which thread `rest` and so need `Strong`/`Choice`. The two
+-- | are different axes — *direction* (widen/narrow) vs *complement* (reshape/focus) — not a
+-- | flat widen/narrow/focus trio.
+-- |
+-- | On the *direction* axis it is the mirror of `widenRecordToVariant`: that one widens
+-- | (`sub → wider`) for free, this one narrows (`wider → sub`), because `Variant → Record`
+-- | sits on the narrow/narrow free side of both row disciplines (variance), the mirror of
 -- | `Record → Variant`'s widen/widen side. The opposite (widening) direction here is **not**
 -- | derivable: it would need a fallback for the extra input cases (widen-variant-in) *and*
 -- | defaults for the extra output fields (widen-record-out) — the two irreducible

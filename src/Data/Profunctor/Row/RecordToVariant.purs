@@ -42,13 +42,23 @@ discard first cont = bind first (\_ -> cont unit)
 -- | widenRecordToVariant :: p (Record sub) (Variant subO) -> p (Record s) (Variant t)
 -- | ```
 -- |
--- | This is **not** a focus and carries no complement across the input→output boundary, so
--- | it needs only `Profunctor` — not `Strong`/`Choice`. The two complements are inert: the
--- | extra input fields are **dropped** on the way in (`pickRecord`), and the extra output
--- | cases are **phantom** — never emitted, only widened into the result type (`expand`).
--- | (Contrast the diagonal focuses `focusRecord`/`focusVariant`, which *do* thread the
--- | complement and so require strength; the through-threading focus does not exist for mixed
--- | kinds, because a product complement has no image in a sum complement.)
+-- | This is a *reshape*, not a *focus* — two different axes (see the note below). It carries
+-- | no complement across the input→output boundary, so it needs only `Profunctor` — not
+-- | `Strong`/`Choice`. The two complements are inert: the extra input fields are **dropped**
+-- | on the way in (`pickRecord`), and the extra output cases are **phantom** — never emitted,
+-- | only widened into the result type (`expand`).
+-- |
+-- | Two axes, not a flat widen/narrow/focus trio:
+-- |
+-- |   * *direction* — widen (grow, `sub → wider`) vs narrow (shrink). `Variant → Record`'s
+-- |     free reshape narrows; see `narrowVariantToRecord`.
+-- |   * *complement* — a *reshape* (this) drops the complement (pure `dimap`); a *focus*
+-- |     (`focusRecord`/`focusVariant`) threads it across, hence needs strength.
+-- |
+-- | `focusRecord` is *itself* a widen-direction operation — it just also threads `rest`. So
+-- | the real contrast with it is the complement axis, not direction. The through-threading
+-- | focus does not exist for mixed kinds: a product complement has no image in a sum one, so
+-- | the mixed shapes get only the complement-free reshape.
 -- |
 -- | Equal to `dimap pickRecord expand`; i.e. `widenVariantOutput ∘ widenRecordInput` from
 -- | `Data.Profunctor.Row`, packaged for the `Record → Variant` shape.
