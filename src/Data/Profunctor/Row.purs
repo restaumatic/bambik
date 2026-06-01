@@ -9,13 +9,15 @@ module Data.Profunctor.Row
   , narrowVariantInput
   , narrowRecordOutput
   , widenVariantOutput
+  , widenRecordToVariant
+  , narrowVariantToRecord
   , variantInputAsMaybeRecord
   , variantOutputAsMaybeRecord
   )
   where
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
@@ -118,6 +120,47 @@ widenVariantOutput :: forall p i narrow extra wider.
   Row.Union narrow extra wider =>
   p i (Variant narrow) -> p i (Variant wider)
 widenVariantOutput = rmap expand
+
+-- ---------------------------------------------------------------------
+-- Both-sides reshapings for the two mixed shapes.
+--
+-- These touch *both* sides at once (a single `dimap`), and the free
+-- direction is forced by variance: `Record → Variant` sits on the
+-- widen/widen side, `Variant → Record` on the narrow/narrow side.
+--
+-- They are *reshapes*, not *focuses* — two orthogonal axes:
+--   * direction  — widen (grow) vs narrow (shrink)
+--   * complement — a reshape drops the complement (pure `dimap`,
+--                  `Profunctor`-only); a focus (`focusRecord`/
+--                  `focusVariant`) threads it across, needing strength.
+-- `focusRecord` is itself a widen that *also* threads the complement, so
+-- the contrast with `widenRecordToVariant` is the complement axis, not
+-- direction. The through-threading focus does not exist for mixed kinds
+-- (a product complement has no image in a sum one), so the mixed shapes
+-- get only the complement-free reshape below. The opposite direction in
+-- each (narrowing `Record → Variant`, widening `Variant → Record`) needs
+-- defaults/fallbacks and is the irreducible binary merge instead.
+-- See doc/row-profunctors.md, "Reshape vs focus: two axes, not a trio".
+-- ---------------------------------------------------------------------
+
+-- Widen both sides at once: `sub → s` on input, `subO → t` on output.
+-- = `widenVariantOutput ∘ widenRecordInput`.
+widenRecordToVariant :: forall p sub rest s subO restOut t.
+  Profunctor p =>
+  Row.Union sub rest s =>
+  Row.Union subO restOut t =>
+  p (Record sub) (Variant subO) -> p (Record s) (Variant t)
+widenRecordToVariant = dimap pickRecord expand
+
+-- Narrow both sides at once: `s → sub` on input, `t → subO` on output —
+-- the categorical dual of `widenRecordToVariant` (arrows reversed swaps
+-- the maps and flips the direction). = `narrowVariantInput ∘ narrowRecordOutput`.
+narrowVariantToRecord :: forall p sub rest s subO restOut t.
+  Profunctor p =>
+  Row.Union sub rest s =>
+  Row.Union subO restOut t =>
+  p (Variant s) (Record t) -> p (Variant sub) (Record subO)
+narrowVariantToRecord = dimap expand pickRecord
 
 variantInputAsMaybeRecord :: forall p v vl mv o.
   Profunctor p =>

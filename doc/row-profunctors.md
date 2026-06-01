@@ -234,7 +234,7 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 ### Reshape vs focus: two axes, not a trio
 
-The mixed kinds still admit *unary* combinators — just not focuses. `Data.Profunctor.Row.{RecordToVariant,VariantToRecord}` export `widenRecordToVariant`/`narrowVariantToRecord`, the both-sides reshapings each mixed shape gets for free. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
+The mixed kinds still admit *unary* combinators — just not focuses. `Data.Profunctor.Row` exports `widenRecordToVariant`/`narrowVariantToRecord`, the both-sides reshapings each mixed shape gets for free, alongside the four one-sided reshapings (`widenRecordInput`, …) — they are `dimap`, not focuses, so they live with the other reshapings rather than beside the merge classes. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
 
 - **direction** — *widen* (grow, `sub → wider`) vs *narrow* (shrink, `wider → sub`).
 - **complement** — *reshape* drops the complement (pure `dimap`, `Profunctor`-only) vs *focus* threads it across the input→output boundary (needs `Strong`/`Choice`).
