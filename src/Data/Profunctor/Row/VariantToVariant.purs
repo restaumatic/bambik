@@ -25,14 +25,13 @@ module Data.Profunctor.Row.VariantToVariant
 
 import Control.Category (identity)
 import Data.Either (Either(..), either)
-import Data.Lens (Optic, Prism)
-import Data.Lens.Extra.Commons (variant) as Commons
+import Data.Lens (Optic, Prism, prism')
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, contract, expand, on)
+import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
 import Data.Void (Void, absurd)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons)
@@ -86,7 +85,7 @@ class Choice p <= ChoiceVariantToVariant p where
     -> p (Variant s) (Variant t)
 
 instance Choice p => ChoiceVariantToVariant p where
-  focusVariant g = dimap splitVariant mergeVariant (left g)
+  focusVariant g = dimap splitVariant (either expand expand) (left g)
 
 -- Dispatch a wider variant into the focused sub-variant or the complement.
 splitVariant
@@ -101,14 +100,6 @@ splitVariant v = case contract v of
   Nothing -> case contract v of
     Just rest -> Right rest
     Nothing -> unsafeThrow "ChoiceVariantToVariant.focusVariant: case in neither sub nor rest"
-
--- Re-merge the (possibly transformed) sub-variant and the complement into the wider variant.
-mergeVariant
-  :: forall sub' rest t
-   . ExclusiveRows sub' rest t
-  => Either (Variant sub') (Variant rest)
-  -> Variant t
-mergeVariant = either expand expand
 
 -- | Eliminate the case `l` via a diverging handler `p case Void`, preserving the rest.
 -- | Built on `ChoiceVariantToVariant` (`Choice`'s `left`): the routed `Left` case exits
@@ -128,4 +119,4 @@ editCase
    . IsSymbol l
   => Cons l a r s
   => Prism (Variant s) (Variant s) a a
-editCase = Commons.variant @l
+editCase = prism' (inj (Proxy @l)) (on (Proxy @l) Just (\_ -> Nothing))

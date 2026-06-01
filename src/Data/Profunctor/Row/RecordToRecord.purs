@@ -16,18 +16,17 @@ module Data.Profunctor.Row.RecordToRecord
   , introduceProperty
   , eliminateProperty
   , editProperty
-  , pickRecord
   )
   where
 
 import Data.Lens (Lens, Optic)
-import Data.Lens.Extra.Commons (property) as Commons
+import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Strong (class Strong, first, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), snd)
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Lacks, class Union)
+import Prim.Row (class Cons, class Lacks)
 import Record (delete, get, insert)
 import Record (union) as Record
 import Type.Proxy (Proxy(..))
@@ -77,19 +76,11 @@ class Strong p <= StrongRecordToRecord p where
 
 instance Strong p => StrongRecordToRecord p where
   focusRecord g =
-    dimap (\s -> Tuple (pickRecord s) (pickRecord s))
+    dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
           -- `Record.union` is left-biased and does not nub; safe here only because
           -- `ExclusiveRows sub' rest t` guarantees `sub'` and `rest` are disjoint.
           (\(Tuple sub' rest) -> Record.union sub' rest)
           (first g)
-
--- | Project a sub-record out of a wider record, dropping the `extra` fields. Sound because
--- | PureScript records are JS objects and `Union narrow extra wider` witnesses
--- | `narrow ⊆ wider`. Shared home for the projection used across `Data.Profunctor.Row.*`
--- | (re-exported from `Data.Profunctor.Row`); lives here because this module has no
--- | dependency on the umbrella `Row` module.
-pickRecord :: forall narrow extra wider. Union narrow extra wider => Record wider -> Record narrow
-pickRecord = unsafeCoerce
 
 -- | Introduce a new field `l :: prop`, computing its value from the whole record `s`
 -- | (the `p s r` shape). `id &&& f` followed by `insert`.
@@ -103,15 +94,16 @@ introduceProperty
 introduceProperty f =
   dimap (\s -> Tuple s s) (\(Tuple s p) -> insert (Proxy @l) p s) (second f)
 
--- | Eliminate the field `l :: prop`, feeding its value to a sink and keeping the rest.
--- | The transpose of `introduceProperty`: `first` + `delete`.
+-- | Eliminate the field `l :: prop`, feeding its value to a sink `p prop Unit` and keeping
+-- | the rest. The sink's output is `Unit` — we discard it (via `snd`), and the monomorphic
+-- | type makes that explicit. The transpose of `introduceProperty`: `first` + `delete`.
 eliminateProperty
-  :: forall p @l prop s t x
+  :: forall p @l prop s t
    . IsSymbol l
   => Cons l prop t s
   => Lacks l t
   => StrongRecordToRecord p
-  => Optic p (Record s) (Record t) prop x
+  => Optic p (Record s) (Record t) prop Unit
 eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)
 
@@ -121,4 +113,4 @@ editProperty
    . IsSymbol l
   => Cons l a r s
   => Lens (Record s) (Record s) a a
-editProperty = Commons.property @l
+editProperty = prop (Proxy @l)

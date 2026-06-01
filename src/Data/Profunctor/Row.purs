@@ -8,12 +8,13 @@ module Data.Profunctor.Row
   where
 
 import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, pickRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Variant (Variant, expand)
 import Prim.Row (class Union) as Row
+import Unsafe.Coerce (unsafeCoerce)
 
 class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant p) <= Row p
 
@@ -21,14 +22,9 @@ class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant 
 -- Primitive value-level row reshapings.
 --
 -- Exported so the binary `recordToRecord` / `recordToVariant` /
--- `variantToRecord` / `variantToVariant` instances in `UI.purs` route
--- through the same helpers as the unary combinators below.
+-- `variantToRecord` / `variantToVariant` instances in `UI.purs` can
+-- reuse the unary combinators defined below.
 -- =====================================================================
-
--- `pickRecord` (record sub-projection) is imported from
--- `Data.Profunctor.Row.RecordToRecord` and used by the reshapings below.
--- It is defined there — that module has no dependency on this umbrella
--- module, so it is the cycle-free home for the shared helper.
 
 -- =====================================================================
 -- Unary row-to-row transformations, derivable from `dimap` alone.
@@ -47,7 +43,7 @@ widenRecordInput :: forall p narrow extra wider o.
   Profunctor p =>
   Row.Union narrow extra wider =>
   p (Record narrow) o -> p (Record wider) o
-widenRecordInput = lcmap pickRecord
+widenRecordInput = lcmap unsafeCoerce
 
 narrowVariantInput :: forall p narrow extra wider o.
   Profunctor p =>
@@ -59,7 +55,7 @@ narrowRecordOutput :: forall p i narrow extra wider.
   Profunctor p =>
   Row.Union narrow extra wider =>
   p i (Record wider) -> p i (Record narrow)
-narrowRecordOutput = rmap pickRecord
+narrowRecordOutput = rmap unsafeCoerce
 
 widenVariantOutput :: forall p i narrow extra wider.
   Profunctor p =>

@@ -3,7 +3,6 @@ module Test.Main where
 import Prelude
 
 import Data.Lens (over, set, view)
-import Data.Lens.Extra.Commons (variant) as Commons
 import Data.Profunctor.Row.RecordToRecord (editProperty, eliminateProperty, focusRecord, introduceProperty)
 import Data.Profunctor.Row.VariantToVariant (editCase, eliminateCase, focusVariant)
 import Data.Variant (Variant, inj)
@@ -64,7 +63,7 @@ main = do
   -- transforming the focused sub-case (not identity), complement carried.
   assertEqual "focusVariant/transform sub-case"
     (inj (Proxy @"x") 6 :: Variant (x :: Int, y :: String))
-    (focusVariant (over (Commons.variant @"x") (_ + 1) :: Variant (x :: Int) -> Variant (x :: Int)) (inj (Proxy @"x") 5))
+    (focusVariant (over (editCase @"x") (_ + 1) :: Variant (x :: Int) -> Variant (x :: Int)) (inj (Proxy @"x") 5))
 
   -- editCase = the value-level single-case prism — over the matching case only.
   assertEqual "editCase/match"
