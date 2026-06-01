@@ -50,7 +50,7 @@ The canonical signatures sit side-by-side:
 
 ```purescript
 -- Row-to-row: binary merge of two complete row-shaped sub-profunctors.
--- src/Data/Profunctor/Row/RecordToRecord.purs:36
+-- src/Data/Profunctor/Row/RecordToRecord.purs:37
 class Profunctor p <= RecordToRecord p where
   recordToRecord ::
     forall i1 o1 i2 o2 i12 i1x i2x i o.
@@ -103,7 +103,7 @@ They are syntactic markers of the boundary where row structure ends and bare val
 
 ### 5. Typeclass surface on `p`
 
-- Row-to-row needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `Row` aggregator in `src/Data/Profunctor/Row.purs:33`). Each is one method with a heavy row-constraint signature.
+- Row-to-row needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `Row` aggregator in `src/Data/Profunctor/Row.purs:34`). Each is one method with a heavy row-constraint signature.
 - Half-lens needs more, smaller classes — `IntroVarP`, `ExceptP`, `ReadP`, `WriteP`, `EditPropP`, plus the composition-style `Endo`, `Sum`, `Zero`, `One`, `Product`, `ProductToSum`. Each method is structurally simpler.
 
 These half-lens classes are not arbitrary: as "The primitive level" part shows, `ReadP`/`WriteP`/`IntroVarP`/`ExceptP` are the four corners of one `Strong`/`Choice` fanout with a unit-pinned slot, and `FormP`/`XP`/`YP`/`ZP` are the boundary adaptors between `Unit` and `Void`. The "not interchangeable at the typeclass level" verdict softens once `ReadP` is read as a *unit-pinned weakening of `Strong`* — see that part for where the equivalence does and does not hold.
@@ -391,11 +391,11 @@ The repository implements this in `Data.Profunctor.Row.*`. Focus and merge are s
 Source locations cited in this document (★ = pre-refactor, see note above):
 
 - Row-to-row classes:
-  - `src/Data/Profunctor/Row/RecordToRecord.purs:36`
+  - `src/Data/Profunctor/Row/RecordToRecord.purs:37`
   - `src/Data/Profunctor/Row/RecordToVariant.purs`
   - `src/Data/Profunctor/Row/VariantToRecord.purs`
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
-  - Umbrella aggregator: `src/Data/Profunctor/Row.purs:33`
+  - Umbrella aggregator: `src/Data/Profunctor/Row.purs:34`
 - Row-to-row examples: `src/Data/Profunctor/Row/Example.purs`
 - Default single-field lifts: `src/Data/Profunctor/Row/Default.purs`
 - Row focus profunctors (current):
