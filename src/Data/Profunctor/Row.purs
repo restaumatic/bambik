@@ -1,35 +1,21 @@
 module Data.Profunctor.Row
   ( class Row
-  , variantToMaybeRecord
-  , class MaybeifyRow
-  , class MaybeifyRowList
-  , defaultMaybeRecord
   , widenRecordInput
   , narrowVariantInput
   , narrowRecordOutput
   , widenVariantOutput
   , widenRecordToVariant
   , narrowVariantToRecord
-  , variantInputAsMaybeRecord
-  , variantOutputAsMaybeRecord
   )
   where
 
-import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, pickRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
-import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, expand)
-import Data.Variant.Internal (VariantCase, VariantRep(..))
-import Prim.Row (class Cons, class Lacks, class Union) as Row
-import Prim.RowList (class RowToList, RowList, Cons, Nil) as RL
-import Record (insert) as Record
-import Record.Unsafe (unsafeSet) as Record
-import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
+import Prim.Row (class Union) as Row
 
 class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant p) <= Row p
 
@@ -46,41 +32,6 @@ class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant 
 -- It is defined there — that module has no dependency on this umbrella
 -- module, so it is the cycle-free home for the shared helper.
 
--- Total Variant → Maybe-record translation: exactly one field is `Just`,
--- the rest are `Nothing`. Uses VariantRep's runtime `{type, value}` shape.
-variantToMaybeRecord
-  :: forall v vl mv
-   . RL.RowToList v vl
-  => MaybeifyRowList vl mv
-  => Variant v
-  -> Record mv
-variantToMaybeRecord v =
-  let VariantRep rep = (unsafeCoerce :: Variant v -> VariantRep VariantCase) v
-  in Record.unsafeSet rep.type (Just rep.value) (defaultMaybeRecord (Proxy :: Proxy vl))
-
--- Type-level: maps a variant row `v` to a record row `mv` where every
--- field `name :: a` becomes `name :: Maybe a`.
-class MaybeifyRow :: Row Type -> Row Type -> Constraint
-class MaybeifyRow v mv | v -> mv
-
-instance (RL.RowToList v vl, MaybeifyRowList vl mv) => MaybeifyRow v mv
-
-class MaybeifyRowList :: RL.RowList Type -> Row Type -> Constraint
-class MaybeifyRowList vl mv | vl -> mv where
-  defaultMaybeRecord :: Proxy vl -> Record mv
-
-instance MaybeifyRowList RL.Nil () where
-  defaultMaybeRecord _ = {}
-
-instance
-  ( IsSymbol name
-  , MaybeifyRowList tl tlMv
-  , Row.Cons name (Maybe a) tlMv mv
-  , Row.Lacks name tlMv
-  ) => MaybeifyRowList (RL.Cons name a tl) mv where
-  defaultMaybeRecord _ =
-    Record.insert (Proxy :: Proxy name) (Nothing :: Maybe a) (defaultMaybeRecord (Proxy :: Proxy tl))
-
 -- =====================================================================
 -- Unary row-to-row transformations, derivable from `dimap` alone.
 --
@@ -88,11 +39,10 @@ instance
 -- `narrow` shrinks it. Each combinator is parametric in the side it
 -- doesn't touch, so each covers two of the four R/V × R/V shapes.
 --
--- The four transformations NOT provided here cannot be derived from
+-- The transformations NOT provided here cannot be derived from
 -- `dimap` alone:
 --   * widening Record output (needs defaults for the extra fields)
 --   * narrowing Variant output (needs a fallback for discarded cases)
---   * Record (Maybeify v) -> Variant v in either direction (partial)
 -- =====================================================================
 
 widenRecordInput :: forall p narrow extra wider o.
@@ -161,17 +111,3 @@ narrowVariantToRecord :: forall p sub rest s subO restOut t.
   Row.Union subO restOut t =>
   p (Variant s) (Record t) -> p (Variant sub) (Record subO)
 narrowVariantToRecord = dimap expand pickRecord
-
-variantInputAsMaybeRecord :: forall p v vl mv o.
-  Profunctor p =>
-  RL.RowToList v vl =>
-  MaybeifyRowList vl mv =>
-  p (Record mv) o -> p (Variant v) o
-variantInputAsMaybeRecord = lcmap variantToMaybeRecord
-
-variantOutputAsMaybeRecord :: forall p i v vl mv.
-  Profunctor p =>
-  RL.RowToList v vl =>
-  MaybeifyRowList vl mv =>
-  p i (Variant v) -> p i (Record mv)
-variantOutputAsMaybeRecord = rmap variantToMaybeRecord

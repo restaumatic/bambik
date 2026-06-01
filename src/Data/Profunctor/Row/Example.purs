@@ -27,22 +27,19 @@ module Data.Profunctor.Row.Example
   , narrowVariantInputExample
   , narrowRecordOutputExample
   , widenVariantOutputExample
-  , variantInputAsMaybeRecordExample
-  , variantOutputAsMaybeRecordExample
   , wizardStep
   )
   where
 
 import Prelude
 
-import Data.Maybe (Maybe)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Row.Default (withRecordDefault, withRecordOutputDefault)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row (class Row, narrowRecordOutput, narrowVariantInput, variantInputAsMaybeRecord, variantOutputAsMaybeRecord, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (class Row, narrowRecordOutput, narrowVariantInput, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
@@ -224,19 +221,6 @@ widenVariantOutputExample :: MyRowToRowProfunctor
   (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
   (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData , extra :: MyData ))
 widenVariantOutputExample = widenVariantOutput recordToVariantExample
-
-variantInputAsMaybeRecordExample :: MyRowToRowProfunctor
-  (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
-variantInputAsMaybeRecordExample = variantInputAsMaybeRecord
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor
-    (Record ( in1 :: Maybe MyData , in2 :: Maybe MyData , in3 :: Maybe MyData ))
-    (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )))
-
-variantOutputAsMaybeRecordExample :: MyRowToRowProfunctor
-  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: Maybe MyData , out2 :: Maybe MyData , out3 :: Maybe MyData ))
-variantOutputAsMaybeRecordExample = variantOutputAsMaybeRecord recordToVariantExample
 
 ui = Semigroupoid.do
   RecordToRecord.do -- inputs inclusive, outputs exclusive
