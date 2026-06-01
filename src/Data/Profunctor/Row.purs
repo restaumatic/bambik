@@ -4,12 +4,10 @@ module Data.Profunctor.Row
   , narrowVariantInput
   , narrowRecordOutput
   , widenVariantOutput
-  , widenRecordToVariant
-  , narrowVariantToRecord
   )
   where
 
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, pickRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
@@ -68,46 +66,3 @@ widenVariantOutput :: forall p i narrow extra wider.
   Row.Union narrow extra wider =>
   p i (Variant narrow) -> p i (Variant wider)
 widenVariantOutput = rmap expand
-
--- ---------------------------------------------------------------------
--- Both-sides reshapings for the two mixed shapes.
---
--- These touch *both* sides at once (a single `dimap`), and the free
--- direction is forced by variance: `Record → Variant` sits on the
--- widen/widen side, `Variant → Record` on the narrow/narrow side.
---
--- They are *reshapes*, not *focuses* — two orthogonal axes:
---   * direction  — widen (grow) vs narrow (shrink)
---   * complement — a reshape drops the complement (pure `dimap`,
---                  `Profunctor`-only); a focus (`focusRecord`/
---                  `focusVariant`) threads it across, needing strength.
--- `focusRecord` is itself a widen that *also* threads the complement, so
--- the contrast with `widenRecordToVariant` is the complement axis, not
--- direction. The through-threading focus does not exist for mixed kinds:
--- `Strong` applies its argument unconditionally, `Choice` only on a gated
--- input branch, so a complement can be carried only when input and output
--- share that conditionality (the diagonals). Crossing it forces a
--- conversion that costs defaults (fill the product a sum left empty,
--- `Variant → Record`) or fallback (collapse a product into the sum's one
--- slot, `Record → Variant`) — the irreducible binary merge instead.
--- See doc/row-profunctors.md, "The break, sharpened: unconditional vs gated".
--- ---------------------------------------------------------------------
-
--- Widen both sides at once: `sub → s` on input, `subO → t` on output.
--- = `widenVariantOutput ∘ widenRecordInput`.
-widenRecordToVariant :: forall p sub rest s subO restOut t.
-  Profunctor p =>
-  Row.Union sub rest s =>
-  Row.Union subO restOut t =>
-  p (Record sub) (Variant subO) -> p (Record s) (Variant t)
-widenRecordToVariant = dimap pickRecord expand
-
--- Narrow both sides at once: `s → sub` on input, `t → subO` on output —
--- the categorical dual of `widenRecordToVariant` (arrows reversed swaps
--- the maps and flips the direction). = `narrowVariantInput ∘ narrowRecordOutput`.
-narrowVariantToRecord :: forall p sub rest s subO restOut t.
-  Profunctor p =>
-  Row.Union sub rest s =>
-  Row.Union subO restOut t =>
-  p (Variant s) (Record t) -> p (Variant sub) (Record subO)
-narrowVariantToRecord = dimap expand pickRecord

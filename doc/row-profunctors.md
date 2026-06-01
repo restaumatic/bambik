@@ -234,18 +234,18 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 ### Reshape vs focus: two axes, not a trio
 
-The mixed kinds still admit *unary* combinators — just not focuses. `Data.Profunctor.Row` exports `widenRecordToVariant`/`narrowVariantToRecord`, the both-sides reshapings each mixed shape gets for free, alongside the four one-sided reshapings (`widenRecordInput`, …) — they are `dimap`, not focuses, so they live with the other reshapings rather than beside the merge classes. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
+The mixed kinds still admit *unary* reshapings — just not focuses. `Data.Profunctor.Row` exports the four one-sided reshapings (`widenRecordInput`, `narrowVariantInput`, `narrowRecordOutput`, `widenVariantOutput`); a both-sides reshape for a mixed shape is just their composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`, `narrowVariantInput ∘ narrowRecordOutput` for `Variant → Record`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
 
 - **direction** — *widen* (grow, `sub → wider`) vs *narrow* (shrink, `wider → sub`).
 - **complement** — *reshape* drops the complement (pure `dimap`, `Profunctor`-only) vs *focus* threads it across the input→output boundary (needs `Strong`/`Choice`).
 
-| combinator | direction | complement | strength |
+| operation | direction | complement | strength |
 |---|---|---|---|
 | `focusRecord` / `focusVariant` | widen | **carried** | Strong / Choice |
-| `widenRecordToVariant` | widen | dropped | Profunctor |
-| `narrowVariantToRecord` | narrow | dropped | Profunctor |
+| `Record → Variant` reshape (`widenVariantOutput ∘ widenRecordInput`) | widen | dropped | Profunctor |
+| `Variant → Record` reshape (`narrowVariantInput ∘ narrowRecordOutput`) | narrow | dropped | Profunctor |
 
-The tell: `focusRecord` is *itself* a widen-direction operation (`Record sub → Record s`, `s = sub ∪ rest`) — it merely *also* threads `rest`. So the real contrast between `focusRecord` and `widenRecordToVariant` is the **complement** column, not direction; `widen`/`narrow` are the genuine duals (one axis), and `focus` is a widen *plus* complement-threading (the other axis). This is exactly why the mixed kinds get only reshape: with input and output of different kinds there is no same-kind `rest` to thread, so the product complement has no image in the sum one — sharpened to *unconditional vs gated* in the next section. Which free *direction* a mixed shape gets is then forced by variance — `Record → Variant` sits on the widen/widen side, `Variant → Record` on the narrow/narrow side, and each shape's *opposite* direction is the irreducible corner (needs fallback/defaults, collapsing to the binary merge above).
+The tell: `focusRecord` is *itself* a widen-direction operation (`Record sub → Record s`, `s = sub ∪ rest`) — it merely *also* threads `rest`. So the real contrast between `focusRecord` and the `Record → Variant` reshape is the **complement** column, not direction; `widen`/`narrow` are the genuine duals (one axis), and `focus` is a widen *plus* complement-threading (the other axis). This is exactly why the mixed kinds get only reshape: with input and output of different kinds there is no same-kind `rest` to thread, so the product complement has no image in the sum one — sharpened to *unconditional vs gated* in the next section. Which free *direction* a mixed shape gets is then forced by variance — `Record → Variant` sits on the widen/widen side, `Variant → Record` on the narrow/narrow side, and each shape's *opposite* direction is the irreducible corner (needs fallback/defaults, collapsing to the binary merge above).
 
 ### The break, sharpened: unconditional vs gated
 
