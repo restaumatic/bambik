@@ -1,4 +1,5 @@
 {
+  "name": "bambik",
   "private": true,
   "scripts": {
     "build": "spago build -w",

@@ -28,7 +28,12 @@ newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o ->
 - **src/UI.purs** - Core UI profunctor type with all profunctor class instances (Strong, Choice, Endo, Sum, Zero)
 - **src/Web.purs** - DOM monad (`Web = StateT DOM Effect`) and primitive elements (`text`, `input`, `button`, `div`, etc.)
 - **src/MDC.purs** - Material Design Component wrappers as oculars
-- **src/Data/Profunctor/** - Profunctor building blocks (Endo, Sum, Zero, ReadP, WriteP, ExceptP, etc.)
+- **src/Data/Profunctor/** - Profunctor building blocks (Endo, Sum, Zero, Product, ProductToSum, etc.)
+- **src/Data/Profunctor/Row/** + **src/Data/Profunctor/Row.purs** - Row profunctors over `Record`/`Variant`. Each diagonal module is the complete home for its row-kind, stacking three layers (merge → focus → single-field combinators); the two mixed modules are pure merges:
+  - **`RecordToRecord.purs`** — merge `recordToRecord`; row-typed `Strong` `StrongRecordToRecord`/`focusRecord` (focus a whole **sub-Record** carrying the complement; generic `instance Strong p => StrongRecordToRecord p`, so `UI` gets it); single-field combinators `introduceProperty`/`eliminateProperty`/`editProperty` (`editProperty` = the value-level field lens).
+  - **`VariantToVariant.purs`** — merge `variantToVariant`; row-typed `Choice` `ChoiceVariantToVariant`/`focusVariant` (focus a whole **sub-Variant**; generic `instance Choice p => ChoiceVariantToVariant p`); single-case combinators `eliminateCase`/`editCase` (`editCase` = the value-level case prism). (Introducing a *fresh* variant case is the one operation outside `Choice`; no dedicated combinator — built via the `Sum`/`variantToVariant` path.)
+  - **`RecordToVariant.purs`** / **`VariantToRecord.purs`** — the mixed binary merges (no focus/single-field layer: only the diagonals admit `identity`-pinned focus).
+  - **`Row.purs`** (module `Data.Profunctor.Row`) — the umbrella `Row` aggregator class + unary row reshapings (`widenRecordInput`, etc.).
 
 ### Composition Patterns
 

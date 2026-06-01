@@ -1,4 +1,4 @@
-module Data.Profunctor.RowToRow.VariantToRecord
+module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord
   , class VariantToRecord
