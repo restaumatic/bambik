@@ -1,6 +1,5 @@
 module Data.Profunctor.Row
   ( class Row
-  , pickRecord
   , variantToMaybeRecord
   , class MaybeifyRow
   , class MaybeifyRowList
@@ -18,7 +17,7 @@ module Data.Profunctor.Row
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, pickRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
@@ -42,11 +41,10 @@ class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant 
 -- through the same helpers as the unary combinators below.
 -- =====================================================================
 
--- Drop the fields named in `extra` from a `Record wider`, yielding the
--- `narrow` projection. Sound because PureScript records are JS objects
--- and `Union narrow extra wider` witnesses `narrow ⊆ wider`.
-pickRecord :: forall narrow extra wider. Row.Union narrow extra wider => Record wider -> Record narrow
-pickRecord = unsafeCoerce
+-- `pickRecord` (record sub-projection) is imported from
+-- `Data.Profunctor.Row.RecordToRecord` and used by the reshapings below.
+-- It is defined there — that module has no dependency on this umbrella
+-- module, so it is the cycle-free home for the shared helper.
 
 -- Total Variant → Maybe-record translation: exactly one field is `Just`,
 -- the rest are `Nothing`. Uses VariantRep's runtime `{type, value}` shape.

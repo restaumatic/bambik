@@ -16,6 +16,7 @@ module Data.Profunctor.Row.RecordToRecord
   , introduceProperty
   , eliminateProperty
   , editProperty
+  , pickRecord
   )
   where
 
@@ -76,16 +77,19 @@ class Strong p <= StrongRecordToRecord p where
 
 instance Strong p => StrongRecordToRecord p where
   focusRecord g =
-    dimap (\s -> Tuple (pick s) (pick s))
+    dimap (\s -> Tuple (pickRecord s) (pickRecord s))
           -- `Record.union` is left-biased and does not nub; safe here only because
           -- `ExclusiveRows sub' rest t` guarantees `sub'` and `rest` are disjoint.
           (\(Tuple sub' rest) -> Record.union sub' rest)
           (first g)
 
--- Project a sub-record out of a wider record. Sound because PureScript records are JS
--- objects and `Union narrow extra wider` witnesses `narrow ⊆ wider`.
-pick :: forall narrow extra wider. Union narrow extra wider => Record wider -> Record narrow
-pick = unsafeCoerce
+-- | Project a sub-record out of a wider record, dropping the `extra` fields. Sound because
+-- | PureScript records are JS objects and `Union narrow extra wider` witnesses
+-- | `narrow ⊆ wider`. Shared home for the projection used across `Data.Profunctor.Row.*`
+-- | (re-exported from `Data.Profunctor.Row`); lives here because this module has no
+-- | dependency on the umbrella `Row` module.
+pickRecord :: forall narrow extra wider. Union narrow extra wider => Record wider -> Record narrow
+pickRecord = unsafeCoerce
 
 -- | Introduce a new field `l :: prop`, computing its value from the whole record `s`
 -- | (the `p s r` shape). `id &&& f` followed by `insert`.
