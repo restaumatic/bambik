@@ -4,6 +4,10 @@ module Data.Profunctor.Row
   , narrowVariantInput
   , narrowRecordOutput
   , widenVariantOutput
+  , widenInputProperty
+  , widenOutputCase
+  , narrowInputCase
+  , narrowOutputProperty
   )
   where
 
@@ -13,7 +17,7 @@ import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Variant (Variant, expand)
-import Prim.Row (class Union) as Row
+import Prim.Row (class Cons, class Union) as Row
 import Unsafe.Coerce (unsafeCoerce)
 
 class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant p) <= Row p
@@ -62,3 +66,50 @@ widenVariantOutput :: forall p i narrow extra wider.
   Row.Union narrow extra wider =>
   p i (Variant narrow) -> p i (Variant wider)
 widenVariantOutput = rmap expand
+
+-- =====================================================================
+-- Single-field / single-case specializations of the four reshapings
+-- above (the `extra` row pinned to one labeled field/case via `Cons`).
+-- Same bodies; each adds or drops exactly ONE phantom field/case.
+--
+-- Unlike `introduceProperty`/`eliminateProperty` (which wrap `first`/
+-- `second` and take a value-operand that produces/consumes the field),
+-- these take no operand — nothing flows through the field/case; they are
+-- pure structural adapters. They are the single-field reshapings the
+-- *mixed* families lean on, where the diagonal focus combinators can't reach:
+--   * Record→Variant (widen/widen): `widenInputProperty` + `widenOutputCase`
+--   * Variant→Record (narrow/narrow): `narrowInputCase` + `narrowOutputProperty`
+-- (each is side-specific, so it also applies to the matching diagonal family).
+-- =====================================================================
+
+-- `Cons l a () one` pins `one` to the singleton row `(l :: a)`; `Union narrow
+-- one wider` then says `wider = narrow` plus that one field/case (and gives
+-- `expand` the `Union` it needs — `Cons` alone wouldn't).
+
+widenInputProperty :: forall @l p a one narrow wider o.
+  Profunctor p =>
+  Row.Cons l a () one =>
+  Row.Union narrow one wider =>
+  p (Record narrow) o -> p (Record wider) o
+widenInputProperty = lcmap unsafeCoerce
+
+widenOutputCase :: forall @l p a one narrow wider i.
+  Profunctor p =>
+  Row.Cons l a () one =>
+  Row.Union narrow one wider =>
+  p i (Variant narrow) -> p i (Variant wider)
+widenOutputCase = rmap expand
+
+narrowInputCase :: forall @l p a one narrow wider o.
+  Profunctor p =>
+  Row.Cons l a () one =>
+  Row.Union narrow one wider =>
+  p (Variant wider) o -> p (Variant narrow) o
+narrowInputCase = lcmap expand
+
+narrowOutputProperty :: forall @l p a one narrow wider i.
+  Profunctor p =>
+  Row.Cons l a () one =>
+  Row.Union narrow one wider =>
+  p i (Record wider) -> p i (Record narrow)
+narrowOutputProperty = rmap unsafeCoerce
