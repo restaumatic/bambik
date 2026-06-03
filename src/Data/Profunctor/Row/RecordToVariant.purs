@@ -1,11 +1,13 @@
 module Data.Profunctor.Row.RecordToVariant
-  ( bind
+  ( Shutter
+  , bind
   , class RecordToVariant
   , discard
   , recordToVariant
   , class ResolvingRecordToVariant
   , resolve
   , resolveProperty
+  , shutter
   )
   where
 
@@ -85,3 +87,15 @@ resolveProperty g =
     (\s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s))
     (either expand (inj (Proxy @l)))
     (resolve g)
+
+-- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`
+-- | (instantiated to `s`) by co-Yoneda collapses `∃c. (s → a × c) × (b + c → t)`
+-- | to `(view : s → a) × (build : b → t) × (escape : s → t)` — a lens that can
+-- | *snap shut*: run the focus and `build` (the `Done` branch), or `escape`
+-- | straight to `t` (the `Loop`/short-circuit). Like a camera shutter: it opens,
+-- | loops while held, then snaps to a single captured value. (Polish: *Migawka*.)
+type Shutter s t a b = forall p. ResolvingRecordToVariant p => p a b -> p s t
+
+shutter :: forall s t a b. (s -> a) -> (b -> t) -> (s -> t) -> Shutter s t a b
+shutter view build escape g =
+  dimap (\s -> Tuple (view s) s) (either build escape) (resolve g)

@@ -1,11 +1,13 @@
 module Data.Profunctor.Row.VariantToRecord
-  ( bind
+  ( Reel
+  , bind
   , variantToRecord
   , class VariantToRecord
   , discard
   , class RetainingVariantToRecord
   , retain
   , retainCase
+  , reel
   )
   where
 
@@ -87,3 +89,14 @@ retainCase g =
     (on (Proxy @l) Right Left)
     (\(Tuple r x) -> insert (Proxy @l) x r)
     (retain g)
+
+-- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`
+-- | (instantiated to `b → t`) by co-Yoneda collapses `∃c. (s → a + c) × (b × c → t)`
+-- | to `s → Either a (b → t)` — a per-input dispatch that either surfaces a focus
+-- | `a`, or supplies a *finisher* `b → t` drawn from retained state. Like a film
+-- | reel: a wound transport that holds its position and never finishes.
+-- | (Polish: *Szpula*.)
+type Reel s t a b = forall p. RetainingVariantToRecord p => p a b -> p s t
+
+reel :: forall s t a b. (s -> Either a (b -> t)) -> Reel s t a b
+reel dispatch g = dimap dispatch (\(Tuple b f) -> f b) (retain g)

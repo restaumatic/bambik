@@ -27,9 +27,9 @@ import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class ResolvingRecordToVariant)
 import Data.Profunctor.Row (widenRecordInput, widenVariantOutput)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class RetainingVariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Profunctor.Sum (class Sum)
@@ -228,6 +228,22 @@ instance Apply m => RecordToVariant (UI m) where
           p2'.fromUser prop
       }
 
+instance Functor m => ResolvingRecordToVariant (UI m) where
+  resolve p = wrap ado
+    let cRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+          New (Tuple a c) cont -> do
+            let _ = unsafePerformEffect $ Ref.write c cRef
+            p'.toUser $ New a cont
+      , fromUser: \prop ->
+          p'.fromUser \(New b cont) ->
+            if cont
+              then prop $ New (Right (unsafePerformEffect (Ref.read cRef))) cont
+              else prop $ New (Left b) cont
+      }
+
 instance Apply m => VariantToRecord (UI m) where
   variantToRecord p1 p2 = wrap ado
     let lastRec = unsafePerformEffect $ Ref.new (unsafeCoerce {})
@@ -248,6 +264,21 @@ instance Apply m => VariantToRecord (UI m) where
             let merged = unsafeUnion partial prev
             let _ = unsafePerformEffect $ Ref.write merged lastRec
             prop $ New (unsafeCoerce merged) cont
+      }
+
+instance Functor m => RetainingVariantToRecord (UI m) where
+  retain p = wrap ado
+    let cRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+          New (Left a) cont -> p'.toUser $ New a cont
+          New (Right c) _ -> do
+            let _ = unsafePerformEffect $ Ref.write c cRef
+            pure unit
+      , fromUser: \prop ->
+          p'.fromUser \(New b cont) ->
+            prop $ New (Tuple b (unsafePerformEffect (Ref.read cRef))) cont
       }
 
 instance Apply m => VariantToVariant (UI m) where

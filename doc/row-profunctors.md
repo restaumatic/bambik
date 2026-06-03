@@ -179,6 +179,15 @@ Carrying a *same-kind* complement is what the mixed directions can't do — but 
 
 These are the product↔sum-crossing analogues of `Strong`/`Choice` — *not* focuses (they carry no same-kind complement) and *not* the merge. Neither has a `(->)` instance: a stateless function can't loop (`resolve` would be the trivial always-`Done`) or retain state (`retain`'s product output has no producer for the missing component). Their binary counterparts are the merges one level up — `resolve` is the identity-pinned form of `Data.Profunctor.ProductToSum.prosum` (its second operand fixed to `identity`), and `retain` is the unary form of `variantToRecord`.
 
+Each strength also **induces an optic** (its `p a b -> p s t` form, with the residual `c` eliminated by co-Yoneda) — the mixed-action cousins of the `Lens` (from `Strong`) and `Prism` (from `Choice`) the diagonals induce:
+
+| strength | induced optic (constructor) | concrete form |
+|---|---|---|
+| `resolve` | **`Shutter`** (`shutter`) | `(view : s→a) × (build : b→t) × (escape : s→t)` |
+| `retain` | **`Reel`** (`reel`) | `s → Either a (b→t)` |
+
+A **`Shutter`** is a lens that can *snap shut* — run the focus and rebuild (`Done`), or `escape` straight to `t` (`Loop`/short-circuit); like a camera shutter that opens, loops while held, then snaps to one captured value. A **`Reel`** is a wound transport that *holds its position and never finishes* — each step emits an output and the next state; like a film reel you scroll through. `Shutter`/`shutter` live beside `resolve` in [RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs); `Reel`/`reel` beside `retain` in [VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs). (Polish, matching `Soczewka`/`Pryzmat`: **`Migawka`**/**`Szpula`**.)
+
 And they give the mixed directions the **`edit`-position single-field combinator** the diagonals have (`editProperty`/`editCase`) — here threading one label *across* the boundary instead of in place:
 
 - `resolveProperty @l :: p (Record i) (Variant o) -> p (Record (l∷x | i)) (Variant (l∷x | o))` — field `l` either escapes directly to output case `l` (`Loop`), or the wrapped profunctor runs on the rest (`Done`).
@@ -210,7 +219,7 @@ Likewise: expanded/collapsed tree nodes, the active tab, a carousel's slide inde
 
 **Rule of thumb:** if the interaction *begins, runs, and resolves to a value*, it's `Resolving` (the `c` dies at `Done`); if it's *state the widget simply has and keeps updating*, it's `Retaining` (the `c` lives on). Both are the same `c`-feedback in `UI m` — differing only in whether a `Done` ever short-circuits out (a gesture's `mouseup`) or the loop runs indefinitely (the viewport never completes).
 
-This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that would deliver this — `ResolvingRecordToVariant (UI m)` / `RetainingVariantToRecord (UI m)` — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
+This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that deliver this — `ResolvingRecordToVariant (UI m)` / `RetainingVariantToRecord (UI m)` in [UI.purs](../src/UI.purs) — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
 
 ## Introduce vs eliminate: each isolates one row-discipline
 
@@ -277,7 +286,7 @@ The repository implements this in `Data.Profunctor.Row.*`. Each of the four **di
 - **`ChoiceVariantToVariant`** (in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), alongside `VariantToVariant`) — `class Choice p <= ChoiceVariantToVariant p` with `focusVariant :: p (Variant sub) (Variant sub') -> p (Variant s) (Variant t)`, the row-typed `left`/`right`; the generic `instance Choice p => ChoiceVariantToVariant p` dispatches via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
 - **`ResolvingRecordToVariant`** (in [Row/RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs), alongside `RecordToVariant`) — `class Profunctor p <= ResolvingRecordToVariant p` with `resolve :: p a b -> p (Tuple a c) (Either b c)`, the product→sum (×→+) strength. No `(->)` instance.
 - **`RetainingVariantToRecord`** (in [Row/VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs), alongside `VariantToRecord`) — `class Profunctor p <= RetainingVariantToRecord p` with `retain :: p a b -> p (Either a c) (Tuple b c)`, the sum→product (+→×) strength. No `(->)` instance.
-- **Single-field/case combinators** (each on its module's strength) — `introduceProperty`/`eliminateProperty`/`editProperty` (on `StrongRecordToRecord`), `eliminateCase`/`editCase` (on `ChoiceVariantToVariant`), `resolveProperty` (on `ResolvingRecordToVariant`), `retainCase` (on `RetainingVariantToRecord`). `editProperty`/`editCase` are the value-level field lens / case prism; `resolveProperty`/`retainCase` are the `edit`-position combinators for the mixed directions (threading one label across the product/sum boundary). The diagonal classes have generic `Strong`/`Choice` instances, so their combinators work on any such profunctor; the mixed strengths have no instances yet (they need a genuinely looping/stateful carrier).
+- **Single-field/case combinators** (each on its module's strength) — `introduceProperty`/`eliminateProperty`/`editProperty` (on `StrongRecordToRecord`), `eliminateCase`/`editCase` (on `ChoiceVariantToVariant`), `resolveProperty` (on `ResolvingRecordToVariant`), `retainCase` (on `RetainingVariantToRecord`). `editProperty`/`editCase` are the value-level field lens / case prism; `resolveProperty`/`retainCase` are the `edit`-position combinators for the mixed directions (threading one label across the product/sum boundary). The diagonal classes have generic `Strong`/`Choice` instances, so their combinators work on any such profunctor; the mixed strengths' instances live on a genuinely stateful carrier — `ResolvingRecordToVariant (UI m)` / `RetainingVariantToRecord (UI m)` (there is still no `(->)` instance: a pure function can't loop or retain state).
 - **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) is *not* a dedicated combinator here: there is no inhabitant for it, and in practice it's built via the `VariantToVariant` composition path.
 - **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`; each direction module additionally hosts its unary strength class.
 - **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`editProperty`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`editCase`/`eliminateCase`.
@@ -297,8 +306,8 @@ Source locations cited in this document:
 - Row unary strengths (each beside its merge, with its single-field combinator(s)):
   - `RecordToRecord.purs` — `class StrongRecordToRecord`/`focusRecord`; `introduceProperty`/`eliminateProperty`/`editProperty`
   - `VariantToVariant.purs` — `class ChoiceVariantToVariant`/`focusVariant`; `eliminateCase`/`editCase`
-  - `RecordToVariant.purs` — `class ResolvingRecordToVariant`/`resolve`; `resolveProperty`
-  - `VariantToRecord.purs` — `class RetainingVariantToRecord`/`retain`; `retainCase`
+  - `RecordToVariant.purs` — `class ResolvingRecordToVariant`/`resolve`; `resolveProperty`; induced optic `Shutter`/`shutter`
+  - `VariantToRecord.purs` — `class RetainingVariantToRecord`/`retain`; `retainCase`; induced optic `Reel`/`reel`
 - Unary row reshapings (in `Data.Profunctor.Row`): `Union`-based `widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput`; single-field/case forms `widenInputProperty`/`widenOutputCase`/`narrowInputCase`/`narrowOutputProperty`
 - Base product↔sum strengths (binary counterparts): `src/Data/Profunctor/ProductToSum.purs` (`prosum`, the binary form of `resolve`)
 - Row constraints: `src/Type/Row/Constraints.purs`
