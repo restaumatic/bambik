@@ -124,11 +124,11 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 `introduceProperty @l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)` pins the **left operand to `identity`** — a `p a a`, which only typechecks when input and output are the **same kind**. The mixed classes' operands have *different* kinds (`p (Record …) (Variant …)`), so **no `identity` can sit there**.
 
-> Only the two **diagonal** classes admit `identity`, so only they collapse to single-field combinators. The two **mixed** classes are **irreducibly binary** — crossing the product/sum boundary is exactly what an opaque business profunctor (e.g. a save-order action) does atomically, composed in with `>>>`.
+> Only the two **diagonal** classes admit `identity`, so only they collapse to a complement-carrying focus. The two **mixed** *merges* are **irreducibly binary** in that sense — crossing the product/sum boundary is exactly what an opaque business profunctor (e.g. a save-order action) does atomically, composed in with `>>>`. (But each mixed *direction* still has its **own** unary strength — a non-focus, mode-crossing one; see ["The mixed directions' own strength"](#the-mixed-directions-own-strength-iterate-and-resume).)
 
 ### Reshape vs focus: two axes, not a trio
 
-The mixed kinds still admit *unary* reshapings — just not focuses. `Data.Profunctor.Row` exports the four one-sided reshapings (`widenRecordInput`, `narrowVariantInput`, `narrowRecordOutput`, `widenVariantOutput`); a both-sides reshape for a mixed shape is just their composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`, `narrowVariantInput ∘ narrowRecordOutput` for `Variant → Record`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
+The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-iterate-and-resume)) — just not focuses. `Data.Profunctor.Row` exports the four one-sided reshapings (`widenRecordInput`, `narrowVariantInput`, `narrowRecordOutput`, `widenVariantOutput`); a both-sides reshape for a mixed shape is just their composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`, `narrowVariantInput ∘ narrowRecordOutput` for `Variant → Record`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
 
 - **direction** — *widen* (grow, `sub → wider`) vs *narrow* (shrink, `wider → sub`).
 - **complement** — *reshape* drops the complement (pure `dimap`, `Profunctor`-only) vs *focus* threads it across the input→output boundary (needs `Strong`/`Choice`).
@@ -167,6 +167,50 @@ When the sides differ (mixed), carrying the complement forces a conversion betwe
 These two fabrications are themselves the product/sum dual pair: **fill** ↔ **collapse**. And inhabited case-introduction is the *degenerate unary case*: introducing into a sum needs the gate's input selector, but a spontaneous source supplies none, so even *with* a producer the case can never be emitted — whereas `second` (ungated) always emits its field, which is why `introduceProperty` exists and there is no `introduceCase`.
 
 Note what stays free: **phantom**-widening a variant output (`widenVariantOutput`/`expand`) adds a case that is *never emitted* — no gate to satisfy — so it costs nothing. Only *inhabited* introduction is irreducible.
+
+### The mixed directions' own strength: iterate and resume
+
+Carrying a *same-kind* complement is what the mixed directions can't do — but each still has its **own** unary strength, one that threads the residual `c` *across* the product/sum boundary, letting it **change mode** (`×` on one side, `+` on the other):
+
+| direction | strength (class / method) | shape | semantics |
+|---|---|---|---|
+| R→V | `IteratingRecordToVariant` / `iterating` | `p a b -> p (a × c) (b + c)` | **loop / iteration** step — `Either b c` reads as `Done b`/`Loop c` |
+| V→R | `ResumingVariantToRecord` / `resuming` | `p a b -> p (a + c) (b × c)` | **Mealy / coroutine** step — `Tuple b c` is output + next state |
+
+These are the product↔sum-crossing analogues of `Strong`/`Choice` — *not* focuses (they carry no same-kind complement) and *not* the merge. Neither has a `(->)` instance: a stateless function can't loop (`iterating` would be the trivial always-`Done`) or retain state (`resuming`'s product output has no producer for the missing component). Their binary counterparts are the merges one level up — `iterating p ≡ prosum p identity` (`Data.Profunctor.ProductToSum`), and `resuming` is the unary form of `variantToRecord`.
+
+And they give the mixed directions the **`edit`-position single-field combinator** the diagonals have (`editProperty`/`editCase`) — here threading one label *across* the boundary instead of in place:
+
+- `iterateProperty @l :: p (Record i) (Variant o) -> p (Record (l∷x | i)) (Variant (l∷x | o))` — field `l` either escapes directly to output case `l` (`Loop`), or the wrapped profunctor runs on the rest (`Done`).
+- `resumeCase @l :: p (Variant i) (Record o) -> p (Variant (l∷x | i)) (Record (l∷x | o))` — input case `l` resumes into output field `l`; otherwise the wrapped profunctor runs and `l` is filled separately.
+
+So the four directions are symmetric after all — each has a **merge**, a **unary strength**, and an **`edit`-position single-field combinator**. Only the *kind* of strength differs: a complement-carrying **focus** on the diagonals, a mode-crossing **iterate/resume** on the mixed.
+
+### In a UI: gestures and local state
+
+For a profunctor UI like `UI m i o` — which pushes `i` to the screen and captures `o` from the user — these two strengths add exactly what the plain `Strong`/`Choice` form lacks. The threaded `c` becomes a **feedback loop inside the widget**: the next-state `c` it emits is fed straight back as its own input and re-renders, invisible to the parent. (A pure function has no such loop — the same reason neither class has a `(->)` instance.)
+
+**`Iterating` = a transient gesture or flow that resolves.** The archetype is a **drag** — literally a loop with a start and an end:
+
+```
+mousedown        → start, state c = initial position
+mousemove (×N)   → Loop c   (re-render the ghost at the new position, keep waiting)
+mouseup          → Done b   (drop result — emit upward, loop ends)
+```
+
+The same `Loop … until Done` shape covers drawing a stroke (mousemoves accumulate the path), rubber-band selection, dragging a slider/splitter (commit on release), autocomplete (each keystroke re-queries; picking an entry finishes), and a modal wizard (`Next` loops, `Finish` is `Done`). The `c` is **ephemeral** — it exists only during the gesture and dies at `Done`.
+
+**`Resuming` = persistent view-state the widget just keeps.** The archetype is **viewport state** — scroll offset, zoom, pan — which persists and updates with every event and never "finishes":
+
+```
+scroll / wheel / pinch → render at the new offset, carry (offset, zoom) onward as c
+```
+
+Likewise: expanded/collapsed tree nodes, the active tab, a carousel's slide index, window geometry you drag around, hover/selection highlight, a counter or cart total, an undo/redo stack. The `c` is **durable** — pure "how this widget currently looks," never part of the business model.
+
+**Rule of thumb:** if the interaction *begins, runs, and resolves to a value*, it's `Iterating` (the `c` dies at `Done`); if it's *state the widget simply has and keeps updating*, it's `Resuming` (the `c` lives on). Both are the same `c`-feedback in `UI m` — differing only in whether a `Done` ever short-circuits out (a gesture's `mouseup`) or the loop runs indefinitely (the viewport never completes).
+
+This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Resuming` keeps that state **local** to the widget; `Iterating` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that would deliver this — `IteratingRecordToVariant (UI m)` / `ResumingVariantToRecord (UI m)` — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
 
 ## Introduce vs eliminate: each isolates one row-discipline
 
@@ -223,17 +267,19 @@ The merge style shines once you have separate sub-records (say a customer block,
 
 ## One-line summary
 
-> Merge and single-field combinators are dual construction strategies for the same family of `Record`/`Variant`-shaped profunctors. Merge builds by **binary combination of complete sub-shapes**; single-field combinators build by **linear chaining of single-field atoms**. Both rest on the row-typed `Strong`/`Choice` focus classes (`focusRecord`/`focusVariant`): product focus carries its complement **unconditionally** (`first`), variant focus carries it **gated** (`left`/`right`), and the mixed kinds get no focus because crossing the product/sum boundary leaves no same-kind complement to thread. Neither family subsumes the other at the typeclass level, but their value-level denotations coincide, and a single-field combinator is an exact `identity`-pinned merge.
+> Merge and single-field combinators are dual construction strategies for the same family of `Record`/`Variant`-shaped profunctors. Merge builds by **binary combination of complete sub-shapes**; single-field combinators build by **linear chaining of single-field atoms**. Both rest on the row-typed `Strong`/`Choice` focus classes (`focusRecord`/`focusVariant`): product focus carries its complement **unconditionally** (`first`), variant focus carries it **gated** (`left`/`right`), and the mixed kinds get no *focus* (no same-kind complement to thread) — instead each gains a mode-crossing strength, `iterating` (×→+, a loop step) and `resuming` (+→×, a Mealy step), with single-field forms `iterateProperty`/`resumeCase`. Neither family subsumes the other at the typeclass level, but their value-level denotations coincide, and a single-field combinator is an exact `identity`-pinned merge.
 
 ## Materialized in code
 
-The repository implements this in `Data.Profunctor.Row.*`. Focus and merge are two distinct disciplines, but the focus class for each row-kind **lives in the same module as its merge class** (they share the row-kind and its constraints):
+The repository implements this in `Data.Profunctor.Row.*`. Each of the four **direction modules** stacks its merge class, its unary strength class, and its single-field combinator(s) (they share the direction and its constraints):
 
 - **`StrongRecordToRecord`** (in [Row/RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), alongside `RecordToRecord`) — `class Strong p <= StrongRecordToRecord p` with `focusRecord :: p (Record sub) (Record sub') -> p (Record s) (Record t)` (`ExclusiveRows sub rest s`, `ExclusiveRows sub' rest t`), the row-typed `first`/`second`. The generic `instance Strong p => StrongRecordToRecord p` splits `s` into `(sub, rest)`, runs the argument on `sub` via `first`, and re-merges, so `StrongRecordToRecord p` is interchangeable with `Strong p`.
 - **`ChoiceVariantToVariant`** (in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), alongside `VariantToVariant`) — `class Choice p <= ChoiceVariantToVariant p` with `focusVariant :: p (Variant sub) (Variant sub') -> p (Variant s) (Variant t)`, the row-typed `left`/`right`; the generic `instance Choice p => ChoiceVariantToVariant p` dispatches via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
-- **Combinators** — `introduceProperty`/`eliminateProperty`/`editProperty` (in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), on `StrongRecordToRecord`) and `eliminateCase`/`editCase` (in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), on `ChoiceVariantToVariant`) — each single-field/case combinator sits in the same module as the merge + focus class it builds on. `editProperty`/`editCase` are the value-level single field/case lens/prism. Because the classes have generic instances, all of these work on any `Strong`/`Choice` profunctor directly.
+- **`IteratingRecordToVariant`** (in [Row/RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs), alongside `RecordToVariant`) — `class Profunctor p <= IteratingRecordToVariant p` with `iterating :: p a b -> p (Tuple a c) (Either b c)`, the product→sum (×→+) strength. No `(->)` instance.
+- **`ResumingVariantToRecord`** (in [Row/VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs), alongside `VariantToRecord`) — `class Profunctor p <= ResumingVariantToRecord p` with `resuming :: p a b -> p (Either a c) (Tuple b c)`, the sum→product (+→×) strength. No `(->)` instance.
+- **Single-field/case combinators** (each on its module's strength) — `introduceProperty`/`eliminateProperty`/`editProperty` (on `StrongRecordToRecord`), `eliminateCase`/`editCase` (on `ChoiceVariantToVariant`), `iterateProperty` (on `IteratingRecordToVariant`), `resumeCase` (on `ResumingVariantToRecord`). `editProperty`/`editCase` are the value-level field lens / case prism; `iterateProperty`/`resumeCase` are the `edit`-position combinators for the mixed directions (threading one label across the product/sum boundary). The diagonal classes have generic `Strong`/`Choice` instances, so their combinators work on any such profunctor; the mixed strengths have no instances yet (they need a genuinely looping/stateful carrier).
 - **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) is *not* a dedicated combinator here: there is no inhabitant for it, and in practice it's built via the `VariantToVariant` composition path.
-- **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`; the two diagonal modules additionally host their focus class.
+- **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`; each direction module additionally hosts its unary strength class.
 - **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`editProperty`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`editCase`/`eliminateCase`.
 
 ## References
@@ -248,7 +294,11 @@ Source locations cited in this document:
   - Umbrella aggregator: `src/Data/Profunctor/Row.purs:18`
 - Merge examples: `src/Data/Profunctor/Row/Example.purs`
 - Default single-field lifts: `src/Data/Profunctor/Row/Default.purs`
-- Row focus profunctors:
-  - `src/Data/Profunctor/Row/RecordToRecord.purs` (`class StrongRecordToRecord`, `focusRecord`); `.../VariantToVariant.purs` (`class ChoiceVariantToVariant`, `focusVariant`)
-  - `introduceProperty`/`eliminateProperty`/`editProperty` live in `RecordToRecord.purs`; `eliminateCase`/`editCase` live in `VariantToVariant.purs` (each beside the merge + focus class it builds on)
+- Row unary strengths (each beside its merge, with its single-field combinator(s)):
+  - `RecordToRecord.purs` — `class StrongRecordToRecord`/`focusRecord`; `introduceProperty`/`eliminateProperty`/`editProperty`
+  - `VariantToVariant.purs` — `class ChoiceVariantToVariant`/`focusVariant`; `eliminateCase`/`editCase`
+  - `RecordToVariant.purs` — `class IteratingRecordToVariant`/`iterating`; `iterateProperty`
+  - `VariantToRecord.purs` — `class ResumingVariantToRecord`/`resuming`; `resumeCase`
+- Unary row reshapings (in `Data.Profunctor.Row`): `Union`-based `widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput`; single-field/case forms `widenInputProperty`/`widenOutputCase`/`narrowInputCase`/`narrowOutputProperty`
+- Base product↔sum strengths (binary counterparts): `src/Data/Profunctor/ProductToSum.purs` (`prosum`, the binary form of `iterating`)
 - Row constraints: `src/Type/Row/Constraints.purs`
