@@ -71,7 +71,8 @@ class Profunctor p <= RetainingVariantToRecord p where
 -- | `l` as **input case ↔ output field**: if the input variant carries case
 -- | `l :: x`, its value resumes directly into output field `l` (the `Right`
 -- | branch); otherwise the wrapped profunctor runs on the remaining cases and
--- | its output record is extended with field `l`.
+-- | field `l` is filled from the carrier's retained state (the `c` that `retain`
+-- | always emits), not from the wrapped profunctor.
 retainCase
   :: forall @l p x i i' o o'
    . RetainingVariantToRecord p

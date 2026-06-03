@@ -177,12 +177,12 @@ Carrying a *same-kind* complement is what the mixed directions can't do — but 
 | R→V | `ResolvingRecordToVariant` / `resolve` | `p a b -> p (a × c) (b + c)` | **loop / iteration** step — `Either b c` reads as `Done b`/`Loop c` |
 | V→R | `RetainingVariantToRecord` / `retain` | `p a b -> p (a + c) (b × c)` | **Mealy / coroutine** step — `Tuple b c` is output + next state |
 
-These are the product↔sum-crossing analogues of `Strong`/`Choice` — *not* focuses (they carry no same-kind complement) and *not* the merge. Neither has a `(->)` instance: a stateless function can't loop (`resolve` would be the trivial always-`Done`) or retain state (`retain`'s product output has no producer for the missing component). Their binary counterparts are the merges one level up — `resolve p ≡ prosum p identity` (`Data.Profunctor.ProductToSum`), and `retain` is the unary form of `variantToRecord`.
+These are the product↔sum-crossing analogues of `Strong`/`Choice` — *not* focuses (they carry no same-kind complement) and *not* the merge. Neither has a `(->)` instance: a stateless function can't loop (`resolve` would be the trivial always-`Done`) or retain state (`retain`'s product output has no producer for the missing component). Their binary counterparts are the merges one level up — `resolve` is the identity-pinned form of `Data.Profunctor.ProductToSum.prosum` (its second operand fixed to `identity`), and `retain` is the unary form of `variantToRecord`.
 
 And they give the mixed directions the **`edit`-position single-field combinator** the diagonals have (`editProperty`/`editCase`) — here threading one label *across* the boundary instead of in place:
 
 - `resolveProperty @l :: p (Record i) (Variant o) -> p (Record (l∷x | i)) (Variant (l∷x | o))` — field `l` either escapes directly to output case `l` (`Loop`), or the wrapped profunctor runs on the rest (`Done`).
-- `retainCase @l :: p (Variant i) (Record o) -> p (Variant (l∷x | i)) (Record (l∷x | o))` — input case `l` resumes into output field `l`; otherwise the wrapped profunctor runs and `l` is filled separately.
+- `retainCase @l :: p (Variant i) (Record o) -> p (Variant (l∷x | i)) (Record (l∷x | o))` — input case `l` resumes into output field `l`; otherwise the wrapped profunctor runs and `l` is filled from the carrier's retained state.
 
 So the four directions are symmetric after all — each has a **merge**, a **unary strength**, and an **`edit`-position single-field combinator**. Only the *kind* of strength differs: a complement-carrying **focus** on the diagonals, a mode-crossing **resolve/retain** on the mixed.
 

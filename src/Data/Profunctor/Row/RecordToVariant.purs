@@ -53,8 +53,8 @@ discard first cont = bind first (\_ -> cont unit)
 -- | State enters guaranteed (product input) and leaves optionally (a branch of
 -- | the sum output), so the step may *halt*; closing the `c` channel gives `p`
 -- | a terminating iteration (`tailRec`-style). It is the `identity`-pinned form
--- | of the binary base merge `Data.Profunctor.ProductToSum.prosum`
--- | (`resolve p ≡ prosum p identity`) — the product→sum analogue of how
+-- | of the binary base merge `Data.Profunctor.ProductToSum.prosum` (its second
+-- | operand fixed to `identity`) — the product→sum analogue of how
 -- | `StrongRecordToRecord`/`focusRecord` is the unary form of `recordToRecord`.
 -- |
 -- | (No `(->)` instance: the only one would be the trivial always-`Done` step,
