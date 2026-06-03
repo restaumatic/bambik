@@ -3,9 +3,9 @@ module Data.Profunctor.Row.RecordToVariant
   , class RecordToVariant
   , discard
   , recordToVariant
-  , class IteratingRecordToVariant
-  , iterating
-  , iterateProperty
+  , class ResolvingRecordToVariant
+  , resolve
+  , resolveProperty
   )
   where
 
@@ -41,11 +41,11 @@ discard :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
 discard first cont = bind first (\_ -> cont unit)
 
 -- | The **unary** product→sum strength for this direction: a single **loop /
--- | iteration step**. `iterating` runs a transformer `p a b` on an input `a`
+-- | iteration step**. `resolve` runs a transformer `p a b` on an input `a`
 -- | alongside a carried state `c`, returning a `Step`:
 -- |
 -- | ```
--- | iterating :: p a b -> p (Tuple a c) (Either b c)
+-- | resolve :: p a b -> p (Tuple a c) (Either b c)
 -- |                                      -- Left  b = Done b  (finish)
 -- |                                      -- Right c = Loop c  (continue)
 -- | ```
@@ -54,24 +54,24 @@ discard first cont = bind first (\_ -> cont unit)
 -- | the sum output), so the step may *halt*; closing the `c` channel gives `p`
 -- | a terminating iteration (`tailRec`-style). It is the `identity`-pinned form
 -- | of the binary base merge `Data.Profunctor.ProductToSum.prosum`
--- | (`iterating p ≡ prosum p identity`) — the product→sum analogue of how
+-- | (`resolve p ≡ prosum p identity`) — the product→sum analogue of how
 -- | `StrongRecordToRecord`/`focusRecord` is the unary form of `recordToRecord`.
 -- |
 -- | (No `(->)` instance: the only one would be the trivial always-`Done` step,
 -- | which carries no iteration — this class is for profunctors that actually loop.)
-class Profunctor p <= IteratingRecordToVariant p where
-  iterating :: forall a b c. p a b -> p (Tuple a c) (Either b c)
+class Profunctor p <= ResolvingRecordToVariant p where
+  resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
 
--- | Single-field specialization of `iterating` — the `edit`-position combinator
+-- | Single-field specialization of `resolve` — the `edit`-position combinator
 -- | for this direction (the analogue of `editProperty`/`editCase` when input and
 -- | output kinds differ). It threads one label `l` as **input field ↔ output
 -- | case**: field `l :: x` is split off the input record, and the wrapped
 -- | profunctor either runs on the rest (emitting some case of `o`, the `Done`
 -- | branch) or the field's value escapes directly as output case `l` (the
 -- | `Loop`/short-circuit branch).
-iterateProperty
+resolveProperty
   :: forall @l p x lo i i' o o'
-   . IteratingRecordToVariant p
+   . ResolvingRecordToVariant p
   => IsSymbol l
   => Cons l x i i'
   => Lacks l i
@@ -80,8 +80,8 @@ iterateProperty
   => Union o lo o'
   => p (Record i) (Variant o)
   -> p (Record i') (Variant o')
-iterateProperty g =
+resolveProperty g =
   dimap
     (\s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s))
     (either expand (inj (Proxy @l)))
-    (iterating g)
+    (resolve g)
