@@ -93,7 +93,7 @@ resolveProperty g =
 -- | to `(view : s → a) × (build : b → t) × (escape : s → t)` — a lens that can
 -- | *snap shut*: run the focus and `build` (the `Done` branch), or `escape`
 -- | straight to `t` (the `Loop`/short-circuit). Like a camera shutter: it opens,
--- | loops while held, then snaps to a single captured value. (Polish: *Migawka*.)
+-- | loops while held, then snaps to a single captured value.
 type Shutter s t a b = forall p. ResolvingRecordToVariant p => p a b -> p s t
 
 shutter :: forall s t a b. (s -> a) -> (b -> t) -> (s -> t) -> Shutter s t a b

@@ -95,7 +95,6 @@ retainCase g =
 -- | to `s → Either a (b → t)` — a per-input dispatch that either surfaces a focus
 -- | `a`, or supplies a *finisher* `b → t` drawn from retained state. Like a film
 -- | reel: a wound transport that holds its position and never finishes.
--- | (Polish: *Szpula*.)
 type Reel s t a b = forall p. RetainingVariantToRecord p => p a b -> p s t
 
 reel :: forall s t a b. (s -> Either a (b -> t)) -> Reel s t a b

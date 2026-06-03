@@ -186,7 +186,7 @@ Each strength also **induces an optic** (its `p a b -> p s t` form, with the res
 | `resolve` | **`Shutter`** (`shutter`) | `(view : s→a) × (build : b→t) × (escape : s→t)` |
 | `retain` | **`Reel`** (`reel`) | `s → Either a (b→t)` |
 
-A **`Shutter`** is a lens that can *snap shut* — run the focus and rebuild (`Done`), or `escape` straight to `t` (`Loop`/short-circuit); like a camera shutter that opens, loops while held, then snaps to one captured value. A **`Reel`** is a wound transport that *holds its position and never finishes* — each step emits an output and the next state; like a film reel you scroll through. `Shutter`/`shutter` live beside `resolve` in [RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs); `Reel`/`reel` beside `retain` in [VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs). (Polish, matching `Soczewka`/`Pryzmat`: **`Migawka`**/**`Szpula`**.)
+A **`Shutter`** is a lens that can *snap shut* — run the focus and rebuild (`Done`), or `escape` straight to `t` (`Loop`/short-circuit); like a camera shutter that opens, loops while held, then snaps to one captured value. A **`Reel`** is a wound transport that *holds its position and never finishes* — each step emits an output and the next state; like a film reel you scroll through. `Shutter`/`shutter` live beside `resolve` in [RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs); `Reel`/`reel` beside `retain` in [VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs).
 
 And they give the mixed directions the **`edit`-position single-field combinator** the diagonals have (`editProperty`/`editCase`) — here threading one label *across* the boundary instead of in place:
 
