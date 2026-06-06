@@ -18,8 +18,11 @@ module Data.Profunctor.Row.VariantToVariant
   , discard
   , class ChoiceVariantToVariant
   , focusVariant
+  , prismE
+  , prismCase
   , eliminateCase
   , editCase
+  , splitVariant
   )
   where
 
@@ -34,7 +37,7 @@ import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
 import Data.Void (Void, absurd)
 import Effect.Exception.Unsafe (unsafeThrow)
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
 import Type.Row.Constraints (class DispatchableVariants, class ExclusiveRows, class InclusiveRows)
 
@@ -100,6 +103,33 @@ splitVariant v = case contract v of
   Nothing -> case contract v of
     Just rest -> Right rest
     Nothing -> unsafeThrow "ChoiceVariantToVariant.focusVariant: case in neither sub nor rest"
+
+-- | Construct a `Prism` straight from its **existential encoding**
+-- | `∃c. (s → a + c) × (b + c → t)`: pick the residual `c`, then supply `decon`
+-- | (match `s` as the focus `a` or the complement `c`) and `recon` (rebuild `t`
+-- | from the built `b` or that same complement `c`). The quantified `c` is the
+-- | eliminator of that existential; `left` (`Choice`) is the carrier. The standard
+-- | `Data.Lens.prism` is this at the co-Yoneda witness `c := t`. Mirror of
+-- | `lensE` (first), `shutterE` (resolve), `reelE` (retain).
+prismE :: forall s t a b c. (s -> Either a c) -> (Either b c -> t) -> Prism s t a b
+prismE decon recon g = dimap decon recon (left g)
+
+-- | The single-case **row** existential prism for label `l`, type-changing: the
+-- | focus is case `l` (`a → b`) and the residual `c` is the **rest of the
+-- | variant** — a sub-Variant. Built via `prismE` at `c := Variant rest`. The row
+-- | counterpart of the generic `prismE`; `editCase` is its monomorphic,
+-- | `prism'`-based cousin.
+prismCase
+  :: forall @l s t a b rest mix
+   . IsSymbol l
+  => Cons l a rest s
+  => Cons l b rest t
+  => Union rest mix t
+  => Prism (Variant s) (Variant t) a b
+prismCase =
+  prismE
+    (on (Proxy @l) Left Right)
+    (either (inj (Proxy @l)) expand)
 
 -- | Eliminate the case `l` via a diverging handler `p case Void`, preserving the rest.
 -- | Built on `ChoiceVariantToVariant` (`Choice`'s `left`): the routed `Left` case exits

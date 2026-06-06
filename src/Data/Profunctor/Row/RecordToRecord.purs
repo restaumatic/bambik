@@ -13,6 +13,8 @@ module Data.Profunctor.Row.RecordToRecord
   , discard
   , class StrongRecordToRecord
   , focusRecord
+  , lensE
+  , lensProperty
   , introduceProperty
   , eliminateProperty
   , editProperty
@@ -81,6 +83,33 @@ instance Strong p => StrongRecordToRecord p where
           -- `ExclusiveRows sub' rest t` guarantees `sub'` and `rest` are disjoint.
           (\(Tuple sub' rest) -> Record.union sub' rest)
           (first g)
+
+-- | Construct a `Lens` straight from its **existential encoding**
+-- | `∃c. (s → a × c) × (b × c → t)`: pick the residual `c`, then supply `decon`
+-- | (split `s` into a focus `a` and the complement `c`) and `recon` (rebuild `t`
+-- | from the new focus `b` and that same complement `c`). The quantified `c` is
+-- | the eliminator of that existential; `first` (`Strong`) is the carrier that
+-- | threads `c`. The standard `Data.Lens.lens` is this at the co-Yoneda witness
+-- | `c := s`. Mirror of `shutterE` (resolve), `reelE` (retain), `prismE` (left).
+lensE :: forall s t a b c. (s -> Tuple a c) -> (Tuple b c -> t) -> Lens s t a b
+lensE decon recon g = dimap decon recon (first g)
+
+-- | The single-field **row** existential lens for label `l`, type-changing: the
+-- | focus is field `l` (`a → b`) and the residual `c` is the **rest of the
+-- | record** — a sub-Record. Built via `lensE` at `c := Record rest`. The row
+-- | counterpart of the generic `lensE`; `editProperty` is its monomorphic,
+-- | `prop`-based cousin.
+lensProperty
+  :: forall @l s t a b rest
+   . IsSymbol l
+  => Cons l a rest s
+  => Cons l b rest t
+  => Lacks l rest
+  => Lens (Record s) (Record t) a b
+lensProperty =
+  lensE
+    (\r -> Tuple (get (Proxy @l) r) (delete (Proxy @l) r))
+    (\(Tuple b rest) -> insert (Proxy @l) b rest)
 
 -- | Introduce a new field `l :: prop`, computing its value from the whole record `s`
 -- | (the `p s r` shape). `id &&& f` followed by `insert`.
