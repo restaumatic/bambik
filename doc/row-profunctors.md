@@ -270,6 +270,42 @@ Likewise: expanded/collapsed tree nodes, the active tab, a carousel's slide inde
 
 This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that deliver this — `Resolving (UI m)` / `Retaining (UI m)` in [UI.purs](../src/UI.purs) — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
 
+## The optics as a domain model (DDD reading)
+
+The split that runs through this whole note — *spatial data navigation* (the diagonals) vs *behavior over time* (the mixed directions) — is exactly Domain-Driven Design's **Value Object / Entity** line. The four optics map onto DDD's tactical vocabulary, and the type-level facts above become the domain rules:
+
+| optic | encoding | DDD role |
+|---|---|---|
+| `Lens` | has-a (product field) | **Value Object** accessor |
+| `Prism` | is-a (sum case) | **Value Object** discriminator |
+| `Reel` | fold a command into state (`+→×`) | **Entity / Aggregate** |
+| `Shutter` | run a step that finishes or loops (`×→+`) | **Process / Use Case / Saga** |
+
+- **Diagonals = Value Objects.** `Lens`/`Prism` navigate frozen ADT structure: timeless, by-value, equal-by-structure, and they have a `(->)` instance. That is a Value Object precisely — no identity, defined wholly by its attributes, immutable (`set` returns a *new* whole).
+- **`Reel` = Entity / Aggregate.** Its product output is *total* — every step yields a complete next state, so it never finishes: a thing that **persists**. The residual `c` is the entity's state/identity carried forward (held by the carrier, not the caller — matching DDD's "no reaching past the root"), and `recon` is the **aggregate root**, the single point that re-establishes invariants on every transition. The `Right c` "resume" branch of `retain` is **rehydration** from a snapshot. `cartReel`/`ledgerReel` in [test/BusinessOptics.purs](../test/BusinessOptics.purs) are aggregates folding commands into carried state.
+- **`Shutter` = Process / Saga.** Its sum output is a *choice* — `Done`/`Loop` — so it can **terminate**: a process driving toward completion. The residual is its in-flight context, escaped on `Loop` (a saga's persisted state between steps). `verifyKyc` in [test/BusinessOptics.purs](../test/BusinessOptics.purs) is exactly this: `Verified` (`Done`) or `Pending partial` (`Loop`, carrying accumulated state).
+- **The missing `(->)` instance is the entity/value-object line drawn in types.** A stateless value can navigate data (Value Object) but cannot carry identity over time (Entity/Process) — see ["The mixed directions' own strength"](#the-mixed-directions-own-strength-resolve-and-retain).
+
+**Composition is the aggregate tree.** Optic composition is function composition, so aggregates nest by composing optics:
+
+- a `Reel` whose focus is itself a `Reel` is a **sub-entity** — its residual is *local identity* nested inside the outer residual, reachable only by composing *through* the root;
+- a `Reel` bottoming out in a pure `(->)` focus has a **value object** at the leaf (the recursion stops).
+
+So an **aggregate** is a composed *stack* of optics, the **aggregate root** is its outermost `Reel`, and DDD's "external access only through the root" is precisely "you reach an inner optic only by composing through the outer one." (The Cybercat Institute's *Optics for UI* reaches the same Mealy machine by *parametrising the diagonal `Lens` with state* — the Para construction — rather than by promoting the off-diagonal optic; their explicit state parameter is this note's residual `c`, but threaded openly rather than encapsulated in the carrier. Their work covers the entity half; the `Shutter`/saga half, a sum-output process that can finish or loop, has no Para counterpart.)
+
+### Business logic as a closed algebra
+
+The four optics are not the *whole* of an application's logic — they are its **structural skeleton**. Everything else fills in around them *inside the same profunctor algebra*:
+
+| concern | profunctor operation |
+|---|---|
+| structural navigation, state, process | the four strengths (`Strong`/`Choice`/`Resolving`/`Retaining`) |
+| computation / arithmetic | `dimap`'s `decon`/`recon` — every optic is `dimap pre post (strength g)` |
+| flow / orchestration | composition (`>>>`, `Endo.do`, `Sum.do`, `Flow.do`) |
+| effects (DB, API, async) | the **carrier** — instantiating the polymorphic `p := UI m` |
+
+The algebra is therefore **closed** over business logic: every pure step has a home (structure in the strengths, computation in `dimap`, flow in composition), and effects ride in the carrier. In particular the arithmetic is *not* outside the optics — it **is** their `decon`/`recon` (a cart's `total + line.price` is literally the `recon` of its `Reel`). Two things sit at the edge by design: **opaque pure functions** (a pricing engine is *carried* as a `rmap`/focus but not *decomposed* by optics) and **effect execution** (in the carrier — exactly DDD's domain/infrastructure boundary, which keeps effects out of the domain). The payoff is that the optic-expressed logic is **carrier-independent**: one definition runs unchanged in a live `UI m`, a pure test stepper, or a batch/server job.
+
 ## Introduce vs eliminate: each isolates one row-discipline
 
 A full `recordToRecord` does two things: **decompose** its input (`InclusiveRows`) and **assemble** its output (`ExclusiveRows`). Each single-field combinator isolates exactly one:
