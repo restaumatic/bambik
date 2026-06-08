@@ -2,7 +2,7 @@
 
 A checkout screen assembled from the **UI widget leaves** in
 [`Data.Profunctor.Row.Example`](../src/Data/Profunctor/Row/Example.purs) — `textInput`,
-`checkbox`, `button`, `notification`, `modal`, `statusBar`, `eventLog` — running at that
+`checkbox`, `button`, `request`, `modal`, `statusBar`, `eventLog` — running at that
 module's concrete fake carrier `MyRowToRowProfunctor`. The whole screen **type-checks as
 a real composite**, with no UI, no effects, and no hand-written optics: the widgets are
 reused as-is and only *composed*.
@@ -29,9 +29,9 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   action buttons (each fires the form)
     button @"submit"
     button @"cancel"
-  VariantToVariant.do    -- + → +   process each action event
-    notification @"submit"
-    modal        @"cancel"
+  VariantToVariant.do    -- + → +   submit hits the backend, cancel is local
+    request @"submit"
+    modal   @"cancel"
   VariantToRecord.do     -- + → ×   record each event
     statusBar @"submit"
     eventLog  @"cancel"
@@ -41,7 +41,7 @@ checkout = Semigroupoid.do
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
 | `button` | Record → Variant (× → +) | reads the whole form, fires an action carrying it |
-| `notification`, `modal` | Variant → Variant (+ → +) | process an action event |
+| `request`, `modal` | Variant → Variant (+ → +) | dispatch an action (`request` = fake backend round-trip) |
 | `statusBar`, `eventLog` | Variant → Record (+ → ×) | record an event as a field |
 
 - **merge** (each `*.do`) combines that direction's widgets;
@@ -50,7 +50,7 @@ checkout = Semigroupoid.do
   completed form as its payload.
 
 Every widget is **`@l`-parameterized** — `textInput @"email"`, `button @"submit"`,
-`notification @"submit"`, … — so each leaf names the single field/case it handles. That
+`request @"submit"`, … — so each leaf names the single field/case it handles. That
 single fact (a closed row, `Cons l a () r`) lets every merge split unambiguously, so the
 body needs **no type annotations at all**.
 

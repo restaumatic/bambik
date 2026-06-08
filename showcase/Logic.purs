@@ -1,7 +1,7 @@
 -- | **A checkout screen, built from row-profunctor UI widgets.**
 -- |
 -- | This reuses the widget leaves from `Data.Profunctor.Row.Example` — `textInput`,
--- | `checkbox`, `button`, `notification`, `modal`, `statusBar`, `eventLog` — and runs
+-- | `checkbox`, `button`, `request`, `modal`, `statusBar`, `eventLog` — and runs
 -- | them at that module's concrete fake carrier `MyRowToRowProfunctor`. So the whole
 -- | screen type-checks as a real composite, with no UI, effects, or hand-written optics:
 -- | the widgets compose by row-profunctor **merge** (the four `*.do` blocks, one per
@@ -11,14 +11,15 @@
 -- |
 -- |   * `textInput`/`checkbox`  — Record → Record  (×→×): an editable field
 -- |   * `button`                — Record → Variant (×→+): reads the form, fires an action
--- |   * `notification`/`modal`  — Variant → Variant (+→+): turn an action into an outcome
+-- |   * `request`/`modal`       — Variant → Variant (+→+): dispatch an action (`request` is
+-- |                               a fake backend round-trip; `modal` is local)
 -- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): record the event as a field
 -- |
 -- | Every widget is `@l`-parameterized (pins the single field/case it handles), so the
 -- | merges split unambiguously and the body needs no type annotations at all.
 module Showcase.Logic where
 
-import Data.Profunctor.Row.Example (button, checkbox, eventLog, modal, notification, statusBar, textInput)
+import Data.Profunctor.Row.Example (button, checkbox, eventLog, modal, request, statusBar, textInput)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -41,8 +42,8 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   actions: each button reads the form and fires its event
     button @"submit"
     button @"cancel"
-  VariantToVariant.do    -- + → +   process each action event
-    notification @"submit"
+  VariantToVariant.do    -- + → +   process each action: submit hits the backend, cancel is local
+    request @"submit"
     modal @"cancel"
   VariantToRecord.do     -- + → ×   display each event
     statusBar @"submit"

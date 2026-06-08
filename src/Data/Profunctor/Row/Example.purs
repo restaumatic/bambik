@@ -16,6 +16,7 @@ module Data.Profunctor.Row.Example
   , rating
   , recordToRecordExample
   , recordToVariantExample
+  , request
   , searchBar
   , slider
   , statusBar
@@ -192,6 +193,11 @@ notification = MyRowToRowProfunctor
 
 modal :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
 modal = MyRowToRowProfunctor
+
+-- A fake request/response dispatch to the backend: send case `l` as a request, the
+-- response returns on the same `l` channel.
+request :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
+request = MyRowToRowProfunctor
 
 wizardStep :: forall @l v w. Cons l (Record ()) () w => MyRowToRowProfunctor (Variant v) (Variant w)
 wizardStep = MyRowToRowProfunctor
