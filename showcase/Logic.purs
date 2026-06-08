@@ -1,20 +1,18 @@
--- | **The checkout app's business logic, as one pipeline of optics — no annotations.**
+-- | **A reactive checkout form, as pure optics.**
 -- |
 -- | No UI, no effects, no carrier: `p` stays abstract, so the logic is
--- | carrier-independent (see `doc/row-profunctors.md`). The four optics map onto
--- | Domain-Driven Design's tactical vocabulary, and each is one stage of the flow:
+-- | carrier-independent (see `doc/row-profunctors.md`). The natural unit is the **field**:
+-- | the form is a *merge of field widgets*, and each `textInput` widget runs its own
+-- | edit → change → validate → status flow over its single field — touching all four
+-- | optic families along the way:
 -- |
--- |   * **Lens**    (× → ×) — value-object field access  ("has-a")    — `textInput`
--- |   * **Shutter** (× → +) — the Process / Saga                       — `onChange`
--- |   * **Prism**   (+ → +) — value-object case match     ("is-a")     — `notification`
--- |   * **Reel**    (+ → ×) — the Entity / Aggregate                   — `statusBar`
+-- |   * **Lens**    (× → ×) — edit the field in place        ("has-a")
+-- |   * **Shutter** (× → +) — fire the field's change event  (Process / Saga)
+-- |   * **Prism**   (+ → +) — validate that event            ("is-a")
+-- |   * **Reel**    (+ → ×) — write the field's status       (Entity / Aggregate)
 -- |
--- | There are no inline `:: p (…) (…)` annotations: each leaf is a **closed-row**
--- | combinator (`Cons l a () r` pins the row to the single field/case `l`), so the merges
--- | can split the form unambiguously without a call-site signature; the field types are
--- | then unified from `checkoutFlow`'s endpoints. This is exactly the idiom of
--- | `Data.Profunctor.Row.Example`'s widget leaves (`textInput @l`, `button @l`, …) — a
--- | label plus a closed single-field/case row — here generalized over the carrier `p`.
+-- | There are no inline annotations: the widget's closed row (`Cons l a () r`) pins every
+-- | step to the single field/case `l`, and the field types unify from `checkoutFlow`.
 module Showcase.Logic where
 
 import Prelude
@@ -23,57 +21,47 @@ import Data.Either (Either(..), either)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, editProperty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, shutterE)
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.VariantToRecord (class Retaining, class VariantToRecord, reelE)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, editCase)
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Profunctor.Row.RecordToVariant (class Resolving, shutterE)
+import Data.Profunctor.Row.VariantToRecord (class Retaining, reelE)
+import Data.Profunctor.Row.VariantToVariant (editCase)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
-import Data.Variant (Variant, case_, inj, on)
+import Data.Variant (case_, inj, on)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get, insert)
 import Type.Proxy (Proxy(..))
 
--- | **`textInput`** — a **Lens** leaf (× → ×): show and edit field `l` in place.
--- | Closed row (`Cons l a () r`) → no annotation needed.
-textInput :: forall @l p a r. Category p => Strong p => IsSymbol l => Cons l a () r => p (Record r) (Record r)
-textInput = editProperty @l identity
-
--- | **`onChange`** — a **Shutter** leaf (× → +): when field `l` changes, fire its value as event `l`.
-onChange :: forall @l p a r. Category p => Resolving p => IsSymbol l => Cons l a () r => p (Record r) (Variant r)
-onChange =
-  shutterE
-    (\rec -> Tuple (get (Proxy @l) rec) (get (Proxy @l) rec))
-    (either (inj (Proxy @l)) (inj (Proxy @l)))
-    identity
-
--- | **`notification`** — a **Prism** leaf (+ → +): react to case `l` and re-emit it.
-notification :: forall @l p a r. Category p => Choice p => IsSymbol l => Cons l a () r => p (Variant r) (Variant r)
-notification = editCase @l identity
-
--- | **`statusBar`** — a **Reel** leaf (+ → ×): display case `l` as field `l`.
-statusBar :: forall @l p a r. Category p => Retaining p => IsSymbol l => Cons l a () r => p (Variant r) (Record r)
-statusBar =
-  reelE
-    (\v -> Left ((case_ # on (Proxy @l) identity) v))
-    (\(Tuple b (_ :: Unit)) -> insert (Proxy @l) b {})
-    identity
-
--- | A reactive **checkout screen**, as one `Semigroupoid.do` (`>>>`) pipeline. The
--- | shopper's form (`email`, `cardNumber`, `amount`) flows through four stages — one
--- | per optic family — and the same data lands back as a status line. Each merge
--- | do-block wires that stage's three field widgets; the outer `Semigroupoid.do` flows
--- | the stages. No type annotations anywhere in the body:
+-- | A complete **`textInput`** widget for field `l`: a `Semigroupoid.do` (`>>>`) flow
+-- | that edits the field, fires its change event, validates it, and writes its status —
+-- | one optic family per step, all over the single field `l`:
 -- |
 -- | ```
--- |   form  ──textInput──▶  form  ──onChange──▶  events  ──notification──▶  events  ──statusBar──▶  status
--- |   RecordToRecord.do       RecordToVariant.do      VariantToVariant.do        VariantToRecord.do
--- |    (edit each field)       (field change → event)  (validate → notice)        (event → status)
+-- |   Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism──▶ Variant ──Reel──▶ Record
+-- |     (edit l)         (l changed)        (validate l)        (status l)
 -- | ```
+textInput
+  :: forall @l p a r
+   . Category p
+  => Strong p
+  => Choice p
+  => Resolving p
+  => Retaining p
+  => IsSymbol l
+  => Cons l a () r
+  => p (Record r) (Record r)
+textInput = Semigroupoid.do
+  editProperty @l identity                                                            -- × → ×  edit
+  shutterE (\rec -> Tuple (get (Proxy @l) rec) (get (Proxy @l) rec))                   -- × → +  change
+           (either (inj (Proxy @l)) (inj (Proxy @l))) identity
+  editCase @l identity                                                                -- + → +  validate
+  reelE (\v -> Left ((case_ # on (Proxy @l) identity) v))                             -- + → ×  status
+        (\(Tuple b (_ :: Unit)) -> insert (Proxy @l) b {}) identity
+
+-- | The checkout form: one `RecordToRecord.do` merge of the field widgets. The smelly
+-- | four-do-blocks-over-the-same-fields pipeline is gone — each field appears once, and
+-- | its whole edit/validate/status lifecycle lives inside its own `textInput`.
 checkoutFlow
   :: forall p
    . Category p
@@ -82,25 +70,9 @@ checkoutFlow
   => Resolving p
   => Retaining p
   => RecordToRecord p
-  => RecordToVariant p
-  => VariantToVariant p
-  => VariantToRecord p
   => p (Record ( email :: String, cardNumber :: String, amount :: Int ))
        (Record ( email :: String, cardNumber :: String, amount :: Int ))
-checkoutFlow = Semigroupoid.do
-  RecordToRecord.do      -- × → ×   the form: an editable input per field
-    textInput @"email"
-    textInput @"cardNumber"
-    textInput @"amount"
-  RecordToVariant.do     -- × → +   each field fires its onChange event
-    onChange @"email"
-    onChange @"cardNumber"
-    onChange @"amount"
-  VariantToVariant.do    -- + → +   validate: a notification per event
-    notification @"email"
-    notification @"cardNumber"
-    notification @"amount"
-  VariantToRecord.do     -- + → ×   status: render each event into the status line
-    statusBar @"email"
-    statusBar @"cardNumber"
-    statusBar @"amount"
+checkoutFlow = RecordToRecord.do
+  textInput @"email"
+  textInput @"cardNumber"
+  textInput @"amount"

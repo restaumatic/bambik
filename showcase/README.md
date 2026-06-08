@@ -1,51 +1,59 @@
-# Showcase: a checkout screen as pure optics
+# Showcase: a checkout form as pure optics
 
-A reactive **checkout screen** — a shopper's form (`email`, `cardNumber`, `amount`)
-flowing through edit → change → validate → status — expressed **only as optics**: no
-UI, no effects, no carrier. `p` stays abstract, so the logic is carrier-independent. It
-type-checks (`spago build`); it is not meant to be *run*. Every binding is used by the
-app — there is no spare vocabulary.
+A reactive **checkout form** — a shopper's fields (`email`, `cardNumber`, `amount`),
+each editing → firing a change → validating → showing status — expressed **only as
+optics**: no UI, no effects, no carrier. `p` stays abstract, so the logic is
+carrier-independent. It type-checks (`spago build`); it is not meant to be *run*.
 
-- [Logic.purs](./Logic.purs) — the whole showcase: four **closed-row leaf** helpers
-  (one per optic family) and `checkoutFlow`, which composes them. The body has no type
-  annotations: each helper pins its row to a single field/case via `Cons l a () r`, so
-  the merges split the form unambiguously and the field types unify from the endpoints.
+- [Logic.purs](./Logic.purs) — the whole showcase: a `textInput` field widget and
+  `checkoutFlow`, the form that merges three of them. No type annotations: the widget's
+  closed row (`Cons l a () r`) pins every step to its field, and the field types unify
+  from `checkoutFlow`'s endpoints.
 
-## The four optics → the four stages
+## The unit is the field, not the operation
 
-Each optic family is one stage of the pipeline, packaged as a closed-row leaf helper
-named after the UI widget that has its shape (the `Example.purs` idiom). Their DDD reading:
+A form is a **merge of field widgets**; each field widget runs its own lifecycle. That's
+why there's one merge (the form) and the four optic families live *inside* each widget —
+not four separate do-blocks all spanning the same three fields.
 
-| optic | direction | DDD role | leaf (widget) | built on |
+`textInput @l` is a `Semigroupoid.do` (`>>>`) flow over the single field `l`, one optic
+family per step:
+
+```
+Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism──▶ Variant ──Reel──▶ Record
+  (edit l)         (l changed)        (validate l)        (status l)
+```
+
+| step | optic | direction | DDD role | built on |
 |---|---|---|---|---|
-| `Lens` | × → × | Value Object accessor ("has-a") | `textInput` — show/edit a field | `editProperty` |
-| `Shutter` | × → + | **Process / Saga** | `onChange` — a field fires its change event | `shutterE` |
-| `Prism` | + → + | Value Object discriminator ("is-a") | `notification` — react to a case | `editCase` |
-| `Reel` | + → × | **Entity / Aggregate** | `statusBar` — display a case | `reelE` |
+| edit | `Lens` | × → × | Value Object accessor ("has-a") | `editProperty` |
+| change | `Shutter` | × → + | **Process / Saga** | `shutterE` |
+| validate | `Prism` | + → + | Value Object discriminator ("is-a") | `editCase` |
+| status | `Reel` | + → × | **Entity / Aggregate** | `reelE` |
 
-## The app
+## The form
 
-`checkoutFlow` wires three field widgets per stage with the four merge do-blocks (the
-`{Record,Variant}²` class matrix), and flows the stages with the outer `Semigroupoid.do`:
+`checkoutFlow` is one `RecordToRecord.do` merge of the field widgets — each field listed
+once, its whole lifecycle encapsulated:
 
+```purescript
+checkoutFlow = RecordToRecord.do
+  textInput @"email"
+  textInput @"cardNumber"
+  textInput @"amount"
 ```
-form  ──textInput──▶ form ──onChange──▶ events ──notification──▶ events ──statusBar──▶ status
-RecordToRecord.do      RecordToVariant.do      VariantToVariant.do        VariantToRecord.do
- (edit each field)      (field change → event)  (validate → notice)        (event → status)
-```
 
-Two axes of composition in one definition: **merge** across a row (inside each
-do-block, wiring the three field widgets) and **flow** along the pipeline (the outer
-`Semigroupoid.do`). The leaves are closed-row, so the app needs no parameters and no
-annotations — the optics build all the structure.
+Two axes of composition: **flow** inside the widget (`Semigroupoid.do`, the four optic
+families end-to-end) and **merge** across the form (`RecordToRecord.do`, combining the
+fields). No annotations — the widget's closed row pins each step; the field types unify
+from the form's endpoints.
 
-### Why closed-row helpers (and not inline annotations)
+### Why a closed row (and not inline annotations)
 
 `editProperty`/`editCase`/… are *open-rest* (`Cons l a r s`, `r` free) so they compose
-onto any record — but that openness makes a merge leaf ambiguous (nothing forces the
-leaf to touch only `l`). The fix isn't a typed `identity` (that pins only the focus, not
-the rest); it's a leaf whose **row tail is `()`** (`Cons l a () r`). That single fact is
-what the merge needs, supplied once per helper rather than at every call site.
+onto any record — but that openness leaves a leaf's row ambiguous in a merge. `textInput`
+fixes it once, at the widget, with a **closed tail `()`** (`Cons l a () r`): every step is
+pinned to the single field/case `l`, so no call-site annotation is needed.
 
 The full optic vocabulary (the focus and wrap combinators — `focusRecord`,
 `focusVariant`, `resolveProperty`, `retainCase`, `shutterWrap`, `reelWrap`, `lensE`,
