@@ -11,9 +11,9 @@
 -- |
 -- |   * `textInput`/`checkbox`  — Record → Record  (×→×): an editable field
 -- |   * `button`                — Record → Variant (×→+): reads the form, fires an action
--- |   * `request`/`modal`       — Variant → Variant (+→+): dispatch an action (`request` is
--- |                               a fake backend round-trip; `modal` is local)
--- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): record the event as a field
+-- |   * `request`/`modal`       — Variant → Variant (+→+): turn an action into an outcome
+-- |                               (`request` is a fake backend round-trip; `modal` is local)
+-- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): render an outcome onto the page
 -- |
 -- | Every widget is `@l`-parameterized (pins the single field/case it handles), so the
 -- | merges split unambiguously and the body needs no type annotations at all.
@@ -26,14 +26,17 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import QualifiedDo.Semigroupoid as Semigroupoid
 
--- | The whole checkout, flowing through all four merge directions — and now with no
--- | inline annotations: every widget is `@l`-parameterized, so each leaf names the
--- | single field/case it handles and the merges split unambiguously.
+-- | The whole checkout, flowing through all four merge directions to a result page —
+-- | with no inline annotations (every widget is `@l`-parameterized):
 -- |
 -- | ```
--- |   form ──▶ submit | cancel ──▶ submit | cancel ──▶ display
--- |   ×→×        ×→+                +→+                 +→×
+-- |   form ──▶ submit | cancel ──▶ thankYou | cancelled ──▶ page { thankYou, cancelled }
+-- |   ×→×        ×→+                +→+                       +→×
 -- | ```
+-- |
+-- | so it resolves to `… (Record ( email, cardNumber, savePayment ))
+-- |                       (Record ( thankYou :: Record …, cancelled :: Record … ))` —
+-- | a checkout status / thank-you page carrying the placed (or cancelled) order.
 checkout = Semigroupoid.do
   RecordToRecord.do      -- × → ×   the form: an input widget per field
     textInput @"email"
@@ -42,9 +45,9 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   actions: each button reads the form and fires its event
     button @"submit"
     button @"cancel"
-  VariantToVariant.do    -- + → +   process each action: submit hits the backend, cancel is local
-    request @"submit"
-    modal @"cancel"
-  VariantToRecord.do     -- + → ×   display each event
-    statusBar @"submit"
-    eventLog @"cancel"
+  VariantToVariant.do    -- + → +   submit → backend → thankYou; cancel → cancelled
+    request @"submit" @"thankYou"
+    modal @"cancel" @"cancelled"
+  VariantToRecord.do     -- + → ×   render the checkout result page
+    statusBar @"thankYou"
+    eventLog @"cancelled"

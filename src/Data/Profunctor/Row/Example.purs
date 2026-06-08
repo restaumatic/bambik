@@ -188,15 +188,18 @@ rating = MyRowToRowProfunctor
 
 -- Variant-to-variant (sum-shaped model in, fires event case)
 
-notification :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
+-- Each turns the incoming event case `from` into an outgoing case `to`, carrying the
+-- payload along (a closed-row rename, so the merges need no annotations).
+
+notification :: forall @from @to a iRow oRow. Cons from a () iRow => Cons to a () oRow => MyRowToRowProfunctor (Variant iRow) (Variant oRow)
 notification = MyRowToRowProfunctor
 
-modal :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
+modal :: forall @from @to a iRow oRow. Cons from a () iRow => Cons to a () oRow => MyRowToRowProfunctor (Variant iRow) (Variant oRow)
 modal = MyRowToRowProfunctor
 
--- A fake request/response dispatch to the backend: send case `l` as a request, the
--- response returns on the same `l` channel.
-request :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
+-- A fake request/response dispatch to the backend: send case `from` as a request, the
+-- response returns on case `to`.
+request :: forall @from @to a iRow oRow. Cons from a () iRow => Cons to a () oRow => MyRowToRowProfunctor (Variant iRow) (Variant oRow)
 request = MyRowToRowProfunctor
 
 wizardStep :: forall @l v w. Cons l (Record ()) () w => MyRowToRowProfunctor (Variant v) (Variant w)

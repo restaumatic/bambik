@@ -16,8 +16,8 @@ Each widget's *shape* is one of the four row-profunctor directions. `checkout` w
 them with the four **merge** do-blocks and the **flow** of `Semigroupoid.do`:
 
 ```
-form ──▶ submit | cancel ──▶ placed | aborted ──▶ display
-×→×          ×→+                +→+                 +→×
+form ──▶ submit | cancel ──▶ thankYou | cancelled ──▶ page { thankYou, cancelled }
+×→×          ×→+                +→+                     +→×
 ```
 
 ```purescript
@@ -29,25 +29,28 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   action buttons (each fires the form)
     button @"submit"
     button @"cancel"
-  VariantToVariant.do    -- + → +   submit hits the backend, cancel is local
-    request @"submit"
-    modal   @"cancel"
-  VariantToRecord.do     -- + → ×   record each event
-    statusBar @"submit"
-    eventLog  @"cancel"
+  VariantToVariant.do    -- + → +   submit → backend → thankYou; cancel → cancelled
+    request @"submit" @"thankYou"
+    modal   @"cancel"  @"cancelled"
+  VariantToRecord.do     -- + → ×   render the checkout result page
+    statusBar @"thankYou"
+    eventLog  @"cancelled"
 ```
 
 | widget | shape | role |
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
 | `button` | Record → Variant (× → +) | reads the whole form, fires an action carrying it |
-| `request`, `modal` | Variant → Variant (+ → +) | dispatch an action (`request` = fake backend round-trip) |
-| `statusBar`, `eventLog` | Variant → Record (+ → ×) | record an event as a field |
+| `request`, `modal` | Variant → Variant (+ → +) | turn an action into an outcome (`request` = fake backend round-trip; `modal` = local) |
+| `statusBar`, `eventLog` | Variant → Record (+ → ×) | render an outcome onto the result page |
 
 - **merge** (each `*.do`) combines that direction's widgets;
-- **flow** (`Semigroupoid.do`) threads the four stages: `Record → Variant → Variant → Record`;
+- **flow** (`Semigroupoid.do`) threads the four stages to a result page;
 - `submit`/`cancel` are *distinct actions* (not one-per-field), each carrying the
-  completed form as its payload.
+  completed form, which the backend turns into `thankYou` / `cancelled`.
+
+So the screen resolves to a **checkout status / thank-you page**:
+`… (Record ( email, cardNumber, savePayment )) (Record ( thankYou :: Record …, cancelled :: Record … ))`.
 
 Every widget is **`@l`-parameterized** — `textInput @"email"`, `button @"submit"`,
 `request @"submit"`, … — so each leaf names the single field/case it handles. That
