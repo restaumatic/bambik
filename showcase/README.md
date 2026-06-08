@@ -2,10 +2,10 @@
 
 A checkout screen assembled from the **UI widget leaves** in
 [`Data.Profunctor.Row.Example`](../src/Data/Profunctor/Row/Example.purs) — `textInput`,
-`checkbox`, `button`, `request`, `statusBar`, `eventLog` — running at that module's
-concrete fake carrier `MyRowToRowProfunctor`. The whole screen **type-checks as a real
-composite**, with no UI, no effects, and no hand-written optics: the widgets are reused
-as-is and only *composed*.
+`checkbox`, `button`, `request`, `modal`, `statusBar`, `eventLog` — running at that
+module's concrete fake carrier `MyRowToRowProfunctor`. The whole screen **type-checks as
+a real composite**, with no UI, no effects, and no hand-written optics: the widgets are
+reused as-is and only *composed*.
 
 - [Logic.purs](./Logic.purs) — `checkout`, one screen flowing through all four
   row-profunctor directions to a result page.
@@ -13,11 +13,12 @@ as-is and only *composed*.
 ## How it composes
 
 Each widget's *shape* is one of the four row-profunctor directions, threaded by
-`Semigroupoid.do` (with merge do-blocks for the form, the buttons, and the page):
+`Semigroupoid.do` (with merge do-blocks for the form, the buttons, the actions, and the page):
 
 ```
-form ──[submit | cancel]──▶ request ──▶ { thankYou | failure | cancelled } ──▶ page
-×→×          ×→+               +→+ (deferred)                                   +→×
+form ──submit──▶ request ──▶ thankYou | failure  ┐
+×→×    ──cancel──▶ modal  ──▶ cancelled           ├──▶ page { thankYou, failure, cancelled }
+       ×→+         +→+                            ┘   +→×
 ```
 
 ```purescript
@@ -29,10 +30,11 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   submit / cancel buttons, each firing the form
     button @"submit"
     button @"cancel"
-  ( request              -- + → +   the backend round-trip (deferred → pinned to a contract)
-      :: MyRowToRowProfunctor
-           (Variant ( submit :: Record Form, cancel :: Record Form ))
-           (Variant ( thankYou :: String, failure :: String, cancelled :: String )) )
+  VariantToVariant.do    -- + → +   submit hits the backend; cancel bypasses it
+    ( request :: …(Variant ( submit :: Record Form ))
+                  (Variant ( thankYou :: String, failure :: String )) )
+    ( modal @"cancel" @"cancelled" :: …(Variant ( cancel :: Record Form ))
+                                       (Variant ( cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog  @"failure"
@@ -43,33 +45,28 @@ checkout = Semigroupoid.do
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
 | `button` | Record → Variant (× → +) | reads the whole form, fires its action carrying it |
-| `request` | Variant → Variant (+ → +) | a fake backend round-trip — *both* its actions and its responses are deferred |
+| `request` | Variant → Variant (+ → +) | a fake backend round-trip — its response cases are *deferred* |
+| `modal` | Variant → Variant (+ → +) | a local handler (no backend) — transforms one case into another |
 | `statusBar`, `eventLog` | Variant → Record (+ → ×) | render a `String` response message onto the page |
 
-The interesting one is **`request`**. Its definition declares *no* cases on either side
-(`forall v w. … (Variant v) (Variant w)`): the backend takes whatever actions come in and
-may answer with whatever responses. It is pinned **at the use site** to one concrete
-contract — here `{ submit, cancel } → { thankYou, failure, cancelled }`. That single
-annotation does three jobs:
+Two things worth seeing:
 
-- decides which **actions** the backend accepts (so the `submit`/`cancel` button merge resolves),
-- decides which **responses** it may return (so the page's handlers line up),
-- pins the faked **response payloads** (here each response is a `String` status message).
+- **`request` is deferred** — its definition declares no response cases
+  (`forall w. … (Variant v) (Variant w)`). It's pinned *at the use site* to a contract,
+  here `submit → { thankYou | failure }`. One request may resolve to several outcomes; the
+  page's handlers are what fix which.
+- **`cancel` bypasses the backend.** `request` processes *only* `submit`; `cancel` is
+  routed to a local `modal` in the same `VariantToVariant.do` merge and turned straight
+  into `cancelled` — it never reaches `request`.
 
-Everything else is `@l` widgets — `textInput @"email"`, `button @"submit"`,
-`statusBar @"thankYou"`, … — no annotations.
-
-So the screen resolves to a **checkout status / thank-you page**:
+Both handlers in that merge are pinned to their contract (the only annotations on the
+screen); everything else is `@l` widgets. The screen resolves to a **checkout status /
+thank-you page**:
 
 ```purescript
 … (Record ( email :: String, cardNumber :: String, savePayment :: Boolean ))
   (Record ( thankYou :: String, failure :: String, cancelled :: String ))
 ```
-
-> A deferred `request` is the *sole* processor of the action variant (it dispatches the
-> whole `{ submit, cancel }` set), not one leaf among several in a `VariantToVariant.do`
-> merge — a merge would need each handler to declare its own output, which is exactly what
-> deferring avoids.
 
 The optics behind the widgets are documented in
 [`doc/row-profunctors.md`](../doc/row-profunctors.md).

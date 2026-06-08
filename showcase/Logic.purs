@@ -1,36 +1,37 @@
 -- | **A checkout screen, built from row-profunctor UI widgets.**
 -- |
 -- | This reuses the widget leaves from `Data.Profunctor.Row.Example` — `textInput`,
--- | `checkbox`, `button`, `request`, `statusBar`, `eventLog` — and runs them at that
--- | module's concrete fake carrier `MyRowToRowProfunctor`. So the whole screen
+-- | `checkbox`, `button`, `request`, `modal`, `statusBar`, `eventLog` — and runs them at
+-- | that module's concrete fake carrier `MyRowToRowProfunctor`. So the whole screen
 -- | type-checks as a real composite, with no UI, effects, or hand-written optics.
 -- |
 -- | Each widget's *shape* is one of the four row-profunctor directions:
 -- |
 -- |   * `textInput`/`checkbox`  — Record → Record  (×→×): an editable field
 -- |   * `button`                — Record → Variant (×→+): reads the form, fires an action
--- |   * `request`               — Variant → Variant (+→+): a fake backend round-trip; both
--- |                               its accepted actions and its response cases are *deferred*
--- |                               (`forall v w`), pinned to a concrete contract at the use site
+-- |   * `request`               — Variant → Variant (+→+): a fake backend round-trip; its
+-- |                               response cases are *deferred* (`forall w`), pinned at use
+-- |   * `modal`                 — Variant → Variant (+→+): a local handler (no backend)
 -- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): render a response onto the page
 module Showcase.Logic where
 
-import Data.Profunctor.Row.Example (MyRowToRowProfunctor, button, checkbox, eventLog, request, statusBar, textInput)
+import Data.Profunctor.Row.Example (MyRowToRowProfunctor, button, checkbox, eventLog, modal, request, statusBar, textInput)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (Variant)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
--- | The checkout: fill the form, press `submit` or `cancel`, and the backend `request`
--- | resolves to a result page — `thankYou` (the placed order), `failure` (an error), or
--- | `cancelled`. `request` is deferred; the single annotation here is its **contract** —
--- | which actions it accepts and which responses it may return — which also pins the
--- | button merge and the response payloads:
+-- | The checkout: fill the form, press `submit` or `cancel`. Only `submit` hits the
+-- | backend `request` (deferred → `thankYou | failure`); `cancel` **bypasses it**, handled
+-- | locally by `modal` → `cancelled`. Both responses land on the result page. Each
+-- | handler is pinned to its contract (which also fixes the button merge and payloads):
 -- |
 -- | ```
--- |   form ──[submit | cancel]──▶ request ──▶ { thankYou | failure | cancelled } ──▶ page
--- |   ×→×          ×→+               +→+ (deferred)                                   +→×
+-- |   form ──submit──▶ request ──▶ thankYou | failure  ┐
+-- |   ×→×    ──cancel──▶ modal  ──▶ cancelled           ├──▶ page { thankYou, failure, cancelled }
+-- |          ×→+         +→+                            ┘   +→×
 -- | ```
 checkout = Semigroupoid.do
   RecordToRecord.do      -- × → ×   the form: an input widget per field
@@ -40,15 +41,18 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   the submit / cancel buttons, each firing the form
     button @"submit"
     button @"cancel"
-  -- + → +   the backend round-trip. `request` is deferred; pinning it here to a concrete
-  -- contract is what fixes which actions it takes and which responses it may return.
-  ( request
-      :: MyRowToRowProfunctor
-           (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
-                    , cancel :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
-           (Variant ( thankYou  :: String
-                    , failure   :: String
-                    , cancelled :: String )) )
+  VariantToVariant.do    -- + → +   submit hits the backend; cancel bypasses it
+    -- `request` (deferred) processes *only* submit — pinned here to its backend contract,
+    -- a deferred response of thankYou | failure.
+    ( request
+        :: MyRowToRowProfunctor
+             (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
+             (Variant ( thankYou :: String, failure :: String )) )
+    -- `cancel` never reaches the backend: a local `modal` turns it straight into `cancelled`.
+    ( modal @"cancel" @"cancelled"
+        :: MyRowToRowProfunctor
+             (Variant ( cancel :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
+             (Variant ( cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog @"failure"
