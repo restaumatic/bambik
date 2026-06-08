@@ -4,10 +4,10 @@
 -- | carrier-independent (see `doc/row-profunctors.md`). The four optics map onto
 -- | Domain-Driven Design's tactical vocabulary, and each is one stage of the flow:
 -- |
--- |   * **Lens**    (× → ×) — value-object field access  ("has-a")    — `onField`
--- |   * **Shutter** (× → +) — the Process / Saga                       — `fieldToCase`
--- |   * **Prism**   (+ → +) — value-object case match     ("is-a")     — `onCase`
--- |   * **Reel**    (+ → ×) — the Entity / Aggregate                   — `caseToField`
+-- |   * **Lens**    (× → ×) — value-object field access  ("has-a")    — `textInput`
+-- |   * **Shutter** (× → +) — the Process / Saga                       — `button`
+-- |   * **Prism**   (+ → +) — value-object case match     ("is-a")     — `notification`
+-- |   * **Reel**    (+ → ×) — the Entity / Aggregate                   — `statusBar`
 -- |
 -- | There are no inline `:: p (…) (…)` annotations: each leaf is a **closed-row**
 -- | combinator (`Cons l a () r` pins the row to the single field/case `l`), so the merges
@@ -38,25 +38,26 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get, insert)
 import Type.Proxy (Proxy(..))
 
--- | **Lens** leaf (× → ×): focus field `l` in place. Closed row → no annotation needed.
-onField :: forall @l p a r. Category p => Strong p => IsSymbol l => Cons l a () r => p (Record r) (Record r)
-onField = editProperty @l identity
+-- | **`textInput`** — a **Lens** leaf (× → ×): show and edit field `l` in place.
+-- | Closed row (`Cons l a () r`) → no annotation needed.
+textInput :: forall @l p a r. Category p => Strong p => IsSymbol l => Cons l a () r => p (Record r) (Record r)
+textInput = editProperty @l identity
 
--- | **Shutter** leaf (× → +): lift field `l` into output case `l`.
-fieldToCase :: forall @l p a r. Category p => Resolving p => IsSymbol l => Cons l a () r => p (Record r) (Variant r)
-fieldToCase =
+-- | **`button`** — a **Shutter** leaf (× → +): read field `l` from the model, fire it as case `l`.
+button :: forall @l p a r. Category p => Resolving p => IsSymbol l => Cons l a () r => p (Record r) (Variant r)
+button =
   shutterE
     (\rec -> Tuple (get (Proxy @l) rec) (get (Proxy @l) rec))
     (either (inj (Proxy @l)) (inj (Proxy @l)))
     identity
 
--- | **Prism** leaf (+ → +): route case `l` in place.
-onCase :: forall @l p a r. Category p => Choice p => IsSymbol l => Cons l a () r => p (Variant r) (Variant r)
-onCase = editCase @l identity
+-- | **`notification`** — a **Prism** leaf (+ → +): react to case `l` and re-emit it.
+notification :: forall @l p a r. Category p => Choice p => IsSymbol l => Cons l a () r => p (Variant r) (Variant r)
+notification = editCase @l identity
 
--- | **Reel** leaf (+ → ×): render case `l` into output field `l`.
-caseToField :: forall @l p a r. Category p => Retaining p => IsSymbol l => Cons l a () r => p (Variant r) (Record r)
-caseToField =
+-- | **`statusBar`** — a **Reel** leaf (+ → ×): display case `l` as field `l`.
+statusBar :: forall @l p a r. Category p => Retaining p => IsSymbol l => Cons l a () r => p (Variant r) (Record r)
+statusBar =
   reelE
     (\v -> Left ((case_ # on (Proxy @l) identity) v))
     (\(Tuple b (_ :: Unit)) -> insert (Proxy @l) b {})
@@ -84,14 +85,14 @@ checkoutFlow
   => p (Record ( email :: String, amount :: Int )) (Record ( email :: String, amount :: Int ))
 checkoutFlow = Semigroupoid.do
   RecordToRecord.do      -- × → ×   Lens: normalize each field
-    onField @"email"
-    onField @"amount"
+    textInput @"email"
+    textInput @"amount"
   RecordToVariant.do     -- × → +   Shutter: lift each field into a channel
-    fieldToCase @"email"
-    fieldToCase @"amount"
+    button @"email"
+    button @"amount"
   VariantToVariant.do    -- + → +   Prism: route each channel
-    onCase @"email"
-    onCase @"amount"
+    notification @"email"
+    notification @"amount"
   VariantToRecord.do     -- + → ×   Reel: render each channel back into a field
-    caseToField @"email"
-    caseToField @"amount"
+    statusBar @"email"
+    statusBar @"amount"

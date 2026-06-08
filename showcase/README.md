@@ -12,15 +12,15 @@ app — there is no spare vocabulary.
 
 ## The four optics → the four stages
 
-Each optic family is one stage of the pipeline, packaged as a closed-row leaf helper.
-Their DDD reading:
+Each optic family is one stage of the pipeline, packaged as a closed-row leaf helper
+named after the UI widget that has its shape (the `Example.purs` idiom). Their DDD reading:
 
-| optic | direction | DDD role | leaf helper (on) |
-|---|---|---|---|
-| `Lens` | × → × | Value Object accessor ("has-a") | `onField` (`editProperty`) |
-| `Shutter` | × → + | **Process / Saga** | `fieldToCase` (`shutterE`) |
-| `Prism` | + → + | Value Object discriminator ("is-a") | `onCase` (`editCase`) |
-| `Reel` | + → × | **Entity / Aggregate** | `caseToField` (`reelE`) |
+| optic | direction | DDD role | leaf (widget) | built on |
+|---|---|---|---|---|
+| `Lens` | × → × | Value Object accessor ("has-a") | `textInput` — show/edit a field | `editProperty` |
+| `Shutter` | × → + | **Process / Saga** | `button` — read model, fire a case | `shutterE` |
+| `Prism` | + → + | Value Object discriminator ("is-a") | `notification` — react to a case | `editCase` |
+| `Reel` | + → × | **Entity / Aggregate** | `statusBar` — display a case | `reelE` |
 
 ## The app
 
