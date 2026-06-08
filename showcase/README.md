@@ -2,22 +2,23 @@
 
 A checkout screen assembled from the **UI widget leaves** in
 [`Data.Profunctor.Row.Example`](../src/Data/Profunctor/Row/Example.purs) — `textInput`,
-`checkbox`, `button`, `request`, `modal`, `statusBar`, `eventLog` — running at that
-module's concrete fake carrier `MyRowToRowProfunctor`. The whole screen **type-checks as
-a real composite**, with no UI, no effects, and no hand-written optics: the widgets are
-reused as-is and only *composed*.
+`checkbox`, `button`, `request`, `statusBar`, `eventLog` — running at that module's
+concrete fake carrier `MyRowToRowProfunctor`. The whole screen **type-checks as a real
+composite**, with no UI, no effects, and no hand-written optics: the widgets are reused
+as-is and only *composed*.
 
-- [Logic.purs](./Logic.purs) — `checkout`, one screen flowing through all four merge
-  directions.
+- [Logic.purs](./Logic.purs) — `checkout`, one screen flowing through all four
+  row-profunctor directions to a result page.
 
 ## How it composes
 
-Each widget's *shape* is one of the four row-profunctor directions. `checkout` wires
-them with the four **merge** do-blocks and the **flow** of `Semigroupoid.do`:
+Each widget's *shape* is one of the four row-profunctor directions, threaded by
+`Semigroupoid.do` (with `RecordToRecord.do` / `VariantToRecord.do` merges for the form
+and the page):
 
 ```
-form ──▶ submit | cancel ──▶ thankYou | cancelled ──▶ page { thankYou, cancelled }
-×→×          ×→+                +→+                     +→×
+form ──submit──▶ request ──▶ { thankYou | failure } ──▶ page { thankYou, failure }
+×→×        ×→+      +→+ (deferred)                        +→×
 ```
 
 ```purescript
@@ -26,36 +27,41 @@ checkout = Semigroupoid.do
     textInput @"email"
     textInput @"cardNumber"
     checkbox  @"savePayment"
-  RecordToVariant.do     -- × → +   action buttons (each fires the form)
-    button @"submit"
-    button @"cancel"
-  VariantToVariant.do    -- + → +   submit → backend → thankYou; cancel → cancelled
-    request @"submit" @"thankYou"
-    modal   @"cancel"  @"cancelled"
-  VariantToRecord.do     -- + → ×   render the checkout result page
+  button  @"submit"      -- × → +   the submit button fires the whole form
+  request @"submit"      -- + → +   backend round-trip: response is thankYou | failure (deferred)
+  VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
-    eventLog  @"cancelled"
+    eventLog  @"failure"
 ```
 
 | widget | shape | role |
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
-| `button` | Record → Variant (× → +) | reads the whole form, fires an action carrying it |
-| `request`, `modal` | Variant → Variant (+ → +) | turn an action into an outcome (`request` = fake backend round-trip; `modal` = local) |
-| `statusBar`, `eventLog` | Variant → Record (+ → ×) | render an outcome onto the result page |
+| `button` | Record → Variant (× → +) | reads the whole form, fires the `submit` action carrying it |
+| `request` | Variant → Variant (+ → +) | a fake backend round-trip — its response cases are *deferred* |
+| `statusBar`, `eventLog` | Variant → Record (+ → ×) | render a response onto the result page |
 
-- **merge** (each `*.do`) combines that direction's widgets;
-- **flow** (`Semigroupoid.do`) threads the four stages to a result page;
-- `submit`/`cancel` are *distinct actions* (not one-per-field), each carrying the
-  completed form, which the backend turns into `thankYou` / `cancelled`.
+The interesting one is **`request`**: it does *not* declare its output cases. A single
+request may resolve to `thankYou` **or** `failure`, so its response variant is left
+deferred and **inferred from the page below** — the `statusBar @"thankYou"` /
+`eventLog @"failure"` handlers are what fix what the backend can return.
+
+Because the backend is faked, the response *payloads* aren't determined by anything, so
+the one type signature on `checkout` pins them (`thankYou` carries the placed order,
+`failure` an error string). Everything else is `@l` widgets — no inline annotations.
 
 So the screen resolves to a **checkout status / thank-you page**:
-`… (Record ( email, cardNumber, savePayment )) (Record ( thankYou :: Record …, cancelled :: Record … ))`.
 
-Every widget is **`@l`-parameterized** — `textInput @"email"`, `button @"submit"`,
-`request @"submit"`, … — so each leaf names the single field/case it handles. That
-single fact (a closed row, `Cons l a () r`) lets every merge split unambiguously, so the
-body needs **no type annotations at all**.
+```purescript
+… (Record ( email :: String, cardNumber :: String, savePayment :: Boolean ))
+  (Record ( thankYou :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
+          , failure  :: String ))
+```
+
+> A deferred response can't share a `VariantToVariant.do` *merge* (the merge couldn't tell
+> which response cases came from which handler), so `request` is the sole processor of
+> `submit` here. Multiple merged actions (submit/cancel/…) need each handler to declare
+> its output.
 
 The optics behind the widgets are documented in
 [`doc/row-profunctors.md`](../doc/row-profunctors.md).
