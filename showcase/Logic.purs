@@ -1,25 +1,24 @@
--- | **The entire business logic of the order app, expressed as optics — nothing else.**
+-- | **The order app's business logic, as optics — and one app that composes them.**
 -- |
--- | No UI, no effects, no carrier. Every binding is a pure optic: either a single
--- | optic value (`Lens`/`Prism`/`Reel`/`Shutter`) or a composite built with one of
--- | the four **merge do-blocks** — the `{Record, Variant} → {Record, Variant}` class
--- | matrix. The profunctor `p` stays abstract throughout: that is the whole point —
--- | one definition, carrier-independent (see `doc/row-profunctors.md`).
--- |
--- | The four single optics map onto Domain-Driven Design's tactical vocabulary:
+-- | No UI, no effects, no carrier: `p` stays abstract, so the logic is
+-- | carrier-independent (see `doc/row-profunctors.md`). The four optics map onto
+-- | Domain-Driven Design's tactical vocabulary:
 -- |
 -- |   * **Lens**    (× → ×) — value-object field access  ("has-a")
 -- |   * **Prism**   (+ → +) — value-object case match     ("is-a")
 -- |   * **Reel**    (+ → ×) — the Entity / Aggregate       (fold a command into state)
 -- |   * **Shutter** (× → +) — the Process / Saga           (run a step that finishes or loops)
 -- |
--- | The four merge do-blocks are how those compose into whole records and variants.
+-- | Each section defines the **flow leaf** its family contributes to the app
+-- | (`checkoutFlow`, at the bottom), plus more of that family's vocabulary. The app
+-- | composes the four flow leaves with the four merge do-blocks and `Semigroupoid.do`.
 module Showcase.Logic where
 
 import Prelude
 
 import Data.Either (Either(..), either)
 import Data.Lens (Lens, Prism)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, class StrongRecordToRecord, editProperty, focusRecord, lensE, lensProperty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, Shutter, resolveProperty, shutter, shutterE, shutterWrap)
@@ -28,29 +27,32 @@ import Data.Profunctor.Row.VariantToRecord (class Retaining, class VariantToReco
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class ChoiceVariantToVariant, class VariantToVariant, editCase, focusVariant, prismCase, prismE)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..))
-import Data.Variant (Variant, case_, on)
+import Data.Variant (Variant, case_, inj, on)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Showcase.Domain (CardDetails, Customer, Line, Money, Order, OrderCmd, Payment, Submission(..))
+import Showcase.Domain (CardDetails, Customer, Money, Order, Submission(..))
 import Type.Proxy (Proxy(..))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- 1. LENS — value-object navigation ("has-a"). The diagonal × → ×.
 -- ════════════════════════════════════════════════════════════════════════════
 
--- | `editProperty` — the in-place field lens onto a value-object field.
-_total :: Lens Order Order Money Money
-_total = editProperty @"total"
+-- | Flow leaves — `editProperty`, the in-place field lens. Applied to a focus they
+-- | become the × → × stage of `checkoutFlow`.
+_email :: Lens (Record ( email :: String )) (Record ( email :: String )) String String
+_email = editProperty @"email"
 
--- | Lenses compose with `<<<`: navigate the aggregate down into a nested value object.
-_city :: Lens Order Order String String
-_city = editProperty @"customer" <<< editProperty @"address" <<< editProperty @"city"
+_amount :: Lens (Record ( amount :: Money )) (Record ( amount :: Money )) Money Money
+_amount = editProperty @"amount"
 
--- | `lensProperty` — the *type-changing* field lens: the field's type may change.
+-- More of the Lens vocabulary:
+
+-- | `lensProperty` — the *type-changing* field lens (the field's type may change).
 _qty :: forall a b. Lens (Record ( sku :: String, qty :: a )) (Record ( sku :: String, qty :: b )) a b
 _qty = lensProperty @"qty"
 
--- | `focusRecord` — row-typed `Strong`: focus a sub-record, carrying the rest.
+-- | `focusRecord` — row-typed `Strong`: focus a sub-record, carry the rest.
 onCustomer
   :: forall p
    . StrongRecordToRecord p
@@ -58,8 +60,7 @@ onCustomer
   -> p (Record ( ref :: String, customer :: Customer )) (Record ( ref :: String, customer :: Customer ))
 onCustomer = focusRecord
 
--- | `lensE` — a `Lens` from its existential encoding (`decon` × `recon`).
--- | With `identity`/`identity` it is exactly `first`: the lens onto the first of a pair.
+-- | `lensE` — a `Lens` from its existential encoding; `identity`/`identity` = `first`.
 _fst :: forall a b c. Lens (Tuple a c) (Tuple b c) a b
 _fst = lensE identity identity
 
@@ -67,9 +68,14 @@ _fst = lensE identity identity
 -- 2. PRISM — value-object case discrimination ("is-a"). The diagonal + → +.
 -- ════════════════════════════════════════════════════════════════════════════
 
--- | `editCase` — the in-place case prism.
-_card :: Prism Payment Payment CardDetails CardDetails
-_card = editCase @"card"
+-- | Flow leaves — `editCase`, the in-place case prism. The + → + stage of the app.
+_emailEvt :: Prism (Variant ( emailEvt :: String )) (Variant ( emailEvt :: String )) String String
+_emailEvt = editCase @"emailEvt"
+
+_amountEvt :: Prism (Variant ( amountEvt :: Money )) (Variant ( amountEvt :: Money )) Money Money
+_amountEvt = editCase @"amountEvt"
+
+-- More of the Prism vocabulary:
 
 -- | `prismCase` — the *type-changing* case prism: re-tag a case, changing its payload.
 _cash :: forall a b. Prism (Variant ( cash :: a, card :: CardDetails )) (Variant ( cash :: b, card :: CardDetails )) a b
@@ -83,78 +89,38 @@ onCardCase
   -> p (Variant ( card :: CardDetails, cash :: Money )) (Variant ( card :: CardDetails, cash :: Money ))
 onCardCase = focusVariant
 
--- | `prismE` — a `Prism` from its existential encoding. `identity`/`identity` = `_Left`.
+-- | `prismE` — a `Prism` from its existential encoding; `identity`/`identity` = `_Left`.
 _Left :: forall a b c. Prism (Either a c) (Either b c) a b
 _Left = prismE identity identity
 
 -- ════════════════════════════════════════════════════════════════════════════
--- 3. REEL — the Entity / Aggregate. Mixed + → ×: fold a command into state.
+-- 3. SHUTTER — the Process / Saga. Mixed × → +: run a step that finishes or loops.
 -- ════════════════════════════════════════════════════════════════════════════
 
--- | The **Order aggregate**: a `Reel` folding each command into the carried `Order`.
--- | `addLine` is a fresh focus (`Left`); `restore` rehydrates the state (`Right`).
--- | `recon` is the **aggregate root** — it re-establishes `total = Σ (price × qty)`
--- | on every transition.
-orderAggregate :: Reel OrderCmd Order Line Line
-orderAggregate = reelE decon recon
-  where
-  decon :: OrderCmd -> Either Line Order
-  decon =
-    case_
-      # on (Proxy @"addLine") Left
-      # on (Proxy @"restore") Right
-
-  recon :: Tuple Line Order -> Order
-  recon (Tuple line order) =
-    order
-      { lines = order.lines <> [ line ]
-      , total = order.total + line.price * line.qty
-      }
-
--- | `reel` — the co-Yoneda collapse (residual `c := b → t`): each input is a fresh
--- | focus (`Left`) or supplies a finisher drawn from retained state (`Right`).
-counterReel :: Reel (Either Int (Int -> Int)) Int Int Int
-counterReel = reel identity
-
--- | `retainCase` — the single-case edit-position combinator. Input case `status`
--- | resumes straight into output field `status`; other cases run the wrapped step.
-resumeStatus
-  :: forall p
-   . Retaining p
-  => p (Variant ( tick :: Int )) (Record ( done :: Boolean ))
-  -> p (Variant ( status :: String, tick :: Int )) (Record ( status :: String, done :: Boolean ))
-resumeStatus = retainCase @"status"
-
--- | `reelWrap` — row `Reel` focusing a sub-Variant; the rest of the input is wrapped
--- | into an output field. The dual of `priceLine`'s `shutterWrap`.
-countdownStep
-  :: Reel
-       (Variant ( cancel :: Unit, tick :: Int ))
-       (Record ( done :: Boolean, pending :: Variant ( tick :: Int ) ))
-       (Variant ( cancel :: Unit ))
-       (Record ( done :: Boolean ))
-countdownStep = reelWrap (Proxy @"pending")
-
--- ════════════════════════════════════════════════════════════════════════════
--- 4. SHUTTER — the Process / Saga. Mixed × → +: run a step that finishes or loops.
--- ════════════════════════════════════════════════════════════════════════════
-
-type CheckoutForm = { order :: Order, paid :: Boolean, draftId :: String }
-
--- | The **checkout process**: focus the decision data, retain the `draftId` as the
--- | residual. `Done` (`Left`) → `Placed`; `Loop` (`Right`) → escape to `SavedDraft`.
-checkout :: Shutter CheckoutForm Submission { order :: Order, paid :: Boolean } { ref :: String }
-checkout =
+-- | Flow leaves — `shutterE`: read a field, emit an event case. The × → + stage.
+-- | (`Done` and `Loop` both land in the event case here; a richer process would
+-- | split them — see `shipOrder` below.)
+emailEvent :: Shutter (Record ( email :: String )) (Variant ( emailEvt :: String )) String String
+emailEvent =
   shutterE
-    (\f -> Tuple { order: f.order, paid: f.paid } f.draftId)
-    (either Placed (\draftId -> SavedDraft { draftId }))
+    (\r -> Tuple r.email r.email)
+    (either (inj (Proxy @"emailEvt")) (inj (Proxy @"emailEvt")))
 
--- | `shutter` — the explicit `(view, build, escape)` form: a lens that can snap shut.
+amountEvent :: Shutter (Record ( amount :: Money )) (Variant ( amountEvt :: Money )) Money Money
+amountEvent =
+  shutterE
+    (\r -> Tuple r.amount r.amount)
+    (either (inj (Proxy @"amountEvt")) (inj (Proxy @"amountEvt")))
+
+-- More of the Shutter vocabulary:
+
+-- | `shutter` — the explicit `(view, build, escape)` form: run the focus and `build`
+-- | (Done), or `escape` straight to the output (Loop).
 shipOrder :: Shutter Order Submission Order { ref :: String }
 shipOrder = shutter identity Placed (\o -> SavedDraft { draftId: o.ref })
 
--- | `resolveProperty` — the single-field edit-position combinator. Field `coupon`
--- | escapes directly to output case `coupon` (Loop), or the wrapped step runs (Done).
+-- | `resolveProperty` — single-field edit-position: field `coupon` escapes to output
+-- | case `coupon` (Loop), or the wrapped step runs (Done).
 applyCoupon
   :: forall p
    . Resolving p
@@ -163,7 +129,7 @@ applyCoupon
 applyCoupon = resolveProperty @"coupon"
 
 -- | `shutterWrap` — row `Shutter` focusing a sub-Record; the rest is wrapped into an
--- | output case. On Loop the unpriced `{ note }` is carried out as `unpriced`.
+-- | output case (on Loop the unpriced `{ note }` is carried out as `unpriced`).
 priceLine
   :: Shutter
        (Record ( sku :: String, qty :: Int, note :: String ))
@@ -173,54 +139,87 @@ priceLine
 priceLine = shutterWrap (Proxy @"unpriced")
 
 -- ════════════════════════════════════════════════════════════════════════════
--- 5. THE MERGE MATRIX — all four `Row → Row` do-blocks composed into ONE pipeline.
+-- 4. REEL — the Entity / Aggregate. Mixed + → ×: fold a command into state.
 -- ════════════════════════════════════════════════════════════════════════════
 
--- | The whole checkout, as a single `Semigroupoid.do` (`>>>`) pipeline that chains
--- | all four merge do-blocks — each stage's output is the next stage's input:
+-- | Flow leaves — `reelE`: dispatch the event case into an output display field.
+-- | The + → × stage of the app.
+emailNote :: Reel (Variant ( emailEvt :: String )) (Record ( emailNote :: String )) String String
+emailNote =
+  reelE
+    (\v -> Left ((case_ # on (Proxy @"emailEvt") identity) v))
+    (\(Tuple b (_ :: Unit)) -> { emailNote: b })
+
+amountNote :: Reel (Variant ( amountEvt :: Money )) (Record ( amountNote :: String )) Money Money
+amountNote =
+  reelE
+    (\v -> Left ((case_ # on (Proxy @"amountEvt") identity) v))
+    (\(Tuple m (_ :: Unit)) -> { amountNote: show m })
+
+-- More of the Reel vocabulary:
+
+-- | `reel` — the co-Yoneda collapse (residual `c := b → t`): a fresh focus (`Left`)
+-- | or a finisher drawn from retained state (`Right`).
+counterReel :: Reel (Either Int (Int -> Int)) Int Int Int
+counterReel = reel identity
+
+-- | `retainCase` — single-case edit-position: input case `status` resumes into output
+-- | field `status`; other cases run the wrapped step.
+resumeStatus
+  :: forall p
+   . Retaining p
+  => p (Variant ( tick :: Int )) (Record ( done :: Boolean ))
+  -> p (Variant ( status :: String, tick :: Int )) (Record ( status :: String, done :: Boolean ))
+resumeStatus = retainCase @"status"
+
+-- | `reelWrap` — row `Reel` focusing a sub-Variant; the rest is wrapped into an
+-- | output field. The dual of `priceLine`'s `shutterWrap`.
+countdownStep
+  :: Reel
+       (Variant ( cancel :: Unit, tick :: Int ))
+       (Record ( done :: Boolean, pending :: Variant ( tick :: Int ) ))
+       (Variant ( cancel :: Unit ))
+       (Record ( done :: Boolean ))
+countdownStep = reelWrap (Proxy @"pending")
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 5. THE APP — `checkoutFlow` composes the four flow leaves above.
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- | The whole checkout, built **from the optics above**. Each merge do-block merges
+-- | one family's flow leaves (applied to the trivial focus `identity`), and the outer
+-- | `Semigroupoid.do` flows the four stages together:
 -- |
 -- | ```
--- |   Record  ──(× → ×)──▶  Record  ──(× → +)──▶  Variant  ──(+ → +)──▶  Variant  ──(+ → ×)──▶  Record
--- |        RecordToRecord.do      RecordToVariant.do     VariantToVariant.do      VariantToRecord.do
--- |          (assemble form)        (validate → events)     (route events)          (render display)
+-- |   Record  ──Lens──▶  Record  ──Shutter──▶  Variant  ──Prism──▶  Variant  ──Reel──▶  Record
+-- |    RecordToRecord.do      RecordToVariant.do     VariantToVariant.do     VariantToRecord.do
 -- | ```
 -- |
--- | Each inner do-block *merges* leaf sub-profunctors (the parameters); the outer
--- | `Semigroupoid.do` *flows* the four merged stages together. The full matrix —
--- | both axes of composition (merge across a row, flow along the pipeline) — in one
--- | carrier-independent definition.
+-- | Two axes of composition at once: **merge** across a row (inside each do-block,
+-- | combining the two field/case leaves) and **flow** along the pipeline (the outer
+-- | `Semigroupoid.do`). The four optic families are exactly the four stages.
 checkoutFlow
   :: forall p
-   . Semigroupoid p
+   . Category p
+  => Strong p
+  => Choice p
+  => Resolving p
+  => Retaining p
   => RecordToRecord p
   => RecordToVariant p
   => VariantToVariant p
   => VariantToRecord p
-  -- stage 1 leaves — assemble (× → ×)
-  => p (Record ( email :: String )) (Record ( email :: String ))
-  -> p (Record ( total :: Money )) (Record ( total :: Money ))
-  -- stage 2 leaves — validate (× → +)
-  -> p (Record ( email :: String )) (Variant ( emailError :: String ))
-  -> p (Record ( total :: Money )) (Variant ( emptyCartError :: String ))
-  -- stage 3 leaves — route (+ → +)
-  -> p (Variant ( emailError :: String )) (Variant ( banner :: String ))
-  -> p (Variant ( emptyCartError :: String )) (Variant ( retry :: Boolean ))
-  -- stage 4 leaves — render (+ → ×)
-  -> p (Variant ( banner :: String )) (Record ( message :: String ))
-  -> p (Variant ( retry :: Boolean )) (Record ( canRetry :: Boolean ))
-  -- the composed flow
-  -> p (Record ( email :: String, total :: Money )) (Record ( message :: String, canRetry :: Boolean ))
-checkoutFlow normEmail normTotal vEmail vTotal onEmailErr onCartErr onBanner onRetry =
-  Semigroupoid.do
-    RecordToRecord.do      -- × → ×   assemble the form
-      normEmail
-      normTotal
-    RecordToVariant.do     -- × → +   validate into events
-      vEmail
-      vTotal
-    VariantToVariant.do    -- + → +   route events to display channels
-      onEmailErr
-      onCartErr
-    VariantToRecord.do     -- + → ×   render the display record
-      onBanner
-      onRetry
+  => p (Record ( email :: String, amount :: Money )) (Record ( emailNote :: String, amountNote :: String ))
+checkoutFlow = Semigroupoid.do
+  RecordToRecord.do      -- × → ×   Lens: normalize each field
+    _email identity
+    _amount identity
+  RecordToVariant.do     -- × → +   Shutter: turn each field into an event
+    emailEvent identity
+    amountEvent identity
+  VariantToVariant.do    -- + → +   Prism: route each event case
+    _emailEvt identity
+    _amountEvt identity
+  VariantToRecord.do     -- + → ×   Reel: render each event into a display field
+    emailNote identity
+    amountNote identity
