@@ -6,7 +6,9 @@ type-checks (`spago build`); it is not meant to be *run*. Every binding is used 
 app — there is no spare vocabulary.
 
 - [Domain.purs](./Domain.purs) — the model: `Form` (input), `Display` (output), `Money`.
-- [Logic.purs](./Logic.purs) — four optic-family sections, then the app (`checkoutFlow`).
+- [Logic.purs](./Logic.purs) — the app, `checkoutFlow`, with the optics inlined. Each
+  inlined leaf carries a `:: p (…) (…)` annotation (the signature's `forall p` is in
+  scope) — that single-row signature is what lets the merge split the form across leaves.
 
 ## The four optics → the four stages
 
