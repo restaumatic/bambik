@@ -19,7 +19,7 @@ checkout = Semigroupoid.do
   VariantToVariant.do
     ( request
         :: MyRowToRowProfunctor
-             (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
+             (Variant ( submit :: { email :: String, cardNumber :: String, savePayment :: Boolean } ))
              (Variant ( thankYou :: String, failure :: String )) )
     ( notification
         :: MyRowToRowProfunctor
@@ -27,7 +27,7 @@ checkout = Semigroupoid.do
              (Variant ( editing :: String )) )
     ( modal
         :: MyRowToRowProfunctor
-             (Variant ( cancel :: Record () ))
+             (Variant ( cancel :: {} ))
              (Variant ( cancelled :: String )) )
   VariantToRecord.do
     statusBar @"thankYou"
