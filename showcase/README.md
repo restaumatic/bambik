@@ -1,7 +1,7 @@
 # Showcase: a checkout screen as pure optics
 
 A reactive **checkout screen** — a shopper's form (`email`, `cardNumber`, `amount`)
-flowing through edit → submit → validate → status — expressed **only as optics**: no
+flowing through edit → change → validate → status — expressed **only as optics**: no
 UI, no effects, no carrier. `p` stays abstract, so the logic is carrier-independent. It
 type-checks (`spago build`); it is not meant to be *run*. Every binding is used by the
 app — there is no spare vocabulary.
@@ -19,7 +19,7 @@ named after the UI widget that has its shape (the `Example.purs` idiom). Their D
 | optic | direction | DDD role | leaf (widget) | built on |
 |---|---|---|---|---|
 | `Lens` | × → × | Value Object accessor ("has-a") | `textInput` — show/edit a field | `editProperty` |
-| `Shutter` | × → + | **Process / Saga** | `button` — read model, fire a case | `shutterE` |
+| `Shutter` | × → + | **Process / Saga** | `onChange` — a field fires its change event | `shutterE` |
 | `Prism` | + → + | Value Object discriminator ("is-a") | `notification` — react to a case | `editCase` |
 | `Reel` | + → × | **Entity / Aggregate** | `statusBar` — display a case | `reelE` |
 
@@ -29,9 +29,9 @@ named after the UI widget that has its shape (the `Example.purs` idiom). Their D
 `{Record,Variant}²` class matrix), and flows the stages with the outer `Semigroupoid.do`:
 
 ```
-form  ──textInput──▶ form  ──button──▶ events ──notification──▶ events ──statusBar──▶ status
-RecordToRecord.do      RecordToVariant.do     VariantToVariant.do        VariantToRecord.do
- (edit each field)      (submit → event)       (validate → notice)        (event → status)
+form  ──textInput──▶ form ──onChange──▶ events ──notification──▶ events ──statusBar──▶ status
+RecordToRecord.do      RecordToVariant.do      VariantToVariant.do        VariantToRecord.do
+ (edit each field)      (field change → event)  (validate → notice)        (event → status)
 ```
 
 Two axes of composition in one definition: **merge** across a row (inside each

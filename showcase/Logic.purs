@@ -5,7 +5,7 @@
 -- | Domain-Driven Design's tactical vocabulary, and each is one stage of the flow:
 -- |
 -- |   * **Lens**    (× → ×) — value-object field access  ("has-a")    — `textInput`
--- |   * **Shutter** (× → +) — the Process / Saga                       — `button`
+-- |   * **Shutter** (× → +) — the Process / Saga                       — `onChange`
 -- |   * **Prism**   (+ → +) — value-object case match     ("is-a")     — `notification`
 -- |   * **Reel**    (+ → ×) — the Entity / Aggregate                   — `statusBar`
 -- |
@@ -43,9 +43,9 @@ import Type.Proxy (Proxy(..))
 textInput :: forall @l p a r. Category p => Strong p => IsSymbol l => Cons l a () r => p (Record r) (Record r)
 textInput = editProperty @l identity
 
--- | **`button`** — a **Shutter** leaf (× → +): read field `l` from the model, fire it as case `l`.
-button :: forall @l p a r. Category p => Resolving p => IsSymbol l => Cons l a () r => p (Record r) (Variant r)
-button =
+-- | **`onChange`** — a **Shutter** leaf (× → +): when field `l` changes, fire its value as event `l`.
+onChange :: forall @l p a r. Category p => Resolving p => IsSymbol l => Cons l a () r => p (Record r) (Variant r)
+onChange =
   shutterE
     (\rec -> Tuple (get (Proxy @l) rec) (get (Proxy @l) rec))
     (either (inj (Proxy @l)) (inj (Proxy @l)))
@@ -70,9 +70,9 @@ statusBar =
 -- | the stages. No type annotations anywhere in the body:
 -- |
 -- | ```
--- |   form  ──textInput──▶  form  ──button──▶  events  ──notification──▶  events  ──statusBar──▶  status
+-- |   form  ──textInput──▶  form  ──onChange──▶  events  ──notification──▶  events  ──statusBar──▶  status
 -- |   RecordToRecord.do       RecordToVariant.do      VariantToVariant.do        VariantToRecord.do
--- |    (edit each field)       (submit → event)        (validate → notice)        (event → status)
+-- |    (edit each field)       (field change → event)  (validate → notice)        (event → status)
 -- | ```
 checkoutFlow
   :: forall p
@@ -92,10 +92,10 @@ checkoutFlow = Semigroupoid.do
     textInput @"email"
     textInput @"cardNumber"
     textInput @"amount"
-  RecordToVariant.do     -- × → +   submit: each field fires a change event
-    button @"email"
-    button @"cardNumber"
-    button @"amount"
+  RecordToVariant.do     -- × → +   each field fires its onChange event
+    onChange @"email"
+    onChange @"cardNumber"
+    onChange @"amount"
   VariantToVariant.do    -- + → +   validate: a notification per event
     notification @"email"
     notification @"cardNumber"
