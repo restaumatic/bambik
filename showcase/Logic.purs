@@ -21,7 +21,7 @@ checkout = Semigroupoid.do
         :: MyRowToRowProfunctor
              (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
              (Variant ( thankYou :: String, failure :: String )) )
-    ( modal @"cancel" @"cancelled"
+    ( modal
         :: MyRowToRowProfunctor
              (Variant ( cancel :: Record () ))
              (Variant ( cancelled :: String )) )

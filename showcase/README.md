@@ -33,8 +33,8 @@ checkout = Semigroupoid.do
   VariantToVariant.do    -- + → +   submit hits the backend; cancel bypasses it
     ( request :: …(Variant ( submit :: Record Form ))
                   (Variant ( thankYou :: String, failure :: String )) )
-    ( modal @"cancel" @"cancelled" :: …(Variant ( cancel :: Record () ))
-                                       (Variant ( cancelled :: String )) )
+    ( modal :: …(Variant ( cancel :: Record () ))
+                 (Variant ( cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog  @"failure"

@@ -194,13 +194,12 @@ rating = MyRowToRowProfunctor
 
 -- Variant-to-variant (sum-shaped model in, fires event case)
 
--- Each turns the incoming event case `from` into an outgoing case `to` (the payload may
--- change too) — a closed-row transform of a single case.
+-- Fully deferred: any input variant to any output variant, pinned at the use site.
 
-notification :: forall @from @to a b iRow oRow. Cons from a () iRow => Cons to b () oRow => MyRowToRowProfunctor (Variant iRow) (Variant oRow)
+notification :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
 notification = MyRowToRowProfunctor
 
-modal :: forall @from @to a b iRow oRow. Cons from a () iRow => Cons to b () oRow => MyRowToRowProfunctor (Variant iRow) (Variant oRow)
+modal :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
 modal = MyRowToRowProfunctor
 
 -- A fake request/response dispatch to the backend: send whatever action variant `v`,
