@@ -31,22 +31,27 @@ Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism─�
 | validate | `Prism` | + → + | Value Object discriminator ("is-a") | `editCase` |
 | status | `Reel` | + → × | **Entity / Aggregate** | `reelE` |
 
-## The form
+## The form and submit
 
-`checkoutFlow` is one `RecordToRecord.do` merge of the field widgets — each field listed
-once, its whole lifecycle encapsulated:
+`form` is one `RecordToRecord.do` merge of the field widgets — each field listed once,
+its whole lifecycle encapsulated. `checkout` then *flows* the form into a submit
+`button` that fires the completed form as one `submit` event (× → +):
 
 ```purescript
-checkoutFlow = RecordToRecord.do
+form = RecordToRecord.do
   textInput @"email"
   textInput @"cardNumber"
   textInput @"amount"
+
+checkout = Semigroupoid.do      -- p (Record …) (Variant ( submit :: Record … ))
+  form
+  button @"submit"
 ```
 
-Two axes of composition: **flow** inside the widget (`Semigroupoid.do`, the four optic
-families end-to-end) and **merge** across the form (`RecordToRecord.do`, combining the
-fields). No annotations — the widget's closed row pins each step; the field types unify
-from the form's endpoints.
+Three axes of composition: **flow** inside each field widget (`Semigroupoid.do`, the
+four optic families end-to-end), **merge** across the form (`RecordToRecord.do`,
+combining the fields), and **flow** again at the top (form `>>>` submit). No annotations
+— the closed rows pin each step; the field types unify from the endpoints.
 
 ### Why a closed row (and not inline annotations)
 

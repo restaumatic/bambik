@@ -11,8 +11,8 @@
 -- |   * **Prism**   (+ → +) — validate that event            ("is-a")
 -- |   * **Reel**    (+ → ×) — write the field's status       (Entity / Aggregate)
 -- |
--- | There are no inline annotations: the widget's closed row (`Cons l a () r`) pins every
--- | step to the single field/case `l`, and the field types unify from `checkoutFlow`.
+-- | The form then flows into a **submit `button`** that fires the whole form as one
+-- | `submit` event. No inline annotations: closed rows (`Cons l a () r`) pin every step.
 module Showcase.Logic where
 
 import Prelude
@@ -27,7 +27,7 @@ import Data.Profunctor.Row.VariantToVariant (editCase)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
-import Data.Variant (case_, inj, on)
+import Data.Variant (Variant, case_, inj, on)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get, insert)
@@ -59,10 +59,24 @@ textInput = Semigroupoid.do
   reelE (\v -> Left ((case_ # on (Proxy @l) identity) v))                             -- + → ×  status
         (\(Tuple b (_ :: Unit)) -> insert (Proxy @l) b {}) identity
 
--- | The checkout form: one `RecordToRecord.do` merge of the field widgets. The smelly
--- | four-do-blocks-over-the-same-fields pipeline is gone — each field appears once, and
--- | its whole edit/validate/status lifecycle lives inside its own `textInput`.
-checkoutFlow
+-- | A **submit `button`** (× → +): read the whole form record and fire it as the single
+-- | event case `l`, carrying the form as payload (the `Example.purs` `button` shape).
+button
+  :: forall @l p r v
+   . Category p
+  => Resolving p
+  => IsSymbol l
+  => Cons l (Record r) () v
+  => p (Record r) (Variant v)
+button =
+  shutterE
+    (\rec -> Tuple rec rec)
+    (either (inj (Proxy @l)) (inj (Proxy @l)))
+    identity
+
+-- | The form body: one `RecordToRecord.do` merge of the field widgets — each field
+-- | listed once, its whole edit/validate/status lifecycle inside its own `textInput`.
+form
   :: forall p
    . Category p
   => Strong p
@@ -72,7 +86,23 @@ checkoutFlow
   => RecordToRecord p
   => p (Record ( email :: String, cardNumber :: String, amount :: Int ))
        (Record ( email :: String, cardNumber :: String, amount :: Int ))
-checkoutFlow = RecordToRecord.do
+form = RecordToRecord.do
   textInput @"email"
   textInput @"cardNumber"
   textInput @"amount"
+
+-- | The whole checkout: fill the `form`, then `submit` it. The form flows (`>>>`) into
+-- | the submit button, which fires the completed form as a single `submit` event.
+checkout
+  :: forall p
+   . Category p
+  => Strong p
+  => Choice p
+  => Resolving p
+  => Retaining p
+  => RecordToRecord p
+  => p (Record ( email :: String, cardNumber :: String, amount :: Int ))
+       (Variant ( submit :: Record ( email :: String, cardNumber :: String, amount :: Int ) ))
+checkout = Semigroupoid.do
+  form
+  button @"submit"
