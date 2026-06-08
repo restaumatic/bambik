@@ -40,4 +40,4 @@ type OrderCmd = Variant ( addLine :: Line, restore :: Order )
 -- | The terminal outcome of the checkout **process** (a Saga): it either *completed*
 -- | (`Placed`) or *escaped* with its in-flight state (`SavedDraft`). This is the
 -- | `Shutter` realm: a step that finishes or loops.
-data Submission = Placed { ref :: String } | SavedDraft String
+data Submission = Placed { ref :: String } | SavedDraft { draftId :: String }

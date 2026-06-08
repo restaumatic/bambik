@@ -146,11 +146,11 @@ checkout :: Shutter CheckoutForm Submission { order :: Order, paid :: Boolean } 
 checkout =
   shutterE
     (\f -> Tuple { order: f.order, paid: f.paid } f.draftId)
-    (either Placed SavedDraft)
+    (either Placed (\draftId -> SavedDraft { draftId }))
 
 -- | `shutter` — the explicit `(view, build, escape)` form: a lens that can snap shut.
 shipOrder :: Shutter Order Submission Order { ref :: String }
-shipOrder = shutter identity Placed (\o -> SavedDraft o.ref)
+shipOrder = shutter identity Placed (\o -> SavedDraft { draftId: o.ref })
 
 -- | `resolveProperty` — the single-field edit-position combinator. Field `coupon`
 -- | escapes directly to output case `coupon` (Loop), or the wrapped step runs (Done).
