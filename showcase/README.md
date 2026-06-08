@@ -32,7 +32,7 @@ checkout = Semigroupoid.do
   ( request              -- + → +   the backend round-trip (deferred → pinned to a contract)
       :: MyRowToRowProfunctor
            (Variant ( submit :: Record Form, cancel :: Record Form ))
-           (Variant ( thankYou :: Record Form, failure :: String, cancelled :: Record Form )) )
+           (Variant ( thankYou :: String, failure :: String, cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog  @"failure"
@@ -44,7 +44,7 @@ checkout = Semigroupoid.do
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
 | `button` | Record → Variant (× → +) | reads the whole form, fires its action carrying it |
 | `request` | Variant → Variant (+ → +) | a fake backend round-trip — *both* its actions and its responses are deferred |
-| `statusBar`, `eventLog` | Variant → Record (+ → ×) | render a response onto the result page |
+| `statusBar`, `eventLog` | Variant → Record (+ → ×) | render a `String` response message onto the page |
 
 The interesting one is **`request`**. Its definition declares *no* cases on either side
 (`forall v w. … (Variant v) (Variant w)`): the backend takes whatever actions come in and
@@ -54,7 +54,7 @@ annotation does three jobs:
 
 - decides which **actions** the backend accepts (so the `submit`/`cancel` button merge resolves),
 - decides which **responses** it may return (so the page's handlers line up),
-- pins the faked **response payloads** (`thankYou`/`cancelled` carry the order, `failure` a string).
+- pins the faked **response payloads** (here each response is a `String` status message).
 
 Everything else is `@l` widgets — `textInput @"email"`, `button @"submit"`,
 `statusBar @"thankYou"`, … — no annotations.
@@ -63,7 +63,7 @@ So the screen resolves to a **checkout status / thank-you page**:
 
 ```purescript
 … (Record ( email :: String, cardNumber :: String, savePayment :: Boolean ))
-  (Record ( thankYou :: Record …, failure :: String, cancelled :: Record … ))
+  (Record ( thankYou :: String, failure :: String, cancelled :: String ))
 ```
 
 > A deferred `request` is the *sole* processor of the action variant (it dispatches the

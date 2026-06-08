@@ -46,9 +46,9 @@ checkout = Semigroupoid.do
       :: MyRowToRowProfunctor
            (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
                     , cancel :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
-           (Variant ( thankYou  :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
+           (Variant ( thankYou  :: String
                     , failure   :: String
-                    , cancelled :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) )) )
+                    , cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog @"failure"

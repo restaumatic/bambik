@@ -171,10 +171,10 @@ menuItem = MyRowToRowProfunctor
 
 -- Variant-to-record (sum-shaped model in, optionally captures field)
 
-statusBar :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Record r)
+statusBar :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Variant r) (Record r)
 statusBar = MyRowToRowProfunctor
 
-eventLog :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Record r)
+eventLog :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Variant r) (Record r)
 eventLog = MyRowToRowProfunctor
 
 outlet :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
