@@ -170,10 +170,10 @@ menuItem = MyRowToRowProfunctor
 
 -- Variant-to-record (sum-shaped model in, optionally captures field)
 
-statusBar :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
+statusBar :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Record r)
 statusBar = MyRowToRowProfunctor
 
-eventLog :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
+eventLog :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Record r)
 eventLog = MyRowToRowProfunctor
 
 outlet :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
@@ -187,10 +187,10 @@ rating = MyRowToRowProfunctor
 
 -- Variant-to-variant (sum-shaped model in, fires event case)
 
-notification :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+notification :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
 notification = MyRowToRowProfunctor
 
-modal :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+modal :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Variant r) (Variant r)
 modal = MyRowToRowProfunctor
 
 wizardStep :: forall @l v w. Cons l (Record ()) () w => MyRowToRowProfunctor (Variant v) (Variant w)

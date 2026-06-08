@@ -12,31 +12,27 @@
 -- |   * `textInput`/`checkbox`  — Record → Record  (×→×): an editable field
 -- |   * `button`                — Record → Variant (×→+): reads the form, fires an action
 -- |   * `notification`/`modal`  — Variant → Variant (+→+): turn an action into an outcome
--- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): display the outcome
+-- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): record the event as a field
+-- |
+-- | Every widget is `@l`-parameterized (pins the single field/case it handles), so the
+-- | merges split unambiguously and the body needs no type annotations at all.
 module Showcase.Logic where
 
-import Data.Profunctor.Row.Example (MyRowToRowProfunctor, button, checkbox, eventLog, modal, notification, statusBar, textInput)
+import Data.Profunctor.Row.Example (button, checkbox, eventLog, modal, notification, statusBar, textInput)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Variant (Variant)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
--- | The whole checkout, flowing through all four merge directions:
+-- | The whole checkout, flowing through all four merge directions — and now with no
+-- | inline annotations: every widget is `@l`-parameterized, so each leaf names the
+-- | single field/case it handles and the merges split unambiguously.
 -- |
 -- | ```
--- |   form ──▶ submit | cancel ──▶ placed | aborted ──▶ display
--- |   ×→×        ×→+                +→+                  +→×
+-- |   form ──▶ submit | cancel ──▶ submit | cancel ──▶ display
+-- |   ×→×        ×→+                +→+                 +→×
 -- | ```
--- |
--- | The `Variant → Variant` / `Variant → Record` widgets are fully polymorphic, so each
--- | leaf carries an annotation pinning which case it handles — which also pins the
--- | upstream `button` outputs.
-checkout
-  :: MyRowToRowProfunctor
-       (Record ( email :: String, cardNumber :: String, savePayment :: Boolean ))
-       (Record ())
 checkout = Semigroupoid.do
   RecordToRecord.do      -- × → ×   the form: an input widget per field
     textInput @"email"
@@ -45,15 +41,9 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   actions: each button reads the form and fires its event
     button @"submit"
     button @"cancel"
-  VariantToVariant.do    -- + → +   process: turn each action into an outcome
-    ( notification
-        :: MyRowToRowProfunctor
-             (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
-             (Variant ( placed :: String )) )
-    ( modal
-        :: MyRowToRowProfunctor
-             (Variant ( cancel :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
-             (Variant ( aborted :: String )) )
-  VariantToRecord.do     -- + → ×   display: render each outcome
-    (statusBar :: MyRowToRowProfunctor (Variant ( placed :: String )) (Record ()))
-    (eventLog  :: MyRowToRowProfunctor (Variant ( aborted :: String )) (Record ()))
+  VariantToVariant.do    -- + → +   process each action event
+    notification @"submit"
+    modal @"cancel"
+  VariantToRecord.do     -- + → ×   display each event
+    statusBar @"submit"
+    eventLog @"cancel"

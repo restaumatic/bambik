@@ -29,30 +29,30 @@ checkout = Semigroupoid.do
   RecordToVariant.do     -- × → +   action buttons (each fires the form)
     button @"submit"
     button @"cancel"
-  VariantToVariant.do    -- + → +   turn each action into an outcome
-    notification …       -- submit  → placed
-    modal …              -- cancel  → aborted
-  VariantToRecord.do     -- + → ×   display each outcome
-    statusBar …          -- placed
-    eventLog  …          -- aborted
+  VariantToVariant.do    -- + → +   process each action event
+    notification @"submit"
+    modal        @"cancel"
+  VariantToRecord.do     -- + → ×   record each event
+    statusBar @"submit"
+    eventLog  @"cancel"
 ```
 
 | widget | shape | role |
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
 | `button` | Record → Variant (× → +) | reads the whole form, fires an action carrying it |
-| `notification`, `modal` | Variant → Variant (+ → +) | turn an action event into an outcome |
-| `statusBar`, `eventLog` | Variant → Record (+ → ×) | display an outcome |
+| `notification`, `modal` | Variant → Variant (+ → +) | process an action event |
+| `statusBar`, `eventLog` | Variant → Record (+ → ×) | record an event as a field |
 
 - **merge** (each `*.do`) combines that direction's widgets;
 - **flow** (`Semigroupoid.do`) threads the four stages: `Record → Variant → Variant → Record`;
 - `submit`/`cancel` are *distinct actions* (not one-per-field), each carrying the
   completed form as its payload.
 
-The `Variant → Variant` and `Variant → Record` widgets are fully polymorphic, so each
-leaf carries a small annotation saying which case it handles — and those annotations also
-pin the upstream `button` outputs, so the whole screen resolves to
-`MyRowToRowProfunctor (Record form) (Record ())`.
+Every widget is **`@l`-parameterized** — `textInput @"email"`, `button @"submit"`,
+`notification @"submit"`, … — so each leaf names the single field/case it handles. That
+single fact (a closed row, `Cons l a () r`) lets every merge split unambiguously, so the
+body needs **no type annotations at all**.
 
 The optics behind the widgets are documented in
 [`doc/row-profunctors.md`](../doc/row-profunctors.md).
