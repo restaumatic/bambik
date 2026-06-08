@@ -1,62 +1,43 @@
-# Showcase: a checkout form as pure optics
+# Showcase: a checkout screen from row-profunctor widgets
 
-A reactive **checkout form** — a shopper's fields (`email`, `cardNumber`, `amount`),
-each editing → firing a change → validating → showing status — expressed **only as
-optics**: no UI, no effects, no carrier. `p` stays abstract, so the logic is
-carrier-independent. It type-checks (`spago build`); it is not meant to be *run*.
+A checkout screen assembled from the **UI widget leaves** in
+[`Data.Profunctor.Row.Example`](../src/Data/Profunctor/Row/Example.purs) — `textInput`,
+`checkbox`, `button` — running at that module's concrete fake carrier
+`MyRowToRowProfunctor`. The whole screen **type-checks as a real composite**, with no UI,
+no effects, and no hand-written optics: the widgets are reused as-is and only *composed*.
 
-- [Logic.purs](./Logic.purs) — the whole showcase: a `textInput` field widget and
-  `checkoutFlow`, the form that merges three of them. No type annotations: the widget's
-  closed row (`Cons l a () r`) pins every step to its field, and the field types unify
-  from `checkoutFlow`'s endpoints.
+- [Logic.purs](./Logic.purs) — `checkout`, one screen: a form of input widgets that flows
+  into two action buttons.
 
-## The unit is the field, not the operation
+## How it composes
 
-A form is a **merge of field widgets**; each field widget runs its own lifecycle. That's
-why there's one merge (the form) and the four optic families live *inside* each widget —
-not four separate do-blocks all spanning the same three fields.
-
-`textInput @l` is a `Semigroupoid.do` (`>>>`) flow over the single field `l`, one optic
-family per step:
-
-```
-Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism──▶ Variant ──Reel──▶ Record
-  (edit l)         (l changed)        (validate l)        (status l)
-```
-
-| step | optic | direction | DDD role | built on |
-|---|---|---|---|---|
-| edit | `Lens` | × → × | Value Object accessor ("has-a") | `editProperty` |
-| change | `Shutter` | × → + | **Process / Saga** | `shutterE` |
-| validate | `Prism` | + → + | Value Object discriminator ("is-a") | `editCase` |
-| status | `Reel` | + → × | **Entity / Aggregate** | `reelE` |
-
-## The form and submit
-
-`checkout` merges the field widgets (`RecordToRecord.do`) and *flows* that form into a
-submit `button` that fires the completed form as one `submit` event (× → +):
+Each widget's *shape* is one row-profunctor direction; the screen wires them with two
+**merge** do-blocks and the **flow** of `Semigroupoid.do`:
 
 ```purescript
-checkout = Semigroupoid.do      -- p (Record …) (Variant ( submit :: Record … ))
-  RecordToRecord.do
-    textInput @"email"
-    textInput @"cardNumber"
-    textInput @"amount"
-  button @"submit"
+checkout = Semigroupoid.do
+  RecordToRecord.do      -- the form          (× → ×)
+    textInput  @"email"
+    textInput  @"cardNumber"
+    checkbox   @"savePayment"
+  RecordToVariant.do     -- the action buttons (× → +)
+    button @"submit"
+    button @"cancel"
 ```
 
-Three axes of composition: **flow** inside each field widget (`Semigroupoid.do`, the
-four optic families end-to-end), **merge** across the form (`RecordToRecord.do`,
-combining the fields), and **flow** again at the top (form `>>>` submit). No annotations
-— the closed rows pin each step; the field types unify from the endpoints.
+| widget | shape | role |
+|---|---|---|
+| `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
+| `button` | Record → Variant (× → +) | reads the whole form, fires an action carrying it |
 
-### Why a closed row (and not inline annotations)
+- **merge** (`RecordToRecord.do`) combines the field widgets into the form;
+- **merge** (`RecordToVariant.do`) combines the buttons into one action channel — `submit`
+  and `cancel` are *distinct actions* (not one-per-field), each carrying the completed form;
+- **flow** (`Semigroupoid.do`) feeds the form into the buttons.
 
-`editProperty`/`editCase`/… are *open-rest* (`Cons l a r s`, `r` free) so they compose
-onto any record — but that openness leaves a leaf's row ambiguous in a merge. `textInput`
-fixes it once, at the widget, with a **closed tail `()`** (`Cons l a () r`): every step is
-pinned to the single field/case `l`, so no call-site annotation is needed.
+So `checkout :: MyRowToRowProfunctor (Record form) (Variant ( submit :: Record form, cancel :: Record form ))`
+— fill the form, press a button, get the action event.
 
-The full optic vocabulary (the focus and wrap combinators — `focusRecord`,
-`focusVariant`, `resolveProperty`, `retainCase`, `shutterWrap`, `reelWrap`, `lensE`,
-`prismE`, …) is documented in [`doc/row-profunctors.md`](../doc/row-profunctors.md).
+The widget vocabulary (and the `Variant → Record` / `Variant → Variant` widgets like
+`statusBar`, `notification`, …) lives in `Example.purs`; the optics behind it all are
+documented in [`doc/row-profunctors.md`](../doc/row-profunctors.md).
