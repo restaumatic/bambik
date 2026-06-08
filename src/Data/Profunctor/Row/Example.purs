@@ -48,6 +48,7 @@ import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaini
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, inj)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -177,15 +178,23 @@ actionButton :: forall @l v. Cons l (Record ()) () v => MyRowToRowProfunctor (Re
 actionButton = MyRowToRowProfunctor
 
 -- A Shutter (× → +): the submit action as a loop step. Reads the whole form and
--- either fires `submit` carrying it (Done → on to the backend) or snaps back to
--- `editing` with a prompt (Loop → return the form for correction). Built on
--- `shutter` — no `(->)` instance, because a pure function can't loop.
-submit :: forall r. MyRowToRowProfunctor (Record r) (Variant ( submit :: Record r, editing :: String ))
+-- either fires the `done` case carrying it (Done → on to the backend) or snaps
+-- back to the `loop` case with a prompt (Loop → return the form for correction).
+-- Both output cases are caller-chosen labels. Built on `shutter` — no `(->)`
+-- instance, because a pure function can't loop.
+submit
+  :: forall @done @loop r vl vd v
+   . IsSymbol done
+  => IsSymbol loop
+  => Cons loop String () vl
+  => Cons done (Record r) vl v
+  => Cons loop String vd v
+  => MyRowToRowProfunctor (Record r) (Variant v)
 submit =
   shutter
     identity
-    (inj (Proxy @"submit"))
-    (\_ -> inj (Proxy @"editing") "review your details")
+    (inj (Proxy @done))
+    (\_ -> inj (Proxy @loop) "review your details")
     MyRowToRowProfunctor
 
 icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)

@@ -29,7 +29,7 @@ checkout = Semigroupoid.do
     textInput @"cardNumber"
     checkbox  @"savePayment"
   RecordToVariant.do     -- × → +   submit is a Shutter; cancel fires nothing
-    submit
+    submit @"submit" @"editing"
     actionButton @"cancel"
   VariantToVariant.do    -- + → +   submit hits the backend; cancel bypasses it; editing loops
     ( request :: …(Variant ( submit :: Record Form ))
@@ -46,7 +46,7 @@ checkout = Semigroupoid.do
 | widget | shape | role |
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
-| `submit` | Record → Variant (× → +) | **a Shutter** — reads the form, either fires `submit` (Done) or loops to `editing` (Loop) |
+| `submit @done @loop` | Record → Variant (× → +) | **a Shutter** — reads the form, either fires the `done` case (Done) or loops to the `loop` case (Loop); both labels caller-chosen |
 | `actionButton` | Record → Variant (× → +) | fires an action carrying nothing (`Record ()`) |
 | `request` | Variant → Variant (+ → +) | a fake backend round-trip — its response cases are *deferred* |
 | `notification`, `modal` | Variant → Variant (+ → +) | local handlers (no backend) — route one case to another |
@@ -59,10 +59,11 @@ The four merge do-blocks all compose *same-kind* leaves. The two
 (`+ → ×`, `retain`) — aren't extra stages bolted onto the pipeline; they're
 baked into the leaves whose row-direction *is* their shape:
 
-- **`submit` is a Shutter.** Built on `shutter`, it reads the whole form and
-  returns a `Step`: fire `submit` carrying the form (**Done** → on to the
-  backend), or snap back to `editing` with a prompt (**Loop** → the form is
-  returned for correction). The loop channel is a real output case the page
+- **`submit @done @loop` is a Shutter.** Built on `shutter`, it reads the whole
+  form and returns a `Step`: fire the `done` case carrying the form (**Done** →
+  on to the backend), or snap back to the `loop` case with a prompt (**Loop** →
+  the form is returned for correction). Both output labels are caller-chosen
+  (here `submit`/`editing`), and the loop channel is a real output case the page
   renders. A `× → +` action that can iterate is the canonical place a Shutter
   belongs — a stateless `button` can only fire once.
 - **`statusBar` and `eventLog` are Reels.** Built on `reel`, each is a `+ → ×`

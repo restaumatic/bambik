@@ -14,7 +14,7 @@ checkout = Semigroupoid.do
     textInput @"cardNumber"
     checkbox @"savePayment"
   RecordToVariant.do
-    submit
+    submit @"submit" @"editing"
     actionButton @"cancel"
   VariantToVariant.do
     ( request
