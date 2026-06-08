@@ -1,7 +1,8 @@
-# Showcase: a checkout app as pure optics
+# Showcase: a checkout screen as pure optics
 
-The business logic of a tiny checkout flow, expressed **only as optics** — no UI, no
-effects, no carrier. `p` stays abstract, so the logic is carrier-independent. It
+A reactive **checkout screen** — a shopper's form (`email`, `cardNumber`, `amount`)
+flowing through edit → submit → validate → status — expressed **only as optics**: no
+UI, no effects, no carrier. `p` stays abstract, so the logic is carrier-independent. It
 type-checks (`spago build`); it is not meant to be *run*. Every binding is used by the
 app — there is no spare vocabulary.
 
@@ -24,18 +25,19 @@ named after the UI widget that has its shape (the `Example.purs` idiom). Their D
 
 ## The app
 
-`checkoutFlow` composes the helpers with the four merge do-blocks (the
-`{Record,Variant}²` class matrix) and the outer `Semigroupoid.do`:
+`checkoutFlow` wires three field widgets per stage with the four merge do-blocks (the
+`{Record,Variant}²` class matrix), and flows the stages with the outer `Semigroupoid.do`:
 
 ```
-Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism──▶ Variant ──Reel──▶ Record
-RecordToRecord.do   RecordToVariant.do    VariantToVariant.do    VariantToRecord.do
+form  ──textInput──▶ form  ──button──▶ events ──notification──▶ events ──statusBar──▶ status
+RecordToRecord.do      RecordToVariant.do     VariantToVariant.do        VariantToRecord.do
+ (edit each field)      (submit → event)       (validate → notice)        (event → status)
 ```
 
 Two axes of composition in one definition: **merge** across a row (inside each
-do-block, combining the two field/case leaves) and **flow** along the pipeline (the
-outer `Semigroupoid.do`). The leaves are closed-row, so the app needs no parameters and
-no annotations — the optics build all the structure.
+do-block, wiring the three field widgets) and **flow** along the pipeline (the outer
+`Semigroupoid.do`). The leaves are closed-row, so the app needs no parameters and no
+annotations — the optics build all the structure.
 
 ### Why closed-row helpers (and not inline annotations)
 

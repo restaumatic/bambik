@@ -63,13 +63,16 @@ statusBar =
     (\(Tuple b (_ :: Unit)) -> insert (Proxy @l) b {})
     identity
 
--- | The whole checkout, as one `Semigroupoid.do` (`>>>`) pipeline. Each merge do-block
--- | merges that stage's two closed-row leaves, and the outer `Semigroupoid.do` flows the
--- | four stages together — no type annotations anywhere in the body:
+-- | A reactive **checkout screen**, as one `Semigroupoid.do` (`>>>`) pipeline. The
+-- | shopper's form (`email`, `cardNumber`, `amount`) flows through four stages — one
+-- | per optic family — and the same data lands back as a status line. Each merge
+-- | do-block wires that stage's three field widgets; the outer `Semigroupoid.do` flows
+-- | the stages. No type annotations anywhere in the body:
 -- |
 -- | ```
--- |   Record  ──Lens──▶  Record  ──Shutter──▶  Variant  ──Prism──▶  Variant  ──Reel──▶  Record
--- |   RecordToRecord.do    RecordToVariant.do     VariantToVariant.do     VariantToRecord.do
+-- |   form  ──textInput──▶  form  ──button──▶  events  ──notification──▶  events  ──statusBar──▶  status
+-- |   RecordToRecord.do       RecordToVariant.do      VariantToVariant.do        VariantToRecord.do
+-- |    (edit each field)       (submit → event)        (validate → notice)        (event → status)
 -- | ```
 checkoutFlow
   :: forall p
@@ -82,17 +85,22 @@ checkoutFlow
   => RecordToVariant p
   => VariantToVariant p
   => VariantToRecord p
-  => p (Record ( email :: String, amount :: Int )) (Record ( email :: String, amount :: Int ))
+  => p (Record ( email :: String, cardNumber :: String, amount :: Int ))
+       (Record ( email :: String, cardNumber :: String, amount :: Int ))
 checkoutFlow = Semigroupoid.do
-  RecordToRecord.do      -- × → ×   Lens: normalize each field
+  RecordToRecord.do      -- × → ×   the form: an editable input per field
     textInput @"email"
+    textInput @"cardNumber"
     textInput @"amount"
-  RecordToVariant.do     -- × → +   Shutter: lift each field into a channel
+  RecordToVariant.do     -- × → +   submit: each field fires a change event
     button @"email"
+    button @"cardNumber"
     button @"amount"
-  VariantToVariant.do    -- + → +   Prism: route each channel
+  VariantToVariant.do    -- + → +   validate: a notification per event
     notification @"email"
+    notification @"cardNumber"
     notification @"amount"
-  VariantToRecord.do     -- + → ×   Reel: render each channel back into a field
+  VariantToRecord.do     -- + → ×   status: render each event into the status line
     statusBar @"email"
+    statusBar @"cardNumber"
     statusBar @"amount"
