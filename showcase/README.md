@@ -69,5 +69,40 @@ thank-you page**:
   (Record ( thankYou :: String, failure :: String, cancelled :: String ))
 ```
 
-The optics behind the widgets are documented in
-[`doc/row-profunctors.md`](../doc/row-profunctors.md).
+## The two mixed strengths: Shutter and Reel
+
+The four merge do-blocks above all compose *same-kind* leaves. The two
+**mixed-direction strengths** are what make the row profunctors more than a
+record/variant calculator — and the checkout has a natural place for each.
+
+```purescript
+confirmPayment
+  :: MyRowToRowProfunctor
+       (Tuple (Record ( amount :: Int ))       (Record ( attempt :: Int )))
+       (Either (Variant ( settled :: Record ( amount :: Int ) )) (Record ( attempt :: Int )))
+confirmPayment = RecordToVariant.resolve (button @"settled")
+
+runningTotal
+  :: MyRowToRowProfunctor
+       (Either (Variant ( addItem :: String )) (Record ( total :: Int )))
+       (Tuple (Record ( addItem :: String ))   (Record ( total :: Int )))
+runningTotal = VariantToRecord.retain (statusBar @"addItem")
+```
+
+- **`confirmPayment` is a Shutter** (`resolve`, × → +) — the **loop step**. It
+  runs `button @"settled"` against the charge alongside a carried `attempt`
+  state, and returns a `Step`: `Left (settled …)` = **Done** (the gateway
+  settled), `Right attempt` = **Loop** (still pending, charge again). State
+  enters guaranteed (the `Tuple` input) and leaves optionally (a branch of the
+  `Either` output), so the iteration can *halt*. A payment-confirmation poll.
+- **`runningTotal` is a Reel** (`retain`, + → ×) — the **Mealy step**. It takes
+  either a fresh `addItem` command (`Left`) or a resumed `total` (`Right`) and
+  always emits an output **plus** the next state (the `Tuple`): the cart never
+  finishes, it just winds forward. The aggregate that folds each command into
+  retained state.
+
+Neither has a `(->)` instance — a pure function can't loop (Shutter) and can't
+hold state across calls (Reel). That missing instance is exactly the
+entity/value-object line drawn in the types; see the **DDD reading** in
+[`doc/row-profunctors.md`](../doc/row-profunctors.md), which also documents the
+optics behind every widget.

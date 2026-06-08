@@ -39,10 +39,10 @@ import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Row.Default (withRecordDefault, withRecordOutputDefault)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row (class Row, narrowRecordOutput, narrowVariantInput, widenRecordInput, widenVariantOutput)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
@@ -73,6 +73,13 @@ instance VariantToRecord MyRowToRowProfunctor where
 
 instance VariantToVariant MyRowToRowProfunctor where
   variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+
+-- It also carries the two mixed-direction strengths: Shutter (× → +) and Reel (+ → ×)
+instance Resolving MyRowToRowProfunctor where
+  resolve MyRowToRowProfunctor = MyRowToRowProfunctor
+
+instance Retaining MyRowToRowProfunctor where
+  retain MyRowToRowProfunctor = MyRowToRowProfunctor
 
 instance Row MyRowToRowProfunctor
 
