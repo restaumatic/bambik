@@ -21,6 +21,7 @@ module Data.Profunctor.Row.Example
   , searchBar
   , slider
   , statusBar
+  , submit
   , text
   , textInput
   , variantToRecordExample
@@ -35,20 +36,22 @@ module Data.Profunctor.Row.Example
 
 import Prelude
 
+import Data.Either (Either(..))
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Row.Default (withRecordDefault, withRecordOutputDefault)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, shutter)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row (class Row, narrowRecordOutput, narrowVariantInput, widenRecordInput, widenVariantOutput)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, reel)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Variant (Variant)
+import Data.Variant (Variant, inj)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
+import Type.Proxy (Proxy(..))
 
 data MyRowToRowProfunctor :: forall k1 k2. k1 -> k2 -> Type
 data MyRowToRowProfunctor a b = MyRowToRowProfunctor
@@ -173,6 +176,18 @@ button = MyRowToRowProfunctor
 actionButton :: forall @l v. Cons l (Record ()) () v => MyRowToRowProfunctor (Record ()) (Variant v)
 actionButton = MyRowToRowProfunctor
 
+-- A Shutter (× → +): the submit action as a loop step. Reads the whole form and
+-- either fires `submit` carrying it (Done → on to the backend) or snaps back to
+-- `editing` with a prompt (Loop → return the form for correction). Built on
+-- `shutter` — no `(->)` instance, because a pure function can't loop.
+submit :: forall r. MyRowToRowProfunctor (Record r) (Variant ( submit :: Record r, editing :: String ))
+submit =
+  shutter
+    identity
+    (inj (Proxy @"submit"))
+    (\_ -> inj (Proxy @"editing") "review your details")
+    MyRowToRowProfunctor
+
 icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 icon = MyRowToRowProfunctor
 
@@ -184,11 +199,16 @@ menuItem = MyRowToRowProfunctor
 
 -- Variant-to-record (sum-shaped model in, optionally captures field)
 
+-- A Reel (+ → ×): the page entity that *retains* its status across renders.
+-- Built on `reel`; the carrier holds the state, so the dispatch only routes the
+-- incoming case in (`Left`) — the retained channel is the do-nothing carrier's.
 statusBar :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Variant r) (Record r)
-statusBar = MyRowToRowProfunctor
+statusBar = reel (\s -> Left s) (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant r) (Record r))
 
+-- A Reel (+ → ×): an event log that retains accumulated history — the same
+-- stateful-entity shape as `statusBar`, also built on `reel`.
 eventLog :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Variant r) (Record r)
-eventLog = MyRowToRowProfunctor
+eventLog = reel (\s -> Left s) (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant r) (Record r))
 
 outlet :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
 outlet = MyRowToRowProfunctor
