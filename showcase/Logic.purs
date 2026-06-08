@@ -32,15 +32,6 @@ import Data.Variant (Variant, case_, inj, on)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
--- The model: just `Record`s (value objects) and, downstream, `Variant`s (channels).
-
--- | Money in minor units (cents) — a primitive value object.
-type Money = Int
-
--- | The input **form** (a value-object record) and the rendered **display** (its projection).
-type Form = { email :: String, amount :: Money }
-type Display = { contactNote :: String, chargeNote :: String }
-
 -- | The whole checkout, as one `Semigroupoid.do` (`>>>`) pipeline. Each merge do-block
 -- | merges that stage's two optics (applied to the trivial focus `identity`), and the
 -- | outer `Semigroupoid.do` flows the four stages together:
@@ -64,21 +55,23 @@ checkoutFlow
   => RecordToVariant p
   => VariantToVariant p
   => VariantToRecord p
-  => p Form Display
+  => p
+       (Record ( email :: String, amount :: Int ))
+       (Record ( contactNote :: String, chargeNote :: String ))
 checkoutFlow = Semigroupoid.do
   RecordToRecord.do      -- × → ×   Lens: normalize each field
     (editProperty @"email" identity :: p (Record ( email :: String )) (Record ( email :: String )))
-    (lensProperty @"amount" identity :: p (Record ( amount :: Money )) (Record ( amount :: Money )))
+    (lensProperty @"amount" identity :: p (Record ( amount :: Int )) (Record ( amount :: Int )))
   RecordToVariant.do     -- × → +   Shutter: lift each field into a channel
     ( shutterE (\r -> Tuple r.email r.email) (either (inj (Proxy @"contact")) (inj (Proxy @"contact"))) identity
         :: p (Record ( email :: String )) (Variant ( contact :: String )) )
     ( shutter _.amount (inj (Proxy @"charge")) (\r -> inj (Proxy @"charge") r.amount) identity
-        :: p (Record ( amount :: Money )) (Variant ( charge :: Money )) )
+        :: p (Record ( amount :: Int )) (Variant ( charge :: Int )) )
   VariantToVariant.do    -- + → +   Prism: route each channel
     (editCase @"contact" identity :: p (Variant ( contact :: String )) (Variant ( contact :: String )))
-    (prismCase @"charge" identity :: p (Variant ( charge :: Money )) (Variant ( charge :: Money )))
+    (prismCase @"charge" identity :: p (Variant ( charge :: Int )) (Variant ( charge :: Int )))
   VariantToRecord.do     -- + → ×   Reel: render each channel into a note
     ( reelE (\v -> Left ((case_ # on (Proxy @"contact") identity) v)) (\(Tuple b (_ :: Unit)) -> { contactNote: b }) identity
         :: p (Variant ( contact :: String )) (Record ( contactNote :: String )) )
     ( reelE (\v -> Left ((case_ # on (Proxy @"charge") identity) v)) (\(Tuple m (_ :: Unit)) -> { chargeNote: show m }) identity
-        :: p (Variant ( charge :: Money )) (Record ( chargeNote :: String )) )
+        :: p (Variant ( charge :: Int )) (Record ( chargeNote :: String )) )

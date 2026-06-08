@@ -5,10 +5,11 @@ effects, no carrier. `p` stays abstract, so the logic is carrier-independent. It
 type-checks (`spago build`); it is not meant to be *run*. Every binding is used by the
 app — there is no spare vocabulary.
 
-- [Logic.purs](./Logic.purs) — the model (`Form`, `Display`, `Money`) plus the app,
-  `checkoutFlow`, with the optics inlined. Each inlined leaf carries a `:: p (…) (…)`
-  annotation (the signature's `forall p` is in scope) — that single-row signature is
-  what lets the merge split the form across leaves.
+- [Logic.purs](./Logic.purs) — the whole showcase: one function, `checkoutFlow`, with
+  the optics inlined and the input/output types written as inline row types (no nominal
+  aliases). Each inlined leaf carries a `:: p (…) (…)` annotation (the signature's
+  `forall p` is in scope) — that single-row signature is what lets the merge split the
+  form across leaves.
 
 ## The four optics → the four stages
 
