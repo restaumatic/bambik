@@ -33,18 +33,15 @@ Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism─�
 
 ## The form and submit
 
-`form` is one `RecordToRecord.do` merge of the field widgets — each field listed once,
-its whole lifecycle encapsulated. `checkout` then *flows* the form into a submit
-`button` that fires the completed form as one `submit` event (× → +):
+`checkout` merges the field widgets (`RecordToRecord.do`) and *flows* that form into a
+submit `button` that fires the completed form as one `submit` event (× → +):
 
 ```purescript
-form = RecordToRecord.do
-  textInput @"email"
-  textInput @"cardNumber"
-  textInput @"amount"
-
 checkout = Semigroupoid.do      -- p (Record …) (Variant ( submit :: Record … ))
-  form
+  RecordToRecord.do
+    textInput @"email"
+    textInput @"cardNumber"
+    textInput @"amount"
   button @"submit"
 ```
 

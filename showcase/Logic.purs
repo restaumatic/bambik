@@ -74,25 +74,10 @@ button =
     (either (inj (Proxy @l)) (inj (Proxy @l)))
     identity
 
--- | The form body: one `RecordToRecord.do` merge of the field widgets — each field
--- | listed once, its whole edit/validate/status lifecycle inside its own `textInput`.
-form
-  :: forall p
-   . Category p
-  => Strong p
-  => Choice p
-  => Resolving p
-  => Retaining p
-  => RecordToRecord p
-  => p (Record ( email :: String, cardNumber :: String, amount :: Int ))
-       (Record ( email :: String, cardNumber :: String, amount :: Int ))
-form = RecordToRecord.do
-  textInput @"email"
-  textInput @"cardNumber"
-  textInput @"amount"
-
--- | The whole checkout: fill the `form`, then `submit` it. The form flows (`>>>`) into
--- | the submit button, which fires the completed form as a single `submit` event.
+-- | The whole checkout: fill the form (a `RecordToRecord.do` merge of field widgets —
+-- | each field listed once, its whole lifecycle inside its own `textInput`), then
+-- | `submit` it. The form flows (`>>>`) into the submit button, which fires the completed
+-- | form as a single `submit` event.
 checkout
   :: forall p
    . Category p
@@ -104,5 +89,8 @@ checkout
   => p (Record ( email :: String, cardNumber :: String, amount :: Int ))
        (Variant ( submit :: Record ( email :: String, cardNumber :: String, amount :: Int ) ))
 checkout = Semigroupoid.do
-  form
+  RecordToRecord.do
+    textInput @"email"
+    textInput @"cardNumber"
+    textInput @"amount"
   button @"submit"
