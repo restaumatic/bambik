@@ -20,14 +20,18 @@ carrier-independent. It type-checks (`spago build`); it is not meant to be *run*
 | `Reel` | + → × | **Entity / Aggregate** | `reelE`, `reel`, `retainCase`, `reelWrap` |
 | `Shutter` | × → + | **Process / Saga** | `shutterE`, `shutter`, `resolveProperty`, `shutterWrap` |
 
-**The four merge do-blocks** — the full class matrix, composing optics into whole
-records and variants:
+**The four merge do-blocks** — the full class matrix, all composed into a single
+`Semigroupoid.do` (`>>>`) pipeline (`checkoutFlow`), each stage's output feeding the
+next: `Record → Record → Variant → Variant → Record`:
 
-| do-block | direction | shape |
+| stage (do-block) | direction | shape |
 |---|---|---|
-| `RecordToRecord.do` | × → × | assemble a record from field leaves |
+| `RecordToRecord.do` | × → × | assemble the form |
 | `RecordToVariant.do` | × → + | form → event (validate) |
 | `VariantToVariant.do` | + → + | dispatch + merge (route) |
 | `VariantToRecord.do` | + → × | event → display (render) |
+
+Two axes of composition in one definition: **merge** across a row (inside each
+do-block) and **flow** along the pipeline (the outer `Semigroupoid.do`).
 
 See [`doc/row-profunctors.md`](../doc/row-profunctors.md) for the theory behind all of this.

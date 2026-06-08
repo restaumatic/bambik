@@ -30,6 +30,7 @@ import Data.Profunctor.Row.VariantToVariant (class ChoiceVariantToVariant, class
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, case_, on)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import Showcase.Domain (CardDetails, Customer, Line, Money, Order, OrderCmd, Payment, Submission(..))
 import Type.Proxy (Proxy(..))
 
@@ -172,54 +173,54 @@ priceLine
 priceLine = shutterWrap (Proxy @"unpriced")
 
 -- ════════════════════════════════════════════════════════════════════════════
--- 5. THE MERGE MATRIX — the four `Row → Row` do-blocks compose optics into whole
---    records and variants. Each merges complete sub-profunctors (the leaves).
+-- 5. THE MERGE MATRIX — all four `Row → Row` do-blocks composed into ONE pipeline.
 -- ════════════════════════════════════════════════════════════════════════════
 
--- | **RecordToRecord.do** (× → ×) — assemble a record from field-producing leaves.
--- | Inputs *shared* (Inclusive), outputs *disjoint* (Exclusive).
-orderSummary
+-- | The whole checkout, as a single `Semigroupoid.do` (`>>>`) pipeline that chains
+-- | all four merge do-blocks — each stage's output is the next stage's input:
+-- |
+-- | ```
+-- |   Record  ──(× → ×)──▶  Record  ──(× → +)──▶  Variant  ──(+ → +)──▶  Variant  ──(+ → ×)──▶  Record
+-- |        RecordToRecord.do      RecordToVariant.do     VariantToVariant.do      VariantToRecord.do
+-- |          (assemble form)        (validate → events)     (route events)          (render display)
+-- | ```
+-- |
+-- | Each inner do-block *merges* leaf sub-profunctors (the parameters); the outer
+-- | `Semigroupoid.do` *flows* the four merged stages together. The full matrix —
+-- | both axes of composition (merge across a row, flow along the pipeline) — in one
+-- | carrier-independent definition.
+checkoutFlow
   :: forall p
-   . RecordToRecord p
-  => p (Record ( ref :: String )) (Record ( label :: String ))
-  -> p (Record ( total :: Money )) (Record ( formatted :: String ))
-  -> p (Record ( ref :: String, total :: Money )) (Record ( label :: String, formatted :: String ))
-orderSummary refLabel totalLabel = RecordToRecord.do
-  refLabel
-  totalLabel
-
--- | **RecordToVariant.do** (× → +) — the *form → event* shape: read a shared form
--- | (Inclusive in), merge the emitted events (Inclusive out).
-validateCheckout
-  :: forall p
-   . RecordToVariant p
-  => p (Record ( email :: String )) (Variant ( emailError :: String ))
+   . Semigroupoid p
+  => RecordToRecord p
+  => RecordToVariant p
+  => VariantToVariant p
+  => VariantToRecord p
+  -- stage 1 leaves — assemble (× → ×)
+  => p (Record ( email :: String )) (Record ( email :: String ))
+  -> p (Record ( total :: Money )) (Record ( total :: Money ))
+  -- stage 2 leaves — validate (× → +)
+  -> p (Record ( email :: String )) (Variant ( emailError :: String ))
   -> p (Record ( total :: Money )) (Variant ( emptyCartError :: String ))
-  -> p (Record ( email :: String, total :: Money )) (Variant ( emailError :: String, emptyCartError :: String ))
-validateCheckout vEmail vCart = RecordToVariant.do
-  vEmail
-  vCart
-
--- | **VariantToVariant.do** (+ → +) — dispatch the live input case (Exclusive in),
--- | merge outputs (Inclusive out — both branches may emit `authorized`).
-routePayment
-  :: forall p
-   . VariantToVariant p
-  => p (Variant ( card :: CardDetails )) (Variant ( authorized :: String ))
-  -> p (Variant ( cash :: Money )) (Variant ( authorized :: String ))
-  -> p (Variant ( card :: CardDetails, cash :: Money )) (Variant ( authorized :: String ))
-routePayment onCard onCash = VariantToVariant.do
-  onCard
-  onCash
-
--- | **VariantToRecord.do** (+ → ×) — the *event → display* shape: dispatch on which
--- | response occurred (Exclusive in), fill disjoint display fields (Exclusive out).
-renderResponse
-  :: forall p
-   . VariantToRecord p
-  => p (Variant ( placed :: String )) (Record ( banner :: String ))
-  -> p (Variant ( failed :: String )) (Record ( retry :: Boolean ))
-  -> p (Variant ( placed :: String, failed :: String )) (Record ( banner :: String, retry :: Boolean ))
-renderResponse onPlaced onFailed = VariantToRecord.do
-  onPlaced
-  onFailed
+  -- stage 3 leaves — route (+ → +)
+  -> p (Variant ( emailError :: String )) (Variant ( banner :: String ))
+  -> p (Variant ( emptyCartError :: String )) (Variant ( retry :: Boolean ))
+  -- stage 4 leaves — render (+ → ×)
+  -> p (Variant ( banner :: String )) (Record ( message :: String ))
+  -> p (Variant ( retry :: Boolean )) (Record ( canRetry :: Boolean ))
+  -- the composed flow
+  -> p (Record ( email :: String, total :: Money )) (Record ( message :: String, canRetry :: Boolean ))
+checkoutFlow normEmail normTotal vEmail vTotal onEmailErr onCartErr onBanner onRetry =
+  Semigroupoid.do
+    RecordToRecord.do      -- × → ×   assemble the form
+      normEmail
+      normTotal
+    RecordToVariant.do     -- × → +   validate into events
+      vEmail
+      vTotal
+    VariantToVariant.do    -- + → +   route events to display channels
+      onEmailErr
+      onCartErr
+    VariantToRecord.do     -- + → ×   render the display record
+      onBanner
+      onRetry
