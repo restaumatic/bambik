@@ -197,10 +197,11 @@ notification = MyRowToRowProfunctor
 modal :: forall @from @to a iRow oRow. Cons from a () iRow => Cons to a () oRow => MyRowToRowProfunctor (Variant iRow) (Variant oRow)
 modal = MyRowToRowProfunctor
 
--- A fake request/response dispatch to the backend: send case `from` as a request; the
--- response comes back on *some* set of cases `w` — left deferred, since one request may
--- resolve to several outcomes (e.g. `thankYou` or `failure`), inferred from downstream.
-request :: forall @from a iRow w. Cons from a () iRow => MyRowToRowProfunctor (Variant iRow) (Variant w)
+-- A fake request/response dispatch to the backend: send whatever action variant `v`,
+-- the response comes back on *some* set of cases `w` — both left deferred, since the
+-- backend takes any action and one request may resolve to several outcomes (e.g.
+-- `thankYou` or `failure`), inferred from downstream.
+request :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
 request = MyRowToRowProfunctor
 
 wizardStep :: forall @l v w. Cons l (Record ()) () w => MyRowToRowProfunctor (Variant v) (Variant w)

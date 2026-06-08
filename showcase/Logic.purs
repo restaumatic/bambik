@@ -9,41 +9,47 @@
 -- |
 -- |   * `textInput`/`checkbox`  — Record → Record  (×→×): an editable field
 -- |   * `button`                — Record → Variant (×→+): reads the form, fires an action
--- |   * `request`               — Variant → Variant (+→+): a fake backend round-trip whose
--- |                               response cases are *deferred* — one request resolves to
--- |                               `thankYou` *or* `failure`, inferred from the page below
+-- |   * `request`               — Variant → Variant (+→+): a fake backend round-trip; both
+-- |                               its accepted actions and its response cases are *deferred*
+-- |                               (`forall v w`), pinned to a concrete contract at the use site
 -- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): render a response onto the page
 module Showcase.Logic where
 
 import Data.Profunctor.Row.Example (MyRowToRowProfunctor, button, checkbox, eventLog, request, statusBar, textInput)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Variant (Variant)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
--- | The checkout: fill the form, `submit` it, and the backend `request` resolves to a
--- | result page — `thankYou` (carrying the placed order) *or* `failure` (an error). The
--- | request's response cases are deferred; the page's two handlers are what fix them:
+-- | The checkout: fill the form, press `submit` or `cancel`, and the backend `request`
+-- | resolves to a result page — `thankYou` (the placed order), `failure` (an error), or
+-- | `cancelled`. `request` is deferred; the single annotation here is its **contract** —
+-- | which actions it accepts and which responses it may return — which also pins the
+-- | button merge and the response payloads:
 -- |
 -- | ```
--- |   form ──submit──▶ request ──▶ { thankYou | failure } ──▶ page { thankYou, failure }
--- |   ×→×        ×→+      +→+ (deferred)                       +→×
+-- |   form ──[submit | cancel]──▶ request ──▶ { thankYou | failure | cancelled } ──▶ page
+-- |   ×→×          ×→+               +→+ (deferred)                                   +→×
 -- | ```
--- |
--- | The signature pins the response payloads (the fake backend invents them); everything
--- | else is `@l` widgets, no inline annotations.
-checkout
-  :: MyRowToRowProfunctor
-       (Record ( email :: String, cardNumber :: String, savePayment :: Boolean ))
-       (Record ( thankYou :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
-               , failure :: String
-               ))
 checkout = Semigroupoid.do
   RecordToRecord.do      -- × → ×   the form: an input widget per field
     textInput @"email"
     textInput @"cardNumber"
     checkbox @"savePayment"
-  button @"submit"       -- × → +   the submit button fires the whole form
-  request @"submit"      -- + → +   backend round-trip: response is thankYou | failure (deferred)
+  RecordToVariant.do     -- × → +   the submit / cancel buttons, each firing the form
+    button @"submit"
+    button @"cancel"
+  -- + → +   the backend round-trip. `request` is deferred; pinning it here to a concrete
+  -- contract is what fixes which actions it takes and which responses it may return.
+  ( request
+      :: MyRowToRowProfunctor
+           (Variant ( submit :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
+                    , cancel :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
+           (Variant ( thankYou  :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
+                    , failure   :: String
+                    , cancelled :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog @"failure"
+    statusBar @"cancelled"

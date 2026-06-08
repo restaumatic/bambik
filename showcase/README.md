@@ -13,12 +13,11 @@ as-is and only *composed*.
 ## How it composes
 
 Each widget's *shape* is one of the four row-profunctor directions, threaded by
-`Semigroupoid.do` (with `RecordToRecord.do` / `VariantToRecord.do` merges for the form
-and the page):
+`Semigroupoid.do` (with merge do-blocks for the form, the buttons, and the page):
 
 ```
-form ──submit──▶ request ──▶ { thankYou | failure } ──▶ page { thankYou, failure }
-×→×        ×→+      +→+ (deferred)                        +→×
+form ──[submit | cancel]──▶ request ──▶ { thankYou | failure | cancelled } ──▶ page
+×→×          ×→+               +→+ (deferred)                                   +→×
 ```
 
 ```purescript
@@ -27,41 +26,50 @@ checkout = Semigroupoid.do
     textInput @"email"
     textInput @"cardNumber"
     checkbox  @"savePayment"
-  button  @"submit"      -- × → +   the submit button fires the whole form
-  request @"submit"      -- + → +   backend round-trip: response is thankYou | failure (deferred)
+  RecordToVariant.do     -- × → +   submit / cancel buttons, each firing the form
+    button @"submit"
+    button @"cancel"
+  ( request              -- + → +   the backend round-trip (deferred → pinned to a contract)
+      :: MyRowToRowProfunctor
+           (Variant ( submit :: Record Form, cancel :: Record Form ))
+           (Variant ( thankYou :: Record Form, failure :: String, cancelled :: Record Form )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
     eventLog  @"failure"
+    statusBar @"cancelled"
 ```
 
 | widget | shape | role |
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
-| `button` | Record → Variant (× → +) | reads the whole form, fires the `submit` action carrying it |
-| `request` | Variant → Variant (+ → +) | a fake backend round-trip — its response cases are *deferred* |
+| `button` | Record → Variant (× → +) | reads the whole form, fires its action carrying it |
+| `request` | Variant → Variant (+ → +) | a fake backend round-trip — *both* its actions and its responses are deferred |
 | `statusBar`, `eventLog` | Variant → Record (+ → ×) | render a response onto the result page |
 
-The interesting one is **`request`**: it does *not* declare its output cases. A single
-request may resolve to `thankYou` **or** `failure`, so its response variant is left
-deferred and **inferred from the page below** — the `statusBar @"thankYou"` /
-`eventLog @"failure"` handlers are what fix what the backend can return.
+The interesting one is **`request`**. Its definition declares *no* cases on either side
+(`forall v w. … (Variant v) (Variant w)`): the backend takes whatever actions come in and
+may answer with whatever responses. It is pinned **at the use site** to one concrete
+contract — here `{ submit, cancel } → { thankYou, failure, cancelled }`. That single
+annotation does three jobs:
 
-Because the backend is faked, the response *payloads* aren't determined by anything, so
-the one type signature on `checkout` pins them (`thankYou` carries the placed order,
-`failure` an error string). Everything else is `@l` widgets — no inline annotations.
+- decides which **actions** the backend accepts (so the `submit`/`cancel` button merge resolves),
+- decides which **responses** it may return (so the page's handlers line up),
+- pins the faked **response payloads** (`thankYou`/`cancelled` carry the order, `failure` a string).
+
+Everything else is `@l` widgets — `textInput @"email"`, `button @"submit"`,
+`statusBar @"thankYou"`, … — no annotations.
 
 So the screen resolves to a **checkout status / thank-you page**:
 
 ```purescript
 … (Record ( email :: String, cardNumber :: String, savePayment :: Boolean ))
-  (Record ( thankYou :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean )
-          , failure  :: String ))
+  (Record ( thankYou :: Record …, failure :: String, cancelled :: Record … ))
 ```
 
-> A deferred response can't share a `VariantToVariant.do` *merge* (the merge couldn't tell
-> which response cases came from which handler), so `request` is the sole processor of
-> `submit` here. Multiple merged actions (submit/cancel/…) need each handler to declare
-> its output.
+> A deferred `request` is the *sole* processor of the action variant (it dispatches the
+> whole `{ submit, cancel }` set), not one leaf among several in a `VariantToVariant.do`
+> merge — a merge would need each handler to declare its own output, which is exactly what
+> deferring avoids.
 
 The optics behind the widgets are documented in
 [`doc/row-profunctors.md`](../doc/row-profunctors.md).
