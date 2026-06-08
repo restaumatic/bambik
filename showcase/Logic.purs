@@ -30,8 +30,16 @@ import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, case_, inj, on)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Showcase.Domain (Display, Form, Money)
 import Type.Proxy (Proxy(..))
+
+-- The model: just `Record`s (value objects) and, downstream, `Variant`s (channels).
+
+-- | Money in minor units (cents) — a primitive value object.
+type Money = Int
+
+-- | The input **form** (a value-object record) and the rendered **display** (its projection).
+type Form = { email :: String, amount :: Money }
+type Display = { contactNote :: String, chargeNote :: String }
 
 -- | The whole checkout, as one `Semigroupoid.do` (`>>>`) pipeline. Each merge do-block
 -- | merges that stage's two optics (applied to the trivial focus `identity`), and the
