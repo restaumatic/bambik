@@ -8,14 +8,15 @@
 -- | Each widget's *shape* is one of the four row-profunctor directions:
 -- |
 -- |   * `textInput`/`checkbox`  — Record → Record  (×→×): an editable field
--- |   * `button`                — Record → Variant (×→+): reads the form, fires an action
+-- |   * `button`                — Record → Variant (×→+): reads the form, fires an action with it
+-- |   * `actionButton`          — Record → Variant (×→+): fires an action carrying nothing (`Record ()`)
 -- |   * `request`               — Variant → Variant (+→+): a fake backend round-trip; its
 -- |                               response cases are *deferred* (`forall w`), pinned at use
 -- |   * `modal`                 — Variant → Variant (+→+): a local handler (no backend)
 -- |   * `statusBar`/`eventLog`  — Variant → Record (+→×): render a response onto the page
 module Showcase.Logic where
 
-import Data.Profunctor.Row.Example (MyRowToRowProfunctor, button, checkbox, eventLog, modal, request, statusBar, textInput)
+import Data.Profunctor.Row.Example (MyRowToRowProfunctor, actionButton, button, checkbox, eventLog, modal, request, statusBar, textInput)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -38,9 +39,9 @@ checkout = Semigroupoid.do
     textInput @"email"
     textInput @"cardNumber"
     checkbox @"savePayment"
-  RecordToVariant.do     -- × → +   the submit / cancel buttons, each firing the form
+  RecordToVariant.do     -- × → +   submit fires the form; cancel fires nothing
     button @"submit"
-    button @"cancel"
+    actionButton @"cancel"
   VariantToVariant.do    -- + → +   submit hits the backend; cancel bypasses it
     -- `request` (deferred) processes *only* submit — pinned here to its backend contract,
     -- a deferred response of thankYou | failure.
@@ -51,7 +52,7 @@ checkout = Semigroupoid.do
     -- `cancel` never reaches the backend: a local `modal` turns it straight into `cancelled`.
     ( modal @"cancel" @"cancelled"
         :: MyRowToRowProfunctor
-             (Variant ( cancel :: Record ( email :: String, cardNumber :: String, savePayment :: Boolean ) ))
+             (Variant ( cancel :: Record () ))
              (Variant ( cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"

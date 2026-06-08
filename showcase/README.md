@@ -2,7 +2,7 @@
 
 A checkout screen assembled from the **UI widget leaves** in
 [`Data.Profunctor.Row.Example`](../src/Data/Profunctor/Row/Example.purs) — `textInput`,
-`checkbox`, `button`, `request`, `modal`, `statusBar`, `eventLog` — running at that
+`checkbox`, `button`, `actionButton`, `request`, `modal`, `statusBar`, `eventLog` — running at that
 module's concrete fake carrier `MyRowToRowProfunctor`. The whole screen **type-checks as
 a real composite**, with no UI, no effects, and no hand-written optics: the widgets are
 reused as-is and only *composed*.
@@ -27,13 +27,13 @@ checkout = Semigroupoid.do
     textInput @"email"
     textInput @"cardNumber"
     checkbox  @"savePayment"
-  RecordToVariant.do     -- × → +   submit / cancel buttons, each firing the form
-    button @"submit"
-    button @"cancel"
+  RecordToVariant.do     -- × → +   submit fires the form; cancel fires nothing
+    button       @"submit"
+    actionButton @"cancel"
   VariantToVariant.do    -- + → +   submit hits the backend; cancel bypasses it
     ( request :: …(Variant ( submit :: Record Form ))
                   (Variant ( thankYou :: String, failure :: String )) )
-    ( modal @"cancel" @"cancelled" :: …(Variant ( cancel :: Record Form ))
+    ( modal @"cancel" @"cancelled" :: …(Variant ( cancel :: Record () ))
                                        (Variant ( cancelled :: String )) )
   VariantToRecord.do     -- + → ×   render the result page
     statusBar @"thankYou"
@@ -45,6 +45,7 @@ checkout = Semigroupoid.do
 |---|---|---|
 | `textInput`, `checkbox` | Record → Record (× → ×) | an editable form field |
 | `button` | Record → Variant (× → +) | reads the whole form, fires its action carrying it |
+| `actionButton` | Record → Variant (× → +) | fires an action carrying nothing (`Record ()`) |
 | `request` | Variant → Variant (+ → +) | a fake backend round-trip — its response cases are *deferred* |
 | `modal` | Variant → Variant (+ → +) | a local handler (no backend) — transforms one case into another |
 | `statusBar`, `eventLog` | Variant → Record (+ → ×) | render a `String` response message onto the page |

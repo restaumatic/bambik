@@ -1,6 +1,7 @@
 module Data.Profunctor.Row.Example
   ( MyData(..)
   , MyRowToRowProfunctor
+  , actionButton
   , badge
   , button
   , checkbox
@@ -159,6 +160,11 @@ badge = MyRowToRowProfunctor
 
 button :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 button = MyRowToRowProfunctor
+
+-- A no-data action button: reads nothing and fires case `l` with an empty payload
+-- (Record () ≅ Unit) — for actions like "cancel" that carry nothing.
+actionButton :: forall @l v. Cons l (Record ()) () v => MyRowToRowProfunctor (Record ()) (Variant v)
+actionButton = MyRowToRowProfunctor
 
 icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
 icon = MyRowToRowProfunctor
