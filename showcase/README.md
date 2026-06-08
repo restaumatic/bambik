@@ -5,45 +5,39 @@ effects, no carrier. `p` stays abstract, so the logic is carrier-independent. It
 type-checks (`spago build`); it is not meant to be *run*. Every binding is used by the
 app — there is no spare vocabulary.
 
-- [Logic.purs](./Logic.purs) — the whole showcase: four **closed-row leaf** helpers
-  (one per optic family) and `checkoutFlow`, which composes them. The body has no type
-  annotations: each helper pins its row to a single field/case via `Cons l a () r`, so
-  the merges split the form unambiguously and the field types unify from the endpoints.
+- [Logic.purs](./Logic.purs) — the whole showcase: one function, `checkoutFlow`, with
+  the optics inlined and the input/output types written as inline row types (no nominal
+  aliases). Each inlined leaf carries a `:: p (…) (…)` annotation (the signature's
+  `forall p` is in scope) — that single-row signature is what lets the merge split the
+  form across leaves.
 
 ## The four optics → the four stages
 
-Each optic family is one stage of the pipeline, packaged as a closed-row leaf helper.
-Their DDD reading:
+Each optic family contributes two **flow leaves**, and the family's direction *is* one
+stage of the pipeline. Their DDD reading:
 
-| optic | direction | DDD role | leaf helper (on) |
+| optic | direction | DDD role | flow leaves (constructors) |
 |---|---|---|---|
-| `Lens` | × → × | Value Object accessor ("has-a") | `onField` (`editProperty`) |
-| `Shutter` | × → + | **Process / Saga** | `fieldToCase` (`shutterE`) |
-| `Prism` | + → + | Value Object discriminator ("is-a") | `onCase` (`editCase`) |
-| `Reel` | + → × | **Entity / Aggregate** | `caseToField` (`reelE`) |
+| `Lens` | × → × | Value Object accessor ("has-a") | `editProperty`, `lensProperty` |
+| `Shutter` | × → + | **Process / Saga** | `shutterE`, `shutter` |
+| `Prism` | + → + | Value Object discriminator ("is-a") | `editCase`, `prismCase` |
+| `Reel` | + → × | **Entity / Aggregate** | `reelE` |
 
 ## The app
 
-`checkoutFlow` composes the helpers with the four merge do-blocks (the
+`checkoutFlow` composes the eight leaves with the four merge do-blocks (the
 `{Record,Variant}²` class matrix) and the outer `Semigroupoid.do`:
 
 ```
-Record ──Lens──▶ Record ──Shutter──▶ Variant ──Prism──▶ Variant ──Reel──▶ Record
+Form ──Lens──▶ Form ──Shutter──▶ Variant ──Prism──▶ Variant ──Reel──▶ Display
 RecordToRecord.do   RecordToVariant.do    VariantToVariant.do    VariantToRecord.do
+ (normalize fields)  (lift to channels)     (route channels)       (render notes)
 ```
 
 Two axes of composition in one definition: **merge** across a row (inside each
 do-block, combining the two field/case leaves) and **flow** along the pipeline (the
-outer `Semigroupoid.do`). The leaves are closed-row, so the app needs no parameters and
-no annotations — the optics build all the structure.
-
-### Why closed-row helpers (and not inline annotations)
-
-`editProperty`/`editCase`/… are *open-rest* (`Cons l a r s`, `r` free) so they compose
-onto any record — but that openness makes a merge leaf ambiguous (nothing forces the
-leaf to touch only `l`). The fix isn't a typed `identity` (that pins only the focus, not
-the rest); it's a leaf whose **row tail is `()`** (`Cons l a () r`). That single fact is
-what the merge needs, supplied once per helper rather than at every call site.
+outer `Semigroupoid.do`). The focuses are the trivial `identity`, so the app needs no
+parameters — the optics build all the structure.
 
 The full optic vocabulary (the focus and wrap combinators — `focusRecord`,
 `focusVariant`, `resolveProperty`, `retainCase`, `shutterWrap`, `reelWrap`, `lensE`,
