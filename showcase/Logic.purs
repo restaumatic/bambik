@@ -5,7 +5,6 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Variant (Variant)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkout = Semigroupoid.do
@@ -19,16 +18,16 @@ checkout = Semigroupoid.do
   VariantToVariant.do
     ( request
         :: MyRowToRowProfunctor
-             (Variant ( submit :: { email :: String, cardNumber :: String, savePayment :: Boolean } ))
-             (Variant ( thankYou :: String, failure :: String )) )
+             [ submit :: { email :: String, cardNumber :: String, savePayment :: Boolean } ]
+             [ thankYou :: String, failure :: String ] )
     ( notification
         :: MyRowToRowProfunctor
-             (Variant ( editing :: String ))
-             (Variant ( editing :: String )) )
+             [ editing :: String ]
+             [ editing :: String ] )
     ( modal
         :: MyRowToRowProfunctor
-             (Variant ( cancel :: {} ))
-             (Variant ( cancelled :: String )) )
+             [ cancel :: {} ]
+             [ cancelled :: String ] )
   VariantToRecord.do
     statusBar @"thankYou"
     eventLog @"failure"
