@@ -37,9 +37,3 @@ checkout = Semigroupoid.do
     eventLog @"failure"
     statusBar @"editing"
     statusBar @"cancelled"
-
-ownership :: [share :: [percent :: Int, fraction :: Number], fullyOwned :: {}]
-ownership = .share.percent 10
-
-empty :: []
-empty = unsafeCoerce {}
