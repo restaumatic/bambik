@@ -7,6 +7,9 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import QualifiedDo.Semigroupoid as Semigroupoid
 
+checkout ∷ MyRowToRowProfunctor 
+  { cardNumber ∷ String , email ∷ String , savePayment ∷ Boolean } 
+  { cancelled ∷ String , editing ∷ String , failure ∷ String , thankYou ∷ String }
 checkout = Semigroupoid.do
   RecordToRecord.do
     textInput @"email"
@@ -33,3 +36,6 @@ checkout = Semigroupoid.do
     eventLog @"failure"
     statusBar @"editing"
     statusBar @"cancelled"
+
+share :: [percent :: Int, fraction :: Number]
+share = .percent 10
