@@ -6,6 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import QualifiedDo.Semigroupoid as Semigroupoid
+import Unsafe.Coerce (unsafeCoerce)
 
 checkout ∷ MyRowToRowProfunctor 
   { cardNumber ∷ String , email ∷ String , savePayment ∷ Boolean } 
@@ -37,5 +38,8 @@ checkout = Semigroupoid.do
     statusBar @"editing"
     statusBar @"cancelled"
 
-share :: [percent :: Int, fraction :: Number]
-share = .percent 10
+ownership :: [share :: [percent :: Int, fraction :: Number], fullyOwned :: {}]
+ownership = .share.percent 10
+
+empty :: []
+empty = unsafeCoerce {}
