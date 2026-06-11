@@ -87,13 +87,17 @@ unwrapNested v = case v of
 
 ## What this codebase uses
 
-Only the **type sugar `[ … ]`** appears in bambik's own code and docs. The
-constructor (`.label`) and pattern (`case _ of .label`) forms need a **literal**
-label, but the row-profunctor library is generic over labels — it constructs and
-eliminates variants through `inj (Proxy @l)` / `on (Proxy @l)` with a
-type-variable `l` — so those two forms have no applicable site here. They are
-documented above because the fork provides them and downstream concrete code
-(business models, demos) can use them.
+| form | adopted | where |
+|---|---|---|
+| Type `[ … ]` | **project-wide** | every variant type in `src/` and `test/`; the `Variant` type *name* is no longer written anywhere — it comes from the `Prim.Variant` builtin |
+| Constructor `.label` | **concrete code only** | `inj (Proxy @"lit") x` → `.lit x` in `test/Main.purs`, `test/RestaurantReel.purs` |
+| Pattern `case _ of .label` | **not used** | concrete eliminators stay as total `case_ # on …` (see below); the library is label-polymorphic |
+
+The constructor and pattern forms need a **literal** label, so they have no site
+in the row-profunctor library itself — it constructs and eliminates variants
+through `inj (Proxy @l)` / `on (Proxy @l)` with a type-variable `l` (writing
+`.l` there would mean the *literal* field `"l"`). They apply only to concrete
+code: the tests above, and downstream business models and demos.
 
 Record sugar (`{ … }`, `{ | r }`, `{}`, `_.label`) used throughout the codebase
 is **stock PureScript**, not part of the fork; the variant forms above are the
