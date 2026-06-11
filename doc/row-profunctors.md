@@ -9,6 +9,8 @@ of **row profunctors** do this, both under [`src/Data/Profunctor/Row/`](../src/D
 
 They produce the **same profunctor values** from different angles; this note explains the relationship. The focus class for each row-kind lives *alongside* the merge class of the same kind: `StrongRecordToRecord` in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), `ChoiceVariantToVariant` in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs).
 
+> **Syntax note.** Variant types appear throughout in the fork's `[ … ]` sugar — `[ a :: X | r ]` is `Variant ( a :: X | r )`, `[ | r ]` is `Variant r`, `[]` is `Variant ()`; records use stock `{ … }`. bambik builds on a **forked `purs`** that adds this (plus `.label` constructor and `case _ of .label` pattern) sugar — see [variant-sugar.md](./variant-sugar.md).
+
 ## The idea in one screen
 
 The punchline the code embodies: **the focus combinators are mostly just `Strong` and `Choice`, relabeled to rows.**

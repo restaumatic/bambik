@@ -24,7 +24,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.VariantToRecord (reel)
-import Data.Variant (Variant, case_, inj, on)
+import Data.Variant (Variant, case_, on)
 import MDC as MDC
 import Type.Proxy (Proxy(..))
 import UI (UI)
@@ -66,7 +66,7 @@ orderReel = reel dispatch priceDish
 
 -- | Sample events, to read the two-beat at the call site.
 beginOrder :: OrderEvent
-beginOrder = inj (Proxy @"openOrder") { lines: [], total: 0 }
+beginOrder = .openOrder { lines: [], total: 0 }
 
 addEspresso :: OrderEvent
-addEspresso = inj (Proxy @"pickDish") "Espresso"
+addEspresso = .pickDish "Espresso"
