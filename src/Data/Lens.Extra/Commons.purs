@@ -23,26 +23,26 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (dimap)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (Variant, inj, on)
+import Data.Variant (inj, on)
 import Prim.Row as Row
 import Record (get)
 import Type.Prelude (Proxy(..))
 
-variant :: forall @l s r a. IsSymbol l => Row.Cons l a r s => Prism (Variant s) (Variant s) a a
+variant :: forall @l s r a. IsSymbol l => Row.Cons l a r s => Prism [ | s ] [ | s ] a a
 variant = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (const Nothing))
 
-variant' :: forall @l s r a. IsSymbol l => Row.Cons l a r s => (Variant r -> a) -> Prism (Variant s) (Variant s) a a
+variant' :: forall @l s r a. IsSymbol l => Row.Cons l a r s => ([ | r ] -> a) -> Prism [ | s ] [ | s ] a a
 variant' f = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (Just <<< f))
 
 
 -- This is just `Data.Lens.Record.prop` but with a type signature allowing for type annotations
-property :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) (Record s) a a
+property :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens { | s } { | s } a a
 property = prop (Proxy :: Proxy l)
 
-input :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) (Record s) a a
+input :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens { | s } { | s } a a
 input = property @l
 
-output :: forall @l s r a t. IsSymbol l => Row.Cons l a r s =>  Lens (Record s) t a Void
+output :: forall @l s r a t. IsSymbol l => Row.Cons l a r s =>  Lens { | s } t a Void
 output = let l = (Proxy :: Proxy l) in lens (get l) (\_ x -> absurd x)
 
 constructor :: forall a s. (a -> s) -> (s -> Maybe a) -> Iso s s (Maybe a) a

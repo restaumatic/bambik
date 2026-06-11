@@ -86,7 +86,7 @@ uniqueId = randomElementId
 
 -- UIs
 
-text :: UI Web String (Record ())
+text :: UI Web String {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do

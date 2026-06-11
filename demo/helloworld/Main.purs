@@ -17,7 +17,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 import Web (body)
 
 main :: Effect Unit
-main = body @(Record ()) $ lcmap (const seed) $ Semigroupoid.do
+main = body @({}) $ lcmap (const seed) $ Semigroupoid.do
   editProperty @"foo" $ MDC.filledTextField { floatingLabel: "Foo" }
   editProperty @"day" $ MDC.filledTextField { floatingLabel: "Day" }
   editProperty @"quantity" $ MDC.filledTextField { floatingLabel: "Quantity" }

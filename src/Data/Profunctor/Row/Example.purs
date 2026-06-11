@@ -49,7 +49,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Symbol (class IsSymbol)
-import Data.Variant (Variant, inj)
+import Data.Variant (inj)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
@@ -87,7 +87,7 @@ instance Retaining MyRowToRowProfunctor where
 
 instance Row MyRowToRowProfunctor
 
--- here's some data type, let's take the minimal and most trivial data type with no values possible - it doesn't matter.  
+-- here's some data type, let's take the minimal and most trivial data type with no values possible - it doesn't matter.
 data MyData
 
 -- rule of thumb:
@@ -113,68 +113,68 @@ data MyData
 --   Fine, because a variant is "one of" — multiple sources can offer the same case.
 
 recordToRecordExample :: MyRowToRowProfunctor
-  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
+  { in1 :: MyData, in2 :: MyData, in3 :: MyData }
+  { out1 :: MyData, out2 :: MyData, out3 :: MyData } -- notice that this type signature can be inferred from the expression
 recordToRecordExample = RecordToRecord.do
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out depends on in
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Record ( "out2" :: MyData ))) -- out can depend on multiple ins
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData)) (Record ( "out3" :: MyData ))) -- all ins and outs must be covered
-  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData)) (Record ( "out1" :: MyData ))) -- out fields must be exclusive
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData } { "out1" :: MyData }) -- out depends on in
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData, "in2" :: MyData } { "out2" :: MyData }) -- out can depend on multiple ins
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in3" :: MyData } { "out3" :: MyData }) -- all ins and outs must be covered
+  -- (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData } { "out1" :: MyData }) -- out fields must be exclusive
 
 recordToVariantExample :: MyRowToRowProfunctor
-  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
+  { in1 :: MyData, in2 :: MyData, in3 :: MyData }
+  [ out1 :: MyData, out2 :: MyData, out3 :: MyData ] -- notice that this type signature can be inferred from the expression
 recordToVariantExample = RecordToVariant.do
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData )) (Variant ( "out1" :: MyData ))) -- out depends on in
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in1" :: MyData, "in2" :: MyData )) (Variant ( "out2" :: MyData ))) -- out can depend on multiple ins
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData )) (Variant ( "out3" :: MyData ))) -- all ins and outs must be covered
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Record ( "in3" :: MyData )) (Variant ( "out1" :: MyData ))) -- out fields can be duplicated
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData } [ "out1" :: MyData ]) -- out depends on in
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData, "in2" :: MyData } [ "out2" :: MyData ]) -- out can depend on multiple ins
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in3" :: MyData } [ "out3" :: MyData ]) -- all ins and outs must be covered
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in3" :: MyData } [ "out1" :: MyData ]) -- out fields can be duplicated
 
 variantToVariantExample :: MyRowToRowProfunctor
-  (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Variant ( out1 :: MyData , out2 :: MyData, out3 :: MyData )) -- notice that this type signature can be inferred from the expression
+  [ in1 :: MyData, in2 :: MyData, in3 :: MyData ]
+  [ out1 :: MyData, out2 :: MyData, out3 :: MyData ] -- notice that this type signature can be inferred from the expression
 variantToVariantExample = VariantToVariant.do
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData )) (Variant ( "out1" :: MyData )))
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in2" :: MyData, "in3" :: MyData )) (Variant ( "out1" :: MyData, "out2" :: MyData, "out3" :: MyData )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor [ "in1" :: MyData ] [ "out1" :: MyData ])
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor [ "in2" :: MyData, "in3" :: MyData ] [ "out1" :: MyData, "out2" :: MyData, "out3" :: MyData ])
 
 variantToRecordExample :: MyRowToRowProfunctor
-  (Variant ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData )) -- notice that this type signature can be inferred from the expression
+  [ in1 :: MyData, in2 :: MyData, in3 :: MyData ]
+  { out1 :: MyData, out2 :: MyData, out3 :: MyData } -- notice that this type signature can be inferred from the expression
 variantToRecordExample = VariantToRecord.do
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in1" :: MyData )) (Record ( "out1" :: MyData )))
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant ( "in2" :: MyData, "in3" :: MyData )) (Record ( "out2" :: MyData, "out3" :: MyData )))
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor [ "in1" :: MyData ] { "out1" :: MyData })
+  (MyRowToRowProfunctor :: MyRowToRowProfunctor [ "in2" :: MyData, "in3" :: MyData ] { "out2" :: MyData, "out3" :: MyData })
 
 -- Record-to-record (model in, optionally captures field)
 
-text :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
+text :: forall @l r. Cons l String () r => MyRowToRowProfunctor { | r } {}
 text = MyRowToRowProfunctor
 
-textInput :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record r)
+textInput :: forall @l r. Cons l String () r => MyRowToRowProfunctor { | r } { | r }
 textInput = MyRowToRowProfunctor
 
-checkbox :: forall @l r. Cons l Boolean () r => MyRowToRowProfunctor (Record r) (Record r)
+checkbox :: forall @l r. Cons l Boolean () r => MyRowToRowProfunctor { | r } { | r }
 checkbox = MyRowToRowProfunctor
 
-slider :: forall @l r. Cons l Number () r => MyRowToRowProfunctor (Record r) (Record r)
+slider :: forall @l r. Cons l Number () r => MyRowToRowProfunctor { | r } { | r }
 slider = MyRowToRowProfunctor
 
-dropdown :: forall @l a r. Cons l a () r => MyRowToRowProfunctor (Record r) (Record r)
+dropdown :: forall @l a r. Cons l a () r => MyRowToRowProfunctor { | r } { | r }
 dropdown = MyRowToRowProfunctor
 
-image :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Record r) (Record ())
+image :: forall @l r. Cons l String () r => MyRowToRowProfunctor { | r } {}
 image = MyRowToRowProfunctor
 
-badge :: forall @l r. Cons l Int () r => MyRowToRowProfunctor (Record r) (Record ())
+badge :: forall @l r. Cons l Int () r => MyRowToRowProfunctor { | r } {}
 badge = MyRowToRowProfunctor
 
 -- Record-to-variant (model in, fires event case)
 
-button :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+button :: forall @l r v. Cons l { | r } () v => MyRowToRowProfunctor { | r } [ | v ]
 button = MyRowToRowProfunctor
 
 -- A no-data action button: reads nothing and fires case `l` with an empty payload
--- (Record () ≅ Unit) — for actions like "cancel" that carry nothing.
-actionButton :: forall @l v. Cons l (Record ()) () v => MyRowToRowProfunctor (Record ()) (Variant v)
+-- ({} ≅ Unit) — for actions like "cancel" that carry nothing.
+actionButton :: forall @l v. Cons l {} () v => MyRowToRowProfunctor {} [ | v ]
 actionButton = MyRowToRowProfunctor
 
 -- A Shutter (× → +): the submit action as a loop step. Reads the whole form and
@@ -187,9 +187,9 @@ submit
    . IsSymbol done
   => IsSymbol loop
   => Cons loop String () vl
-  => Cons done (Record r) vl v
+  => Cons done { | r } vl v
   => Cons loop String vd v
-  => MyRowToRowProfunctor (Record r) (Variant v)
+  => MyRowToRowProfunctor { | r } [ | v ]
 submit =
   shutter
     identity
@@ -197,13 +197,13 @@ submit =
     (\_ -> inj (Proxy @loop) "review your details")
     MyRowToRowProfunctor
 
-icon :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+icon :: forall @l r v. Cons l { | r } () v => MyRowToRowProfunctor { | r } [ | v ]
 icon = MyRowToRowProfunctor
 
-link :: forall @l r v. Cons l String () v => MyRowToRowProfunctor (Record r) (Variant v)
+link :: forall @l r v. Cons l String () v => MyRowToRowProfunctor { | r } [ | v ]
 link = MyRowToRowProfunctor
 
-menuItem :: forall @l r v. Cons l (Record r) () v => MyRowToRowProfunctor (Record r) (Variant v)
+menuItem :: forall @l r v. Cons l { | r } () v => MyRowToRowProfunctor { | r } [ | v ]
 menuItem = MyRowToRowProfunctor
 
 -- Variant-to-record (sum-shaped model in, optionally captures field)
@@ -211,41 +211,41 @@ menuItem = MyRowToRowProfunctor
 -- A Reel (+ → ×): the page entity that *retains* its status across renders.
 -- Built on `reel`; the carrier holds the state, so the dispatch only routes the
 -- incoming case in (`Left`) — the retained channel is the do-nothing carrier's.
-statusBar :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Variant r) (Record r)
-statusBar = reel (\s -> Left s) (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant r) (Record r))
+statusBar :: forall @l r. Cons l String () r => MyRowToRowProfunctor [ | r ] { | r }
+statusBar = reel (\s -> Left s) (MyRowToRowProfunctor :: MyRowToRowProfunctor [ | r ] { | r })
 
 -- A Reel (+ → ×): an event log that retains accumulated history — the same
 -- stateful-entity shape as `statusBar`, also built on `reel`.
-eventLog :: forall @l r. Cons l String () r => MyRowToRowProfunctor (Variant r) (Record r)
-eventLog = reel (\s -> Left s) (MyRowToRowProfunctor :: MyRowToRowProfunctor (Variant r) (Record r))
+eventLog :: forall @l r. Cons l String () r => MyRowToRowProfunctor [ | r ] { | r }
+eventLog = reel (\s -> Left s) (MyRowToRowProfunctor :: MyRowToRowProfunctor [ | r ] { | r })
 
-outlet :: forall v. MyRowToRowProfunctor (Variant v) (Record ())
+outlet :: forall v. MyRowToRowProfunctor [ | v ] {}
 outlet = MyRowToRowProfunctor
 
-searchBar :: forall @l v r. Cons l String () r => MyRowToRowProfunctor (Variant v) (Record r)
+searchBar :: forall @l v r. Cons l String () r => MyRowToRowProfunctor [ | v ] { | r }
 searchBar = MyRowToRowProfunctor
 
-rating :: forall @l v r. Cons l Int () r => MyRowToRowProfunctor (Variant v) (Record r)
+rating :: forall @l v r. Cons l Int () r => MyRowToRowProfunctor [ | v ] { | r }
 rating = MyRowToRowProfunctor
 
 -- Variant-to-variant (sum-shaped model in, fires event case)
 
 -- Fully deferred: any input variant to any output variant, pinned at the use site.
 
-notification :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+notification :: forall v w. MyRowToRowProfunctor [ | v ] [ | w ]
 notification = MyRowToRowProfunctor
 
-modal :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+modal :: forall v w. MyRowToRowProfunctor [ | v ] [ | w ]
 modal = MyRowToRowProfunctor
 
 -- A fake request/response dispatch to the backend: send whatever action variant `v`,
 -- the response comes back on *some* set of cases `w` — both left deferred, since the
 -- backend takes any action and one request may resolve to several outcomes (e.g.
 -- `thankYou` or `failure`), inferred from downstream.
-request :: forall v w. MyRowToRowProfunctor (Variant v) (Variant w)
+request :: forall v w. MyRowToRowProfunctor [ | v ] [ | w ]
 request = MyRowToRowProfunctor
 
-wizardStep :: forall @l v w. Cons l (Record ()) () w => MyRowToRowProfunctor (Variant v) (Variant w)
+wizardStep :: forall @l v w. Cons l {} () w => MyRowToRowProfunctor [ | v ] [ | w ]
 wizardStep = MyRowToRowProfunctor
 
 
@@ -255,23 +255,23 @@ wizardStep = MyRowToRowProfunctor
 -- works in both Record-to-* and *-to-Record/Variant directions.
 
 widenRecordInputExample :: MyRowToRowProfunctor
-  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData , extra :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+  { in1 :: MyData, in2 :: MyData, in3 :: MyData, extra :: MyData }
+  { out1 :: MyData, out2 :: MyData, out3 :: MyData }
 widenRecordInputExample = widenRecordInput recordToRecordExample
 
 narrowVariantInputExample :: MyRowToRowProfunctor
-  (Variant ( in1 :: MyData , in2 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData , out3 :: MyData ))
+  [ in1 :: MyData, in2 :: MyData ]
+  { out1 :: MyData, out2 :: MyData, out3 :: MyData }
 narrowVariantInputExample = narrowVariantInput variantToRecordExample
 
 narrowRecordOutputExample :: MyRowToRowProfunctor
-  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Record ( out1 :: MyData , out2 :: MyData ))
+  { in1 :: MyData, in2 :: MyData, in3 :: MyData }
+  { out1 :: MyData, out2 :: MyData }
 narrowRecordOutputExample = narrowRecordOutput recordToRecordExample
 
 widenVariantOutputExample :: MyRowToRowProfunctor
-  (Record ( in1 :: MyData , in2 :: MyData , in3 :: MyData ))
-  (Variant ( out1 :: MyData , out2 :: MyData , out3 :: MyData , extra :: MyData ))
+  { in1 :: MyData, in2 :: MyData, in3 :: MyData }
+  [ out1 :: MyData, out2 :: MyData, out3 :: MyData, extra :: MyData ]
 widenVariantOutputExample = widenVariantOutput recordToVariantExample
 
 ui = Semigroupoid.do
@@ -282,7 +282,7 @@ ui = Semigroupoid.do
     textInput @"phonePrefix" `withRecordDefault` "+48"
     textInput @"phoneSuffix" `withRecordDefault` ""
     checkbox @"subscribe" `withRecordDefault` false
-  RecordToVariant.do -- inputs inclusive, outputs inclusive 
+  RecordToVariant.do -- inputs inclusive, outputs inclusive
     button @"submitMonthly"
     button @"submitYearly"
     button @"submit"

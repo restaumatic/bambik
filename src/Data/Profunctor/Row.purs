@@ -16,7 +16,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
-import Data.Variant (Variant, expand)
+import Data.Variant (expand)
 import Prim.Row (class Cons, class Union) as Row
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -46,25 +46,25 @@ class (RecordToRecord p, RecordToVariant p, VariantToRecord p, VariantToVariant 
 widenRecordInput :: forall p narrow extra wider o.
   Profunctor p =>
   Row.Union narrow extra wider =>
-  p (Record narrow) o -> p (Record wider) o
+  p { | narrow } o -> p { | wider } o
 widenRecordInput = lcmap unsafeCoerce
 
 narrowVariantInput :: forall p narrow extra wider o.
   Profunctor p =>
   Row.Union narrow extra wider =>
-  p (Variant wider) o -> p (Variant narrow) o
+  p [ | wider ] o -> p [ | narrow ] o
 narrowVariantInput = lcmap expand
 
 narrowRecordOutput :: forall p i narrow extra wider.
   Profunctor p =>
   Row.Union narrow extra wider =>
-  p i (Record wider) -> p i (Record narrow)
+  p i { | wider } -> p i { | narrow }
 narrowRecordOutput = rmap unsafeCoerce
 
 widenVariantOutput :: forall p i narrow extra wider.
   Profunctor p =>
   Row.Union narrow extra wider =>
-  p i (Variant narrow) -> p i (Variant wider)
+  p i [ | narrow ] -> p i [ | wider ]
 widenVariantOutput = rmap expand
 
 -- =====================================================================
@@ -90,26 +90,26 @@ widenInputProperty :: forall @l p a one narrow wider o.
   Profunctor p =>
   Row.Cons l a () one =>
   Row.Union narrow one wider =>
-  p (Record narrow) o -> p (Record wider) o
+  p { | narrow } o -> p { | wider } o
 widenInputProperty = lcmap unsafeCoerce
 
 widenOutputCase :: forall @l p a one narrow wider i.
   Profunctor p =>
   Row.Cons l a () one =>
   Row.Union narrow one wider =>
-  p i (Variant narrow) -> p i (Variant wider)
+  p i [ | narrow ] -> p i [ | wider ]
 widenOutputCase = rmap expand
 
 narrowInputCase :: forall @l p a one narrow wider o.
   Profunctor p =>
   Row.Cons l a () one =>
   Row.Union narrow one wider =>
-  p (Variant wider) o -> p (Variant narrow) o
+  p [ | wider ] o -> p [ | narrow ] o
 narrowInputCase = lcmap expand
 
 narrowOutputProperty :: forall @l p a one narrow wider i.
   Profunctor p =>
   Row.Cons l a () one =>
   Row.Union narrow one wider =>
-  p i (Record wider) -> p i (Record narrow)
+  p i { | wider } -> p i { | narrow }
 narrowOutputProperty = rmap unsafeCoerce

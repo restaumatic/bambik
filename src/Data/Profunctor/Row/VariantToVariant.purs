@@ -34,7 +34,7 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
+import Data.Variant (class Contractable, contract, expand, inj, on)
 import Data.Void (Void, absurd)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Union)
@@ -46,14 +46,14 @@ class Profunctor p <= VariantToVariant p where
     ExclusiveRows i1 i2 i =>
     InclusiveRows o1 o2 o o12 o1x o2x =>
     DispatchableVariants i1 i2 i1l i2l =>
-    p (Variant i1) (Variant o1) -> p (Variant i2) (Variant o2) -> p (Variant i) (Variant o)
+    p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
 
 bind :: forall f i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   VariantToVariant f =>
   ExclusiveRows i1 i2 i =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f (Variant i1) (Variant o1) -> (f (Variant i1) (Variant o1) -> f (Variant i2) (Variant o2)) -> f (Variant i) (Variant o)
+  f [ | i1 ] [ | o1 ] -> (f [ | i1 ] [ | o1 ] -> f [ | i2 ] [ | o2 ]) -> f [ | i ] [ | o ]
 bind first cont = variantToVariant first (cont first)
 
 discard :: forall f i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
@@ -61,7 +61,7 @@ discard :: forall f i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   ExclusiveRows i1 i2 i =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f (Variant i1) (Variant o1) -> (Unit -> f (Variant i2) (Variant o2)) -> f (Variant i) (Variant o)
+  f [ | i1 ] [ | o1 ] -> (Unit -> f [ | i2 ] [ | o2 ]) -> f [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Row-typed `Choice`: focus a **sub-variant** `sub`, transforming it while carrying the
@@ -69,7 +69,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | — operates on rows on **both sides**:
 -- |
 -- | ```
--- | focusVariant :: p (Variant sub) (Variant sub') -> p (Variant s) (Variant t)
+-- | focusVariant :: p [ | sub ] [ | sub' ] -> p [ | s ] [ | t ]
 -- |               -- where s = sub ∪ rest,  t = sub' ∪ rest   (ExclusiveRows)
 -- | ```
 -- |
@@ -84,8 +84,8 @@ class Choice p <= ChoiceVariantToVariant p where
     => ExclusiveRows sub' rest t
     => Contractable s sub
     => Contractable s rest
-    => p (Variant sub) (Variant sub')
-    -> p (Variant s) (Variant t)
+    => p [ | sub ] [ | sub' ]
+    -> p [ | s ] [ | t ]
 
 instance Choice p => ChoiceVariantToVariant p where
   focusVariant g = dimap splitVariant (either expand expand) (left g)
@@ -96,8 +96,8 @@ splitVariant
    . ExclusiveRows sub rest s
   => Contractable s sub
   => Contractable s rest
-  => Variant s
-  -> Either (Variant sub) (Variant rest)
+  => [ | s ]
+  -> Either [ | sub ] [ | rest ]
 splitVariant v = case contract v of
   Just sub -> Left sub
   Nothing -> case contract v of
@@ -116,7 +116,7 @@ prismE decon recon g = dimap decon recon (left g)
 
 -- | The single-case **row** existential prism for label `l`, type-changing: the
 -- | focus is case `l` (`a → b`) and the residual `c` is the **rest of the
--- | variant** — a sub-Variant. Built via `prismE` at `c := Variant rest`. The row
+-- | variant** — a sub-Variant. Built via `prismE` at `c := [ | rest ]`. The row
 -- | counterpart of the generic `prismE`; `editCase` is its monomorphic,
 -- | `prism'`-based cousin.
 prismCase
@@ -125,7 +125,7 @@ prismCase
   => Cons l a rest s
   => Cons l b rest t
   => Union rest mix t
-  => Prism (Variant s) (Variant t) a b
+  => Prism [ | s ] [ | t ] a b
 prismCase =
   prismE
     (on (Proxy @l) Left Right)
@@ -139,7 +139,7 @@ eliminateCase
    . IsSymbol l
   => Cons l case_ t s
   => ChoiceVariantToVariant p
-  => Optic p (Variant s) (Variant t) case_ Void
+  => Optic p [ | s ] [ | t ] case_ Void
 eliminateCase handler =
   dimap (on (Proxy @l) Left Right) (either absurd identity) (left handler)
 
@@ -148,5 +148,5 @@ editCase
   :: forall @l s r a
    . IsSymbol l
   => Cons l a r s
-  => Prism (Variant s) (Variant s) a a
+  => Prism [ | s ] [ | s ] a a
 editCase = prism' (inj (Proxy @l)) (on (Proxy @l) Just (\_ -> Nothing))

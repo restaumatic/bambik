@@ -39,20 +39,20 @@ class Profunctor p <= RecordToRecord p where
   recordToRecord :: forall i1 o1 i2 o2 i12 i1x i2x i o.
     InclusiveRows i1 i2 i i12 i1x i2x =>
     ExclusiveRows o1 o2 o =>
-    p (Record i1) (Record o1) -> p (Record i2) (Record o2) -> p (Record i) (Record o)
+    p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
 
 bind :: forall f i1 o1 i2 o2 i12 i1x i2x i o.
   RecordToRecord f =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   ExclusiveRows o1 o2 o =>
-  f (Record i1) (Record o1) -> (f (Record i1) (Record o1) -> f (Record i2) (Record o2)) -> f (Record i) (Record o)
+  f { | i1 } { | o1 } -> (f { | i1 } { | o1 } -> f { | i2 } { | o2 }) -> f { | i } { | o }
 bind first cont = recordToRecord first (cont first)
 
 discard :: forall f i1 o1 i2 o2 i12 i1x i2x i o.
   RecordToRecord f =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   ExclusiveRows o1 o2 o =>
-  f (Record i1) (Record o1) -> (Unit -> f (Record i2) (Record o2)) -> f (Record i) (Record o)
+  f { | i1 } { | o1 } -> (Unit -> f { | i2 } { | o2 }) -> f { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Row-typed `Strong`: focus a **sub-record** `sub`, transforming it while carrying the
@@ -60,7 +60,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | argument is itself a `Record → Record` profunctor:
 -- |
 -- | ```
--- | focusRecord :: p (Record sub) (Record sub') -> p (Record s) (Record t)
+-- | focusRecord :: p { | sub } { | sub' } -> p { | s } { | t }
 -- |              -- where s = sub ∪ rest,  t = sub' ∪ rest   (ExclusiveRows)
 -- | ```
 -- |
@@ -73,8 +73,8 @@ class Strong p <= StrongRecordToRecord p where
     :: forall sub sub' rest s t
      . ExclusiveRows sub rest s
     => ExclusiveRows sub' rest t
-    => p (Record sub) (Record sub')
-    -> p (Record s) (Record t)
+    => p { | sub } { | sub' }
+    -> p { | s } { | t }
 
 instance Strong p => StrongRecordToRecord p where
   focusRecord g =
@@ -96,7 +96,7 @@ lensE decon recon g = dimap decon recon (first g)
 
 -- | The single-field **row** existential lens for label `l`, type-changing: the
 -- | focus is field `l` (`a → b`) and the residual `c` is the **rest of the
--- | record** — a sub-Record. Built via `lensE` at `c := Record rest`. The row
+-- | record** — a sub-Record. Built via `lensE` at `c := { | rest }`. The row
 -- | counterpart of the generic `lensE`; `editProperty` is its monomorphic,
 -- | `prop`-based cousin.
 lensProperty
@@ -105,7 +105,7 @@ lensProperty
   => Cons l a rest s
   => Cons l b rest t
   => Lacks l rest
-  => Lens (Record s) (Record t) a b
+  => Lens { | s } { | t } a b
 lensProperty =
   lensE
     (\r -> Tuple (get (Proxy @l) r) (delete (Proxy @l) r))
@@ -119,7 +119,7 @@ introduceProperty
   => Cons l prop s t
   => Lacks l s
   => StrongRecordToRecord p
-  => Optic p (Record s) (Record t) (Record s) prop
+  => Optic p { | s } { | t } { | s } prop
 introduceProperty f =
   dimap (\s -> Tuple s s) (\(Tuple s p) -> insert (Proxy @l) p s) (second f)
 
@@ -132,7 +132,7 @@ eliminateProperty
   => Cons l prop t s
   => Lacks l t
   => StrongRecordToRecord p
-  => Optic p (Record s) (Record t) prop Unit
+  => Optic p { | s } { | t } prop Unit
 eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)
 
@@ -141,5 +141,5 @@ editProperty
   :: forall @l s r a
    . IsSymbol l
   => Cons l a r s
-  => Lens (Record s) (Record s) a a
+  => Lens { | s } { | s } a a
 editProperty = prop (Proxy @l)

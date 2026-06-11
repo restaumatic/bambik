@@ -20,7 +20,7 @@ import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, on)
+import Data.Variant (class Contractable, on)
 import Prim.Row (class Cons, class Lacks)
 import Record (insert)
 import Type.Proxy (Proxy(..))
@@ -31,14 +31,14 @@ class Profunctor p <= VariantToRecord p where
     ExclusiveRows i1 i2 i =>
     ExclusiveRows o1 o2 o =>
     DispatchableVariants i1 i2 i1l i2l =>
-    p (Variant i1) (Record o1) -> p (Variant i2) (Record o2) -> p (Variant i) (Record o)
+    p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 } -> p [ | i ] { | o }
 
 bind :: forall f i1 i1l i2 i2l o1 o2 i o.
   VariantToRecord f =>
   ExclusiveRows i1 i2 i =>
   ExclusiveRows o1 o2 o =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f (Variant i1) (Record o1) -> (f (Variant i1) (Record o1) -> f (Variant i2) (Record o2)) -> f (Variant i) (Record o)
+  f [ | i1 ] { | o1 } -> (f [ | i1 ] { | o1 } -> f [ | i2 ] { | o2 }) -> f [ | i ] { | o }
 bind first cont = variantToRecord first (cont first)
 
 discard :: forall f i1 i1l i2 i2l o1 o2 i o.
@@ -46,7 +46,7 @@ discard :: forall f i1 i1l i2 i2l o1 o2 i o.
   ExclusiveRows i1 i2 i =>
   ExclusiveRows o1 o2 o =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f (Variant i1) (Record o1) -> (Unit -> f (Variant i2) (Record o2)) -> f (Variant i) (Record o)
+  f [ | i1 ] { | o1 } -> (Unit -> f [ | i2 ] { | o2 }) -> f [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /
@@ -91,8 +91,8 @@ retainCase
   => Cons l x i i'
   => Cons l x o o'
   => Lacks l o
-  => p (Variant i) (Record o)
-  -> p (Variant i') (Record o')
+  => p [ | i ] { | o }
+  -> p [ | i' ] { | o' }
 retainCase g =
   dimap
     (on (Proxy @l) Right Left)
@@ -127,11 +127,11 @@ reelE decon recon g = dimap decon recon (retain g)
 -- | `ChoiceVariantToVariant`).
 class Retaining p <= RetainingVariantToRecord p where
   -- | Row existential `Reel` focusing a whole **sub-Variant `i`** of the full
-  -- | input `i'`; the residual is the **rest** `Variant rest` (`ExclusiveRows i
+  -- | input `i'`; the residual is the **rest** `[ | rest ]` (`ExclusiveRows i
   -- | rest i'`, the same split `focusVariant` uses). Crossing `+ → ×`, the rest
   -- | can't stay a variant in the `Record` output, so it is **wrapped as a single
   -- | output field `w`** — a record holding the variant (`o' = o` plus field `w`).
-  -- | The inner `p (Variant i) (Record o)` runs on the focus; the retained
+  -- | The inner `p [ | i ] { | o }` runs on the focus; the retained
   -- | rest-variant is inserted at field `w`. The mixed-direction analogue of
   -- | `focusVariant`, and the dual of `shutterWrap` — same sub-row focus, but the
   -- | complement is *wrapped* to cross into the record output rather than carried
@@ -141,10 +141,10 @@ class Retaining p <= RetainingVariantToRecord p where
   -- | ```purescript
   -- | -- focus the `cancel` case; wrap the rest into output field `pending`
   -- | step :: Reel
-  -- |   (Variant (cancel :: Unit, tick :: Int))                       -- i'  full input
-  -- |   (Record (done :: Boolean, pending :: Variant (tick :: Int)))  -- o'  full output
-  -- |   (Variant (cancel :: Unit))                                    -- i   sub-Variant focus
-  -- |   (Record (done :: Boolean))                                    -- o   inner output
+  -- |   [ cancel :: Unit, tick :: Int ]                               -- i'  full input
+  -- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- o'  full output
+  -- |   [ cancel :: Unit ]                                            -- i   sub-Variant focus
+  -- |   { done :: Boolean }                                          -- o   inner output
   -- | step = reelWrap (Proxy @"pending")
   -- | ```
   reelWrap
@@ -153,11 +153,11 @@ class Retaining p <= RetainingVariantToRecord p where
     => ExclusiveRows i rest i'
     => Contractable i' i
     => Contractable i' rest
-    => Cons w (Variant rest) o o'
+    => Cons w [ | rest ] o o'
     => Lacks w o
     => Proxy w
-    -> p (Variant i) (Record o)
-    -> p (Variant i') (Record o')
+    -> p [ | i ] { | o }
+    -> p [ | i' ] { | o' }
 
 instance Retaining p => RetainingVariantToRecord p where
   reelWrap pw g =

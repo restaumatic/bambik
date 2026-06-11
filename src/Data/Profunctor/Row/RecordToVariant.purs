@@ -19,7 +19,7 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (Variant, expand, inj)
+import Data.Variant (expand, inj)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Record (delete, get)
 import Type.Proxy (Proxy(..))
@@ -30,20 +30,20 @@ class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
     InclusiveRows i1 i2 i i12 i1x i2x =>
     InclusiveRows o1 o2 o o12 o1x o2x =>
-    p (Record i1) (Variant o1) -> p (Record i2) (Variant o2) -> p (Record i) (Variant o)
+    p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
 
 bind :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant f =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
-  f (Record i1) (Variant o1) -> (f (Record i1) (Variant o1) -> f (Record i2) (Variant o2)) -> f (Record i) (Variant o)
+  f { | i1 } [ | o1 ] -> (f { | i1 } [ | o1 ] -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
 discard :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant f =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
-  f (Record i1) (Variant o1) -> (Unit -> f (Record i2) (Variant o2)) -> f (Record i) (Variant o)
+  f { | i1 } [ | o1 ] -> (Unit -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | The **unary** product→sum strength for this direction: a single **loop /
@@ -89,8 +89,8 @@ resolveProperty
   => Cons l x o o'
   => Cons l x () lo
   => Union o lo o'
-  => p (Record i) (Variant o)
-  -> p (Record i') (Variant o')
+  => p { | i } [ | o ]
+  -> p { | i' } [ | o' ]
 resolveProperty g =
   dimap
     (\s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s))
@@ -127,11 +127,11 @@ shutterE decon recon g = dimap decon recon (resolve g)
 -- | `StrongRecordToRecord`).
 class Resolving p <= ResolvingRecordToVariant p where
   -- | Row existential `Shutter` focusing a whole **sub-Record `i`** of the full
-  -- | input `i'`; the residual is the **rest** `Record rest` (`ExclusiveRows i rest
+  -- | input `i'`; the residual is the **rest** `{ | rest }` (`ExclusiveRows i rest
   -- | i'`, the same split `focusRecord` uses). Crossing `× → +`, the rest can't stay
   -- | a record in the `Variant` output, so it is **wrapped as a single output case
   -- | `w`** — a variant carrying the record (`o' = o` plus case `w`). The inner
-  -- | `p (Record i) (Variant o)` runs on the focus: `Done` expands its result into
+  -- | `p { | i } [ | o ]` runs on the focus: `Done` expands its result into
   -- | `o'`, `Loop` injects the retained rest-record into case `w`. The mixed-direction
   -- | analogue of `focusRecord` — same sub-record focus, but the complement is
   -- | *wrapped* to cross into the variant output rather than carried same-kind.
@@ -142,21 +142,21 @@ class Resolving p <= ResolvingRecordToVariant p where
   -- | ```purescript
   -- | -- focus (item, qty); wrap the leftover { note } into output case `draft`
   -- | checkout :: Shutter
-  -- |   (Record (item :: String, qty :: Int, note :: String))        -- i'  full input
-  -- |   (Variant (priced :: Int, draft :: Record (note :: String)))  -- o'  full output
-  -- |   (Record (item :: String, qty :: Int))                        -- i   sub-Record focus
-  -- |   (Variant (priced :: Int))                                    -- o   inner output
+  -- |   { item :: String, qty :: Int, note :: String }              -- i'  full input
+  -- |   [ priced :: Int, draft :: { note :: String } ]              -- o'  full output
+  -- |   { item :: String, qty :: Int }                              -- i   sub-Record focus
+  -- |   [ priced :: Int ]                                            -- o   inner output
   -- | checkout = shutterWrap (Proxy @"draft")
   -- | ```
   shutterWrap
     :: forall w i i' rest o o' mix
      . IsSymbol w
     => ExclusiveRows i rest i'
-    => Cons w (Record rest) o o'
+    => Cons w { | rest } o o'
     => Union o mix o'
     => Proxy w
-    -> p (Record i) (Variant o)
-    -> p (Record i') (Variant o')
+    -> p { | i } [ | o ]
+    -> p { | i' } [ | o' ]
 
 instance Resolving p => ResolvingRecordToVariant p where
   shutterWrap pw g =
