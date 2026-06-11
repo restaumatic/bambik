@@ -1,4 +1,4 @@
-module Showcase.Logic where
+module Showcase.App where
 
 import Data.Profunctor.Row.Example (MyRowToRowProfunctor, actionButton, checkbox, eventLog, modal, notification, request, statusBar, submit, textInput)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -6,7 +6,6 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Unsafe.Coerce (unsafeCoerce)
 
 checkout ∷ MyRowToRowProfunctor 
   { cardNumber ∷ String , email ∷ String , savePayment ∷ Boolean } 
