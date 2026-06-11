@@ -14,7 +14,6 @@ import Data.Either (Either(..))
 import Data.Profunctor.Row.RecordToVariant (Shutter, shutterE, shutterWrap)
 import Data.Profunctor.Row.VariantToRecord (Reel, reelE, reelWrap)
 import Data.Tuple (Tuple(..))
-import Data.Variant (Variant)
 import Type.Proxy (Proxy(..))
 
 type Money = Int
@@ -65,10 +64,10 @@ verifyKyc =
 -- | (`Proxy @"draft"` is the only thing the caller must supply — the wrapper case name.)
 checkout
   :: Shutter
-       (Record (item :: String, qty :: Int, note :: String))          -- i'  full input
-       (Variant (priced :: Money, draft :: Record (note :: String)))  -- o'  full output (o + case `draft`)
-       (Record (item :: String, qty :: Int))                          -- i   sub-Record focus
-       (Variant (priced :: Money))                                    -- o   inner output
+       (Record (item :: String, qty :: Int, note :: String))  -- i'  full input
+       [ priced :: Money, draft :: Record (note :: String) ]  -- o'  full output (o + case `draft`)
+       (Record (item :: String, qty :: Int))                  -- i   sub-Record focus
+       [ priced :: Money ]                                    -- o   inner output
 checkout = shutterWrap (Proxy @"draft")
 
 --------------------------------------------------------------------------------
@@ -113,8 +112,8 @@ ledgerReel =
 -- | field `pending`. (`Proxy @"pending"` is the only caller-supplied bit.)
 countdownStep
   :: Reel
-       (Variant (cancel :: Unit, tick :: Int))                       -- i'  full input
-       (Record (done :: Boolean, pending :: Variant (tick :: Int)))  -- o'  full output (o + field `pending`)
-       (Variant (cancel :: Unit))                                    -- i   sub-Variant focus
+       [ cancel :: Unit, tick :: Int ]                               -- i'  full input
+       (Record (done :: Boolean, pending :: [ tick :: Int ]))        -- o'  full output (o + field `pending`)
+       [ cancel :: Unit ]                                            -- i   sub-Variant focus
        (Record (done :: Boolean))                                    -- o   inner output
 countdownStep = reelWrap (Proxy @"pending")

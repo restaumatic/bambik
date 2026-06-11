@@ -24,7 +24,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.VariantToRecord (reel)
-import Data.Variant (Variant, case_, on)
+import Data.Variant (case_, on)
 import MDC as MDC
 import Type.Proxy (Proxy(..))
 import UI (UI)
@@ -37,10 +37,9 @@ type Order = { lines :: Array PricedLine, total :: Money }
 
 -- | One event at a time (sum / `Variant`).
 type OrderEvent =
-  Variant
-    ( openOrder :: Order    -- resume: this order becomes the retained state
-    , pickDish  :: DishId   -- focus: a dish to be priced and folded in
-    )
+  [ openOrder :: Order    -- resume: this order becomes the retained state
+  , pickDish  :: DishId   -- focus: a dish to be priced and folded in
+  ]
 
 -- | The inner transformer `p a b`: a fresh `DishId` in, a `PricedLine` out
 -- | (toy menu lookup; a real one would be an interactive picker with modifiers).

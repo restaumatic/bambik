@@ -5,7 +5,6 @@ import Prelude
 import Data.Lens (over, set, view)
 import Data.Profunctor.Row.RecordToRecord (editProperty, eliminateProperty, focusRecord, introduceProperty)
 import Data.Profunctor.Row.VariantToVariant (editCase, eliminateCase, focusVariant)
-import Data.Variant (Variant)
 import Effect (Effect)
 import Effect.Exception (throw)
 
@@ -53,27 +52,27 @@ main = do
 
   -- focusVariant: dispatch on the sub-variant { x }, carry the complement { y }.
   assertEqual "focusVariant/sub-case carried"
-    (.x 5 :: Variant (x :: Int, y :: String))
-    (focusVariant (identity :: Variant (x :: Int) -> Variant (x :: Int)) (.x 5))
+    (.x 5 :: [ x :: Int, y :: String ])
+    (focusVariant (identity :: [ x :: Int ] -> [ x :: Int ]) (.x 5))
   assertEqual "focusVariant/rest-case carried"
-    (.y "a" :: Variant (x :: Int, y :: String))
-    (focusVariant (identity :: Variant (x :: Int) -> Variant (x :: Int)) (.y "a"))
+    (.y "a" :: [ x :: Int, y :: String ])
+    (focusVariant (identity :: [ x :: Int ] -> [ x :: Int ]) (.y "a"))
 
   -- transforming the focused sub-case (not identity), complement carried.
   assertEqual "focusVariant/transform sub-case"
-    (.x 6 :: Variant (x :: Int, y :: String))
-    (focusVariant (over (editCase @"x") (_ + 1) :: Variant (x :: Int) -> Variant (x :: Int)) (.x 5))
+    (.x 6 :: [ x :: Int, y :: String ])
+    (focusVariant (over (editCase @"x") (_ + 1) :: [ x :: Int ] -> [ x :: Int ]) (.x 5))
 
   -- editCase = the value-level single-case prism — over the matching case only.
   assertEqual "editCase/match"
-    (.x 10 :: Variant (x :: Int, y :: String))
+    (.x 10 :: [ x :: Int, y :: String ])
     (over (editCase @"x") (_ * 2) (.x 5))
   assertEqual "editCase/miss"
-    (.y "a" :: Variant (x :: Int, y :: String))
+    (.y "a" :: [ x :: Int, y :: String ])
     (over (editCase @"x") (_ * 2) (.y "a"))
 
   -- eliminateCase (ChoiceVariantToVariant via `left`): survivors pass through (eliminated case is Void).
-  let elim = eliminateCase @"gone" (identity :: Void -> Void) :: Variant (gone :: Void, keep :: Int) -> Variant (keep :: Int)
+  let elim = eliminateCase @"gone" (identity :: Void -> Void) :: [ gone :: Void, keep :: Int ] -> [ keep :: Int ]
   assertEqual "eliminateCase/passthrough"
-    (.keep 7 :: Variant (keep :: Int))
+    (.keep 7 :: [ keep :: Int ])
     (elim (.keep 7))

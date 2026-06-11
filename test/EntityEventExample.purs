@@ -6,7 +6,7 @@ import Data.Lens (Lens', Prism', preview, review, set, view)
 import Data.Maybe (Maybe)
 import Data.Profunctor.Row.RecordToRecord (editProperty)
 import Data.Profunctor.Row.VariantToVariant (editCase)
-import Data.Variant (Variant, case_, on)
+import Data.Variant (case_, on)
 import Type.Proxy (Proxy(..))
 
 -- ONE row: the order's fields.
@@ -16,7 +16,7 @@ type Order = ( customer :: String, item :: String, qty :: Int )
 --   entity = all fields at once     (product / Record)
 --   event  = exactly one field fired (sum     / Variant)
 type OrderEntity = Record (Order)
-type OrderEvent = Variant (Order)
+type OrderEvent = [ | Order ]
 
 sampleOrder :: OrderEntity
 sampleOrder = { customer: "Ada", item: "Espresso", qty: 1 }
