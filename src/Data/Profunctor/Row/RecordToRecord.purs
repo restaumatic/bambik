@@ -4,7 +4,7 @@
 -- |     sub-profunctors (share inputs, disjoin outputs).
 -- |   * `StrongRecordToRecord`/`focusRecord` — the row-typed **`Strong`**: focus a whole
 -- |     sub-record, carrying the complement (`first`/`second`, relabeled to rows).
--- |   * `introduceProperty`/`eliminateProperty`/`editProperty` — the single-field
+-- |   * `introduceProperty`/`eliminateProperty`/`property` — the single-field
 -- |     **combinators** built on `StrongRecordToRecord`.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
@@ -17,7 +17,7 @@ module Data.Profunctor.Row.RecordToRecord
   , lensProperty
   , introduceProperty
   , eliminateProperty
-  , editProperty
+  , property
   , withRecordDefault
   , withRecordOutputDefault
   )
@@ -101,7 +101,7 @@ lensE decon recon g = dimap decon recon (first g)
 -- | The single-field **row** existential lens for label `l`, type-changing: the
 -- | focus is field `l` (`a → b`) and the residual `c` is the **rest of the
 -- | record** — a sub-Record. Built via `lensE` at `c := { | rest }`. The row
--- | counterpart of the generic `lensE`; `editProperty` is its monomorphic,
+-- | counterpart of the generic `lensE`; `property` is its monomorphic,
 -- | `prop`-based cousin.
 lensProperty
   :: forall @l s t a b rest
@@ -141,12 +141,13 @@ eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)
 
 -- | Edit an existing field in place — the standard `Strong` field lens.
-editProperty
-  :: forall @l s r a
+property
+  :: forall @l p s r a
    . IsSymbol l
   => Cons l a r s
-  => Lens { | s } { | s } a a
-editProperty = prop (Proxy @l)
+  => Strong p
+  => p a a -> p { | s } { | s }
+property = prop (Proxy @l)
 
 -- UI: seed a single-field input with an initial value. A widget that needs
 -- a record field to display (e.g. `textInput @"name"`) becomes one needing

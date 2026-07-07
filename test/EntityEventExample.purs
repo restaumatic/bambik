@@ -4,9 +4,9 @@ import Prelude
 
 import Data.Lens (Lens', Prism', preview, review, set, view)
 import Data.Maybe (Maybe)
-import Data.Profunctor.Row.RecordToRecord (editProperty)
-import Data.Profunctor.Row.VariantToVariant (editCase)
-import Data.Variant (case_, on)
+import Data.Profunctor.Row.RecordToRecord (property)
+import Data.Profunctor.Row.VariantToVariant (case_)
+import Data.Variant (case_, on) as Variant
 import Type.Proxy (Proxy(..))
 
 -- ONE row: the order's fields.
@@ -23,11 +23,11 @@ sampleOrder = { customer: "Ada", item: "Espresso", qty: 1 }
 
 -- The SAME label "qty" reads two ways on the same row ----------------------
 
-qtyField :: Lens' OrderEntity Int     -- a field of the entity   (editProperty)
-qtyField = editProperty @"qty"
+qtyField :: Lens' OrderEntity Int     -- a field of the entity   (property)
+qtyField = property @"qty"
 
-qtyCase :: Prism' OrderEvent Int      -- a case  of the event    (editCase)
-qtyCase = editCase @"qty"
+qtyCase :: Prism' OrderEvent Int      -- a case  of the event    (case_)
+qtyCase = case_ @"qty"
 
 -- entity -> event : read the live field, fire it as that case
 --   (value-level essence of resolveProperty / Shutter, the × → + leg)
@@ -38,10 +38,10 @@ fieldToEvent o = review qtyCase (view qtyField o)
 --   (value-level essence of retainCase / Reel, the + → × leg)
 applyEvent :: OrderEvent -> OrderEntity -> OrderEntity
 applyEvent e o =
-  ( case_
-      # on (Proxy @"customer") (\c -> o { customer = c })
-      # on (Proxy @"item") (\i -> o { item = i })
-      # on (Proxy @"qty") (\q -> o { qty = q })
+  ( Variant.case_
+      # Variant.on (Proxy @"customer") (\c -> o { customer = c })
+      # Variant.on (Proxy @"item") (\i -> o { item = i })
+      # Variant.on (Proxy @"qty") (\q -> o { qty = q })
   ) e
 
 -- the two readings, used independently

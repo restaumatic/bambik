@@ -3,8 +3,8 @@ module Test.Main where
 import Prelude
 
 import Data.Lens (over, set, view)
-import Data.Profunctor.Row.RecordToRecord (editProperty, eliminateProperty, focusRecord, introduceProperty)
-import Data.Profunctor.Row.VariantToVariant (editCase, eliminateCase, focusVariant)
+import Data.Profunctor.Row.RecordToRecord (property, eliminateProperty, focusRecord, introduceProperty)
+import Data.Profunctor.Row.VariantToVariant (case_, eliminateCase, focusVariant)
 import Effect (Effect)
 import Effect.Exception (throw)
 
@@ -28,10 +28,10 @@ main = do
     { a: 50, c: 2, b: "x" }
     (focusRecord (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
 
-  -- editProperty = the value-level single-field lens — get / set / over.
-  assertEqual "editProperty/view" 7 (view (editProperty @"foo") { foo: 7, bar: "x" })
-  assertEqual "editProperty/set" { foo: 9, bar: "x" } (set (editProperty @"foo") 9 { foo: 7, bar: "x" })
-  assertEqual "editProperty/over" { foo: 14, bar: "x" } (over (editProperty @"foo") (_ * 2) { foo: 7, bar: "x" })
+  -- property = the value-level single-field lens — get / set / over.
+  assertEqual "property/view" 7 (view (property @"foo") { foo: 7, bar: "x" })
+  assertEqual "property/set" { foo: 9, bar: "x" } (set (property @"foo") 9 { foo: 7, bar: "x" })
+  assertEqual "property/over" { foo: 14, bar: "x" } (over (property @"foo") (_ * 2) { foo: 7, bar: "x" })
 
   -- introduceProperty grows the record; the source reads the accumulator (the `p s r` shape).
   assertEqual "introduceProperty"
@@ -61,15 +61,15 @@ main = do
   -- transforming the focused sub-case (not identity), complement carried.
   assertEqual "focusVariant/transform sub-case"
     (.x 6 :: [ x :: Int, y :: String ])
-    (focusVariant (over (editCase @"x") (_ + 1) :: [ x :: Int ] -> [ x :: Int ]) (.x 5))
+    (focusVariant (over (case_ @"x") (_ + 1) :: [ x :: Int ] -> [ x :: Int ]) (.x 5))
 
-  -- editCase = the value-level single-case prism — over the matching case only.
-  assertEqual "editCase/match"
+  -- case_ = the value-level single-case prism — over the matching case only.
+  assertEqual "case_/match"
     (.x 10 :: [ x :: Int, y :: String ])
-    (over (editCase @"x") (_ * 2) (.x 5))
-  assertEqual "editCase/miss"
+    (over (case_ @"x") (_ * 2) (.x 5))
+  assertEqual "case_/miss"
     (.y "a" :: [ x :: Int, y :: String ])
-    (over (editCase @"x") (_ * 2) (.y "a"))
+    (over (case_ @"x") (_ * 2) (.y "a"))
 
   -- eliminateCase (ChoiceVariantToVariant via `left`): survivors pass through (eliminated case is Void).
   let elim = eliminateCase @"gone" (identity :: Void -> Void) :: [ gone :: Void, keep :: Int ] -> [ keep :: Int ]

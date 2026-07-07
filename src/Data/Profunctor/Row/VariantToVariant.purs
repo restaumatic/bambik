@@ -4,7 +4,7 @@
 -- |     sub-profunctors (dispatch inputs, merge outputs).
 -- |   * `ChoiceVariantToVariant`/`focusVariant` — the row-typed **`Choice`**: focus a whole
 -- |     sub-variant, carrying the complement (`left`/`right`, relabeled to rows).
--- |   * `eliminateCase`/`editCase` — the single-case **combinators** built on
+-- |   * `eliminateCase`/`case_` — the single-case **combinators** built on
 -- |     `ChoiceVariantToVariant`. (Introducing a *fresh* case is the one operation outside
 -- |     `Choice`: `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
 -- |     branch — but an introduced case has no input selector, so it can never be emitted by
@@ -21,7 +21,7 @@ module Data.Profunctor.Row.VariantToVariant
   , prismE
   , prismCase
   , eliminateCase
-  , editCase
+  , case_
   , splitVariant
   )
   where
@@ -117,7 +117,7 @@ prismE decon recon g = dimap decon recon (left g)
 -- | The single-case **row** existential prism for label `l`, type-changing: the
 -- | focus is case `l` (`a → b`) and the residual `c` is the **rest of the
 -- | variant** — a sub-Variant. Built via `prismE` at `c := [ | rest ]`. The row
--- | counterpart of the generic `prismE`; `editCase` is its monomorphic,
+-- | counterpart of the generic `prismE`; `case_` is its monomorphic,
 -- | `prism'`-based cousin.
 prismCase
   :: forall @l s t a b rest mix
@@ -144,9 +144,10 @@ eliminateCase handler =
   dimap (on (Proxy @l) Left Right) (either absurd identity) (left handler)
 
 -- | Focus an existing case in place — the standard `Choice` prism.
-editCase
-  :: forall @l s r a
+case_
+  :: forall @l p s r a
    . IsSymbol l
   => Cons l a r s
-  => Prism [ | s ] [ | s ] a a
-editCase = prism' (inj (Proxy @l)) (on (Proxy @l) Just (\_ -> Nothing))
+  => Choice p
+  => p a a -> p [ | s ] [ | s ]
+case_ = prism' (inj (Proxy @l)) (on (Proxy @l) Just (\_ -> Nothing))

@@ -74,7 +74,7 @@ class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
--- | for this direction (the analogue of `editProperty`/`editCase` when input and
+-- | for this direction (the analogue of `property`/`case_` when input and
 -- | output kinds differ). It threads one label `l` as **input field ↔ output
 -- | case**: field `l :: x` is split off the input record, and the wrapped
 -- | profunctor either runs on the rest (emitting some case of `o`, the `Done`
