@@ -1,6 +1,5 @@
 module Data.Lens.Extra.Commons
   ( case_
-  , case_'
   , constructor
   , input
   , just
@@ -22,21 +21,20 @@ import Data.Lens (Iso, Lens, Prism, lens, prism, prism')
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (dimap)
+import Data.Profunctor.Choice (class Choice)
+import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (inj, on)
 import Prim.Row as Row
 import Record (get)
 import Type.Prelude (Proxy(..))
 
-case_ :: forall @l s r a. IsSymbol l => Row.Cons l a r s => Prism [ | s ] [ | s ] a a
+case_ :: forall @l p s r a. IsSymbol l => Row.Cons l a r s => Choice p => p a a -> p [ | s ] [ | s ]
 case_ = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (const Nothing))
-
-case_' :: forall @l s r a. IsSymbol l => Row.Cons l a r s => ([ | r ] -> a) -> Prism [ | s ] [ | s ] a a
-case_' f = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (Just <<< f))
 
 
 -- This is just `Data.Lens.Record.prop` but with a type signature allowing for type annotations
-property :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens { | s } { | s } a a
+property :: forall @l p s r a. IsSymbol l => Row.Cons l a r s => Strong p => p a a -> p { | s } { | s }
 property = prop (Proxy :: Proxy l)
 
 input :: forall @l s r a. IsSymbol l => Row.Cons l a r s =>  Lens { | s } { | s } a a
