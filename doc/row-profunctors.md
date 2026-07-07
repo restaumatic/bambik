@@ -389,7 +389,7 @@ Source locations cited in this document:
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
   - Umbrella aggregator: `src/Data/Profunctor/Row.purs:18`
 - Merge examples: `src/Data/Profunctor/Row/Example.purs`
-- Default single-field lifts: `src/Data/Profunctor/Row/Default.purs`
+- Default single-field lifts (`withRecordDefault`/`withRecordOutputDefault`): `src/Data/Profunctor/Row/RecordToRecord.purs`
 - Row unary strengths (each beside its merge, with its single-field combinator(s)):
   - `RecordToRecord.purs` — `class StrongRecordToRecord`/`focusRecord`; `introduceProperty`/`eliminateProperty`/`editProperty`; existential constructors `lensE`/`lensProperty`
   - `VariantToVariant.purs` — `class ChoiceVariantToVariant`/`focusVariant`; `eliminateCase`/`editCase`; existential constructors `prismE`/`prismCase`

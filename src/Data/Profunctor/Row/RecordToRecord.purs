@@ -18,17 +18,21 @@ module Data.Profunctor.Row.RecordToRecord
   , introduceProperty
   , eliminateProperty
   , editProperty
+  , withRecordDefault
+  , withRecordOutputDefault
   )
   where
 
+import Data.Function (const)
 import Data.Lens (Lens, Optic)
 import Data.Lens.Record (prop)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Strong (class Strong, first, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), snd)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks)
+import Prim.RowList as RL
 import Record (delete, get, insert)
 import Record (union) as Record
 import Type.Proxy (Proxy(..))
@@ -143,3 +147,30 @@ editProperty
   => Cons l a r s
   => Lens { | s } { | s } a a
 editProperty = prop (Proxy @l)
+
+-- UI: seed a single-field input with an initial value. A widget that needs
+-- a record field to display (e.g. `textInput @"name"`) becomes one needing
+-- no input data — the default is shown initially and user edits flow back
+-- via `o`. The default is consumed on every render.
+-- Lifts `p { l :: a } o` into `p {} o`.
+withRecordDefault :: forall l p a r o.
+  RL.RowToList r (RL.Cons l a RL.Nil) =>
+  IsSymbol l =>
+  Cons l a () r =>
+  Profunctor p =>
+  p { | r } o -> a -> p {} o
+withRecordDefault p default = lcmap (const (insert (Proxy :: Proxy l) default {})) p
+
+-- UI: promote a read-only widget into a form contributor. A display-only
+-- element like `textOutput` or `icon` that captures nothing gets lifted to
+-- one that emits a fixed singleton record on every call — useful for static
+-- fields like auto-IDs, hidden constants, or computed values the form layer
+-- needs. The default is emitted on every render.
+-- Lifts `p i {}` into `p i { l :: a }`.
+withRecordOutputDefault :: forall l p a r i.
+  RL.RowToList r (RL.Cons l a RL.Nil) =>
+  IsSymbol l =>
+  Cons l a () r =>
+  Profunctor p =>
+  p i {} -> a -> p i { | r }
+withRecordOutputDefault p default = rmap (const (insert (Proxy :: Proxy l) default {})) p
