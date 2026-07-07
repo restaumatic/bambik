@@ -56,7 +56,7 @@ import Prelude
 import Data.Default (class Default)
 import Data.Either (Either(..))
 import Data.Lens (Iso, Lens, Prism, iso, lens, prism)
-import Data.Lens.Extra.Commons (constructor, field, projection)
+import Data.Lens.Extra.Commons (constructor, projection, property)
 import Data.Maybe (Maybe(..))
 import Data.String (length)
 import Effect.Aff (Aff, Milliseconds(..), delay)
@@ -128,52 +128,52 @@ summary :: forall t. Iso OrderSummary t String Void
 summary = projection (_.summary)
 
 priority :: Lens Order Order Priority Priority
-priority = field @"priority"
+priority = property @"priority"
 
 orderId :: Lens Order Order String String
-orderId = field @"orderId"
+orderId = property @"orderId"
 
 shortId :: Lens Order Order String String 
-shortId = field @"shortId"
+shortId = property @"shortId"
 
 customer :: Lens Order Order NameInformal NameInformal 
-customer = field @"customer"
+customer = property @"customer"
 
 payment :: Lens Order Order (Maybe Payment) (Maybe Payment)
-payment = field @"payment"
+payment = property @"payment"
 
 firstName :: Lens NameInformal NameInformal String String
-firstName = field @"firstName"
+firstName = property @"firstName"
 
 lastName :: Lens NameInformal NameInformal String String
-lastName = field @"lastName"
+lastName = property @"lastName"
 
 forename :: Lens NameFormal NameFormal String String
-forename = field @"forename"
+forename = property @"forename"
 
 surname :: Lens NameFormal NameFormal String String
-surname =  field @"surname"
+surname =  property @"surname"
 
 fulfillment :: Lens Order Order Fulfillment Fulfillment 
-fulfillment =  field @"fulfillment"
+fulfillment =  property @"fulfillment"
 
 table :: Lens { table :: Table } { table :: Table } Table Table
-table =  field @"table"
+table =  property @"table"
 
 time :: Lens { time :: Time } { time :: Time } Time Time
-time =  field @"time"
+time =  property @"time"
 
 address :: Lens { address :: Address} { address :: Address} Address Address
-address =  field @"address"
+address =  property @"address"
 
 remarks :: Lens Order Order String String
-remarks = field @"remarks"
+remarks = property @"remarks"
 
 total :: Lens Order Order String String
-total = field @"total"
+total = property @"total"
 
 paid :: Lens Payment Payment String String
-paid = field @"paid"
+paid = property @"paid"
 
 dineIn :: Iso Fulfillment Fulfillment (Maybe { table :: Table }) { table :: Table }
 dineIn = constructor DineIn case _ of
@@ -229,7 +229,7 @@ orderSubmissionFailed = prism absurd case _ of
   true -> Left unit
 
 paymentMethod :: Lens Payment Payment PaymentMethod PaymentMethod
-paymentMethod = field @"method"
+paymentMethod = property @"method"
 
 cash :: Iso PaymentMethod PaymentMethod (Maybe Unit) Unit
 cash = constructor (const Cash) case _ of

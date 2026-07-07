@@ -1,5 +1,7 @@
 module Data.Lens.Extra.Commons
-  ( constructor
+  ( case_
+  , case_'
+  , constructor
   , input
   , just
   , left
@@ -9,8 +11,6 @@ module Data.Lens.Extra.Commons
   , projection
   , property
   , right
-  , variant
-  , variant'
   )
   where
 
@@ -28,11 +28,11 @@ import Prim.Row as Row
 import Record (get)
 import Type.Prelude (Proxy(..))
 
-variant :: forall @l s r a. IsSymbol l => Row.Cons l a r s => Prism [ | s ] [ | s ] a a
-variant = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (const Nothing))
+case_ :: forall @l s r a. IsSymbol l => Row.Cons l a r s => Prism [ | s ] [ | s ] a a
+case_ = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (const Nothing))
 
-variant' :: forall @l s r a. IsSymbol l => Row.Cons l a r s => ([ | r ] -> a) -> Prism [ | s ] [ | s ] a a
-variant' f = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (Just <<< f))
+case_' :: forall @l s r a. IsSymbol l => Row.Cons l a r s => ([ | r ] -> a) -> Prism [ | s ] [ | s ] a a
+case_' f = prism' (inj (Proxy :: Proxy l)) (on (Proxy :: Proxy l) Just (Just <<< f))
 
 
 -- This is just `Data.Lens.Record.prop` but with a type signature allowing for type annotations
