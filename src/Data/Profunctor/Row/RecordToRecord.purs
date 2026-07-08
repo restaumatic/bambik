@@ -14,7 +14,6 @@ module Data.Profunctor.Row.RecordToRecord
   , class StrongRecordToRecord
   , focusRecord
   , lensE
-  , lensProperty
   , introduceProperty
   , eliminateProperty
   , property
@@ -98,23 +97,6 @@ instance Strong p => StrongRecordToRecord p where
 lensE :: forall s t a b c. (s -> Tuple a c) -> (Tuple b c -> t) -> Lens s t a b
 lensE decon recon g = dimap decon recon (first g)
 
--- | The single-field **row** existential lens for label `l`, type-changing: the
--- | focus is field `l` (`a → b`) and the residual `c` is the **rest of the
--- | record** — a sub-Record. Built via `lensE` at `c := { | rest }`. The row
--- | counterpart of the generic `lensE`; `property` is its monomorphic,
--- | `prop`-based cousin.
-lensProperty
-  :: forall @l s t a b rest
-   . IsSymbol l
-  => Cons l a rest s
-  => Cons l b rest t
-  => Lacks l rest
-  => Lens { | s } { | t } a b
-lensProperty =
-  lensE
-    (\r -> Tuple (get (Proxy @l) r) (delete (Proxy @l) r))
-    (\(Tuple b rest) -> insert (Proxy @l) b rest)
-
 -- | Introduce a new field `l :: prop`, computing its value from the whole record `s`
 -- | (the `p s r` shape). `id &&& f` followed by `insert`.
 introduceProperty
@@ -140,13 +122,17 @@ eliminateProperty
 eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)
 
--- | Edit an existing field in place — the standard `Strong` field lens.
+-- | Edit an existing field in place — the standard `Strong` field lens,
+-- | type-changing: focus `a → b` turns row `s` into `t` (same rows except at
+-- | `l`, witnessed by the shared remainder `r`). `b := a` recovers the simple
+-- | `p a a -> p { | s } { | s }` form.
 property
-  :: forall @l p s r a
+  :: forall @l p s t r a b
    . IsSymbol l
   => Cons l a r s
+  => Cons l b r t
   => Strong p
-  => p a a -> p { | s } { | s }
+  => p a b -> p { | s } { | t }
 property = prop (Proxy @l)
 
 -- UI: seed a single-field input with an initial value. A widget that needs

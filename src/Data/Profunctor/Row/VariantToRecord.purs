@@ -4,6 +4,7 @@ module Data.Profunctor.Row.VariantToRecord
   , variantToRecord
   , class VariantToRecord
   , discard
+  , caseToProperty
   , class Retaining
   , class RetainingVariantToRecord
   , retain
@@ -97,6 +98,33 @@ retainCase g =
   dimap
     (on (Proxy @l) Right Left)
     (\(Tuple r x) -> insert (Proxy @l) x r)
+    (retain g)
+
+-- | The single-case **focus** for this direction — the `+ → ×` analogue of
+-- | `case_` (row-typed `left`), built on `retain` exactly as `case_` is built
+-- | on `left`. Case `l` of the input variant is the focus fed to the wrapped
+-- | `p a b` (the `Left`/fresh branch); the leftover `[ | r ]` cannot stay a
+-- | variant inside the `Record` output, so — as in `reelWrap` — it is wrapped
+-- | as a single output field `w`. Field `l` carries `p`'s output (drawn from
+-- | the carrier's retained state when some other case arrived), field `w` the
+-- | rest-variant. The single-case form of `reelWrap`; the transpose of
+-- | `retainCase`, which runs the wrapped profunctor on the *other* cases and
+-- | resumes the focused case directly.
+caseToProperty
+  :: forall @l @w p s r a b lo t
+   . Retaining p
+  => IsSymbol l
+  => IsSymbol w
+  => Cons l a r s
+  => Cons l b () lo
+  => Cons w [ | r ] lo t
+  => Lacks w lo
+  => p a b
+  -> p [ | s ] { | t }
+caseToProperty g =
+  dimap
+    (on (Proxy @l) Left Right)
+    (\(Tuple b rest) -> insert (Proxy @w) rest (insert (Proxy @l) b {}))
     (retain g)
 
 -- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`

@@ -19,7 +19,6 @@ module Data.Profunctor.Row.VariantToVariant
   , class ChoiceVariantToVariant
   , focusVariant
   , prismE
-  , prismCase
   , eliminateCase
   , case_
   , splitVariant
@@ -114,23 +113,6 @@ splitVariant v = case contract v of
 prismE :: forall s t a b c. (s -> Either a c) -> (Either b c -> t) -> Prism s t a b
 prismE decon recon g = dimap decon recon (left g)
 
--- | The single-case **row** existential prism for label `l`, type-changing: the
--- | focus is case `l` (`a → b`) and the residual `c` is the **rest of the
--- | variant** — a sub-Variant. Built via `prismE` at `c := [ | rest ]`. The row
--- | counterpart of the generic `prismE`; `case_` is its monomorphic,
--- | `prism'`-based cousin.
-prismCase
-  :: forall @l s t a b rest mix
-   . IsSymbol l
-  => Cons l a rest s
-  => Cons l b rest t
-  => Union rest mix t
-  => Prism [ | s ] [ | t ] a b
-prismCase =
-  prismE
-    (on (Proxy @l) Left Right)
-    (either (inj (Proxy @l)) expand)
-
 -- | Eliminate the case `l` via a diverging handler `p case Void`, preserving the rest.
 -- | Built on `ChoiceVariantToVariant` (`Choice`'s `left`): the routed `Left` case exits
 -- | through the `Void` slot, the survivors pass `Right`.
@@ -143,11 +125,21 @@ eliminateCase
 eliminateCase handler =
   dimap (on (Proxy @l) Left Right) (either absurd identity) (left handler)
 
--- | Focus an existing case in place — the standard `Choice` prism.
+-- | Focus an existing case in place — the standard `Choice` case prism,
+-- | type-changing: focus `a → b` turns row `s` into `t` (same rows except at
+-- | `l`, witnessed by the shared remainder `rest`; `Union rest mix t` lets the
+-- | untouched complement `expand` into the new row). `b := a` recovers the
+-- | simple `p a a -> p [ | s ] [ | s ]` form. Built via `prismE` at
+-- | `c := [ | rest ]`.
 case_
-  :: forall @l p s r a
+  :: forall @l p s t a b rest mix
    . IsSymbol l
-  => Cons l a r s
+  => Cons l a rest s
+  => Cons l b rest t
+  => Union rest mix t
   => Choice p
-  => p a a -> p [ | s ] [ | s ]
-case_ = prism' (inj (Proxy @l)) (on (Proxy @l) Just (\_ -> Nothing))
+  => p a b -> p [ | s ] [ | t ]
+case_ =
+  prismE
+    (on (Proxy @l) Left Right)
+    (either (inj (Proxy @l)) expand)

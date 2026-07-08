@@ -6,6 +6,7 @@ module Data.Profunctor.Row.RecordToVariant
   , recordToVariant
   , class Resolving
   , class ResolvingRecordToVariant
+  , propertyToCase
   , resolve
   , resolveProperty
   , shutter
@@ -95,6 +96,32 @@ resolveProperty g =
   dimap
     (\s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s))
     (either expand (inj (Proxy @l)))
+    (resolve g)
+
+-- | The single-field **focus** for this direction — the `× → +` analogue of
+-- | `property` (row-typed `first`), built on `resolve` exactly as `property` is
+-- | built on `first`. Field `l` of the input record is the focus fed to the
+-- | wrapped `p a b`; the leftover `{ | r }` cannot stay a record inside the
+-- | `Variant` output, so — as in `shutterWrap` — it is wrapped as a single
+-- | output case `w`: `Done b` emits case `l`, the `Loop`/escape branch emits
+-- | case `w` carrying the untouched rest. The single-field form of
+-- | `shutterWrap`; the transpose of `resolveProperty`, which runs the wrapped
+-- | profunctor on the *rest* and lets the focused field escape.
+propertyToCase
+  :: forall @l @w p s r a b lx wx t
+   . Resolving p
+  => IsSymbol l
+  => IsSymbol w
+  => Cons l a r s
+  => Lacks l r
+  => Cons l b lx t
+  => Cons w { | r } wx t
+  => p a b
+  -> p { | s } [ | t ]
+propertyToCase g =
+  dimap
+    (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
+    (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
 
 -- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`
