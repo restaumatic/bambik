@@ -1,6 +1,6 @@
 -- | Illustrative only — this demo is NOT part of `spago build` (sources are `src`/`test`).
 -- |
--- | The product single-field combinators rest on `StrongRecordToRecord` (the row-typed
+-- | The product single-field combinators rest on `Strong` (the row-typed
 -- | `Strong`), and `UI` is `Strong`, so `property` (the field lens) works directly on `UI`.
 -- | Field-filling is `property` over a seeded record. To introduce a brand-new field from a
 -- | source, use `Data.Profunctor.Row.RecordToRecord.recordToProperty`.

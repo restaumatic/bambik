@@ -68,7 +68,7 @@ checkout
        [ priced :: Money, draft :: Record (note :: String) ]  -- o'  full output (o + case `draft`)
        (Record (item :: String, qty :: Int))                  -- i   sub-Record focus
        [ priced :: Money ]                                    -- o   inner output
-checkout = shutterWrap (Proxy @"draft")
+checkout = shutterWrap @"draft"
 
 --------------------------------------------------------------------------------
 -- Reel (+ → ×): fresh focus, or resume state c; fold the result into c.
@@ -116,4 +116,4 @@ countdownStep
        (Record (done :: Boolean, pending :: [ tick :: Int ]))        -- o'  full output (o + field `pending`)
        [ cancel :: Unit ]                                            -- i   sub-Variant focus
        (Record (done :: Boolean))                                    -- o   inner output
-countdownStep = reelWrap (Proxy @"pending")
+countdownStep = reelWrap @"pending"

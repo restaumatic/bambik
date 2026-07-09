@@ -16,7 +16,7 @@ assertEqual msg expected actual =
 
 main :: Effect Unit
 main = do
-  -- == StrongRecordToRecord: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
+  -- == focusRecord: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
 
   -- focusRecord: rows on both sides. Here a one-field sub-record { a } is transformed
   -- (Int -> String) while the complement { b } is carried unchanged.
@@ -49,7 +49,7 @@ main = do
     { a: 1 }
     (eliminateProperty @"b" (const unit) (recordToProperty @"b" (\r -> r.a + 100) { a: 1 }))
 
-  -- == ChoiceVariantToVariant: row-typed Choice, focus a sub-variant carrying the rest. On `(->)`. ==
+  -- == focusVariant: row-typed Choice, focus a sub-variant carrying the rest. On `(->)`. ==
 
   -- focusVariant: dispatch on the sub-variant { x }, carry the complement { y }.
   assertEqual "focusVariant/sub-case carried"

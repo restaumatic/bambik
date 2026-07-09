@@ -2,7 +2,7 @@
 -- |
 -- |   * `recordToRecord` — the n-ary **merge** class: combine two complete record-shaped
 -- |     sub-profunctors (share inputs, disjoin outputs).
--- |   * `StrongRecordToRecord`/`focusRecord` — the row-typed **`Strong`**: focus a whole
+-- |   * `focusRecord` — the row-typed **`Strong`**: focus a whole
 -- |     sub-record, carrying the complement (`first`/`second`, relabeled to rows).
 -- |   * `recordToProperty`/`eliminateProperty`/`property` — the single-field
 -- |     **combinators**, directly on `Strong` (`first`/`second` + insert/delete).
@@ -11,7 +11,6 @@ module Data.Profunctor.Row.RecordToRecord
   , recordToRecord
   , class RecordToRecord
   , discard
-  , class StrongRecordToRecord
   , focusRecord
   , lensE
   , recordToProperty
@@ -69,23 +68,21 @@ discard first cont = bind first (\_ -> cont unit)
 -- |
 -- | The labeled analogue of `Strong`'s `first`/`second`: instead of carrying a positional
 -- | complement `c`, it carries the complement *row* `rest`, split off by `ExclusiveRows`.
--- | Equivalent to `Strong` (generic instance below): split `s` into `(sub, rest)`, run the
--- | argument on `sub` via `first`, and re-merge `sub'` with `rest`.
-class Strong p <= StrongRecordToRecord p where
-  focusRecord
-    :: forall sub sub' rest s t
-     . ExclusiveRows sub rest s
-    => ExclusiveRows sub' rest t
-    => p { | sub } { | sub' }
-    -> p { | s } { | t }
-
-instance Strong p => StrongRecordToRecord p where
-  focusRecord g =
-    dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
-          -- `Record.union` is left-biased and does not nub; safe here only because
-          -- `ExclusiveRows sub' rest t` guarantees `sub'` and `rest` are disjoint.
-          (\(Tuple sub' rest) -> Record.union sub' rest)
-          (first g)
+-- | Plain `Strong` underneath: split `s` into `(sub, rest)`, run the argument on `sub`
+-- | via `first`, and re-merge `sub'` with `rest`.
+focusRecord
+  :: forall p sub sub' rest s t
+   . Strong p
+  => ExclusiveRows sub rest s
+  => ExclusiveRows sub' rest t
+  => p { | sub } { | sub' }
+  -> p { | s } { | t }
+focusRecord g =
+  dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
+        -- `Record.union` is left-biased and does not nub; safe here only because
+        -- `ExclusiveRows sub' rest t` guarantees `sub'` and `rest` are disjoint.
+        (\(Tuple sub' rest) -> Record.union sub' rest)
+        (first g)
 
 -- | Construct a `Lens` straight from its **existential encoding**
 -- | `∃c. (s → a × c) × (b × c → t)`: pick the residual `c`, then supply `decon`

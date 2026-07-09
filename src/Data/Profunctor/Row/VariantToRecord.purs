@@ -7,7 +7,6 @@ module Data.Profunctor.Row.VariantToRecord
   , caseToProperty
   , caseToRecord
   , class Retaining
-  , class RetainingVariantToRecord
   , retain
   , retainCase
   , reel
@@ -73,9 +72,8 @@ discard first cont = bind first (\_ -> cont unit)
 -- | resume — the product output can't be filled without retaining state.
 -- |
 -- | This is the **bare strength** for the `+ → ×` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it lives in the row class
--- | `RetainingVariantToRecord` below — exactly as `focusVariant` lives in
--- | `ChoiceVariantToVariant` (built on `Choice`).
+-- | `Strong`/`Choice`); the row combinator built on it is `reelWrap` below —
+-- | exactly as `focusVariant` is built on `Choice`.
 class Profunctor p <= Retaining p where
   retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
 
@@ -164,49 +162,40 @@ reel dispatch g = reelE dispatch (\(Tuple b f) -> f b) g
 reelE :: forall s t a b c. (s -> Either a c) -> (Tuple b c -> t) -> Reel s t a b
 reelE decon recon g = dimap decon recon (retain g)
 
--- | The **row-typed** class for this direction — the `+ → ×` analogue of
--- | `ChoiceVariantToVariant` (row-typed `Choice`). `Retaining` above is the bare
--- | strength; `RetainingVariantToRecord` adds the row combinator `reelWrap`, and
--- | the generic `instance Retaining p => RetainingVariantToRecord p` gives it to
--- | every `Retaining` profunctor for free (just as every `Choice` is a
--- | `ChoiceVariantToVariant`).
-class Retaining p <= RetainingVariantToRecord p where
-  -- | Row existential `Reel` focusing a whole **sub-Variant `i`** of the full
-  -- | input `i'`; the residual is the **rest** `[ | rest ]` (`ExclusiveRows i
-  -- | rest i'`, the same split `focusVariant` uses). Crossing `+ → ×`, the rest
-  -- | can't stay a variant in the `Record` output, so it is **wrapped as a single
-  -- | output field `w`** — a record holding the variant (`o' = o` plus field `w`).
-  -- | The inner `p [ | i ] { | o }` runs on the focus; the retained
-  -- | rest-variant is inserted at field `w`. The mixed-direction analogue of
-  -- | `focusVariant`, and the dual of `shutterWrap` — same sub-row focus, but the
-  -- | complement is *wrapped* to cross into the record output rather than carried
-  -- | same-kind. The wrapper label is a `Proxy w` (instance methods can't bind a
-  -- | visible `@w` for the body):
-  -- |
-  -- | ```purescript
-  -- | -- focus the `cancel` case; wrap the rest into output field `pending`
-  -- | step :: Reel
-  -- |   [ cancel :: Unit, tick :: Int ]                               -- i'  full input
-  -- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- o'  full output
-  -- |   [ cancel :: Unit ]                                            -- i   sub-Variant focus
-  -- |   { done :: Boolean }                                          -- o   inner output
-  -- | step = reelWrap (Proxy @"pending")
-  -- | ```
-  reelWrap
-    :: forall w i i' rest o o'
-     . IsSymbol w
-    => ExclusiveRows i rest i'
-    => Contractable i' i
-    => Contractable i' rest
-    => Cons w [ | rest ] o o'
-    => Lacks w o
-    => Proxy w
-    -> p [ | i ] { | o }
-    -> p [ | i' ] { | o' }
-
-instance Retaining p => RetainingVariantToRecord p where
-  reelWrap pw g =
-    reelE
-      splitVariant
-      (\(Tuple o v) -> insert pw v o)
-      g
+-- | Row existential `Reel` focusing a whole **sub-Variant `i`** of the full
+-- | input `i'`; the residual is the **rest** `[ | rest ]` (`ExclusiveRows i
+-- | rest i'`, the same split `focusVariant` uses). Crossing `+ → ×`, the rest
+-- | can't stay a variant in the `Record` output, so it is **wrapped as a single
+-- | output field `w`** — a record holding the variant (`o' = o` plus field `w`).
+-- | The inner `p [ | i ] { | o }` runs on the focus; the retained
+-- | rest-variant is inserted at field `w`. The mixed-direction analogue of
+-- | `focusVariant`, and the dual of `shutterWrap` — same sub-row focus, but the
+-- | complement is *wrapped* to cross into the record output rather than carried
+-- | same-kind. The `+ → ×` row combinator over the bare strength `Retaining`,
+-- | just as `focusVariant` is the row combinator over `Choice`.
+-- |
+-- | ```purescript
+-- | -- focus the `cancel` case; wrap the rest into output field `pending`
+-- | step :: Reel
+-- |   [ cancel :: Unit, tick :: Int ]                               -- i'  full input
+-- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- o'  full output
+-- |   [ cancel :: Unit ]                                            -- i   sub-Variant focus
+-- |   { done :: Boolean }                                          -- o   inner output
+-- | step = reelWrap @"pending"
+-- | ```
+reelWrap
+  :: forall @w p i i' rest o o'
+   . Retaining p
+  => IsSymbol w
+  => ExclusiveRows i rest i'
+  => Contractable i' i
+  => Contractable i' rest
+  => Cons w [ | rest ] o o'
+  => Lacks w o
+  => p [ | i ] { | o }
+  -> p [ | i' ] { | o' }
+reelWrap g =
+  reelE
+    splitVariant
+    (\(Tuple o v) -> insert (Proxy @w) v o)
+    g

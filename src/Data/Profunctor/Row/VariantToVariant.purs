@@ -2,7 +2,7 @@
 -- |
 -- |   * `variantToVariant` — the n-ary **merge** class: combine two complete variant-shaped
 -- |     sub-profunctors (dispatch inputs, merge outputs).
--- |   * `ChoiceVariantToVariant`/`focusVariant` — the row-typed **`Choice`**: focus a whole
+-- |   * `focusVariant` — the row-typed **`Choice`**: focus a whole
 -- |     sub-variant, carrying the complement (`left`/`right`, relabeled to rows).
 -- |   * `case_`/`caseToVariant` — the single-case **combinators**, directly on
 -- |     `Choice` (`left`). (Introducing a *fresh* case is the one operation outside
@@ -17,7 +17,6 @@ module Data.Profunctor.Row.VariantToVariant
   , variantToVariant
   , class VariantToVariant
   , discard
-  , class ChoiceVariantToVariant
   , focusVariant
   , prismE
   , case_
@@ -64,7 +63,7 @@ discard :: forall f i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Row-typed `Choice`: focus a **sub-variant** `sub`, transforming it while carrying the
--- | complement `rest` of the cases unchanged. The coproduct dual of `StrongRecordToRecord`
+-- | complement `rest` of the cases unchanged. The coproduct dual of `focusRecord`
 -- | — operates on rows on **both sides**:
 -- |
 -- | ```
@@ -73,21 +72,19 @@ discard first cont = bind first (\_ -> cont unit)
 -- | ```
 -- |
 -- | The labeled analogue of `Choice`'s `left`/`right`, carrying the complement *row* `rest`.
--- | Equivalent to `Choice` (generic instance below): dispatch `s` into `sub | rest` (via
+-- | Plain `Choice` underneath: dispatch `s` into `sub | rest` (via
 -- | `Data.Variant.contract`), run the argument on the `sub` branch via `left`, and re-merge
 -- | both branches into `t` (via `expand`).
-class Choice p <= ChoiceVariantToVariant p where
-  focusVariant
-    :: forall sub sub' rest s t
-     . ExclusiveRows sub rest s
-    => ExclusiveRows sub' rest t
-    => Contractable s sub
-    => Contractable s rest
-    => p [ | sub ] [ | sub' ]
-    -> p [ | s ] [ | t ]
-
-instance Choice p => ChoiceVariantToVariant p where
-  focusVariant g = dimap splitVariant (either expand expand) (left g)
+focusVariant
+  :: forall p sub sub' rest s t
+   . Choice p
+  => ExclusiveRows sub rest s
+  => ExclusiveRows sub' rest t
+  => Contractable s sub
+  => Contractable s rest
+  => p [ | sub ] [ | sub' ]
+  -> p [ | s ] [ | t ]
+focusVariant g = dimap splitVariant (either expand expand) (left g)
 
 -- Dispatch a wider variant into the focused sub-variant or the complement.
 splitVariant
@@ -101,7 +98,7 @@ splitVariant v = case contract v of
   Just sub -> Left sub
   Nothing -> case contract v of
     Just rest -> Right rest
-    Nothing -> unsafeThrow "ChoiceVariantToVariant.focusVariant: case in neither sub nor rest"
+    Nothing -> unsafeThrow "focusVariant: case in neither sub nor rest"
 
 -- | Construct a `Prism` straight from its **existential encoding**
 -- | `∃c. (s → a + c) × (b + c → t)`: pick the residual `c`, then supply `decon`
