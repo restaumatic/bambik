@@ -4,7 +4,7 @@ bambik builds profunctor UIs over `Record`-shaped (**product** — all fields pr
 and `Variant`-shaped (**sum** — mutually exclusive cases) types. Two complementary families
 of **row profunctors** do this, both under [`src/Data/Profunctor/Row/`](../src/Data/Profunctor/Row/):
 
-- **Focus** — `StrongRecordToRecord`/`ChoiceVariantToVariant`, the row-typed `Strong`/`Choice`: zoom into a **sub**-record/sub-variant, carrying the rest of the row. The single-field/single-case combinators (`introduceProperty`, `case_`, …) build on them.
+- **Focus** — `StrongRecordToRecord`/`ChoiceVariantToVariant`, the row-typed `Strong`/`Choice`: zoom into a **sub**-record/sub-variant, carrying the rest of the row. The single-field/single-case combinators (`recordToProperty`, `case_`, …) build on them.
 - **Merge** — `recordToRecord`/`variantToVariant`/…: binary merges of **complete** row-shaped sub-profunctors. N-ary, tree-shaped.
 
 They produce the **same profunctor values** from different angles; this note explains the relationship. The focus class for each row-kind lives *alongside* the merge class of the same kind: `StrongRecordToRecord` in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), `ChoiceVariantToVariant` in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs).
@@ -16,8 +16,8 @@ They produce the **same profunctor values** from different angles; this note exp
 The punchline the code embodies: **the focus combinators are mostly just `Strong` and `Choice`, relabeled to rows.**
 
 - **`StrongRecordToRecord`** (`focusRecord`) and **`ChoiceVariantToVariant`** (`focusVariant`) are the row-typed `Strong`/`Choice` — they operate on rows on **both sides**, embedding a whole **sub-Record/sub-Variant** profunctor (`p { | sub } { | sub' }`) into a bigger row and carrying the complement. Each is *equivalent* to its positional original (generic `instance Strong p => StrongRecordToRecord p`, `Choice p => ChoiceVariantToVariant p`), so every `Strong`/`Choice` profunctor is one for free.
-- **Product** (`Record`) combinators — `introduceProperty`, `eliminateProperty`, `property` — rest on `StrongRecordToRecord` (`first`/`second` + insert/delete; `property` is the value-level single-field lens).
-- **Sum** (`Variant`) combinators — `eliminateCase`, `case_` — rest on `ChoiceVariantToVariant` (`left`; `case_` is the value-level single-case prism). There is one operation that *would* fall outside `Choice` — introducing a *fresh* case from a spontaneous source (a case the input never carries; see the rationale below) — but in this codebase that is built via the `VariantToVariant` composition path from sources that emit variants, not a dedicated focus combinator.
+- **Product** (`Record`) combinators — `recordToProperty`, `eliminateProperty`, `property` — rest directly on `Strong` (`first`/`second` + insert/delete; `property` is the value-level single-field lens).
+- **Sum** (`Variant`) combinators — `case_`, `caseToVariant` — rest directly on `Choice` (`left`; `case_` is the value-level single-case prism). There is one operation that *would* fall outside `Choice` — introducing a *fresh* case from a spontaneous source (a case the input never carries; see the rationale below) — but in this codebase that is built via the `VariantToVariant` composition path from sources that emit variants, not a dedicated focus combinator.
 - A single-field/grow combinator is an **identity-pinned** merge; a merge is an **iterated** single-field combinator. Same values, two granularities — and since they share a row-kind, each focus class sits in the same module as its merge class (`StrongRecordToRecord` with `RecordToRecord`, `ChoiceVariantToVariant` with `VariantToVariant`).
 
 See ["Materialized in code"](#materialized-in-code) for the module layout.
@@ -31,7 +31,7 @@ See ["Materialized in code"](#materialized-in-code) for the module layout.
 | Semantic role of types | `Record` = entity (product, all fields present at once); `Variant` = event channel (sum, mutually exclusive cases) |
 | Final values | A given profunctor value inhabits the same type either way (modulo `p` having the requisite instances) |
 
-A submit-form profunctor built via `RecordToRecord.do` and the same one built by chaining single-field combinators (`introduceProperty … >>> introduceProperty …`) are the *same inhabitant* of `p { … } { … }`. The two strategies are not two different theories — they are two different ways of writing one theory down.
+A submit-form profunctor built via `RecordToRecord.do` and the same one built by chaining single-field combinators (`recordToProperty … >>> recordToProperty …`) are the *same inhabitant* of `p { … } { … }`. The two strategies are not two different theories — they are two different ways of writing one theory down.
 
 ## Where they diverge
 
@@ -55,7 +55,7 @@ class Profunctor p <= RecordToRecord p where
 ```purescript
 -- Single-field combinator: unary lift of one value-source into one new field.
 -- src/Data/Profunctor/Row/RecordToRecord.purs:96
-introduceProperty
+recordToProperty
   :: forall p @l prop s t
    . IsSymbol l
   => Cons l prop s t
@@ -65,17 +65,17 @@ introduceProperty
 -- expanded: p { | s } prop -> p { | s } { | t }
 ```
 
-`recordToRecord` consumes two row-shaped arguments at once. `introduceProperty` consumes one sub-profunctor that reads the whole record `s` and threads its value into an accumulator that grows by one field per step.
+`recordToRecord` consumes two row-shaped arguments at once. `recordToProperty` consumes one sub-profunctor that reads the whole record `s` and threads its value into an accumulator that grows by one field per step.
 
 ### 2. Composition shape
 
 - **Merge** is a **tree**: `recordToRecord (recordToRecord a b) c` and `recordToRecord a (recordToRecord b c)` are both valid foldings; associativity holds modulo the row-disjointness constraints (`ExclusiveRows` on outputs, `InclusiveRows` on inputs).
-- **Single-field combinators** are a **list**: `introduceProperty @"a" pa >>> introduceProperty @"b" pb >>> introduceProperty @"c" pc`. Linear, order-driven, accumulates one cell per step.
+- **Single-field combinators** are a **list**: `recordToProperty @"a" pa >>> recordToProperty @"b" pb >>> recordToProperty @"c" pc`. Linear, order-driven, accumulates one cell per step.
 
 ### 3. Typeclass surface on `p`
 
 - **Merge** needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `Row` aggregator in `src/Data/Profunctor/Row.purs:18`). Each is one method with a heavy row-constraint signature.
-- **Single-field combinators** rest on the two focus classes `StrongRecordToRecord`/`ChoiceVariantToVariant` (the row-typed `Strong`/`Choice`). Because those classes have generic instances, every `Strong`/`Choice` profunctor supports them for free.
+- **Single-field combinators** rest directly on `Strong`/`Choice`, so every such profunctor supports them for free. (The row-typed focus classes `StrongRecordToRecord`/`ChoiceVariantToVariant` — with their generic instances — add the *sub-row* focus `focusRecord`/`focusVariant` on top.)
 
 ### 4. Type-inference cost
 
@@ -87,10 +87,10 @@ introduceProperty
 For any `p` that supports both families, the two satisfy a fold/degeneracy duality at the value level.
 
 **Merge combinators are folds of single-field combinators over a row-list.**
-A binary `recordToRecord p1 p2 :: p { | i } { | o }` is equivalent to taking the row-list of the union output, and for each label `l : a` inserting an `introduceProperty @l` step into a chained pipeline, with `p1` and `p2` decomposed into their per-field constituents. The fold gives the same value as the binary merge.
+A binary `recordToRecord p1 p2 :: p { | i } { | o }` is equivalent to taking the row-list of the union output, and for each label `l : a` inserting an `recordToProperty @l` step into a chained pipeline, with `p1` and `p2` decomposed into their per-field constituents. The fold gives the same value as the binary merge.
 
 **Single-field combinators are degenerate binary merges with identity.**
-`introduceProperty @l q :: p { | s } { | t }` is the binary merge of identity (`p { | s } { | s }` doing nothing) with the single-field lift of `q`. The merge machinery reduces to "do nothing on the left, attach this one field on the right."
+`recordToProperty @l q :: p { | s } { | t }` is the binary merge of identity (`p { | s } { | s }` doing nothing) with the single-field lift of `q`. The merge machinery reduces to "do nothing on the left, attach this one field on the right."
 
 So **merge = iterated single-field, single-field = degenerate merge**.
 
@@ -124,7 +124,7 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 ### Only diagonals have focus
 
-`introduceProperty @l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)` pins the **left operand to `identity`** — a `p a a`, which only typechecks when input and output are the **same kind**. The mixed classes' operands have *different* kinds (`p { … } [ … ]`), so **no `identity` can sit there**.
+`recordToProperty @l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)` pins the **left operand to `identity`** — a `p a a`, which only typechecks when input and output are the **same kind**. The mixed classes' operands have *different* kinds (`p { … } [ … ]`), so **no `identity` can sit there**.
 
 > Only the two **diagonal** classes admit `identity`, so only they collapse to a complement-carrying focus. The two **mixed** *merges* are **irreducibly binary** in that sense — crossing the product/sum boundary is exactly what an opaque business profunctor (e.g. a save-order action) does atomically, composed in with `>>>`. (But each mixed *direction* still has its **own** unary strength — a non-focus, mode-crossing one; see ["The mixed directions' own strength"](#the-mixed-directions-own-strength-resolve-and-retain).)
 
@@ -166,7 +166,7 @@ When the sides differ (mixed), carrying the complement forces a conversion betwe
 - **V→R** (gated in, unconditional out): only one input branch is live, but the product output demands every field — the un-selected branch's fields have no producer ⇒ **defaults** (fill the product the sum left empty).
 - **R→V** (unconditional in, gated out): the record carries all fields, but the variant emits one case — you must *choose* which and discard the rest ⇒ **fallback** (collapse the product into the sum's one slot).
 
-These two fabrications are themselves the product/sum dual pair: **fill** ↔ **collapse**. And inhabited case-introduction is the *degenerate unary case*: introducing into a sum needs the gate's input selector, but a spontaneous source supplies none, so even *with* a producer the case can never be emitted — whereas `second` (ungated) always emits its field, which is why `introduceProperty` exists and there is no `introduceCase`.
+These two fabrications are themselves the product/sum dual pair: **fill** ↔ **collapse**. And inhabited case-introduction is the *degenerate unary case*: introducing into a sum needs the gate's input selector, but a spontaneous source supplies none, so even *with* a producer the case can never be emitted — whereas `second` (ungated) always emits its field, which is why `recordToProperty` exists and there is no `introduceCase` *in the diagonal directions*. (The `× → +` direction, where nothing else emits and the computed case fires unconditionally, does have it: `recordToCase` — plain `rmap (inj l)`, no strength needed.)
 
 Note what stays free: **phantom**-widening a variant output (`widenVariantOutput`/`expand`) adds a case that is *never emitted* — no gate to satisfy — so it costs nothing. Only *inhabited* introduction is irreducible.
 
@@ -315,9 +315,9 @@ A full `recordToRecord` does two things: **decompose** its input (`InclusiveRows
 - **introduce** = the **output-assembly** half (grow one field/case; input passes through).
 - **eliminate** = the **input-decomposition** half (split off one field/case; output passes through).
 
-Concretely, `eliminateProperty` rides the input split — `lcmap \s -> Tuple (get l s) (delete l s)`; `eliminateCase` rides the input dispatch — `lcmap (on l Left Right)`. The split-off field/case is handed to a **sink whose output is discarded** — `p prop Unit` for `eliminateProperty` (the `Unit` is dropped via `snd`) and `p case_ Void` for `eliminateCase`. Those two sink-output types are the recurring `Unit`(terminal)/`Void`(initial) split: the product side *chooses* `Unit` (any type would do — `snd` throws it away — so it's pinned to `Unit` to make the discard explicit), while the sum side has `Void` *forced* on it (`left` routes the handled branch into the `Left` slot of `Either Void [ | t ]`, and only an uninhabited slot lets `either absurd identity` collapse it back to `[ | t ]`).
+Concretely, `eliminateProperty` rides the input split — `lcmap \s -> Tuple (get l s) (delete l s)`; case elimination (`caseToVariant` with a `Void`-output sink, `rmap absurd`) rides the input dispatch — `lcmap (on l Left Right)`. The split-off field/case is handed to a **sink whose output is discarded** — `p prop Unit` for `eliminateProperty` (the `Unit` is dropped via `snd`) and `p case Void` for the case eliminator. Those two sink-output types are the recurring `Unit`(terminal)/`Void`(initial) split: the product side *chooses* `Unit` (any type would do — `snd` throws it away — so it's pinned to `Unit` to make the discard explicit), while the sum side has `Void` *forced* on it (`left` routes the handled branch into the `Left` slot of `Either Void [ | t ]`, and only an uninhabited slot lets `either absurd identity` collapse it back to `[ | t ]`).
 
-This is what "single-field combinator = degenerate merge with identity" means concretely: `introduceProperty l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)`, with the one-field operand a genuine record-reading sub-profunctor (the `p { | s } prop` shape — it may read the whole record).
+This is what "single-field combinator = degenerate merge with identity" means concretely: `recordToProperty l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)`, with the one-field operand a genuine record-reading sub-profunctor (the `p { | s } prop` shape — it may read the whole record).
 
 ## When to use which
 
@@ -326,9 +326,9 @@ Both strategies build the same values; pick by the granularity of the pieces you
 ### Single-field-combinator style
 
 ```purescript
-introduceProperty @"shortId"  shortIdSource
-  >>> introduceProperty @"orderId"  orderIdSource
-  >>> introduceProperty @"customer" customerSource
+recordToProperty @"shortId"  shortIdSource
+  >>> recordToProperty @"orderId"  orderIdSource
+  >>> recordToProperty @"customer" customerSource
 ```
 
 Each step composes an atomic value-source with a single-field combinator that introduces one field; `>>>` chains them, growing the record one cell per step. Sub-records nest naturally — a field's source can itself be a chain of single-field steps.
@@ -373,10 +373,10 @@ The repository implements this in `Data.Profunctor.Row.*`. Each of the four **di
 - **`ChoiceVariantToVariant`** (in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), alongside `VariantToVariant`) — `class Choice p <= ChoiceVariantToVariant p` with `focusVariant :: p [ | sub ] [ | sub' ] -> p [ | s ] [ | t ]`, the row-typed `left`/`right`; the generic `instance Choice p => ChoiceVariantToVariant p` dispatches via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
 - **`Resolving`** (in [Row/RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs), alongside `RecordToVariant`) — `class Profunctor p <= Resolving p` with `resolve :: p a b -> p (Tuple a c) (Either b c)`, the bare product→sum (×→+) strength. No `(->)` instance. Its **row** class `ResolvingRecordToVariant` (atop `Resolving`, generic instance) carries `shutterWrap`.
 - **`Retaining`** (in [Row/VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs), alongside `VariantToRecord`) — `class Profunctor p <= Retaining p` with `retain :: p a b -> p (Either a c) (Tuple b c)`, the bare sum→product (+→×) strength. No `(->)` instance. Its **row** class `RetainingVariantToRecord` (atop `Retaining`, generic instance) carries `reelWrap`.
-- **Single-field/case combinators** (each on its module's strength) — `introduceProperty`/`eliminateProperty`/`property` (on `StrongRecordToRecord`), `eliminateCase`/`case_` (on `ChoiceVariantToVariant`), `resolveProperty` (on `Resolving`), `retainCase` (on `Retaining`). `property`/`case_` are the value-level field lens / case prism; `resolveProperty`/`retainCase` are the `edit`-position combinators for the mixed directions (threading one label across the product/sum boundary); `propertyToCase`/`caseToProperty` are their transposes and the mixed analogues of `property`/`case_` (the wrapped profunctor runs on the *focused* label's value; the leftover row is wrapped as a single output case/field `w`); `shutterWrap`/`reelWrap` are the *sub-row* focus combinators on the row classes `ResolvingRecordToVariant`/`RetainingVariantToRecord`. The diagonal classes have generic `Strong`/`Choice` instances, so their combinators work on any such profunctor; the mixed strengths' instances live on a genuinely stateful carrier — `Resolving (UI m)` / `Retaining (UI m)` (there is still no `(->)` instance: a pure function can't loop or retain state).
+- **Single-field/case combinators** (each on its module's strength) — `recordToProperty`/`eliminateProperty`/`property` (on `Strong`), `case_`/`caseToVariant` (on `Choice`), `resolveProperty` (on `Resolving`), `retainCase` (on `Retaining`). `property`/`case_` are the value-level field lens / case prism; `resolveProperty`/`retainCase` are the `edit`-position combinators for the mixed directions (threading one label across the product/sum boundary); `propertyToCase`/`caseToProperty` are their transposes and the mixed analogues of `property`/`case_` (the wrapped profunctor runs on the *focused* label's value; the leftover row is wrapped as a single output case/field `w`); the **introduce family** puts the whole row at the wrapped profunctor's far end — `recordToProperty` (×→×, whole row in, new output field), `caseToVariant` (+→+, new input case dispatched by a whole-row-out profunctor; at a `Void`-output sink it *eliminates* the case, subsuming the former `eliminateCase`), `recordToCase` (×→+, ungated emission, mere `Profunctor`), `caseToRecord` (+→×, Mealy reducer on `Retaining`: case `l` updates the record, other cases replay it); `shutterWrap`/`reelWrap` are the *sub-row* focus combinators on the row classes `ResolvingRecordToVariant`/`RetainingVariantToRecord`. The diagonal classes have generic `Strong`/`Choice` instances, so their combinators work on any such profunctor; the mixed strengths' instances live on a genuinely stateful carrier — `Resolving (UI m)` / `Retaining (UI m)` (there is still no `(->)` instance: a pure function can't loop or retain state).
 - **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) is *not* a dedicated combinator here: there is no inhabitant for it, and in practice it's built via the `VariantToVariant` composition path.
 - **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`; each direction module additionally hosts its unary strength class.
-- **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`property`/`introduceProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`case_`/`eliminateCase`.
+- **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`property`/`recordToProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`case_`/`caseToVariant` (incl. `Void`-pinned case elimination).
 
 ## References
 
@@ -391,8 +391,8 @@ Source locations cited in this document:
 - Merge examples: `src/Data/Profunctor/Row/Example.purs`
 - Default single-field lifts (`withRecordDefault`/`withRecordOutputDefault`): `src/Data/Profunctor/Row/RecordToRecord.purs`
 - Row unary strengths (each beside its merge, with its single-field combinator(s)):
-  - `RecordToRecord.purs` — `class StrongRecordToRecord`/`focusRecord`; `introduceProperty`/`eliminateProperty`/`property`; existential constructor `lensE`
-  - `VariantToVariant.purs` — `class ChoiceVariantToVariant`/`focusVariant`; `eliminateCase`/`case_`; existential constructor `prismE`
+  - `RecordToRecord.purs` — `class StrongRecordToRecord`/`focusRecord`; `recordToProperty`/`eliminateProperty`/`property`; existential constructor `lensE`
+  - `VariantToVariant.purs` — `class ChoiceVariantToVariant`/`focusVariant`; `case_`/`caseToVariant`; existential constructor `prismE`
   - `RecordToVariant.purs` — bare `class Resolving`/`resolve` + row `class ResolvingRecordToVariant`/`shutterWrap`; `resolveProperty`; induced optic `Shutter`/`shutter`; existential constructor `shutterE`
   - `VariantToRecord.purs` — bare `class Retaining`/`retain` + row `class RetainingVariantToRecord`/`reelWrap`; `retainCase`; induced optic `Reel`/`reel`; existential constructor `reelE`
 - Unary row reshapings (in `Data.Profunctor.Row`): `Union`-based `widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput`; single-field/case forms `widenInputProperty`/`widenOutputCase`/`narrowInputCase`/`narrowOutputProperty`

@@ -72,7 +72,7 @@ widenVariantOutput = rmap expand
 -- above (the `extra` row pinned to one labeled field/case via `Cons`).
 -- Same bodies; each adds or drops exactly ONE phantom field/case.
 --
--- Unlike `introduceProperty`/`eliminateProperty` (which wrap `first`/
+-- Unlike `recordToProperty`/`eliminateProperty` (which wrap `first`/
 -- `second` and take a value-operand that produces/consumes the field),
 -- these take no operand — nothing flows through the field/case; they are
 -- pure structural adapters. They are the single-field reshapings the

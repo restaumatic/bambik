@@ -5,6 +5,7 @@ module Data.Profunctor.Row.VariantToRecord
   , class VariantToRecord
   , discard
   , caseToProperty
+  , caseToRecord
   , class Retaining
   , class RetainingVariantToRecord
   , retain
@@ -19,7 +20,7 @@ import Data.Either (Either(..))
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, on)
 import Prim.Row (class Cons, class Lacks)
@@ -126,6 +127,22 @@ caseToProperty g =
     (on (Proxy @l) Left Right)
     (\(Tuple b rest) -> insert (Proxy @w) rest (insert (Proxy @l) b {}))
     (retain g)
+
+-- | The `+ → ×` member of the introduce family and the dual of `recordToCase`:
+-- | the wrapped `p a { | o }` consumes case `l`'s value and produces the whole
+-- | output record (as `caseToVariant`'s wrapped profunctor produces the whole output
+-- | variant). Every *other* case must still yield a record, and a sum input
+-- | can't supply one — it is replayed from the carrier's retained state, which
+-- | is why this member alone needs `Retaining`. A Mealy **reducer**: case `l`
+-- | updates the record via `g`, the remaining cases leave it as it was.
+caseToRecord
+  :: forall @l p s r a o
+   . Retaining p
+  => IsSymbol l
+  => Cons l a r s
+  => p a { | o }
+  -> p [ | s ] { | o }
+caseToRecord g = dimap (on (Proxy @l) Left Right) fst (retain g)
 
 -- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`
 -- | (instantiated to `b → t`) by co-Yoneda collapses `∃c. (s → a + c) × (b × c → t)`

@@ -4,12 +4,13 @@
 -- |     sub-profunctors (dispatch inputs, merge outputs).
 -- |   * `ChoiceVariantToVariant`/`focusVariant` — the row-typed **`Choice`**: focus a whole
 -- |     sub-variant, carrying the complement (`left`/`right`, relabeled to rows).
--- |   * `eliminateCase`/`case_` — the single-case **combinators** built on
--- |     `ChoiceVariantToVariant`. (Introducing a *fresh* case is the one operation outside
+-- |   * `case_`/`caseToVariant` — the single-case **combinators**, directly on
+-- |     `Choice` (`left`). (Introducing a *fresh* case is the one operation outside
 -- |     `Choice`: `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
 -- |     branch — but an introduced case has no input selector, so it can never be emitted by
 -- |     `left`/`right`, even given a producer. Contrast `Strong`'s ungated `second`, which
--- |     always emits its field, hence `introduceProperty` exists and `introduceCase` cannot.
+-- |     always emits its field, hence `recordToProperty` exists and `introduceCase` cannot
+-- |     — not here: the `× → +` direction has it as `RecordToVariant.recordToCase`.
 -- |     Built instead via the `Sum`/`variantToVariant` path, not a focus combinator.)
 module Data.Profunctor.Row.VariantToVariant
   ( bind
@@ -19,22 +20,21 @@ module Data.Profunctor.Row.VariantToVariant
   , class ChoiceVariantToVariant
   , focusVariant
   , prismE
-  , eliminateCase
   , case_
+  , caseToVariant
   , splitVariant
   )
   where
 
 import Control.Category (identity)
 import Data.Either (Either(..), either)
-import Data.Lens (Optic, Prism, prism')
+import Data.Lens (Prism)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, contract, expand, inj, on)
-import Data.Void (Void, absurd)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
@@ -113,18 +113,6 @@ splitVariant v = case contract v of
 prismE :: forall s t a b c. (s -> Either a c) -> (Either b c -> t) -> Prism s t a b
 prismE decon recon g = dimap decon recon (left g)
 
--- | Eliminate the case `l` via a diverging handler `p case Void`, preserving the rest.
--- | Built on `ChoiceVariantToVariant` (`Choice`'s `left`): the routed `Left` case exits
--- | through the `Void` slot, the survivors pass `Right`.
-eliminateCase
-  :: forall p @l case_ s t
-   . IsSymbol l
-  => Cons l case_ t s
-  => ChoiceVariantToVariant p
-  => Optic p [ | s ] [ | t ] case_ Void
-eliminateCase handler =
-  dimap (on (Proxy @l) Left Right) (either absurd identity) (left handler)
-
 -- | Focus an existing case in place — the standard `Choice` case prism,
 -- | type-changing: focus `a → b` turns row `s` into `t` (same rows except at
 -- | `l`, witnessed by the shared remainder `rest`; `Union rest mix t` lets the
@@ -143,3 +131,25 @@ case_ =
   prismE
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
+
+-- | Accept an **extra** input case `l :: a` and dispatch it into the remaining
+-- | cases: the wrapped `p a [ | t ]` consumes the new case's value and emits the
+-- | whole output variant itself (deciding which case the adapted event becomes);
+-- | every other case passes through untouched via the sum codiagonal. An event
+-- | adapter/normalizer. The exact dual of `recordToProperty`: the whole row
+-- | sits at the wrapped profunctor's *output* end here, at its *input* end
+-- | there — sums grow the input row, products grow the output row. (Introducing
+-- | an *output* case is the impossible direction — gated `left` could never
+-- | emit it — but introducing an *input* case is exactly this.) Pinning the
+-- | dispatch unreachable eliminates the case outright:
+-- | `caseToVariant @l (rmap absurd (sink :: p a Void))` drops case `l`,
+-- | passing the survivors through.
+caseToVariant
+  :: forall @l p s t a
+   . IsSymbol l
+  => Cons l a t s
+  => Choice p
+  => p a [ | t ]
+  -> p [ | s ] [ | t ]
+caseToVariant g =
+  dimap (on (Proxy @l) Left Right) (either identity identity) (left g)

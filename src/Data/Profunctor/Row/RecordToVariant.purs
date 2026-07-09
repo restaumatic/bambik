@@ -7,6 +7,7 @@ module Data.Profunctor.Row.RecordToVariant
   , class Resolving
   , class ResolvingRecordToVariant
   , propertyToCase
+  , recordToCase
   , resolve
   , resolveProperty
   , shutter
@@ -16,7 +17,7 @@ module Data.Profunctor.Row.RecordToVariant
   where
 
 import Data.Either (Either, either)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
@@ -123,6 +124,23 @@ propertyToCase g =
     (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
     (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
+
+-- | The `× → +` member of the introduce family: the wrapped `p { | r } b` reads
+-- | the whole record (as in `recordToProperty`) and its result is emitted as
+-- | output case `l`. This is the `introduceCase` that `VariantToVariant`
+-- | documents as impossible — there, a fresh output case must coexist with
+-- | gated pass-through cases and can never fire; here nothing else emits, the
+-- | computed case fires unconditionally, and no strength is needed at all:
+-- | plain `rmap (inj l)` on any `Profunctor`. (Other cases of `t` are simply
+-- | never produced — the widening is free, as with `inj` itself.)
+recordToCase
+  :: forall @l p r b x t
+   . IsSymbol l
+  => Cons l b x t
+  => Profunctor p
+  => p { | r } b
+  -> p { | r } [ | t ]
+recordToCase = rmap (inj (Proxy @l))
 
 -- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`
 -- | (instantiated to `s`) by co-Yoneda collapses `∃c. (s → a × c) × (b + c → t)`

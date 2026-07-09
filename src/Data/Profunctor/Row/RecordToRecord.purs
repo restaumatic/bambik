@@ -4,8 +4,8 @@
 -- |     sub-profunctors (share inputs, disjoin outputs).
 -- |   * `StrongRecordToRecord`/`focusRecord` — the row-typed **`Strong`**: focus a whole
 -- |     sub-record, carrying the complement (`first`/`second`, relabeled to rows).
--- |   * `introduceProperty`/`eliminateProperty`/`property` — the single-field
--- |     **combinators** built on `StrongRecordToRecord`.
+-- |   * `recordToProperty`/`eliminateProperty`/`property` — the single-field
+-- |     **combinators**, directly on `Strong` (`first`/`second` + insert/delete).
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord
@@ -14,7 +14,7 @@ module Data.Profunctor.Row.RecordToRecord
   , class StrongRecordToRecord
   , focusRecord
   , lensE
-  , introduceProperty
+  , recordToProperty
   , eliminateProperty
   , property
   , withRecordDefault
@@ -97,27 +97,31 @@ instance Strong p => StrongRecordToRecord p where
 lensE :: forall s t a b c. (s -> Tuple a c) -> (Tuple b c -> t) -> Lens s t a b
 lensE decon recon g = dimap decon recon (first g)
 
--- | Introduce a new field `l :: prop`, computing its value from the whole record `s`
--- | (the `p s r` shape). `id &&& f` followed by `insert`.
-introduceProperty
-  :: forall p @l prop s t
+-- | Introduce a new field `l :: b`, computed from the whole record by the
+-- | wrapped `p { | s } b`. `id &&& f` followed by `insert`. The exact dual of
+-- | `caseToVariant` (`VariantToVariant`): the whole row sits at the wrapped
+-- | profunctor's *input* end here, at its *output* end there — products grow
+-- | the output row, sums grow the input row.
+recordToProperty
+  :: forall @l p s t b
    . IsSymbol l
-  => Cons l prop s t
+  => Cons l b s t
   => Lacks l s
-  => StrongRecordToRecord p
-  => Optic p { | s } { | t } { | s } prop
-introduceProperty f =
-  dimap (\s -> Tuple s s) (\(Tuple s p) -> insert (Proxy @l) p s) (second f)
+  => Strong p
+  => p { | s } b
+  -> p { | s } { | t }
+recordToProperty f =
+  dimap (\s -> Tuple s s) (\(Tuple s b) -> insert (Proxy @l) b s) (second f)
 
 -- | Eliminate the field `l :: prop`, feeding its value to a sink `p prop Unit` and keeping
 -- | the rest. The sink's output is `Unit` — we discard it (via `snd`), and the monomorphic
--- | type makes that explicit. The transpose of `introduceProperty`: `first` + `delete`.
+-- | type makes that explicit. The transpose of `recordToProperty`: `first` + `delete`.
 eliminateProperty
   :: forall p @l prop s t
    . IsSymbol l
   => Cons l prop t s
   => Lacks l t
-  => StrongRecordToRecord p
+  => Strong p
   => Optic p { | s } { | t } prop Unit
 eliminateProperty f =
   dimap (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s)) snd (first f)

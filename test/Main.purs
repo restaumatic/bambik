@@ -3,8 +3,9 @@ module Test.Main where
 import Prelude
 
 import Data.Lens (over, set, view)
-import Data.Profunctor.Row.RecordToRecord (property, eliminateProperty, focusRecord, introduceProperty)
-import Data.Profunctor.Row.VariantToVariant (case_, eliminateCase, focusVariant)
+import Data.Profunctor.Row.RecordToRecord (property, eliminateProperty, focusRecord, recordToProperty)
+import Data.Profunctor.Row.VariantToVariant (case_, caseToVariant, focusVariant)
+import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Effect (Effect)
 import Effect.Exception (throw)
 
@@ -33,10 +34,10 @@ main = do
   assertEqual "property/set" { foo: 9, bar: "x" } (set (property @"foo") 9 { foo: 7, bar: "x" })
   assertEqual "property/over" { foo: 14, bar: "x" } (over (property @"foo") (_ * 2) { foo: 7, bar: "x" })
 
-  -- introduceProperty grows the record; the source reads the accumulator (the `p s r` shape).
-  assertEqual "introduceProperty"
+  -- recordToProperty grows the record; the source reads the accumulator (the `p s r` shape).
+  assertEqual "recordToProperty"
     { a: 1, b: 101 }
-    (introduceProperty @"b" (\r -> r.a + 100) { a: 1 })
+    (recordToProperty @"b" (\r -> r.a + 100) { a: 1 })
 
   -- eliminateProperty is the transpose — it drops a field, consuming its value.
   assertEqual "eliminateProperty"
@@ -46,7 +47,7 @@ main = do
   -- introduce-then-eliminate round-trips (focus = identity-pinned merge).
   assertEqual "introduce >>> eliminate = id"
     { a: 1 }
-    (eliminateProperty @"b" (const unit) (introduceProperty @"b" (\r -> r.a + 100) { a: 1 }))
+    (eliminateProperty @"b" (const unit) (recordToProperty @"b" (\r -> r.a + 100) { a: 1 }))
 
   -- == ChoiceVariantToVariant: row-typed Choice, focus a sub-variant carrying the rest. On `(->)`. ==
 
@@ -71,8 +72,27 @@ main = do
     (.y "a" :: [ x :: Int, y :: String ])
     (over (case_ @"x") (_ * 2) (.y "a"))
 
-  -- eliminateCase (ChoiceVariantToVariant via `left`): survivors pass through (eliminated case is Void).
-  let elim = eliminateCase @"gone" (identity :: Void -> Void) :: [ gone :: Void, keep :: Int ] -> [ keep :: Int ]
-  assertEqual "eliminateCase/passthrough"
+  -- caseToVariant = accept an extra input case and dispatch it into the remaining cases
+  -- (dual of recordToProperty); every other case passes through.
+  let adapt = caseToVariant @"legacyInc" (\(_ :: String) -> .inc 100) :: [ legacyInc :: String, inc :: Int, reset :: Unit ] -> [ inc :: Int, reset :: Unit ]
+  assertEqual "caseToVariant/adapted"
+    (.inc 100 :: [ inc :: Int, reset :: Unit ])
+    (adapt (.legacyInc "bump"))
+  assertEqual "caseToVariant/direct passthrough"
+    (.inc 5 :: [ inc :: Int, reset :: Unit ])
+    (adapt (.inc 5))
+  assertEqual "caseToVariant/other passthrough"
+    (.reset unit :: [ inc :: Int, reset :: Unit ])
+    (adapt (.reset unit))
+
+  -- case elimination = caseToVariant with the dispatch pinned unreachable (Void).
+  let elim = caseToVariant @"gone" (absurd :: Void -> [ keep :: Int ]) :: [ gone :: Void, keep :: Int ] -> [ keep :: Int ]
+  assertEqual "caseToVariant/eliminate passthrough"
     (.keep 7 :: [ keep :: Int ])
     (elim (.keep 7))
+
+  -- recordToCase (x -> +): whole record computes a value, emitted unconditionally
+  -- as case l — the introduce-family member Choice can't have, free on any Profunctor.
+  assertEqual "recordToCase"
+    (.total 8 :: [ total :: Int, other :: String ])
+    (recordToCase @"total" (\r -> r.a + r.b) { a: 3, b: 5 })
