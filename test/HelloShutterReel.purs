@@ -18,7 +18,7 @@ import Data.Profunctor.Row.RecordToVariant (shutter)
 import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import MDC as MDC
-import QualifiedDo.Semigroupoid as Flow
+import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (UI, silence)
 import Web (Web, body, text)
 
@@ -33,8 +33,8 @@ import Web (Web, body, text)
 greet :: UI Web String String
 greet =
   reel
-    (\prefix -> Right \typed -> prefix <> typed)
-    (MDC.filledTextField { floatingLabel: "Your name" })
+    (\prefix -> Right \typed -> prefix <> typed.name)
+    (MDC.filledTextField @"name" { floatingLabel: "Your name" })
 
 -- | The **Shutter** (× → +): open on the greeting, then snap shut on one value.
 -- | The button click is a `Done` (`cont=false`), so the **build** leg fires and
@@ -52,7 +52,7 @@ confirm =
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.
 main :: Effect Unit
-main = body @Unit $ lcmap (const "Hello, ") $ Flow.do
+main = body @Unit $ lcmap (const "Hello, ") $ Semigroupoid.do
   greet
   confirm
   text

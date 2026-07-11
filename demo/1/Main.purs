@@ -10,10 +10,12 @@
 -- |
 -- | with real MDC widgets as the merge operands, laid out so that the order
 -- | of the code maps 1-1 to the order of the UI, with no inline type
--- | annotations: every row is closed either by a label-pinning helper
--- | (`field`/`reading`/`switch`/`casePane`/`event`/`statusLine`) or by a
--- | model-function signature, and inference propagates from the pipeline
--- | ends inward. Decoration is data or design-system config, not
+-- | annotations: MDC components are label-indexed row profunctors already
+-- | (`MDC.filledTextField @"total"` is a singleton-record editor), and every
+-- | remaining row is closed either by a label-pinning helper (`field` for
+-- | nesting sub-composites, `reading`/`switch`/`casePane`/`event`/
+-- | `statusLine`) or by a model-function signature; inference propagates
+-- | from the pipeline ends inward. Decoration is data or design-system config, not
 -- | composition: the headline prefix rides in `reading`'s render function,
 -- | card captions in `MDC.card`'s config. Variant editors (fulfillment,
 -- | method) are `synced` composites: input is broadcast to switches and
@@ -54,7 +56,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import MDC as MDC
 import Prim.Row (class Cons)
-import QualifiedDo.Semigroupoid as Flow
+import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
 import UI (UI, action, debounced, latch, silence, synced)
@@ -86,27 +88,27 @@ type Order =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.elevation20 Flow.do
+main = body @Unit $ MDC.elevation20 Semigroupoid.do
   action loadOrder MDC.indeterminateLinearProgress
   RecordToRecord.do
     MDC.headline6 $ reading @"shortId" ("Order " <> _)
     MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
-      field @"shortId" $ MDC.filledTextField { floatingLabel: "Short ID" }
-      field @"orderId" $ MDC.filledTextField { floatingLabel: "Unique ID" }
+      MDC.filledTextField @"shortId" { floatingLabel: "Short ID" }
+      MDC.filledTextField @"orderId" { floatingLabel: "Unique ID" }
     field @"customer" $ MDC.card { caption: Just "Customer" } $ RecordToRecord.do
-      field @"firstName" $ MDC.filledTextField { floatingLabel: "First name" }
-      field @"lastName" $ MDC.filledTextField { floatingLabel: "Last name" }
+      MDC.filledTextField @"firstName" { floatingLabel: "First name" }
+      MDC.filledTextField @"lastName" { floatingLabel: "Last name" }
     field @"fulfillment" $ MDC.card { caption: Just "Fulfillment" } $ synced
       [ switch @"dineIn" "Dine in" { table: "1" }
       , switch @"takeaway" "Takeaway" { time: "12:00" }
       , switch @"delivery" "Delivery" { address: "" }
-      , casePane @"dineIn" $ field @"table" $ MDC.filledTextField { floatingLabel: "Table" }
-      , casePane @"takeaway" $ field @"time" $ MDC.filledTextField { floatingLabel: "Time" }
+      , casePane @"dineIn" $ MDC.filledTextField @"table" { floatingLabel: "Table" }
+      , casePane @"takeaway" $ MDC.filledTextField @"time" { floatingLabel: "Time" }
       , casePane @"delivery" $ RecordToRecord.do
-          field @"address" $ MDC.filledTextField { floatingLabel: "Address" }
+          MDC.filledTextField @"address" { floatingLabel: "Address" }
           MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
       ]
-    MDC.card { caption: Just "Total" } $ field @"total" $ MDC.filledTextField { floatingLabel: "Total" }
+    MDC.card { caption: Just "Total" } $ MDC.filledTextField @"total" { floatingLabel: "Total" }
     field @"payment" $ MDC.card { caption: Just "Payment" } $ RecordToRecord.do
       -- `identity` is the echo wire: buttons don't echo on render, so a
       -- button-only editor needs this pass-through member to open the
@@ -116,9 +118,9 @@ main = body @Unit $ MDC.elevation20 Flow.do
         , switch @"cash" "Cash" unit
         , switch @"card" "Card" unit
         ]
-      field @"paid" $ MDC.filledTextField { floatingLabel: "Paid" }
+      MDC.filledTextField @"paid" { floatingLabel: "Paid" }
       MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
-    MDC.card { caption: Just "Remarks" } $ field @"remarks" $ MDC.filledTextArea { columns: 80, rows: 3 }
+    MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
     debounced $ MDC.body1 $ lcmap summarize text
   RecordToVariant.do
     event @"submit" $ MDC.containedButton { label: Just "Submit order", icon: Just "save" }
@@ -206,8 +208,10 @@ printReceipt order = do
 
 -- row-generic helpers (candidates for the library once proven here)
 
--- | A single-field editor as a record-merge operand: the singleton-shot
--- | `property` (background pinned empty).
+-- | Nest a sub-composite (a card's record merge, a variant editor) as one
+-- | field of the enclosing record: the singleton-shot `property`
+-- | (background pinned empty). Leaf editors don't need it — MDC components
+-- | are label-indexed themselves.
 field :: forall @l a r. IsSymbol l => Cons l a () r => UI Web a a -> UI Web { | r } { | r }
 field = property @l
 

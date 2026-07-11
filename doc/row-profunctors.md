@@ -302,7 +302,7 @@ The four optics are not the *whole* of an application's logic — they are its *
 |---|---|
 | structural navigation, state, process | the four strengths (`Strong`/`Choice`/`Resolving`/`Retaining`) |
 | computation / arithmetic | `dimap`'s `decon`/`recon` — every optic is `dimap pre post (strength g)` |
-| flow / orchestration | composition (`>>>`/`Flow.do` between stages; `synced` within one) |
+| flow / orchestration | composition (`>>>`/`Semigroupoid.do` between stages; `synced` within one) |
 | effects (DB, API, async) | the **carrier** — instantiating the polymorphic `p := UI m` |
 
 The algebra is therefore **closed** over business logic: every pure step has a home (structure in the strengths, computation in `dimap`, flow in composition), and effects ride in the carrier. In particular the arithmetic is *not* outside the optics — it **is** their `decon`/`recon` (a cart's `total + line.price` is literally the `recon` of its `Reel`). Two things sit at the edge by design: **opaque pure functions** (a pricing engine is *carried* as a `rmap`/focus but not *decomposed* by optics) and **effect execution** (in the carrier — exactly DDD's domain/infrastructure boundary, which keeps effects out of the domain). The payoff is that the optic-expressed logic is **carrier-independent**: one definition runs unchanged in a live `UI m`, a pure test stepper, or a batch/server job.

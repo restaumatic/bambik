@@ -1,15 +1,15 @@
 -- | Illustrative only — this demo is NOT part of `spago build` (sources are `src`/`test`).
 -- |
--- | The product single-field combinators rest on `Strong` (the row-typed
--- | `Strong`), and `UI` is `Strong`, so `property` (the field lens) works directly on `UI`.
--- | Field-filling is `property` over a seeded record. To introduce a brand-new field from a
--- | source, use `Data.Profunctor.Row.RecordToRecord.recordToProperty`.
+-- | MDC components are row-typed at their labels (`filledTextField @l` is a
+-- | singleton-record editor), so a stage of this pipeline is `focusRecord`
+-- | of a labeled leaf: the focused field is edited, the background fields
+-- | pass through, and each stage hands the whole seeded record to the next.
 module Main (main) where
 
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (property)
+import Data.Profunctor.Row.RecordToRecord (focusRecord)
 import Effect (Effect)
 import UI (silence)
 import MDC as MDC
@@ -18,10 +18,10 @@ import Web (body)
 
 main :: Effect Unit
 main = body @({}) $ lcmap (const seed) $ Semigroupoid.do
-  property @"foo" $ MDC.filledTextField { floatingLabel: "Foo" }
-  property @"day" $ MDC.filledTextField { floatingLabel: "Day" }
-  property @"quantity" $ MDC.filledTextField { floatingLabel: "Quantity" }
-  property @"price" $ MDC.filledTextField { floatingLabel: "Price" }
+  focusRecord $ MDC.filledTextField @"foo" { floatingLabel: "Foo" }
+  focusRecord $ MDC.filledTextField @"day" { floatingLabel: "Day" }
+  focusRecord $ MDC.filledTextField @"quantity" { floatingLabel: "Quantity" }
+  focusRecord $ MDC.filledTextField @"price" { floatingLabel: "Price" }
   silence
   where
   seed =

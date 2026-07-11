@@ -12,8 +12,6 @@
 -- |   * **reshapings** — `dimap`-only structural adapters that grow or
 -- |     shrink one row-typed side, with nothing flowing through the added
 -- |     or dropped labels.
--- |   * **bridges** — `dimap`-only scalar ↔ singleton-row adapters at the
--- |     scalar/row frontier.
 -- |
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
@@ -44,22 +42,14 @@ module Data.Profunctor.Row
   , widenOutputCase
   , narrowInputCase
   , narrowOutputProperty
-  , backdrop
-  , live
-  , scalar
-  , watching
   )
   where
 
-import Control.Category (identity)
-import Data.Function (const)
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
-import Data.Variant (case_, expand, inj, match)
+import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Variant (expand)
 import Data.Variant.Internal (class VariantTags)
-import Data.Void (Void, absurd)
 import Prim.Row (class Cons, class Nub, class Union) as Row
 import Prim.RowList (class RowToList, RowList)
-import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- =====================================================================
@@ -182,32 +172,3 @@ narrowOutputProperty :: forall @l p f lf b s r.
   Row.Union b lf s =>
   p r { | s } -> p r { | b }
 narrowOutputProperty = rmap unsafeCoerce
-
--- =====================================================================
--- Scalar ↔ singleton-row bridges: compound widgets as `× → +` merges —
--- the ungated direction, so silent chrome composes freely. The closed
--- signatures are what lets merge operands infer with no annotations;
--- chrome operands need no bridge at all — the silent leaves are typed at
--- the chrome type already (`Web.staticText`/`staticHTML :: … {} []`, and
--- the merge's own unit `pempty` as the empty-element terminal).
--- =====================================================================
-
--- | The live piece as a merge operand: input field `value` drives it, its
--- | output emits as case `value`.
-live :: forall p v v'. Profunctor p => p v v' -> p { value :: v } [ value :: v' ]
-live = dimap _.value (inj (Proxy @"value"))
-
--- | An input-consuming display as a merge operand: reads the value,
--- | provably never emits (`Void`).
-watching :: forall p v. Profunctor p => p v Void -> p { value :: v } []
-watching = dimap _.value absurd
-
--- | Component boundary: collapse a composite with a `live` member back to
--- | its scalar interface.
-scalar :: forall p v v'. Profunctor p => p { value :: v } [ value :: v' ] -> p v v'
-scalar = dimap { value: _ } (match { value: identity })
-
--- | Component boundary for all-chrome composites: no `live` member, so the
--- | composite is a widget at any types.
-backdrop :: forall p i o. Profunctor p => p {} [] -> p i o
-backdrop = dimap (const {}) case_

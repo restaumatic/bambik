@@ -145,38 +145,54 @@ textArea = wrap do
 checkboxInput :: forall a . Default a => UI Web (Maybe a) (Maybe a)
 checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
+  mPropRef <- liftEffect $ Ref.new Nothing
   element "input" (pure unit)
   node <- gets _.sibling
   pure
-    { toUser: case _ of
-    New Nothing _ -> setChecked node false
-    New (Just newa) _ -> do
-      setChecked node true
-      Ref.write newa aRef
-    , fromUser: \prop -> void $ addEventListener "input" node $ const do
-      checked <- getChecked node
-      a <- Ref.read aRef
-      void $ prop $ New (if checked then (Just a) else Nothing) false
+    { toUser: \(New ma _) -> do
+        case ma of
+          Nothing -> setChecked node false
+          Just newa -> do
+            setChecked node true
+            Ref.write newa aRef
+        -- leaf echo: announce what was received, so record-merge gates open
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> void $ prop $ New ma false
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "input" node $ const do
+          checked <- getChecked node
+          a <- Ref.read aRef
+          void $ prop $ New (if checked then (Just a) else Nothing) false
     }
 
 radioButton :: forall a. Default a => UI Web (Maybe a) a
 radioButton = "type" := "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
+  mPropRef <- liftEffect $ Ref.new Nothing
   element "input" (pure unit)
   node <- gets _.sibling
   pure
-    { toUser: case _ of
-    New Nothing _ -> setChecked node false
-    New (Just newa) _ -> do
-      setChecked node true
-      Ref.write newa aRef
-    , fromUser: \prop -> void $ addEventListener "change" node $ const do
-    a <- Ref.read aRef
-    void $ prop $ New a false
+    { toUser: \(New ma _) -> do
+        case ma of
+          Nothing -> setChecked node false
+          Just newa -> do
+            setChecked node true
+            Ref.write newa aRef
+        -- leaf echo (output is the bare selection, so only a `Just` echoes)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> for_ ma \newa -> void $ prop $ New newa false
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "change" node $ const do
+          a <- Ref.read aRef
+          void $ prop $ New a false
     }
 
 -- TODO disable button after click?
-button :: forall a. UI Web a Void -> UI Web a a
+-- | Content is chrome (`{} → {}`, announcing): a button contains decoration
+-- | only; its wiring is the click emitter, replaying the last value fed.
+button :: forall a. UI Web {} {} -> UI Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
   -- a click before any value arrived has nothing valid to emit — withheld
@@ -184,7 +200,7 @@ button w = wrap do
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
-        status <- w'.toUser occur
+        status <- w'.toUser (occur $> {})
         case occur of
           New a _ -> Ref.write (Just a) mARef
         pure status
@@ -195,10 +211,11 @@ button w = wrap do
           void $ prop $ New a false
     }
 
--- | Static text at the chrome type (`{} → []`): silent by construction and
--- | self-pinning as a `× → +` merge operand. Repolarize with
--- | `Data.Profunctor.Row.backdrop` where another interface is needed.
-staticText :: String -> UI Web {} []
+-- | Static text as the announcing record unit with a face (`{} → {}`):
+-- | fixed DOM and, like `RecordToRecord.pempty`, it announces its
+-- | informationless `{}` on registration — so chrome composes as a gated
+-- | record-merge operand without starving anything.
+staticText :: String -> UI Web {} {}
 staticText text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -208,18 +225,18 @@ staticText text = wrap do
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: mempty
+    , fromUser: \prop -> void $ prop $ New {} false
     }
 
--- | See `staticText` — same chrome typing.
-staticHTML :: String -> UI Web {} []
+-- | See `staticText` — same announcing chrome typing.
+staticHTML :: String -> UI Web {} {}
 staticHTML html = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: mempty
+    , fromUser: \prop -> void $ prop $ New {} false
     }
 
 -- UIOculars
