@@ -318,6 +318,31 @@ Concretely, `eliminateProperty` rides the input split — `lcmap \s -> Tuple (ge
 
 This is what "single-field combinator = degenerate merge with identity" means concretely: `recordToProperty l f ≡ recordToRecord identity (rmap (\r -> {l: r}) f)`, with the one-field operand a genuine record-reading sub-profunctor (the `p { | s } prop` shape — it may read the whole record).
 
+### The introduce quartet: one schema, five roles
+
+The four introduce members share a single generating schema, read in the photographic register the library already inhabits (`Shutter`, `Reel`):
+
+| role | letter | meaning |
+|---|---|---|
+| label | `l` | where the focus attaches |
+| focus | `f` | the single value the wrapped profunctor is wired to |
+| background | `b` | the shot's complement at `l` |
+| shot | `s` | the grown row: `Cons l f b s` |
+| reality | `r` | the row the camera is *pointed at* — the entire opposite side, wired to the wrapped profunctor verbatim |
+
+**The schema**: each member grafts `g` between the focus `f` and the whole of reality; the label side grows from `f` to the shot `s`; reality passes to/from `g` untouched. Every signature repeats exactly one row exactly twice — once inside `g`, once in the result — and that row is reality:
+
+```purescript
+recordToProperty :: … Cons l f b s => Strong p     => p { | b } f -> p { | b } { | s }   -- reality = b
+caseToVariant    :: … Cons l f b s => Choice p     => p f [ | b ] -> p [ | s ] [ | b ]   -- reality = b
+recordToCase     :: … Cons l f b s => Profunctor p => p { | r } f -> p { | r } [ | s ]   -- reality free
+caseToRecord     :: … Cons l f b s => Retaining p  => p f { | r } -> p [ | s ] { | r }   -- reality free
+```
+
+**Background conservation** makes the diagonal/mixed split a theorem rather than a notational accident. On the diagonals, reality *must* coincide with the background: `recordToProperty`'s output record needs its background fields filled and only the input can supply them; `caseToVariant`'s non-focus input cases must land somewhere and only the output can receive them. Across the mode boundary there is nothing to conserve — reality is consumed whole (`recordToCase`) or produced whole (`caseToRecord`) — so it stays a free row. In the idiom: **on the diagonal, what the camera sees becomes the shot's background; across the boundary, reality never enters the frame.** The constraint column is priced by reality's fate: read it (`Strong`, via duplication), pass it (`Choice`, via branching), consume it (`Profunctor`, nothing survives), produce it without input (`Retaining`, replay from state).
+
+Note the direction of specialization: the diagonals are the `reality := background` *instances* of the general five-role shape — sound, because instantiating a free variable loses nothing. Pinning the other way (forcing the mixed members' reality to equal `b` for the sake of surface symmetry) would assert a data flow that doesn't exist and force dead cases on downstream consumers; the free `r` is the visible scar of the mode crossing, and it is information.
+
 ## When to use which
 
 Both strategies build the same values; pick by the granularity of the pieces you start from.

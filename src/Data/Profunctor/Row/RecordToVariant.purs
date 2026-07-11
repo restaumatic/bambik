@@ -147,8 +147,9 @@ propertyToCase g =
     (resolve g)
 
 -- | The `× → +` member of the introduce family: the wrapped `p { | r } f` reads
--- | the whole record (as in `recordToProperty`) and its result — the **focus**
--- | `f` — is emitted as
+-- | the whole record — `r`, the **reality** the camera is pointed at, which
+-- | never enters the shot — and its result, the **focus**
+-- | `f`, is emitted as
 -- | output case `l`. This is the `introduceCase` that `VariantToVariant`
 -- | documents as impossible — there, a fresh output case must coexist with
 -- | gated pass-through cases and can never fire; here nothing else emits, the

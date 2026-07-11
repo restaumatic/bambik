@@ -151,20 +151,22 @@ caseToProperty g =
     (retain g)
 
 -- | The `+ → ×` member of the introduce family and the dual of `recordToCase`:
--- | the wrapped `p f { | o }` consumes the **focus** — case `l` of the input
--- | **shot** `s` — and produces the whole
--- | output record (as `caseToVariant`'s wrapped profunctor produces the whole output
--- | variant). Every **background** case must still yield a record, and a sum
--- | input can't supply one — it is replayed from the carrier's retained state,
--- | which is why this member alone needs `Retaining`. A Mealy **reducer**: case
--- | `l` updates the record via `g`, the background cases leave it as it was.
+-- | the wrapped `p f { | r }` consumes the **focus** — case `l` of the input
+-- | **shot** `s` — and produces the whole output record `r` (as `caseToVariant`'s
+-- | wrapped profunctor produces the whole output variant). `r` is the
+-- | **reality** the camera is pointed at: it never enters the shot, and here it
+-- | must be *produced* without arriving — every **background** case must still
+-- | yield a record, and a sum input can't supply one, so it is replayed from
+-- | the carrier's retained state. That is why this member alone needs
+-- | `Retaining`. A Mealy **reducer**: case `l` updates the record via `g`, the
+-- | background cases leave it as it was.
 caseToRecord
-  :: forall @l p b s f o
+  :: forall @l p b s f r
    . Retaining p
   => IsSymbol l
   => Cons l f b s
-  => p f { | o }
-  -> p [ | s ] { | o }
+  => p f { | r }
+  -> p [ | s ] { | r }
 caseToRecord g = dimap (on (Proxy @l) Left Right) fst (retain g)
 
 -- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`
