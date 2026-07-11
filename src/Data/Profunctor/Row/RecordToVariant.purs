@@ -11,21 +11,28 @@
 -- |     `Profunctor`), the `Shutter` optic with `shutter`/`shutterE`.
 -- |
 -- | Law connecting the two classes: the mixed directions have no `identity` to
--- | pin (nothing inhabits a mode-crossing diagonal), but they have a **unit** —
--- | `pzero :: p {} []` (cf. `Data.Profunctor.Zero`), the silent source. The
--- | unary introduce operator is the **unit-pinned merge**,
+-- | pin (nothing inhabits a mode-crossing diagonal), but they have the class's
+-- | own **unit** `pempty :: p {} (Variant ())`, the silent source. The unary
+-- | introduce operator is the **unit-pinned merge**,
 -- |
 -- | ```
--- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) pzero
+-- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) pempty
 -- | ```
 -- |
 -- | and a pinned unit contributes nothing — which is why `recordToCase`
 -- | collapses to plain `rmap (inj l)` on any `Profunctor`.
+-- |
+-- | As nullary operator, `pempty` is the empty merge:
+-- | `recordToVariant pempty g = g`. Silence is forced on the output end (the
+-- | empty variant is uninhabited) and sufficient on the input end (the empty
+-- | record demands nothing), so `UI` implements it as its silent widget:
+-- | `pempty = mempty`.
 module Data.Profunctor.Row.RecordToVariant
   ( Shutter
   , bind
   , class RecordToVariant
   , discard
+  , pempty
   , recordToVariant
   , class Resolving
   , propertyToCase
@@ -43,12 +50,12 @@ import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (expand, inj)
+import Data.Variant (Variant, expand, inj)
 import Prim.Row (class Cons, class Union)
 import Record (get)
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
-import Type.Row.Constraints (class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** product→sum strength for this direction: a single **loop /
@@ -64,9 +71,10 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | State enters guaranteed (product input) and leaves optionally (a branch of
 -- | the sum output), so the step may *halt*; closing the `c` channel gives `p`
 -- | a terminating iteration (`tailRec`-style). It is the `identity`-pinned form
--- | of the binary base merge `Data.Profunctor.ProductToSum.prosum` (its second
--- | operand fixed to `identity`) — the product→sum analogue of how
--- | `focusRecord` is the unary form of `recordToRecord`.
+-- | of the positional product→sum base merge
+-- | `p a b -> p c d -> p (Tuple a c) (Either b d)` (its second operand fixed
+-- | to `identity`) — the product→sum analogue of how `focusRecord` is the
+-- | unary form of `recordToRecord`.
 -- |
 -- | (No `(->)` instance: the only one would be the trivial always-`Done` step,
 -- | which carries no iteration — this class is for profunctors that actually loop.)
@@ -82,6 +90,11 @@ class Profunctor p <= RecordToVariant p where
     InclusiveRows i1 i2 i i12 i1x i2x =>
     InclusiveRows o1 o2 o o12 o1x o2x =>
     p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
+  -- | The **nullary** merge — the unit: reads nothing, emits no cases. The
+  -- | silent source of the header's law; silence is forced on the uninhabited
+  -- | variant output and sufficient on the empty record input, so any silent
+  -- | element implements it (`UI`: `pempty = mempty`).
+  pempty :: p {} (Variant ())
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant p =>

@@ -10,7 +10,6 @@ import Prelude
 
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (property)
-import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,6 +21,11 @@ main = body @({}) $ lcmap (const seed) $ Semigroupoid.do
   property @"day" $ MDC.filledTextField { floatingLabel: "Day" }
   property @"quantity" $ MDC.filledTextField { floatingLabel: "Quantity" }
   property @"price" $ MDC.filledTextField { floatingLabel: "Price" }
-  pzero
+  mempty
   where
-  seed = { foo: "foo", day: "1", quantity: "1", price: "10" }
+  seed =
+    { foo: "foo"
+    , day: "1"
+    , quantity: "1"
+    , price: "10"
+    }

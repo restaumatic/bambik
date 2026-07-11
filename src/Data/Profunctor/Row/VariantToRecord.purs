@@ -11,23 +11,32 @@
 -- |     optic with `reel`/`reelE`.
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
--- | crosses the modes, but the unit does — `pzero :: p [ | r ] {}` (consume any
--- | case, contribute no field; cf. `Data.Profunctor.Zero`). The unary introduce
--- | operator is the **unit-pinned merge**,
+-- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
+-- | any case and contributing no field (`UI`'s parametric `mempty` at that
+-- | type; the unit `pempty` is its `b = ()` special case). The unary
+-- | introduce operator is the **sink-pinned merge**,
 -- |
 -- | ```
--- | caseToRecord @l g = variantToRecord (lcmap unwrap g) pzero
+-- | caseToRecord @l g = variantToRecord (lcmap unwrap g) mempty
 -- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
 -- | ```
 -- |
 -- | with the cross-operand **retention** the merge machinery performs on
 -- | non-`l` events supplied, in the free-function form, by `Retaining`.
+-- |
+-- | Completing the arity ladder downward, the **nullary** operator is the
+-- | class's own unit `pempty :: p (Variant ()) {}` — the empty merge:
+-- | `variantToRecord pempty g = g = variantToRecord g pempty`. It is a class
+-- | member (not a parametric silent element like `mempty`): a lawful
+-- | record-output unit must *announce* its informationless `{}` so the merge
+-- | knows that side is complete, and parametric silence cannot.
 module Data.Profunctor.Row.VariantToRecord
   ( Reel
   , bind
   , variantToRecord
   , class VariantToRecord
   , discard
+  , pempty
   , caseToProperty
   , caseToRecord
   , class Retaining
@@ -45,11 +54,11 @@ import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, on)
+import Data.Variant (class Contractable, Variant, on)
 import Prim.Row (class Cons)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Type.Row.Constraints (class DispatchableVariants, class ExclusiveRows)
+import Data.Profunctor.Row (class DispatchableVariants, class ExclusiveRows)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /
 -- | coroutine step**, the dual of `RecordToVariant`'s `Resolving`. `retain`
@@ -84,6 +93,12 @@ class Profunctor p <= VariantToRecord p where
     ExclusiveRows o1 o2 o =>
     DispatchableVariants i1 i2 i1l i2l =>
     p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 } -> p [ | i ] { | o }
+  -- | The **nullary** merge — the unit: handles no cases, contributes no
+  -- | fields. Genuinely per-carrier: the uninhabited input can never drive it,
+  -- | yet a lawful record-output unit must still *announce* its
+  -- | informationless `{}` so the merge machinery knows that side is complete
+  -- | — which the parametric, necessarily-silent `mempty` cannot do.
+  pempty :: p (Variant ()) {}
 
 bind :: forall p i1 i1l i2 i2l o1 o2 i o.
   VariantToRecord p =>

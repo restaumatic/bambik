@@ -27,7 +27,7 @@ See ["Materialized in code"](#materialized-in-code) for the module layout.
 | | |
 |---|---|
 | Type domain | Both build `p (X i) (Y o)` for `X, Y ∈ {Record, Variant}` |
-| Row mechanics | Both use `RowToList`, `Prim.Row.{Cons,Union,Lacks}`, and the constraints in `src/Type/Row/Constraints.purs` |
+| Row mechanics | Both use `RowToList`, `Prim.Row.{Cons,Union,Lacks}`, and the constraints in `Data.Profunctor.Row` |
 | Semantic role of types | `Record` = entity (product, all fields present at once); `Variant` = event channel (sum, mutually exclusive cases) |
 | Final values | A given profunctor value inhabits the same type either way (modulo `p` having the requisite instances) |
 
@@ -73,7 +73,7 @@ recordToProperty
 
 ### 3. Typeclass surface on `p`
 
-- **Merge** needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant` (plus the umbrella `Row` aggregator in `src/Data/Profunctor/Row.purs:18`). Each is one method with a heavy row-constraint signature.
+- **Merge** needs the four classes `RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant`, each carrying the binary merge and its nullary unit `pempty` under a heavy row-constraint signature.
 - **Single-field combinators** rest directly on `Strong`/`Choice`, so every such profunctor supports them for free — as do the *sub-row* focus functions `focusRecord`/`focusVariant`.
 
 ### 4. Type-inference cost
@@ -129,7 +129,7 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 ### Reshape vs focus: two axes, not a trio
 
-The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-resolve-and-retain)) — just not focuses. `Data.Profunctor.Row` exports the four one-sided reshapings (`widenRecordInput`, `narrowVariantInput`, `narrowRecordOutput`, `widenVariantOutput`); a both-sides reshape for a mixed shape is just their composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`, `narrowVariantInput ∘ narrowRecordOutput` for `Variant → Record`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
+The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-resolve-and-retain)) — just not focuses. `Data.Profunctor.Row` — the shared floor of the row layer — exports the four one-sided reshapings (`widenRecordInput`, `narrowVariantInput`, `narrowRecordOutput`, `widenVariantOutput`, plus their single-label `Cons`-pinned forms); a both-sides reshape for a mixed shape is just their composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`, `narrowVariantInput ∘ narrowRecordOutput` for `Variant → Record`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
 
 - **direction** — *widen* (grow, `f → s`) vs *narrow* (shrink, `s → f`).
 - **complement** — *reshape* drops the complement (pure `dimap`, `Profunctor`-only) vs *focus* threads it across the input→output boundary (needs `Strong`/`Choice`).
@@ -180,7 +180,7 @@ Carrying a *same-kind* complement is what the mixed directions can't do — but 
 
 (`Resolving`/`Retaining` are the **bare strengths**, the `× → +` / `+ → ×` analogues of `Strong`/`Choice`. Each has a **row-typed** focus function on top of it — `shutterWrap` and `reelWrap` — exactly as `focusRecord` sits on `Strong`; see the row existential constructors below.)
 
-These are the product↔sum-crossing analogues of `Strong`/`Choice` — *not* focuses (they carry no same-kind complement) and *not* the merge. Neither has a `(->)` instance: a stateless function can't loop (`resolve` would be the trivial always-`Done`) or retain state (`retain`'s product output has no producer for the missing component). Their binary counterparts are the merges one level up — `resolve` is the identity-pinned form of `Data.Profunctor.ProductToSum.prosum` (its second operand fixed to `identity`), and `retain` is the unary form of `variantToRecord`.
+These are the product↔sum-crossing analogues of `Strong`/`Choice` — *not* focuses (they carry no same-kind complement) and *not* the merge. Neither has a `(->)` instance: a stateless function can't loop (`resolve` would be the trivial always-`Done`) or retain state (`retain`'s product output has no producer for the missing component). Their binary counterparts are the merges one level up — `resolve` is the identity-pinned form of the positional product→sum merge `p a b -> p c d -> p (Tuple a c) (Either b d)` (its second operand fixed to `identity`), and `retain` is the unary form of `variantToRecord`.
 
 Each strength also **induces an optic** (its `p a b -> p s t` form, with the residual `c` eliminated by co-Yoneda) — the mixed-action cousins of the `Lens` (from `Strong`) and `Prism` (from `Choice`) the diagonals induce:
 
@@ -302,7 +302,7 @@ The four optics are not the *whole* of an application's logic — they are its *
 |---|---|
 | structural navigation, state, process | the four strengths (`Strong`/`Choice`/`Resolving`/`Retaining`) |
 | computation / arithmetic | `dimap`'s `decon`/`recon` — every optic is `dimap pre post (strength g)` |
-| flow / orchestration | composition (`>>>`, `Endo.do`, `Sum.do`, `Flow.do`) |
+| flow / orchestration | composition (`>>>`, `<>`/`fold`, `Flow.do`) |
 | effects (DB, API, async) | the **carrier** — instantiating the polymorphic `p := UI m` |
 
 The algebra is therefore **closed** over business logic: every pure step has a home (structure in the strengths, computation in `dimap`, flow in composition), and effects ride in the carrier. In particular the arithmetic is *not* outside the optics — it **is** their `decon`/`recon` (a cart's `total + line.price` is literally the `recon` of its `Reel`). Two things sit at the edge by design: **opaque pure functions** (a pricing engine is *carried* as a `rmap`/focus but not *decomposed* by optics) and **effect execution** (in the carrier — exactly DDD's domain/infrastructure boundary, which keeps effects out of the domain). The payoff is that the optic-expressed logic is **carrier-independent**: one definition runs unchanged in a live `UI m`, a pure test stepper, or a batch/server job.
@@ -411,7 +411,7 @@ Source locations cited in this document:
   - `src/Data/Profunctor/Row/RecordToVariant.purs`
   - `src/Data/Profunctor/Row/VariantToRecord.purs`
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
-  - Umbrella aggregator: `src/Data/Profunctor/Row.purs:18`
+  - Unary row reshapings (`widen*`/`narrow*` + single-label forms): `src/Data/Profunctor/Row.purs`
 - Merge examples: `src/Data/Profunctor/Row/Example.purs`
 - Default single-field lifts (`withRecordDefault`/`withRecordOutputDefault`): `src/Data/Profunctor/Row/RecordToRecord.purs`
 - Row unary strengths (each beside its merge, with its single-field combinator(s)):
@@ -419,6 +419,6 @@ Source locations cited in this document:
   - `VariantToVariant.purs` — `focusVariant` (on `Choice`); `case_`/`caseToVariant`; existential constructor `prismE`
   - `RecordToVariant.purs` — bare `class Resolving`/`resolve` + row focus `shutterWrap`; `resolveProperty`; induced optic `Shutter`/`shutter`; existential constructor `shutterE`
   - `VariantToRecord.purs` — bare `class Retaining`/`retain` + row focus `reelWrap`; `retainCase`; induced optic `Reel`/`reel`; existential constructor `reelE`
-- Unary row reshapings (in `Data.Profunctor.Row`): `Union`-based `widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput`; single-field/case forms `widenInputProperty`/`widenOutputCase`/`narrowInputCase`/`narrowOutputProperty`
-- Base product↔sum strengths (binary counterparts): `src/Data/Profunctor/ProductToSum.purs` (`prosum`, the binary form of `resolve`)
-- Row constraints: `src/Type/Row/Constraints.purs`
+- Unary row reshapings (`widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput` and single-label forms): `Data.Profunctor.Row` — see "Reshape vs focus"
+- Base product↔sum binary counterpart of `resolve`: `p a b -> p c d -> p (Tuple a c) (Either b d)` — cited in `resolve`'s docstring; no longer a module of its own
+- Row constraints (`InclusiveRows`/`ExclusiveRows`/`DispatchableVariants`): `src/Data/Profunctor/Row.purs`

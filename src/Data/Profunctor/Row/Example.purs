@@ -24,6 +24,7 @@ module Data.Profunctor.Row.Example
   , submit
   , text
   , textInput
+  , ui
   , variantToRecordExample
   , variantToVariantExample
   , widenRecordInputExample
@@ -42,7 +43,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, withRecordDefau
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, shutter)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row (class Row, narrowRecordOutput, narrowVariantInput, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (narrowRecordOutput, narrowVariantInput, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, reel)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
@@ -67,15 +68,19 @@ instance Semigroupoid MyRowToRowProfunctor where
 -- And here's the thing, it's a row-to-row profunctor
 instance RecordToRecord MyRowToRowProfunctor where
   recordToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+  pempty = MyRowToRowProfunctor
 
 instance RecordToVariant MyRowToRowProfunctor where
   recordToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+  pempty = MyRowToRowProfunctor
 
 instance VariantToRecord MyRowToRowProfunctor where
   variantToRecord MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+  pempty = MyRowToRowProfunctor
 
 instance VariantToVariant MyRowToRowProfunctor where
   variantToVariant MyRowToRowProfunctor MyRowToRowProfunctor = MyRowToRowProfunctor
+  pempty = MyRowToRowProfunctor
 
 -- It also carries the two mixed-direction strengths: Shutter (× → +) and Reel (+ → ×)
 instance Resolving MyRowToRowProfunctor where
@@ -83,8 +88,6 @@ instance Resolving MyRowToRowProfunctor where
 
 instance Retaining MyRowToRowProfunctor where
   retain MyRowToRowProfunctor = MyRowToRowProfunctor
-
-instance Row MyRowToRowProfunctor
 
 -- here's some data type, let's take the minimal and most trivial data type with no values possible - it doesn't matter.
 data MyData
@@ -248,7 +251,7 @@ wizardStep :: forall @l v w. Cons l {} () w => MyRowToRowProfunctor [ | v ] [ | 
 wizardStep = MyRowToRowProfunctor
 
 
--- Unary row-to-row combinator examples.
+-- Unary reshaping examples (Data.Profunctor.Row.Reshape, the dimap-only floor).
 --
 -- Each example pins the inferred type to confirm the row reshaping
 -- works in both Record-to-* and *-to-Record/Variant directions.
@@ -273,6 +276,17 @@ widenVariantOutputExample :: MyRowToRowProfunctor
   [ out1 :: MyData, out2 :: MyData, out3 :: MyData, extra :: MyData ]
 widenVariantOutputExample = widenVariantOutput recordToVariantExample
 
+type UiFormData =
+  { message :: String
+  , name :: String
+  , phonePrefix :: String
+  , phoneSuffix :: String
+  , subscribe :: Boolean
+  }
+
+ui :: MyRowToRowProfunctor
+  { message :: String, code :: String }
+  [ submit :: UiFormData, submitMonthly :: UiFormData, submitYearly :: UiFormData ]
 ui = Semigroupoid.do
   RecordToRecord.do -- inputs inclusive, outputs exclusive
     text @"message" `withRecordOutputDefault` "foo!"

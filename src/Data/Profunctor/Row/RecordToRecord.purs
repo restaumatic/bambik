@@ -18,11 +18,25 @@
 -- |
 -- | and conversely a merge is an iterated chain of single-field steps
 -- | (see doc/row-profunctors.md, "The precise correspondence").
+-- |
+-- | Completing the arity ladder downward, the **nullary** operator is the
+-- | class's own unit `pempty :: p {} {}` — the empty merge:
+-- |
+-- | ```
+-- | recordToRecord pempty g = g = recordToRecord g pempty
+-- | ```
+-- |
+-- | It is a class member (not a parametric silent element like `UI`'s
+-- | `mempty`) because a lawful record-output unit must *announce* its
+-- | contribution — the informationless `{}` — to the merge machinery, and
+-- | anything typed `forall a b. p a b` is silent by parametricity (it can
+-- | never fabricate a `b`). For `Category` carriers, `pempty = identity @{}`.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord
   , class RecordToRecord
   , discard
+  , pempty
   , focusRecord
   , lensE
   , recordToProperty
@@ -47,7 +61,7 @@ import Record (get, insert)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete, unsafeSet)
 import Type.Proxy (Proxy(..))
-import Type.Row.Constraints (class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
@@ -55,6 +69,12 @@ class Profunctor p <= RecordToRecord p where
     InclusiveRows i1 i2 i i12 i1x i2x =>
     ExclusiveRows o1 o2 o =>
     p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
+  -- | The **nullary** merge — the unit: reads nothing, contributes no fields.
+  -- | Genuinely per-carrier: a parametric silent element cannot serve, because
+  -- | a record-output unit must *announce* its informationless `{}` so the
+  -- | merge machinery knows that side is complete. For `Category` carriers,
+  -- | `pempty = identity @{}`.
+  pempty :: p {} {}
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x i o.
   RecordToRecord p =>

@@ -1,3 +1,4 @@
+-- Add to profunctors package?
 module Data.Profunctor.Cont where
 
 import Prelude
@@ -9,7 +10,6 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Strong (class Strong)
 import Data.Tuple (Tuple(..))
 
--- Add to profunctors package?
 newtype Cont r a b = Cont ((b -> r) -> (a -> r))
 
 derive instance Newtype (Cont r a b) _

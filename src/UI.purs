@@ -25,15 +25,12 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Endo (class Endo)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving)
 import Data.Profunctor.Row (widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
-import Data.Profunctor.Sum (class Sum)
-import Data.Profunctor.Zero (class Zero)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Variant (contract)
@@ -45,8 +42,6 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (union) as Record
-import Record.Unsafe.Union (unsafeUnion)
-import Unsafe.Coerce (unsafeCoerce)
 
 -- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit)) 
 newtype UI m i o = UI (m
@@ -73,61 +68,65 @@ instance Functor m => Profunctor (UI m) where
       , fromUser: lcmap (map post) >>> p'.fromUser
       }
 
+-- Stateful instances below share one gating principle (the same one the
+-- record merges follow): state a widget hasn't received yet cannot be
+-- fabricated, so emissions needing it are withheld (`pure Nothing`) until
+-- the state channel has been fed.
 instance Functor m => Strong (UI m) where
   first p = wrap ado
-    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let lastab = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
-      { toUser: case _ of
-          New ab cont -> do
-            let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ New (fst ab) cont
-      , fromUser: \prop -> do
-        p'.fromUser \u -> do
-          let prevab = unsafePerformEffect $ Ref.read lastab
-          prop (map (flip Tuple (snd prevab)) u)
+      { toUser: \(New ab cont) -> do
+          Ref.write (Just ab) lastab
+          p'.toUser $ New (fst ab) cont
+      , fromUser: \prop ->
+          p'.fromUser \u -> do
+            mab <- Ref.read lastab
+            case mab of
+              Nothing -> pure Nothing
+              Just prevab -> prop (map (flip Tuple (snd prevab)) u)
       }
   second p = wrap ado
-    let lastab = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let lastab = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
-      { toUser: case _ of
-          New ab cont -> do
-            let _ = unsafePerformEffect $ Ref.write ab lastab
-            p'.toUser $ New (snd ab) cont
-      , fromUser: \prop -> do
-        p'.fromUser \u -> do
-          let prevab = unsafePerformEffect $ Ref.read lastab
-          prop (map (Tuple (fst prevab)) u)
+      { toUser: \(New ab cont) -> do
+          Ref.write (Just ab) lastab
+          p'.toUser $ New (snd ab) cont
+      , fromUser: \prop ->
+          p'.fromUser \u -> do
+            mab <- Ref.read lastab
+            case mab of
+              Nothing -> pure Nothing
+              Just prevab -> prop (map (Tuple (fst prevab)) u)
       }
 
 instance Functor m => Choice (UI m) where
   left p = wrap ado
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let mPropRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
       { toUser: case _ of
         New (Right c) cont -> do
-          let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New (Right c) cont)
-          pure unit
+          mProp <- Ref.read mPropRef
+          for_ mProp \prop -> prop (New (Right c) cont)
         New (Left a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
-        Ref.write prop propRef
+        Ref.write (Just prop) mPropRef
         p'.fromUser \u -> prop (Left <$> u)
       }
   right p = wrap ado
+    let mPropRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
     in
       { toUser: case _ of
         New (Left c) cont -> do
-          let prop = unsafePerformEffect $ Ref.read propRef
-          _ <- prop (New (Left c) cont)
-          pure unit
+          mProp <- Ref.read mPropRef
+          for_ mProp \prop -> prop (New (Left c) cont)
         New (Right a) cont -> p'.toUser $ New a cont
       , fromUser: \prop -> do
-        Ref.write prop propRef
+        Ref.write (Just prop) mPropRef
         p'.fromUser \u -> prop (Right <$> u)
       }
 
@@ -145,21 +144,26 @@ instance Apply m => Semigroupoid (UI m) where
           p2'.fromUser prop
       }
 
--- TODO: not sure abot this instance, it is not really a category?
+-- | `identity` forwards its input straight to its output: a wire. The unit
+-- | of `compose` (up to effect timing), the element the diagonal unary laws
+-- | pin, and — at `{}` — an alternative `RecordToRecord.pempty`.
 instance Applicative m => Category (UI m) where
-  identity = wrap  ado
-    let propRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+  identity = wrap ado
+    let mPropRef = unsafePerformEffect $ Ref.new Nothing
     in
       { toUser: \ch -> do
-        let prop = unsafePerformEffect $ Ref.read propRef
-        _ <- prop ch
-        pure unit
-      , fromUser: \prop -> do
-        Ref.write prop propRef
+          mProp <- Ref.read mPropRef
+          for_ mProp \prop -> prop ch
+      , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
-instance Apply m => Sum (UI m) where
-  psum p1 p2 = wrap ado
+-- | `<>` is broadcast composition — the sum-shaped monoid on UI: both widgets
+-- | display the same input and feed the same output — simultaneous sibling
+-- | views of one model. Formerly the bespoke `psum` (earlier still
+-- | `class Sum`); UI was its only carrier, so it dissolved into the ecosystem
+-- | `Semigroup`.
+instance Apply m => Semigroup (UI m i o) where
+  append p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
@@ -167,30 +171,25 @@ instance Apply m => Sum (UI m) where
       , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
       }
 
-instance Applicative m => Zero (UI m) where
-  pzero = wrap $ pure
+-- | `mempty` is the silent widget: shows nothing, captures nothing — at ANY
+-- | types, and necessarily so (parametricity: `forall i o. p i o` can neither
+-- | inspect an `i` nor fabricate an `o`). The unit of `<>`, the pinned
+-- | trivial operand of the mixed introduce laws, and the implementation of
+-- | `pempty` at the variant-output directions (where silence is forced).
+-- | Formerly the bespoke `pzero` (earlier still `class Zero`).
+instance Applicative m => Monoid (UI m i o) where
+  mempty = wrap $ pure
     { toUser: mempty
     , fromUser: mempty
     }
 
-instance Apply m => Endo (UI m) where
-  pendo p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> do
-        p1'.toUser ch
-        p2'.toUser ch
-      , fromUser: \prop -> do
-        p1'.fromUser \u -> do
-          p2'.toUser u
-          prop u
-        p2'.fromUser \u -> do
-          p1'.toUser u
-          prop u
-      }
-
-instance Apply m => RecordToRecord (UI m) where
+instance Applicative m => RecordToRecord (UI m) where
+  -- the unit announces its informationless {} once, so the merge gates below
+  -- never starve against it
+  pempty = wrap $ pure
+    { toUser: mempty
+    , fromUser: \prop -> void $ prop $ New {} false
+    }
   recordToRecord p1 p2 = wrap ado
     let p1Last = unsafePerformEffect $ Ref.new Nothing
     let p2Last = unsafePerformEffect $ Ref.new Nothing
@@ -215,7 +214,8 @@ instance Apply m => RecordToRecord (UI m) where
               Just p1val -> prop $ New (Record.union p1val partial) cont
       }
 
-instance Apply m => RecordToVariant (UI m) where
+instance Applicative m => RecordToVariant (UI m) where
+  pempty = mempty
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
     p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
@@ -228,25 +228,42 @@ instance Apply m => RecordToVariant (UI m) where
           p2'.fromUser prop
       }
 
+-- | The loop step: the input `Tuple a c` shows `a` to the inner widget and
+-- | retains `c`. When the inner widget emits, the **continuity flag decides
+-- | the branch**: a transient emission (`cont = true`, e.g. mid-typing) takes
+-- | the `Loop` branch, escaping with the retained `c`; a final emission
+-- | (`cont = false`, e.g. a button click) is `Done` with the emitted `b`.
+-- | Until a `c` has arrived there is nothing valid to loop with, so transient
+-- | emissions are withheld.
 instance Functor m => Resolving (UI m) where
   resolve p = wrap ado
-    let cRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let cRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
-      { toUser: case _ of
-          New (Tuple a c) cont -> do
-            let _ = unsafePerformEffect $ Ref.write c cRef
-            p'.toUser $ New a cont
+      { toUser: \(New (Tuple a c) cont) -> do
+          Ref.write (Just c) cRef
+          p'.toUser $ New a cont
       , fromUser: \prop ->
           p'.fromUser \(New b cont) ->
             if cont
-              then prop $ New (Right (unsafePerformEffect (Ref.read cRef))) cont
+              then do
+                mc <- Ref.read cRef
+                case mc of
+                  Nothing -> pure Nothing
+                  Just c -> prop $ New (Right c) cont
               else prop $ New (Left b) cont
       }
 
-instance Apply m => VariantToRecord (UI m) where
+instance Applicative m => VariantToRecord (UI m) where
+  pempty = wrap $ pure
+    { toUser: mempty
+    , fromUser: \prop -> void $ prop $ New {} false
+    }
   variantToRecord p1 p2 = wrap ado
-    let lastRec = unsafePerformEffect $ Ref.new (unsafeCoerce {})
+    -- gate like `recordToRecord`: hold propagation until both sides' fields
+    -- are known (each operand emits its complete sub-record)
+    let p1Last = unsafePerformEffect $ Ref.new Nothing
+    let p2Last = unsafePerformEffect $ Ref.new Nothing
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
@@ -255,33 +272,42 @@ instance Apply m => VariantToRecord (UI m) where
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser $ New v2 cont
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
-            let prev = unsafePerformEffect $ Ref.read lastRec
-            let merged = unsafeUnion partial prev
-            let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ New (unsafeCoerce merged) cont
+            let _ = unsafePerformEffect $ Ref.write (Just partial) p1Last
+            let mp2 = unsafePerformEffect $ Ref.read p2Last
+            case mp2 of
+              Nothing -> pure Nothing
+              Just p2val -> prop $ New (Record.union partial p2val) cont
           p2'.fromUser \(New partial cont) -> do
-            let prev = unsafePerformEffect $ Ref.read lastRec
-            let merged = unsafeUnion partial prev
-            let _ = unsafePerformEffect $ Ref.write merged lastRec
-            prop $ New (unsafeCoerce merged) cont
+            let _ = unsafePerformEffect $ Ref.write (Just partial) p2Last
+            let mp1 = unsafePerformEffect $ Ref.read p1Last
+            case mp1 of
+              Nothing -> pure Nothing
+              Just p1val -> prop $ New (Record.union p1val partial) cont
       }
 
+-- | The Mealy step: a fresh `Left a` feeds the inner widget, a `Right c`
+-- | (re)places the retained state. When the inner widget emits `b`, the
+-- | output pairs it with the retained `c` — and is **withheld until a `c`
+-- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
+-- | mirroring the knowledge-gated record merges.
 instance Functor m => Retaining (UI m) where
   retain p = wrap ado
-    let cRef = unsafePerformEffect $ Ref.new (unsafeCoerce unit)
+    let cRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
       { toUser: case _ of
           New (Left a) cont -> p'.toUser $ New a cont
-          New (Right c) _ -> do
-            let _ = unsafePerformEffect $ Ref.write c cRef
-            pure unit
+          New (Right c) _ -> Ref.write (Just c) cRef
       , fromUser: \prop ->
-          p'.fromUser \(New b cont) ->
-            prop $ New (Tuple b (unsafePerformEffect (Ref.read cRef))) cont
+          p'.fromUser \(New b cont) -> do
+            mc <- Ref.read cRef
+            case mc of
+              Nothing -> pure Nothing
+              Just c -> prop $ New (Tuple b c) cont
       }
 
-instance Apply m => VariantToVariant (UI m) where
+instance Applicative m => VariantToVariant (UI m) where
+  pempty = mempty
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
     p2' <- unwrap (widenVariantOutput p2)

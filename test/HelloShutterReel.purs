@@ -4,34 +4,36 @@
 -- | state / loop, so the only inhabitant is `UI`. That is why this is a rendered
 -- | app and not a pure-value trace.
 -- |
--- | Flow: type a name (Reel) → click Greet (Shutter) → the greeting is shown.
+-- | Flow: the app seeds the greeting prefix (the Reel's retained state) →
+-- | type a name → click Greet (Shutter) → the greeting is shown. Everything
+-- | is gated: no stage emits before the state it needs exists.
 module HelloShutterReel where
 
 import Prelude
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToVariant (shutter)
-import Data.Profunctor.Row.VariantToRecord (reelE)
-import Data.Tuple (Tuple(..))
+import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
 import UI (UI)
 import Web (Web, body, staticText, text)
 
--- | The **Reel** (+ → ×), built via the existential constructor `reelE`. Run in
--- | its *stateless* mode: every keystroke is a fresh focus (`decon = Left`), and
--- | the residual `c` is unused. Because `decon` is `Left`, the field echoes its
--- | value back through `recon` — including the initial `""` at startup, so `greet`
--- | emits `"Hello, "` immediately. That initial emission **seeds the downstream
--- | button**, which is what closes the premature-click hazard below.
--- | (For reels that actually carry state in `c`, see `RestaurantReel`/`BusinessOptics`.)
+-- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
+-- | greeting **prefix**, installed from the model side (`Right` — the app's
+-- | initial render seeds `"Hello, "`, exactly the "install a finisher"
+-- | protocol of `retain`); the text field runs freely, and each typed name is
+-- | finished against that retained prefix. Under the gated `Retaining (UI m)`
+-- | nothing is emitted before the prefix has arrived — there is no greeting
+-- | to fabricate. (For a reel whose state is *updated by events*, see
+-- | `RestaurantReel`/`BusinessOptics`.)
 greet :: UI Web String String
 greet =
-  reelE
-    (Left :: String -> Either String Unit)
-    (\(Tuple typed _) -> "Hello, " <> typed)
+  reel
+    (\prefix -> Right \typed -> prefix <> typed)
     (MDC.filledTextField { floatingLabel: "Your name" })
 
 -- | The **Shutter** (× → +): open on the greeting, then snap shut on one value.
@@ -39,17 +41,18 @@ greet =
 -- | appends `"!"`. The **escape** leg is the `Loop` branch — it would fire on a
 -- | `cont=true` emission (e.g. a text field), which a button never produces.
 -- |
--- | The button's value is **seeded at startup** by `greet`'s initial emission, so
--- | clicking *Greet* before typing yields `"Hello, !"` (a real greeting), not the
--- | uninitialized value it would otherwise hold.
+-- | Clicking *Greet* before typing does nothing: the button has received no
+-- | value yet, so its click is withheld — the gates make a premature click
+-- | silent instead of letting it fabricate a greeting.
 confirm :: UI Web String String
 confirm =
   shutter identity (_ <> "!") identity
     (MDC.containedButton { label: Just "Greet", icon: Nothing })
 
--- | type name (Reel) → click Greet (Shutter) → `text` shows the greeting.
+-- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
+-- | shows the greeting.
 main :: Effect Unit
-main = body $ Flow.do
+main = body @Unit $ lcmap (const "Hello, ") $ Flow.do
   greet
   confirm
   text

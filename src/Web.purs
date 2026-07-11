@@ -50,10 +50,8 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
-import Data.Lens.Record (prop)
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
-import Data.String.Regex.Flags (dotAll)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -128,12 +126,19 @@ textArea :: UI Web String String
 textArea = wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: case _ of
-    (New newa _) -> setValue node newa
-    , fromUser: \prop -> void $ addEventListener "input" node $ const do
-      value <- getValue node
-      void $ prop $ New value true
+    { toUser: \(New newa _) -> do
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> do
+        setValue node newa
+        void $ prop $ New newa false
+    , fromUser: \prop -> do
+      Ref.write (Just prop) mPropRef
+      void $ addEventListener "input" node $ const do
+        Ref.write Nothing mPropRef
+        value <- getValue node
+        void $ prop $ New value true
     }
 
 
@@ -174,19 +179,20 @@ radioButton = "type" := "radio" $ wrap do
 button :: forall a. UI Web a Void -> UI Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
-  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  -- a click before any value arrived has nothing valid to emit — withheld
+  mARef <- liftEffect $ Ref.new Nothing
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
-    status <- w'.toUser occur
-    case occur of
-      New a _ -> Ref.write a aRef
-    pure status
+        status <- w'.toUser occur
+        case occur of
+          New a _ -> Ref.write (Just a) mARef
+        pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    a <- Ref.read aRef
-    -- w'.toUser Nothing -- TODO check
-    setAttribute node "disabled" "true" -- TODO re-think
-    void $ prop $ New a false
+        mA <- Ref.read mARef
+        for_ mA \a -> do
+          setAttribute node "disabled" "true" -- TODO re-think
+          void $ prop $ New a false
     }
 
 staticText :: forall a b. String -> UI Web a b

@@ -8,7 +8,7 @@ Bambik is a prototype PureScript library implementing **Profunctor User Interfac
 
 ## Build Commands
 
-Do `export PATH=$PATH:/node_modules/.bin` and then `spago build`.
+Do `export PATH=$PWD/node_modules/.bin:$PATH` and then `spago build` (tests: `spago test`). Note the repo builds with the forked PureScript compiler pinned in `package.json` (variant row sugar `[ l :: T | r ]`, `.label` constructors — see doc/variant-sugar.md), so `npm install` first.
 
 ## Architecture
 
@@ -25,35 +25,34 @@ newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o ->
 
 ### Key Source Files
 
-- **src/UI.purs** - Core UI profunctor type with all profunctor class instances (Strong, Choice, Endo, Sum, Zero)
+- **src/UI.purs** - Core UI profunctor type with all class instances: `Profunctor`, `Strong`, `Choice`, `Semigroupoid`, `Category`, `Semigroup`/`Monoid` (`<>` is broadcast sibling composition, `mempty` the silent widget — the former bespoke `psum`/`pzero`, dissolved into the ecosystem classes), the four row merges (`RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant`), and the two mixed strengths (`Resolving`, `Retaining`)
 - **src/Web.purs** - DOM monad (`Web = StateT DOM Effect`) and primitive elements (`text`, `input`, `button`, `div`, etc.)
 - **src/MDC.purs** - Material Design Component wrappers as oculars
-- **src/Data/Profunctor/** - Profunctor building blocks (Endo, Sum, Zero, Product, ProductToSum, etc.)
-- **src/Data/Profunctor/Row/** + **src/Data/Profunctor/Row.purs** - Row profunctors over `Record`/`Variant`. Each of the four direction modules stacks three layers (merge → unary strength → single-field combinator(s)):
-  - **`RecordToRecord.purs`** (×→×) — merge `recordToRecord`; row-typed `Strong` `StrongRecordToRecord`/`focusRecord` (focus a whole **sub-Record** carrying the complement; generic `instance Strong p => StrongRecordToRecord p`, so `UI` gets it); single-field combinators `introduceProperty`/`eliminateProperty`/`editProperty` (`editProperty` = the value-level field lens).
-  - **`VariantToVariant.purs`** (+→+) — merge `variantToVariant`; row-typed `Choice` `ChoiceVariantToVariant`/`focusVariant` (focus a whole **sub-Variant**; generic `instance Choice p => ChoiceVariantToVariant p`); single-case combinators `eliminateCase`/`editCase` (`editCase` = the value-level case prism). (Introducing a *fresh* variant case is the one operation outside `Choice`; no dedicated combinator — built via the `Sum`/`variantToVariant` path.)
-  - **`RecordToVariant.purs`** (×→+) — merge `recordToVariant`; unary product→sum strength `ResolvingRecordToVariant`/`resolve` (a loop/iteration step, `Either b c` = `Done`/`Loop`); single-field combinator `resolveProperty` (threads one label as input field ↔ output case).
-  - **`VariantToRecord.purs`** (+→×) — merge `variantToRecord`; unary sum→product strength `RetainingVariantToRecord`/`retain` (a Mealy/coroutine step, `Tuple b c` = output + next state); single-field combinator `retainCase` (input case ↔ output field). The mixed strengths have **no `(->)` instance** (a stateless function can't loop / retain state), and unlike the diagonals' `focus` they thread the residual across the product/sum boundary with a *mode change* (× ↔ +) rather than carrying a same-kind complement.
-  - **`Row.purs`** (module `Data.Profunctor.Row`) — the umbrella `Row` aggregator class + unary row reshapings: `Union`-based `widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput` and their single-field/case forms `widenInputProperty`/`widenOutputCase`/`narrowInputCase`/`narrowOutputProperty`.
+- **src/Data/Profunctor/** - `Cont` (CPS profunctor) + the `Row/` layer; everything else was dissolved or deleted
+- **src/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`. Each of the four direction modules is organized in three layers: **strength** (the unary power — ecosystem `Strong`/`Choice` on the diagonals, module-defined `Resolving`/`Retaining` on the mixed directions) → **direction class** (the binary merge plus its nullary unit `pempty`, the genuine per-carrier primitives) → **free functions over the strength** (everything else — no row-focus classes; laws pinning the unary to the merge are stated in the module headers: identity-pinned on the diagonals, `mempty`-pinned on the mixed directions). Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
+  - **`RecordToRecord.purs`** (×→×) — merge `recordToRecord`; over `Strong`: `focusRecord` (focus a whole **sub-Record**, background carried same-kind), `property` (the value-level field lens, type-changing), `recordToProperty`/`eliminateProperty` (grow/drop one field), `lensE` (existential `Lens` constructor), `withRecordDefault`/`withRecordOutputDefault`.
+  - **`VariantToVariant.purs`** (+→+) — merge `variantToVariant`; over `Choice`: `focusVariant` (focus a whole **sub-Variant**), `case_` (the value-level case prism, type-changing), `caseToVariant` (absorb one input case; pinned to a `Void`-output sink it *eliminates* the case), `prismE`. Introducing a fresh *output* case is the one operation outside `Choice` (gated `left`/`right` can never emit it) — the ×→+ direction has it as `recordToCase`.
+  - **`RecordToVariant.purs`** (×→+) — strength `Resolving`/`resolve :: p a b -> p (Tuple a c) (Either b c)` (a loop/iteration step: `Left` = `Done`, `Right` = `Loop`); merge `recordToVariant`; over `Resolving`: `resolveProperty` (hold field `l`, transform the background — input field ↔ output case), `propertyToCase` (single-field focus; background wrapped as output case `w`), `shutterWrap` (sub-Record focus, background wrapped at `w`), the `Shutter` optic with `shutter`/`shutterE`; `recordToCase` (introduce — plain `Profunctor`, `rmap (inj l)`).
+  - **`VariantToRecord.purs`** (+→×) — strength `Retaining`/`retain :: p a b -> p (Either a c) (Tuple b c)` (a Mealy/coroutine step: output + next state); merge `variantToRecord`; over `Retaining`: `retainCase` (hold case `l`, transform the background — input case ↔ output field), `caseToProperty` (single-case focus; background wrapped as output field `w`), `caseToRecord` (Mealy reducer — case `l` updates the record, other cases replay it), `reelWrap` (sub-Variant focus, background wrapped at `w`), the `Reel` optic with `reel`/`reelE`. The mixed strengths have **no `(->)` instance** (a stateless function can't loop / retain state) — their instances live on `UI`.
+  - **`Row.purs`** (module `Data.Profunctor.Row`) — the shared floor: the row-constraint vocabulary (`InclusiveRows`/`ExclusiveRows`/`DispatchableVariants`) + the `dimap`-only unary **reshapings** (`widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput` and single-label forms `widenInputProperty`/`widenOutputCase`/`narrowInputCase`/`narrowOutputProperty`); the merge instances in `UI.purs` build on the two widening ones.
+  - **`Row/Example.purs`**, **`test/Main.purs`**, **doc/row-profunctors.md** — a phantom carrier exercising the API shape, `(->)` value-level tests for the diagonal combinators, and the design note.
 
 ### Composition Patterns
 
-Uses PureScript's qualified-do for different composition styles:
-
-- `Endo.do` / `Form.do` - Record-like structures (multiple fields)
-- `Sum.do` / `A.do` - Alternatives/variants
-- `Semigroupoid.do` / `Flow.do` - Data flow pipelines
+- `<>` / `fold` (UI's `Semigroup`/`Monoid`) - broadcast sibling views of one model; `mempty` is the silent widget
+- `Semigroupoid.do` / `Flow.do` (qualified-do) - Data flow pipelines
+- `RecordToRecord.do` / `RecordToVariant.do` / `VariantToVariant.do` / `VariantToRecord.do` (qualified-do) - the four row merges
 
 ### Separation of Concerns
 
-- **Business Logic** - Optics (Lens, Prism) in model files (e.g., demo/1/Model.purs)
+- **Business Logic** - Row-shaped models, structural as far as readable (anonymous Record rows for all-at-once, anonymous Variant rows for one-at-a-time; a named alias only for the top aggregate) plus plain functions and Aff actions (demo/1/Main.purs); business optics (Shutter/Reel) where state/loop semantics are needed (test/BusinessOptics.purs)
 - **Design System** - Oculars in Web.purs and MDC.purs
-- **Composition** - UI elements compose orthogonally to optics
+- **Composition** - UI elements compose orthogonally to the row combinators
 
 ## Demo Structure
 
-- **demo/1/** - Full MDC-based order form (complex nested forms, conditional sections)
-- **demo/2/** - Plain HTML demo
+- **demo/1/** - Full MDC-based order form as the four-direction row pipeline: load action → `×→×` form (nested record merges, variant case panes) → `×→+` event buttons → `+→+` backend dispatch → `+→×` status snackbars
+- **demo/2/** - Plain HTML demo: static layout via UI's `Monoid` plus a minimal `×→×` record merge over plain `input`s
 - **demo/helloworld/** - Simple intro example
 
 ## Key Dependencies

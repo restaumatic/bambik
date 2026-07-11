@@ -14,7 +14,6 @@ import Data.Either (Either(..))
 import Data.Profunctor.Row.RecordToVariant (Shutter, shutterE, shutterWrap)
 import Data.Profunctor.Row.VariantToRecord (Reel, reelE, reelWrap)
 import Data.Tuple (Tuple(..))
-import Type.Proxy (Proxy(..))
 
 type Money = Int
 

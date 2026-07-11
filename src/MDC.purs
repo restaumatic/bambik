@@ -33,12 +33,10 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Data.Default (class Default)
+import Data.Foldable (fold)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Profunctor (rmap)
-import Data.Profunctor.Endo as Form
-import Data.Profunctor.Sum as A
-import Data.Profunctor.Zero (pzero)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -51,14 +49,15 @@ import Web (button, radioButton) as Web
 
 containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
 containedButton { label, icon } =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ A.do
-    div >>> cl "mdc-button__ripple" $ pzero
-    case icon of
-      Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon'
-      Nothing -> pzero
-    case label of
-      Just label' -> span >>> cl "mdc-button__label" $ staticText label'
-      Nothing -> pzero
+  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ fold
+    [ div >>> cl "mdc-button__ripple" $ mempty
+    , case icon of
+        Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon'
+        Nothing -> mempty
+    , case label of
+        Just label' -> span >>> cl "mdc-button__label" $ staticText label'
+        Nothing -> mempty
+    ]
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: { floatingLabel :: String } -> UI Web String String
@@ -68,64 +67,74 @@ filledTextField { floatingLabel } =
       useNativeValidation comp false
       pure comp) mempty (\node validationStatus -> do
         setValid node (isNothing validationStatus)
-        setContent node (fromMaybe "" validationStatus)) $ Form.do
-    span >>> cl "mdc-text-field__ripple" $ pzero
-    span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel
-    input "text" # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId
-    div >>> cl "mdc-text-field-helper-line" $
-      div >>> cl "mdc-text-field-helper-text" >>> "id" := helperId >>> "aria-hidden" := "true" >>> init mdcTextFieldHelperText mempty mempty $ pzero
-    span >>> cl "mdc-line-ripple" $ pzero
+        setContent node (fromMaybe "" validationStatus)) $ fold
+    [ span >>> cl "mdc-text-field__ripple" $ mempty
+    , span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel
+    , input "text" # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId
+    , div >>> cl "mdc-text-field-helper-line" $
+        div >>> cl "mdc-text-field-helper-text" >>> "id" := helperId >>> "aria-hidden" := "true" >>> init mdcTextFieldHelperText mempty mempty $ mempty
+    , span >>> cl "mdc-line-ripple" $ mempty
+    ]
   where
     id = unsafePerformEffect uniqueId
     helperId = unsafePerformEffect uniqueId
 
 filledTextArea :: { columns :: Int, rows :: Int } -> UI Web String String
 filledTextArea { columns, rows } =
-  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ Form.do
-    span >>> cl "mdc-text-field__ripple" $ pzero
-    span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label"
-    span >>> cl "mdc-line-ripple" $ pzero
+  label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ fold
+    [ span >>> cl "mdc-text-field__ripple" $ mempty
+    , span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label"
+    , span >>> cl "mdc-line-ripple" $ mempty
+    ]
 
 checkbox :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) (Maybe a)
 checkbox label =
-  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ Form.do
-    div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ Form.do
-      checkboxInput # cl "mdc-checkbox__native-control" # "id" := id
-      div >>> cl "mdc-checkbox__background" $ Form.do
-        staticHTML """
-          <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
-            <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
-          </svg>""" -- Without raw HTML it doesn't work
-        div >>> cl "mdc-checkbox__mixedmark" $ pzero
-      div >>> cl "mdc-checkbox__ripple" $ pzero
-    "for" := id $ rmap absurd label
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ fold
+    [ div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ fold
+        [ checkboxInput # cl "mdc-checkbox__native-control" # "id" := id
+        , div >>> cl "mdc-checkbox__background" $ fold
+            [ staticHTML """
+                <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                  <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
+                </svg>""" -- Without raw HTML it doesn't work
+            , div >>> cl "mdc-checkbox__mixedmark" $ mempty
+            ]
+        , div >>> cl "mdc-checkbox__ripple" $ mempty
+        ]
+    , "for" := id $ rmap absurd label
+    ]
     where
       id = unsafePerformEffect uniqueId
 
 -- TODO add staticHTML grouping?
 radioButton :: forall a. Default a => UI Web (Maybe a) Void -> UI Web (Maybe a) a
 radioButton labelContent =
-  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ A.do
-    div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ A.do
-      Web.radioButton # cl "mdc-radio__native-control" # "id" := uid
-      div >>> cl "mdc-radio__background" $ A.do
-        div >>> cl "mdc-radio__outer-circle" $ pzero
-        div >>> cl "mdc-radio__inner-circle" $ pzero
-      div >>> cl "mdc-radio__ripple" $ pzero
-    "for" := uid $ rmap absurd labelContent
+  div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ fold
+    [ div >>> cl "mdc-radio" >>> init (newComponent material.radio."MDCRadio") mempty mempty $ fold
+        [ Web.radioButton # cl "mdc-radio__native-control" # "id" := uid
+        , div >>> cl "mdc-radio__background" $ fold
+            [ div >>> cl "mdc-radio__outer-circle" $ mempty
+            , div >>> cl "mdc-radio__inner-circle" $ mempty
+            ]
+        , div >>> cl "mdc-radio__ripple" $ mempty
+        ]
+    , "for" := uid $ rmap absurd labelContent
+    ]
   where
     uid = unsafePerformEffect uniqueId
 
 indeterminateLinearProgress :: forall a. UI Web Boolean a
 indeterminateLinearProgress =
-  div >>> "role" := "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" >>> effAdapter adapter $ A.do
-    div >>> cl "mdc-linear-progress__buffer" $ A.do
-      div >>> cl "mdc-linear-progress__buffer-bar" $ pzero
-      div >>> cl "mdc-linear-progress__buffer-dots" $ pzero
-    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
-      span >>> cl "mdc-linear-progress__bar-inner" $ pzero
-    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
-      span >>> cl "mdc-linear-progress__bar-inner" $ pzero
+  div >>> "role" := "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" >>> effAdapter adapter $ fold
+    [ div >>> cl "mdc-linear-progress__buffer" $ fold
+        [ div >>> cl "mdc-linear-progress__buffer-bar" $ mempty
+        , div >>> cl "mdc-linear-progress__buffer-dots" $ mempty
+        ]
+    , div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
+        span >>> cl "mdc-linear-progress__bar-inner" $ mempty
+    , div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
+        span >>> cl "mdc-linear-progress__bar-inner" $ mempty
+    ]
     where
       adapter = do
         comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
@@ -192,26 +201,31 @@ card w = div w # cl "mdc-card" # "style" := "padding: 10px; margin: 15px 0 15px 
 
 dialog :: { title :: String } -> Ocular (UI Web)
 dialog { title } content =
-  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ A.do
-    div >>> cl "mdc-dialog__container" $ A.do
-      div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ A.do
-        h2 >>> cl "mdc-dialog__title" >>> "id" := "my-dialog-title" $ staticText title
-        div >>> cl "mdc-dialog__content" >>> "id" := "my-dialog-content" $ content
-    div >>> cl "mdc-dialog__scrim" $ pzero
+  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ fold
+    [ div >>> cl "mdc-dialog__container" $
+        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ fold
+          [ h2 >>> cl "mdc-dialog__title" >>> "id" := "my-dialog-title" $ staticText title
+          , div >>> cl "mdc-dialog__content" >>> "id" := "my-dialog-content" $ content
+          ]
+    , div >>> cl "mdc-dialog__scrim" $ mempty
+    ]
 
 simpleDialog :: { title :: String, confirm :: String } -> Ocular (UI Web)
 simpleDialog { title, confirm } content =
-  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ A.do
-    div >>> cl "mdc-dialog__container" $
-      div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ Flow.do
-        A.do
-          h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title
-          div >>> cl "mdc-dialog__content" >>> "id" := id' $ content
-        div >>> cl "mdc-dialog__actions" $
-          Web.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ A.do
-            div >>> cl "mdc-button__ripple" $ pzero
-            span >>>  cl "mdc-button__label" $ staticText confirm
-    div >>> cl "mdc-dialog__scrim" $ pzero
+  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ fold
+    [ div >>> cl "mdc-dialog__container" $
+        div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ Flow.do
+          fold
+            [ h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title
+            , div >>> cl "mdc-dialog__content" >>> "id" := id' $ content
+            ]
+          div >>> cl "mdc-dialog__actions" $
+            Web.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ fold
+              [ div >>> cl "mdc-button__ripple" $ mempty
+              , span >>> cl "mdc-button__label" $ staticText confirm
+              ]
+    , div >>> cl "mdc-dialog__scrim" $ mempty
+    ]
     where
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId

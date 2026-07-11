@@ -20,6 +20,12 @@
 -- | and conversely a merge is an iterated chain of single-case steps
 -- | (see doc/row-profunctors.md, "The precise correspondence").
 -- |
+-- | The **nullary** operator is the merge **unit** — the class's own
+-- | `pempty :: p (Variant ()) (Variant ())`: `variantToVariant pempty g = g`.
+-- | Here silence is not merely lawful but forced — both empty-variant ends
+-- | are uninhabited, so the unit can neither receive nor emit — and any
+-- | silent element implements it (`UI`: `pempty = mempty`).
+-- |
 -- | (Introducing a *fresh* case is the one operation outside `Choice`:
 -- | `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
 -- | branch — but an introduced case has no input selector, so it can never be
@@ -33,6 +39,7 @@ module Data.Profunctor.Row.VariantToVariant
   , variantToVariant
   , class VariantToVariant
   , discard
+  , pempty
   , focusVariant
   , prismE
   , case_
@@ -49,11 +56,11 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, contract, expand, inj, on)
+import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
-import Type.Row.Constraints (class DispatchableVariants, class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class DispatchableVariants, class ExclusiveRows, class InclusiveRows)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
@@ -61,6 +68,10 @@ class Profunctor p <= VariantToVariant p where
     InclusiveRows o1 o2 o o12 o1x o2x =>
     DispatchableVariants i1 i2 i1l i2l =>
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
+  -- | The **nullary** merge — the unit: handles no cases, emits no cases.
+  -- | Both empty-variant ends are uninhabited, so silence is forced — any
+  -- | silent element implements it (`UI`: `pempty = mempty`).
+  pempty :: p (Variant ()) (Variant ())
 
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   VariantToVariant p =>
