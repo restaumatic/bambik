@@ -12,12 +12,12 @@
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
--- | any case and contributing no field (`UI`'s parametric `mempty` at that
+-- | any case and contributing no field (`UI`'s parametric `silence` at that
 -- | type; the unit `pempty` is its `b = ()` special case). The unary
 -- | introduce operator is the **sink-pinned merge**,
 -- |
 -- | ```
--- | caseToRecord @l g = variantToRecord (lcmap unwrap g) mempty
+-- | caseToRecord @l g = variantToRecord (lcmap unwrap g) silence
 -- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
 -- | ```
 -- |
@@ -27,7 +27,7 @@
 -- | Completing the arity ladder downward, the **nullary** operator is the
 -- | class's own unit `pempty :: p (Variant ()) {}` — the empty merge:
 -- | `variantToRecord pempty g = g = variantToRecord g pempty`. It is a class
--- | member (not a parametric silent element like `mempty`): a lawful
+-- | member (not a parametric silent element like `silence`): a lawful
 -- | record-output unit must *announce* its informationless `{}` so the merge
 -- | knows that side is complete, and parametric silence cannot.
 module Data.Profunctor.Row.VariantToRecord
@@ -97,7 +97,7 @@ class Profunctor p <= VariantToRecord p where
   -- | fields. Genuinely per-carrier: the uninhabited input can never drive it,
   -- | yet a lawful record-output unit must still *announce* its
   -- | informationless `{}` so the merge machinery knows that side is complete
-  -- | — which the parametric, necessarily-silent `mempty` cannot do.
+  -- | — which the parametric, necessarily-silent `silence` cannot do.
   pempty :: p (Variant ()) {}
 
 bind :: forall p i1 i1l i2 i2l o1 o2 i o.

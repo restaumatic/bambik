@@ -24,7 +24,7 @@
 -- | `pempty :: p (Variant ()) (Variant ())`: `variantToVariant pempty g = g`.
 -- | Here silence is not merely lawful but forced — both empty-variant ends
 -- | are uninhabited, so the unit can neither receive nor emit — and any
--- | silent element implements it (`UI`: `pempty = mempty`).
+-- | silent element implements it (`UI`: `pempty = silence`).
 -- |
 -- | (Introducing a *fresh* case is the one operation outside `Choice`:
 -- | `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
@@ -70,7 +70,7 @@ class Profunctor p <= VariantToVariant p where
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
   -- | The **nullary** merge — the unit: handles no cases, emits no cases.
   -- | Both empty-variant ends are uninhabited, so silence is forced — any
-  -- | silent element implements it (`UI`: `pempty = mempty`).
+  -- | silent element implements it (`UI`: `pempty = silence`).
   pempty :: p (Variant ()) (Variant ())
 
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.

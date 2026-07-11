@@ -11,6 +11,7 @@ import Prelude
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (property)
 import Effect (Effect)
+import UI (silence)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Web (body)
@@ -21,7 +22,7 @@ main = body @({}) $ lcmap (const seed) $ Semigroupoid.do
   property @"day" $ MDC.filledTextField { floatingLabel: "Day" }
   property @"quantity" $ MDC.filledTextField { floatingLabel: "Quantity" }
   property @"price" $ MDC.filledTextField { floatingLabel: "Price" }
-  mempty
+  silence
   where
   seed =
     { foo: "foo"

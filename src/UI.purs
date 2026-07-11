@@ -7,11 +7,16 @@ module UI
   , action
   , action'
   , affAdapter
+  , after
+  , before
   , constant
   , debounced
   , debounced'
   , effAdapter
+  , latch
+  , silence
   , spied
+  , synced
   )
   where
 
@@ -19,6 +24,8 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (for_)
+import Data.FoldableWithIndex (forWithIndex_)
+import Data.Traversable (traverse)
 import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
@@ -157,30 +164,91 @@ instance Applicative m => Category (UI m) where
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | `<>` is broadcast composition — the sum-shaped monoid on UI: both widgets
--- | display the same input and feed the same output — simultaneous sibling
--- | views of one model. Formerly the bespoke `psum` (earlier still
--- | `class Sum`); UI was its only carrier, so it dissolved into the ecosystem
--- | `Semigroup`.
-instance Apply m => Semigroup (UI m i o) where
-  append p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
-    in
-      { toUser: \ch -> p1'.toUser ch *> p2'.toUser ch
-      , fromUser: \prop -> p1'.fromUser prop *> p2'.fromUser prop
-      }
+-- | The silent widget: shows nothing, captures nothing — at ANY types, and
+-- | necessarily so (parametricity: `forall i o. p i o` can neither inspect an
+-- | `i` nor fabricate an `o`). The pinned trivial operand of the mixed
+-- | introduce laws, the implementation of `pempty` at the variant-output
+-- | directions (where silence is forced), and the terminal sink of data-flow
+-- | pipelines.
+silence :: forall m i o. Applicative m => UI m i o
+silence = wrap $ pure
+  { toUser: mempty
+  , fromUser: mempty
+  }
 
--- | `mempty` is the silent widget: shows nothing, captures nothing — at ANY
--- | types, and necessarily so (parametricity: `forall i o. p i o` can neither
--- | inspect an `i` nor fabricate an `o`). The unit of `<>`, the pinned
--- | trivial operand of the mixed introduce laws, and the implementation of
--- | `pempty` at the variant-output directions (where silence is forced).
--- | Formerly the bespoke `pzero` (earlier still `class Zero`).
-instance Applicative m => Monoid (UI m i o) where
-  mempty = wrap $ pure
-    { toUser: mempty
-    , fromUser: mempty
+-- | Decoration, flanking a widget: `deco`'s DOM is built before (`before`) or
+-- | after (`after`) the widget's, `deco` receives the same input (so
+-- | input-driven dynamics like floating labels work), and its `Void` output
+-- | type proves it can never emit — the composite's wiring is the widget's
+-- | alone. This is the honest typing of chrome: a display-only sibling, not a
+-- | peer editor.
+before :: forall m i o. Apply m => UI m i Void -> UI m i o -> UI m i o
+before deco w = wrap ado
+  deco' <- unwrap deco
+  w' <- unwrap w
+  in
+    { toUser: \u -> deco'.toUser u *> w'.toUser u
+    , fromUser: w'.fromUser
+    }
+
+-- | See `before`.
+after :: forall m i o. Apply m => UI m i Void -> UI m i o -> UI m i o
+after deco w = wrap ado
+  w' <- unwrap w
+  deco' <- unwrap deco
+  in
+    { toUser: \u -> w'.toUser u *> deco'.toUser u
+    , fromUser: w'.fromUser
+    }
+
+-- | Mutually synced sibling editors of one value: input is broadcast to all,
+-- | and each member's emission is propagated AND cross-fed into the other
+-- | members' displays, so the composite always shows a consistent view (a
+-- | selector lights up the case a pane just emitted, and vice versa). A
+-- | re-entrancy guard swallows the echoes the cross-feed itself provokes
+-- | (leaf widgets echo on `toUser`), which is what makes mirroring safe where
+-- | naive cross-feeding would loop forever. `identity` as a member is the
+-- | echo wire: it forwards the broadcast input to the composite output, which
+-- | opens record-merge gates when no member echoes by itself (button-only
+-- | editors).
+synced :: forall m a. Applicative m => Array (UI m a a) -> UI m a a
+synced ps = wrap ado
+  ps' <- traverse unwrap ps
+  let busyRef = unsafePerformEffect $ Ref.new false
+  in
+    { toUser: \u -> for_ ps' \p -> p.toUser u
+    , fromUser: \prop -> forWithIndex_ ps' \i p ->
+        p.fromUser \u -> do
+          busy <- Ref.read busyRef
+          if busy
+            then pure Nothing
+            else do
+              Ref.write true busyRef
+              forWithIndex_ ps' \j q -> when (i /= j) do q.toUser u
+              Ref.write false busyRef
+              prop u
+    }
+
+-- | Seeded retention of one case's payload: feeds the inner widget every
+-- | `Just` (retaining rides on the widget — e.g. `Web.button` re-emits the
+-- | last value it was fed), and on the first `Nothing` feeds the seed once,
+-- | so the widget is armed before its case was ever selected. `Nothing`s
+-- | never overwrite a retained payload — switching a case away and back
+-- | restores its last state.
+latch :: forall m a b. Functor m => a -> UI m a b -> UI m (Maybe a) b
+latch seed w = wrap $ unwrap w <#> \w' ->
+  let seededRef = unsafePerformEffect $ Ref.new false
+  in
+    { toUser: case _ of
+        New (Just a) cont -> do
+          Ref.write true seededRef
+          w'.toUser $ New a cont
+        New Nothing _ -> do
+          seeded <- Ref.read seededRef
+          unless seeded do
+            Ref.write true seededRef
+            w'.toUser $ New seed false
+    , fromUser: w'.fromUser
     }
 
 instance Applicative m => RecordToRecord (UI m) where
@@ -215,7 +283,7 @@ instance Applicative m => RecordToRecord (UI m) where
       }
 
 instance Applicative m => RecordToVariant (UI m) where
-  pempty = mempty
+  pempty = silence
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
     p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
@@ -307,7 +375,7 @@ instance Functor m => Retaining (UI m) where
       }
 
 instance Applicative m => VariantToVariant (UI m) where
-  pempty = mempty
+  pempty = silence
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
     p2' <- unwrap (widenVariantOutput p2)

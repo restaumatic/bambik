@@ -27,7 +27,7 @@
 -- | ```
 -- |
 -- | It is a class member (not a parametric silent element like `UI`'s
--- | `mempty`) because a lawful record-output unit must *announce* its
+-- | `silence`) because a lawful record-output unit must *announce* its
 -- | contribution — the informationless `{}` — to the merge machinery, and
 -- | anything typed `forall a b. p a b` is silent by parametricity (it can
 -- | never fabricate a `b`). For `Category` carriers, `pempty = identity @{}`.

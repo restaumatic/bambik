@@ -26,7 +26,7 @@
 -- | `recordToVariant pempty g = g`. Silence is forced on the output end (the
 -- | empty variant is uninhabited) and sufficient on the input end (the empty
 -- | record demands nothing), so `UI` implements it as its silent widget:
--- | `pempty = mempty`.
+-- | `pempty = silence`.
 module Data.Profunctor.Row.RecordToVariant
   ( Shutter
   , bind
@@ -93,7 +93,7 @@ class Profunctor p <= RecordToVariant p where
   -- | The **nullary** merge — the unit: reads nothing, emits no cases. The
   -- | silent source of the header's law; silence is forced on the uninhabited
   -- | variant output and sufficient on the empty record input, so any silent
-  -- | element implements it (`UI`: `pempty = mempty`).
+  -- | element implements it (`UI`: `pempty = silence`).
   pempty :: p {} (Variant ())
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.

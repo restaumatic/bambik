@@ -120,9 +120,9 @@ main = do
 
   -- == Merge unit laws on the UI carrier: each merge class carries its own ==
   -- == nullary operator `pempty`. At record outputs the unit *announces* its ==
-  -- == informationless {} (the parametric silent `mempty` couldn't), so the ==
-  -- == merge gates never starve against it; at variant outputs it coincides ==
-  -- == with `mempty`. ==
+  -- == informationless {} (the parametric `silence` couldn't), so the merge ==
+  -- == gates never starve against it; at variant outputs it coincides with ==
+  -- == `silence`. ==
 
   -- ×→× unit law: recordToRecord pempty g = g (the output leg — g's emissions
   -- must pass through undisturbed, not starve against the unit).

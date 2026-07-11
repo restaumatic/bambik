@@ -25,11 +25,11 @@ newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o ->
 
 ### Key Source Files
 
-- **src/UI.purs** - Core UI profunctor type with all class instances: `Profunctor`, `Strong`, `Choice`, `Semigroupoid`, `Category`, `Semigroup`/`Monoid` (`<>` is broadcast sibling composition, `mempty` the silent widget — the former bespoke `psum`/`pzero`, dissolved into the ecosystem classes), the four row merges (`RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant`), and the two mixed strengths (`Resolving`, `Retaining`)
+- **src/UI.purs** - Core UI profunctor type with class instances `Profunctor`, `Strong`, `Choice`, `Semigroupoid`, `Category`, the four row merges (`RecordToRecord`, `RecordToVariant`, `VariantToRecord`, `VariantToVariant`), and the two mixed strengths (`Resolving`, `Retaining`) — plus the leaf/decoration combinators: `silence` (the silent widget), `before`/`after` (chrome flanking a live widget; decorations are `Void`-output displays), `synced` (mutually synced sibling editors with cross-feed and a re-entrancy guard), `latch` (seeded per-case payload retention)
 - **src/Web.purs** - DOM monad (`Web = StateT DOM Effect`) and primitive elements (`text`, `input`, `button`, `div`, etc.)
 - **src/MDC.purs** - Material Design Component wrappers as oculars
 - **src/Data/Profunctor/** - `Cont` (CPS profunctor) + the `Row/` layer; everything else was dissolved or deleted
-- **src/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`. Each of the four direction modules is organized in three layers: **strength** (the unary power — ecosystem `Strong`/`Choice` on the diagonals, module-defined `Resolving`/`Retaining` on the mixed directions) → **direction class** (the binary merge plus its nullary unit `pempty`, the genuine per-carrier primitives) → **free functions over the strength** (everything else — no row-focus classes; laws pinning the unary to the merge are stated in the module headers: identity-pinned on the diagonals, `mempty`-pinned on the mixed directions). Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
+- **src/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`. Each of the four direction modules is organized in three layers: **strength** (the unary power — ecosystem `Strong`/`Choice` on the diagonals, module-defined `Resolving`/`Retaining` on the mixed directions) → **direction class** (the binary merge plus its nullary unit `pempty`, the genuine per-carrier primitives) → **free functions over the strength** (everything else — no row-focus classes; laws pinning the unary to the merge are stated in the module headers: identity-pinned on the diagonals, silence-pinned on the mixed directions). Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
   - **`RecordToRecord.purs`** (×→×) — merge `recordToRecord`; over `Strong`: `focusRecord` (focus a whole **sub-Record**, background carried same-kind), `property` (the value-level field lens, type-changing), `recordToProperty`/`eliminateProperty` (grow/drop one field), `lensE` (existential `Lens` constructor), `withRecordDefault`/`withRecordOutputDefault`.
   - **`VariantToVariant.purs`** (+→+) — merge `variantToVariant`; over `Choice`: `focusVariant` (focus a whole **sub-Variant**), `case_` (the value-level case prism, type-changing), `caseToVariant` (absorb one input case; pinned to a `Void`-output sink it *eliminates* the case), `prismE`. Introducing a fresh *output* case is the one operation outside `Choice` (gated `left`/`right` can never emit it) — the ×→+ direction has it as `recordToCase`.
   - **`RecordToVariant.purs`** (×→+) — strength `Resolving`/`resolve :: p a b -> p (Tuple a c) (Either b c)` (a loop/iteration step: `Left` = `Done`, `Right` = `Loop`); merge `recordToVariant`; over `Resolving`: `resolveProperty` (hold field `l`, transform the background — input field ↔ output case), `propertyToCase` (single-field focus; background wrapped as output case `w`), `shutterWrap` (sub-Record focus, background wrapped at `w`), the `Shutter` optic with `shutter`/`shutterE`; `recordToCase` (introduce — plain `Profunctor`, `rmap (inj l)`).
@@ -39,9 +39,10 @@ newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o ->
 
 ### Composition Patterns
 
-- `<>` / `fold` (UI's `Semigroup`/`Monoid`) - broadcast sibling views of one model; `mempty` is the silent widget
 - `Semigroupoid.do` / `Flow.do` (qualified-do) - Data flow pipelines
 - `RecordToRecord.do` / `RecordToVariant.do` / `VariantToVariant.do` / `VariantToRecord.do` (qualified-do) - the four row merges
+- `before` / `after` - decoration flanking a live widget (chrome is a `Void`-output display, provably never emits)
+- `synced` - mutually synced sibling editors of one value (broadcast + cross-feed, re-entrancy-guarded); `latch` seeds and retains per-case payloads inside it
 
 ### Separation of Concerns
 
@@ -52,7 +53,7 @@ newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o ->
 ## Demo Structure
 
 - **demo/1/** - Full MDC-based order form as the four-direction row pipeline: load action → `×→×` form (nested record merges, variant case panes) → `×→+` event buttons → `+→+` backend dispatch → `+→×` status snackbars
-- **demo/2/** - Plain HTML demo: static layout via UI's `Monoid` plus a minimal `×→×` record merge over plain `input`s
+- **demo/2/** - Plain HTML demo: static content flanking (`before`) a minimal `×→×` record merge over plain `input`s
 - **demo/helloworld/** - Simple intro example
 
 ## Key Dependencies

@@ -13,32 +13,32 @@
 -- | annotations: every row is closed either by a label-pinning helper
 -- | (`field`/`reading`/`switch`/`casePane`/`event`/`statusLine`) or by a
 -- | model-function signature, and inference propagates from the pipeline
--- | ends inward. Sibling decoration (captions, static text) rides along via
--- | `fold`/`<>` (UI's broadcast `Semigroup` — decorations never emit, so
--- | they don't gate the merges).
+-- | ends inward. Decoration (captions, static text) flanks live widgets via
+-- | `before` — decorations are `Void`-output displays, so they provably
+-- | never emit and don't gate the merges. Variant editors (fulfillment,
+-- | method) are `synced` composites: input is broadcast to switches and
+-- | panes, and every emission is cross-fed back into the siblings, so the
+-- | view stays consistent; `latch` seeds each switch and retains its case's
+-- | last payload, so switching away and back restores state.
 -- |
 -- | Merge-gate protocol: every record-merge operand must contain at least
 -- | one element that echoes on `toUser` (text fields, `text` displays, or —
--- | for button-only editors — the `identity` wire), so all gates open on the
--- | initial `loadOrder` render and the merged order flows to the buttons.
+-- | for button-only editors — the `identity` wire inside `synced`), so all
+-- | gates open on the initial `loadOrder` render and the merged order flows
+-- | to the buttons.
 -- |
--- | Known limitations (deliberate, pending design work):
--- |   * No intra-form reactivity: `recordToRecord` broadcasts downward and
--- |     merges upward but does not cross-feed sibling outputs into sibling
--- |     displays (the pre-row demo did that with a dedicated mirroring
--- |     combinator, `pendo`, since dissolved). Case panes, the summary line,
--- |     and the `reading` displays update only from upstream (i.e. on load),
--- |     not on sibling edits.
--- |   * Case switches emit fixed payloads: switching a case away and back
--- |     resets its sub-form to the seed value. Retaining the last payload
--- |     per case is a `Retaining`/`Reel` follow-up.
+-- | Known limitation (deliberate, pending design work): `recordToRecord`
+-- | broadcasts downward and merges upward but does not cross-feed sibling
+-- | outputs into sibling displays — the summary line and `reading` displays
+-- | update only from upstream (i.e. on load), not on sibling edits. (Within
+-- | a `synced` composite the cross-feed exists but skips the emitting
+-- | member itself, so a pane's own `reading` is likewise load-only.)
 module Main (main) where
 
 import Prelude
 
-import Data.Foldable (fold)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (dimap, lcmap, rmap)
+import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord (property)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
@@ -57,7 +57,7 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Flow
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, debounced)
+import UI (UI, action, before, debounced, latch, synced)
 import Web (Web, body, staticText, text, variant)
 
 -- The one named type — the aggregate the whole pipeline revolves around.
@@ -89,56 +89,50 @@ main :: Effect Unit
 main = body @Unit $ MDC.elevation20 Flow.do
   action loadOrder MDC.indeterminateLinearProgress
   RecordToRecord.do
-    MDC.headline6 $ fold
-      [ staticText "Order "
-      , reading @"shortId" identity
-      ]
-    MDC.card $ fold
-      [ MDC.caption $ staticText "Identifier"
-      , RecordToRecord.do
+    MDC.headline6
+      $ before (staticText "Order ")
+      $ reading @"shortId" identity
+    MDC.card
+      $ before (MDC.caption $ staticText "Identifier")
+      $ RecordToRecord.do
           field @"shortId" $ MDC.filledTextField { floatingLabel: "Short ID" }
           field @"orderId" $ MDC.filledTextField { floatingLabel: "Unique ID" }
-      ]
-    field @"customer" $ MDC.card $ fold
-      [ MDC.caption $ staticText "Customer"
-      , RecordToRecord.do
+    field @"customer" $ MDC.card
+      $ before (MDC.caption $ staticText "Customer")
+      $ RecordToRecord.do
           field @"firstName" $ MDC.filledTextField { floatingLabel: "First name" }
           field @"lastName" $ MDC.filledTextField { floatingLabel: "Last name" }
-      ]
-    field @"fulfillment" $ MDC.card $ fold
-      [ MDC.caption $ staticText "Fulfillment"
-      -- switches emit fixed seed payloads (see header: known limitations)
-      , switch @"dineIn" "Dine in" { table: "1" }
-      , switch @"takeaway" "Takeaway" { time: "12:00" }
-      , switch @"delivery" "Delivery" { address: "" }
-      , casePane @"dineIn" $ field @"table" $ MDC.filledTextField { floatingLabel: "Table" }
-      , casePane @"takeaway" $ field @"time" $ MDC.filledTextField { floatingLabel: "Time" }
-      , casePane @"delivery" $ RecordToRecord.do
-          field @"address" $ MDC.filledTextField { floatingLabel: "Address" }
-          MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
-      ]
-    MDC.card $ fold
-      [ MDC.caption $ staticText "Total"
-      , field @"total" $ MDC.filledTextField { floatingLabel: "Total" }
-      ]
-    field @"payment" $ MDC.card $ fold
-      [ MDC.caption $ staticText "Payment"
-      , RecordToRecord.do
-          field @"method" $ fold
-            -- `identity` is the echo wire: buttons don't echo on render, so a
-            -- button-only editor needs this pass-through contribution to open
-            -- the record-merge gate (every operand must echo what it knows)
+    field @"fulfillment" $ MDC.card
+      $ before (MDC.caption $ staticText "Fulfillment")
+      $ synced
+          [ switch @"dineIn" "Dine in" { table: "1" }
+          , switch @"takeaway" "Takeaway" { time: "12:00" }
+          , switch @"delivery" "Delivery" { address: "" }
+          , casePane @"dineIn" $ field @"table" $ MDC.filledTextField { floatingLabel: "Table" }
+          , casePane @"takeaway" $ field @"time" $ MDC.filledTextField { floatingLabel: "Time" }
+          , casePane @"delivery" $ RecordToRecord.do
+              field @"address" $ MDC.filledTextField { floatingLabel: "Address" }
+              MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
+          ]
+    MDC.card
+      $ before (MDC.caption $ staticText "Total")
+      $ field @"total" $ MDC.filledTextField { floatingLabel: "Total" }
+    field @"payment" $ MDC.card
+      $ before (MDC.caption $ staticText "Payment")
+      $ RecordToRecord.do
+          -- `identity` is the echo wire: buttons don't echo on render, so a
+          -- button-only editor needs this pass-through member to open the
+          -- record-merge gate (every operand must echo what it knows)
+          field @"method" $ synced
             [ identity
             , switch @"cash" "Cash" unit
             , switch @"card" "Card" unit
             ]
           field @"paid" $ MDC.filledTextField { floatingLabel: "Paid" }
           MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
-      ]
-    MDC.card $ fold
-      [ MDC.caption $ staticText "Remarks"
-      , field @"remarks" $ MDC.filledTextArea { columns: 80, rows: 3 }
-      ]
+    MDC.card
+      $ before (MDC.caption $ staticText "Remarks")
+      $ field @"remarks" $ MDC.filledTextArea { columns: 80, rows: 3 }
     debounced $ MDC.body1 $ lcmap summarize text
   RecordToVariant.do
     event @"submit" $ MDC.containedButton { label: Just "Submit order", icon: Just "save" }
@@ -236,10 +230,12 @@ field = property @l
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> UI Web { | r } {}
 reading render = lcmap (\r -> render (get (Proxy @l) r)) text
 
--- | A case *switch*: a button emitting case `l` with the given payload into
--- | the variant under edit (enabled once the current value has arrived).
+-- | A case *switch*: a button emitting case `l` into the variant under edit.
+-- | `latch` arms it with the seed before its case was ever selected and
+-- | retains the case's last payload thereafter (cross-fed by `synced`), so
+-- | switching away and back restores the last state instead of reseeding.
 switch :: forall @l f b s. IsSymbol l => Cons l f b s => String -> f -> UI Web [ | s ] [ | s ]
-switch label payload = rmap (const (Variant.inj (Proxy @l) payload)) (MDC.containedButton { label: Just label, icon: Nothing })
+switch label seed = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (latch seed (MDC.containedButton { label: Just label, icon: Nothing }))
 
 -- | A case *pane*: the sub-form for one case, attached to the DOM only while
 -- | that case is selected (`Web.variant` hides on the other cases), emitting

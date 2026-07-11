@@ -1,13 +1,13 @@
 -- | Plain-HTML demo — no design system, just `Web` primitives. Static
--- | layout is composed with UI's `Monoid` (`fold` — every element a silent
--- | sibling), and the live part is the smallest possible row-profunctor
--- | pipeline: a `×→×` record merge of two plain `input`s feeding a `text`
--- | display of the merged record.
+-- | content flanks the live part via `before` (decorations are `Void`-output
+-- | displays: they provably never emit), and the live part is the smallest
+-- | possible row-profunctor pipeline: a `×→×` record merge of two plain
+-- | `input`s feeding a `text` display of the merged record, terminated by
+-- | the `silence` sink.
 module Main (main) where
 
 import Prelude hiding (div)
 
-import Data.Foldable (fold)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (property)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -15,20 +15,21 @@ import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Flow
-import UI (UI)
+import UI (UI, before, silence)
 import Web (Web, a, body, div, input, li, p, staticHTML, staticText, text, ul, (:=))
 
 main :: Effect Unit
-main = body @Unit $ div $ fold
-  [ p $ staticText "Hello World!"
-  , ul $ fold
-      [ li $ staticText "One"
-      , li $ staticText "Two"
-      , li $ staticText "Three"
-      ]
-  , a >>> "href" := "https://www.google.com" $ staticText "Search for me!"
-  , staticHTML "<hr/>"
-  , lcmap
+main = body @Unit $ div
+  $ before (p $ staticText "Hello World!")
+  $ before
+      ( ul
+          $ before (li $ staticText "One")
+          $ before (li $ staticText "Two")
+          $ li $ staticText "Three"
+      )
+  $ before (a >>> "href" := "https://www.google.com" $ staticText "Search for me!")
+  $ before (staticHTML "<hr/>")
+  $ lcmap
       ( const
           { greeting: "Hello"
           , name: "World"
@@ -39,8 +40,7 @@ main = body @Unit $ div $ fold
           field @"greeting" $ input "text"
           field @"name" $ input "text"
         p $ lcmap (\r -> r.greeting <> ", " <> r.name <> "!") text
-        staticText ""
-  ]
+        silence
 
 -- the same single-field pinning helper as demo/1 (a library candidate):
 -- `property` over a closed singleton row, so the merge operands resolve by
