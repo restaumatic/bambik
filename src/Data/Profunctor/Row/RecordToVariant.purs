@@ -1,3 +1,26 @@
+-- | `Record → Variant` (× → +) row profunctors, organized (uniformly across
+-- | the four direction modules) as:
+-- |
+-- |   * **strength** — `Resolving` (defined here; `UI m` instances only, no
+-- |     `(->)`): the unary power, a loop/iteration step.
+-- |   * **direction class** — `RecordToVariant`, the binary **merge**: the one
+-- |     genuine per-carrier primitive.
+-- |   * **free functions over the strength** — everything else: `shutterWrap`
+-- |     (sub-record focus), `resolveProperty` (thread one label),
+-- |     `propertyToCase` (single-field focus), `recordToCase` (introduce; mere
+-- |     `Profunctor`), the `Shutter` optic with `shutter`/`shutterE`.
+-- |
+-- | Law connecting the two classes: the mixed directions have no `identity` to
+-- | pin (nothing inhabits a mode-crossing diagonal), but they have a **unit** —
+-- | `pzero :: p {} []` (cf. `Data.Profunctor.Zero`), the silent source. The
+-- | unary introduce operator is the **unit-pinned merge**,
+-- |
+-- | ```
+-- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) pzero
+-- | ```
+-- |
+-- | and a pinned unit contributes nothing — which is why `recordToCase`
+-- | collapses to plain `rmap (inj l)` on any `Profunctor`.
 module Data.Profunctor.Row.RecordToVariant
   ( Shutter
   , bind
@@ -27,26 +50,6 @@ import Type.Proxy (Proxy(..))
 import Type.Row.Constraints (class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
 
-class Profunctor p <= RecordToVariant p where
-  recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
-    InclusiveRows i1 i2 i i12 i1x i2x =>
-    InclusiveRows o1 o2 o o12 o1x o2x =>
-    p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
-
-bind :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
-  RecordToVariant f =>
-  InclusiveRows i1 i2 i i12 i1x i2x =>
-  InclusiveRows o1 o2 o o12 o1x o2x =>
-  f { | i1 } [ | o1 ] -> (f { | i1 } [ | o1 ] -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
-bind first cont = recordToVariant first (cont first)
-
-discard :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
-  RecordToVariant f =>
-  InclusiveRows i1 i2 i i12 i1x i2x =>
-  InclusiveRows o1 o2 o o12 o1x o2x =>
-  f { | i1 } [ | o1 ] -> (Unit -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
-discard first cont = bind first (\_ -> cont unit)
-
 -- | The **unary** product→sum strength for this direction: a single **loop /
 -- | iteration step**. `resolve` runs a transformer `p a b` on an input `a`
 -- | alongside a carried state `c`, returning a `Step`:
@@ -72,6 +75,26 @@ discard first cont = bind first (\_ -> cont unit)
 -- | exactly as `focusRecord` is built on `Strong`.
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
+
+class Profunctor p <= RecordToVariant p where
+  recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
+    InclusiveRows i1 i2 i i12 i1x i2x =>
+    InclusiveRows o1 o2 o o12 o1x o2x =>
+    p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
+
+bind :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
+  RecordToVariant f =>
+  InclusiveRows i1 i2 i i12 i1x i2x =>
+  InclusiveRows o1 o2 o o12 o1x o2x =>
+  f { | i1 } [ | o1 ] -> (f { | i1 } [ | o1 ] -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
+bind first cont = recordToVariant first (cont first)
+
+discard :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
+  RecordToVariant f =>
+  InclusiveRows i1 i2 i i12 i1x i2x =>
+  InclusiveRows o1 o2 o o12 o1x o2x =>
+  f { | i1 } [ | o1 ] -> (Unit -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
+discard first cont = bind first (\_ -> cont unit)
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
 -- | for this direction (the analogue of `property`/`case_` when input and
@@ -123,21 +146,23 @@ propertyToCase g =
     (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
 
--- | The `× → +` member of the introduce family: the wrapped `p { | r } b` reads
--- | the whole record (as in `recordToProperty`) and its result is emitted as
+-- | The `× → +` member of the introduce family: the wrapped `p { | r } f` reads
+-- | the whole record (as in `recordToProperty`) and its result — the **focus**
+-- | `f` — is emitted as
 -- | output case `l`. This is the `introduceCase` that `VariantToVariant`
 -- | documents as impossible — there, a fresh output case must coexist with
 -- | gated pass-through cases and can never fire; here nothing else emits, the
 -- | computed case fires unconditionally, and no strength is needed at all:
--- | plain `rmap (inj l)` on any `Profunctor`. (Other cases of `t` are simply
--- | never produced — the widening is free, as with `inj` itself.)
+-- | plain `rmap (inj l)` on any `Profunctor`. (The **background** `b` of the
+-- | output **shot** `s` is simply never produced — the widening is free, as
+-- | with `inj` itself.)
 recordToCase
-  :: forall @l p r b x t
+  :: forall @l p r b s f
    . IsSymbol l
-  => Cons l b x t
+  => Cons l f b s
   => Profunctor p
-  => p { | r } b
-  -> p { | r } [ | t ]
+  => p { | r } f
+  -> p { | r } [ | s ]
 recordToCase = rmap (inj (Proxy @l))
 
 -- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`

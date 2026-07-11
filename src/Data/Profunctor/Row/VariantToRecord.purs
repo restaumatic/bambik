@@ -1,3 +1,27 @@
+-- | `Variant → Record` (+ → ×) row profunctors, organized (uniformly across
+-- | the four direction modules) as:
+-- |
+-- |   * **strength** — `Retaining` (defined here; `UI m` instances only, no
+-- |     `(->)`): the unary power, a Mealy/coroutine step.
+-- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
+-- |     genuine per-carrier primitive.
+-- |   * **free functions over the strength** — everything else: `reelWrap`
+-- |     (sub-variant focus), `retainCase` (thread one label), `caseToProperty`
+-- |     (single-case focus), `caseToRecord` (introduce/reduce), the `Reel`
+-- |     optic with `reel`/`reelE`.
+-- |
+-- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
+-- | crosses the modes, but the unit does — `pzero :: p [ | r ] {}` (consume any
+-- | case, contribute no field; cf. `Data.Profunctor.Zero`). The unary introduce
+-- | operator is the **unit-pinned merge**,
+-- |
+-- | ```
+-- | caseToRecord @l g = variantToRecord (lcmap unwrap g) pzero
+-- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
+-- | ```
+-- |
+-- | with the cross-operand **retention** the merge machinery performs on
+-- | non-`l` events supplied, in the free-function form, by `Retaining`.
 module Data.Profunctor.Row.VariantToRecord
   ( Reel
   , bind
@@ -27,6 +51,33 @@ import Record (insert)
 import Type.Proxy (Proxy(..))
 import Type.Row.Constraints (class DispatchableVariants, class ExclusiveRows)
 
+-- | The **unary** sum→product strength for this direction: a **Mealy /
+-- | coroutine step**, the dual of `RecordToVariant`'s `Resolving`. `retain`
+-- | turns a transformer `p a b` into a step that consumes either a fresh input
+-- | `a` or a resumed state `c`, emitting an output `b` together with the next
+-- | state `c`:
+-- |
+-- | ```
+-- | retain :: p a b -> p (Either a c) (Tuple b c)
+-- |                        -- Left  a = fresh input
+-- |                        -- Right c = resume from state
+-- | ```
+-- |
+-- | State enters optionally (a branch of the sum input) and leaves guaranteed
+-- | (product output), so the step *always* produces an output and the next
+-- | state — a productive, stateful stream. Its binary, two-profunctor form is
+-- | the `variantToRecord` merge below.
+-- |
+-- | There is deliberately **no `(->)` instance**: a stateless function has no
+-- | `c` to place in the product on a fresh `Left a`, and no `b` on a `Right c`
+-- | resume — the product output can't be filled without retaining state.
+-- |
+-- | This is the **bare strength** for the `+ → ×` direction (the analogue of
+-- | `Strong`/`Choice`); the row combinator built on it is `reelWrap` below —
+-- | exactly as `focusVariant` is built on `Choice`.
+class Profunctor p <= Retaining p where
+  retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
+
 class Profunctor p <= VariantToRecord p where
   variantToRecord :: forall i1 i1l i2 i2l o1 o2 i o.
     ExclusiveRows i1 i2 i =>
@@ -49,33 +100,6 @@ discard :: forall f i1 i1l i2 i2l o1 o2 i o.
   DispatchableVariants i1 i2 i1l i2l =>
   f [ | i1 ] { | o1 } -> (Unit -> f [ | i2 ] { | o2 }) -> f [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
-
--- | The **unary** sum→product strength for this direction: a **Mealy /
--- | coroutine step**, the dual of `RecordToVariant`'s `Resolving`. `retain`
--- | turns a transformer `p a b` into a step that consumes either a fresh input
--- | `a` or a resumed state `c`, emitting an output `b` together with the next
--- | state `c`:
--- |
--- | ```
--- | retain :: p a b -> p (Either a c) (Tuple b c)
--- |                        -- Left  a = fresh input
--- |                        -- Right c = resume from state
--- | ```
--- |
--- | State enters optionally (a branch of the sum input) and leaves guaranteed
--- | (product output), so the step *always* produces an output and the next
--- | state — a productive, stateful stream. Its binary, two-profunctor form is
--- | the `variantToRecord` merge above.
--- |
--- | There is deliberately **no `(->)` instance**: a stateless function has no
--- | `c` to place in the product on a fresh `Left a`, and no `b` on a `Right c`
--- | resume — the product output can't be filled without retaining state.
--- |
--- | This is the **bare strength** for the `+ → ×` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is `reelWrap` below —
--- | exactly as `focusVariant` is built on `Choice`.
-class Profunctor p <= Retaining p where
-  retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
 -- | for this direction (the dual of `resolveProperty`). It threads one label
@@ -127,18 +151,19 @@ caseToProperty g =
     (retain g)
 
 -- | The `+ → ×` member of the introduce family and the dual of `recordToCase`:
--- | the wrapped `p a { | o }` consumes case `l`'s value and produces the whole
+-- | the wrapped `p f { | o }` consumes the **focus** — case `l` of the input
+-- | **shot** `s` — and produces the whole
 -- | output record (as `caseToVariant`'s wrapped profunctor produces the whole output
--- | variant). Every *other* case must still yield a record, and a sum input
--- | can't supply one — it is replayed from the carrier's retained state, which
--- | is why this member alone needs `Retaining`. A Mealy **reducer**: case `l`
--- | updates the record via `g`, the remaining cases leave it as it was.
+-- | variant). Every **background** case must still yield a record, and a sum
+-- | input can't supply one — it is replayed from the carrier's retained state,
+-- | which is why this member alone needs `Retaining`. A Mealy **reducer**: case
+-- | `l` updates the record via `g`, the background cases leave it as it was.
 caseToRecord
-  :: forall @l p s r a o
+  :: forall @l p b s f o
    . Retaining p
   => IsSymbol l
-  => Cons l a r s
-  => p a { | o }
+  => Cons l f b s
+  => p f { | o }
   -> p [ | s ] { | o }
 caseToRecord g = dimap (on (Proxy @l) Left Right) fst (retain g)
 

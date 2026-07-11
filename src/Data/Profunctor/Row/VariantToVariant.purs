@@ -1,17 +1,33 @@
--- | `Variant → Variant` row profunctors, in three layers:
+-- | `Variant → Variant` row profunctors, organized (uniformly across the four
+-- | direction modules) as:
 -- |
--- |   * `variantToVariant` — the n-ary **merge** class: combine two complete variant-shaped
--- |     sub-profunctors (dispatch inputs, merge outputs).
--- |   * `focusVariant` — the row-typed **`Choice`**: focus a whole
--- |     sub-variant, carrying the complement (`left`/`right`, relabeled to rows).
--- |   * `case_`/`caseToVariant` — the single-case **combinators**, directly on
--- |     `Choice` (`left`). (Introducing a *fresh* case is the one operation outside
--- |     `Choice`: `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
--- |     branch — but an introduced case has no input selector, so it can never be emitted by
--- |     `left`/`right`, even given a producer. Contrast `Strong`'s ungated `second`, which
--- |     always emits its field, hence `recordToProperty` exists and `introduceCase` cannot
--- |     — not here: the `× → +` direction has it as `RecordToVariant.recordToCase`.
--- |     Built instead via the `Sum`/`variantToVariant` path, not a focus combinator.)
+-- |   * **strength** — `Choice` (ecosystem class, imported): the unary power,
+-- |     minimal and interop-friendly.
+-- |   * **direction class** — `VariantToVariant`, the binary **merge**: the one
+-- |     genuine per-carrier primitive.
+-- |   * **free functions over the strength** — everything else: `focusVariant`
+-- |     (sub-variant focus), `case_` (case prism), `caseToVariant` (absorb one
+-- |     input case), `prismE`.
+-- |
+-- | Law connecting the two classes, for carriers with `identity :: p a a`:
+-- | the unary introduce operator is the **identity-pinned merge**,
+-- |
+-- | ```
+-- | caseToVariant @l g = variantToVariant (lcmap unwrap g) identity
+-- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
+-- | ```
+-- |
+-- | and conversely a merge is an iterated chain of single-case steps
+-- | (see doc/row-profunctors.md, "The precise correspondence").
+-- |
+-- | (Introducing a *fresh* case is the one operation outside `Choice`:
+-- | `Choice`'s `left`/`right` are *gated* — they fire only on a selected input
+-- | branch — but an introduced case has no input selector, so it can never be
+-- | emitted by `left`/`right`, even given a producer. Contrast `Strong`'s
+-- | ungated `second`, which always emits its field, hence `recordToProperty`
+-- | exists and `introduceCase` cannot — not here: the `× → +` direction has it
+-- | as `RecordToVariant.recordToCase`. Built instead via the
+-- | `Sum`/`variantToVariant` path, not a focus combinator.)
 module Data.Profunctor.Row.VariantToVariant
   ( bind
   , variantToVariant
@@ -129,8 +145,9 @@ case_ =
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
 
--- | Accept an **extra** input case `l :: a` and dispatch it into the remaining
--- | cases: the wrapped `p a [ | t ]` consumes the new case's value and emits the
+-- | Accept an **extra** input case `l :: f` (the **focus**) and dispatch it
+-- | into the remaining cases (the **background** `b`; the grown input is the
+-- | **shot** `s`): the wrapped `p f [ | b ]` consumes the new case's value and emits the
 -- | whole output variant itself (deciding which case the adapted event becomes);
 -- | every other case passes through untouched via the sum codiagonal. An event
 -- | adapter/normalizer. The exact dual of `recordToProperty`: the whole row
@@ -139,14 +156,14 @@ case_ =
 -- | an *output* case is the impossible direction — gated `left` could never
 -- | emit it — but introducing an *input* case is exactly this.) Pinning the
 -- | dispatch unreachable eliminates the case outright:
--- | `caseToVariant @l (rmap absurd (sink :: p a Void))` drops case `l`,
+-- | `caseToVariant @l (rmap absurd (sink :: p f Void))` drops case `l`,
 -- | passing the survivors through.
 caseToVariant
-  :: forall @l p s t a
+  :: forall @l p b s f
    . IsSymbol l
-  => Cons l a t s
+  => Cons l f b s
   => Choice p
-  => p a [ | t ]
-  -> p [ | s ] [ | t ]
+  => p f [ | b ]
+  -> p [ | s ] [ | b ]
 caseToVariant g =
   dimap (on (Proxy @l) Left Right) (either identity identity) (left g)

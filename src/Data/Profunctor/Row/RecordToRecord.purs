@@ -1,11 +1,23 @@
--- | `Record → Record` row profunctors, in three layers:
+-- | `Record → Record` row profunctors, organized (uniformly across the four
+-- | direction modules) as:
 -- |
--- |   * `recordToRecord` — the n-ary **merge** class: combine two complete record-shaped
--- |     sub-profunctors (share inputs, disjoin outputs).
--- |   * `focusRecord` — the row-typed **`Strong`**: focus a whole
--- |     sub-record, carrying the complement (`first`/`second`, relabeled to rows).
--- |   * `recordToProperty`/`eliminateProperty`/`property` — the single-field
--- |     **combinators**, directly on `Strong` (`first`/`second` + insert/delete).
+-- |   * **strength** — `Strong` (ecosystem class, imported): the unary power,
+-- |     minimal and interop-friendly.
+-- |   * **direction class** — `RecordToRecord`, the binary **merge**: the one
+-- |     genuine per-carrier primitive.
+-- |   * **free functions over the strength** — everything else: `focusRecord`
+-- |     (sub-record focus), `property` (field lens), `recordToProperty`/
+-- |     `eliminateProperty` (grow/drop one field), `lensE`, the defaults.
+-- |
+-- | Law connecting the two classes, for carriers with `identity :: p a a`:
+-- | the unary introduce operator is the **identity-pinned merge**,
+-- |
+-- | ```
+-- | recordToProperty @l g = recordToRecord identity (rmap (\f -> insert (Proxy @l) f {}) g)
+-- | ```
+-- |
+-- | and conversely a merge is an iterated chain of single-field steps
+-- | (see doc/row-profunctors.md, "The precise correspondence").
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord
@@ -26,13 +38,14 @@ import Data.Lens (Lens, Optic)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Strong (class Strong, first, second)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), snd)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks)
 import Prim.RowList as RL
 import Record (delete, get, insert)
 import Record (union) as Record
+import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
 import Type.Row.Constraints (class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
@@ -94,21 +107,27 @@ focusRecord g =
 lensE :: forall s t a b c. (s -> Tuple a c) -> (Tuple b c -> t) -> Lens s t a b
 lensE decon recon g = dimap decon recon (first g)
 
--- | Introduce a new field `l :: b`, computed from the whole record by the
--- | wrapped `p { | s } b`. `id &&& f` followed by `insert`. The exact dual of
--- | `caseToVariant` (`VariantToVariant`): the whole row sits at the wrapped
--- | profunctor's *input* end here, at its *output* end there — products grow
--- | the output row, sums grow the input row.
+-- | Introduce a new field `l :: f` (the **focus**), computed from the whole
+-- | record (the **background** `b`) by the wrapped `p { | b } f`; the result is
+-- | the **shot** `s`. `id &&& g` followed by writing field `l`. The exact
+-- | dual of `caseToVariant` (`VariantToVariant`): the whole row sits at the
+-- | wrapped profunctor's *input* end here, at its *output* end there — products
+-- | grow the output row, sums grow the input row.
 recordToProperty
-  :: forall @l p s t b
+  :: forall @l p b s f
    . IsSymbol l
-  => Cons l b s t
-  => Lacks l s
+  => Cons l f b s
   => Strong p
-  => p { | s } b
-  -> p { | s } { | t }
-recordToProperty f =
-  dimap (\s -> Tuple s s) (\(Tuple s b) -> insert (Proxy @l) b s) (second f)
+  => p { | b } f
+  -> p { | b } { | s }
+recordToProperty g =
+  dimap (\b -> Tuple b b)
+        -- `unsafeSet` (not `insert`, which would demand `Lacks l b`) realizes the
+        -- layout `Cons l f b s` pins: s = (l :: f | b). Under a shadowed duplicate
+        -- `l` the outer entry wins — the same first-label convention the Variant
+        -- side's `inj`/`on` (hence `caseToVariant`) already follow without `Lacks`.
+        (\(Tuple b f) -> unsafeSet (reflectSymbol (Proxy @l)) f b)
+        (second g)
 
 -- | Eliminate the field `l :: prop`, feeding its value to a sink `p prop Unit` and keeping
 -- | the rest. The sink's output is `Unit` — we discard it (via `snd`), and the monomorphic

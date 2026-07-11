@@ -56,13 +56,12 @@ class Profunctor p <= RecordToRecord p where
 -- Single-field combinator: unary lift of one value-source into one new field.
 -- src/Data/Profunctor/Row/RecordToRecord.purs:96
 recordToProperty
-  :: forall p @l prop s t
+  :: forall @l p b s f
    . IsSymbol l
-  => Cons l prop s t
-  => Lacks l s
+  => Cons l f b s      -- shot s = focus f at label l, against background b
   => Strong p
-  => Optic p { | s } { | t } { | s } prop
--- expanded: p { | s } prop -> p { | s } { | t }
+  => p { | b } f
+  -> p { | b } { | s }
 ```
 
 `recordToRecord` consumes two row-shaped arguments at once. `recordToProperty` consumes one sub-profunctor that reads the whole record `s` and threads its value into an accumulator that grows by one field per step.
