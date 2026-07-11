@@ -125,5 +125,6 @@ caveats apply even in concrete code:
   closed row is checked exhaustive by the type system (it must consume the row
   down to `Variant ()`). The pattern sugar can't reproduce that — it *requires* a
   `_` catch-all (§3), which adds a dead branch and silently swallows a forgotten
-  case. So the remaining `case_`/`on` in `test/RestaurantReel.purs` and
+  case. So the remaining `case_`/`on` eliminators in `demo/1/Main.purs`
+  (`methodText`, `summarize`), `test/RestaurantReel.purs`, and
   `test/EntityEventExample.purs` are kept deliberately.

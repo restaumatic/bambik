@@ -41,7 +41,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (property)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -207,13 +207,6 @@ printReceipt order = do
   pure $ .receiptPrinted ("Receipt for order " <> order.shortId <> " printed")
 
 -- row-generic helpers (candidates for the library once proven here)
-
--- | Nest a sub-composite (a card's record merge, a variant editor) as one
--- | field of the enclosing record: the singleton-shot `property`
--- | (background pinned empty). Leaf editors don't need it — MDC components
--- | are label-indexed themselves.
-field :: forall @l a r. IsSymbol l => Cons l a () r => UI Web a a -> UI Web { | r } { | r }
-field = property @l
 
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.

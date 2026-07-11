@@ -304,6 +304,27 @@ instance Functor m => Resolving (UI m) where
               else prop $ New (Left b) cont
       }
 
+-- | The Mealy step: a fresh `Left a` feeds the inner widget, a `Right c`
+-- | (re)places the retained state. When the inner widget emits `b`, the
+-- | output pairs it with the retained `c` — and is **withheld until a `c`
+-- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
+-- | mirroring the knowledge-gated record merges.
+instance Functor m => Retaining (UI m) where
+  retain p = wrap ado
+    let cRef = unsafePerformEffect $ Ref.new Nothing
+    p' <- unwrap p
+    in
+      { toUser: case _ of
+          New (Left a) cont -> p'.toUser $ New a cont
+          New (Right c) _ -> Ref.write (Just c) cRef
+      , fromUser: \prop ->
+          p'.fromUser \(New b cont) -> do
+            mc <- Ref.read cRef
+            case mc of
+              Nothing -> pure Nothing
+              Just c -> prop $ New (Tuple b c) cont
+      }
+
 instance Applicative m => VariantToRecord (UI m) where
   pempty = wrap $ pure
     { toUser: mempty
@@ -333,27 +354,6 @@ instance Applicative m => VariantToRecord (UI m) where
             case mp1 of
               Nothing -> pure Nothing
               Just p1val -> prop $ New (Record.union p1val partial) cont
-      }
-
--- | The Mealy step: a fresh `Left a` feeds the inner widget, a `Right c`
--- | (re)places the retained state. When the inner widget emits `b`, the
--- | output pairs it with the retained `c` — and is **withheld until a `c`
--- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
--- | mirroring the knowledge-gated record merges.
-instance Functor m => Retaining (UI m) where
-  retain p = wrap ado
-    let cRef = unsafePerformEffect $ Ref.new Nothing
-    p' <- unwrap p
-    in
-      { toUser: case _ of
-          New (Left a) cont -> p'.toUser $ New a cont
-          New (Right c) _ -> Ref.write (Just c) cRef
-      , fromUser: \prop ->
-          p'.fromUser \(New b cont) -> do
-            mc <- Ref.read cRef
-            case mc of
-              Nothing -> pure Nothing
-              Just c -> prop $ New (Tuple b c) cont
       }
 
 instance Applicative m => VariantToVariant (UI m) where
