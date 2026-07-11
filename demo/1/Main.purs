@@ -13,9 +13,9 @@
 -- | annotations: every row is closed either by a label-pinning helper
 -- | (`field`/`reading`/`switch`/`casePane`/`event`/`statusLine`) or by a
 -- | model-function signature, and inference propagates from the pipeline
--- | ends inward. Decoration (captions, static text) flanks live widgets via
--- | `before` — decorations are `Void`-output displays, so they provably
--- | never emit and don't gate the merges. Variant editors (fulfillment,
+-- | ends inward. Decoration is data or design-system config, not
+-- | composition: the headline prefix rides in `reading`'s render function,
+-- | card captions in `MDC.card`'s config. Variant editors (fulfillment,
 -- | method) are `synced` composites: input is broadcast to switches and
 -- | panes, and every emission is cross-fed back into the siblings, so the
 -- | view stays consistent; `latch` seeds each switch and retains its case's
@@ -57,8 +57,8 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Flow
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, before, debounced, latch, synced)
-import Web (Web, body, staticText, text, variant)
+import UI (UI, action, debounced, latch, silence, synced)
+import Web (Web, body, text, variant)
 
 -- The one named type — the aggregate the whole pipeline revolves around.
 -- Everything inside it is structural: anonymous record and variant rows.
@@ -89,50 +89,36 @@ main :: Effect Unit
 main = body @Unit $ MDC.elevation20 Flow.do
   action loadOrder MDC.indeterminateLinearProgress
   RecordToRecord.do
-    MDC.headline6
-      $ before (staticText "Order ")
-      $ reading @"shortId" identity
-    MDC.card
-      $ before (MDC.caption $ staticText "Identifier")
-      $ RecordToRecord.do
-          field @"shortId" $ MDC.filledTextField { floatingLabel: "Short ID" }
-          field @"orderId" $ MDC.filledTextField { floatingLabel: "Unique ID" }
-    field @"customer" $ MDC.card
-      $ before (MDC.caption $ staticText "Customer")
-      $ RecordToRecord.do
-          field @"firstName" $ MDC.filledTextField { floatingLabel: "First name" }
-          field @"lastName" $ MDC.filledTextField { floatingLabel: "Last name" }
-    field @"fulfillment" $ MDC.card
-      $ before (MDC.caption $ staticText "Fulfillment")
-      $ synced
-          [ switch @"dineIn" "Dine in" { table: "1" }
-          , switch @"takeaway" "Takeaway" { time: "12:00" }
-          , switch @"delivery" "Delivery" { address: "" }
-          , casePane @"dineIn" $ field @"table" $ MDC.filledTextField { floatingLabel: "Table" }
-          , casePane @"takeaway" $ field @"time" $ MDC.filledTextField { floatingLabel: "Time" }
-          , casePane @"delivery" $ RecordToRecord.do
-              field @"address" $ MDC.filledTextField { floatingLabel: "Address" }
-              MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
-          ]
-    MDC.card
-      $ before (MDC.caption $ staticText "Total")
-      $ field @"total" $ MDC.filledTextField { floatingLabel: "Total" }
-    field @"payment" $ MDC.card
-      $ before (MDC.caption $ staticText "Payment")
-      $ RecordToRecord.do
-          -- `identity` is the echo wire: buttons don't echo on render, so a
-          -- button-only editor needs this pass-through member to open the
-          -- record-merge gate (every operand must echo what it knows)
-          field @"method" $ synced
-            [ identity
-            , switch @"cash" "Cash" unit
-            , switch @"card" "Card" unit
-            ]
-          field @"paid" $ MDC.filledTextField { floatingLabel: "Paid" }
-          MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
-    MDC.card
-      $ before (MDC.caption $ staticText "Remarks")
-      $ field @"remarks" $ MDC.filledTextArea { columns: 80, rows: 3 }
+    MDC.headline6 $ reading @"shortId" ("Order " <> _)
+    MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
+      field @"shortId" $ MDC.filledTextField { floatingLabel: "Short ID" }
+      field @"orderId" $ MDC.filledTextField { floatingLabel: "Unique ID" }
+    field @"customer" $ MDC.card { caption: Just "Customer" } $ RecordToRecord.do
+      field @"firstName" $ MDC.filledTextField { floatingLabel: "First name" }
+      field @"lastName" $ MDC.filledTextField { floatingLabel: "Last name" }
+    field @"fulfillment" $ MDC.card { caption: Just "Fulfillment" } $ synced
+      [ switch @"dineIn" "Dine in" { table: "1" }
+      , switch @"takeaway" "Takeaway" { time: "12:00" }
+      , switch @"delivery" "Delivery" { address: "" }
+      , casePane @"dineIn" $ field @"table" $ MDC.filledTextField { floatingLabel: "Table" }
+      , casePane @"takeaway" $ field @"time" $ MDC.filledTextField { floatingLabel: "Time" }
+      , casePane @"delivery" $ RecordToRecord.do
+          field @"address" $ MDC.filledTextField { floatingLabel: "Address" }
+          MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
+      ]
+    MDC.card { caption: Just "Total" } $ field @"total" $ MDC.filledTextField { floatingLabel: "Total" }
+    field @"payment" $ MDC.card { caption: Just "Payment" } $ RecordToRecord.do
+      -- `identity` is the echo wire: buttons don't echo on render, so a
+      -- button-only editor needs this pass-through member to open the
+      -- record-merge gate (every operand must echo what it knows)
+      field @"method" $ synced
+        [ identity
+        , switch @"cash" "Cash" unit
+        , switch @"card" "Card" unit
+        ]
+      field @"paid" $ MDC.filledTextField { floatingLabel: "Paid" }
+      MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
+    MDC.card { caption: Just "Remarks" } $ field @"remarks" $ MDC.filledTextArea { columns: 80, rows: 3 }
     debounced $ MDC.body1 $ lcmap summarize text
   RecordToVariant.do
     event @"submit" $ MDC.containedButton { label: Just "Submit order", icon: Just "save" }
@@ -144,7 +130,7 @@ main = body @Unit $ MDC.elevation20 Flow.do
     statusLine @"orderSubmitted"
     statusLine @"submissionFailed"
     statusLine @"receiptPrinted"
-  staticText ""
+  silence
 
 -- model functions
 

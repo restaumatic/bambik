@@ -195,7 +195,10 @@ button w = wrap do
           void $ prop $ New a false
     }
 
-staticText :: forall a b. String -> UI Web a b
+-- | Static text at the chrome type (`{} → []`): silent by construction and
+-- | self-pinning as a `× → +` merge operand. Repolarize with
+-- | `Data.Profunctor.Row.backdrop` where another interface is needed.
+staticText :: String -> UI Web {} []
 staticText text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -208,7 +211,8 @@ staticText text = wrap do
     , fromUser: mempty
     }
 
-staticHTML :: forall a b. String -> UI Web a b
+-- | See `staticText` — same chrome typing.
+staticHTML :: String -> UI Web {} []
 staticHTML html = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent

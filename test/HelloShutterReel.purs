@@ -19,8 +19,8 @@ import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Flow
-import UI (UI)
-import Web (Web, body, staticText, text)
+import UI (UI, silence)
+import Web (Web, body, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
 -- | greeting **prefix**, installed from the model side (`Right` — the app's
@@ -56,4 +56,4 @@ main = body @Unit $ lcmap (const "Hello, ") $ Flow.do
   greet
   confirm
   text
-  staticText ""
+  silence

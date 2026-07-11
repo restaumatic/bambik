@@ -7,8 +7,6 @@ module UI
   , action
   , action'
   , affAdapter
-  , after
-  , before
   , constant
   , debounced
   , debounced'
@@ -170,36 +168,20 @@ instance Applicative m => Category (UI m) where
 -- | introduce laws, the implementation of `pempty` at the variant-output
 -- | directions (where silence is forced), and the terminal sink of data-flow
 -- | pipelines.
+-- |
+-- | Not primitive — the `dimap`-closure of the `× → +` unit (the one unit
+-- | with record input and variant output, so the one that repolarizes):
+-- |
+-- | ```
+-- | silence = dimap (const {}) case_ RecordToVariant.pempty
+-- | ```
+-- |
+-- | Implemented directly, as elsewhere laws are stated and bodies stay lean.
 silence :: forall m i o. Applicative m => UI m i o
 silence = wrap $ pure
   { toUser: mempty
   , fromUser: mempty
   }
-
--- | Decoration, flanking a widget: `deco`'s DOM is built before (`before`) or
--- | after (`after`) the widget's, `deco` receives the same input (so
--- | input-driven dynamics like floating labels work), and its `Void` output
--- | type proves it can never emit — the composite's wiring is the widget's
--- | alone. This is the honest typing of chrome: a display-only sibling, not a
--- | peer editor.
-before :: forall m i o. Apply m => UI m i Void -> UI m i o -> UI m i o
-before deco w = wrap ado
-  deco' <- unwrap deco
-  w' <- unwrap w
-  in
-    { toUser: \u -> deco'.toUser u *> w'.toUser u
-    , fromUser: w'.fromUser
-    }
-
--- | See `before`.
-after :: forall m i o. Apply m => UI m i Void -> UI m i o -> UI m i o
-after deco w = wrap ado
-  w' <- unwrap w
-  deco' <- unwrap deco
-  in
-    { toUser: \u -> w'.toUser u *> deco'.toUser u
-    , fromUser: w'.fromUser
-    }
 
 -- | Mutually synced sibling editors of one value: input is broadcast to all,
 -- | and each member's emission is propagated AND cross-fed into the other
