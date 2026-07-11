@@ -42,12 +42,12 @@ module Data.Profunctor.Row.VariantToRecord
 import Data.Either (Either(..))
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row.VariantToVariant (splitVariant)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, on)
-import Prim.Row (class Cons, class Lacks)
-import Record (insert)
+import Prim.Row (class Cons)
+import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
 import Type.Row.Constraints (class DispatchableVariants, class ExclusiveRows)
 
@@ -85,69 +85,75 @@ class Profunctor p <= VariantToRecord p where
     DispatchableVariants i1 i2 i1l i2l =>
     p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 } -> p [ | i ] { | o }
 
-bind :: forall f i1 i1l i2 i2l o1 o2 i o.
-  VariantToRecord f =>
+bind :: forall p i1 i1l i2 i2l o1 o2 i o.
+  VariantToRecord p =>
   ExclusiveRows i1 i2 i =>
   ExclusiveRows o1 o2 o =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f [ | i1 ] { | o1 } -> (f [ | i1 ] { | o1 } -> f [ | i2 ] { | o2 }) -> f [ | i ] { | o }
+  p [ | i1 ] { | o1 } -> (p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 bind first cont = variantToRecord first (cont first)
 
-discard :: forall f i1 i1l i2 i2l o1 o2 i o.
-  VariantToRecord f =>
+discard :: forall p i1 i1l i2 i2l o1 o2 i o.
+  VariantToRecord p =>
   ExclusiveRows i1 i2 i =>
   ExclusiveRows o1 o2 o =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f [ | i1 ] { | o1 } -> (Unit -> f [ | i2 ] { | o2 }) -> f [ | i ] { | o }
+  p [ | i1 ] { | o1 } -> (Unit -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
--- | for this direction (the dual of `resolveProperty`). It threads one label
--- | `l` as **input case ↔ output field**: if the input variant carries case
--- | `l :: x`, its value resumes directly into output field `l` (the `Right`
--- | branch); otherwise the wrapped profunctor runs on the remaining cases and
--- | field `l` is filled from the carrier's retained state (the `c` that `retain`
--- | always emits), not from the wrapped profunctor.
+-- | for this direction (the dual of `resolveProperty`). Where `case_`
+-- | **refocuses** (background fixed, focus transformed), this
+-- | **re-backgrounds**: the **focus** `f` at `l` is held fixed and threaded as
+-- | **input case ↔ output field**, while the wrapped profunctor transforms the
+-- | **background** `b → b'` (turning the input **shot** `s` into the output
+-- | shot `s'`). If the input carries case `l :: f`, its value resumes directly
+-- | into output field `l` (the `Right` branch); otherwise the wrapped
+-- | profunctor runs on the background cases and field `l` is filled from the
+-- | carrier's retained state (the `c` that `retain` always emits), not from
+-- | the wrapped profunctor.
 retainCase
-  :: forall @l p x i i' o o'
+  :: forall @l p f b s b' s'
    . Retaining p
   => IsSymbol l
-  => Cons l x i i'
-  => Cons l x o o'
-  => Lacks l o
-  => p [ | i ] { | o }
-  -> p [ | i' ] { | o' }
+  => Cons l f b s
+  => Cons l f b' s'
+  => p [ | b ] { | b' }
+  -> p [ | s ] { | s' }
 retainCase g =
   dimap
     (on (Proxy @l) Right Left)
-    (\(Tuple r x) -> insert (Proxy @l) x r)
+    -- no `Lacks`: `unsafeSet` realizes the layout `Cons l f b' s'` pins — see
+    -- `recordToProperty`'s note.
+    (\(Tuple b' f) -> unsafeSet (reflectSymbol (Proxy @l)) f b')
     (retain g)
 
 -- | The single-case **focus** for this direction — the `+ → ×` analogue of
 -- | `case_` (row-typed `left`), built on `retain` exactly as `case_` is built
--- | on `left`. Case `l` of the input variant is the focus fed to the wrapped
--- | `p a b` (the `Left`/fresh branch); the leftover `[ | r ]` cannot stay a
--- | variant inside the `Record` output, so — as in `reelWrap` — it is wrapped
--- | as a single output field `w`. Field `l` carries `p`'s output (drawn from
--- | the carrier's retained state when some other case arrived), field `w` the
--- | rest-variant. The single-case form of `reelWrap`; the transpose of
--- | `retainCase`, which runs the wrapped profunctor on the *other* cases and
--- | resumes the focused case directly.
+-- | on `left`. The **focus** `f` at `l` of the input **shot** `s` is fed to the
+-- | wrapped `p f f'` (the `Left`/fresh branch); the **background** `[ | b ]`
+-- | cannot stay a variant inside the `Record` output, so — as in `reelWrap` —
+-- | it is wrapped as a single output field `w`. Field `l` carries the wrapped
+-- | profunctor's output `f'` (drawn from the carrier's retained state when a
+-- | background case arrived), field `w` the background-variant. The
+-- | single-case form of `reelWrap`; the transpose of `retainCase`, which runs
+-- | the wrapped profunctor on the *background* and resumes the focus directly.
 caseToProperty
-  :: forall @l @w p s r a b lo t
+  :: forall @l @w p f f' b s lf s'
    . Retaining p
   => IsSymbol l
   => IsSymbol w
-  => Cons l a r s
-  => Cons l b () lo
-  => Cons w [ | r ] lo t
-  => Lacks w lo
-  => p a b
-  -> p [ | s ] { | t }
+  => Cons l f b s
+  => Cons l f' () lf
+  => Cons w [ | b ] lf s'
+  => p f f'
+  -> p [ | s ] { | s' }
 caseToProperty g =
   dimap
     (on (Proxy @l) Left Right)
-    (\(Tuple b rest) -> insert (Proxy @w) rest (insert (Proxy @l) b {}))
+    -- no `Lacks`: `unsafeSet` realizes the layout the `Cons` chain pins — see
+    -- `recordToProperty`'s note.
+    (\(Tuple f' b) -> unsafeSet (reflectSymbol (Proxy @w)) b (unsafeSet (reflectSymbol (Proxy @l)) f' {}))
     (retain g)
 
 -- | The `+ → ×` member of the introduce family and the dual of `recordToCase`:
@@ -189,40 +195,44 @@ reel dispatch g = reelE dispatch (\(Tuple b f) -> f b) g
 reelE :: forall s t a b c. (s -> Either a c) -> (Tuple b c -> t) -> Reel s t a b
 reelE decon recon g = dimap decon recon (retain g)
 
--- | Row existential `Reel` focusing a whole **sub-Variant `i`** of the full
--- | input `i'`; the residual is the **rest** `[ | rest ]` (`ExclusiveRows i
--- | rest i'`, the same split `focusVariant` uses). Crossing `+ → ×`, the rest
--- | can't stay a variant in the `Record` output, so it is **wrapped as a single
--- | output field `w`** — a record holding the variant (`o' = o` plus field `w`).
--- | The inner `p [ | i ] { | o }` runs on the focus; the retained
--- | rest-variant is inserted at field `w`. The mixed-direction analogue of
--- | `focusVariant`, and the dual of `shutterWrap` — same sub-row focus, but the
--- | complement is *wrapped* to cross into the record output rather than carried
--- | same-kind. The `+ → ×` row combinator over the bare strength `Retaining`,
+-- | Row existential `Reel` focusing a whole **sub-Variant** — the row-valued
+-- | **focus** `f` — of the input **shot** `s`; the residual is the **background**
+-- | `[ | b ]` (`ExclusiveRows f b s`, the same split `focusVariant` uses).
+-- | Crossing `+ → ×`, the background can't stay a variant in the `Record`
+-- | output, so it is **wrapped as a single output field `w`** — a record
+-- | holding the variant. The output extension is itself shot-shaped:
+-- | `Cons w [ | b ] b' s'` — the wrapped background is the focus of a second
+-- | shot at `w`, against the inner output `b'`. The inner
+-- | `p [ | f ] { | b' }` runs on the focus; the retained background-variant is
+-- | written at field `w`. The mixed-direction analogue of `focusVariant`, and
+-- | the dual of `shutterWrap` — same sub-row focus, but the background is
+-- | *wrapped* to cross into the record output rather than carried same-kind.
+-- | The `+ → ×` row combinator over the bare strength `Retaining`,
 -- | just as `focusVariant` is the row combinator over `Choice`.
 -- |
 -- | ```purescript
--- | -- focus the `cancel` case; wrap the rest into output field `pending`
+-- | -- focus the `cancel` case; wrap the background into output field `pending`
 -- | step :: Reel
--- |   [ cancel :: Unit, tick :: Int ]                               -- i'  full input
--- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- o'  full output
--- |   [ cancel :: Unit ]                                            -- i   sub-Variant focus
--- |   { done :: Boolean }                                          -- o   inner output
+-- |   [ cancel :: Unit, tick :: Int ]                               -- s   input shot
+-- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- s'  output shot
+-- |   [ cancel :: Unit ]                                            -- f   sub-Variant focus
+-- |   { done :: Boolean }                                          -- b'  inner output
 -- | step = reelWrap @"pending"
 -- | ```
 reelWrap
-  :: forall @w p i i' rest o o'
+  :: forall @w p f b s b' s'
    . Retaining p
   => IsSymbol w
-  => ExclusiveRows i rest i'
-  => Contractable i' i
-  => Contractable i' rest
-  => Cons w [ | rest ] o o'
-  => Lacks w o
-  => p [ | i ] { | o }
-  -> p [ | i' ] { | o' }
+  => ExclusiveRows f b s
+  => Contractable s f
+  => Contractable s b
+  => Cons w [ | b ] b' s'
+  => p [ | f ] { | b' }
+  -> p [ | s ] { | s' }
 reelWrap g =
   reelE
     splitVariant
-    (\(Tuple o v) -> insert (Proxy @w) v o)
+    -- no `Lacks`: `unsafeSet` realizes the layout `Cons w [ | b ] b' s'` pins —
+    -- see `recordToProperty`'s note.
+    (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g

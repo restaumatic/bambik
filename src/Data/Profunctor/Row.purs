@@ -82,34 +82,35 @@ widenVariantOutput = rmap expand
 -- (each is side-specific, so it also applies to the matching diagonal family).
 -- =====================================================================
 
--- `Cons l a () one` pins `one` to the singleton row `(l :: a)`; `Union narrow
--- one wider` then says `wider = narrow` plus that one field/case (and gives
--- `expand` the `Union` it needs — `Cons` alone wouldn't).
+-- `Cons l f () lf` pins `lf` to the singleton row `(l :: f)`; `Union b lf s`
+-- then says the shot `s` = background `b` plus that one focus field/case (and
+-- gives `expand` the `Union` it needs — `Cons` alone wouldn't). The untouched
+-- opposite side is the reality `r`.
 
-widenInputProperty :: forall @l p a one narrow wider o.
+widenInputProperty :: forall @l p f lf b s r.
   Profunctor p =>
-  Row.Cons l a () one =>
-  Row.Union narrow one wider =>
-  p { | narrow } o -> p { | wider } o
+  Row.Cons l f () lf =>
+  Row.Union b lf s =>
+  p { | b } r -> p { | s } r
 widenInputProperty = lcmap unsafeCoerce
 
-widenOutputCase :: forall @l p a one narrow wider i.
+widenOutputCase :: forall @l p f lf b s r.
   Profunctor p =>
-  Row.Cons l a () one =>
-  Row.Union narrow one wider =>
-  p i [ | narrow ] -> p i [ | wider ]
+  Row.Cons l f () lf =>
+  Row.Union b lf s =>
+  p r [ | b ] -> p r [ | s ]
 widenOutputCase = rmap expand
 
-narrowInputCase :: forall @l p a one narrow wider o.
+narrowInputCase :: forall @l p f lf b s r.
   Profunctor p =>
-  Row.Cons l a () one =>
-  Row.Union narrow one wider =>
-  p [ | wider ] o -> p [ | narrow ] o
+  Row.Cons l f () lf =>
+  Row.Union b lf s =>
+  p [ | s ] r -> p [ | b ] r
 narrowInputCase = lcmap expand
 
-narrowOutputProperty :: forall @l p a one narrow wider i.
+narrowOutputProperty :: forall @l p f lf b s r.
   Profunctor p =>
-  Row.Cons l a () one =>
-  Row.Union narrow one wider =>
-  p i { | wider } -> p i { | narrow }
+  Row.Cons l f () lf =>
+  Row.Union b lf s =>
+  p r { | s } -> p r { | b }
 narrowOutputProperty = rmap unsafeCoerce

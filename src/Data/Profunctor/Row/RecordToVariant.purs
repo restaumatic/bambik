@@ -40,12 +40,13 @@ module Data.Profunctor.Row.RecordToVariant
 
 import Data.Either (Either, either)
 import Data.Profunctor (class Profunctor, dimap, rmap)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant (expand, inj)
-import Prim.Row (class Cons, class Lacks, class Union)
-import Record (delete, get)
+import Prim.Row (class Cons, class Union)
+import Record (get)
+import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
 import Type.Row.Constraints (class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
@@ -82,67 +83,70 @@ class Profunctor p <= RecordToVariant p where
     InclusiveRows o1 o2 o o12 o1x o2x =>
     p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
 
-bind :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
-  RecordToVariant f =>
+bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
+  RecordToVariant p =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
-  f { | i1 } [ | o1 ] -> (f { | i1 } [ | o1 ] -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
+  p { | i1 } [ | o1 ] -> (p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ]) -> p { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
-discard :: forall f i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
-  RecordToVariant f =>
+discard :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
+  RecordToVariant p =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
-  f { | i1 } [ | o1 ] -> (Unit -> f { | i2 } [ | o2 ]) -> f { | i } [ | o ]
+  p { | i1 } [ | o1 ] -> (Unit -> p { | i2 } [ | o2 ]) -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
--- | for this direction (the analogue of `property`/`case_` when input and
--- | output kinds differ). It threads one label `l` as **input field ↔ output
--- | case**: field `l :: x` is split off the input record, and the wrapped
--- | profunctor either runs on the rest (emitting some case of `o`, the `Done`
--- | branch) or the field's value escapes directly as output case `l` (the
--- | `Loop`/short-circuit branch).
+-- | for this direction. Where `property` **refocuses** (background fixed, focus
+-- | transformed), this **re-backgrounds**: the **focus** `f` at `l` is held
+-- | fixed and threaded across the boundary as **input field ↔ output case**,
+-- | while the wrapped profunctor transforms the **background** `b → b'`
+-- | (turning the input **shot** `s` into the output shot `s'`). The `Done`
+-- | branch emits some case of `b'`; the `Loop`/short-circuit branch lets the
+-- | focus escape directly as output case `l`.
 resolveProperty
-  :: forall @l p x lo i i' o o'
+  :: forall @l p f lf b s b' s'
    . Resolving p
   => IsSymbol l
-  => Cons l x i i'
-  => Lacks l i
-  => Cons l x o o'
-  => Cons l x () lo
-  => Union o lo o'
-  => p { | i } [ | o ]
-  -> p { | i' } [ | o' ]
+  => Cons l f b s
+  => Cons l f b' s'
+  => Cons l f () lf
+  => Union b' lf s'
+  => p { | b } [ | b' ]
+  -> p { | s } [ | s' ]
 resolveProperty g =
   dimap
-    (\s -> Tuple (delete (Proxy @l) s) (get (Proxy @l) s))
+    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins — see
+    -- `recordToProperty`'s note.
+    (\s -> Tuple (unsafeDelete (reflectSymbol (Proxy @l)) s) (get (Proxy @l) s))
     (either expand (inj (Proxy @l)))
     (resolve g)
 
 -- | The single-field **focus** for this direction — the `× → +` analogue of
 -- | `property` (row-typed `first`), built on `resolve` exactly as `property` is
--- | built on `first`. Field `l` of the input record is the focus fed to the
--- | wrapped `p a b`; the leftover `{ | r }` cannot stay a record inside the
--- | `Variant` output, so — as in `shutterWrap` — it is wrapped as a single
--- | output case `w`: `Done b` emits case `l`, the `Loop`/escape branch emits
--- | case `w` carrying the untouched rest. The single-field form of
--- | `shutterWrap`; the transpose of `resolveProperty`, which runs the wrapped
--- | profunctor on the *rest* and lets the focused field escape.
+-- | built on `first`. The **focus** `f` at `l` of the input **shot** `s` is fed
+-- | to the wrapped `p f f'`; the **background** `{ | b }` cannot stay a record
+-- | inside the `Variant` output, so — as in `shutterWrap` — it is wrapped as a
+-- | single output case `w`: `Done` emits case `l :: f'`, the `Loop`/escape
+-- | branch emits case `w` carrying the untouched background. The single-field
+-- | form of `shutterWrap`; the transpose of `resolveProperty`, which runs the
+-- | wrapped profunctor on the *background* and lets the focus escape.
 propertyToCase
-  :: forall @l @w p s r a b lx wx t
+  :: forall @l @w p f f' b s lx wx s'
    . Resolving p
   => IsSymbol l
   => IsSymbol w
-  => Cons l a r s
-  => Lacks l r
-  => Cons l b lx t
-  => Cons w { | r } wx t
-  => p a b
-  -> p { | s } [ | t ]
+  => Cons l f b s
+  => Cons l f' lx s'
+  => Cons w { | b } wx s'
+  => p f f'
+  -> p { | s } [ | s' ]
 propertyToCase g =
   dimap
-    (\s -> Tuple (get (Proxy @l) s) (delete (Proxy @l) s))
+    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins — see
+    -- `recordToProperty`'s note.
+    (\s -> Tuple (get (Proxy @l) s) (unsafeDelete (reflectSymbol (Proxy @l)) s))
     (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
 
@@ -188,36 +192,39 @@ shutter view build escape g = shutterE (\s -> Tuple (view s) s) (either build es
 shutterE :: forall s t a b c. (s -> Tuple a c) -> (Either b c -> t) -> Shutter s t a b
 shutterE decon recon g = dimap decon recon (resolve g)
 
--- | Row existential `Shutter` focusing a whole **sub-Record `i`** of the full
--- | input `i'`; the residual is the **rest** `{ | rest }` (`ExclusiveRows i rest
--- | i'`, the same split `focusRecord` uses). Crossing `× → +`, the rest can't stay
--- | a record in the `Variant` output, so it is **wrapped as a single output case
--- | `w`** — a variant carrying the record (`o' = o` plus case `w`). The inner
--- | `p { | i } [ | o ]` runs on the focus: `Done` expands its result into
--- | `o'`, `Loop` injects the retained rest-record into case `w`. The mixed-direction
--- | analogue of `focusRecord` — same sub-record focus, but the complement is
--- | *wrapped* to cross into the variant output rather than carried same-kind.
--- | The `× → +` row combinator over the bare strength `Resolving`, just as
--- | `focusRecord` is the row combinator over `Strong`.
+-- | Row existential `Shutter` focusing a whole **sub-Record** — the row-valued
+-- | **focus** `f` — of the input **shot** `s`; the residual is the **background**
+-- | `{ | b }` (`ExclusiveRows f b s`, the same split `focusRecord` uses).
+-- | Crossing `× → +`, the background can't stay a record in the `Variant`
+-- | output, so it is **wrapped as a single output case `w`** — a variant
+-- | carrying the record. The output extension is itself shot-shaped:
+-- | `Cons w { | b } b' s'` — the wrapped background is the focus of a second
+-- | shot at `w`, against the inner output `b'`. The inner
+-- | `p { | f } [ | b' ]` runs on the focus: `Done` expands its result into
+-- | `s'`, `Loop` injects the retained background-record into case `w`. The
+-- | mixed-direction analogue of `focusRecord` — same sub-record focus, but the
+-- | background is *wrapped* to cross into the variant output rather than
+-- | carried same-kind. The `× → +` row combinator over the bare strength
+-- | `Resolving`, just as `focusRecord` is the row combinator over `Strong`.
 -- |
 -- | ```purescript
--- | -- focus (item, qty); wrap the leftover { note } into output case `draft`
+-- | -- focus (item, qty); wrap the background { note } into output case `draft`
 -- | checkout :: Shutter
--- |   { item :: String, qty :: Int, note :: String }              -- i'  full input
--- |   [ priced :: Int, draft :: { note :: String } ]              -- o'  full output
--- |   { item :: String, qty :: Int }                              -- i   sub-Record focus
--- |   [ priced :: Int ]                                            -- o   inner output
+-- |   { item :: String, qty :: Int, note :: String }              -- s   input shot
+-- |   [ priced :: Int, draft :: { note :: String } ]              -- s'  output shot
+-- |   { item :: String, qty :: Int }                              -- f   sub-Record focus
+-- |   [ priced :: Int ]                                            -- b'  inner output
 -- | checkout = shutterWrap @"draft"
 -- | ```
 shutterWrap
-  :: forall @w p i i' rest o o' mix
+  :: forall @w p f b s b' s' mix
    . Resolving p
   => IsSymbol w
-  => ExclusiveRows i rest i'
-  => Cons w { | rest } o o'
-  => Union o mix o'
-  => p { | i } [ | o ]
-  -> p { | i' } [ | o' ]
+  => ExclusiveRows f b s
+  => Cons w { | b } b' s'
+  => Union b' mix s'
+  => p { | f } [ | b' ]
+  -> p { | s } [ | s' ]
 shutterWrap g =
   shutterE
     (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))

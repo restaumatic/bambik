@@ -62,59 +62,60 @@ class Profunctor p <= VariantToVariant p where
     DispatchableVariants i1 i2 i1l i2l =>
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
 
-bind :: forall f i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
-  VariantToVariant f =>
+bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
+  VariantToVariant p =>
   ExclusiveRows i1 i2 i =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f [ | i1 ] [ | o1 ] -> (f [ | i1 ] [ | o1 ] -> f [ | i2 ] [ | o2 ]) -> f [ | i ] [ | o ]
+  p [ | i1 ] [ | o1 ] -> (p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
 bind first cont = variantToVariant first (cont first)
 
-discard :: forall f i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
-  VariantToVariant f =>
+discard :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
+  VariantToVariant p =>
   ExclusiveRows i1 i2 i =>
   InclusiveRows o1 o2 o o12 o1x o2x =>
   DispatchableVariants i1 i2 i1l i2l =>
-  f [ | i1 ] [ | o1 ] -> (Unit -> f [ | i2 ] [ | o2 ]) -> f [ | i ] [ | o ]
+  p [ | i1 ] [ | o1 ] -> (Unit -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | Row-typed `Choice`: focus a **sub-variant** `sub`, transforming it while carrying the
--- | complement `rest` of the cases unchanged. The coproduct dual of `focusRecord`
--- | — operates on rows on **both sides**:
+-- | Row-typed `Choice`: focus a whole **sub-variant** — the row-valued **focus**
+-- | `f` — transforming it against the **background** `b` cases, which pass
+-- | unchanged. The **shot** `s` is refocused to `s'`. The coproduct dual of
+-- | `focusRecord` — operates on rows on **both sides**:
 -- |
 -- | ```
--- | focusVariant :: p [ | sub ] [ | sub' ] -> p [ | s ] [ | t ]
--- |               -- where s = sub ∪ rest,  t = sub' ∪ rest   (ExclusiveRows)
+-- | focusVariant :: p [ | f ] [ | f' ] -> p [ | s ] [ | s' ]
+-- |               -- where s = f ∪ b,  s' = f' ∪ b   (ExclusiveRows)
 -- | ```
 -- |
--- | The labeled analogue of `Choice`'s `left`/`right`, carrying the complement *row* `rest`.
--- | Plain `Choice` underneath: dispatch `s` into `sub | rest` (via
--- | `Data.Variant.contract`), run the argument on the `sub` branch via `left`, and re-merge
--- | both branches into `t` (via `expand`).
+-- | The labeled analogue of `Choice`'s `left`/`right`, carrying the background *row* `b`.
+-- | Plain `Choice` underneath: dispatch `s` into `f | b` (via
+-- | `Data.Variant.contract`), run the argument on the `f` branch via `left`, and re-merge
+-- | both branches into `s'` (via `expand`).
 focusVariant
-  :: forall p sub sub' rest s t
+  :: forall p f f' b s s'
    . Choice p
-  => ExclusiveRows sub rest s
-  => ExclusiveRows sub' rest t
-  => Contractable s sub
-  => Contractable s rest
-  => p [ | sub ] [ | sub' ]
-  -> p [ | s ] [ | t ]
+  => ExclusiveRows f b s
+  => ExclusiveRows f' b s'
+  => Contractable s f
+  => Contractable s b
+  => p [ | f ] [ | f' ]
+  -> p [ | s ] [ | s' ]
 focusVariant g = dimap splitVariant (either expand expand) (left g)
 
--- Dispatch a wider variant into the focused sub-variant or the complement.
+-- Dispatch a shot into the focused sub-variant or the background.
 splitVariant
-  :: forall sub rest s
-   . ExclusiveRows sub rest s
-  => Contractable s sub
-  => Contractable s rest
+  :: forall f b s
+   . ExclusiveRows f b s
+  => Contractable s f
+  => Contractable s b
   => [ | s ]
-  -> Either [ | sub ] [ | rest ]
+  -> Either [ | f ] [ | b ]
 splitVariant v = case contract v of
-  Just sub -> Left sub
+  Just f -> Left f
   Nothing -> case contract v of
-    Just rest -> Right rest
-    Nothing -> unsafeThrow "focusVariant: case in neither sub nor rest"
+    Just b -> Right b
+    Nothing -> unsafeThrow "focusVariant: case in neither focus nor background"
 
 -- | Construct a `Prism` straight from its **existential encoding**
 -- | `∃c. (s → a + c) × (b + c → t)`: pick the residual `c`, then supply `decon`
@@ -126,20 +127,23 @@ splitVariant v = case contract v of
 prismE :: forall s t a b c. (s -> Either a c) -> (Either b c -> t) -> Prism s t a b
 prismE decon recon g = dimap decon recon (left g)
 
--- | Focus an existing case in place — the standard `Choice` case prism,
--- | type-changing: focus `a → b` turns row `s` into `t` (same rows except at
--- | `l`, witnessed by the shared remainder `rest`; `Union rest mix t` lets the
--- | untouched complement `expand` into the new row). `b := a` recovers the
--- | simple `p a a -> p [ | s ] [ | s ]` form. Built via `prismE` at
--- | `c := [ | rest ]`.
+-- | Focus an existing case in place — the standard `Choice` case prism, read
+-- | photographically as **refocusing**: the **focus** `f → f'` changes, the
+-- | **background** `b` stays, so the **shot** `s` becomes `s'` (`Union b mix s'`
+-- | lets the untouched background `expand` into the new row). `f' := f`
+-- | recovers the simple `p f f -> p [ | s ] [ | s ]` form. Built via `prismE`
+-- | at `c := [ | b ]`. Contrast `resolveProperty`/`retainCase`, which hold the
+-- | focus and transform the background. (The *diagonal* re-backgrounder — hold
+-- | case `l`, transform every other case — needs no combinator of its own: it
+-- | is `focusVariant` at the singleton complement `(l :: f)`.)
 case_
-  :: forall @l p s t a b rest mix
+  :: forall @l p f f' b s s' mix
    . IsSymbol l
-  => Cons l a rest s
-  => Cons l b rest t
-  => Union rest mix t
+  => Cons l f b s
+  => Cons l f' b s'
+  => Union b mix s'
   => Choice p
-  => p a b -> p [ | s ] [ | t ]
+  => p f f' -> p [ | s ] [ | s' ]
 case_ =
   prismE
     (on (Proxy @l) Left Right)
