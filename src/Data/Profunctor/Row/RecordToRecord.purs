@@ -4,9 +4,10 @@
 -- |     minimal and interop-friendly.
 -- |   * **direction class** — `RecordToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
--- |   * **free functions over the strength** — `focusRecord` (sub-record
--- |     focus), `property` (the field lens), `field` (its closed-singleton
--- |     form — the merge-operand shape).
+-- |   * **free functions** — over the strength: `focusRecord` (sub-record
+-- |     focus), `property` (the field lens); over bare `Profunctor`:
+-- |     `field` (`property`'s closed-singleton form — the merge-operand
+-- |     shape, `dimap`-only and runtime-exact).
 -- |
 -- | The **nullary** operator is the class's own unit `pempty :: p {} {}` —
 -- | the empty merge:
@@ -39,8 +40,8 @@ import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons)
-import Record (union) as Record
+import Prim.Row (class Cons, class Lacks)
+import Record (get, insert, union) as Record
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
@@ -117,8 +118,18 @@ property = prop (Proxy @l)
 
 -- | `property` at the **closed singleton row** — the merge-operand form:
 -- | nests a widget (or a whole sub-composite) as exactly one field of the
--- | enclosing record. The pinned empty background is what lets merge
--- | operands infer with no annotations — raw `property`'s open background is
--- | ambiguous under the merges' `Union`.
-field :: forall @l p v r. IsSymbol l => Cons l v () r => Strong p => p v v -> p { | r } { | r }
-field = property @l
+-- | enclosing record, type-changing like `property` (`f' := f` recovers the
+-- | simple `p v v -> p { | r } { | r }` form). The pinned empty background
+-- | is what lets merge operands infer with no annotations — raw
+-- | `property`'s open background is ambiguous under the merges' `Union`.
+-- |
+-- | With no background to carry it needs no strength — `dimap` suffices —
+-- | and, crucially, its emissions are **runtime-exact**: exactly the one
+-- | field, freshly built. A lens emission (`property`) rebuilds the record
+-- | from its retained input, which under the merges' widening coercions
+-- | runtime-carries stale copies of *sibling* fields that would then shadow
+-- | the siblings' genuine contributions in the gates' left-biased
+-- | `Record.union`. Merge operands must therefore come through `field`, not
+-- | raw `property`.
+field :: forall @l p f f' si so. IsSymbol l => Profunctor p => Lacks l () => Cons l f () si => Cons l f' () so => p f f' -> p { | si } { | so }
+field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})

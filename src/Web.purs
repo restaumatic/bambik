@@ -36,8 +36,14 @@ module Web
   , staticHTML
   , staticText
   , svg
+  , table
+  , tbody
+  , td
   , text
   , textArea
+  , th
+  , thead
+  , tr
   , transient
   , ul
   , uniqueId
@@ -309,6 +315,26 @@ ol = el "ol"
 
 li :: Ocular (UI Web)
 li = el "li"
+
+-- table elements get real oculars (not `staticHTML`): the raw-HTML parser
+-- drops `tr`/`td`/`thead` fragments outside a table context
+table :: Ocular (UI Web)
+table = el "table"
+
+thead :: Ocular (UI Web)
+thead = el "thead"
+
+tbody :: Ocular (UI Web)
+tbody = el "tbody"
+
+tr :: Ocular (UI Web)
+tr = el "tr"
+
+th :: Ocular (UI Web)
+th = el "th"
+
+td :: Ocular (UI Web)
+td = el "td"
 
 h1 :: Ocular (UI Web)
 h1 = el "h1"
