@@ -388,11 +388,13 @@ constant a w = wrap $ ado
 
 type Action s t a b = forall m. Functor m => Optic (UI m) s t a b
 
-action :: forall s t. (s -> Aff t) -> Action s t Boolean Void
+-- | The progress slot is row-shaped like every component interface: the
+-- | widget is a `{ busy :: Boolean } → {}` display citizen.
+action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
 action arr = action' \i pro post -> do
-  liftEffect $ pro true
+  liftEffect $ pro { busy: true }
   o <- arr i
-  liftEffect $ pro false
+  liftEffect $ pro { busy: false }
   liftEffect $ post o
 
 action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (UI m) i o a b

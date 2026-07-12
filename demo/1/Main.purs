@@ -11,17 +11,18 @@
 -- | with real MDC widgets as the merge operands, laid out so that the order
 -- | of the code maps 1-1 to the order of the UI, with no inline type
 -- | annotations: MDC components are label-indexed row profunctors already
--- | (`MDC.filledTextField @"total"` is a singleton-record editor), and every
+-- | (`MDC.filledTextField @"total"` edits one field, `MDC.button @"submit"`
+-- | fires one event case, `MDC.switch @"dineIn"` selects one variant case,
+-- | `MDC.snackbar @"orderSubmitted"` shows one message case), and every
 -- | remaining row is closed either by a label-pinning helper (`field` for
--- | nesting sub-composites, `reading`/`switch`/`casePane`/`event`/
--- | `statusLine`) or by a model-function signature; inference propagates
--- | from the pipeline ends inward. Decoration is data or design-system config, not
+-- | nesting sub-composites, `reading`/`casePane`) or by a model-function
+-- | signature; inference propagates from the pipeline ends inward. Decoration is data or design-system config, not
 -- | composition: the headline prefix rides in `reading`'s render function,
 -- | card captions in `MDC.card`'s config. Variant editors (fulfillment,
 -- | method) are `synced` composites: input is broadcast to switches and
 -- | panes, and every emission is cross-fed back into the siblings, so the
--- | view stays consistent; `latch` seeds each switch and retains its case's
--- | last payload, so switching away and back restores state.
+-- | view stays consistent; `MDC.switch` seeds and retains its case's last
+-- | payload (`latch` inside), so switching away and back restores state.
 -- |
 -- | Merge-gate protocol: every record-merge operand must contain at least
 -- | one element that echoes on `toUser` (text fields, `text` displays, or —
@@ -43,7 +44,6 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
@@ -59,7 +59,7 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, debounced, latch, silence, synced)
+import UI (UI, action, debounced, silence, synced)
 import Web (Web, body, text, variant)
 
 -- The one named type — the aggregate the whole pipeline revolves around.
@@ -99,9 +99,9 @@ main = body @Unit $ MDC.elevation20 Semigroupoid.do
       MDC.filledTextField @"firstName" { floatingLabel: "First name" }
       MDC.filledTextField @"lastName" { floatingLabel: "Last name" }
     field @"fulfillment" $ MDC.card { caption: Just "Fulfillment" } $ synced
-      [ switch @"dineIn" "Dine in" { table: "1" }
-      , switch @"takeaway" "Takeaway" { time: "12:00" }
-      , switch @"delivery" "Delivery" { address: "" }
+      [ MDC.switch @"dineIn" { label: Just "Dine in", icon: Nothing } { table: "1" }
+      , MDC.switch @"takeaway" { label: Just "Takeaway", icon: Nothing } { time: "12:00" }
+      , MDC.switch @"delivery" { label: Just "Delivery", icon: Nothing } { address: "" }
       , casePane @"dineIn" $ MDC.filledTextField @"table" { floatingLabel: "Table" }
       , casePane @"takeaway" $ MDC.filledTextField @"time" { floatingLabel: "Time" }
       , casePane @"delivery" $ RecordToRecord.do
@@ -115,23 +115,23 @@ main = body @Unit $ MDC.elevation20 Semigroupoid.do
       -- record-merge gate (every operand must echo what it knows)
       field @"method" $ synced
         [ identity
-        , switch @"cash" "Cash" unit
-        , switch @"card" "Card" unit
+        , MDC.switch @"cash" { label: Just "Cash", icon: Nothing } unit
+        , MDC.switch @"card" { label: Just "Card", icon: Nothing } unit
         ]
       MDC.filledTextField @"paid" { floatingLabel: "Paid" }
       MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
     MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
     debounced $ MDC.body1 $ lcmap summarize text
   RecordToVariant.do
-    event @"submit" $ MDC.containedButton { label: Just "Submit order", icon: Just "save" }
-    event @"printReceipt" $ MDC.containedButton { label: Just "Receipt", icon: Just "file" }
+    MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
+    MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
   VariantToVariant.do
     action (Variant.on (Proxy @"submit") submitOrder Variant.case_) MDC.indeterminateLinearProgress
     action (Variant.on (Proxy @"printReceipt") printReceipt Variant.case_) MDC.indeterminateLinearProgress
   VariantToRecord.do
-    statusLine @"orderSubmitted"
-    statusLine @"submissionFailed"
-    statusLine @"receiptPrinted"
+    MDC.snackbar @"orderSubmitted"
+    MDC.snackbar @"submissionFailed"
+    MDC.snackbar @"receiptPrinted"
   silence
 
 -- model functions
@@ -213,12 +213,6 @@ printReceipt order = do
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> UI Web { | r } {}
 reading render = lcmap (\r -> render (get (Proxy @l) r)) text
 
--- | A case *switch*: a button emitting case `l` into the variant under edit.
--- | `latch` arms it with the seed before its case was ever selected and
--- | retains the case's last payload thereafter (cross-fed by `synced`), so
--- | switching away and back restores the last state instead of reseeding.
-switch :: forall @l f b s. IsSymbol l => Cons l f b s => String -> f -> UI Web [ | s ] [ | s ]
-switch label seed = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (latch seed (MDC.containedButton { label: Just label, icon: Nothing }))
 
 -- | A case *pane*: the sub-form for one case, attached to the DOM only while
 -- | that case is selected (`Web.variant` hides on the other cases), emitting
@@ -226,11 +220,4 @@ switch label seed = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (lat
 casePane :: forall @l f b s. IsSymbol l => Cons l f b s => UI Web f f -> UI Web [ | s ] [ | s ]
 casePane w = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (variant w)
 
--- | An event button as a record-to-variant operand: reads the whole record
--- | and fires it as event case `l` on click.
-event :: forall @l r s. IsSymbol l => Cons l { | r } () s => UI Web { | r } { | r } -> UI Web { | r } [ | s ]
-event = recordToCase @l
 
--- | A status snackbar for one message case.
-statusLine :: forall @l r. IsSymbol l => Cons l String () r => UI Web [ | r ] {}
-statusLine = MDC.snackbar $ lcmap (Variant.on (Proxy @l) identity Variant.case_) text

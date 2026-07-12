@@ -12,7 +12,6 @@ module HelloShutterReel where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToVariant (shutter)
 import Data.Profunctor.Row.VariantToRecord (reel)
@@ -20,7 +19,7 @@ import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (UI, silence)
-import Web (Web, body, text)
+import Web (Web, body, button, staticText, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
 -- | greeting **prefix**, installed from the model side (`Right` — the app's
@@ -47,7 +46,7 @@ greet =
 confirm :: UI Web String String
 confirm =
   shutter identity (_ <> "!") identity
-    (MDC.containedButton { label: Just "Greet", icon: Nothing })
+    (button $ staticText "Greet")
 
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.

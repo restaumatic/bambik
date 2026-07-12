@@ -1,15 +1,24 @@
 -- Material Design Components implemented as UI Web/UIOcular (UI Web) datatypes, dogfooding intentional.
--- Every component is **based on row profunctors**: compounds are
--- label-indexed (`filledTextField @l` is a singleton-record editor,
--- `Cons l v () s => … -> UI Web { | s } { | s }`), so they slot into the
--- app-level record merges directly. Internally the live leaf is
--- `property @l`-lifted and its chrome is hand-fused in the `Web` monad
--- (decoration as implementation technique — and a necessity: abstract
--- labels cannot flow through the merges' `Nub`, so a skolem-labeled
--- operand can't be merged); all-chrome groups (button content, progress
--- bars) have concrete rows and stay literal `RecordToRecord.do` merges of
--- announcing chrome (`staticText`/`staticHTML`/`pempty` at `{} → {}`).
--- Code order = DOM order throughout.
+-- The vocabulary is two-sorted:
+--
+--   * **components** — widgets with a model interface, every one a citizen
+--     of exactly one row direction: `×→×` editors (`filledTextField @l`,
+--     `filledTextArea @l`, `checkbox @l`, `radioButton @l`), the `×→+`
+--     event `button @l`, the `+→+` selector `switch @l`, the `+→×` status
+--     `snackbar @l`, and the `×→×` display `indeterminateLinearProgress`
+--     (`{ busy } → {}`). No scalar or polymorphic component interfaces.
+--   * **oculars** — shape-preserving decorators (`card`, `dialog`,
+--     typography, elevations): they have no model of their own, so they
+--     wrap any polarity and impose none.
+--
+-- Internally the live leaf of a compound is `property @l`-lifted and its
+-- chrome is hand-fused in the `Web` monad (decoration as implementation
+-- technique — and a necessity: abstract labels cannot flow through the
+-- merges' `Nub`, so a skolem-labeled operand can't be merged); all-chrome
+-- groups (button content, progress bars) have concrete rows and stay
+-- literal `RecordToRecord.do` merges of announcing chrome
+-- (`staticText`/`staticHTML`/`pempty` at `{} → {}`). Code order = DOM
+-- order throughout.
 module MDC
   ( body1
   , body2
@@ -17,7 +26,6 @@ module MDC
   , caption
   , card
   , checkbox
-  , containedButton
   , dialog
   , elevation1
   , elevation10
@@ -35,6 +43,7 @@ module MDC
   , radioButton
   , simpleDialog
   , snackbar
+  , switch
   , subtitle1
   , subtitle2
   )
@@ -48,21 +57,38 @@ import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (lcmap)
+import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord (pempty, property)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Symbol (class IsSymbol)
+import Data.Variant (case_, inj, on, prj) as Variant
+import Type.Proxy (Proxy(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (UI, effAdapter, silence)
-import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, textArea, uniqueId, (:=))
+import UI (UI, effAdapter, latch)
+import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, p, span, staticHTML, staticText, text, textArea, uniqueId, (:=))
 import Web (button, radioButton) as Web
 
 -- UIs
 
+-- | The `×→+` event button: reads the whole record it is shown and fires
+-- | it as event case `l` on click (`recordToCase` over the raw button).
+button :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: Maybe String, icon :: Maybe String } -> UI Web { | r } [ | s ]
+button config = recordToCase @l (containedButton config)
+
+-- | The `+→+` selector: a button emitting case `l` into the variant under
+-- | edit. `latch` arms it with the seed before its case was ever selected
+-- | and retains the case's last payload thereafter (cross-fed by `synced`),
+-- | so switching away and back restores the last state.
+switch :: forall @l f b s. IsSymbol l => Cons l f b s => { label :: Maybe String, icon :: Maybe String } -> f -> UI Web [ | s ] [ | s ]
+switch config seed = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (latch seed (containedButton config))
+
+-- the raw MDC button — scalar, so private: components expose it only in a
+-- shaped role (`button @l`, `switch @l`)
 containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
 containedButton { label, icon } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
@@ -155,27 +181,25 @@ radioButton labelContent =
   where
     uid = unsafePerformEffect uniqueId
 
-indeterminateLinearProgress :: forall a. UI Web Boolean a
+-- | The `×→×` display citizen for async progress: `{ busy } → {}`, the
+-- | shape `UI.action`'s progress slot expects.
+indeterminateLinearProgress :: UI Web { busy :: Boolean } {}
 indeterminateLinearProgress =
-  div >>> "role" := "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" >>> effAdapter adapter $ lcmap (const {}) $ Semigroupoid.do
-    RecordToRecord.do
-      div >>> cl "mdc-linear-progress__buffer" $ RecordToRecord.do
-        div >>> cl "mdc-linear-progress__buffer-bar" $ pempty
-        div >>> cl "mdc-linear-progress__buffer-dots" $ pempty
-      div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
-        span >>> cl "mdc-linear-progress__bar-inner" $ pempty
-      div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
-        span >>> cl "mdc-linear-progress__bar-inner" $ pempty
-    silence
+  div >>> "role" := "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" >>> effAdapter adapter $ RecordToRecord.do
+    div >>> cl "mdc-linear-progress__buffer" $ RecordToRecord.do
+      div >>> cl "mdc-linear-progress__buffer-bar" $ pempty
+      div >>> cl "mdc-linear-progress__buffer-dots" $ pempty
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ pempty
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ pempty
     where
       adapter = do
         comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
         liftEffect $ close comp
         liftEffect $ setDeterminate comp false
         pure
-          { pre: case _ of
-            true -> open comp
-            false -> close comp
+          { pre: \r -> (if r.busy then open comp else close comp) $> {}
           , post: pure }
 
 -- UIOculars
@@ -203,9 +227,6 @@ subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
 subtitle2 :: Ocular (UI Web)
 subtitle2 w = p w # cl "mdc-typography--subtitle2"
-
-button :: Ocular (UI Web)
-button w = span w # cl "mdc-typography--button"
 
 caption :: Ocular (UI Web)
 caption w = span w # cl "mdc-typography--caption"
@@ -267,8 +288,13 @@ simpleDialog { title, confirm } content =
       id = unsafePerformEffect uniqueId
       id' = unsafePerformEffect uniqueId
 
-snackbar :: Ocular (UI Web)
-snackbar content =
+-- | The `+→×` status receiver: shows message case `l` in a snackbar,
+-- | contributing no fields (`text` echoes its `{}`, so it announces).
+snackbar :: forall @l r. IsSymbol l => Cons l String () r => UI Web [ | r ] {}
+snackbar = snackbarContainer $ lcmap (Variant.on (Proxy @l) identity Variant.case_) text
+
+snackbarContainer :: Ocular (UI Web)
+snackbarContainer content =
   aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open (\a propStatus -> close a) $
     div >>> cl "mdc-snackbar__surface" >>> "role" := "status" >>> "aria-relevant" := "additions" $
       div >>> cl "mdc-snackbar__label" >>> "aria-atomic" := "false" $

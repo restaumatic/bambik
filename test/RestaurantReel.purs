@@ -21,14 +21,12 @@ module RestaurantReel where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.VariantToRecord (reel)
 import Data.Variant (case_, on)
-import MDC as MDC
 import Type.Proxy (Proxy(..))
 import UI (UI)
-import Web (Web)
+import Web (Web, button, staticText)
 
 type Money = Int
 type DishId = String
@@ -46,7 +44,7 @@ type OrderEvent =
 priceDish :: UI Web DishId PricedLine
 priceDish =
   rmap (\id -> { name: id, price: 1000 })
-    (MDC.containedButton { label: Just "Price dish", icon: Nothing })
+    (button $ staticText "Price dish")
 
 -- | The Reel: events folded into the running order. The order is real retained
 -- | state — it lives in the finisher's closure inside the carrier, installed by
