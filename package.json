@@ -7,8 +7,10 @@
     "demo-helloworld": "parcel -p 1234 demo/helloworld/index.html & spago bundle-app --main Main --to demo/helloworld/bundle.js -w -l --path demo/helloworld/**/*.purs",
     "demo-1": "parcel -p 1234 demo/1/index.html & spago bundle-app --main Main --to demo/1/bundle.js -w -l --path demo/1/**/*.purs",
     "demo-2": "parcel -p 1234 demo/2/index.html & spago bundle-app --main Main --to demo/2/bundle.js -w -l --path demo/2/**/*.purs",
+    "demo-mdc": "parcel -p 1234 demo/mdc/index.html & spago bundle-app --main Main --to demo/mdc/bundle.js -w -l --path demo/mdc/**/*.purs",
     "deploy-demo-1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
-    "deploy-demo-2": "scp -r demo/2/ xyz:/var/www/html/bambik/demo/"
+    "deploy-demo-2": "scp -r demo/2/ xyz:/var/www/html/bambik/demo/",
+    "deploy-demo-mdc": "scp -r demo/mdc/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
     "material-components-web": "^14.0.0"
@@ -17,7 +19,7 @@
     "@marp-team/marp-cli": "^4.1.2",
     "esbuild": "0.25.1",
     "parcel": "^2.9.3",
-    "purescript": "^0.15.15",
+    "purescript": "file:/home/eryk/mine/purescript-variant-pkg/purescript-0.15.16-variant.6.tgz",
     "spago": "^0.21.0"
   }
 }

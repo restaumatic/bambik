@@ -66,3 +66,156 @@ export function setDeterminate(component) {
     }
   };
 }
+
+// listen :: Component -> String -> Effect Unit -> Effect Unit
+export function listen(component) {
+  return function (eventType) {
+    return function (handler) {
+      return function () {
+        component.listen(eventType, function () { handler(); });
+      };
+    };
+  };
+}
+
+// listenNode :: Node -> String -> Effect Unit -> Effect Unit
+export function listenNode(node) {
+  return function (eventType) {
+    return function (handler) {
+      return function () {
+        node.addEventListener(eventType, function () { handler(); });
+      };
+    };
+  };
+}
+
+// setClassIf :: Node -> String -> Boolean -> Effect Unit
+export function setClassIf(node) {
+  return function (name) {
+    return function (condition) {
+      return function () {
+        node.classList.toggle(name, condition);
+      };
+    };
+  };
+}
+
+// getSliderValue :: Component -> Effect Number
+export function getSliderValue(component) {
+  return function () {
+    return component.getValue();
+  };
+}
+
+// setSliderValue :: Component -> Number -> Effect Unit
+export function setSliderValue(component) {
+  return function (value) {
+    return function () {
+      component.setValue(value);
+    };
+  };
+}
+
+// layout :: Component -> Effect Unit
+export function layout(component) {
+  return function () {
+    component.layout();
+  };
+}
+
+// getSelected :: Component -> Effect Boolean (MDCSwitch)
+export function getSelected(component) {
+  return function () {
+    return component.selected;
+  };
+}
+
+// setSelected :: Component -> Boolean -> Effect Unit (MDCSwitch)
+export function setSelected(component) {
+  return function (selected) {
+    return function () {
+      component.selected = selected;
+    };
+  };
+}
+
+// getSelectedIndex :: Component -> Effect Int (MDCSelect)
+export function getSelectedIndex(component) {
+  return function () {
+    return component.selectedIndex;
+  };
+}
+
+// setSelectedIndex :: Component -> Int -> Effect Unit (MDCSelect)
+export function setSelectedIndex(component) {
+  return function (index) {
+    return function () {
+      component.selectedIndex = index;
+    };
+  };
+}
+
+// getIconToggleOn :: Component -> Effect Boolean (MDCIconButtonToggle)
+export function getIconToggleOn(component) {
+  return function () {
+    return component.on;
+  };
+}
+
+// setIconToggleOn :: Component -> Boolean -> Effect Unit (MDCIconButtonToggle)
+export function setIconToggleOn(component) {
+  return function (on) {
+    return function () {
+      component.on = on;
+    };
+  };
+}
+
+// setMenuOpen :: Component -> Boolean -> Effect Unit (MDCMenu)
+export function setMenuOpen(component) {
+  return function (open) {
+    return function () {
+      component.open = open;
+    };
+  };
+}
+
+// setTabActive :: Component -> Boolean -> Effect Unit (MDCTab)
+export function setTabActive(component) {
+  return function (active) {
+    return function () {
+      if (active) {
+        component.activate();
+      } else {
+        component.deactivate();
+      }
+    };
+  };
+}
+
+// closeBanner :: Component -> Effect Unit (MDCBanner.close requires a CloseReason)
+export function closeBanner(component) {
+  return function () {
+    if (component.isOpen) {
+      component.close(material_.banner.CloseReason.UNSPECIFIED);
+    }
+  };
+}
+
+// querySelectorIn :: Node -> String -> Effect Node
+export function querySelectorIn(node) {
+  return function (selector) {
+    return function () {
+      return node.querySelector(selector);
+    };
+  };
+}
+
+// setNodeChecked :: Node -> Boolean -> Effect Unit
+export function setNodeChecked(node) {
+  return function (checked) {
+    return function () {
+      node.checked = checked;
+    };
+  };
+}

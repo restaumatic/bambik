@@ -7,6 +7,10 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 [20 minutes-long presentation of the idea](/doc/presentation-20min.md)
 
+[Row profunctors over records and variants (design note)](/doc/row-profunctors.md)
+
+[Variant syntax sugar — the forked PureScript compiler this repo builds on](/doc/variant-sugar.md)
+
 # Demo
 
 In order to run the demo:
@@ -15,23 +19,14 @@ In order to run the demo:
 $ npm install
 ```
 
-Demo of [Material Design Component-based UI](demo/1/Demo1/Main.purs):
+Demo of [Material Design Component-based UI](demo/1/Main.purs):
 
 ```bash
-$ npm run demo1
+$ npm run demo-1
 ```
 
-Demo of [plain HTML-based UI](demo/2/Demo2/Main.purs):
+Demo of [plain HTML-based UI](demo/2/Main.purs):
 
 ```bash
-$ npm run demo2
+$ npm run demo-2
 ```
-
-
-# TODOs
-
-  1. Full set of first-order MDC components
-  1. Validation
-  1. Collections and Higher-order components (including MDC)
-  1. I18n
-  1. Web UI live preview

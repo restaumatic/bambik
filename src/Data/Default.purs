@@ -27,7 +27,7 @@ instance Default (Array a) where
 
 class RecordDefault :: forall k. k -> Row Type -> Constraint
 class RecordDefault rl r | rl -> r where
-  defaultRecord :: Proxy rl -> Record r
+  defaultRecord :: Proxy rl -> { | r }
 
 instance ( IsSymbol name
          , Default value
@@ -43,5 +43,5 @@ instance RecordDefault RowList.Nil () where
 
 instance (RowList.RowToList r rl
          , RecordDefault rl r)
-        =>  Default (Record r) where
+        =>  Default { | r } where
   default = defaultRecord (Proxy @rl)

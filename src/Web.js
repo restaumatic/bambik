@@ -85,12 +85,14 @@ export function appendRawHtml(html) {
       dummyElement.innerHTML = html;
 
       var node = dummyElement.firstChild;
+      var last = null;
       while (node !== null) {
         var next = node.nextSibling;
         parent.appendChild(node); // moves the node from dummyElement to parent
+        last = node;
         node = next;
       }
-      return dummyElement.lastChild;
+      return last; // the last node appended (dummyElement is empty by now)
     };
   };
 }

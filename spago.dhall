@@ -13,14 +13,15 @@ to generate this file without the comments in this block.
 { name = "my-project"
 , dependencies =
   [ "aff"
+  , "arrays"
   , "avar"
   , "datetime"
   , "debug"
   , "effect"
   , "either"
+  , "exceptions"
   , "foldable-traversable"
   , "foreign-object"
-  , "functors"
   , "maybe"
   , "newtype"
   , "prelude"
@@ -29,12 +30,12 @@ to generate this file without the comments in this block.
   , "qualified-do"
   , "record"
   , "refs"
+  , "strings"
   , "transformers"
   , "tuples"
-  , "typelevel-prelude"
   , "unsafe-coerce"
   , "variant"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs", "showcase/**/*.purs" ]
 }

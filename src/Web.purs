@@ -36,8 +36,14 @@ module Web
   , staticHTML
   , staticText
   , svg
+  , table
+  , tbody
+  , td
   , text
   , textArea
+  , th
+  , thead
+  , tr
   , transient
   , ul
   , uniqueId
@@ -84,7 +90,7 @@ uniqueId = randomElementId
 
 -- UIs
 
-text :: forall a. UI Web String a
+text :: UI Web String {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -93,90 +99,129 @@ text = wrap do
     pure node
   modify_ _ { sibling = newNode}
   node <- gets (_.sibling)
+  propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
     { toUser: case _ of
-      New s _ -> setTextNodeValue node s
-    , fromUser: \_ -> pure unit
+      New s _ -> do
+        setTextNodeValue node s
+        prop <- Ref.read propRef
+        void $ prop $ New {} false
+    , fromUser: \prop -> Ref.write prop propRef
     }
 
 input :: String -> UI Web String String
 input type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new $ Nothing
   pure
-    { toUser: case _ of
-    New newa _ -> setValue node newa
-    , fromUser: \prop -> void $ addEventListener "input" node $ const do
-      value <- getValue node
-      void $ prop $ New value true
+    { toUser: \(New newa _) -> do
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> do
+        setValue node newa
+        void $ prop $ New newa false
+    , fromUser: \prop -> do
+      Ref.write (Just prop) mPropRef
+      void $ addEventListener "input" node $ const do
+        Ref.write Nothing mPropRef
+        value <- getValue node
+        void $ prop $ New value true
     }
 
 textArea :: UI Web String String
 textArea = wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: case _ of
-    (New newa _) -> setValue node newa
-    , fromUser: \prop -> void $ addEventListener "input" node $ const do
-      value <- getValue node
-      void $ prop $ New value true
+    { toUser: \(New newa _) -> do
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> do
+        setValue node newa
+        void $ prop $ New newa false
+    , fromUser: \prop -> do
+      Ref.write (Just prop) mPropRef
+      void $ addEventListener "input" node $ const do
+        Ref.write Nothing mPropRef
+        value <- getValue node
+        void $ prop $ New value true
     }
 
 
 checkboxInput :: forall a . Default a => UI Web (Maybe a) (Maybe a)
 checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
+  mPropRef <- liftEffect $ Ref.new Nothing
   element "input" (pure unit)
   node <- gets _.sibling
   pure
-    { toUser: case _ of
-    New Nothing _ -> setChecked node false
-    New (Just newa) _ -> do
-      setChecked node true
-      Ref.write newa aRef
-    , fromUser: \prop -> void $ addEventListener "input" node $ const do
-      checked <- getChecked node
-      a <- Ref.read aRef
-      void $ prop $ New (if checked then (Just a) else Nothing) false
+    { toUser: \(New ma _) -> do
+        case ma of
+          Nothing -> setChecked node false
+          Just newa -> do
+            setChecked node true
+            Ref.write newa aRef
+        -- leaf echo: announce what was received, so record-merge gates open
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> void $ prop $ New ma false
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "input" node $ const do
+          checked <- getChecked node
+          a <- Ref.read aRef
+          void $ prop $ New (if checked then (Just a) else Nothing) false
     }
 
 radioButton :: forall a. Default a => UI Web (Maybe a) a
 radioButton = "type" := "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
+  mPropRef <- liftEffect $ Ref.new Nothing
   element "input" (pure unit)
   node <- gets _.sibling
   pure
-    { toUser: case _ of
-    New Nothing _ -> setChecked node false
-    New (Just newa) _ -> do
-      setChecked node true
-      Ref.write newa aRef
-    , fromUser: \prop -> void $ addEventListener "change" node $ const do
-    a <- Ref.read aRef
-    void $ prop $ New a false
+    { toUser: \(New ma _) -> do
+        case ma of
+          Nothing -> setChecked node false
+          Just newa -> do
+            setChecked node true
+            Ref.write newa aRef
+        -- leaf echo (output is the bare selection, so only a `Just` echoes)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> for_ ma \newa -> void $ prop $ New newa false
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "change" node $ const do
+          a <- Ref.read aRef
+          void $ prop $ New a false
     }
 
 -- TODO disable button after click?
-button :: forall a. UI Web a Void -> UI Web a a
+-- | Content is chrome (`{} → {}`, announcing): a button contains decoration
+-- | only; its wiring is the click emitter, replaying the last value fed.
+button :: forall a. UI Web {} {} -> UI Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
-  aRef <- liftEffect $ Ref.new $ unsafeCoerce unit
+  -- a click before any value arrived has nothing valid to emit — withheld
+  mARef <- liftEffect $ Ref.new Nothing
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
-    status <- w'.toUser occur
-    case occur of
-      New a _ -> Ref.write a aRef
-    pure status
+        status <- w'.toUser (occur $> {})
+        case occur of
+          New a _ -> Ref.write (Just a) mARef
+        pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
-    a <- Ref.read aRef
-    -- w'.toUser Nothing -- TODO check
-    setAttribute node "disabled" "true" -- TODO re-think
-    void $ prop $ New a false
+        mA <- Ref.read mARef
+        for_ mA \a -> do
+          setAttribute node "disabled" "true" -- TODO re-think
+          void $ prop $ New a false
     }
 
-staticText :: forall a b. String -> UI Web a b
+-- | Static text as the announcing record unit with a face (`{} → {}`):
+-- | fixed DOM and, like `RecordToRecord.pempty`, it announces its
+-- | informationless `{}` on registration — so chrome composes as a gated
+-- | record-merge operand without starving anything.
+staticText :: String -> UI Web {} {}
 staticText text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -186,17 +231,18 @@ staticText text = wrap do
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: mempty
+    , fromUser: \prop -> void $ prop $ New {} false
     }
 
-staticHTML :: forall a b. String -> UI Web a b
+-- | See `staticText` — same announcing chrome typing.
+staticHTML :: String -> UI Web {} {}
 staticHTML html = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: mempty
+    , fromUser: \prop -> void $ prop $ New {} false
     }
 
 -- UIOculars
@@ -269,6 +315,26 @@ ol = el "ol"
 
 li :: Ocular (UI Web)
 li = el "li"
+
+-- table elements get real oculars (not `staticHTML`): the raw-HTML parser
+-- drops `tr`/`td`/`thead` fragments outside a table context
+table :: Ocular (UI Web)
+table = el "table"
+
+thead :: Ocular (UI Web)
+thead = el "thead"
+
+tbody :: Ocular (UI Web)
+tbody = el "tbody"
+
+tr :: Ocular (UI Web)
+tr = el "tr"
+
+th :: Ocular (UI Web)
+th = el "th"
+
+td :: Ocular (UI Web)
+td = el "td"
 
 h1 :: Ocular (UI Web)
 h1 = el "h1"
@@ -407,10 +473,9 @@ runWidgetInSelectedNode selector initial callback ui = do
 runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
 runWidgetInNode node initial callback ui = runDomInNode node do
   { toUser, fromUser } <- unwrap ui
-  liftEffect $ fromUser case _ of
-    New b _ -> do
-      callback b
-      pure Nothing
+  liftEffect $ fromUser \(New b _) -> do
+    callback b
+    pure Nothing
   void $ liftEffect $ toUser $ New initial false
 
 --- private
