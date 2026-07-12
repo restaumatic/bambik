@@ -83,7 +83,7 @@ import Data.Profunctor.Row (class DispatchableVariants, class ExclusiveRows)
 -- |
 -- | This is the **bare strength** for the `+ → ×` direction (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is `reelWrap` below —
--- | exactly as `focusVariant` is built on `Choice`.
+-- | exactly as `focusRecord` is built on `Strong`.
 class Profunctor p <= Retaining p where
   retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
 
@@ -138,8 +138,9 @@ retainCase
 retainCase g =
   dimap
     (on (Proxy @l) Right Left)
-    -- no `Lacks`: `unsafeSet` realizes the layout `Cons l f b' s'` pins — see
-    -- `recordToProperty`'s note.
+    -- no `Lacks`: `unsafeSet` realizes the layout `Cons l f b' s'` pins —
+    -- under a shadowed duplicate label the outer entry wins, the same
+    -- first-label convention `inj`/`on` follow.
     (\(Tuple b' f) -> unsafeSet (reflectSymbol (Proxy @l)) f b')
     (retain g)
 
@@ -166,15 +167,14 @@ caseToProperty
 caseToProperty g =
   dimap
     (on (Proxy @l) Left Right)
-    -- no `Lacks`: `unsafeSet` realizes the layout the `Cons` chain pins — see
-    -- `recordToProperty`'s note.
+    -- no `Lacks`: `unsafeSet` realizes the layout the `Cons` chain pins —
+    -- first-label convention, as `inj`/`on`.
     (\(Tuple f' b) -> unsafeSet (reflectSymbol (Proxy @w)) b (unsafeSet (reflectSymbol (Proxy @l)) f' {}))
     (retain g)
 
 -- | The `+ → ×` member of the introduce family and the dual of `recordToCase`:
 -- | the wrapped `p f { | r }` consumes the **focus** — case `l` of the input
--- | **shot** `s` — and produces the whole output record `r` (as `caseToVariant`'s
--- | wrapped profunctor produces the whole output variant). `r` is the
+-- | **shot** `s` — and produces the whole output record `r`. `r` is the
 -- | **reality** the camera is pointed at: it never enters the shot, and here it
 -- | must be *produced* without arriving — every **background** case must still
 -- | yield a record, and a sum input can't supply one, so it is replayed from
@@ -212,18 +212,18 @@ reelE decon recon g = dimap decon recon (retain g)
 
 -- | Row existential `Reel` focusing a whole **sub-Variant** — the row-valued
 -- | **focus** `f` — of the input **shot** `s`; the residual is the **background**
--- | `[ | b ]` (`ExclusiveRows f b s`, the same split `focusVariant` uses).
+-- | `[ | b ]` (`ExclusiveRows f b s`, the split `splitVariant` performs).
 -- | Crossing `+ → ×`, the background can't stay a variant in the `Record`
 -- | output, so it is **wrapped as a single output field `w`** — a record
 -- | holding the variant. The output extension is itself shot-shaped:
 -- | `Cons w [ | b ] b' s'` — the wrapped background is the focus of a second
 -- | shot at `w`, against the inner output `b'`. The inner
 -- | `p [ | f ] { | b' }` runs on the focus; the retained background-variant is
--- | written at field `w`. The mixed-direction analogue of `focusVariant`, and
+-- | written at field `w`. The sub-variant focus for this direction, and
 -- | the dual of `shutterWrap` — same sub-row focus, but the background is
 -- | *wrapped* to cross into the record output rather than carried same-kind.
 -- | The `+ → ×` row combinator over the bare strength `Retaining`,
--- | just as `focusVariant` is the row combinator over `Choice`.
+-- | just as `focusRecord` is the row combinator over `Strong`.
 -- |
 -- | ```purescript
 -- | -- focus the `cancel` case; wrap the background into output field `pending`
@@ -248,6 +248,6 @@ reelWrap g =
   reelE
     splitVariant
     -- no `Lacks`: `unsafeSet` realizes the layout `Cons w [ | b ] b' s'` pins —
-    -- see `recordToProperty`'s note.
+    -- first-label convention, as `inj`/`on`.
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g

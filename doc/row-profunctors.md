@@ -4,12 +4,14 @@ bambik builds profunctor UIs over `Record`-shaped (**product** — all fields pr
 and `Variant`-shaped (**sum** — mutually exclusive cases) types. Two complementary families
 of **row profunctors** do this, both under [`src/Data/Profunctor/Row/`](../src/Data/Profunctor/Row/):
 
-- **Focus** — `focusRecord`/`focusVariant`, the row-typed `Strong`/`Choice`: zoom into a **sub**-record/sub-variant, carrying the rest of the row. The single-field/single-case combinators (`recordToProperty`, `case_`, …) are their single-label forms.
+- **Focus** — `focusRecord`/`focusVariant`, the row-typed `Strong`/`Choice`: zoom into a **sub**-record/sub-variant, carrying the rest of the row. The single-field/single-case combinators (`property`, `case_`, …) are their single-label forms.
 - **Merge** — `recordToRecord`/`variantToVariant`/…: binary merges of **complete** row-shaped sub-profunctors. N-ary, tree-shaped.
 
-They produce the **same profunctor values** from different angles; this note explains the relationship. The focus function for each row-kind lives *alongside* the merge class of the same kind: `focusRecord` in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), `focusVariant` in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs).
+They produce the **same profunctor values** from different angles; this note explains the relationship. Each row-kind's focus machinery lives *alongside* the merge class of the same kind: `focusRecord` in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), `case_` (the single-case form; the sub-row `focusVariant` is pruned) in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs).
 
 > **Syntax note.** Variant types appear throughout in the fork's `[ … ]` sugar — `[ a :: X | r ]` is `Variant ( a :: X | r )`, `[ | r ]` is `Variant r`, `[]` is `Variant ()`; records use stock `{ … }`. bambik builds on a **forked `purs`** that adds this (plus `.label` constructor and `case _ of .label` pattern) sugar — see [variant-sugar.md](./variant-sugar.md).
+
+> **Code status.** The modules keep only what the demos reach (plus the mixed-strength layer, kept deliberately). Some combinators this note *derives* — `recordToProperty`, `eliminateProperty`, `caseToVariant`, `focusVariant`, `lensE`, the default lifts, the narrowing and single-label reshapings — are **pruned from the code**; they remain in this note because the algebra needs their names to state the laws and dualities. The living inventory is in ["Materialized in code"](#materialized-in-code).
 
 ## The idea in one screen
 
@@ -18,7 +20,7 @@ The punchline the code embodies: **the focus combinators are mostly just `Strong
 - **`focusRecord`** and **`focusVariant`** are the row-typed `Strong`/`Choice` — they operate on rows on **both sides**, embedding a whole **sub-Record/sub-Variant** profunctor (`p { | f } { | f' }`) into a bigger row and carrying the complement. Each is a plain function over its positional original (`Strong p` / `Choice p`), so every such profunctor has them for free.
 - **Product** (`Record`) combinators — `recordToProperty`, `eliminateProperty`, `property` — rest directly on `Strong` (`first`/`second` + insert/delete; `property` is the value-level single-field lens).
 - **Sum** (`Variant`) combinators — `case_`, `caseToVariant` — rest directly on `Choice` (`left`; `case_` is the value-level single-case prism). There is one operation that *would* fall outside `Choice` — introducing a *fresh* case from a spontaneous source (a case the input never carries; see the rationale below) — but in this codebase that is built via the `VariantToVariant` composition path from sources that emit variants, not a dedicated focus combinator.
-- A single-field/grow combinator is an **identity-pinned** merge; a merge is an **iterated** single-field combinator. Same values, two granularities — and since they share a row-kind, each focus function sits in the same module as its merge class (`focusRecord` with `RecordToRecord`, `focusVariant` with `VariantToVariant`).
+- A single-field/grow combinator is an **identity-pinned** merge; a merge is an **iterated** single-field combinator. Same values, two granularities — and since they share a row-kind, each row-kind's focus machinery sits in the same module as its merge class (`focusRecord` with `RecordToRecord`; `case_` with `VariantToVariant`).
 
 See ["Materialized in code"](#materialized-in-code) for the module layout.
 
@@ -27,7 +29,7 @@ See ["Materialized in code"](#materialized-in-code) for the module layout.
 | | |
 |---|---|
 | Type domain | Both build `p (X i) (Y o)` for `X, Y ∈ {Record, Variant}` |
-| Row mechanics | Both use `RowToList`, `Prim.Row.{Cons,Union,Lacks}`, and the constraints in `Data.Profunctor.Row` |
+| Row mechanics | Both use `RowToList`, `Prim.Row.{Cons,Union,Nub}`, and the constraints in `Data.Profunctor.Row` |
 | Semantic role of types | `Record` = entity (product, all fields present at once); `Variant` = event channel (sum, mutually exclusive cases) |
 | Final values | A given profunctor value inhabits the same type either way (modulo `p` having the requisite instances) |
 
@@ -129,7 +131,7 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 ### Reshape vs focus: two axes, not a trio
 
-The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-resolve-and-retain)) — just not focuses. `Data.Profunctor.Row` — the shared floor of the row layer — exports the four one-sided reshapings (`widenRecordInput`, `narrowVariantInput`, `narrowRecordOutput`, `widenVariantOutput`, plus their single-label `Cons`-pinned forms); a both-sides reshape for a mixed shape is just their composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`, `narrowVariantInput ∘ narrowRecordOutput` for `Variant → Record`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
+The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-resolve-and-retain)) — just not focuses. `Data.Profunctor.Row` — the shared floor of the row layer — exports the two widening reshapings the `UI` merge instances build on (`widenRecordInput`, `widenVariantOutput`); their narrowing duals and single-label `Cons`-pinned forms are pruned (all are `dimap` one-liners, reconstructible on demand). A both-sides reshape for a mixed shape is just a composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
 
 - **direction** — *widen* (grow, `f → s`) vs *narrow* (shrink, `s → f`).
 - **complement** — *reshape* drops the complement (pure `dimap`, `Profunctor`-only) vs *focus* threads it across the input→output boundary (needs `Strong`/`Choice`).
@@ -213,7 +215,7 @@ optic ≅ ∃c. (decon : s → a ⟨in⟩ c) × (recon : b ⟨out⟩ c → t)   
 
 The same optic admits **three interchangeable encodings**, bridged by (co-)Yoneda:
 
-- **existential** `∃c. (decon) × (recon)` — the symmetric form above. The constructors `lensE`/`prismE`/`shutterE`/`reelE` are its eliminators (`forall c. (decon) -> (recon) -> _`), each literally `dimap decon recon (carrier g)` with `carrier ∈ {first, left, resolve, retain}`.
+- **existential** `∃c. (decon) × (recon)` — the symmetric form above. The constructors `prismE`/`shutterE`/`reelE` (and the pruned `lensE`) are its eliminators (`forall c. (decon) -> (recon) -> _`), each literally `dimap decon recon (carrier g)` with `carrier ∈ {first, left, resolve, retain}`.
 - **profunctor** `∀p. C p ⇒ p a b → p s t` — the type aliases (`Shutter`/`Reel`, and `Data.Lens`'s `Lens`/`Prism`); the symmetry lives entirely in the constraint `C ∈ {Strong, Choice, Resolving, Retaining}`.
 - **explicit** — the co-Yoneda *collapse* of the existential at a fixed witness: `lens` / `prism` / `shutter view build escape` / `reel dispatch`, at `c := s` / `c := t` / `c := s` / `c := b → t` respectively.
 
@@ -347,15 +349,18 @@ Note the direction of specialization: the diagonals are the `reality := backgrou
 
 Both strategies build the same values; pick by the granularity of the pieces you start from.
 
-### Single-field-combinator style
+### Single-field style
+
+The leaf level works one label at a time. In the living code this is the label-indexed components and the closed-singleton `field`:
 
 ```purescript
-recordToProperty @"shortId"  shortIdSource
-  >>> recordToProperty @"orderId"  orderIdSource
-  >>> recordToProperty @"customer" customerSource
+RecordToRecord.do
+  MDC.filledTextField @"shortId" { floatingLabel: "Short ID" }
+  MDC.filledTextField @"orderId" { floatingLabel: "Unique ID" }
+  field @"customer" customerSubForm
 ```
 
-Each step composes an atomic value-source with a single-field combinator that introduces one field; `>>>` chains them, growing the record one cell per step. Sub-records nest naturally — a field's source can itself be a chain of single-field steps.
+(The algebra's growth-by-one-field form of the same idea is the pruned `recordToProperty @l … >>> recordToProperty @l' …` chain — one new field per step; it survives in this note as the derivation of the merge/single-field correspondence.)
 
 This reads as "this record has these fields, one per line." It is the right style at the **leaf level** — when you start from atomic value-sources.
 
@@ -391,34 +396,31 @@ The merge style shines once you have separate sub-records (say a customer block,
 
 ## Materialized in code
 
-The repository implements this in `Data.Profunctor.Row.*`. Each of the four **direction modules** stacks its merge class, its unary strength class, and its single-field combinator(s) (they share the direction and its constraints):
+The repository implements this in `Data.Profunctor.Row.*` (pruned to demo-reachability — see the code-status note; pruned combinators below are marked):
 
-- **`focusRecord`** (in [Row/RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), alongside `RecordToRecord`) — `Strong p => p { | f } { | f' } -> p { | s } { | s' }` (`ExclusiveRows f b s`, `ExclusiveRows f' b s'`), the row-typed `first`/`second`: splits the shot `s` into focus `f` and background `b`, runs the argument on `f` via `first`, and re-merges.
-- **`focusVariant`** (in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs), alongside `VariantToVariant`) — `Choice p => p [ | f ] [ | f' ] -> p [ | s ] [ | s' ]`, the row-typed `left`/`right`: dispatches the shot into focus or background via `Data.Variant.contract`, runs the argument via `left`, and re-merges via `expand`.
+- **`focusRecord`** (in [Row/RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), alongside `RecordToRecord`) — `Strong p => p { | f } { | f' } -> p { | s } { | s' }` (`ExclusiveRows f b s`, `ExclusiveRows f' b s'`), the row-typed `first`/`second`: splits the shot `s` into focus `f` and background `b`, runs the argument on `f` via `first`, and re-merges. Its variant dual `focusVariant` is pruned; the dispatch it used, `splitVariant`, survives in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs) (`reelWrap` shares it).
 - **`Resolving`** (in [Row/RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs), alongside `RecordToVariant`) — `class Profunctor p <= Resolving p` with `resolve :: p a b -> p (Tuple a c) (Either b c)`, the bare product→sum (×→+) strength. No `(->)` instance. The row focus function `shutterWrap` sits atop it.
 - **`Retaining`** (in [Row/VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs), alongside `VariantToRecord`) — `class Profunctor p <= Retaining p` with `retain :: p a b -> p (Either a c) (Tuple b c)`, the bare sum→product (+→×) strength. No `(->)` instance. The row focus function `reelWrap` sits atop it.
-- **Single-field/case combinators** (each on its module's strength) — `recordToProperty`/`eliminateProperty`/`property` (on `Strong`), `case_`/`caseToVariant` (on `Choice`), `resolveProperty` (on `Resolving`), `retainCase` (on `Retaining`). `property`/`case_` are the value-level field lens / case prism; `resolveProperty`/`retainCase` are the `edit`-position combinators for the mixed directions (threading one label across the product/sum boundary); `propertyToCase`/`caseToProperty` are their transposes and the mixed analogues of `property`/`case_` (the wrapped profunctor runs on the *focused* label's value; the leftover row is wrapped as a single output case/field `w`); the **introduce family** puts the whole row at the wrapped profunctor's far end — `recordToProperty` (×→×, whole row in, new output field), `caseToVariant` (+→+, new input case dispatched by a whole-row-out profunctor; at a `Void`-output sink it *eliminates* the case, subsuming the former `eliminateCase`), `recordToCase` (×→+, ungated emission, mere `Profunctor`), `caseToRecord` (+→×, Mealy reducer on `Retaining`: case `l` updates the record, other cases replay it); `shutterWrap`/`reelWrap` are the *sub-row* focus combinators on `Resolving`/`Retaining`. All row combinators are plain functions over the strengths, so the diagonal ones work on any `Strong`/`Choice` profunctor; the mixed strengths' instances live on a genuinely stateful carrier — `Resolving (UI m)` / `Retaining (UI m)` (there is still no `(->)` instance: a pure function can't loop or retain state).
-- **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) is *not* a dedicated combinator here: there is no inhabitant for it, and in practice it's built via the `VariantToVariant` composition path.
-- **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`; each direction module additionally hosts its unary strength class.
-- **Tests**: [test/Main.purs](../test/Main.purs) exercises both classes on `(->)` — `focusRecord`/`property`/`recordToProperty`/`eliminateProperty` (incl. the introduce-then-eliminate identity that encodes the focus = identity-pinned merge claim) and `focusVariant`/`case_`/`caseToVariant` (incl. `Void`-pinned case elimination).
+- **Single-field/case combinators** — living: `property`/`field` (on `Strong`; the value-level field lens and its closed-singleton merge-operand form), `case_` via `prismE` (on `Choice`; the value-level case prism), `resolveProperty`/`propertyToCase` (on `Resolving`), `retainCase`/`caseToProperty`/`caseToRecord` (on `Retaining`; `caseToRecord` is the Mealy reducer — case `l` updates the record, other cases replay it), `recordToCase` (×→+ introduce, mere `Profunctor` — the ungated emission). Pruned: `recordToProperty`/`eliminateProperty` (×→× grow/drop), `caseToVariant` (+→+ absorb), `lensE`, `withRecordDefault(s)`. All row combinators are plain functions over the strengths; the mixed strengths' instances live on a genuinely stateful carrier — `Resolving (UI m)` / `Retaining (UI m)` (there is still no `(->)` instance: a pure function can't loop or retain state).
+- **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) exists only where nothing gates it: `recordToCase` on the ×→+ direction.
+- **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`, each with its nullary unit `pempty` and qualified-do sugar; the mixed direction modules additionally host their unary strength classes.
+- **Tests**: [test/Main.purs](../test/Main.purs) exercises the diagonals on `(->)` — `focusRecord`/`property`/`recordToCase` — plus the merge unit laws and knowledge-gating on the `UI` carrier via a probe harness; [test/BusinessOptics.purs](../test/BusinessOptics.purs), [test/RestaurantReel.purs](../test/RestaurantReel.purs), [test/EntityEventExample.purs](../test/EntityEventExample.purs) and [test/HelloShutterReel.purs](../test/HelloShutterReel.purs) exercise `Shutter`/`Reel`.
 
 ## References
 
 Source locations cited in this document:
 
-- Merge classes:
-  - `src/Data/Profunctor/Row/RecordToRecord.purs:37`
+- Merge classes (each with `pempty` and qualified-do):
+  - `src/Data/Profunctor/Row/RecordToRecord.purs`
   - `src/Data/Profunctor/Row/RecordToVariant.purs`
   - `src/Data/Profunctor/Row/VariantToRecord.purs`
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
-  - Unary row reshapings (`widen*`/`narrow*` + single-label forms): `src/Data/Profunctor/Row.purs`
-- Merge examples: `src/Data/Profunctor/Row/Example.purs`
-- Default single-field lifts (`withRecordDefault`/`withRecordOutputDefault`): `src/Data/Profunctor/Row/RecordToRecord.purs`
-- Row unary strengths (each beside its merge, with its single-field combinator(s)):
-  - `RecordToRecord.purs` — `focusRecord` (on `Strong`); `recordToProperty`/`eliminateProperty`/`property`; existential constructor `lensE`
-  - `VariantToVariant.purs` — `focusVariant` (on `Choice`); `case_`/`caseToVariant`; existential constructor `prismE`
-  - `RecordToVariant.purs` — bare `class Resolving`/`resolve` + row focus `shutterWrap`; `resolveProperty`; induced optic `Shutter`/`shutter`; existential constructor `shutterE`
-  - `VariantToRecord.purs` — bare `class Retaining`/`retain` + row focus `reelWrap`; `retainCase`; induced optic `Reel`/`reel`; existential constructor `reelE`
-- Unary row reshapings (`widenRecordInput`/`narrowVariantInput`/`narrowRecordOutput`/`widenVariantOutput` and single-label forms): `Data.Profunctor.Row` — see "Reshape vs focus"
+- Merge examples: `src/Data/Profunctor/Row/Example.purs` (phantom carrier) + `showcase/App.purs` (four-direction pipeline)
+- Row strengths and their combinators (each beside its merge):
+  - `RecordToRecord.purs` — `focusRecord` (on `Strong`); `property`/`field`
+  - `VariantToVariant.purs` — `case_` (on `Choice`, via `prismE`); `splitVariant`
+  - `RecordToVariant.purs` — bare `class Resolving`/`resolve` + row focus `shutterWrap`; `resolveProperty`/`propertyToCase`; `recordToCase`; induced optic `Shutter`/`shutter`; existential constructor `shutterE`
+  - `VariantToRecord.purs` — bare `class Retaining`/`retain` + row focus `reelWrap`; `retainCase`/`caseToProperty`/`caseToRecord`; induced optic `Reel`/`reel`; existential constructor `reelE`
+- Unary row reshapings (the two widenings): `Data.Profunctor.Row` — see "Reshape vs focus"
 - Base product↔sum binary counterpart of `resolve`: `p a b -> p c d -> p (Tuple a c) (Either b d)` — cited in `resolve`'s docstring; no longer a module of its own
 - Row constraints (`InclusiveRows`/`ExclusiveRows`/`DispatchableVariants`): `src/Data/Profunctor/Row.purs`

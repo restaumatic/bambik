@@ -130,8 +130,9 @@ resolveProperty
   -> p { | s } [ | s' ]
 resolveProperty g =
   dimap
-    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins — see
-    -- `recordToProperty`'s note.
+    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins —
+    -- under a shadowed duplicate label the outer entry wins, the same
+    -- first-label convention `inj`/`on` follow.
     (\s -> Tuple (unsafeDelete (reflectSymbol (Proxy @l)) s) (get (Proxy @l) s))
     (either expand (inj (Proxy @l)))
     (resolve g)
@@ -157,8 +158,9 @@ propertyToCase
   -> p { | s } [ | s' ]
 propertyToCase g =
   dimap
-    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins — see
-    -- `recordToProperty`'s note.
+    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins —
+    -- under a shadowed duplicate label the outer entry wins, the same
+    -- first-label convention `inj`/`on` follow.
     (\s -> Tuple (get (Proxy @l) s) (unsafeDelete (reflectSymbol (Proxy @l)) s))
     (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
