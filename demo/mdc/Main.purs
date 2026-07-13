@@ -12,8 +12,12 @@
 -- | `filledTextArea`, `checkbox`, `radioButton`, `toggleSwitch`, `slider`,
 -- | `select`, `segmentedButton`, `filterChip`, `iconToggle`); the shipping
 -- | variant is edited with `tab @l`s in a `tabBar` plus `casePane`s, all
--- | `synced`; the data table shows live `reading`s; the image list and
--- | dividers are announcing statics. Events cover `button`, `fab`,
+-- | `synced`; the data table and summary line are **live views of the
+-- | form's output** — a `synced` passthrough stage after the form
+-- | (`identity` wires the record through, the displays drain into
+-- | `silence`), because within a record merge siblings never see each
+-- | other's emissions; the image list and dividers are announcing
+-- | statics. Events cover `button`, `fab`,
 -- | `iconButton` and a `menu` of `menuItem`s; dispatch shows both
 -- | progress displays (`indeterminateLinearProgress` and
 -- | `indeterminateCircularProgress`); statuses cover `snackbar`s and a
@@ -32,7 +36,7 @@ module Main (main) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -94,7 +98,22 @@ type SettingsOut =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" } nav Semigroupoid.do
+main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
+  ( MDC.list RecordToRecord.do
+      MDC.listItem $ staticText "Text fields"
+      MDC.listItem $ staticText "Selection controls"
+      MDC.listItem $ staticText "Chips"
+      MDC.listItem $ staticText "Segmented buttons"
+      MDC.listItem $ staticText "Menus"
+      MDC.listItem $ staticText "Sliders"
+      MDC.listItem $ staticText "Tabs"
+      MDC.listItem $ staticText "Data tables"
+      MDC.listItem $ staticText "Image lists"
+      MDC.divider
+      MDC.listItem $ staticText "Buttons & FAB"
+      MDC.listItem $ staticText "Progress indicators"
+      MDC.listItem $ staticText "Banner & snackbars"
+  ) Semigroupoid.do
   action loadSettings MDC.indeterminateLinearProgress
   MDC.layoutGrid RecordToRecord.do
     MDC.layoutCell { span: 12 } $ MDC.headline6 $ reading @"name" ("Settings — " <> _)
@@ -142,17 +161,6 @@ main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
       , casePane @"standard" $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" }
       , casePane @"express" $ MDC.filledTextField @"price" { floatingLabel: "Express fee" }
       ]
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
-      MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
-        MDC.dataRow RecordToRecord.do
-          MDC.dataCell $ staticText "Name"
-          MDC.dataCell $ reading @"name" identity
-        MDC.dataRow RecordToRecord.do
-          MDC.dataCell $ staticText "Volume"
-          MDC.dataCell $ reading @"volume" show
-        MDC.dataRow RecordToRecord.do
-          MDC.dataCell $ staticText "Theme"
-          MDC.dataCell $ reading @"theme" (fromMaybe "—")
     MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
       MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
       MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
@@ -160,8 +168,30 @@ main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
       MDC.imageListItem { src: swatch "0081cf" 110, label: "Sea" }
       MDC.imageListItem { src: swatch "c34a36" 130, label: "Clay" }
       MDC.imageListItem { src: swatch "936c00" 90, label: "Ochre" }
-    MDC.layoutCell { span: 12 } divider
-    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize text
+  -- live views of the form's *output*: within the form merge, siblings never
+  -- see each other's emissions (`recordToRecord` has no cross-feed), so
+  -- whole-record displays go in a passthrough stage after it — `identity`
+  -- wires the record through, the display member re-renders on every form
+  -- emission and (`>>> silence`) never emits
+  synced
+    [ identity
+    , Semigroupoid.do
+        MDC.layoutGrid RecordToRecord.do
+          MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
+            MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
+              MDC.dataRow RecordToRecord.do
+                MDC.dataCell $ staticText "Name"
+                MDC.dataCell $ reading @"name" identity
+              MDC.dataRow RecordToRecord.do
+                MDC.dataCell $ staticText "Volume"
+                MDC.dataCell $ reading @"volume" show
+              MDC.dataRow RecordToRecord.do
+                MDC.dataCell $ staticText "Theme"
+                MDC.dataCell $ reading @"theme" identity
+          MDC.layoutCell { span: 12 } MDC.divider
+          MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize text
+        silence
+    ]
   MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ Web.div >>> attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
     MDC.button @"save" { label: Just "Save", icon: Just "save" }
     MDC.fab @"like" { icon: "favorite", label: Just "Like" }
@@ -182,22 +212,6 @@ main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
     MDC.banner @"exported"
     MDC.snackbar @"resetDone"
   silence
-  where
-  nav = MDC.list RecordToRecord.do
-    MDC.listItem $ staticText "Text fields"
-    MDC.listItem $ staticText "Selection controls"
-    MDC.listItem $ staticText "Chips"
-    MDC.listItem $ staticText "Segmented buttons"
-    MDC.listItem $ staticText "Menus"
-    MDC.listItem $ staticText "Sliders"
-    MDC.listItem $ staticText "Tabs"
-    MDC.listItem $ staticText "Data tables"
-    MDC.listItem $ staticText "Image lists"
-    divider
-    MDC.listItem $ staticText "Buttons & FAB"
-    MDC.listItem $ staticText "Progress indicators"
-    MDC.listItem $ staticText "Banner & snackbars"
-  divider = MDC.divider
 
 -- model functions
 
@@ -207,14 +221,14 @@ swatch color height =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='" <> show height
     <> "'><rect width='100%25' height='100%25' fill='%23" <> color <> "'/></svg>"
 
-summarize :: SettingsIn -> String
+summarize :: SettingsOut -> String
 summarize s =
   "Summary: " <> s.name
     <> ", volume " <> show s.volume
     <> ", Wi-Fi " <> (if s.wifi then "on" else "off")
-    <> ", plan " <> fromMaybe "unset" s.plan
-    <> ", theme " <> fromMaybe "unset" s.theme
-    <> ", size " <> fromMaybe "unset" s.size
+    <> ", plan " <> s.plan
+    <> ", theme " <> s.theme
+    <> ", size " <> s.size
     <> ", shipping " <> shippingText s.shipping
     <> "."
 
