@@ -7,11 +7,13 @@ module UI
   , action
   , action'
   , affAdapter
+  , announce
   , constant
   , debounced
   , debounced'
   , effAdapter
   , looped
+  , seeded
   , silence
   , spied
   )
@@ -194,22 +196,32 @@ instance Functor m => Cochoice (UI m) where
     }
 
 -- | The `× → +` **co-strength** (retraction of `Resolving`): a `Right c`
--- | emission is retained as the state paired with subsequent inputs, a
--- | `Left b` exits — a **terminating fold**. Gated like `Costrong` (a first
--- | `c` must arrive before inputs pass); `coresolve (resolve g) ≅ g` once
--- | primed.
+-- | emission is retained as the fold state and — **eagerly** — re-fed to
+-- | the widget joined with the last input (guarded), so the widget
+-- | re-renders at every fold step; a `Left b` exits. Gated like `Costrong`
+-- | (a first `c` must arrive before inputs pass — `announce` an initial
+-- | state to prime it); `coresolve (resolve g) ≅ g` once primed.
 instance Functor m => Coresolving (UI m) where
   coresolve p = wrap ado
+    let aRef = unsafePerformEffect $ Ref.new Nothing
     let cRef = unsafePerformEffect $ Ref.new Nothing
+    let busyRef = unsafePerformEffect $ Ref.new false
     p' <- unwrap p
     in
       { toUser: \(New a cont) -> do
+          Ref.write (Just a) aRef
           mc <- Ref.read cRef
           for_ mc \c -> p'.toUser $ New (Tuple a c) cont
       , fromUser: \prop -> p'.fromUser \(New bc cont) -> case bc of
           Left b -> prop $ New b cont
           Right c -> do
             Ref.write (Just c) cRef
+            busy <- Ref.read busyRef
+            unless busy do
+              Ref.write true busyRef
+              ma <- Ref.read aRef
+              for_ ma \a -> p'.toUser $ New (Tuple a c) cont
+              Ref.write false busyRef
             pure Nothing
       }
 
@@ -219,12 +231,20 @@ instance Functor m => Coresolving (UI m) where
 -- | `coretain (retain g) ≅ g` once the state channel is primed.
 instance Functor m => Coretaining (UI m) where
   coretain p = wrap $ unwrap p <#> \p' ->
-    { toUser: \(New a cont) -> p'.toUser $ New (Left a) cont
-    , fromUser: \prop -> p'.fromUser \(New (Tuple b c) cont) -> do
-        status <- prop $ New b cont
-        p'.toUser $ New (Right c) cont
-        pure status
-    }
+    -- the resume re-entry is guarded: a record-output widget echoes on
+    -- `toUser`, and an unguarded re-feed would loop on its own echo
+    let busyRef = unsafePerformEffect $ Ref.new false
+    in
+      { toUser: \(New a cont) -> p'.toUser $ New (Left a) cont
+      , fromUser: \prop -> p'.fromUser \(New (Tuple b c) cont) -> do
+          status <- prop $ New b cont
+          busy <- Ref.read busyRef
+          unless busy do
+            Ref.write true busyRef
+            p'.toUser $ New (Right c) cont
+            Ref.write false busyRef
+          pure status
+      }
 
 instance Apply m => Semigroupoid (UI m) where
   compose p2 p1 = wrap ado
@@ -234,17 +254,23 @@ instance Apply m => Semigroupoid (UI m) where
       { toUser: \cha -> do
         p1'.toUser cha
       , fromUser: \prop -> do
+          -- downstream registers first: emissions fired during upstream's
+          -- registration (announcements, seeds) must find downstream's
+          -- wiring already listening
+          p2'.fromUser prop
           p1'.fromUser \x -> do
             p2'.toUser x
             pure Nothing
-          p2'.fromUser prop
       }
 
 -- | `identity` forwards its input straight to its output: a wire. The unit
 -- | of `compose` (up to effect timing), the element the diagonal unary laws
 -- | pin, and — at `{}` — an alternative `RecordToRecord.pempty`.
 instance Applicative m => Category (UI m) where
-  identity = wrap ado
+  -- the ref is created per unwrap (inside the functor map), NOT in a
+  -- top-level `let`: `identity` is a constant, and a constant's `let` is
+  -- evaluated once — every `identity` in the app would share one wire
+  identity = wrap $ pure unit <#> \_ ->
     let mPropRef = unsafePerformEffect $ Ref.new Nothing
     in
       { toUser: \ch -> do
@@ -273,6 +299,39 @@ silence = wrap $ pure
   { toUser: mempty
   , fromUser: mempty
   }
+
+-- | The **announcing constant**: silent except for one emission of `o` at
+-- | registration — the value-level generalization of the record units'
+-- | `{}` announcement (`Web.staticText`'s protocol, with a payload). As a
+-- | merge operand it seeds fields or cases; in front of a knowledge-gated
+-- | trace (`folding`, `feedback`) it primes the state channel — the fold
+-- | announces its initial state the way `pempty` announces its
+-- | informationless `{}`.
+announce :: forall m o. Applicative m => o -> UI m {} o
+announce o = wrap $ pure
+  { toUser: mempty
+  , fromUser: \prop -> void $ prop $ New o false
+  }
+
+-- | The **seeded echo wire**: `identity`'s pass-through plus one emission
+-- | of the seed at registration. As the first stage of a knowledge-gated
+-- | trace's inner (`feedback`, `unfolding`), the seed emission flows into
+-- | the following stages, they render and emit, and the trace's state
+-- | channel is primed before any input arrives — `announce`'s job, at a
+-- | pass-through type.
+seeded :: forall m a. Applicative m => a -> UI m a a
+seeded a = wrap $ pure unit <#> \_ ->
+  -- ref per unwrap, like `identity` (a shared `let` would wire all
+  -- instantiations together)
+  let mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \ch -> do
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> void $ prop ch
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ prop $ New a false
+    }
 
 -- | The `×`-diagonal **self-trace**: feed a diagonal widget its own
 -- | emissions, re-entrancy-guarded (leaf widgets echo on `toUser`, and the

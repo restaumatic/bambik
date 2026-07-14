@@ -8,7 +8,9 @@
 -- |   * **free functions over the strength** — everything else: `shutterWrap`
 -- |     (sub-record focus), `resolveProperty` (thread one label),
 -- |     `propertyToCase` (single-field focus), `recordToCase` (introduce; mere
--- |     `Profunctor`), the `Shutter` optic with `shutter`/`shutterE`.
+-- |     `Profunctor`), the `Shutter` optic with `shutter`/`shutterE` — and
+-- |     over the co-strength `Coresolving`: `folding @w` (the terminating
+-- |     fold at row granularity).
 -- |
 -- | Law connecting the two classes: the mixed directions have no `identity` to
 -- | pin (nothing inhabits a mode-crossing diagonal), but they have the class's
@@ -34,6 +36,7 @@ module Data.Profunctor.Row.RecordToVariant
   , class RecordToVariant
   , coresolve
   , discard
+  , folding
   , pempty
   , recordToVariant
   , class Resolving
@@ -47,14 +50,15 @@ module Data.Profunctor.Row.RecordToVariant
   )
   where
 
-import Data.Either (Either, either)
+import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (Variant, expand, inj)
+import Data.Variant (Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record (get)
+import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class InclusiveRows)
@@ -104,6 +108,33 @@ class Profunctor p <= Resolving p where
 -- | (No `(->)` instance: tying a knot takes state.)
 class Profunctor p <= Coresolving p where
   coresolve :: forall a b c. p (Tuple a c) (Either b c) -> p a b
+
+-- | `coresolve` at row granularity — the **terminating fold** with labeled
+-- | channels: the wrapped profunctor sees its input joined with the folded
+-- | state sub-record `fb`, and answers with a variant that either continues
+-- | the fold (case `w`, carrying the next `{ | fb }` — retained silently)
+-- | or exits (any `done` case — emitted). The `× → +` co-analogue of
+-- | `shutterWrap`: there the background is wrapped as case `w` to *escape*,
+-- | here case `w` is unwrapped to *loop*. No coercions: `on` splits the
+-- | output variant exactly.
+-- |
+-- | On a knowledge-gated carrier (`UI`) inputs are withheld until a first
+-- | fold state exists — the accumulating-wizard shape primes it with its
+-- | first continue emission.
+folding
+  :: forall @w p i fb iw done ow
+   . Coresolving p
+  => IsSymbol w
+  => ExclusiveRows i fb iw
+  => Cons w { | fb } done ow
+  => p { | iw } [ | ow ]
+  -> p { | i } [ | done ]
+folding g =
+  coresolve
+    (dimap
+      (\(Tuple i fb) -> Record.union i fb)
+      (on (Proxy @w) Right Left)
+      g)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.

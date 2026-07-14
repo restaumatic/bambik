@@ -5,9 +5,11 @@
 -- |   * **direction class** — `RecordToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions** — over the strength: `focusRecord` (sub-record
--- |     focus), `property` (the field lens); over bare `Profunctor`:
--- |     `field` (`property`'s closed-singleton form — the merge-operand
--- |     shape, `dimap`-only and runtime-exact).
+-- |     focus), `property` (the field lens), `tapped` (the display tap);
+-- |     over bare `Profunctor`: `field` (`property`'s closed-singleton
+-- |     form — the merge-operand shape, `dimap`-only and runtime-exact);
+-- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
+-- |     granularity — a state sub-record loops from output to input).
 -- |
 -- | The **nullary** operator is the class's own unit `pempty :: p {} {}` —
 -- | the empty merge:
@@ -26,6 +28,7 @@ module Data.Profunctor.Row.RecordToRecord
   , recordToRecord
   , class RecordToRecord
   , discard
+  , feedback
   , field
   , pempty
   , focusRecord
@@ -37,6 +40,7 @@ module Data.Profunctor.Row.RecordToRecord
 import Data.Lens.Record (prop)
 import Data.Profunctor (dimap)
 import Data.Profunctor (class Profunctor)
+import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Strong (class Strong, first, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst)
@@ -143,3 +147,32 @@ field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 -- | would replay the retained upstream value on every edit.
 tapped :: forall p s x. Strong p => p s x -> p s s
 tapped display = dimap (\s -> Tuple s s) fst (second display)
+
+-- | The `×`-diagonal **trace at row granularity**, over ecosystem
+-- | `Costrong`: the **state** sub-record `fb` of the output loops back into
+-- | the input, so the wrapped profunctor sees `i ∪ fb` and its `fb`
+-- | contribution comes around again — state threading across a pipeline
+-- | stage. Like `focusRecord`, the output is split by coercion, so the
+-- | emitted `{ | o }` runtime-carries the looped fields — a `feedback`
+-- | stage belongs in a pipeline, not as a record-merge operand.
+-- |
+-- | On a knowledge-gated carrier (`UI`) the state channel must be
+-- | **primed by the widget's first emission** — inputs are withheld until
+-- | then, so the inner widget must be able to emit unfed (editors that emit
+-- | on user input qualify; load-first ensembles use `looped`, the
+-- | self-feeding special case, instead).
+feedback
+  :: forall p i o fb iw ow
+   . Costrong p
+  => ExclusiveRows i fb iw
+  => ExclusiveRows o fb ow
+  => p { | iw } { | ow }
+  -> p { | i } { | o }
+feedback g =
+  unfirst
+    (dimap
+      (\(Tuple i fb) -> Record.union i fb)
+      -- coerce-split, as in `focusRecord`: safe because `ExclusiveRows o fb ow`
+      -- guarantees the two typed views are disjoint
+      (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
+      g)

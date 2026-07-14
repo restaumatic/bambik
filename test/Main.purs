@@ -9,11 +9,11 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Cochoice (unleft)
 import Data.Profunctor.Costrong (unfirst)
-import Data.Profunctor.Row.RecordToRecord (property, focusRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (feedback, property, focusRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.VariantToRecord (coretain, variantToRecord)
+import Data.Profunctor.Row.VariantToRecord (coretain, unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.RecordToVariant (coresolve, recordToCase)
+import Data.Profunctor.Row.RecordToVariant (coresolve, folding, recordToCase)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -169,8 +169,9 @@ main = do
     Ref.read ins >>= assertEqual "coresolve: gated before state" []
     fire gProp (Right true)
     Ref.read outs >>= assertEqual "coresolve: folded state withheld" []
+    Ref.read ins >>= assertEqual "coresolve: fold step re-fed eagerly" [ Tuple 1 true ]
     m.toUser (New 2 false)
-    Ref.read ins >>= assertEqual "coresolve: input paired with folded state" [ Tuple 2 true ]
+    Ref.read ins >>= assertEqual "coresolve: input paired with folded state" [ Tuple 1 true, Tuple 2 true ]
     fire gProp (Left "done")
     Ref.read outs >>= assertEqual "coresolve: exit passes" [ "done" ]
 
@@ -216,3 +217,52 @@ main = do
     Ref.read ins >>= assertEqual "iterate: again re-enters" [ .again 1, .again 2 ]
     fire gProp (.done "d")
     Ref.read outs >>= assertEqual "iterate: done exits" [ .done "d" ]
+
+  -- == The co-strengths' row forms: labeled channels for each trace. ==
+
+  -- feedback (×-trace at row granularity): the state sub-record loops from
+  -- output to input, primed by the widget's first emission.
+  do
+    ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { o :: Int })
+    m <- unwrap (feedback (probeIO ins gProp :: UI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
+    m.fromUser \(New o _) -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser (New { a: 1 } false)
+    Ref.read ins >>= assertEqual "feedback: gated before state" []
+    fire gProp { o: 10, acc: 100 }
+    Ref.read outs >>= assertEqual "feedback: value fields pass" [ { o: 10 } ]
+    m.toUser (New { a: 2 } false)
+    Ref.read ins >>= assertEqual "feedback: input joined with looped state" [ { a: 2, acc: 100 } ]
+
+  -- folding @w (terminating fold at row granularity): case w continues the
+  -- fold silently, done cases exit.
+  do
+    ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ done :: String ])
+    m <- unwrap (folding @"fold" (probeIO ins gProp :: UI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
+    m.fromUser \(New o _) -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser (New { a: 1 } false)
+    Ref.read ins >>= assertEqual "folding: gated before state" []
+    fire gProp (.fold { acc: 5 })
+    Ref.read outs >>= assertEqual "folding: fold case withheld" []
+    Ref.read ins >>= assertEqual "folding: fold step re-fed eagerly" [ { a: 1, acc: 5 } ]
+    m.toUser (New { a: 2 } false)
+    Ref.read ins >>= assertEqual "folding: input joined with folded state" [ { a: 1, acc: 5 }, { a: 2, acc: 5 } ]
+    fire gProp (.done "d")
+    Ref.read outs >>= assertEqual "folding: done exits" [ .done "d" ]
+
+  -- unfolding @w (productive unfold at row granularity): value fields pass,
+  -- state fields resume the widget as case w.
+  do
+    ins <- Ref.new ([] :: Array [ start :: Int, resume :: { acc :: Int } ])
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { o :: String })
+    m <- unwrap (unfolding @"resume" (probeIO ins gProp :: UI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
+    m.fromUser \(New o _) -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser (New (.start 1) false)
+    Ref.read ins >>= assertEqual "unfolding: fresh input enters" [ .start 1 ]
+    fire gProp { o: "x", acc: 7 }
+    Ref.read outs >>= assertEqual "unfolding: value fields pass" [ { o: "x" } ]
+    Ref.read ins >>= assertEqual "unfolding: state resumes as its case" [ .start 1, .resume { acc: 7 } ]

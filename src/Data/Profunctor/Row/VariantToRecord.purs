@@ -8,7 +8,8 @@
 -- |   * **free functions over the strength** — everything else: `reelWrap`
 -- |     (sub-variant focus), `retainCase` (thread one label), `caseToProperty`
 -- |     (single-case focus), `caseToRecord` (introduce/reduce), the `Reel`
--- |     optic with `reel`/`reelE`.
+-- |     optic with `reel`/`reelE` — and over the co-strength `Coretaining`:
+-- |     `unfolding @w` (the productive unfold at row granularity).
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
@@ -47,20 +48,22 @@ module Data.Profunctor.Row.VariantToRecord
   , reel
   , reelE
   , reelWrap
+  , unfolding
   )
   where
 
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, on)
-import Prim.Row (class Cons)
+import Data.Variant (class Contractable, Variant, expand, inj, on)
+import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class DispatchableVariants, class ExclusiveRows)
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /
 -- | coroutine step**, the dual of `RecordToVariant`'s `Resolving`. `retain`
@@ -102,6 +105,31 @@ class Profunctor p <= Retaining p where
 -- | (No `(->)` instance: tying a knot takes state.)
 class Profunctor p <= Coretaining p where
   coretain :: forall a b c. p (Either a c) (Tuple b c) -> p a b
+
+-- | `coretain` at row granularity — the **productive unfold** with labeled
+-- | channels: the wrapped profunctor consumes either a fresh input case
+-- | (any case of `i`) or a resume (case `w`, carrying the unfold state
+-- | `{ | fb }`), and every emission's value fields `o` pass while its state
+-- | fields `fb` immediately re-enter as case `w` — a generator. The
+-- | `+ → ×` co-analogue of `reelWrap`. Like `feedback`, the output is
+-- | split by coercion (`ExclusiveRows o fb ow` keeps the typed views
+-- | disjoint), so the emitted `{ | o }` runtime-carries the state fields —
+-- | an `unfolding` stage belongs in a pipeline, not as a merge operand.
+unfolding
+  :: forall @w p i fb iw wx o ow
+   . Coretaining p
+  => IsSymbol w
+  => Cons w { | fb } i iw
+  => Union i wx iw
+  => ExclusiveRows o fb ow
+  => p [ | iw ] { | ow }
+  -> p [ | i ] { | o }
+unfolding g =
+  coretain
+    (dimap
+      (either expand (inj (Proxy @w)))
+      (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
+      g)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord :: forall i1 i1l i2 i2l o1 o2 i o.
