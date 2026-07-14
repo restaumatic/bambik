@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(git commit -m ' *)",
-      "Bash(grep -oE \"Session peak [0-9.]+|Step 1 of 2[^<]{0,40}\")"
+      "Bash(grep -oE \"Session peak [0-9.]+|Step 1 of 2[^<]{0,40}\")",
+      "Bash(node_modules/purescript/purs.bin --version)",
+      "Bash(node_modules/.bin/purs --version)",
+      "Bash(npm run *)",
+      "Bash(git commit -m 'docs: demo build/deploy procedure in CLAUDE.md; lockfile on variant.6 compiler *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile"
