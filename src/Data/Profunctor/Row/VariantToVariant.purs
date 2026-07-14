@@ -17,17 +17,20 @@ module Data.Profunctor.Row.VariantToVariant
   , case_
   , class VariantToVariant
   , discard
+  , iterate
   , pempty
   , prismE
   , splitVariant
   )
   where
 
+import Control.Category (identity)
 import Data.Either (Either(..), either)
 import Data.Lens (Prism)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
+import Data.Profunctor.Cochoice (class Cochoice, unleft)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
@@ -104,3 +107,19 @@ case_ =
   prismE
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
+
+-- | The `+`-diagonal **trace** at row granularity, over ecosystem `Cochoice`:
+-- | loop the `again` cases of the output back into the input, emit only the
+-- | `done` cases — **iteration** (retry/wizard flows). `splitVariant` is the
+-- | done/again dispatch. Unit law: at `again = ()` (no loop-back cases) the
+-- | widget is unchanged. On `UI` the re-entry is a `toUser`, so the loop
+-- | advances on the widget's next emission — an event loop, not a busy loop.
+iterate
+  :: forall p done again out
+   . Cochoice p
+  => ExclusiveRows done again out
+  => Contractable out done
+  => Contractable out again
+  => p [ | again ] [ | out ]
+  -> p [ | again ] [ | done ]
+iterate g = unleft (dimap (either identity identity) splitVariant g)

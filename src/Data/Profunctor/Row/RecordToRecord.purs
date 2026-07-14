@@ -30,15 +30,16 @@ module Data.Profunctor.Row.RecordToRecord
   , pempty
   , focusRecord
   , property
+  , tapped
   )
   where
 
 import Data.Lens.Record (prop)
 import Data.Profunctor (dimap)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Strong (class Strong, first)
+import Data.Profunctor.Strong (class Strong, first, second)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks)
 import Record (get, insert, union) as Record
@@ -133,3 +134,12 @@ property = prop (Proxy @l)
 -- | raw `property`.
 field :: forall @l p f f' si so. IsSymbol l => Profunctor p => Lacks l () => Cons l f () si => Cons l f' () so => p f f' -> p { | si } { | so }
 field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
+
+-- | A display **tap** on the `×`-diagonal: shows the value flowing through
+-- | and passes it on — the pipeline-stage form of a live view. Pure `Strong`
+-- | plus the leaf-echo protocol: `second` retains the value, and the
+-- | display's echo triggers the forwarding. Honest only over *displays*
+-- | (elements whose sole emission is the echo) — an editing widget inside
+-- | would replay the retained upstream value on every edit.
+tapped :: forall p s x. Strong p => p s x -> p s s
+tapped display = dimap (\s -> Tuple s s) fst (second display)

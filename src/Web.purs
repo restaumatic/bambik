@@ -32,6 +32,7 @@ module Web
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
+  , shownWhen
   , span
   , staticHTML
   , staticText
@@ -384,9 +385,28 @@ clDyn name pred w = wrap do
     , fromUser: w'.fromUser
     }
 
+-- | Value-aware visibility for a record-merge operand: the wrapped element
+-- | stays in the DOM — detachment would starve the merge gates, since a
+-- | detached editor's wiring cannot echo — but is displayed only while the
+-- | predicate holds for the value fed. (Single-element content: the toggle
+-- | lands on the content's root node.)
+shownWhen :: forall i o. (i -> Boolean) -> UI Web i o -> UI Web i o
+shownWhen pred w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  liftEffect $ setAttribute node "style" "display: none;"
+  pure
+    { toUser: \u@(New i _) -> do
+        if pred i
+          then removeAttribute node "style"
+          else setAttribute node "style" "display: none;"
+        w'.toUser u
+    , fromUser: w'.fromUser
+    }
+
 -- others
 
--- Transient UI elements that appear temporarily and then disappear, for small content short focused interactions as opposed to long-term use or complex content. 
+-- Transient UI elements that appear temporarily and then disappear, for small content short focused interactions as opposed to long-term use or complex content.
 -- It wraps provided UI element with the following behaviour:
 --   - when fed with a value (when `toUser` is called) it's ensured it's appearing
 --   - when emiting a value (when `fromUser` is called) it disappears

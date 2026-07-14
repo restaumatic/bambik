@@ -12,37 +12,41 @@
 -- | of the code maps 1-1 to the order of the UI, with no inline type
 -- | annotations: MDC components are label-indexed row profunctors already
 -- | (`MDC.filledTextField @"total"` edits one field, `MDC.button @"submit"`
--- | fires one event case, `MDC.switch @"dineIn"` selects one variant case,
--- | `MDC.snackbar @"orderSubmitted"` shows one message case), and every
--- | remaining row is closed either by a label-pinning helper (`field` for
--- | nesting sub-composites, `reading`/`casePane`) or by a model-function
--- | signature; inference propagates from the pipeline ends inward. Decoration is data or design-system config, not
+-- | fires one event case, `MDC.snackbar @"orderSubmitted"` shows one
+-- | message case), and every remaining row is closed either by a
+-- | label-pinning helper (`field` for nesting sub-composites, `reading`)
+-- | or by a model-function signature; inference propagates from the
+-- | pipeline ends inward. Decoration is data or design-system config, not
 -- | composition: the headline prefix rides in `reading`'s render function,
--- | card captions in `MDC.card`'s config. Variant editors (fulfillment,
--- | method) are `synced` composites: input is broadcast to switches and
--- | panes, and every emission is cross-fed back into the siblings, so the
--- | view stays consistent; `MDC.switch` seeds and retains its case's last
--- | payload (`latch` inside), so switching away and back restores state.
+-- | card captions in `MDC.card`'s config.
+-- |
+-- | Variant editors (fulfillment, method) work through **record-shaped
+-- | editor state**: the model keeps the variant (one case at a time), the
+-- | editor keeps every payload. `dimap` brackets the variant in
+-- | (`fulfillmentState` seeds absent payloads) and out (`fulfillmentCase`
+-- | projects the selection); inside, a plain record merge of a `tabBar`
+-- | selection component and `shownWhen` panes — wrapped in `looped`, the
+-- | `×`-diagonal self-trace, so every emission is re-broadcast and the
+-- | ensemble stays mutually consistent. Per-pane payload retention falls
+-- | out of the merge gates (each gate holds its side's last contribution):
+-- | switching a case away and back restores its state. A unit-payload
+-- | variant (method) needs no panes and no loop — the bracket around one
+-- | selection component suffices. The summary line is a `tapped` stage on
+-- | the form's output, re-rendering on every emission.
 -- |
 -- | Merge-gate protocol: every record-merge operand must contain at least
--- | one element that echoes on `toUser` (text fields, `text` displays, or —
--- | for button-only editors — the `identity` wire inside `synced`), so all
--- | gates open on the initial `loadOrder` render and the merged order flows
--- | to the buttons.
--- |
--- | Known limitation (deliberate, pending design work): `recordToRecord`
--- | broadcasts downward and merges upward but does not cross-feed sibling
--- | outputs into sibling displays — the summary line and `reading` displays
--- | update only from upstream (i.e. on load), not on sibling edits. (Within
--- | a `synced` composite the cross-feed exists but skips the emitting
--- | member itself, so a pane's own `reading` is likewise load-only.)
+-- | one element that echoes on `toUser` (text fields, `text` displays,
+-- | selection components), so all gates open on the initial `loadOrder`
+-- | render and the merged order flows to the buttons. Panes stay attached
+-- | (`shownWhen` only hides them) — a detached editor cannot echo, which
+-- | would starve the gates.
 module Main (main) where
 
 import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -59,8 +63,8 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, debounced, silence, synced)
-import Web (Web, body, text, variant)
+import UI (UI, action, debounced, looped, silence)
+import Web (Web, body, shownWhen, text)
 
 -- The one named type — the aggregate the whole pipeline revolves around.
 -- Everything inside it is structural: anonymous record and variant rows.
@@ -98,30 +102,38 @@ main = body @Unit $ MDC.elevation20 Semigroupoid.do
     field @"customer" $ MDC.card { caption: Just "Customer" } $ RecordToRecord.do
       MDC.filledTextField @"firstName" { floatingLabel: "First name" }
       MDC.filledTextField @"lastName" { floatingLabel: "Last name" }
-    field @"fulfillment" $ MDC.card { caption: Just "Fulfillment" } $ synced
-      [ MDC.switch @"dineIn" { label: Just "Dine in", icon: Nothing } { table: "1" }
-      , MDC.switch @"takeaway" { label: Just "Takeaway", icon: Nothing } { time: "12:00" }
-      , MDC.switch @"delivery" { label: Just "Delivery", icon: Nothing } { address: "" }
-      , casePane @"dineIn" $ MDC.filledTextField @"table" { floatingLabel: "Table" }
-      , casePane @"takeaway" $ MDC.filledTextField @"time" { floatingLabel: "Time" }
-      , casePane @"delivery" $ RecordToRecord.do
+    -- the fulfillment variant is edited through record-shaped editor state:
+    -- `dimap` brackets the variant in (seeding absent payloads) and out
+    -- (projecting the selection), `looped` re-broadcasts every emission so
+    -- the tab bar and panes stay mutually consistent, and the merge gates
+    -- retain every pane's payload — switching away and back restores it
+    field @"fulfillment" $ MDC.card { caption: Just "Fulfillment" } $
+      dimap fulfillmentState fulfillmentCase $ looped RecordToRecord.do
+        MDC.tabBar @"selected"
+          [ { value: "dineIn", label: "Dine in", icon: Nothing }
+          , { value: "takeaway", label: "Takeaway", icon: Nothing }
+          , { value: "delivery", label: "Delivery", icon: Nothing }
+          ]
+        shownWhen (\r -> r.selected == "dineIn") $ lcmap tableOf $ MDC.filledTextField @"table" { floatingLabel: "Table" }
+        shownWhen (\r -> r.selected == "takeaway") $ lcmap timeOf $ MDC.filledTextField @"time" { floatingLabel: "Time" }
+        shownWhen (\r -> r.selected == "delivery") $ lcmap addressOf $ RecordToRecord.do
           MDC.filledTextField @"address" { floatingLabel: "Address" }
           MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
-      ]
     MDC.card { caption: Just "Total" } $ MDC.filledTextField @"total" { floatingLabel: "Total" }
     field @"payment" $ MDC.card { caption: Just "Payment" } $ RecordToRecord.do
-      -- `identity` is the echo wire: buttons don't echo on render, so a
-      -- button-only editor needs this pass-through member to open the
-      -- record-merge gate (every operand must echo what it knows)
-      field @"method" $ synced
-        [ identity
-        , MDC.switch @"cash" { label: Just "Cash", icon: Nothing } unit
-        , MDC.switch @"card" { label: Just "Card", icon: Nothing } unit
+      -- a unit-payload variant needs no panes and no loop — the bracket
+      -- around a single selection component suffices (it echoes, so no
+      -- `identity` echo wire either)
+      field @"method" $ dimap methodState methodCase $ MDC.segmentedButton @"selected"
+        [ { value: "cash", label: "Cash" }
+        , { value: "card", label: "Card" }
         ]
       MDC.filledTextField @"paid" { floatingLabel: "Paid" }
       MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
     MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
-    debounced $ MDC.body1 $ lcmap summarize text
+  -- a live view of the form's output: displays every emission and passes it
+  -- on (a sibling inside the merge would update on load only)
+  tapped $ debounced $ MDC.body1 $ lcmap summarize text
   RecordToVariant.do
     MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
     MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
@@ -147,6 +159,62 @@ methodText ::
 methodText = Variant.case_
   # Variant.on (Proxy @"cash") (const "cash")
   # Variant.on (Proxy @"card") (const "card")
+
+-- editor state for the fulfillment ensemble: the model holds one case at a
+-- time, the editor keeps every payload (retained by the merge gates while
+-- the `looped` ensemble runs); `fulfillmentState`/`fulfillmentCase` bracket
+-- the variant in (seeding absent payloads) and out (projecting the selection)
+type FulfillmentState =
+  { selected :: String
+  , table :: String
+  , time :: String
+  , address :: String
+  }
+
+fulfillmentState ::
+  [ dineIn :: { table :: String }
+  , takeaway :: { time :: String }
+  , delivery :: { address :: String }
+  ]
+  -> FulfillmentState
+fulfillmentState = Variant.case_
+  # Variant.on (Proxy @"dineIn") (\r -> { selected: "dineIn", table: r.table, time: "12:00", address: "" })
+  # Variant.on (Proxy @"takeaway") (\r -> { selected: "takeaway", table: "1", time: r.time, address: "" })
+  # Variant.on (Proxy @"delivery") (\r -> { selected: "delivery", table: "1", time: "12:00", address: r.address })
+
+fulfillmentCase :: FulfillmentState ->
+  [ dineIn :: { table :: String }
+  , takeaway :: { time :: String }
+  , delivery :: { address :: String }
+  ]
+fulfillmentCase s =
+  if s.selected == "dineIn" then .dineIn { table: s.table }
+  else if s.selected == "takeaway" then .takeaway { time: s.time }
+  else .delivery { address: s.address }
+
+tableOf :: FulfillmentState -> { table :: String }
+tableOf s = { table: s.table }
+
+timeOf :: FulfillmentState -> { time :: String }
+timeOf s = { time: s.time }
+
+addressOf :: FulfillmentState -> { address :: String }
+addressOf s = { address: s.address }
+
+methodState ::
+  [ cash :: Unit
+  , card :: Unit
+  ]
+  -> { selected :: Maybe String }
+methodState = Variant.case_
+  # Variant.on (Proxy @"cash") (const { selected: Just "cash" })
+  # Variant.on (Proxy @"card") (const { selected: Just "card" })
+
+methodCase :: { selected :: String } ->
+  [ cash :: Unit
+  , card :: Unit
+  ]
+methodCase r = if r.selected == "cash" then .cash unit else .card unit
 
 summarize :: Order -> String
 summarize order =
@@ -213,11 +281,5 @@ printReceipt order = do
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> UI Web { | r } {}
 reading render = lcmap (\r -> render (get (Proxy @l) r)) text
 
-
--- | A case *pane*: the sub-form for one case, attached to the DOM only while
--- | that case is selected (`Web.variant` hides on the other cases), emitting
--- | back into the same case.
-casePane :: forall @l f b s. IsSymbol l => Cons l f b s => UI Web f f -> UI Web [ | s ] [ | s ]
-casePane w = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (variant w)
 
 

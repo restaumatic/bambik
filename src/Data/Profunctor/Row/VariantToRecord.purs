@@ -34,7 +34,9 @@ module Data.Profunctor.Row.VariantToRecord
   ( Reel
   , bind
   , variantToRecord
+  , class Coretaining
   , class VariantToRecord
+  , coretain
   , discard
   , pempty
   , caseToProperty
@@ -86,6 +88,20 @@ import Data.Profunctor.Row (class DispatchableVariants, class ExclusiveRows)
 -- | exactly as `focusRecord` is built on `Strong`.
 class Profunctor p <= Retaining p where
   retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
+
+-- | The **co-strength** of `Retaining` — its retraction: where `retain`
+-- | *adds* the resumable state channel `c`, `coretain` *ties* it. Every
+-- | emission `Tuple b c` yields `b` and immediately re-enters the wrapped
+-- | profunctor as a `Right c` resume — a **productive unfold**/generator:
+-- | control loops back while output flows every step (the dual corner to
+-- | `Coresolving`'s terminating fold in the trace quartet).
+-- |
+-- | Retraction law: `coretain (retain g) ≅ g` — once the state channel is
+-- | primed (state must enter somewhere).
+-- |
+-- | (No `(->)` instance: tying a knot takes state.)
+class Profunctor p <= Coretaining p where
+  coretain :: forall a b c. p (Either a c) (Tuple b c) -> p a b
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord :: forall i1 i1l i2 i2l o1 o2 i o.

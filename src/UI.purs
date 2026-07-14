@@ -11,10 +11,9 @@ module UI
   , debounced
   , debounced'
   , effAdapter
-  , latch
+  , looped
   , silence
   , spied
-  , synced
   )
   where
 
@@ -30,10 +29,12 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
+import Data.Profunctor.Cochoice (class Cochoice)
+import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (widenRecordInput, widenVariantOutput)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
@@ -135,6 +136,96 @@ instance Functor m => Choice (UI m) where
         p'.fromUser \u -> prop (Right <$> u)
       }
 
+-- | The `×`-diagonal **trace** (dual of `Strong`): the `c` a widget emits is
+-- | retained and paired with its next input — feedback of **state**.
+-- | Knowledge-gated like every stateful instance: inputs are withheld until a
+-- | first `c` exists, so the loop needs priming — route the initial state in
+-- | through the widget's input where possible, or use `looped` for the
+-- | self-feeding diagonal special case, which has no gate. The retraction law
+-- | `unfirst (first g) ≅ g` holds once the state channel is primed.
+instance Functor m => Costrong (UI m) where
+  unfirst p = wrap ado
+    let cRef = unsafePerformEffect $ Ref.new Nothing
+    p' <- unwrap p
+    in
+      { toUser: \(New a cont) -> do
+          mc <- Ref.read cRef
+          for_ mc \c -> p'.toUser $ New (Tuple a c) cont
+      , fromUser: \prop ->
+          p'.fromUser \(New (Tuple b c) cont) -> do
+            Ref.write (Just c) cRef
+            prop $ New b cont
+      }
+  unsecond p = wrap ado
+    let aRef = unsafePerformEffect $ Ref.new Nothing
+    p' <- unwrap p
+    in
+      { toUser: \(New b cont) -> do
+          ma <- Ref.read aRef
+          for_ ma \a -> p'.toUser $ New (Tuple a b) cont
+      , fromUser: \prop ->
+          p'.fromUser \(New (Tuple a c) cont) -> do
+            Ref.write (Just a) aRef
+            prop $ New c cont
+      }
+
+-- | The `+`-diagonal **trace** (dual of `Choice`): a looped-branch emission
+-- | re-enters the widget as input — feedback of **control**, i.e. iteration —
+-- | until an exit-branch emission passes through. The re-entry is a `toUser`,
+-- | so in `UI` the loop is an *event* loop: it advances on the widget's next
+-- | emission (variant-output widgets do not echo, so the leaf protocol cannot
+-- | provoke a synchronous spin). Retraction law: `unleft (left g) ≅ g`.
+instance Functor m => Cochoice (UI m) where
+  unleft p = wrap $ unwrap p <#> \p' ->
+    { toUser: \(New a cont) -> p'.toUser $ New (Left a) cont
+    , fromUser: \prop -> p'.fromUser \(New bc cont) -> case bc of
+        Left b -> prop $ New b cont
+        Right c -> do
+          p'.toUser $ New (Right c) cont
+          pure Nothing
+    }
+  unright p = wrap $ unwrap p <#> \p' ->
+    { toUser: \(New a cont) -> p'.toUser $ New (Right a) cont
+    , fromUser: \prop -> p'.fromUser \(New cb cont) -> case cb of
+        Right b -> prop $ New b cont
+        Left c -> do
+          p'.toUser $ New (Left c) cont
+          pure Nothing
+    }
+
+-- | The `× → +` **co-strength** (retraction of `Resolving`): a `Right c`
+-- | emission is retained as the state paired with subsequent inputs, a
+-- | `Left b` exits — a **terminating fold**. Gated like `Costrong` (a first
+-- | `c` must arrive before inputs pass); `coresolve (resolve g) ≅ g` once
+-- | primed.
+instance Functor m => Coresolving (UI m) where
+  coresolve p = wrap ado
+    let cRef = unsafePerformEffect $ Ref.new Nothing
+    p' <- unwrap p
+    in
+      { toUser: \(New a cont) -> do
+          mc <- Ref.read cRef
+          for_ mc \c -> p'.toUser $ New (Tuple a c) cont
+      , fromUser: \prop -> p'.fromUser \(New bc cont) -> case bc of
+          Left b -> prop $ New b cont
+          Right c -> do
+            Ref.write (Just c) cRef
+            pure Nothing
+      }
+
+-- | The `+ → ×` **co-strength** (retraction of `Retaining`): every emission
+-- | `Tuple b c` yields `b` and immediately re-enters the widget as a
+-- | `Right c` resume — a **productive unfold**/generator.
+-- | `coretain (retain g) ≅ g` once the state channel is primed.
+instance Functor m => Coretaining (UI m) where
+  coretain p = wrap $ unwrap p <#> \p' ->
+    { toUser: \(New a cont) -> p'.toUser $ New (Left a) cont
+    , fromUser: \prop -> p'.fromUser \(New (Tuple b c) cont) -> do
+        status <- prop $ New b cont
+        p'.toUser $ New (Right c) cont
+        pure status
+    }
+
 instance Apply m => Semigroupoid (UI m) where
   compose p2 p1 = wrap ado
     p1' <- unwrap p1
@@ -183,54 +274,31 @@ silence = wrap $ pure
   , fromUser: mempty
   }
 
--- | Mutually synced sibling editors of one value: input is broadcast to all,
--- | and each member's emission is propagated AND cross-fed into the other
--- | members' displays, so the composite always shows a consistent view (a
--- | selector lights up the case a pane just emitted, and vice versa). A
--- | re-entrancy guard swallows the echoes the cross-feed itself provokes
--- | (leaf widgets echo on `toUser`), which is what makes mirroring safe where
--- | naive cross-feeding would loop forever. `identity` as a member is the
--- | echo wire: it forwards the broadcast input to the composite output, which
--- | opens record-merge gates when no member echoes by itself (button-only
--- | editors).
-synced :: forall m a. Applicative m => Array (UI m a a) -> UI m a a
-synced ps = wrap ado
-  ps' <- traverse unwrap ps
+-- | The `×`-diagonal **self-trace**: feed a diagonal widget its own
+-- | emissions, re-entrancy-guarded (leaf widgets echo on `toUser`, and the
+-- | guard swallows the echoes the re-feed provokes). Wrapped around a record
+-- | merge it supplies the sibling cross-feed the gated merge deliberately
+-- | omits — every operand sees every emission re-broadcast, and per-operand
+-- | *retention* falls out of the merge gates (each gate holds its side's
+-- | last contribution). Primitive rather than derived: `Costrong`'s
+-- | `unfirst` cannot self-feed (no `c` before the first emission, no
+-- | emission before the first input — the gate deadlocks), so the
+-- | self-feeding special case ties the knot directly.
+looped :: forall m a. Functor m => UI m a a -> UI m a a
+looped p = wrap $ unwrap p <#> \p' ->
   let busyRef = unsafePerformEffect $ Ref.new false
   in
-    { toUser: \u -> for_ ps' \p -> p.toUser u
-    , fromUser: \prop -> forWithIndex_ ps' \i p ->
-        p.fromUser \u -> do
+    { toUser: p'.toUser
+    , fromUser: \prop ->
+        p'.fromUser \u -> do
           busy <- Ref.read busyRef
           if busy
             then pure Nothing
             else do
               Ref.write true busyRef
-              forWithIndex_ ps' \j q -> when (i /= j) do q.toUser u
+              p'.toUser u
               Ref.write false busyRef
               prop u
-    }
-
--- | Seeded retention of one case's payload: feeds the inner widget every
--- | `Just` (retaining rides on the widget — e.g. `Web.button` re-emits the
--- | last value it was fed), and on the first `Nothing` feeds the seed once,
--- | so the widget is armed before its case was ever selected. `Nothing`s
--- | never overwrite a retained payload — switching a case away and back
--- | restores its last state.
-latch :: forall m a b. Functor m => a -> UI m a b -> UI m (Maybe a) b
-latch seed w = wrap $ unwrap w <#> \w' ->
-  let seededRef = unsafePerformEffect $ Ref.new false
-  in
-    { toUser: case _ of
-        New (Just a) cont -> do
-          Ref.write true seededRef
-          w'.toUser $ New a cont
-        New Nothing _ -> do
-          seeded <- Ref.read seededRef
-          unless seeded do
-            Ref.write true seededRef
-            w'.toUser $ New seed false
-    , fromUser: w'.fromUser
     }
 
 instance Applicative m => RecordToRecord (UI m) where

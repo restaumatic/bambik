@@ -30,7 +30,9 @@
 module Data.Profunctor.Row.RecordToVariant
   ( Shutter
   , bind
+  , class Coresolving
   , class RecordToVariant
+  , coresolve
   , discard
   , pempty
   , recordToVariant
@@ -84,6 +86,24 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | exactly as `focusRecord` is built on `Strong`.
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
+
+-- | The **co-strength** of `Resolving` — its retraction: where `resolve`
+-- | *adds* the loop channel `c`, `coresolve` *ties* it. A `Right c` emission
+-- | is retained as the state paired with subsequent inputs; a `Left b` exits.
+-- | Semantically a **terminating fold**: inputs accumulate through `c` until
+-- | the wrapped profunctor decides `b` — the fourth loop flavor in the trace
+-- | quartet (`Costrong` = state that emits each step, `Cochoice` = control
+-- | that emits at exit, `Coresolving` = state that emits at exit,
+-- | `Coretaining` = control that emits each step).
+-- |
+-- | Retraction law, shared by all four traces: `coresolve (resolve g) ≅ g` —
+-- | once the state channel is primed (state must enter somewhere; the `UI`
+-- | instance is knowledge-gated like `Costrong`, withholding inputs until a
+-- | first `c` exists).
+-- |
+-- | (No `(->)` instance: tying a knot takes state.)
+class Profunctor p <= Coresolving p where
+  coresolve :: forall a b c. p (Tuple a c) (Either b c) -> p a b
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.

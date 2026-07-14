@@ -7,18 +7,21 @@
 --       `×→×` editors — `filledTextField @l`, `filledTextArea @l`,
 --         `checkbox @l`, `radioButton @l`, `toggleSwitch @l` (the MD2
 --         Switch), `slider @l`, `select @l` (the MD2 exposed dropdown),
---         `segmentedButton @l`, `filterChip @l`, `iconToggle @l`;
+--         `segmentedButton @l`, `tabBar @l` (the same-type selector — the
+--         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
 --       `×→×` displays — `indeterminateLinearProgress`,
 --         `indeterminateCircularProgress` (both `{ busy } → {}`, the shape
 --         `UI.action`'s progress slot expects);
 --       `×→+` events — `button @l`, `fab @l`, `iconButton @l`,
 --         `menuItem @l`;
---       `+→+` selectors — `switch @l` (button-styled), `tab @l`
---         (tab-styled, wrap a group in the `tabBar` ocular);
 --       `+→×` statuses — `snackbar @l`, `banner @l`.
---     No scalar or polymorphic component interfaces.
+--     No scalar or polymorphic component interfaces. Variant *editing* has
+--     no `+→+` component citizens: it goes through record-shaped editor
+--     state (`dimap`-bracketed `looped` merges of a selection component
+--     plus `shownWhen` panes — see the demos); `+→+` remains the dispatch
+--     direction (`VariantToVariant.do` of action stages).
 --   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
---     `tabBar`, `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/
+--     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/
 --     `dataCell`, `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`,
 --     `drawer`, `tooltip`, typography, elevations): they have no model of
 --     their own, so they wrap any polarity and impose none.
@@ -85,10 +88,8 @@ module MDC
   , simpleDialog
   , slider
   , snackbar
-  , switch
   , subtitle1
   , subtitle2
-  , tab
   , tabBar
   , toggleSwitch
   , tooltip
@@ -106,13 +107,13 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (dimap, lcmap)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field, pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Symbol (class IsSymbol)
 import Data.Traversable (for)
-import Data.Variant (case_, inj, on, prj) as Variant
+import Data.Variant (case_, on) as Variant
 import Type.Proxy (Proxy(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -120,7 +121,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (New(..), UI, effAdapter, latch)
+import UI (New(..), UI, effAdapter)
 import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
 import Web (button) as Web
 
@@ -131,44 +132,54 @@ import Web (button) as Web
 button :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: Maybe String, icon :: Maybe String } -> UI Web { | r } [ | s ]
 button config = recordToCase @l (containedButton config)
 
--- | The `+→+` selector: a button emitting case `l` into the variant under
--- | edit. `latch` arms it with the seed before its case was ever selected
--- | and retains the case's last payload thereafter (cross-fed by `synced`),
--- | so switching away and back restores the last state.
-switch :: forall @l f b s. IsSymbol l => Cons l f b s => { label :: Maybe String, icon :: Maybe String } -> f -> UI Web [ | s ] [ | s ]
-switch config seed = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (latch seed (containedButton config))
+-- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
+-- | **same-type** (`Cons l a () s`): the selection is always known from the
+-- | input, so it echoes unconditionally and sits happily inside `looped`
+-- | ensembles (selection field + `shownWhen` panes). One tab per option;
+-- | `MDCTab` drives the activation indicator.
+tabBar :: forall @l a s. IsSymbol l => Eq a => Cons l a () s => Array { value :: a, label :: String, icon :: Maybe String } -> UI Web { | s } { | s }
+tabBar options = field @l (tabBarLeaf options)
 
--- | The `+→+` selector in tab clothing — `switch @l` with MDC tab chrome
--- | and an activation indicator: the tab is active exactly while its case
--- | is selected (`effAdapter` drives `MDCTab` from the pre-`latch`
--- | `Maybe`). Wrap a group of tabs in the `tabBar` ocular.
-tab :: forall @l f b s. IsSymbol l => Cons l f b s => { label :: Maybe String, icon :: Maybe String } -> f -> UI Web [ | s ] [ | s ]
-tab config seed = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (effAdapter adapter (latch seed (rawTab config)))
+tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> UI Web a a
+tabBarLeaf options =
+  div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $
+    div >>> cl "mdc-tab-scroller" $
+      div >>> cl "mdc-tab-scroller__scroll-area" $
+        div >>> cl "mdc-tab-scroller__scroll-content" $ wrap do
+          tabs <- for options \o -> do
+            _ <- unwrap (staticHTML (tabMarkup o.label o.icon))
+            node <- gets _.sibling
+            comp <- liftEffect $ newComponent material.tab."MDCTab" node
+            pure { node, comp, value: o.value }
+          mPropRef <- liftEffect $ Ref.new Nothing
+          let render sel = for_ tabs \t -> setTabActive t.comp (t.value == sel)
+          liftEffect $ for_ tabs \t -> listenNode t.node "click" do
+            render t.value
+            mProp <- Ref.read mPropRef
+            for_ mProp \prop -> void $ prop $ New t.value false
+          pure
+            { toUser: \(New a _) -> do
+                render a
+                -- leaf echo: the selection is always known, so always announce
+                mProp <- Ref.read mPropRef
+                for_ mProp \prop -> void $ prop $ New a false
+            , fromUser: \prop -> Ref.write (Just prop) mPropRef
+            }
   where
-  adapter = do
-    node <- gets _.sibling
-    comp <- liftEffect $ newComponent material.tab."MDCTab" node
-    -- self-activate on click: `synced` cross-feeds every *other* member,
-    -- so the clicked tab would never see its own selection otherwise
-    liftEffect $ listenNode node "click" (setTabActive comp true)
-    pure { pre: \mf -> setTabActive comp (isJust mf) $> mf, post: pure }
-
-rawTab :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
-rawTab config =
-  Web.button >>> cl "mdc-tab" >>> "role" := "tab" $ RecordToRecord.do
-    span >>> cl "mdc-tab__content" $ RecordToRecord.do
-      case config.icon of
-        Just icon' -> span >>> cl "mdc-tab__icon" >>> cl "material-icons" >>> "aria-hidden" := "true" $ staticText icon'
-        Nothing -> pempty
-      case config.label of
-        Just label' -> span >>> cl "mdc-tab__text-label" $ staticText label'
-        Nothing -> pempty
-    span >>> cl "mdc-tab-indicator" $
-      span >>> cl "mdc-tab-indicator__content" >>> cl "mdc-tab-indicator__content--underline" $ pempty
-    span >>> cl "mdc-tab__ripple" $ pempty
+  tabMarkup lbl mIcon =
+    "<button class=\"mdc-tab\" role=\"tab\">"
+      <> "<span class=\"mdc-tab__content\">"
+      <> (case mIcon of
+            Just icon' -> "<span class=\"mdc-tab__icon material-icons\" aria-hidden=\"true\">" <> icon' <> "</span>"
+            Nothing -> "")
+      <> "<span class=\"mdc-tab__text-label\">" <> lbl <> "</span>"
+      <> "</span>"
+      <> "<span class=\"mdc-tab-indicator\"><span class=\"mdc-tab-indicator__content mdc-tab-indicator__content--underline\"></span></span>"
+      <> "<span class=\"mdc-tab__ripple\"></span>"
+      <> "</button>"
 
 -- the raw MDC button — scalar, so private: components expose it only in a
--- shaped role (`button @l`, `switch @l`)
+-- shaped role (`button @l`)
 containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
 containedButton { label, icon } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
@@ -771,15 +782,6 @@ menu config content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "disp
   comp <- liftEffect $ newComponent material.menu."MDCMenu" menuNode
   liftEffect $ listenNode anchorNode "click" (setMenuOpen comp true)
   pure w
-
--- | Chrome for a group of `tab @l`s. Deliberately no `MDCTabBar`
--- | (index-based activation would fight the per-tab model wiring).
-tabBar :: Ocular (UI Web)
-tabBar content =
-  div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $
-    div >>> cl "mdc-tab-scroller" $
-      div >>> cl "mdc-tab-scroller__scroll-area" $
-        div >>> cl "mdc-tab-scroller__scroll-content" $ content
 
 -- | Chrome for a group of `filterChip @l`s.
 chipSet :: Ocular (UI Web)

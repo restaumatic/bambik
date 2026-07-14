@@ -10,18 +10,19 @@
 -- | `{} → {}` chrome), cards per catalog section, a `layoutGrid` for the
 -- | form. Editors cover every `×→×` citizen (`filledTextField`,
 -- | `filledTextArea`, `checkbox`, `radioButton`, `toggleSwitch`, `slider`,
--- | `select`, `segmentedButton`, `filterChip`, `iconToggle`); the shipping
--- | variant is edited with `tab @l`s in a `tabBar` plus `casePane`s, all
--- | `synced`; the data table and summary line are **live views of the
--- | form's output** — a `synced` passthrough stage after the form
--- | (`identity` wires the record through, the displays drain into
--- | `silence`), because within a record merge siblings never see each
--- | other's emissions; the image list and dividers are announcing
--- | statics. Events cover `button`, `fab`,
--- | `iconButton` and a `menu` of `menuItem`s; dispatch shows both
--- | progress displays (`indeterminateLinearProgress` and
--- | `indeterminateCircularProgress`); statuses cover `snackbar`s and a
--- | `banner`.
+-- | `select`, `segmentedButton`, `tabBar`, `filterChip`, `iconToggle`).
+-- | The shipping variant is edited through **record-shaped editor state**:
+-- | `dimap` brackets the variant into `ShippingState` (seeding absent
+-- | payloads) and back out (projecting the selection), and `looped` — the
+-- | `×`-diagonal self-trace — re-broadcasts every emission so the tab bar
+-- | and its `shownWhen` panes stay mutually consistent, with payload
+-- | retention falling out of the merge gates. The slider readout and the
+-- | data-table/summary live views are `tapped` stages (display every
+-- | emission flowing through, pass it on). The image list and dividers
+-- | are announcing statics. Events cover `button`, `fab`, `iconButton`
+-- | and a `menu` of `menuItem`s; dispatch shows both progress displays
+-- | (`indeterminateLinearProgress` and `indeterminateCircularProgress`);
+-- | statuses cover `snackbar`s and a `banner`.
 -- |
 -- | Type-changing editors make the form's input and output rows differ:
 -- | `radioButton`/`select`/`segmentedButton` consume `Maybe`-selection
@@ -38,7 +39,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -54,8 +55,8 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, debounced, silence, synced)
-import Web (Web, attr, body, staticText, text, variant)
+import UI (UI, action, debounced, looped, silence)
+import Web (Web, attr, body, shownWhen, staticText, text)
 import Web (div) as Web
 
 -- The named types — the aggregate the whole pipeline revolves around,
@@ -145,22 +146,26 @@ main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
         , { value: "dark", label: "Dark" }
         , { value: "system", label: "System" }
         ]
-    -- the slider and its readout are `synced` siblings of the one field, so
-    -- the readout follows every emission (a plain record-merge sibling would
-    -- update on load only); `>>> silence` makes the display an `a → a`
-    -- member that never emits
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ synced
-      [ MDC.slider @"volume" { label: "Volume", min: 0.0, max: 100.0, step: Nothing }
-      , MDC.body2 (reading @"volume" (\v -> "Volume " <> show v)) >>> silence
-      ]
-    MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" } $ field @"shipping" $ synced
-      [ MDC.tabBar $ synced
-          [ MDC.tab @"standard" { label: Just "Standard", icon: Just "local_shipping" } { days: "3" }
-          , MDC.tab @"express" { label: Just "Express", icon: Just "bolt" } { price: "9.99" }
+    -- the readout is a `tapped` stage after the slider: it displays every
+    -- value the slider emits and passes it on (a plain record-merge sibling
+    -- would update on load only)
+    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
+      MDC.slider @"volume" { label: "Volume", min: 0.0, max: 100.0, step: Nothing }
+      tapped $ MDC.body2 $ reading @"volume" (\v -> "Volume " <> show v)
+    -- the variant model is edited through record-shaped editor state
+    -- (`ShippingState` — all payloads persist, the merge gates retain them):
+    -- `dimap` brackets the variant in (seeding absent payloads) and out
+    -- (projecting the selected case), `looped` re-broadcasts every emission
+    -- so the tab bar and panes stay mutually consistent, and the panes stay
+    -- attached (`shownWhen` only hides them — the gates need their echoes)
+    MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" } $ field @"shipping" $
+      dimap shippingState shippingCase $ looped RecordToRecord.do
+        MDC.tabBar @"selected"
+          [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
+          , { value: "express", label: "Express", icon: Just "bolt" }
           ]
-      , casePane @"standard" $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" }
-      , casePane @"express" $ MDC.filledTextField @"price" { floatingLabel: "Express fee" }
-      ]
+        shownWhen (\r -> r.selected == "standard") $ lcmap daysOf $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" }
+        shownWhen (\r -> r.selected == "express") $ lcmap priceOf $ MDC.filledTextField @"price" { floatingLabel: "Express fee" }
     MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
       MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
       MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
@@ -170,28 +175,22 @@ main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
       MDC.imageListItem { src: swatch "936c00" 90, label: "Ochre" }
   -- live views of the form's *output*: within the form merge, siblings never
   -- see each other's emissions (`recordToRecord` has no cross-feed), so
-  -- whole-record displays go in a passthrough stage after it — `identity`
-  -- wires the record through, the display member re-renders on every form
-  -- emission and (`>>> silence`) never emits
-  synced
-    [ identity
-    , Semigroupoid.do
-        MDC.layoutGrid RecordToRecord.do
-          MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
-            MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
-              MDC.dataRow RecordToRecord.do
-                MDC.dataCell $ staticText "Name"
-                MDC.dataCell $ reading @"name" identity
-              MDC.dataRow RecordToRecord.do
-                MDC.dataCell $ staticText "Volume"
-                MDC.dataCell $ reading @"volume" show
-              MDC.dataRow RecordToRecord.do
-                MDC.dataCell $ staticText "Theme"
-                MDC.dataCell $ reading @"theme" identity
-          MDC.layoutCell { span: 12 } MDC.divider
-          MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize text
-        silence
-    ]
+  -- whole-record displays go in a `tapped` stage after it — every form
+  -- emission is displayed and passed on
+  tapped $ MDC.layoutGrid RecordToRecord.do
+    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
+      MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
+        MDC.dataRow RecordToRecord.do
+          MDC.dataCell $ staticText "Name"
+          MDC.dataCell $ reading @"name" identity
+        MDC.dataRow RecordToRecord.do
+          MDC.dataCell $ staticText "Volume"
+          MDC.dataCell $ reading @"volume" show
+        MDC.dataRow RecordToRecord.do
+          MDC.dataCell $ staticText "Theme"
+          MDC.dataCell $ reading @"theme" identity
+    MDC.layoutCell { span: 12 } MDC.divider
+    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize text
   MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ Web.div >>> attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
     MDC.button @"save" { label: Just "Save", icon: Just "save" }
     MDC.fab @"like" { icon: "favorite", label: Just "Like" }
@@ -240,6 +239,33 @@ shippingText ::
 shippingText = Variant.case_
   # Variant.on (Proxy @"standard") (\r -> "standard (" <> r.days <> " days)")
   # Variant.on (Proxy @"express") (\r -> "express (" <> r.price <> " fee)")
+
+-- the shipping ensemble's editor state: the model holds one case at a
+-- time, the editor keeps every payload (retained by the merge gates while
+-- the `looped` ensemble runs); `shippingState`/`shippingCase` bracket the
+-- variant in (seeding absent payloads) and out (projecting the selection)
+type ShippingState = { selected :: String, days :: String, price :: String }
+
+shippingState ::
+  [ standard :: { days :: String }
+  , express :: { price :: String }
+  ]
+  -> ShippingState
+shippingState = Variant.case_
+  # Variant.on (Proxy @"standard") (\r -> { selected: "standard", days: r.days, price: "9.99" })
+  # Variant.on (Proxy @"express") (\r -> { selected: "express", days: "3", price: r.price })
+
+shippingCase :: ShippingState ->
+  [ standard :: { days :: String }
+  , express :: { price :: String }
+  ]
+shippingCase s = if s.selected == "standard" then .standard { days: s.days } else .express { price: s.price }
+
+daysOf :: ShippingState -> { days :: String }
+daysOf s = { days: s.days }
+
+priceOf :: ShippingState -> { price :: String }
+priceOf s = { price: s.price }
 
 -- asynchronous actions
 
@@ -296,9 +322,3 @@ reset _ = do
 -- | contributes nothing.
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> UI Web { | r } {}
 reading render = lcmap (\r -> render (get (Proxy @l) r)) text
-
--- | A case *pane*: the sub-form for one case, attached to the DOM only while
--- | that case is selected (`Web.variant` hides on the other cases), emitting
--- | back into the same case.
-casePane :: forall @l f b s. IsSymbol l => Cons l f b s => UI Web f f -> UI Web [ | s ] [ | s ]
-casePane w = dimap (Variant.prj (Proxy @l)) (Variant.inj (Proxy @l)) (variant w)
