@@ -104,6 +104,40 @@ sit side by side and become one:
 - `variantToRecord` — gated like `×→×`: a status arrives on one side, the
   merged output retains what the other side last said.
 
+Look at the may-overlap/must-be-disjoint pattern for a moment, because it
+is a law, not a coincidence: **sharing is inclusive, responsibility is
+exclusive**. A record field may be *read* by everyone and a variant case
+may be *emitted* by anyone — data can be copied freely, so those rows may
+overlap. But a variant case must be *handled* by exactly one operand and a
+record field must be *produced* by exactly one operand — responsibility
+cannot be split, so those rows must be disjoint. Records are read-shared
+but write-owned; variants are emit-shared but handle-owned: the two shapes
+swap polarity as you cross from input to output, which is why there are
+genuinely four directions and not two with a flip.
+
+The library's constraint vocabulary spells this out. Each merge signature
+carries exactly two constraints, one per side:
+
+```
+recordToRecord   : SharedRecordInputs + OwnedRecordOutputs
+recordToVariant  : SharedRecordInputs + SharedVariantOutputs
+variantToVariant : OwnedVariantInputs + SharedVariantOutputs
+variantToRecord  : OwnedVariantInputs + OwnedRecordOutputs
+```
+
+The `Shared` sides need nothing beyond the type-level overlap bookkeeping —
+their runtime actions (broadcast a record, `expand` a variant) are
+label-blind. The `Owned` sides each carry **runtime evidence** alongside
+disjointness, because their runtime actions are label-*driven*:
+`OwnedVariantInputs` bundles `DispatchableVariants` (reified case tags, so
+dispatch can route each value to its one handler) and `OwnedRecordOutputs`
+bundles `MergeableRecords` (reified field names, so the gate can trim each
+emission to exactly its declared row before combining contributions).
+Evidence appears precisely where responsibility does — and the constraint
+count is an honest price sheet: `recordToVariant`, with no owned side, is
+the trivial broadcast; `variantToRecord`, doubly owned, both dispatches
+and gates.
+
 These merges are what the qualified-do sugar desugars to. A form is
 literally:
 
