@@ -143,11 +143,17 @@ literally:
 
 ```purescript
 RecordToRecord.do
-  field @"name"  (filledTextField @"name" ...)
-  field @"email" (filledTextField @"email" ...)
+  filledTextField @"name"  { floatingLabel: "Name" }
+  filledTextField @"email" { floatingLabel: "Email" }
 ```
 
-each line one more operand merged in — and code order is DOM order.
+each line one more operand merged in — and code order is DOM order. Note
+there is no wrapping at the use site: every component carries its own
+label (`filledTextField @l` is already the closed-singleton editor at
+field `l`), so merge operands drop straight in. The general lifter
+`field @l` exists for the other cases — turning a raw scalar leaf into a
+singleton, or nesting a whole sub-composite as one field of a larger
+record.
 
 ## Nullary operators: the units
 
