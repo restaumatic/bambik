@@ -9,12 +9,12 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Cochoice (unleft)
 import Data.Profunctor.Costrong (unfirst)
-import Data.Profunctor.Row.RecordToRecord (feedback, property, focusRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (colens, feedback, property, focusRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.VariantToRecord (coretain, unfolding, variantToRecord)
+import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.RecordToVariant (coresolve, folding, recordToCase)
-import Data.Profunctor.Row.VariantToVariant (iterate)
+import Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase)
+import Data.Profunctor.Row.VariantToVariant (coprism, iterate)
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -322,3 +322,68 @@ main = do
       liftEffect do
         Ref.read outs >>= assertEqual "resolveFor: only the last burst value resolves, after quiescence"
           [ Right 7, Left "burst2" ]
+
+  -- == The co-optics: each co-strength induces the reversed optic. ==
+
+  -- Colens (unfirst; ≅ Lens b a t s): each input read against the last
+  -- output, outputs mapped; gated before a first emission.
+  do
+    ins <- Ref.new ([] :: Array String)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array Int)
+    m <- unwrap (colens (\s b -> s <> show b) (_ * 10) (probeIO ins gProp :: UI Effect String Int))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser "x"
+    Ref.read ins >>= assertEqual "colens: gated before first emission" []
+    fire gProp 3
+    Ref.read outs >>= assertEqual "colens: output mapped" [ 30 ]
+    m.toUser "y"
+    Ref.read ins >>= assertEqual "colens: input joined with last output" [ "y3" ]
+
+  -- Coprism (unleft; ≅ Prism b a t s): every input embeds as a focus; each
+  -- result exits or re-enters as the next focus — tailRec at the optic level.
+  do
+    ins <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (coprism identity (\b -> if b > 10 then Left (show b) else Right (b + 1)) (probeIO ins gProp :: UI Effect Int Int))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser 3
+    Ref.read ins >>= assertEqual "coprism: input embeds as focus" [ 3 ]
+    fire gProp 5
+    Ref.read outs >>= assertEqual "coprism: looped result withheld" []
+    Ref.read ins >>= assertEqual "coprism: looped result re-enters" [ 3, 6 ]
+    fire gProp 11
+    Ref.read outs >>= assertEqual "coprism: exit passes" [ "11" ]
+
+  -- Coshutter (coresolve; ≅ Reel b a t s): the fold state is a reader —
+  -- each emission exits or yields a new way to read inputs; gated until a
+  -- first reader exists.
+  do
+    ins <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (coshutter (\b -> if b >= 100 then Left (show b) else Right (_ + b)) (probeIO ins gProp :: UI Effect Int Int))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser 1
+    Ref.read ins >>= assertEqual "coshutter: gated before a first reader" []
+    fire gProp 10
+    Ref.read ins >>= assertEqual "coshutter: new reader re-reads last input" [ 11 ]
+    m.toUser 2
+    Ref.read ins >>= assertEqual "coshutter: input read through the fold reader" [ 11, 12 ]
+    fire gProp 100
+    Ref.read outs >>= assertEqual "coshutter: exit passes" [ "100" ]
+
+  -- Coreel (coretain; ≅ Shutter b a t s): every emission both leaves and
+  -- re-enters — a generator.
+  do
+    ins <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (coreel identity show (_ + 1) (probeIO ins gProp :: UI Effect Int Int))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    m.toUser 5
+    Ref.read ins >>= assertEqual "coreel: input embeds" [ 5 ]
+    fire gProp 7
+    Ref.read outs >>= assertEqual "coreel: emission leaves" [ "7" ]
+    Ref.read ins >>= assertEqual "coreel: emission resumes as next input" [ 5, 8 ]
