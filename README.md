@@ -3,6 +3,8 @@
 
 This is a prototype of the idea of *profunctor user interfaces* for Web/Material Design Component-based UIs written in [PureScript](https://www.purescript.org/).
 
+[Why Bambik? — a long-form introduction](/doc/why-bambik.md)
+
 [1000 characters-long description of the idea](/doc/description-1000characters.md)
 
 [20 minutes-long presentation of the idea](/doc/presentation-20min.md)
