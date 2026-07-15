@@ -210,12 +210,29 @@ Every strength opens a channel; every **co-strength is its retraction** — it
 ties the channel back into a loop, with the law `co (strength g) ≅ g` once
 the channel is primed. This is the **trace quartet**:
 
-| strength | co-strength | ties into | row form | example |
-|---|---|---|---|---|
-| `Strong` | `Costrong` / `unfirst` | state feedback | `feedback` | a session-peak readout chasing its own output |
-| `Choice` | `Cochoice` / `unleft` | iteration | `iterate` | retrying a flaky publish with attempt+1 |
-| `Resolving` | `Coresolving` / `coresolve` | terminating fold | `folding @w` | an accumulating multi-step wizard |
-| `Retaining` | `Coretaining` / `coretain` | productive unfold | `unfolding @w` | an activity meter counting every event |
+| strength | co-strength | ties into | co-optic | row form | example |
+|---|---|---|---|---|---|
+| `Strong` | `Costrong` / `unfirst` | state feedback | `Colens` | `feedback` | a session-peak readout chasing its own output |
+| `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | `iterate` | retrying a flaky publish with attempt+1 |
+| `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | `folding @w` | an accumulating multi-step wizard |
+| `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | `unfolding @w` | an activity meter counting every event |
+
+And just as each strength induces an optic (`Strong` the lens, `Choice`
+the prism, the coined pair `Shutter` and `Reel`), each co-strength induces
+a **co-optic** — and it is the corresponding optic *run backwards*:
+`Colens s t a b ≅ Lens b a t s`, `Coprism ≅ Prism` reversed, and the mixed
+pair swap partners under reversal — `Coshutter` is the reversed `Reel`,
+`Coreel` the reversed `Shutter`. Where a lens carries its residual visibly
+in the type (the background rides along), a co-optic *hides* its residual
+and threads it through the loop instead: `Colens` reads each input against
+the widget's own last output; `Coprism` is `tailRec` at the optic level
+(every result exits or re-enters as the next focus); `Coshutter`'s fold
+state is a *reader* — its collapsed form `b → Either t (s → a)` has no
+initial reader, which is exactly why the carrier gates inputs until
+primed; `Coreel` is a generator, every emission both leaving and resuming.
+Strength optics give compositional *access*; co-optics give compositional
+*hiding* — a stage's private state has no footprint in the pipeline's
+types.
 
 The retraction law pays an unexpected dividend on the `Resolving` row:
 compose the time-driven quiescence step with its co-strength and you get
