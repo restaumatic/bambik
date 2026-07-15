@@ -9,7 +9,8 @@
 -- |     (sub-variant focus), `retainCase` (thread one label), `caseToProperty`
 -- |     (single-case focus), `caseToRecord` (introduce/reduce), the `Reel`
 -- |     optic with `reel`/`reelE` — and over the co-strength `Coretaining`:
--- |     `unfolding @w` (the productive unfold at row granularity).
+-- |     the `Coreel` optic with `coreel`/`coreelE` (the reversed `Shutter`)
+-- |     and its row form `unfolding @w` (the productive unfold).
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
@@ -32,8 +33,11 @@
 -- | record-output unit must *announce* its informationless `{}` so the merge
 -- | knows that side is complete, and parametric silence cannot.
 module Data.Profunctor.Row.VariantToRecord
-  ( Reel
+  ( Coreel
+  , Reel
   , bind
+  , coreel
+  , coreelE
   , variantToRecord
   , class Coretaining
   , class VariantToRecord
@@ -130,6 +134,27 @@ unfolding g =
       (either expand (inj (Proxy @w)))
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
       g)
+
+-- | The optic `coretain` induces: the **Coreel** — the `Shutter` run
+-- | backwards (`Coreel s t a b ≅ Shutter b a t s`). Eliminating the residual
+-- | `c` (instantiated to `b`) by co-Yoneda collapses
+-- | `∃c. (s + c → a) × (b → t × c)` to
+-- | `(embed : s → a) × (out : b → t) × (resume : b → a)`: every emission
+-- | both leaves as `t` and **re-enters as the next focus input** — a
+-- | generator, producing on every step. `unfolding @w` is this optic at row
+-- | granularity.
+type Coreel s t a b = forall p. Coretaining p => p a b -> p s t
+
+coreel :: forall s t a b. (s -> a) -> (b -> t) -> (b -> a) -> Coreel s t a b
+coreel embed out resume = coreelE (either embed resume) (\b -> Tuple (out b) b)
+
+-- | Construct a `Coreel` straight from its **existential encoding**
+-- | `∃c. (s + c → a) × (b → t × c)`: pick the resume channel `c`, then supply
+-- | `decon` (read a fresh input or a resumed value) and `recon` (split each
+-- | emission into the output and the channel's next value). `coreel` is this
+-- | at the co-Yoneda witness `c := b`.
+coreelE :: forall s t a b c. (Either s c -> a) -> (b -> Tuple t c) -> Coreel s t a b
+coreelE decon recon g = coretain (dimap decon recon g)
 
 class Profunctor p <= VariantToRecord p where
   -- | One constraint per side: `OwnedVariantInputs` (disjoint rows — one

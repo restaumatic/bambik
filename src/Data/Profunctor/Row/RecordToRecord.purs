@@ -10,8 +10,10 @@
 -- |     form — the merge-operand shape, `dimap`-only and runtime-exact
 -- |     by construction; the merges themselves enforce exactness via
 -- |     `MergeableRecords`, so `property` operands are safe too);
--- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
--- |     granularity — a state sub-record loops from output to input).
+-- |     over the co-strength `Costrong`: the `Colens` optic with
+-- |     `colens`/`colensE` (the reversed lens) and its row form `feedback`
+-- |     (the ×-trace at row granularity — a state sub-record loops from
+-- |     output to input).
 -- |
 -- | The **nullary** operator is the class's own unit `pempty :: p {} {}` —
 -- | the empty merge:
@@ -26,7 +28,10 @@
 -- | anything typed `forall a b. p a b` is silent by parametricity (it can
 -- | never fabricate a `b`). For `Category` carriers, `pempty = identity @{}`.
 module Data.Profunctor.Row.RecordToRecord
-  ( bind
+  ( Colens
+  , bind
+  , colens
+  , colensE
   , recordToRecord
   , class RecordToRecord
   , discard
@@ -188,3 +193,24 @@ feedback g =
       -- guarantees the two typed views are disjoint
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
       g)
+
+-- | The optic `unfirst` induces: the **Colens** — the lens run backwards
+-- | (`Colens s t a b ≅ Lens b a t s`). Eliminating the residual `c`
+-- | (instantiated to `b`) by co-Yoneda collapses `∃c. (s × c → a) × (b → t × c)`
+-- | to `(join : s → b → a) × (out : b → t)`: each input is read **against the
+-- | widget's own last output** — the residual a lens would carry visibly in
+-- | the type is hidden, threaded through state instead. The collapsed form
+-- | shows why the `UI` carrier gates it (there is no last output before the
+-- | first emission). `feedback` is this optic at row granularity.
+type Colens s t a b = forall p. Costrong p => p a b -> p s t
+
+colens :: forall s t a b. (s -> b -> a) -> (b -> t) -> Colens s t a b
+colens join out = colensE (\(Tuple s b) -> join s b) (\b -> Tuple (out b) b)
+
+-- | Construct a `Colens` straight from its **existential encoding**
+-- | `∃c. (s × c → a) × (b → t × c)`: pick the looped channel `c`, then supply
+-- | `decon` (read the input joined with the channel) and `recon` (split each
+-- | emission into the output and the channel's next value). `colens` is this
+-- | at the co-Yoneda witness `c := b`.
+colensE :: forall s t a b c. (Tuple s c -> a) -> (b -> Tuple t c) -> Colens s t a b
+colensE decon recon g = unfirst (dimap decon recon g)
