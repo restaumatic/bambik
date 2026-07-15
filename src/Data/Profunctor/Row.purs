@@ -8,7 +8,7 @@
 -- |     Their meanings come from the row-profunctor reading: everyone may
 -- |     read a record field / offer a variant case, but each variant case
 -- |     must have exactly one handler and each record field exactly one
--- |     producer. `ExactRows` adds the **runtime-exactness** evidence the
+-- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
 -- |     gated merges use to trim operand emissions to their declared
 -- |     output rows (`exactRow`).
 -- |   * **reshapings** — `dimap`-only structural adapters that grow or
@@ -26,10 +26,10 @@ module Data.Profunctor.Row
   ( class InclusiveRows
   , class ExclusiveRows
   , class DispatchableVariants
-  , class ExactRows
-  , class ExactRowList
+  , class MergeableRecords
+  , class FieldNames
   , exactRow
-  , exactRowList
+  , fieldNames
   , widenRecordInput
   , widenVariantOutput
   )
@@ -113,46 +113,46 @@ instance
 -- | operand's emission to its declared output row before the left-biased
 -- | `Record.union`, so stale runtime copies of *sibling* fields can never
 -- | shadow the siblings' genuine contributions.
-exactRow :: forall r rl. RowToList r rl => ExactRowList rl r r => { | r } -> { | r }
-exactRow r = Builder.buildFromScratch (exactRowList (Proxy @rl) r)
+exactRow :: forall r rl. RowToList r rl => FieldNames rl r r => { | r } -> { | r }
+exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
 
 -- | Rows o1 and o2 carry runtime rebuild evidence for the gated merges'
 -- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,
 -- | o2l = RowToList o2 — the `DispatchableVariants` pattern, so the merge
 -- | instances can discharge `exactRow`'s constraints from the givens'
 -- | superclasses.
-class ExactRows :: Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class MergeableRecords :: Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
 class
   ( RowToList o1 o1l
-  , ExactRowList o1l o1 o1
+  , FieldNames o1l o1 o1
   , RowToList o2 o2l
-  , ExactRowList o2l o2 o2
-  ) <= ExactRows o1 o2 o1l o2l
+  , FieldNames o2l o2 o2
+  ) <= MergeableRecords o1 o2 o1l o2l
 
 instance
   ( RowToList o1 o1l
-  , ExactRowList o1l o1 o1
+  , FieldNames o1l o1 o1
   , RowToList o2 o2l
-  , ExactRowList o2l o2 o2
-  ) => ExactRows o1 o2 o1l o2l
+  , FieldNames o2l o2 o2
+  ) => MergeableRecords o1 o2 o1l o2l
 
 -- | `RowList`-indexed worker for `exactRow`: copies exactly the listed
 -- | labels out of `from` into a freshly built record.
-class ExactRowList :: RowList Type -> Row Type -> Row Type -> Constraint
-class ExactRowList rl from to | rl -> to where
-  exactRowList :: Proxy rl -> { | from } -> Builder {} { | to }
+class FieldNames :: RowList Type -> Row Type -> Row Type -> Constraint
+class FieldNames rl from to | rl -> to where
+  fieldNames :: Proxy rl -> { | from } -> Builder {} { | to }
 
-instance ExactRowList RL.Nil from () where
-  exactRowList _ _ = identity
+instance FieldNames RL.Nil from () where
+  fieldNames _ _ = identity
 
 instance
   ( IsSymbol l
   , Row.Cons l a fromRest from
   , Row.Cons l a toRest to
   , Row.Lacks l toRest
-  , ExactRowList rl from toRest
-  ) => ExactRowList (RL.Cons l a rl) from to where
-  exactRowList _ r = Builder.insert (Proxy @l) (Record.get (Proxy @l) r) <<< exactRowList (Proxy @rl) r
+  , FieldNames rl from toRest
+  ) => FieldNames (RL.Cons l a rl) from to where
+  fieldNames _ r = Builder.insert (Proxy @l) (Record.get (Proxy @l) r) <<< fieldNames (Proxy @rl) r
 
 -- =====================================================================
 -- Whole-row reshapings

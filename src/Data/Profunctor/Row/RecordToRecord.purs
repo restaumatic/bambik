@@ -9,7 +9,7 @@
 -- |     over bare `Profunctor`: `field` (`property`'s closed-singleton
 -- |     form — the merge-operand shape, `dimap`-only and runtime-exact
 -- |     by construction; the merges themselves enforce exactness via
--- |     `ExactRows`, so `property` operands are safe too);
+-- |     `MergeableRecords`, so `property` operands are safe too);
 -- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
 -- |     granularity — a state sub-record loops from output to input).
 -- |
@@ -50,11 +50,11 @@ import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks)
 import Record (get, insert, union) as Record
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExactRows, class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class MergeableRecords, class ExclusiveRows, class InclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
-  -- | The `ExactRows` constraint is the merge's **runtime-exactness
+  -- | The `MergeableRecords` constraint is the merge's **runtime-exactness
   -- | guarantee**: gated carriers trim each operand's emission to its
   -- | declared output row before the left-biased union, so an operand whose
   -- | runtime object carries stale copies of sibling fields (an echo wire or
@@ -63,7 +63,7 @@ class Profunctor p <= RecordToRecord p where
   recordToRecord :: forall i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
     InclusiveRows i1 i2 i i12 i1x i2x =>
     ExclusiveRows o1 o2 o =>
-    ExactRows o1 o2 o1l o2l =>
+    MergeableRecords o1 o2 o1l o2l =>
     p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
   -- | The **nullary** merge — the unit: reads nothing, contributes no fields.
   -- | Genuinely per-carrier: a parametric silent element cannot serve, because
@@ -76,7 +76,7 @@ bind :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   RecordToRecord p =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   ExclusiveRows o1 o2 o =>
-  ExactRows o1 o2 o1l o2l =>
+  MergeableRecords o1 o2 o1l o2l =>
   p { | i1 } { | o1 } -> (p { | i1 } { | o1 } -> p { | i2 } { | o2 }) -> p { | i } { | o }
 bind first cont = recordToRecord first (cont first)
 
@@ -84,7 +84,7 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   RecordToRecord p =>
   InclusiveRows i1 i2 i i12 i1x i2x =>
   ExclusiveRows o1 o2 o =>
-  ExactRows o1 o2 o1l o2l =>
+  MergeableRecords o1 o2 o1l o2l =>
   p { | i1 } { | o1 } -> (Unit -> p { | i2 } { | o2 }) -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 
@@ -144,7 +144,7 @@ property = prop (Proxy @l)
 -- | field, freshly built. (A lens emission (`property`) instead rebuilds the
 -- | record from its retained input, which under the merges' widening
 -- | coercions runtime-carries stale copies of *sibling* fields. The gated
--- | merges guard against this — their `ExactRows` evidence trims every
+-- | merges guard against this — their `MergeableRecords` evidence trims every
 -- | operand emission to its declared output row before the left-biased
 -- | `Record.union` — so this is no longer a correctness obligation on
 -- | operands; `field` remains the preferred operand form for its

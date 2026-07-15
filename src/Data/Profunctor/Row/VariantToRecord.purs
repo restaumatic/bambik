@@ -62,7 +62,7 @@ import Data.Variant (class Contractable, Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class DispatchableVariants, class ExactRows, class ExclusiveRows)
+import Data.Profunctor.Row (class DispatchableVariants, class MergeableRecords, class ExclusiveRows)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /
@@ -132,7 +132,7 @@ unfolding g =
       g)
 
 class Profunctor p <= VariantToRecord p where
-  -- | The `ExactRows` constraint is the merge's **runtime-exactness
+  -- | The `MergeableRecords` constraint is the merge's **runtime-exactness
   -- | guarantee** — see `RecordToRecord.recordToRecord`: gated carriers trim
   -- | each operand's emission to its declared output row before the
   -- | left-biased union.
@@ -140,7 +140,7 @@ class Profunctor p <= VariantToRecord p where
     ExclusiveRows i1 i2 i =>
     ExclusiveRows o1 o2 o =>
     DispatchableVariants i1 i2 i1l i2l =>
-    ExactRows o1 o2 o1l o2l =>
+    MergeableRecords o1 o2 o1l o2l =>
     p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 } -> p [ | i ] { | o }
   -- | The **nullary** merge — the unit: handles no cases, contributes no
   -- | fields. Genuinely per-carrier: the uninhabited input can never drive it,
@@ -154,7 +154,7 @@ bind :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
   ExclusiveRows i1 i2 i =>
   ExclusiveRows o1 o2 o =>
   DispatchableVariants i1 i2 i1l i2l =>
-  ExactRows o1 o2 o1l o2l =>
+  MergeableRecords o1 o2 o1l o2l =>
   p [ | i1 ] { | o1 } -> (p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 bind first cont = variantToRecord first (cont first)
 
@@ -163,7 +163,7 @@ discard :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
   ExclusiveRows i1 i2 i =>
   ExclusiveRows o1 o2 o =>
   DispatchableVariants i1 i2 i1l i2l =>
-  ExactRows o1 o2 o1l o2l =>
+  MergeableRecords o1 o2 o1l o2l =>
   p [ | i1 ] { | o1 } -> (Unit -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
 
