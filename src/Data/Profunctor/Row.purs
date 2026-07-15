@@ -8,7 +8,9 @@
 -- |     Their meanings come from the row-profunctor reading: everyone may
 -- |     read a record field / offer a variant case, but each variant case
 -- |     must have exactly one handler and each record field exactly one
--- |     producer.
+-- |     producer. `ExactRows` adds the **runtime-exactness** evidence the
+-- |     gated merges use to trim operand emissions to their declared
+-- |     output rows (`exactRow`).
 -- |   * **reshapings** — `dimap`-only structural adapters that grow or
 -- |     shrink one row-typed side, with nothing flowing through the added
 -- |     or dropped labels.
@@ -24,16 +26,28 @@ module Data.Profunctor.Row
   ( class InclusiveRows
   , class ExclusiveRows
   , class DispatchableVariants
+  , class ExactRows
+  , class ExactRowList
+  , exactRow
+  , exactRowList
   , widenRecordInput
   , widenVariantOutput
   )
   where
 
+import Prelude (identity, (<<<))
+
 import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Symbol (class IsSymbol)
 import Data.Variant (expand)
 import Data.Variant.Internal (class VariantTags)
-import Prim.Row (class Nub, class Union) as Row
+import Prim.Row (class Cons, class Lacks, class Nub, class Union) as Row
 import Prim.RowList (class RowToList, RowList)
+import Prim.RowList (Cons, Nil) as RL
+import Record (get) as Record
+import Record.Builder (Builder)
+import Record.Builder (buildFromScratch, insert) as Builder
+import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- =====================================================================
@@ -85,6 +99,60 @@ instance
   , RowToList r2 r2l
   , VariantTags r2l
   ) => DispatchableVariants r1 r2 r1l r2l
+
+-- =====================================================================
+-- Runtime exactness
+-- =====================================================================
+
+-- | Rebuild a record field-by-field so its **runtime** shape is exactly its
+-- | row — no more, no less. A record's type never guarantees its runtime
+-- | object carries only the declared labels: the widening reshapings above
+-- | are coercions, so a widget that echoes or lens-rebuilds its input emits
+-- | an object runtime-carrying every field of the *merged* row while typed
+-- | at its own narrow slice. The gated merges use `exactRow` to trim each
+-- | operand's emission to its declared output row before the left-biased
+-- | `Record.union`, so stale runtime copies of *sibling* fields can never
+-- | shadow the siblings' genuine contributions.
+exactRow :: forall r rl. RowToList r rl => ExactRowList rl r r => { | r } -> { | r }
+exactRow r = Builder.buildFromScratch (exactRowList (Proxy @rl) r)
+
+-- | Rows o1 and o2 carry runtime rebuild evidence for the gated merges'
+-- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,
+-- | o2l = RowToList o2 — the `DispatchableVariants` pattern, so the merge
+-- | instances can discharge `exactRow`'s constraints from the givens'
+-- | superclasses.
+class ExactRows :: Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( RowToList o1 o1l
+  , ExactRowList o1l o1 o1
+  , RowToList o2 o2l
+  , ExactRowList o2l o2 o2
+  ) <= ExactRows o1 o2 o1l o2l
+
+instance
+  ( RowToList o1 o1l
+  , ExactRowList o1l o1 o1
+  , RowToList o2 o2l
+  , ExactRowList o2l o2 o2
+  ) => ExactRows o1 o2 o1l o2l
+
+-- | `RowList`-indexed worker for `exactRow`: copies exactly the listed
+-- | labels out of `from` into a freshly built record.
+class ExactRowList :: RowList Type -> Row Type -> Row Type -> Constraint
+class ExactRowList rl from to | rl -> to where
+  exactRowList :: Proxy rl -> { | from } -> Builder {} { | to }
+
+instance ExactRowList RL.Nil from () where
+  exactRowList _ _ = identity
+
+instance
+  ( IsSymbol l
+  , Row.Cons l a fromRest from
+  , Row.Cons l a toRest to
+  , Row.Lacks l toRest
+  , ExactRowList rl from toRest
+  ) => ExactRowList (RL.Cons l a rl) from to where
+  exactRowList _ r = Builder.insert (Proxy @l) (Record.get (Proxy @l) r) <<< exactRowList (Proxy @rl) r
 
 -- =====================================================================
 -- Whole-row reshapings

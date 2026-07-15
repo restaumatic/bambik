@@ -20,6 +20,7 @@ import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import UI (New(..), PropagationStatus, UI(..), looped)
+import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
 assertEqual msg expected actual =
@@ -96,6 +97,38 @@ main = do
     m.fromUser \(New o _) -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp { a: 2 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g pempty = g" [ { a: 2 } ]
+
+  -- ×→× runtime-exactness: the merge widens each operand's input by coercion,
+  -- so an operand that echoes or lens-rebuilds its input emits an object
+  -- runtime-carrying stale copies of *sibling* fields while typed at its own
+  -- narrow row. The gate must trim to the declared output row, so the stale
+  -- copy cannot shadow the sibling's genuine contribution in the left-biased
+  -- union. (The fat emission below is exactly what `widenRecordInput`'s
+  -- coercion hands an echo wire.)
+  do
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+    m <- unwrap (recordToRecord
+      (probe p1Prop :: UI Effect {} { a :: Int })
+      (probe p2Prop :: UI Effect {} { b :: String }))
+    m.fromUser \(New o _) -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    fire p2Prop { b: "fresh" }
+    fire p1Prop (unsafeCoerce { a: 1, b: "stale" } :: { a :: Int })
+    Ref.read outs >>= assertEqual "×→× exactness: stale runtime sibling must not shadow" [ { a: 1, b: "fresh" } ]
+
+  -- +→× runtime-exactness: same guarantee on the other gated merge.
+  do
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+    m <- unwrap (variantToRecord
+      (probe p1Prop :: UI Effect [ x :: Unit ] { a :: Int })
+      (probe p2Prop :: UI Effect [ y :: Unit ] { b :: String }))
+    m.fromUser \(New o _) -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    fire p2Prop { b: "fresh" }
+    fire p1Prop (unsafeCoerce { a: 4, b: "stale" } :: { a :: Int })
+    Ref.read outs >>= assertEqual "+→× exactness: stale runtime sibling must not shadow" [ { a: 4, b: "fresh" } ]
 
   -- +→× unit law: variantToRecord pempty g = g.
   do
