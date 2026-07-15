@@ -121,7 +121,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (New(..), UI, effAdapter)
+import UI (UI, effAdapter)
 import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
 import Web (button) as Web
 
@@ -156,13 +156,13 @@ tabBarLeaf options =
           liftEffect $ for_ tabs \t -> listenNode t.node "click" do
             render t.value
             mProp <- Ref.read mPropRef
-            for_ mProp \prop -> void $ prop $ New t.value false
+            for_ mProp \prop -> void $ prop t.value
           pure
-            { toUser: \(New a _) -> do
+            { toUser: \a -> do
                 render a
                 -- leaf echo: the selection is always known, so always announce
                 mProp <- Ref.read mPropRef
-                for_ mProp \prop -> void $ prop $ New a false
+                for_ mProp \prop -> void $ prop a
             , fromUser: \prop -> Ref.write (Just prop) mPropRef
             }
   where
@@ -233,9 +233,9 @@ menuItemLeaf lbl = wrap do
   liftEffect $ listenNode node "click" do
     mProp <- Ref.read mPropRef
     mA <- Ref.read mARef
-    for_ mProp \prop -> for_ mA \a' -> void $ prop $ New a' false
+    for_ mProp \prop -> for_ mA \a' -> void $ prop a'
   pure
-    { toUser: \(New a' _) -> Ref.write (Just a') mARef
+    { toUser: \a' -> Ref.write (Just a') mARef
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
@@ -256,7 +256,7 @@ filledTextField { floatingLabel } =
     _ <- unwrap (span >>> cl "mdc-line-ripple" $ pempty)
     pure
       { toUser: \u -> do
-          floating.toUser (u $> {})
+          floating.toUser {}
           w.toUser u
       , fromUser: w.fromUser
       }
@@ -291,7 +291,7 @@ checkbox labelContent =
     lbl <- unwrap (label >>> "for" := id $ labelContent)
     pure
       { toUser: \u -> do
-          lbl.toUser (u $> {})
+          lbl.toUser {}
           w.toUser u
       , fromUser: w.fromUser
       }
@@ -320,13 +320,13 @@ radioLeaf options =
     let render ma = for_ members \m -> setNodeChecked m.inputNode (Just m.value == ma)
     liftEffect $ for_ members \m -> listenNode m.inputNode "change" do
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop $ New m.value false
+      for_ mProp \prop -> void $ prop m.value
     pure
-      { toUser: \(New ma _) -> do
+      { toUser: \ma -> do
           render ma
           -- leaf echo (output is the bare selection, so only a `Just` echoes)
           mProp <- Ref.read mPropRef
-          for_ mProp \prop -> for_ ma \a' -> void $ prop $ New a' false
+          for_ mProp \prop -> for_ ma \a' -> void $ prop a'
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
   where
@@ -356,13 +356,13 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
   liftEffect $ listenNode node "click" do
     selected <- getSelected comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop $ New selected false
+    for_ mProp \prop -> void $ prop selected
   pure
-    { toUser: \(New b _) -> do
+    { toUser: \b -> do
         setSelected comp b
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop $ New b false
+        for_ mProp \prop -> void $ prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -382,8 +382,8 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
     </button>"""
 
 -- | The `×→×` `Number` editor. A `step` makes it the discrete slider.
--- | Mid-drag values are transient emissions (`cont = true`, like
--- | mid-typing text); the released value is final.
+-- | Mid-drag values emit continuously (like mid-typing text); a consumer
+-- | that doesn't want the burst wraps its stage in `debounced`.
 slider :: forall @l s. IsSymbol l => Cons l Number () s => { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> UI Web { | s } { | s }
 slider config = field @l (sliderLeaf config)
 
@@ -396,18 +396,18 @@ sliderLeaf config = wrap do
   liftEffect $ listen comp "MDCSlider:input" do
     v <- getSliderValue comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop $ New v true
+    for_ mProp \prop -> void $ prop v
   liftEffect $ listen comp "MDCSlider:change" do
     v <- getSliderValue comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop $ New v false
+    for_ mProp \prop -> void $ prop v
   pure
-    { toUser: \(New v _) -> do
+    { toUser: \v -> do
         setSliderValue comp v
         -- construction may have happened before styles applied; re-measure
         layout comp
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop $ New v false
+        for_ mProp \prop -> void $ prop v
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -450,9 +450,9 @@ selectLeaf config options = wrap do
       idx <- getSelectedIndex comp
       for_ (options !! idx) \o -> do
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop $ New o.value false
+        for_ mProp \prop -> void $ prop o.value
   pure
-    { toUser: \(New ma _) -> do
+    { toUser: \ma -> do
         Ref.write true busyRef
         case ma of
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setSelectedIndex comp idx
@@ -460,7 +460,7 @@ selectLeaf config options = wrap do
         Ref.write false busyRef
         -- leaf echo (output is the bare selection, so only a `Just` echoes)
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> void $ prop $ New a' false
+        for_ mProp \prop -> for_ ma \a' -> void $ prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -508,13 +508,13 @@ segmentedLeaf options =
     liftEffect $ for_ segments \seg -> listenNode seg.node "click" do
       render (Just seg.value)
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop $ New seg.value false
+      for_ mProp \prop -> void $ prop seg.value
     pure
-      { toUser: \(New ma _) -> do
+      { toUser: \ma -> do
           render ma
           -- leaf echo (output is the bare selection, so only a `Just` echoes)
           mProp <- Ref.read mPropRef
-          for_ mProp \prop -> for_ ma \a' -> void $ prop $ New a' false
+          for_ mProp \prop -> for_ ma \a' -> void $ prop a'
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
@@ -537,14 +537,14 @@ chipLeaf lbl = wrap do
     Ref.write b stateRef
     render b
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop $ New b false
+    for_ mProp \prop -> void $ prop b
   pure
-    { toUser: \(New b _) -> do
+    { toUser: \b -> do
         Ref.write b stateRef
         render b
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop $ New b false
+        for_ mProp \prop -> void $ prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -577,13 +577,13 @@ iconToggleLeaf config = wrap do
   liftEffect $ listen comp "MDCIconButtonToggle:change" do
     on' <- getIconToggleOn comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop $ New on' false
+    for_ mProp \prop -> void $ prop on'
   pure
-    { toUser: \(New b _) -> do
+    { toUser: \b -> do
         setIconToggleOn comp b
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop $ New b false
+        for_ mProp \prop -> void $ prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -811,7 +811,7 @@ dataTable config content =
     for_ config.columns \c -> void $ unwrap (th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText c)
     pure
       { toUser: mempty
-      , fromUser: \prop -> void $ prop $ New {} false
+      , fromUser: \prop -> void $ prop {}
       }
 
 dataRow :: Ocular (UI Web)

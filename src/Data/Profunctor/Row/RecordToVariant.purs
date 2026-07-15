@@ -82,8 +82,13 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | to `identity`) — the product→sum analogue of how `focusRecord` is the
 -- | unary form of `recordToRecord`.
 -- |
--- | (No `(->)` instance: the only one would be the trivial always-`Done` step,
--- | which carries no iteration — this class is for profunctors that actually loop.)
+-- | With no out-of-band loop signal in the wire protocol (values are just
+-- | values), the `UI` instance derives the branch **from time**: every
+-- | emission loops (`Right`) while the widget is still moving, and the last
+-- | emission resolves (`Left`) at quiescence — so
+-- | `coresolve (resolve g) = debounced g ≅ g` up to time, once primed.
+-- | (No `(->)` instance: a timeless carrier could only give the trivial
+-- | always-`Done` step, which carries no iteration.)
 -- |
 -- | This is the **bare strength** for the `× → +` direction (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is `shutterWrap` below —

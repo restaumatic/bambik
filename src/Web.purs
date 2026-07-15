@@ -65,7 +65,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import UI (New(..), PropagationStatus, UI)
+import UI (PropagationStatus, UI)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
@@ -102,11 +102,10 @@ text = wrap do
   node <- gets (_.sibling)
   propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
-    { toUser: case _ of
-      New s _ -> do
+    { toUser: \s -> do
         setTextNodeValue node s
         prop <- Ref.read propRef
-        void $ prop $ New {} false
+        void $ prop {}
     , fromUser: \prop -> Ref.write prop propRef
     }
 
@@ -116,17 +115,17 @@ input type_ = "type" := type_ $ wrap do
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new $ Nothing
   pure
-    { toUser: \(New newa _) -> do
+    { toUser: \newa -> do
       mProp <- Ref.read mPropRef
       for_ mProp \prop -> do
         setValue node newa
-        void $ prop $ New newa false
+        void $ prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
       void $ addEventListener "input" node $ const do
         Ref.write Nothing mPropRef
         value <- getValue node
-        void $ prop $ New value true
+        void $ prop value
     }
 
 textArea :: UI Web String String
@@ -135,17 +134,17 @@ textArea = wrap do
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \(New newa _) -> do
+    { toUser: \newa -> do
       mProp <- Ref.read mPropRef
       for_ mProp \prop -> do
         setValue node newa
-        void $ prop $ New newa false
+        void $ prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
       void $ addEventListener "input" node $ const do
         Ref.write Nothing mPropRef
         value <- getValue node
-        void $ prop $ New value true
+        void $ prop value
     }
 
 
@@ -156,7 +155,7 @@ checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothi
   element "input" (pure unit)
   node <- gets _.sibling
   pure
-    { toUser: \(New ma _) -> do
+    { toUser: \ma -> do
         case ma of
           Nothing -> setChecked node false
           Just newa -> do
@@ -164,13 +163,13 @@ checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothi
             Ref.write newa aRef
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop $ New ma false
+        for_ mProp \prop -> void $ prop ma
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         void $ addEventListener "input" node $ const do
           checked <- getChecked node
           a <- Ref.read aRef
-          void $ prop $ New (if checked then (Just a) else Nothing) false
+          void $ prop (if checked then (Just a) else Nothing)
     }
 
 radioButton :: forall a. Default a => UI Web (Maybe a) a
@@ -180,7 +179,7 @@ radioButton = "type" := "radio" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   pure
-    { toUser: \(New ma _) -> do
+    { toUser: \ma -> do
         case ma of
           Nothing -> setChecked node false
           Just newa -> do
@@ -188,12 +187,12 @@ radioButton = "type" := "radio" $ wrap do
             Ref.write newa aRef
         -- leaf echo (output is the bare selection, so only a `Just` echoes)
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \newa -> void $ prop $ New newa false
+        for_ mProp \prop -> for_ ma \newa -> void $ prop newa
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         void $ addEventListener "change" node $ const do
           a <- Ref.read aRef
-          void $ prop $ New a false
+          void $ prop a
     }
 
 -- TODO disable button after click?
@@ -207,15 +206,14 @@ button w = wrap do
   node <- gets _.sibling
   pure
     { toUser: \occur -> do
-        status <- w'.toUser (occur $> {})
-        case occur of
-          New a _ -> Ref.write (Just a) mARef
+        status <- w'.toUser {}
+        Ref.write (Just occur) mARef
         pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
         mA <- Ref.read mARef
         for_ mA \a -> do
           setAttribute node "disabled" "true" -- TODO re-think
-          void $ prop $ New a false
+          void $ prop a
     }
 
 -- | Static text as the announcing record unit with a face (`{} → {}`):
@@ -232,7 +230,7 @@ staticText text = wrap do
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop $ New {} false
+    , fromUser: \prop -> void $ prop {}
     }
 
 -- | See `staticText` — same announcing chrome typing.
@@ -243,7 +241,7 @@ staticHTML html = wrap do
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop $ New {} false
+    , fromUser: \prop -> void $ prop {}
     }
 
 -- UIOculars
@@ -355,7 +353,7 @@ h5 = el "h5"
 h6 :: Ocular (UI Web)
 h6 = el "h6"
 
-attrDyn :: String -> (Maybe (New Unit) -> Maybe String) -> Ocular (UI Web)
+attrDyn :: String -> (Maybe Unit -> Maybe String) -> Ocular (UI Web)
 attrDyn name valueFunction w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -367,20 +365,20 @@ attrDyn name valueFunction w = wrap do
     , fromUser: w'.fromUser
     }
     where
-      updateAttribute node mnewa = case valueFunction (map (_ $> unit) $ mnewa) of
+      updateAttribute node mnewa = case valueFunction (mnewa $> unit) of
         Just value -> setAttribute node name value
         Nothing -> removeAttribute node name
 
 infixr 10 attrDyn as :=>
 
-clDyn :: String -> (Maybe (New Unit) -> Boolean) -> Ocular (UI Web)
+clDyn :: String -> (Maybe Unit -> Boolean) -> Ocular (UI Web)
 clDyn name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   liftEffect $ (if pred Nothing then addClass else removeClass) node name
   pure
     { toUser: \mch -> do
-    (if pred (Just (mch $> unit)) then addClass else removeClass) node name
+    (if pred (Just unit) then addClass else removeClass) node name
     w'.toUser mch
     , fromUser: w'.fromUser
     }
@@ -396,11 +394,11 @@ shownWhen pred w = wrap do
   node <- gets _.sibling
   liftEffect $ setAttribute node "style" "display: none;"
   pure
-    { toUser: \u@(New i _) -> do
+    { toUser: \i -> do
         if pred i
           then removeAttribute node "style"
           else setAttribute node "style" "display: none;"
-        w'.toUser u
+        w'.toUser i
     , fromUser: w'.fromUser
     }
 
@@ -428,9 +426,9 @@ variant w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
     { toUser: case _ of
-      (New Nothing _) -> ensureDetached
-      new@(New (Just y) _) -> do
-        status <- toUser (new $> y)
+      Nothing -> ensureDetached
+      Just y -> do
+        status <- toUser y
         ensureAttached
         pure status
     , fromUser
@@ -493,10 +491,10 @@ runWidgetInSelectedNode selector initial callback ui = do
 runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
 runWidgetInNode node initial callback ui = runDomInNode node do
   { toUser, fromUser } <- unwrap ui
-  liftEffect $ fromUser \(New b _) -> do
+  liftEffect $ fromUser \b -> do
     callback b
     pure Nothing
-  void $ liftEffect $ toUser $ New initial false
+  void $ liftEffect $ toUser initial
 
 --- private
 
