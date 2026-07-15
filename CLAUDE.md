@@ -22,7 +22,7 @@ Do `export PATH=$PWD/node_modules/.bin:$PATH` and then `spago build` (tests: `sp
 ### Core Type
 
 ```purescript
-newtype UI m i o = UI (m { toUser :: New i -> Effect Unit, fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit })
+newtype UI m i o = UI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effect PropagationStatus) -> Effect Unit })
 ```
 
 - `i` - input type (data model to display)
