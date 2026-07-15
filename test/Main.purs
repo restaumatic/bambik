@@ -16,10 +16,13 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.RecordToVariant (coresolve, folding, recordToCase)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Tuple (Tuple(..))
+import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
+import Effect.Aff (delay, launchAff_)
+import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import UI (PropagationStatus, UI(..), looped)
+import UI (PropagationStatus, UI(..), looped, resolveFor)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -299,3 +302,23 @@ main = do
     fire gProp { o: "x", acc: 7 }
     Ref.read outs >>= assertEqual "unfolding: value fields pass" [ { o: "x" } ]
     Ref.read ins >>= assertEqual "unfolding: state resumes as its case" [ .start 1, .resume { acc: 7 } ]
+
+  -- Resolving/resolveFor (the quiescence step): every emission loops
+  -- immediately (Right, gated on a first state), and the last emission of a
+  -- burst resolves (Left) once the widget stays quiet for the window —
+  -- transiency derived from time, no wire-level flag.
+  do
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array (Either String Int))
+    m <- unwrap (resolveFor (Milliseconds 40.0) (probe gProp :: UI Effect Int String))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    fire gProp "burst1"
+    Ref.read outs >>= assertEqual "resolveFor: loop withheld before state" []
+    m.toUser (Tuple 1 7)
+    fire gProp "burst2"
+    Ref.read outs >>= assertEqual "resolveFor: emission loops immediately" [ Right 7 ]
+    launchAff_ do
+      delay (Milliseconds 100.0)
+      liftEffect do
+        Ref.read outs >>= assertEqual "resolveFor: only the last burst value resolves, after quiescence"
+          [ Right 7, Left "burst2" ]

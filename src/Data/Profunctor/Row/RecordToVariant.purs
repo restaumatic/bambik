@@ -82,13 +82,13 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | to `identity`) — the product→sum analogue of how `focusRecord` is the
 -- | unary form of `recordToRecord`.
 -- |
--- | With no out-of-band loop signal in a wire protocol (values are just
--- | values), a bare emission can only mean `Done`: the `UI` instance is the
--- | always-`Done` step, and `(->)` has no instance at all. The iteration
--- | content of this direction lives where "keep going" is spelled in the
--- | output *type* — the label-driven row form (`folding @w`) and the
--- | co-strength `Coresolving`, whose wrapped profunctors emit their own
--- | loop decisions.
+-- | With no out-of-band loop signal in the wire protocol (values are just
+-- | values), the `UI` instance derives the branch **from time**: every
+-- | emission loops (`Right`) while the widget is still moving, and the last
+-- | emission resolves (`Left`) at quiescence — so
+-- | `coresolve (resolve g) = debounced g ≅ g` up to time, once primed.
+-- | (No `(->)` instance: a timeless carrier could only give the trivial
+-- | always-`Done` step, which carries no iteration.)
 -- |
 -- | This is the **bare strength** for the `× → +` direction (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is `shutterWrap` below —

@@ -12,6 +12,7 @@ module UI
   , debounced'
   , effAdapter
   , looped
+  , resolveFor
   , seeded
   , silence
   , spied
@@ -404,22 +405,48 @@ instance Applicative m => RecordToVariant (UI m) where
           p2'.fromUser prop
       }
 
--- | The loop step: the input `Tuple a c` shows `a` to the inner widget and
--- | retains `c`. Every emission of the inner widget is a decision, and with
--- | no out-of-band transiency channel in the wire protocol (values are just
--- | values), the `UI` step is the **always-`Done` step**: an emission `b`
--- | exits as `Left b`. The `Loop` branch belongs to widgets whose *output
--- | type* says "keep going" — the label-driven row forms (`folding @w`) and
--- | the co-strengths — not to a hidden flag. Transient-input suppression
--- | (mid-typing, mid-drag) is time semantics, not step semantics: opt in
--- | with `debounced`.
+-- | The loop step, with transiency **derived from time**: the input
+-- | `Tuple a c` shows `a` to the inner widget and retains `c`. Every
+-- | emission of the inner widget loops immediately — `Right c`, the
+-- | retained state escapes (withheld until a first `c` exists) — and
+-- | (re)arms a quiescence timer; when the widget stays quiet for the
+-- | window, the last emission resolves: `Left b`. **Loop = still moving,
+-- | Done = quiescence** — which is the definition of debouncing, so the
+-- | retraction law refines to `coresolve (resolve g) = debounced g ≅ g`
+-- | up to time (once primed). The window is `resolveFor`'s parameter;
+-- | the instance uses the same default as `debounced`.
 instance Functor m => Resolving (UI m) where
-  resolve p = wrap ado
-    p' <- unwrap p
-    in
-      { toUser: \(Tuple a _) -> p'.toUser a
-      , fromUser: \prop -> p'.fromUser \b -> prop $ Left b
-      }
+  resolve = resolveFor (Milliseconds 300.0)
+
+-- | `resolve` with an explicit quiescence window — see the `Resolving`
+-- | instance. `Done` needs no state and fires (after the window) even
+-- | unprimed; only the `Loop` branch is gated on a first `c`.
+resolveFor :: forall m a b c. Functor m => Milliseconds -> UI m a b -> UI m (Tuple a c) (Either b c)
+resolveFor millis p = wrap ado
+  let cRef = unsafePerformEffect $ Ref.new Nothing
+  let mFiberRef = unsafePerformEffect $ Ref.new Nothing
+  p' <- unwrap p
+  in
+    { toUser: \(Tuple a c) -> do
+        Ref.write (Just c) cRef
+        p'.toUser a
+    , fromUser: \prop ->
+        p'.fromUser \b -> do
+          -- (re)arm the quiescence timer: a newer emission supersedes the
+          -- pending Done, so only the last value of a burst resolves
+          launchAff_ do
+            mFiber <- liftEffect $ Ref.read mFiberRef
+            for_ mFiber $ killFiber (error "Superseded by a newer emission")
+            newFiber <- forkAff do
+              delay millis
+              liftEffect $ void $ prop $ Left b
+            liftEffect $ Ref.write (Just newFiber) mFiberRef
+          -- loop immediately with the retained state
+          mc <- Ref.read cRef
+          case mc of
+            Nothing -> pure Nothing
+            Just c -> prop $ Right c
+    }
 
 -- | The Mealy step: a fresh `Left a` feeds the inner widget, a `Right c`
 -- | (re)places the retained state. When the inner widget emits `b`, the
@@ -580,12 +607,15 @@ affAdapter f w = wrap ado
 
 -- | Debounce the widget's *input* leg: each incoming value is delayed by
 -- | `millis`, and a newer value supersedes (kills) the pending one, so only
--- | the last value of a burst reaches the widget — classic debouncing as a
--- | **retention loop over time**: the pending fiber is the retained state,
--- | each arrival ties off the previous loop and starts the next. This is the
--- | opt-in replacement for the deleted wire-level transiency flag (`New`'s
--- | continuity `Boolean`): rapid sources (keystrokes, slider drags) emit
--- | every value, and the stage that doesn't want the burst debounces it.
+-- | the last value of a burst reaches the widget. Rapid sources (keystrokes,
+-- | slider drags) emit every value; the stage that doesn't want the burst
+-- | opts in here.
+-- |
+-- | Algebraically this is the `× → +` trace at the value level:
+-- | `debounced g ≅ coresolve (resolveFor millis g)` once primed — the
+-- | quiescence step composed with its retraction. Implemented directly
+-- | (ungated, on the input leg) as elsewhere laws are stated and bodies
+-- | stay lean.
 debounced' :: forall m. Applicative m => Milliseconds -> Ocular (UI m)
 debounced' millis = affAdapter $ pure
   { pre: \i -> delay millis *> pure i
