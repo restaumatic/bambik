@@ -53,8 +53,8 @@ an application's architecture is readable off its types.
 
 ```purescript
 newtype UI m i o = UI (m
-  { toUser   :: New i -> Effect Unit
-  , fromUser :: (New o -> Effect PropagationStatus) -> Effect Unit
+  { toUser   :: i -> Effect Unit
+  , fromUser :: (o -> Effect PropagationStatus) -> Effect Unit
   })
 ```
 
@@ -184,7 +184,14 @@ of their own, and here the library coins two:
 
 - **`Resolving`**: `p a b -> p (Tuple a c) (Either b c)` — a widget that
   sees everything but answers with a *decision*: `Left` done, `Right` keep
-  going. One step of a loop. It underlies the `Shutter` optic.
+  going. One step of a loop. It underlies the `Shutter` optic. On `UI` the
+  decision is derived **from time**: emissions loop while the widget is
+  still moving (mid-typing, mid-drag), and the last emission of a burst
+  resolves at quiescence. Note the values on the wire are just values — no
+  hidden "transient" flag rides along; transiency is when a value arrives,
+  not what it carries. (An earlier design *did* smuggle a continuity
+  `Boolean` through every wire in a `New` wrapper; deriving the branch from
+  time dissolved it.)
 - **`Retaining`**: `p a b -> p (Either a c) (Tuple b c)` — a widget that
   receives one case at a time but always *remembers* the rest: a
   Mealy/coroutine step. It underlies the `Reel` optic. Tellingly, `(->)` has
@@ -203,6 +210,13 @@ the channel is primed. This is the **trace quartet**:
 | `Choice` | `Cochoice` / `unleft` | iteration | `iterate` | retrying a flaky publish with attempt+1 |
 | `Resolving` | `Coresolving` / `coresolve` | terminating fold | `folding @w` | an accumulating multi-step wizard |
 | `Retaining` | `Coretaining` / `coretain` | productive unfold | `unfolding @w` | an activity meter counting every event |
+
+The retraction law pays an unexpected dividend on the `Resolving` row:
+compose the time-driven quiescence step with its co-strength and you get
+`coresolve (resolve g) = debounced g` — **debouncing is a theorem**, the
+`×→+` strength tied by its own retraction, not a gadget bolted on beside
+the algebra. (`debounced` ships as a directly-implemented combinator with
+this identity stated in its docs.)
 
 All four loops are knowledge-gated: they will not spin until something
 primes the state channel — which is exactly what `announce` and `seeded`
