@@ -35,7 +35,7 @@ import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
-import Data.Profunctor.Row (widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
@@ -378,17 +378,23 @@ instance Applicative m => RecordToRecord (UI m) where
             p2'.toUser new
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
-            let _ = unsafePerformEffect $ Ref.write (Just partial) p1Last
+            -- runtime-exactness: trim to the declared output row, so stale
+            -- runtime copies of sibling fields (echo wires, lens rebuilds
+            -- over the widening-coerced input) never shadow the other
+            -- side's genuine contribution in the left-biased union
+            let exact = exactRow partial
+            let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
             let mp2 = unsafePerformEffect $ Ref.read p2Last
             case mp2 of
               Nothing -> pure Nothing
-              Just p2val -> prop $ New (Record.union partial p2val) cont
+              Just p2val -> prop $ New (Record.union exact p2val) cont
           p2'.fromUser \(New partial cont) -> do
-            let _ = unsafePerformEffect $ Ref.write (Just partial) p2Last
+            let exact = exactRow partial
+            let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
             let mp1 = unsafePerformEffect $ Ref.read p1Last
             case mp1 of
               Nothing -> pure Nothing
-              Just p1val -> prop $ New (Record.union p1val partial) cont
+              Just p1val -> prop $ New (Record.union p1val exact) cont
       }
 
 instance Applicative m => RecordToVariant (UI m) where
@@ -470,17 +476,20 @@ instance Applicative m => VariantToRecord (UI m) where
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser $ New v2 cont
       , fromUser: \prop -> do
           p1'.fromUser \(New partial cont) -> do
-            let _ = unsafePerformEffect $ Ref.write (Just partial) p1Last
+            -- runtime-exactness trim, as in `recordToRecord`
+            let exact = exactRow partial
+            let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
             let mp2 = unsafePerformEffect $ Ref.read p2Last
             case mp2 of
               Nothing -> pure Nothing
-              Just p2val -> prop $ New (Record.union partial p2val) cont
+              Just p2val -> prop $ New (Record.union exact p2val) cont
           p2'.fromUser \(New partial cont) -> do
-            let _ = unsafePerformEffect $ Ref.write (Just partial) p2Last
+            let exact = exactRow partial
+            let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
             let mp1 = unsafePerformEffect $ Ref.read p1Last
             case mp1 of
               Nothing -> pure Nothing
-              Just p1val -> prop $ New (Record.union p1val partial) cont
+              Just p1val -> prop $ New (Record.union p1val exact) cont
       }
 
 instance Applicative m => VariantToVariant (UI m) where

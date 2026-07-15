@@ -8,7 +8,9 @@
 -- |     Their meanings come from the row-profunctor reading: everyone may
 -- |     read a record field / offer a variant case, but each variant case
 -- |     must have exactly one handler and each record field exactly one
--- |     producer.
+-- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
+-- |     gated merges use to trim operand emissions to their declared
+-- |     output rows (`exactRow`).
 -- |   * **reshapings** — `dimap`-only structural adapters that grow or
 -- |     shrink one row-typed side, with nothing flowing through the added
 -- |     or dropped labels.
@@ -24,16 +26,32 @@ module Data.Profunctor.Row
   ( class InclusiveRows
   , class ExclusiveRows
   , class DispatchableVariants
+  , class MergeableRecords
+  , class FieldNames
+  , class SharedRecordInputs
+  , class SharedVariantOutputs
+  , class OwnedVariantInputs
+  , class OwnedRecordOutputs
+  , exactRow
+  , fieldNames
   , widenRecordInput
   , widenVariantOutput
   )
   where
 
+import Prelude (identity, (<<<))
+
 import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Symbol (class IsSymbol)
 import Data.Variant (expand)
 import Data.Variant.Internal (class VariantTags)
-import Prim.Row (class Nub, class Union) as Row
+import Prim.Row (class Cons, class Lacks, class Nub, class Union) as Row
 import Prim.RowList (class RowToList, RowList)
+import Prim.RowList (Cons, Nil) as RL
+import Record (get) as Record
+import Record.Builder (Builder)
+import Record.Builder (buildFromScratch, insert) as Builder
+import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- =====================================================================
@@ -85,6 +103,122 @@ instance
   , RowToList r2 r2l
   , VariantTags r2l
   ) => DispatchableVariants r1 r2 r1l r2l
+
+-- =====================================================================
+-- Runtime exactness
+-- =====================================================================
+
+-- | Rebuild a record field-by-field so its **runtime** shape is exactly its
+-- | row — no more, no less. A record's type never guarantees its runtime
+-- | object carries only the declared labels: the widening reshapings above
+-- | are coercions, so a widget that echoes or lens-rebuilds its input emits
+-- | an object runtime-carrying every field of the *merged* row while typed
+-- | at its own narrow slice. The gated merges use `exactRow` to trim each
+-- | operand's emission to its declared output row before the left-biased
+-- | `Record.union`, so stale runtime copies of *sibling* fields can never
+-- | shadow the siblings' genuine contributions.
+exactRow :: forall r rl. RowToList r rl => FieldNames rl r r => { | r } -> { | r }
+exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
+
+-- | Rows o1 and o2 carry runtime rebuild evidence for the gated merges'
+-- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,
+-- | o2l = RowToList o2 — the `DispatchableVariants` pattern, so the merge
+-- | instances can discharge `exactRow`'s constraints from the givens'
+-- | superclasses.
+class MergeableRecords :: Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( RowToList o1 o1l
+  , FieldNames o1l o1 o1
+  , RowToList o2 o2l
+  , FieldNames o2l o2 o2
+  ) <= MergeableRecords o1 o2 o1l o2l
+
+instance
+  ( RowToList o1 o1l
+  , FieldNames o1l o1 o1
+  , RowToList o2 o2l
+  , FieldNames o2l o2 o2
+  ) => MergeableRecords o1 o2 o1l o2l
+
+-- | `RowList`-indexed worker for `exactRow`: copies exactly the listed
+-- | labels out of `from` into a freshly built record.
+class FieldNames :: RowList Type -> Row Type -> Row Type -> Constraint
+class FieldNames rl from to | rl -> to where
+  fieldNames :: Proxy rl -> { | from } -> Builder {} { | to }
+
+instance FieldNames RL.Nil from () where
+  fieldNames _ _ = identity
+
+instance
+  ( IsSymbol l
+  , Row.Cons l a fromRest from
+  , Row.Cons l a toRest to
+  , Row.Lacks l toRest
+  , FieldNames rl from toRest
+  ) => FieldNames (RL.Cons l a rl) from to where
+  fieldNames _ r = Builder.insert (Proxy @l) (Record.get (Proxy @l) r) <<< fieldNames (Proxy @rl) r
+
+-- =====================================================================
+-- Side vocabulary: one constraint per merge side
+-- =====================================================================
+--
+-- The four merges' constraints factor exactly by side, under one law:
+-- **sharing is inclusive, responsibility is exclusive** — and runtime
+-- label evidence appears only on the exclusive sides, where the merge's
+-- runtime action is label-driven (dispatch, union) rather than
+-- label-blind (broadcast, expand). Records are read-shared but
+-- write-owned; variants are emit-shared but handle-owned. Each merge
+-- signature is then two words, one per side:
+--
+--   recordToRecord   : SharedRecordInputs  + OwnedRecordOutputs
+--   recordToVariant  : SharedRecordInputs  + SharedVariantOutputs
+--   variantToVariant : OwnedVariantInputs  + SharedVariantOutputs
+--   variantToRecord  : OwnedVariantInputs  + OwnedRecordOutputs
+
+-- | A merge's **record-input side**: everyone may read a field, so operand
+-- | rows may overlap. The merge action is a label-blind broadcast — no
+-- | runtime evidence needed.
+class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
+class InclusiveRows i1 i2 i i12 i1x i2x <= SharedRecordInputs i1 i2 i i12 i1x i2x
+
+instance InclusiveRows i1 i2 i i12 i1x i2x => SharedRecordInputs i1 i2 i i12 i1x i2x
+
+-- | A merge's **variant-output side**: anyone may emit a case, so operand
+-- | rows may overlap. The merge action is a label-blind `expand` — no
+-- | runtime evidence needed.
+class SharedVariantOutputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
+class InclusiveRows o1 o2 o o12 o1x o2x <= SharedVariantOutputs o1 o2 o o12 o1x o2x
+
+instance InclusiveRows o1 o2 o o12 o1x o2x => SharedVariantOutputs o1 o2 o o12 o1x o2x
+
+-- | A merge's **variant-input side**: every case has exactly one handler
+-- | (disjoint rows), and routing a value to its handler is label-driven —
+-- | `DispatchableVariants` supplies the runtime tags `contract` compares.
+class OwnedVariantInputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( ExclusiveRows i1 i2 i
+  , DispatchableVariants i1 i2 i1l i2l
+  ) <= OwnedVariantInputs i1 i2 i i1l i2l
+
+instance
+  ( ExclusiveRows i1 i2 i
+  , DispatchableVariants i1 i2 i1l i2l
+  ) => OwnedVariantInputs i1 i2 i i1l i2l
+
+-- | A merge's **record-output side**: every field has exactly one producer
+-- | (disjoint rows), and combining contributions is label-driven —
+-- | `MergeableRecords` supplies the runtime field names `exactRow` trims
+-- | with before the gates' union.
+class OwnedRecordOutputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( ExclusiveRows o1 o2 o
+  , MergeableRecords o1 o2 o1l o2l
+  ) <= OwnedRecordOutputs o1 o2 o o1l o2l
+
+instance
+  ( ExclusiveRows o1 o2 o
+  , MergeableRecords o1 o2 o1l o2l
+  ) => OwnedRecordOutputs o1 o2 o o1l o2l
 
 -- =====================================================================
 -- Whole-row reshapings

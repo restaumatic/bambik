@@ -37,13 +37,12 @@ import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class DispatchableVariants, class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
-    ExclusiveRows i1 i2 i =>
-    InclusiveRows o1 o2 o o12 o1x o2x =>
-    DispatchableVariants i1 i2 i1l i2l =>
+    OwnedVariantInputs i1 i2 i i1l i2l =>
+    SharedVariantOutputs o1 o2 o o12 o1x o2x =>
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
   -- | The **nullary** merge — the unit: handles no cases, emits no cases.
   -- | Both empty-variant ends are uninhabited, so silence is forced — any
@@ -52,17 +51,15 @@ class Profunctor p <= VariantToVariant p where
 
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   VariantToVariant p =>
-  ExclusiveRows i1 i2 i =>
-  InclusiveRows o1 o2 o o12 o1x o2x =>
-  DispatchableVariants i1 i2 i1l i2l =>
+  OwnedVariantInputs i1 i2 i i1l i2l =>
+  SharedVariantOutputs o1 o2 o o12 o1x o2x =>
   p [ | i1 ] [ | o1 ] -> (p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
 bind first cont = variantToVariant first (cont first)
 
 discard :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   VariantToVariant p =>
-  ExclusiveRows i1 i2 i =>
-  InclusiveRows o1 o2 o o12 o1x o2x =>
-  DispatchableVariants i1 i2 i1l i2l =>
+  OwnedVariantInputs i1 i2 i i1l i2l =>
+  SharedVariantOutputs o1 o2 o o12 o1x o2x =>
   p [ | i1 ] [ | o1 ] -> (Unit -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
