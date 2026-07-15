@@ -28,6 +28,10 @@ module Data.Profunctor.Row
   , class DispatchableVariants
   , class MergeableRecords
   , class FieldNames
+  , class SharedRecordInputs
+  , class SharedVariantOutputs
+  , class OwnedVariantInputs
+  , class OwnedRecordOutputs
   , exactRow
   , fieldNames
   , widenRecordInput
@@ -153,6 +157,68 @@ instance
   , FieldNames rl from toRest
   ) => FieldNames (RL.Cons l a rl) from to where
   fieldNames _ r = Builder.insert (Proxy @l) (Record.get (Proxy @l) r) <<< fieldNames (Proxy @rl) r
+
+-- =====================================================================
+-- Side vocabulary: one constraint per merge side
+-- =====================================================================
+--
+-- The four merges' constraints factor exactly by side, under one law:
+-- **sharing is inclusive, responsibility is exclusive** — and runtime
+-- label evidence appears only on the exclusive sides, where the merge's
+-- runtime action is label-driven (dispatch, union) rather than
+-- label-blind (broadcast, expand). Records are read-shared but
+-- write-owned; variants are emit-shared but handle-owned. Each merge
+-- signature is then two words, one per side:
+--
+--   recordToRecord   : SharedRecordInputs  + OwnedRecordOutputs
+--   recordToVariant  : SharedRecordInputs  + SharedVariantOutputs
+--   variantToVariant : OwnedVariantInputs  + SharedVariantOutputs
+--   variantToRecord  : OwnedVariantInputs  + OwnedRecordOutputs
+
+-- | A merge's **record-input side**: everyone may read a field, so operand
+-- | rows may overlap. The merge action is a label-blind broadcast — no
+-- | runtime evidence needed.
+class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
+class InclusiveRows i1 i2 i i12 i1x i2x <= SharedRecordInputs i1 i2 i i12 i1x i2x
+
+instance InclusiveRows i1 i2 i i12 i1x i2x => SharedRecordInputs i1 i2 i i12 i1x i2x
+
+-- | A merge's **variant-output side**: anyone may emit a case, so operand
+-- | rows may overlap. The merge action is a label-blind `expand` — no
+-- | runtime evidence needed.
+class SharedVariantOutputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
+class InclusiveRows o1 o2 o o12 o1x o2x <= SharedVariantOutputs o1 o2 o o12 o1x o2x
+
+instance InclusiveRows o1 o2 o o12 o1x o2x => SharedVariantOutputs o1 o2 o o12 o1x o2x
+
+-- | A merge's **variant-input side**: every case has exactly one handler
+-- | (disjoint rows), and routing a value to its handler is label-driven —
+-- | `DispatchableVariants` supplies the runtime tags `contract` compares.
+class OwnedVariantInputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( ExclusiveRows i1 i2 i
+  , DispatchableVariants i1 i2 i1l i2l
+  ) <= OwnedVariantInputs i1 i2 i i1l i2l
+
+instance
+  ( ExclusiveRows i1 i2 i
+  , DispatchableVariants i1 i2 i1l i2l
+  ) => OwnedVariantInputs i1 i2 i i1l i2l
+
+-- | A merge's **record-output side**: every field has exactly one producer
+-- | (disjoint rows), and combining contributions is label-driven —
+-- | `MergeableRecords` supplies the runtime field names `exactRow` trims
+-- | with before the gates' union.
+class OwnedRecordOutputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( ExclusiveRows o1 o2 o
+  , MergeableRecords o1 o2 o1l o2l
+  ) <= OwnedRecordOutputs o1 o2 o o1l o2l
+
+instance
+  ( ExclusiveRows o1 o2 o
+  , MergeableRecords o1 o2 o1l o2l
+  ) => OwnedRecordOutputs o1 o2 o o1l o2l
 
 -- =====================================================================
 -- Whole-row reshapings

@@ -62,7 +62,7 @@ import Data.Variant (class Contractable, Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class DispatchableVariants, class MergeableRecords, class ExclusiveRows)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /
@@ -132,15 +132,15 @@ unfolding g =
       g)
 
 class Profunctor p <= VariantToRecord p where
-  -- | The `MergeableRecords` constraint is the merge's **runtime-exactness
-  -- | guarantee** — see `RecordToRecord.recordToRecord`: gated carriers trim
-  -- | each operand's emission to its declared output row before the
-  -- | left-biased union.
+  -- | One constraint per side: `OwnedVariantInputs` (disjoint rows — one
+  -- | handler per case — plus `DispatchableVariants`, the runtime tags
+  -- | dispatch routes by) and `OwnedRecordOutputs` (disjoint rows — one
+  -- | producer per field — plus `MergeableRecords`, the runtime-exactness
+  -- | trim; see `RecordToRecord.recordToRecord`). The doubly-owned merge:
+  -- | it both dispatches and gates.
   variantToRecord :: forall i1 i1l i2 i2l o1 o2 i o o1l o2l.
-    ExclusiveRows i1 i2 i =>
-    ExclusiveRows o1 o2 o =>
-    DispatchableVariants i1 i2 i1l i2l =>
-    MergeableRecords o1 o2 o1l o2l =>
+    OwnedVariantInputs i1 i2 i i1l i2l =>
+    OwnedRecordOutputs o1 o2 o o1l o2l =>
     p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 } -> p [ | i ] { | o }
   -- | The **nullary** merge — the unit: handles no cases, contributes no
   -- | fields. Genuinely per-carrier: the uninhabited input can never drive it,
@@ -151,19 +151,15 @@ class Profunctor p <= VariantToRecord p where
 
 bind :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
   VariantToRecord p =>
-  ExclusiveRows i1 i2 i =>
-  ExclusiveRows o1 o2 o =>
-  DispatchableVariants i1 i2 i1l i2l =>
-  MergeableRecords o1 o2 o1l o2l =>
+  OwnedVariantInputs i1 i2 i i1l i2l =>
+  OwnedRecordOutputs o1 o2 o o1l o2l =>
   p [ | i1 ] { | o1 } -> (p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 bind first cont = variantToRecord first (cont first)
 
 discard :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
   VariantToRecord p =>
-  ExclusiveRows i1 i2 i =>
-  ExclusiveRows o1 o2 o =>
-  DispatchableVariants i1 i2 i1l i2l =>
-  MergeableRecords o1 o2 o1l o2l =>
+  OwnedVariantInputs i1 i2 i i1l i2l =>
+  OwnedRecordOutputs o1 o2 o o1l o2l =>
   p [ | i1 ] { | o1 } -> (Unit -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
 

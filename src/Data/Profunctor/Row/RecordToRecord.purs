@@ -50,20 +50,21 @@ import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks)
 import Record (get, insert, union) as Record
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class MergeableRecords, class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
-  -- | The `MergeableRecords` constraint is the merge's **runtime-exactness
-  -- | guarantee**: gated carriers trim each operand's emission to its
-  -- | declared output row before the left-biased union, so an operand whose
-  -- | runtime object carries stale copies of sibling fields (an echo wire or
-  -- | lens rebuild over the widening-coerced input) cannot shadow the
-  -- | siblings' genuine contributions.
+  -- | One constraint per side: `SharedRecordInputs` (rows may overlap,
+  -- | label-blind broadcast) and `OwnedRecordOutputs` (disjoint rows —
+  -- | one producer per field — plus `MergeableRecords`, the merge's
+  -- | **runtime-exactness guarantee**: gated carriers trim each operand's
+  -- | emission to its declared output row before the left-biased union, so
+  -- | an operand whose runtime object carries stale copies of sibling
+  -- | fields — an echo wire or lens rebuild over the widening-coerced
+  -- | input — cannot shadow the siblings' genuine contributions).
   recordToRecord :: forall i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
-    InclusiveRows i1 i2 i i12 i1x i2x =>
-    ExclusiveRows o1 o2 o =>
-    MergeableRecords o1 o2 o1l o2l =>
+    SharedRecordInputs i1 i2 i i12 i1x i2x =>
+    OwnedRecordOutputs o1 o2 o o1l o2l =>
     p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
   -- | The **nullary** merge — the unit: reads nothing, contributes no fields.
   -- | Genuinely per-carrier: a parametric silent element cannot serve, because
@@ -74,17 +75,15 @@ class Profunctor p <= RecordToRecord p where
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   RecordToRecord p =>
-  InclusiveRows i1 i2 i i12 i1x i2x =>
-  ExclusiveRows o1 o2 o =>
-  MergeableRecords o1 o2 o1l o2l =>
+  SharedRecordInputs i1 i2 i i12 i1x i2x =>
+  OwnedRecordOutputs o1 o2 o o1l o2l =>
   p { | i1 } { | o1 } -> (p { | i1 } { | o1 } -> p { | i2 } { | o2 }) -> p { | i } { | o }
 bind first cont = recordToRecord first (cont first)
 
 discard :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   RecordToRecord p =>
-  InclusiveRows i1 i2 i i12 i1x i2x =>
-  ExclusiveRows o1 o2 o =>
-  MergeableRecords o1 o2 o1l o2l =>
+  SharedRecordInputs i1 i2 i i12 i1x i2x =>
+  OwnedRecordOutputs o1 o2 o o1l o2l =>
   p { | i1 } { | o1 } -> (Unit -> p { | i2 } { | o2 }) -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 

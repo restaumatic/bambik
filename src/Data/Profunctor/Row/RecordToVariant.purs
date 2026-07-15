@@ -61,7 +61,7 @@ import Record (get)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class InclusiveRows)
+import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** product→sum strength for this direction: a single **loop /
@@ -138,8 +138,8 @@ folding g =
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
-    InclusiveRows i1 i2 i i12 i1x i2x =>
-    InclusiveRows o1 o2 o o12 o1x o2x =>
+    SharedRecordInputs i1 i2 i i12 i1x i2x =>
+    SharedVariantOutputs o1 o2 o o12 o1x o2x =>
     p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
   -- | The **nullary** merge — the unit: reads nothing, emits no cases. The
   -- | silent source of the header's law; silence is forced on the uninhabited
@@ -149,15 +149,15 @@ class Profunctor p <= RecordToVariant p where
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant p =>
-  InclusiveRows i1 i2 i i12 i1x i2x =>
-  InclusiveRows o1 o2 o o12 o1x o2x =>
+  SharedRecordInputs i1 i2 i i12 i1x i2x =>
+  SharedVariantOutputs o1 o2 o o12 o1x o2x =>
   p { | i1 } [ | o1 ] -> (p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ]) -> p { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
 discard :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant p =>
-  InclusiveRows i1 i2 i i12 i1x i2x =>
-  InclusiveRows o1 o2 o o12 o1x o2x =>
+  SharedRecordInputs i1 i2 i i12 i1x i2x =>
+  SharedVariantOutputs o1 o2 o o12 o1x o2x =>
   p { | i1 } [ | o1 ] -> (Unit -> p { | i2 } [ | o2 ]) -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
