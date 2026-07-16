@@ -19,8 +19,8 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
 import PUI (PUI, looped, updates, with)
-import PUI.MDC as MDC
-import PUI.Web as Web
+import PUI.MDC (body1, card, elevation20, filledTextField) as MDC
+import PUI.Web (Web, body, escapeHtml, onKeyClick, text, viewEvents) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 

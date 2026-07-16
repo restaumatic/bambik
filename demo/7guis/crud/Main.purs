@@ -14,8 +14,8 @@ import Data.String (Pattern(..)) as String
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
-import PUI.MDC as MDC
-import PUI.Web as Web
+import PUI.MDC (button, card, elevation20, filledTextField) as MDC
+import PUI.Web (Web, body, escapeHtml, onKeyClick, viewEvents) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 

@@ -34,7 +34,8 @@
       "Bash(git commit -m 'revert\\(7guis\\): symmetric debounce in the converter loop is unsound — back to immediate *)",
       "Bash(grep -E '`UI|UI m|UI Web|newtype UI|UI\\\\\\(|UI \\\\\\(')",
       "Bash(git commit -q -m 'refactor: rename type UI -> PUI; Data.* modules back at src root *)",
-      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/crud/Main.purs)"
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/crud/Main.purs)",
+      "Bash(git commit -q -m 'style\\(demos\\): explicit import lists on qualified PUI.MDC/PUI.Web imports *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

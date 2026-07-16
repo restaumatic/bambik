@@ -13,8 +13,8 @@ import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (every, looped, updates, with)
-import PUI.MDC as MDC
-import PUI.Web as Web
+import PUI.MDC (body1, button, card, elevation20, headline6, slider) as MDC
+import PUI.Web (body, text) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Timer =

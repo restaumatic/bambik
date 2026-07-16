@@ -12,8 +12,8 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (focusRecord)
 import Effect (Effect)
 import PUI (silence, with)
-import PUI.MDC as MDC
-import PUI.Web as Web
+import PUI.MDC (filledTextField) as MDC
+import PUI.Web (body) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit

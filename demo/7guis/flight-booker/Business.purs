@@ -1,4 +1,4 @@
-module Main (main) where
+module Business where
 
 import Prelude
 
@@ -14,9 +14,6 @@ import Data.String (Pattern(..), split)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, debounced, looped, with)
-import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar) as MDC
-import PUI.Web (body, shownWhen, text) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
@@ -25,26 +22,6 @@ type Booking =
   , start :: String
   , return :: String
   }
-
-main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
-  looped $ with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } RecordToRecord.do
-    field @"flightType" $ dimap (\v -> { selected: Just v }) _.selected $
-      MDC.select @"selected" { floatingLabel: "Flight type" }
-        [ { value: "one-way", label: "one-way flight" }
-        , { value: "return", label: "return flight" }
-        ]
-    MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
-    Web.shownWhen isReturn $
-      MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
-        # lcmap returnDate
-  completed $ debounced $ MDC.body1 $ Web.text # lcmap validationText
-  RecordToVariant.do
-    MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
-  action (Variant.case_ # Variant.on (Proxy @"book") bookFlight) MDC.indeterminateLinearProgress
-  VariantToRecord.do
-    MDC.snackbar @"booked"
-    MDC.snackbar @"rejected"
 
 validationText :: Booking -> String
 validationText b = case validate b of

@@ -7,8 +7,8 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (completed)
 import Effect (Effect)
 import PUI (looped, updates, with)
-import PUI.MDC as MDC
-import PUI.Web as Web
+import PUI.MDC (button, card, elevation20, headline4) as MDC
+import PUI.Web (body, text) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit

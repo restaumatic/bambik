@@ -16,7 +16,7 @@ import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import PUI (PUI, silence, with)
 import PUI.Web ((:=))
-import PUI.Web as Web
+import PUI.Web (a, body, div, input, li, p, staticHTML, staticText, text, ul) as Web
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

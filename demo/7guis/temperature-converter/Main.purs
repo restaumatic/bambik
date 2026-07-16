@@ -10,8 +10,8 @@ import Data.String (Pattern(..), stripSuffix)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (looped, with)
-import PUI.MDC as MDC
-import PUI.Web as Web
+import PUI.MDC (card, debouncedTextField, elevation20) as MDC
+import PUI.Web (body) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
