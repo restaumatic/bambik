@@ -43,7 +43,8 @@
       "Bash(grep -rnE 'import PUI\\(\\\\.MDC|\\\\.Web\\)?$|import PUI\\(\\\\.MDC|\\\\.Web\\)? as' --include='*.purs' . --exclude-dir=node_modules)",
       "Bash(git commit -q -m 'docs\\(7guis\\): note the $-leads/#-trails convention on all pages *)",
       "Bash(pkill -f 'http.server 8791')",
-      "Bash(git commit -q -m 'feat\\(rows\\): asField/asCase — canonical-label component interfaces \\(value/clicked\\); filledTextField, debouncedTextField, button converted; demos adopt '\\\\''# asField @l'\\\\'' style *)"
+      "Bash(git commit -q -m 'feat\\(rows\\): asField/asCase — canonical-label component interfaces \\(value/clicked\\); filledTextField, debouncedTextField, button converted; demos adopt '\\\\''# asField @l'\\\\'' style *)",
+      "Bash(git commit -q -m 'timer: elapsed/duration readout composed from per-field text leaves glued with statics *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

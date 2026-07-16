@@ -13,7 +13,7 @@ import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (every, looped, updates, with)
-import PUI.HTML (body, text) as HTML
+import PUI.HTML (body, staticText, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, headline6, slider) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -27,7 +27,11 @@ main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ ( Semigroupoid.do
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap gauge)
-          MDC.body1 (HTML.text # lcmap elapsedCaption)
+          MDC.body1 RecordToRecord.do
+            HTML.text # lcmap format # lcmap _.elapsed
+            HTML.staticText "s / "
+            HTML.text # lcmap format # lcmap _.duration
+            HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed
       every (Milliseconds 100.0) tick
@@ -36,9 +40,6 @@ main =
 
 reset :: forall click. click -> Timer -> Timer
 reset _ t = t { elapsed = 0.0 }
-
-elapsedCaption :: Timer -> String
-elapsedCaption t = format t.elapsed <> "s / " <> format t.duration <> "s"
 
 tick :: Timer -> Maybe Timer
 tick t
