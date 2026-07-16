@@ -40,7 +40,8 @@
       "Bash(sed -i 's#Doc comments are deliberately absent — a test of whether the code reads and reasons on its own.#Doc comments are deliberately absent — a test of whether the code reads and reasons on its own. Imports are explicit, so it is visible which modules export what.#' demo/7guis/*/index.html)",
       "Bash(git commit -q -m 'docs\\(7guis\\): note that explicit imports show which modules export what *)",
       "Bash(grep -rn 'as MDC$\\\\|as Web$' --include='*.purs' demo test showcase src)",
-      "Bash(grep -rnE 'import PUI\\(\\\\.MDC|\\\\.Web\\)?$|import PUI\\(\\\\.MDC|\\\\.Web\\)? as' --include='*.purs' . --exclude-dir=node_modules)"
+      "Bash(grep -rnE 'import PUI\\(\\\\.MDC|\\\\.Web\\)?$|import PUI\\(\\\\.MDC|\\\\.Web\\)? as' --include='*.purs' . --exclude-dir=node_modules)",
+      "Bash(git commit -q -m 'docs\\(7guis\\): note the $-leads/#-trails convention on all pages *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
