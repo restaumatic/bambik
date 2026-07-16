@@ -13,13 +13,13 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToVariant (shutter)
-import Data.Profunctor.Row.VariantToRecord (reel)
+import PUI.Data.Profunctor.Row.RecordToVariant (shutter)
+import PUI.Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
-import MDC as MDC
+import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (UI, silence, with)
-import Web (Web, body, button, staticText, text)
+import PUI.UI (UI, silence, with)
+import PUI.Web (Web, body, button, staticText, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
 -- | greeting **prefix**, installed from the model side (`Right` — the app's

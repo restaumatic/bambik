@@ -31,7 +31,7 @@
 -- | empty variant is uninhabited) and sufficient on the input end (the empty
 -- | record demands nothing), so `UI` implements it as its silent widget:
 -- | `pempty = silence`.
-module Data.Profunctor.Row.RecordToVariant
+module PUI.Data.Profunctor.Row.RecordToVariant
   ( Coshutter
   , coshutter
   , coshutterE
@@ -68,7 +68,7 @@ import Record (get)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
+import PUI.Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** product→sum strength for this direction: a single **loop /

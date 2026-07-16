@@ -22,7 +22,7 @@
 -- | reshape *drops* the complement — extra record fields are simply never
 -- | read (free coercion), extra variant cases are never emitted (`expand`)
 -- | — while a focus *threads* it (`Strong`/`Choice`).
-module Data.Profunctor.Row
+module PUI.Data.Profunctor.Row
   ( class InclusiveRows
   , class ExclusiveRows
   , class DispatchableVariants

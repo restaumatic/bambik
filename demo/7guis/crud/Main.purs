@@ -6,18 +6,18 @@ import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Foldable (for_)
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Profunctor.Row.RecordToRecord (completed)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI.Data.Profunctor.Row.RecordToRecord (completed)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith, stripPrefix)
 import Data.String (Pattern(..)) as String
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
-import MDC as MDC
+import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (UI, looped, updates, with)
-import Web (Web, body, escapeHtml, onKeyClick, viewEvents)
+import PUI.UI (UI, looped, updates, with)
+import PUI.Web (Web, body, escapeHtml, onKeyClick, viewEvents)
 
 type Person = { name :: String, surname :: String }
 

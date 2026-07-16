@@ -32,7 +32,7 @@
 -- | member (not a parametric silent element like `silence`): a lawful
 -- | record-output unit must *announce* its informationless `{}` so the merge
 -- | knows that side is complete, and parametric silence cannot.
-module Data.Profunctor.Row.VariantToRecord
+module PUI.Data.Profunctor.Row.VariantToRecord
   ( Coreel
   , Reel
   , bind
@@ -58,7 +58,7 @@ module Data.Profunctor.Row.VariantToRecord
 
 import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Row.VariantToVariant (splitVariant)
+import PUI.Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
@@ -66,7 +66,7 @@ import Data.Variant (class Contractable, Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs)
+import PUI.Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /

@@ -41,7 +41,7 @@
 -- bars) have concrete rows and stay literal `RecordToRecord.do` merges of
 -- announcing chrome (`staticText`/`staticHTML`/`pempty` at `{} → {}`).
 -- Code order = DOM order throughout.
-module MDC
+module PUI.MDC
   ( banner
   , body1
   , body2
@@ -102,16 +102,16 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Data.Array (findIndex, (!!))
-import Data.Default (class Default)
+import PUI.Data.Default (class Default)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
-import Data.Lens.Extra.Types (Ocular)
+import PUI.Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
+import PUI.Data.Profunctor.Row.RecordToRecord (field, pempty)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Time.Duration (Milliseconds)
 import Data.Symbol (class IsSymbol)
 import Data.Traversable (for)
@@ -123,9 +123,9 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (UI, effAdapter)
-import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
-import Web (button) as Web
+import PUI.UI (UI, effAdapter)
+import PUI.Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
+import PUI.Web (button) as Web
 
 -- UIs
 

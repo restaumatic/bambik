@@ -9,12 +9,12 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Cochoice (unleft)
 import Data.Profunctor.Costrong (unfirst)
-import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase)
-import Data.Profunctor.Row.VariantToVariant (coprism, iterate)
+import PUI.Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
+import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import PUI.Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase)
+import PUI.Data.Profunctor.Row.VariantToVariant (coprism, iterate)
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -22,7 +22,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import UI (PropagationStatus, UI(..), looped, resolveFor, updates, with)
+import PUI.UI (PropagationStatus, UI(..), looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit

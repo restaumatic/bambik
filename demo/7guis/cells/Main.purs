@@ -11,18 +11,18 @@ import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToRecord (completed)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
-import MDC as MDC
+import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (UI, looped, updates, with)
-import Web (Web, body, escapeHtml, onKeyClick, text, viewEvents)
+import PUI.UI (UI, looped, updates, with)
+import PUI.Web (Web, body, escapeHtml, onKeyClick, text, viewEvents)
 
 cols :: Int
 cols = 26

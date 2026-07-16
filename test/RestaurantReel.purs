@@ -22,11 +22,11 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (rmap)
-import Data.Profunctor.Row.VariantToRecord (reel)
+import PUI.Data.Profunctor.Row.VariantToRecord (reel)
 import Data.Variant (case_, on)
 import Type.Proxy (Proxy(..))
-import UI (UI)
-import Web (Web, button, staticText)
+import PUI.UI (UI)
+import PUI.Web (Web, button, staticText)
 
 type Money = Int
 type DishId = String

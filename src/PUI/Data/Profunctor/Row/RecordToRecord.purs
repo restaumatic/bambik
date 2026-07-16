@@ -27,7 +27,7 @@
 -- | contribution — the informationless `{}` — to the merge machinery, and
 -- | anything typed `forall a b. p a b` is silent by parametricity (it can
 -- | never fabricate a `b`). For `Category` carriers, `pempty = identity @{}`.
-module Data.Profunctor.Row.RecordToRecord
+module PUI.Data.Profunctor.Row.RecordToRecord
   ( Colens
   , bind
   , colens
@@ -57,7 +57,7 @@ import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Record (get, insert, union) as Record
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
+import PUI.Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where

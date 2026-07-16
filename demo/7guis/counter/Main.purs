@@ -4,12 +4,12 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
+import PUI.Data.Profunctor.Row.RecordToRecord (completed)
 import Effect (Effect)
-import MDC as MDC
+import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (looped, updates, with)
-import Web (body, text)
+import PUI.UI (looped, updates, with)
+import PUI.Web (body, text)
 
 main :: Effect Unit
 main = body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped $ with { count: 0 } Semigroupoid.do

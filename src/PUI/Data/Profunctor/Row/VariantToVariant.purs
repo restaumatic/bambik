@@ -11,7 +11,7 @@
 -- | Here silence is not merely lawful but forced — both empty-variant ends
 -- | are uninhabited, so the unit can neither receive nor emit — and any
 -- | silent element implements it (`UI`: `pempty = silence`).
-module Data.Profunctor.Row.VariantToVariant
+module PUI.Data.Profunctor.Row.VariantToVariant
   ( Coprism
   , bind
   , coprism
@@ -40,7 +40,7 @@ import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs)
+import PUI.Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.

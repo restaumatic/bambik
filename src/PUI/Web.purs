@@ -1,4 +1,4 @@
-module Web
+module PUI.Web
   ( (:=)
   , (:=>)
   , DOM
@@ -58,9 +58,9 @@ module Web
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
-import Data.Default (class Default, default)
+import PUI.Data.Default (class Default, default)
 import Data.Foldable (for_)
-import Data.Lens.Extra.Types (Ocular)
+import PUI.Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Newtype (unwrap, wrap)
@@ -71,7 +71,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import UI (PropagationStatus, UI)
+import PUI.UI (PropagationStatus, UI)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type

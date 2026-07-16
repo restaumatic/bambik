@@ -1,4 +1,4 @@
-module UI
+module PUI.UI
   ( Action
   , PropagationError
   , PropagationStatus
@@ -27,18 +27,18 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic)
-import Data.Lens.Extra.Types (Ocular)
+import PUI.Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
-import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
-import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
+import PUI.Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import PUI.Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
+import PUI.Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
+import PUI.Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
+import PUI.Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)

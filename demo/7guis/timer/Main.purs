@@ -7,15 +7,15 @@ import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToRecord (completed)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import MDC as MDC
+import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (every, looped, updates, with)
-import Web (body, text)
+import PUI.UI (every, looped, updates, with)
+import PUI.Web (body, text)
 
 type Timer =
   { duration :: Number

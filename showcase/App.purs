@@ -1,10 +1,10 @@
 module Showcase.App where
 
-import Data.Profunctor.Row.Example (MyRowToRowProfunctor, actionButton, checkbox, eventLog, modal, notification, request, statusBar, submit, textInput)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import PUI.Data.Profunctor.Row.Example (MyRowToRowProfunctor, actionButton, checkbox, eventLog, modal, notification, request, statusBar, submit, textInput)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import PUI.Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkout ∷ MyRowToRowProfunctor 

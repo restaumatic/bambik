@@ -1,7 +1,7 @@
 -- | A phantom carrier exercising the row-profunctor API shape — no runtime,
 -- | just instances and label-indexed widget signatures. See showcase/App.purs
 -- | for a four-direction pipeline written against it.
-module Data.Profunctor.Row.Example
+module PUI.Data.Profunctor.Row.Example
   ( MyRowToRowProfunctor
   , actionButton
   , checkbox
@@ -18,10 +18,10 @@ module Data.Profunctor.Row.Example
 import Prelude
 
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
-import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
+import PUI.Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import PUI.Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import PUI.Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
+import PUI.Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Symbol (class IsSymbol)
 import Prim.Row (class Cons)
 
