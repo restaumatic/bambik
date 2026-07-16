@@ -25,7 +25,9 @@
       "Bash(git commit -m 'build: minified demo bundles \\(spago bundle-app --minify\\) *)",
       "Bash(git commit -m 'chore\\(7guis\\): restore the elevation'\\\\''s own top padding — the band was align-content, not padding *)",
       "Bash(sed -i 's/>Task description on 7GUIs</>description</' demo/7guis/*/index.html)",
-      "Bash(git commit -m 'chore\\(7guis\\): header link wording — '\\\\''description'\\\\'' *)"
+      "Bash(git commit -m 'chore\\(7guis\\): header link wording — '\\\\''description'\\\\'' *)",
+      "Bash(sed -i 's|<a href=\"../\">Go back to all 7GUIs tasks</a>|<a href=\"../\">&#171; Go back to all 7GUIs tasks</a>|' demo/7guis/*/index.html)",
+      "Bash(git commit -m 'chore\\(7guis\\): « chevron on the back link *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
