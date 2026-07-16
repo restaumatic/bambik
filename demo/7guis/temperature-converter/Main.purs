@@ -17,8 +17,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 main :: Effect Unit
 main = body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ looped $ with { celsius: "20" } Semigroupoid.do
   MDC.debouncedTextField @"celsius" { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
-  dimap celsiusToFahrenheit fahrenheitToCelsius $
-    MDC.debouncedTextField @"fahrenheit" { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
+  MDC.debouncedTextField @"fahrenheit" { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
+    # dimap celsiusToFahrenheit fahrenheitToCelsius
 
 celsiusToFahrenheit :: { celsius :: String } -> { fahrenheit :: String }
 celsiusToFahrenheit r = { fahrenheit: maybe "" (\c -> format (c * 9.0 / 5.0 + 32.0)) (Number.fromString r.celsius) }

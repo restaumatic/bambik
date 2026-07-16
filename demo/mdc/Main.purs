@@ -173,8 +173,8 @@ main = body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ M
       -- the loop at registration
       feedback $ Semigroupoid.do
         seeded { volume: 0.0, peak: 0.0 }
-        lcmap stepPeak identity
-        tapped $ MDC.body2 $ lcmap peakLine text
+        identity # lcmap stepPeak
+        tapped $ MDC.body2 $ text # lcmap peakLine
       tapped $ MDC.body2 $ reading @"volume" (\v -> "Volume " <> show v)
     -- the variant model is edited through record-shaped editor state
     -- (`ShippingState` — all payloads persist, the merge gates retain them):
@@ -191,8 +191,8 @@ main = body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ M
           [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
           , { value: "express", label: "Express", icon: Just "bolt" }
           ]
-        shownWhen (\r -> r.selected == "standard") $ lcmap daysOf $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" }
-        shownWhen (\r -> r.selected == "express") $ lcmap priceOf $ MDC.filledTextField @"price" { floatingLabel: "Express fee" }
+        shownWhen (\r -> r.selected == "standard") $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" } # lcmap daysOf
+        shownWhen (\r -> r.selected == "express") $ MDC.filledTextField @"price" { floatingLabel: "Express fee" } # lcmap priceOf
     MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
       MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
       MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
@@ -217,7 +217,7 @@ main = body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ M
           MDC.dataCell $ staticText "Theme"
           MDC.dataCell $ reading @"theme" identity
     MDC.layoutCell { span: 12 } MDC.divider
-    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize text
+    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ text # lcmap summarize
   -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
   -- broadcast) — every operand reads the settings record, each emits its
   -- own event cases (`recordToCase` inside the button components)
@@ -237,13 +237,13 @@ main = body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ M
     -- "published" case exits into the dispatch like any other event
     MDC.card { caption: Just "Wizard (folding)" } $ folding @"next" $ Semigroupoid.do
       tapped $ RecordToRecord.do
-        shownWhen (\r -> r.step == "review") $ MDC.body2 $ lcmap reviewLine text
-        shownWhen (\r -> r.step == "confirm") $ MDC.body2 $ lcmap confirmLine text
+        shownWhen (\r -> r.step == "review") $ MDC.body2 $ text # lcmap reviewLine
+        shownWhen (\r -> r.step == "confirm") $ MDC.body2 $ text # lcmap confirmLine
       Web.div >>> attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
         announce initialStep
-        shownWhen (\r -> r.step == "review") $ lcmap (toStep "confirm") $ MDC.button @"next" { label: Just "Next", icon: Nothing }
-        shownWhen (\r -> r.step == "confirm") $ lcmap (toStep "review") $ MDC.button @"next" { label: Just "Back", icon: Nothing }
-        shownWhen (\r -> r.step == "confirm") $ lcmap essentials $ MDC.button @"publish" { label: Just "Publish", icon: Just "publish" }
+        shownWhen (\r -> r.step == "review") $ MDC.button @"next" { label: Just "Next", icon: Nothing } # lcmap (toStep "confirm")
+        shownWhen (\r -> r.step == "confirm") $ MDC.button @"next" { label: Just "Back", icon: Nothing } # lcmap (toStep "review")
+        shownWhen (\r -> r.step == "confirm") $ MDC.button @"publish" { label: Just "Publish", icon: Just "publish" } # lcmap essentials
   -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —
   -- exclusive inputs, one action handler per event case
   VariantToVariant.do
@@ -265,8 +265,8 @@ main = body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ M
   -- the state at registration
   tapped $ unfolding @"resume" $ Semigroupoid.do
     seeded resumeZero
-    dimap splitStatus countUp (retain identity)
-    tapped $ MDC.body2 $ lcmap activityLine text
+    retain identity # dimap splitStatus countUp
+    tapped $ MDC.body2 $ text # lcmap activityLine
   -- the statuses: the +→× merge (direction class `VariantToRecord`) —
   -- one receiver per message case
   VariantToRecord.do
@@ -462,4 +462,4 @@ publishFlaky r = do
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
-reading render = lcmap (\r -> render (get (Proxy @l) r)) text
+reading render = text # lcmap (\r -> render (get (Proxy @l) r))

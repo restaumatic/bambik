@@ -114,8 +114,8 @@ main = body $ with unit $ MDC.elevation20 Semigroupoid.do
           , { value: "takeaway", label: "Takeaway", icon: Nothing }
           , { value: "delivery", label: "Delivery", icon: Nothing }
           ]
-        shownWhen (\r -> r.selected == "dineIn") $ lcmap tableOf $ MDC.filledTextField @"table" { floatingLabel: "Table" }
-        shownWhen (\r -> r.selected == "takeaway") $ lcmap timeOf $ MDC.filledTextField @"time" { floatingLabel: "Time" }
+        shownWhen (\r -> r.selected == "dineIn") $ MDC.filledTextField @"table" { floatingLabel: "Table" } # lcmap tableOf
+        shownWhen (\r -> r.selected == "takeaway") $ MDC.filledTextField @"time" { floatingLabel: "Time" } # lcmap timeOf
         shownWhen (\r -> r.selected == "delivery") $ lcmap addressOf $ RecordToRecord.do
           MDC.filledTextField @"address" { floatingLabel: "Address" }
           MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
@@ -124,16 +124,18 @@ main = body $ with unit $ MDC.elevation20 Semigroupoid.do
       -- a unit-payload variant needs no panes and no loop — the bracket
       -- around a single selection component suffices (it echoes, so no
       -- `identity` echo wire either)
-      field @"method" $ dimap methodState methodCase $ MDC.segmentedButton @"selected"
-        [ { value: "cash", label: "Cash" }
-        , { value: "card", label: "Card" }
-        ]
+      field @"method" $
+        MDC.segmentedButton @"selected"
+          [ { value: "cash", label: "Cash" }
+          , { value: "card", label: "Card" }
+          ]
+          # dimap methodState methodCase
       MDC.filledTextField @"paid" { floatingLabel: "Paid" }
       MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
     MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
   -- a live view of the form's output: displays every emission and passes it
   -- on (a sibling inside the merge would update on load only)
-  tapped $ debounced $ MDC.body1 $ lcmap summarize text
+  tapped $ debounced $ MDC.body1 $ text # lcmap summarize
   RecordToVariant.do
     MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
     MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
@@ -279,7 +281,7 @@ printReceipt order = do
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
-reading render = lcmap (\r -> render (get (Proxy @l) r)) text
+reading render = text # lcmap (\r -> render (get (Proxy @l) r))
 
 
 

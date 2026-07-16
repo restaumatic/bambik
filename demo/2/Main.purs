@@ -32,7 +32,7 @@ main = body $ with {} $ div $ Semigroupoid.do
       RecordToRecord.do
         field @"greeting" $ input "text"
         field @"name" $ input "text"
-      p $ lcmap (\r -> r.greeting <> ", " <> r.name <> "!") text
+      p $ text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!")
   silence
 
 -- model seed: its closed signature pins the live operand's input row

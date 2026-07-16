@@ -41,9 +41,12 @@ main = body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ loo
     , redoStack: []
     }
   $ Semigroupoid.do
-  rmap applyDiameter $ completed $
-    shownWhen hasSelection $ lcmap diameterField $
-      MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
+  completed
+    ( shownWhen hasSelection $
+        MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
+          # lcmap diameterField
+    )
+    # rmap applyDiameter
   updates handle RecordToVariant.do
     canvas
     MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }

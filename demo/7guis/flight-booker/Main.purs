@@ -29,15 +29,17 @@ type Booking =
 main :: Effect Unit
 main = body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
   looped $ with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } RecordToRecord.do
-    field @"flightType" $ dimap (\v -> { selected: Just v }) _.selected $
+    field @"flightType" $
       MDC.select @"selected" { floatingLabel: "Flight type" }
         [ { value: "one-way", label: "one-way flight" }
         , { value: "return", label: "return flight" }
         ]
+        # dimap (\v -> { selected: Just v }) _.selected
     MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
-    shownWhen isReturn $ lcmap returnDate $
+    shownWhen isReturn $
       MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
-  completed $ debounced $ MDC.body1 $ lcmap validationText text
+        # lcmap returnDate
+  completed $ debounced $ MDC.body1 $ text # lcmap validationText
   RecordToVariant.do
     MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
   action (Variant.case_ # Variant.on (Proxy @"book") bookFlight) MDC.indeterminateLinearProgress

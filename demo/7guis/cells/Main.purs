@@ -48,9 +48,11 @@ main = body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped
     , formula: ""
     }
   $ Semigroupoid.do
-  rmap commit $ completed RecordToRecord.do
-    MDC.body1 $ lcmap selectedCaption text
-    MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
+  ( completed RecordToRecord.do
+      MDC.body1 $ text # lcmap selectedCaption
+      MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
+  )
+    # rmap commit
   updates handle grid
 
 handle :: [ cellClicked :: String ] -> Model -> Model
