@@ -7,8 +7,9 @@ import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToRecord (completed)
+import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
@@ -31,7 +32,7 @@ main =
           MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
       ) # completed
       every (Milliseconds 100.0) tick
-      MDC.button @"reset" { label: Just "Reset", icon: Just "replay" } # updates reset
+      MDC.button { label: Just "Reset", icon: Just "replay" } # asCase @"reset" # updates reset
   ) # with { duration: 10.0, elapsed: 0.0 } # looped
 
 reset :: forall click. click -> Timer -> Timer

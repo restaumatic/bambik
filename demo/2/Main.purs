@@ -10,8 +10,8 @@ module Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import PUI (PUI, silence, with)

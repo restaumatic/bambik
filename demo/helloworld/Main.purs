@@ -9,7 +9,7 @@ module Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (focusRecord)
+import Data.Profunctor.Row.RecordToRecord (asField, focusRecord)
 import Effect (Effect)
 import PUI (silence, with)
 import PUI.HTML (body) as HTML
@@ -19,10 +19,10 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 main :: Effect Unit
 main =
   HTML.body $ ( Semigroupoid.do
-      MDC.filledTextField @"foo" { floatingLabel: "Foo" } # focusRecord
-      MDC.filledTextField @"day" { floatingLabel: "Day" } # focusRecord
-      MDC.filledTextField @"quantity" { floatingLabel: "Quantity" } # focusRecord
-      MDC.filledTextField @"price" { floatingLabel: "Price" } # focusRecord
+      MDC.filledTextField { floatingLabel: "Foo" } # asField @"foo" # focusRecord
+      MDC.filledTextField { floatingLabel: "Day" } # asField @"day" # focusRecord
+      MDC.filledTextField { floatingLabel: "Quantity" } # asField @"quantity" # focusRecord
+      MDC.filledTextField { floatingLabel: "Price" } # asField @"price" # focusRecord
       silence
   ) # with
       { foo: "foo"

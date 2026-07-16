@@ -46,9 +46,10 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (field, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToRecord (asField, field, tapped)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
@@ -99,12 +100,12 @@ main =
       RecordToRecord.do
         MDC.headline6 $ reading @"shortId" ("Order " <> _)
         MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
-          MDC.filledTextField @"shortId" { floatingLabel: "Short ID" }
-          MDC.filledTextField @"orderId" { floatingLabel: "Unique ID" }
+          MDC.filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
+          MDC.filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
         MDC.card { caption: Just "Customer" }
           ( RecordToRecord.do
-              MDC.filledTextField @"firstName" { floatingLabel: "First name" }
-              MDC.filledTextField @"lastName" { floatingLabel: "Last name" }
+              MDC.filledTextField { floatingLabel: "First name" } # asField @"firstName"
+              MDC.filledTextField { floatingLabel: "Last name" } # asField @"lastName"
           ) # field @"customer"
         -- the fulfillment variant is edited through record-shaped editor state:
         -- `dimap` brackets the variant in (seeding absent payloads) and out
@@ -118,17 +119,17 @@ main =
                   , { value: "takeaway", label: "Takeaway", icon: Nothing }
                   , { value: "delivery", label: "Delivery", icon: Nothing }
                   ]
-                HTML.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField @"table" { floatingLabel: "Table" } # lcmap tableOf)
-                HTML.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField @"time" { floatingLabel: "Time" } # lcmap timeOf)
+                HTML.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField { floatingLabel: "Table" } # asField @"table" # lcmap tableOf)
+                HTML.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField { floatingLabel: "Time" } # asField @"time" # lcmap timeOf)
                 HTML.shownWhen (\r -> r.selected == "delivery")
                   ( ( RecordToRecord.do
-                        MDC.filledTextField @"address" { floatingLabel: "Address" }
+                        MDC.filledTextField { floatingLabel: "Address" } # asField @"address"
                         MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
                     ) # lcmap addressOf
                   )
             ) # looped # dimap fulfillmentState fulfillmentCase
           ) # field @"fulfillment"
-        MDC.card { caption: Just "Total" } $ MDC.filledTextField @"total" { floatingLabel: "Total" }
+        MDC.card { caption: Just "Total" } $ MDC.filledTextField { floatingLabel: "Total" } # asField @"total"
         MDC.card { caption: Just "Payment" }
           ( RecordToRecord.do
               -- a unit-payload variant needs no panes and no loop — the bracket
@@ -139,7 +140,7 @@ main =
                 , { value: "card", label: "Card" }
                 ]
                 # dimap methodState methodCase # field @"method"
-              MDC.filledTextField @"paid" { floatingLabel: "Paid" }
+              MDC.filledTextField { floatingLabel: "Paid" } # asField @"paid"
               MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
           ) # field @"payment"
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
@@ -147,8 +148,8 @@ main =
       -- on (a sibling inside the merge would update on load only)
       MDC.body1 (HTML.text # lcmap summarize) # debounced # tapped
       HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-        MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
-        MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
+        MDC.button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
+        MDC.button { label: Just "Receipt", icon: Just "file" } # asCase @"printReceipt"
       VariantToVariant.do
         MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"submit") submitOrder Variant.case_)
         MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"printReceipt") printReceipt Variant.case_)

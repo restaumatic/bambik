@@ -47,6 +47,7 @@ module Data.Profunctor.Row.RecordToVariant
   , class Resolving
   , propertyToCase
   , echoCase
+  , asCase
   , recordToCase
   , resolve
   , resolveProperty
@@ -62,7 +63,7 @@ import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (Variant, expand, inj, on)
+import Data.Variant (Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record (get)
 import Record (union) as Record
@@ -260,6 +261,12 @@ propertyToCase g =
 -- | plain `rmap (inj l)` on any `Profunctor`. (The **background** `b` of the
 -- | output **shot** `s` is simply never produced — the widening is free, as
 -- | with `inj` itself.)
+-- | Adopt a **canonically-labeled** event component (`[ clicked :: a ]` out,
+-- | the citizenship-carrying interface) as business case `l`: renames the
+-- | case, input untouched — `rmap`-only, the `asField` twin at `× → +`.
+asCase :: forall @l p i a s. IsSymbol l => Profunctor p => Cons l a () s => p i [ clicked :: a ] -> p i [ | s ]
+asCase = rmap (on (Proxy @"clicked") (inj (Proxy @l)) case_)
+
 recordToCase
   :: forall @l p r b s f
    . IsSymbol l

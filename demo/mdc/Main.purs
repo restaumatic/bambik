@@ -45,14 +45,14 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (feedback, field, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (folding)
+import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, tapped)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.RecordToVariant (asCase, folding)
 import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Variant (case_, inj, match, on, prj) as Variant
@@ -135,7 +135,7 @@ main =
       MDC.layoutGrid RecordToRecord.do
         MDC.layoutCell { span: 12 } $ MDC.headline6 $ reading @"name" ("Settings — " <> _)
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
-          MDC.filledTextField @"name" { floatingLabel: "Name" }
+          MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
           MDC.filledTextArea @"notes" { columns: 60, rows: 3 }
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Selection controls" } RecordToRecord.do
           MDC.checkbox @"subscribed" $ HTML.staticText "Subscribe to the newsletter"
@@ -193,8 +193,8 @@ main =
                   [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
                   , { value: "express", label: "Express", icon: Just "bolt" }
                   ]
-                HTML.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField @"days" { floatingLabel: "Delivery days" } # lcmap daysOf)
-                HTML.shownWhen (\r -> r.selected == "express") (MDC.filledTextField @"price" { floatingLabel: "Express fee" } # lcmap priceOf)
+                HTML.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField { floatingLabel: "Delivery days" } # asField @"days" # lcmap daysOf)
+                HTML.shownWhen (\r -> r.selected == "express") (MDC.filledTextField { floatingLabel: "Express fee" } # asField @"price" # lcmap priceOf)
             ) # looped # dimap shippingState shippingCase
           ) # field @"shipping"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
@@ -228,7 +228,7 @@ main =
       -- own event cases (`recordToCase` inside the button components)
       RecordToVariant.do
         MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
-          MDC.button @"save" { label: Just "Save", icon: Just "save" }
+          MDC.button { label: Just "Save", icon: Just "save" } # asCase @"save"
           MDC.fab @"like" { icon: "favorite", label: Just "Like" }
           MDC.iconButton @"share" { icon: "share", label: "Share" }
           MDC.menu { label: "More" } RecordToVariant.do
@@ -248,9 +248,9 @@ main =
                 ) # tapped
                 HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
                   announce initialStep
-                  HTML.shownWhen (\r -> r.step == "review") (MDC.button @"next" { label: Just "Next", icon: Nothing } # lcmap (toStep "confirm"))
-                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button @"next" { label: Just "Back", icon: Nothing } # lcmap (toStep "review"))
-                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button @"publish" { label: Just "Publish", icon: Just "publish" } # lcmap essentials)
+                  HTML.shownWhen (\r -> r.step == "review") (MDC.button { label: Just "Next", icon: Nothing } # asCase @"next" # lcmap (toStep "confirm"))
+                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button { label: Just "Back", icon: Nothing } # asCase @"next" # lcmap (toStep "review"))
+                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button { label: Just "Publish", icon: Just "publish" } # asCase @"publish" # lcmap essentials)
             ) # folding @"next"
           )
       -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —

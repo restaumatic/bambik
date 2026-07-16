@@ -6,9 +6,10 @@ import Data.Either (Either(..))
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (completed, field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToRecord (asField, completed, field)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
 import Data.Variant (match) as Variant
@@ -34,15 +35,15 @@ main =
         , { value: "return", label: "return flight" }
         ]
         # dimap (\v -> { selected: Just v }) _.selected # field @"flightType"
-      MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
+      MDC.filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
       HTML.shownWhen isReturn
-        ( MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
+        ( MDC.filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
             # lcmap returnDate
         )
   ) # with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } # looped
   MDC.body1 (HTML.text # lcmap validationText) # debounced # completed
   RecordToVariant.do
-    MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
+    MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
   MDC.indeterminateLinearProgress # action (Variant.match { book: bookFlight })
   VariantToRecord.do
     MDC.snackbar @"booked"

@@ -6,6 +6,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number (fromString) as Number
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (dimap)
+import Data.Profunctor.Row.RecordToRecord (asField)
 import Data.String (Pattern(..), stripSuffix)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -17,8 +18,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
-      MDC.debouncedTextField @"celsius" { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
-      MDC.debouncedTextField @"fahrenheit" { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
+      MDC.debouncedTextField { floatingLabel: "Celsius", millis: Milliseconds 300.0 } # asField @"celsius"
+      MDC.debouncedTextField { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 } # asField @"fahrenheit"
         # dimap celsiusToFahrenheit fahrenheitToCelsius
   ) # with { celsius: "20" } # looped
 

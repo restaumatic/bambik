@@ -36,6 +36,7 @@ module Data.Profunctor.Row.RecordToRecord
   , class RecordToRecord
   , discard
   , feedback
+  , asField
   , field
   , pempty
   , focusRecord
@@ -155,6 +156,14 @@ property = prop (Proxy @l)
 -- | `Record.union` — so this is no longer a correctness obligation on
 -- | operands; `field` remains the preferred operand form for its
 -- | annotation-free inference.)
+-- | Adopt a **canonically-labeled** component (`{ value :: a }` in and out,
+-- | the citizenship-carrying scalar interface) as business field `l`: a pure
+-- | relabeling, `dimap`-only like `field` — merge-gate exactness untouched,
+-- | annotation-free as a merge operand (closed singleton rows on both sides).
+-- | `field` wraps its argument under `l`; `asField` renames `value` to `l`.
+asField :: forall @l p a b s t. IsSymbol l => Profunctor p => Lacks l () => Cons l a () s => Cons l b () t => p { value :: a } { value :: b } -> p { | s } { | t }
+asField = dimap (\r -> { value: Record.get (Proxy @l) r }) (\r -> Record.insert (Proxy @l) r.value {})
+
 field :: forall @l p f f' si so. IsSymbol l => Profunctor p => Lacks l () => Cons l f () si => Cons l f' () so => p f f' -> p { | si } { | so }
 field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 

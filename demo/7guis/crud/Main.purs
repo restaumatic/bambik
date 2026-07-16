@@ -5,11 +5,12 @@ import Prelude
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToRecord (asField, completed)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.String (stripPrefix)
+import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.String (Pattern(..)) as String
+import Data.String (stripPrefix)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (looped, updates, with)
@@ -31,9 +32,9 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ ( Semigroupoid.do
       ( RecordToRecord.do
-          MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
-          MDC.filledTextField @"name" { floatingLabel: "Name" }
-          MDC.filledTextField @"surname" { floatingLabel: "Surname" }
+          MDC.filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
+          MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
+          MDC.filledTextField { floatingLabel: "Surname" } # asField @"surname"
       ) # completed
       ( RecordToVariant.do
           HTML.ul >>> HTML.cl "mdc-deprecated-list" >>> HTML.attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;" $ HTML.foreach
@@ -42,9 +43,9 @@ main =
                 $ HTML.text # lcmap _.label
             ) # rmap picked # lcmap entries
           HTML.div >>> HTML.attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
-            MDC.button @"create" { label: Just "Create", icon: Nothing }
-            MDC.button @"update" { label: Just "Update", icon: Nothing }
-            MDC.button @"delete" { label: Just "Delete", icon: Nothing }
+            MDC.button { label: Just "Create", icon: Nothing } # asCase @"create"
+            MDC.button { label: Just "Update", icon: Nothing } # asCase @"update"
+            MDC.button { label: Just "Delete", icon: Nothing } # asCase @"delete"
       ) # updates handle
   ) # with
       { prefix: ""

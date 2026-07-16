@@ -11,8 +11,8 @@ import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToRecord (asField, completed)
 import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
 import Data.Variant (match) as Variant
@@ -41,7 +41,7 @@ main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ ( Semigroupoid.do
       ( RecordToRecord.do
           MDC.body1 (HTML.text # lcmap selectedCaption)
-          MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
+          MDC.filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
       ) # completed # rmap commit
       HTML.viewEvents
         """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""

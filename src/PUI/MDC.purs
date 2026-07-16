@@ -132,8 +132,8 @@ import PUI.Web (Node, Web, uniqueId)
 
 -- | The `×→+` event button: reads the whole record it is shown and fires
 -- | it as event case `l` on click (`recordToCase` over the raw button).
-button :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: Maybe String, icon :: Maybe String } -> PUI Web { | r } [ | s ]
-button config = recordToCase @l (containedButton config)
+button :: forall r. { label :: Maybe String, icon :: Maybe String } -> PUI Web { | r } [ clicked :: { | r } ]
+button config = recordToCase @"clicked" (containedButton config)
 
 -- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
 -- | **same-type** (`Cons l a () s`): the selection is always known from the
@@ -243,14 +243,14 @@ menuItemLeaf lbl = wrap do
     }
 
 -- TODO support input types: email, text, password, number, search, tel, url
-filledTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String } -> PUI Web { | s } { | s }
-filledTextField = textFieldWith @l (input "text")
+filledTextField :: { floatingLabel :: String } -> PUI Web { value :: String } { value :: String }
+filledTextField = textFieldWith @"value" (input "text")
 
 -- | `filledTextField` over the debounced input leaf: keystrokes coalesce
 -- | at the DOM boundary (`Web.inputDebounced`), so the field is loop-safe
 -- | to debounce — the wire itself stays synchronous.
-debouncedTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String, millis :: Milliseconds } -> PUI Web { | s } { | s }
-debouncedTextField { floatingLabel, millis } = textFieldWith @l (inputDebounced millis "text") { floatingLabel }
+debouncedTextField :: { floatingLabel :: String, millis :: Milliseconds } -> PUI Web { value :: String } { value :: String }
+debouncedTextField { floatingLabel, millis } = textFieldWith @"value" (inputDebounced millis "text") { floatingLabel }
 
 textFieldWith :: forall @l s. IsSymbol l => Cons l String () s => PUI Web String String -> { floatingLabel :: String } -> PUI Web { | s } { | s }
 textFieldWith leaf { floatingLabel } =

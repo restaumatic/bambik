@@ -8,6 +8,7 @@ import Data.Number (sqrt)
 import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.String (joinWith)
 import Data.Variant (match) as Variant
 import Effect (Effect)
@@ -43,8 +44,8 @@ main =
             renderCanvas
             (\node emit -> onCanvasClick node \x y -> emit (clickedAt x y))
           HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-            MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }
-            MDC.button @"redo" { label: Just "Redo", icon: Just "redo" }
+            MDC.button { label: Just "Undo", icon: Just "undo" } # asCase @"undo"
+            MDC.button { label: Just "Redo", icon: Just "redo" } # asCase @"redo"
       ) # updates handle
   ) # with
       { circles: []

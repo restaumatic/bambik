@@ -14,6 +14,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToVariant (shutter)
+import Data.Profunctor.Row.RecordToRecord (asField)
 import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import PUI.MDC (filledTextField) as MDC
@@ -34,7 +35,7 @@ greet :: PUI Web String String
 greet =
   reel
     (\prefix -> Right \typed -> prefix <> typed.name)
-    (MDC.filledTextField @"name" { floatingLabel: "Your name" })
+    (asField @"name" (MDC.filledTextField { floatingLabel: "Your name" }))
 
 -- | The **Shutter** (× → +): open on the greeting, then snap shut on one value.
 -- | The button click is a `Done` (`cont=false`), so the **build** leg fires and
