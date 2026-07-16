@@ -28,9 +28,9 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap gauge)
           MDC.body1 RecordToRecord.do
-            HTML.text # lcmap (toStringWith (fixed 1)) # forField @"elapsed"
+            HTML.text # lcmap (toStringWith (fixed 1)) # lcmap _.value # forField @"elapsed"
             HTML.staticText "s / "
-            HTML.text # lcmap (toStringWith (fixed 1)) # forField @"duration"
+            HTML.text # lcmap (toStringWith (fixed 1)) # lcmap _.value # forField @"duration"
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed

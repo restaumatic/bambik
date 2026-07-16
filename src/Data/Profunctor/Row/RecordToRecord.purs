@@ -157,13 +157,14 @@ property = prop (Proxy @l)
 -- | `Record.union` — so this is no longer a correctness obligation on
 -- | operands; `field` remains the preferred operand form for its
 -- | annotation-free inference.)
--- | Adopt a scalar **display** for field `l`: reads the field, output
--- | untouched — `lcmap`-only, the input-side member of the adopter family
--- | (`asField` renames both sides of an editor, `forField` reads one field
--- | into a display). Closed singleton row: annotation-free as a merge
--- | operand, and a display owns no output fields.
-forField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
-forField = lcmap (Record.get (Proxy @l))
+-- | Adopt a **canonically-labeled display** (`{ value :: a }` in) for field
+-- | `l`: renames the incoming field, output untouched — `lcmap`-only, the
+-- | input-side member of the adopter family (`asField` renames both sides
+-- | of an editor, `forField` reads one field into a display). Closed
+-- | singleton row: annotation-free as a merge operand, and a display owns
+-- | no output fields.
+forField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p { value :: a } o -> p { | r } o
+forField = lcmap (\r -> { value: Record.get (Proxy @l) r })
 
 -- | Adopt a **canonically-labeled** component (`{ value :: a }` in and out,
 -- | the citizenship-carrying scalar interface) as business field `l`: a pure

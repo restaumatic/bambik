@@ -133,7 +133,7 @@ main =
       -- own disjoint output fields, inputs may overlap; label-indexed MDC
       -- components are `field @l`-shaped inside (bare `Profunctor`)
       MDC.layoutGrid RecordToRecord.do
-        MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # lcmap ("Settings — " <> _) # forField @"name")
+        MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # lcmap ("Settings — " <> _) # lcmap _.value # forField @"name")
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
           MDC.filledTextArea { columns: 60, rows: 3 } # asField @"notes"
@@ -180,7 +180,7 @@ main =
               lcmap stepPeak identity
               MDC.body2 (HTML.text # lcmap peakLine) # tapped
           ) # feedback
-          MDC.body2 (HTML.text # lcmap (\v -> "Volume " <> show v) # forField @"volume") # tapped
+          MDC.body2 (HTML.text # lcmap (\v -> "Volume " <> show v) # lcmap _.value # forField @"volume") # tapped
         -- the variant model is edited through record-shaped editor state
         -- (`ShippingState` — all payloads persist, the merge gates retain them):
         -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
@@ -217,13 +217,13 @@ main =
           MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Name"
-              MDC.dataCell (HTML.text # forField @"name")
+              MDC.dataCell (HTML.text # lcmap _.value # forField @"name")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Volume"
-              MDC.dataCell (HTML.text # lcmap show # forField @"volume")
+              MDC.dataCell (HTML.text # lcmap show # lcmap _.value # forField @"volume")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Theme"
-              MDC.dataCell (HTML.text # forField @"theme")
+              MDC.dataCell (HTML.text # lcmap _.value # forField @"theme")
         MDC.layoutCell { span: 12 } MDC.divider
         MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # lcmap summarize) # debounced)
       ) # tapped
