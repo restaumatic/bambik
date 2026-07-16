@@ -16,11 +16,11 @@ import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (UI, silence)
+import UI (UI, silence, with)
 import Web (Web, a, body, div, input, li, p, staticHTML, staticText, text, ul, (:=))
 
 main :: Effect Unit
-main = body @({}) $ div $ Semigroupoid.do
+main = body $ with {} $ div $ Semigroupoid.do
   RecordToRecord.do
     p $ staticText "Hello World!"
     ul $ RecordToRecord.do

@@ -9,7 +9,6 @@ module Web
   , attr
   , attrDyn
   , body
-  , bodyWith
   , button
   , checkboxInput
   , cl
@@ -487,18 +486,17 @@ placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 
 -- Entry point
 
-body :: forall @a. Default a => UI Web a Void -> Effect Unit
+-- | The app entry: builds the widget in `<body>` and registers its
+-- | wiring — and feeds **nothing**. All initial data enters as seeds
+-- | (`with initial`, `announce`, `seeded`) inside the widget itself, so
+-- | the standalone app reads `body $ with initial $ ...`; emissions are
+-- | simply dropped.
+body :: forall i o. UI Web i o -> Effect Unit
 body ui = do
   node <- documentBody
-  runWidgetInNode node default mempty ui
-
--- | `body` with an explicit initial value and any output type — the
--- | standalone-app entry: no `lcmap (const initial)` bracket, no trailing
--- | `silence` (emissions are simply dropped).
-bodyWith :: forall a b. a -> UI Web a b -> Effect Unit
-bodyWith initial ui = do
-  node <- documentBody
-  runWidgetInNode node initial mempty ui
+  runDomInNode node do
+    { fromUser } <- unwrap ui
+    liftEffect $ fromUser \_ -> pure Nothing
 
 -- | Build a `×→+` **view-with-events leaf**: `shell` is the container
 -- | markup (appended once), `render` fills it per value fed (no echo —

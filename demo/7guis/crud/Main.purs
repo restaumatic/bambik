@@ -16,8 +16,8 @@ import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (UI, looped, updates)
-import Web (Web, bodyWith, escapeHtml, onKeyClick, viewEvents)
+import UI (UI, looped, updates, with)
+import Web (Web, body, escapeHtml, onKeyClick, viewEvents)
 
 type Person = { name :: String, surname :: String }
 
@@ -30,7 +30,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped Semigroupoid.do
+main = body $ with initial $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped Semigroupoid.do
   completed RecordToRecord.do
     MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
     MDC.filledTextField @"name" { floatingLabel: "Name" }

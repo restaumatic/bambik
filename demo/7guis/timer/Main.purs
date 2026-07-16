@@ -14,8 +14,8 @@ import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (every, looped, updates)
-import Web (bodyWith, text)
+import UI (every, looped, updates, with)
+import Web (body, text)
 
 type Timer =
   { duration :: Number
@@ -23,7 +23,7 @@ type Timer =
   }
 
 main :: Effect Unit
-main = bodyWith { duration: 10.0, elapsed: 0.0 } $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped Semigroupoid.do
+main = body $ with { duration: 10.0, elapsed: 0.0 } $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped Semigroupoid.do
   completed RecordToRecord.do
     MDC.headline6 $ lcmap gauge text
     MDC.body1 $ lcmap elapsedCaption text

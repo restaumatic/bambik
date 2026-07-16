@@ -315,9 +315,9 @@ announce o = wrap $ pure
 -- | closure (`with a w = seeded a >>> w`, so `with a identity = seeded a`).
 -- | Insertable at every `UI m a b` position: in front of a form (the
 -- | initial model), around a merge operand (seeding just that operand's
--- | gates), or in front of a knowledge-gated trace as its primer. At the
--- | app entry use `bodyWith` instead — `body`'s own `default` feed would
--- | arrive *after* the seed and overwrite it.
+-- | gates), or in front of a knowledge-gated trace as its primer — and at
+-- | the app entry: `body` feeds nothing, so `body $ with initial $ ...`
+-- | is the standalone-app shape.
 with :: forall m a b. Applicative m => a -> UI m a b -> UI m a b
 with a w = seeded a >>> w
 

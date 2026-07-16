@@ -63,7 +63,7 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, debounced, looped, silence)
+import UI (UI, action, debounced, looped, silence, with)
 import Web (Web, body, shownWhen, text)
 
 -- The one named type — the aggregate the whole pipeline revolves around.
@@ -92,7 +92,7 @@ type Order =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.elevation20 Semigroupoid.do
+main = body $ with unit $ MDC.elevation20 Semigroupoid.do
   action loadOrder MDC.indeterminateLinearProgress
   RecordToRecord.do
     MDC.headline6 $ reading @"shortId" ("Order " <> _)

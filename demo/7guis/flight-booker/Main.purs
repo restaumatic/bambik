@@ -17,8 +17,8 @@ import Effect.Aff (Aff)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (action, debounced, looped)
-import Web (bodyWith, shownWhen, text)
+import UI (action, debounced, looped, with)
+import Web (body, shownWhen, text)
 
 type Booking =
   { flightType :: String
@@ -27,7 +27,7 @@ type Booking =
   }
 
 main :: Effect Unit
-main = bodyWith { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
+main = body $ with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
   looped RecordToRecord.do
     field @"flightType" $ dimap (\v -> { selected: Just v }) _.selected $
       MDC.select @"selected" { floatingLabel: "Flight type" }

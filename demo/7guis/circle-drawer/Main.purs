@@ -14,8 +14,8 @@ import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (UI, looped, updates)
-import Web (Node, Web, bodyWith, shownWhen, viewEvents)
+import UI (UI, looped, updates, with)
+import Web (Node, Web, body, shownWhen, viewEvents)
 
 foreign import onCanvasClick :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 
@@ -31,7 +31,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ looped Semigroupoid.do
+main = body $ with initial $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ looped Semigroupoid.do
   rmap applyDiameter $ completed $
     shownWhen hasSelection $ lcmap diameterField $
       MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }

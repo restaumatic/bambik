@@ -18,7 +18,7 @@ import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (UI, silence)
+import UI (UI, silence, with)
 import Web (Web, body, button, staticText, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
@@ -51,7 +51,7 @@ confirm =
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.
 main :: Effect Unit
-main = body @Unit $ lcmap (const "Hello, ") $ Semigroupoid.do
+main = body $ with "Hello, " $ Semigroupoid.do
   greet
   confirm
   text

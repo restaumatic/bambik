@@ -21,8 +21,8 @@ import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (UI, looped, updates)
-import Web (Web, bodyWith, escapeHtml, onKeyClick, text, viewEvents)
+import UI (UI, looped, updates, with)
+import Web (Web, body, escapeHtml, onKeyClick, text, viewEvents)
 
 cols :: Int
 cols = 26
@@ -37,7 +37,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
+main = body $ with initial $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
   rmap commit $ completed RecordToRecord.do
     MDC.body1 $ lcmap selectedCaption text
     MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }

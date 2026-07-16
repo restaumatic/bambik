@@ -65,7 +65,7 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import UI (UI, action, announce, debounced, looped, seeded, silence)
+import UI (UI, action, announce, debounced, looped, seeded, silence, with)
 import Web (Web, attr, body, shownWhen, staticText, text)
 import Web (div) as Web
 
@@ -109,7 +109,7 @@ type SettingsOut =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
+main = body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
   ( MDC.list RecordToRecord.do
       MDC.listItem $ staticText "Text fields"
       MDC.listItem $ staticText "Selection controls"
