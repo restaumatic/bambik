@@ -62,6 +62,7 @@ module MDC
   , fab
   , filledTextArea
   , filledTextField
+  , debouncedTextField
   , filterChip
   , headline1
   , headline2
@@ -111,6 +112,7 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field, pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
+import Data.Time.Duration (Milliseconds)
 import Data.Symbol (class IsSymbol)
 import Data.Traversable (for)
 import Data.Variant (case_, on) as Variant
@@ -122,7 +124,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import UI (UI, effAdapter)
-import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
+import Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
 import Web (button) as Web
 
 -- UIs
@@ -241,7 +243,16 @@ menuItemLeaf lbl = wrap do
 
 -- TODO support input types: email, text, password, number, search, tel, url
 filledTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String } -> UI Web { | s } { | s }
-filledTextField { floatingLabel } =
+filledTextField = textFieldWith @l (input "text")
+
+-- | `filledTextField` over the debounced input leaf: keystrokes coalesce
+-- | at the DOM boundary (`Web.inputDebounced`), so the field is loop-safe
+-- | to debounce — the wire itself stays synchronous.
+debouncedTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String, millis :: Milliseconds } -> UI Web { | s } { | s }
+debouncedTextField { floatingLabel, millis } = textFieldWith @l (inputDebounced millis "text") { floatingLabel }
+
+textFieldWith :: forall @l s. IsSymbol l => Cons l String () s => UI Web String String -> { floatingLabel :: String } -> UI Web { | s } { | s }
+textFieldWith leaf { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
@@ -250,7 +261,7 @@ filledTextField { floatingLabel } =
         setContent node (fromMaybe "" validationStatus)) $ wrap do
     _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
     floating <- unwrap (span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel)
-    w <- unwrap (field @l $ input "text" # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId)
+    w <- unwrap (field @l $ leaf # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId)
     _ <- unwrap (div >>> cl "mdc-text-field-helper-line" $
       div >>> cl "mdc-text-field-helper-text" >>> "id" := helperId >>> "aria-hidden" := "true" >>> init mdcTextFieldHelperText mempty mempty $ pempty)
     _ <- unwrap (span >>> cl "mdc-line-ripple" $ pempty)

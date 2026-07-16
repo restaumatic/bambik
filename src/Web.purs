@@ -24,6 +24,7 @@ module Web
   , i
   , init
   , input
+  , inputDebounced
   , label
   , li
   , ol
@@ -63,6 +64,7 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Newtype (unwrap, wrap)
+import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -134,6 +136,28 @@ input type_ = "type" := type_ $ wrap do
       void $ addEventListener "input" node $ const do
         value <- getValue node
         void $ prop value
+    }
+
+-- | `input` with the DOM events debounced **at the leaf**: keystrokes are
+-- | coalesced before they enter the wire, so everything downstream of an
+-- | emission stays synchronous and `looped`'s re-entrancy guard still
+-- | terminates loop cycles. (Wire-level debouncing inside a loop turns
+-- | refeeds into a standing async ping-pong — the delay must sit in front
+-- | of the wire, not on it.)
+inputDebounced :: Milliseconds -> String -> UI Web String String
+inputDebounced (Milliseconds millis) type_ = "type" := type_ $ wrap do
+  element "input" (pure unit)
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new $ Nothing
+  pure
+    { toUser: \newa -> do
+      focused <- isFocused node
+      unless focused $ setValue node newa
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> void $ prop newa
+    , fromUser: \prop -> do
+      Ref.write (Just prop) mPropRef
+      onInputDebounced node millis \value -> void $ prop value
     }
 
 -- | See `input` — same focus-guarded protocol.
@@ -589,6 +613,7 @@ foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
 foreign import setInnerHTML :: Node -> String -> Effect Unit
 foreign import onKeyClick :: Node -> (String -> Effect Unit) -> Effect Unit
+foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }

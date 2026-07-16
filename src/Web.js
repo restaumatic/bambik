@@ -277,3 +277,20 @@ export function onKeyClick(node) {
     };
   };
 }
+
+// onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
+export function onInputDebounced(node) {
+  return function (millis) {
+    return function (callback) {
+      return function () {
+        let timer;
+        node.addEventListener("input", function () {
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            callback(node.value)();
+          }, millis);
+        });
+      };
+    };
+  };
+}

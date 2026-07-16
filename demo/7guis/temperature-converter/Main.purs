@@ -7,6 +7,7 @@ import Data.Number (fromString) as Number
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (dimap)
 import Data.String (Pattern(..), stripSuffix)
+import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,9 +16,9 @@ import Web (body)
 
 main :: Effect Unit
 main = body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ looped $ with { celsius: "20" } Semigroupoid.do
-  MDC.filledTextField @"celsius" { floatingLabel: "Celsius" }
+  MDC.debouncedTextField @"celsius" { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
   dimap celsiusToFahrenheit fahrenheitToCelsius $
-    MDC.filledTextField @"fahrenheit" { floatingLabel: "Fahrenheit" }
+    MDC.debouncedTextField @"fahrenheit" { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
 
 celsiusToFahrenheit :: { celsius :: String } -> { fahrenheit :: String }
 celsiusToFahrenheit r = { fahrenheit: maybe "" (\c -> format (c * 9.0 / 5.0 + 32.0)) (Number.fromString r.celsius) }
