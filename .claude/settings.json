@@ -35,7 +35,10 @@
       "Bash(grep -E '`UI|UI m|UI Web|newtype UI|UI\\\\\\(|UI \\\\\\(')",
       "Bash(git commit -q -m 'refactor: rename type UI -> PUI; Data.* modules back at src root *)",
       "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/crud/Main.purs)",
-      "Bash(git commit -q -m 'style\\(demos\\): explicit import lists on qualified PUI.MDC/PUI.Web imports *)"
+      "Bash(git commit -q -m 'style\\(demos\\): explicit import lists on qualified PUI.MDC/PUI.Web imports *)",
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/timer/Main.purs)",
+      "Bash(sed -i 's#Doc comments are deliberately absent — a test of whether the code reads and reasons on its own.#Doc comments are deliberately absent — a test of whether the code reads and reasons on its own. Imports are explicit, so it is visible which modules export what.#' demo/7guis/*/index.html)",
+      "Bash(git commit -q -m 'docs\\(7guis\\): note that explicit imports show which modules export what *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
