@@ -45,14 +45,22 @@
       <a href="https://eugenkiss.github.io/7guis/tasks/#temp">Task description on 7GUIs</a>
     </header>
     <section id="source-panel">
-      <h3>PureScript source</h3>
+      <h3 id="src-heading">PureScript source</h3>
       <pre><code id="src" class="language-haskell">loading…</code></pre>
     </section>
     <script>
-      fetch("Main.purs").then(r => r.text()).then(src => {
+      const fmt = (n) => n.toLocaleString("en-US");
+      Promise.all([
+        fetch("Main.purs").then(r => r.text()),
+        fetch("bundle.js", { method: "HEAD" }).then(r => r.headers.get("content-length")),
+      ]).then(([src, bundleBytes]) => {
         const el = document.getElementById("src");
         el.textContent = src;
         if (window.hljs) hljs.highlightElement(el);
+        const srcBytes = new TextEncoder().encode(src).length;
+        document.getElementById("src-heading").textContent =
+          "PureScript source (" + fmt(srcBytes) + " bytes of source code, "
+            + (bundleBytes ? fmt(+bundleBytes) + " bytes of compiled code)" : "compiled size unavailable)");
       });
     </script>
   </body>

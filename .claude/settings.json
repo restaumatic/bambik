@@ -18,7 +18,9 @@
       "Bash(git commit -m 'refactor\\(7guis\\): tapped -> completed for displays; comment-free demos; page header *)",
       "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/counter/Main.purs)",
       "Bash(git rm *)",
-      "Bash(git commit -m 'chore: drop stray settings tmp file, ignore the pattern *)"
+      "Bash(git commit -m 'chore: drop stray settings tmp file, ignore the pattern *)",
+      "Bash(git commit -m 'fix: repair .gitignore corrupted by newline-less append; untrack bundles *)",
+      "Bash(git commit -m 'feat\\(7guis\\): source/compiled byte counts in the source heading *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
