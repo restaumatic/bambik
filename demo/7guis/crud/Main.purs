@@ -10,13 +10,13 @@
 -- | ensemble consistent: filtering re-renders the list, mutations
 -- | re-render everything.
 -- |
--- | Deviation from some reference implementations: selecting an entry
--- | enables update/delete against it but does not prefill the text fields.
+-- | Selecting an entry prefills the name fields (a `picked` event through
+-- | the fold), so update edits the selected person in place.
 module Main (main) where
 
 import Prelude
 
-import Data.Array (deleteAt, filter, mapWithIndex, snoc, updateAt)
+import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
@@ -56,11 +56,12 @@ main = body @Unit $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } Semigrou
   lcmap (const initial) $ looped Semigroupoid.do
     RecordToRecord.do
       MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
-      lcmap entries listBox
       MDC.filledTextField @"name" { floatingLabel: "Name" }
       MDC.filledTextField @"surname" { floatingLabel: "Surname" }
       field @"people" identity
+      field @"selected" identity
     RecordToVariant.do
+      listBox
       MDC.button @"create" { label: Just "Create", icon: Nothing }
       MDC.button @"update" { label: Just "Update", icon: Nothing }
       MDC.button @"delete" { label: Just "Delete", icon: Nothing }
@@ -81,9 +82,13 @@ initial =
   , selected: Nothing
   }
 
-handle :: [ create :: Model, update :: Model, delete :: Model, state :: Model ] -> Model
+handle :: [ picked :: { key :: Int, model :: Model }, create :: Model, update :: Model, delete :: Model, state :: Model ] -> Model
 handle = Variant.case_
   # Variant.on (Proxy @"state") identity
+  -- selection is an event: it prefills the fields from the picked person
+  # Variant.on (Proxy @"picked") (\{ key, model: m } -> case index m.people key of
+      Just p -> m { selected = Just key, name = p.name, surname = p.surname }
+      Nothing -> m)
   # Variant.on (Proxy @"create") (\m ->
       m { people = snoc m.people { name: m.name, surname: m.surname } })
   # Variant.on (Proxy @"update") (\m -> case m.selected of
@@ -107,32 +112,26 @@ entries m =
     Just _ -> true
     Nothing -> false
 
--- | The custom leaf: an MDC list rendering derived entries, editing the
--- | `selected` field. Echoes on `toUser` (the leaf protocol), emits on
--- | delegated entry clicks.
-listBox :: UI Web { entries :: Array { key :: Int, label :: String }, selected :: Maybe Int } { selected :: Maybe Int }
+-- | The custom leaf: a `×→+` citizen like Circle Drawer's canvas — the
+-- | model in (rendered as an MDC list of derived, filtered entries), one
+-- | `picked` case out. Selection semantics (prefilling the fields) live
+-- | in the fold, not here.
+listBox :: UI Web Model [ picked :: { key :: Int, model :: Model } ]
 listBox = wrap do
   _ <- unwrap (staticHTML """<ul class="mdc-deprecated-list" style="border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"></ul>""")
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  lastRef <- liftEffect $ Ref.new { entries: [], selected: Nothing }
-  let render st = setInnerHTML node (joinWith "" (st.entries <#> \e ->
-        "<li class=\"mdc-deprecated-list-item" <> (if st.selected == Just e.key then " mdc-deprecated-list-item--selected" else "") <> "\" style=\"cursor: pointer;\" data-key=\"" <> show e.key <> "\">"
-          <> escape e.label <> "</li>"))
+  lastRef <- liftEffect $ Ref.new initial
   pure
-    { toUser: \st -> do
-        Ref.write st lastRef
-        render st
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop { selected: st.selected }
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
+    { toUser: \m -> do
+        Ref.write m lastRef
+        let st = entries m
+        setInnerHTML node (joinWith "" (st.entries <#> \e ->
+          "<li class=\"mdc-deprecated-list-item" <> (if st.selected == Just e.key then " mdc-deprecated-list-item--selected" else "") <> "\" style=\"cursor: pointer;\" data-key=\"" <> show e.key <> "\">"
+            <> escape e.label <> "</li>"))
+    , fromUser: \prop ->
         onEntryClick node \key -> do
-          st <- Ref.read lastRef
-          let st' = st { selected = Just key }
-          Ref.write st' lastRef
-          render st'
-          void $ prop { selected: Just key }
+          m <- Ref.read lastRef
+          void $ prop (.picked { key, model: m })
     }
 
 escape :: String -> String

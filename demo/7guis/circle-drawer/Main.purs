@@ -114,7 +114,7 @@ dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 -- | fold can hit-test without the canvas knowing what a selection is.
 canvas :: UI Web Model [ clicked :: { x :: Number, y :: Number, model :: Model } ]
 canvas = wrap do
-  _ <- unwrap (staticHTML """<svg width="500" height="300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white;"></svg>""")
+  _ <- unwrap (staticHTML """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>""")
   node <- gets _.sibling
   lastRef <- liftEffect $ Ref.new initial
   pure
