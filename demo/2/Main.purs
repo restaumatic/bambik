@@ -31,18 +31,13 @@ main =
           HTML.li $ HTML.staticText "Three"
         HTML.a >>> "href" := "https://www.google.com" $ HTML.staticText "Search for me!"
         HTML.staticHTML "<hr/>"
-        ( Semigroupoid.do
-            RecordToRecord.do
-              HTML.input "text" # field @"greeting"
-              HTML.input "text" # field @"name"
-            HTML.p (HTML.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!"))
-        ) # lcmap seed
+        Semigroupoid.do
+          RecordToRecord.do
+            HTML.input "text" # field @"greeting"
+            HTML.input "text" # field @"name"
+          HTML.p (HTML.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!"))
       silence
-  ) # with {}
-
--- model seed: its closed signature pins the live operand's input row
-seed :: {} -> { greeting :: String, name :: String }
-seed _ =
-  { greeting: "Hello"
-  , name: "World"
-  }
+  ) # with
+      { greeting: "Hello"
+      , name: "World"
+      }
