@@ -34,10 +34,8 @@ type Model =
 main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
-      HTML.shownWhen hasSelection
-        ( MDC.slider { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
-            # lcmap diameterField
-        ) # completed # rmap applyDiameter
+      MDC.slider { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
+        # completed # HTML.shownWhen hasSelection # rmap applyDiameter
       ( RecordToVariant.do
           HTML.viewEvents
             """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
@@ -102,6 +100,3 @@ renderCanvas m = joinWith "" (mapWithIndex (\i c ->
 
 hasSelection :: Model -> Boolean
 hasSelection m = isJust m.selected
-
-diameterField :: Model -> { diameter :: Number }
-diameterField m = { diameter: m.diameter }
