@@ -10,13 +10,13 @@ import Data.String (Pattern(..), stripSuffix)
 import Effect (Effect)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import UI (debounced, looped)
+import UI (looped)
 import Web (bodyWith)
 
 main :: Effect Unit
 main = bodyWith { celsius: "20" } $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ looped Semigroupoid.do
   MDC.filledTextField @"celsius" { floatingLabel: "Celsius" }
-  debounced $ dimap celsiusToFahrenheit fahrenheitToCelsius $
+  dimap celsiusToFahrenheit fahrenheitToCelsius $
     MDC.filledTextField @"fahrenheit" { floatingLabel: "Fahrenheit" }
 
 celsiusToFahrenheit :: { celsius :: String } -> { fahrenheit :: String }
