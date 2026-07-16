@@ -31,7 +31,7 @@ main = bodyWith { duration: 10.0, elapsed: 0.0 } $ MDC.elevation20 $ MDC.card { 
   every (Milliseconds 100.0) tick
   updates reset $ MDC.button @"reset" { label: Just "Reset", icon: Just "replay" }
 
-reset :: forall e. e -> Timer -> Timer
+reset :: forall click. click -> Timer -> Timer
 reset _ t = t { elapsed = 0.0 }
 
 elapsedCaption :: Timer -> String

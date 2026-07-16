@@ -16,7 +16,7 @@ main = bodyWith { count: 0 } $ MDC.elevation20 $ MDC.card { caption: Just "Count
   completed $ MDC.headline4 $ lcmap countCaption text
   updates increment $ MDC.button @"count" { label: Just "Count", icon: Nothing }
 
-increment :: forall e. e -> { count :: Int } -> { count :: Int }
+increment :: forall click. click -> { count :: Int } -> { count :: Int }
 increment _ r = { count: r.count + 1 }
 
 countCaption :: { count :: Int } -> String
