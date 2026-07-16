@@ -37,7 +37,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = body
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped
   $ with
     { cells: Obj.empty
         # Obj.insert "A0" "Item"    # Obj.insert "B0" "Price" # Obj.insert "C0" "Qty" # Obj.insert "D0" "Total"
@@ -47,7 +47,7 @@ main = body
     , selected: Nothing
     , formula: ""
     }
-  $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
+  $ Semigroupoid.do
   rmap commit $ completed RecordToRecord.do
     MDC.body1 $ lcmap selectedCaption text
     MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }

@@ -14,7 +14,7 @@ import UI (looped, with)
 import Web (body)
 
 main :: Effect Unit
-main = body $ with { celsius: "20" } $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ looped Semigroupoid.do
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ looped $ with { celsius: "20" } Semigroupoid.do
   MDC.filledTextField @"celsius" { floatingLabel: "Celsius" }
   dimap celsiusToFahrenheit fahrenheitToCelsius $
     MDC.filledTextField @"fahrenheit" { floatingLabel: "Fahrenheit" }

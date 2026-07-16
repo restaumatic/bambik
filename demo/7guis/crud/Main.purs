@@ -30,7 +30,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = body
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped
   $ with
     { prefix: ""
     , name: ""
@@ -42,7 +42,7 @@ main = body
         ]
     , selected: Nothing
     }
-  $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped Semigroupoid.do
+  $ Semigroupoid.do
   completed RecordToRecord.do
     MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
     MDC.filledTextField @"name" { floatingLabel: "Name" }

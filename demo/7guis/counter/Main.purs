@@ -12,7 +12,7 @@ import UI (looped, updates, with)
 import Web (body, text)
 
 main :: Effect Unit
-main = body $ with { count: 0 } $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped Semigroupoid.do
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped $ with { count: 0 } Semigroupoid.do
   completed $ MDC.headline4 $ lcmap countCaption text
   updates increment $ MDC.button @"count" { label: Just "Count", icon: Nothing }
 

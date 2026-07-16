@@ -27,8 +27,8 @@ type Booking =
   }
 
 main :: Effect Unit
-main = body $ with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
-  looped RecordToRecord.do
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
+  looped $ with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } RecordToRecord.do
     field @"flightType" $ dimap (\v -> { selected: Just v }) _.selected $
       MDC.select @"selected" { floatingLabel: "Flight type" }
         [ { value: "one-way", label: "one-way flight" }

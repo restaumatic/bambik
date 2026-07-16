@@ -23,7 +23,7 @@ type Timer =
   }
 
 main :: Effect Unit
-main = body $ with { duration: 10.0, elapsed: 0.0 } $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped Semigroupoid.do
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped $ with { duration: 10.0, elapsed: 0.0 } Semigroupoid.do
   completed RecordToRecord.do
     MDC.headline6 $ lcmap gauge text
     MDC.body1 $ lcmap elapsedCaption text

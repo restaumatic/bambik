@@ -31,7 +31,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = body
+main = body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ looped
   $ with
     { circles: []
     , selected: Nothing
@@ -40,7 +40,7 @@ main = body
     , undoStack: []
     , redoStack: []
     }
-  $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ looped Semigroupoid.do
+  $ Semigroupoid.do
   rmap applyDiameter $ completed $
     shownWhen hasSelection $ lcmap diameterField $
       MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
