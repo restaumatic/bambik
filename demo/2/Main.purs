@@ -10,7 +10,7 @@ module Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, forValue, projection)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
@@ -35,7 +35,7 @@ main =
           RecordToRecord.do
             HTML.input "text" # field @"greeting"
             HTML.input "text" # field @"name"
-          HTML.p (HTML.text # lcmap (\r -> { value: r.greeting <> ", " <> r.name <> "!" }))
+          HTML.p (HTML.text # projection (\r -> r.greeting <> ", " <> r.name <> "!") # forValue)
       silence
   ) # with
       { greeting: "Hello"

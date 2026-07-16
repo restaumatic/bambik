@@ -6,7 +6,7 @@ import Data.Array (replicate)
 import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed, forField, projection)
+import Data.Profunctor.Row.RecordToRecord (asField, completed, forField, forValue, projection)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Effect (Effect)
@@ -25,7 +25,7 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ ( Semigroupoid.do
       ( RecordToRecord.do
-          MDC.headline6 (HTML.text # lcmap ({ value: _ } <<< gauge))
+          MDC.headline6 (HTML.text # projection gauge # forValue)
           MDC.body1 RecordToRecord.do
             HTML.text # projection show # forField @"elapsed"
             HTML.staticText "s / "

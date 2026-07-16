@@ -50,7 +50,8 @@
       "Bash(grep -E 'lcmap|text$|text\\\\\\)|text #')",
       "Bash(grep -n 'HTML.text\\\\|\\(text\\\\| text$\\\\| text\\)' test/HelloShutterReel.purs test/RestaurantReel.purs test/Main.purs)",
       "Bash(git commit -q -m 'HTML: text is canonical \\({ value :: String } -> {}\\); formatters map value-records; forField sites drop the _.value bridge *)",
-      "Bash(git commit -q -m 'demos: TextValue sweep — volume cell and counter display drop their show lambdas; countCaption deleted *)"
+      "Bash(git commit -q -m 'demos: TextValue sweep — volume cell and counter display drop their show lambdas; countCaption deleted *)",
+      "Bash(git commit -q -m 'rows: forValue — whole-input adopter pairing with projection; all display lambdas dissolved *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

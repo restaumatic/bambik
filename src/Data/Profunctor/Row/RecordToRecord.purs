@@ -38,6 +38,7 @@ module Data.Profunctor.Row.RecordToRecord
   , feedback
   , asField
   , forField
+  , forValue
   , projection
   , field
   , pempty
@@ -158,6 +159,13 @@ property = prop (Proxy @l)
 -- | `Record.union` — so this is no longer a correctness obligation on
 -- | operands; `field` remains the preferred operand form for its
 -- | annotation-free inference.)
+-- | Adopt a canonically-labeled component for the **whole input**: what
+-- | flows in becomes its `value` — `forField`'s zero-focus sibling
+-- | (`forField @l` reads one field; `forValue` reads everything), for
+-- | displays of a function of the whole model: `text # projection f # forValue`.
+forValue :: forall p a b. Profunctor p => p { value :: a } b -> p a b
+forValue = lcmap { value: _ }
+
 -- | Map the **canonical value** on the input side: adapt a component
 -- | expecting `{ value :: a }` to accept `{ value :: a' }` through a
 -- | projection `a' -> a` — the explicit formatting stage for displays

@@ -47,7 +47,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToRecord (asField, field, forField, projection, tapped)
+import Data.Profunctor.Row.RecordToRecord (asField, field, forField, forValue, projection, tapped)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -148,7 +148,7 @@ main =
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       -- a live view of the form's output: displays every emission and passes it
       -- on (a sibling inside the merge would update on load only)
-      MDC.body1 (HTML.text # lcmap ({ value: _ } <<< summarize)) # debounced # tapped
+      MDC.body1 (HTML.text # projection summarize # forValue) # debounced # tapped
       HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
         MDC.button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
         MDC.button { label: Just "Receipt", icon: Just "file" } # asCase @"printReceipt"

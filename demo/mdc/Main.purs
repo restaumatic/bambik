@@ -45,7 +45,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, forField, projection, tapped)
+import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, forField, forValue, projection, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase, folding)
@@ -178,7 +178,7 @@ main =
           ( Semigroupoid.do
               seeded { volume: 0.0, peak: 0.0 }
               lcmap stepPeak identity
-              MDC.body2 (HTML.text # lcmap ({ value: _ } <<< peakLine)) # tapped
+              MDC.body2 (HTML.text # projection peakLine # forValue) # tapped
           ) # feedback
           MDC.body2 (HTML.text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
         -- the variant model is edited through record-shaped editor state
@@ -225,7 +225,7 @@ main =
               MDC.dataCell $ HTML.staticText "Theme"
               MDC.dataCell (HTML.text # forField @"theme")
         MDC.layoutCell { span: 12 } MDC.divider
-        MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # lcmap ({ value: _ } <<< summarize)) # debounced)
+        MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # projection summarize # forValue) # debounced)
       ) # tapped
       -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
       -- broadcast) — every operand reads the settings record, each emits its
@@ -247,8 +247,8 @@ main =
         MDC.card { caption: Just "Wizard (folding)" }
           ( ( Semigroupoid.do
                 ( RecordToRecord.do
-                    HTML.shownWhen (\r -> r.step == "review") $ MDC.body2 (HTML.text # lcmap ({ value: _ } <<< reviewLine))
-                    HTML.shownWhen (\r -> r.step == "confirm") $ MDC.body2 (HTML.text # lcmap ({ value: _ } <<< confirmLine))
+                    HTML.shownWhen (\r -> r.step == "review") $ MDC.body2 (HTML.text # projection reviewLine # forValue)
+                    HTML.shownWhen (\r -> r.step == "confirm") $ MDC.body2 (HTML.text # projection confirmLine # forValue)
                 ) # tapped
                 HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
                   announce initialStep
@@ -279,7 +279,7 @@ main =
       ( Semigroupoid.do
           seeded resumeZero
           retain identity # dimap splitStatus countUp
-          MDC.body2 (HTML.text # lcmap ({ value: _ } <<< activityLine)) # tapped
+          MDC.body2 (HTML.text # projection activityLine # forValue) # tapped
       ) # unfolding @"resume" # tapped
       -- the statuses: the +→× merge (direction class `VariantToRecord`) —
       -- one receiver per message case
