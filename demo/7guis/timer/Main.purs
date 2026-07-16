@@ -28,9 +28,9 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap gauge)
           MDC.body1 RecordToRecord.do
-            HTML.text # lcmap format # forField @"elapsed"
+            HTML.text # lcmap (toStringWith (fixed 1)) # forField @"elapsed"
             HTML.staticText "s / "
-            HTML.text # lcmap format # forField @"duration"
+            HTML.text # lcmap (toStringWith (fixed 1)) # forField @"duration"
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed
@@ -51,6 +51,3 @@ gauge t =
   let cells = 20
       filled = if t.duration <= 0.0 then cells else min cells (Int.round (t.elapsed / t.duration * Int.toNumber cells))
   in joinWith "" (replicate filled "█") <> joinWith "" (replicate (cells - filled) "░")
-
-format :: Number -> String
-format = toStringWith (fixed 1)
