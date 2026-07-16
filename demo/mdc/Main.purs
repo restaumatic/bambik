@@ -45,14 +45,14 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, tapped)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase, folding)
-import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Profunctor.Row.VariantToRecord (forCase, retain, unfolding)
 import Data.Profunctor.Row.VariantToVariant (iterate)
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Variant (case_, inj, match, on, prj) as Variant
@@ -136,38 +136,41 @@ main =
         MDC.layoutCell { span: 12 } $ MDC.headline6 $ reading @"name" ("Settings — " <> _)
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
-          MDC.filledTextArea @"notes" { columns: 60, rows: 3 }
+          MDC.filledTextArea { columns: 60, rows: 3 } # asField @"notes"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Selection controls" } RecordToRecord.do
-          MDC.checkbox @"subscribed" $ HTML.staticText "Subscribe to the newsletter"
-          MDC.radioButton @"plan"
+          MDC.checkbox (HTML.staticText "Subscribe to the newsletter") # asField @"subscribed"
+          MDC.radioButton
             [ { value: "free", label: "Free plan" }
             , { value: "pro", label: "Pro plan" }
             , { value: "team", label: "Team plan" }
             ]
-          MDC.tooltip { text: "Toggles connectivity" } $ MDC.toggleSwitch @"wifi" { label: "Wi-Fi" }
-          MDC.iconToggle @"dark" { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" }
+            # asField @"plan"
+          MDC.tooltip { text: "Toggles connectivity" } $ MDC.toggleSwitch { label: "Wi-Fi" } # asField @"wifi"
+          MDC.iconToggle { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" } # asField @"dark"
           HTML.staticText "Dark mode"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Chips" } $ MDC.chipSet RecordToRecord.do
-          MDC.filterChip @"favorite" { label: "Favorite" }
-          MDC.filterChip @"archived" { label: "Archived" }
+          MDC.filterChip { label: "Favorite" } # asField @"favorite"
+          MDC.filterChip { label: "Archived" } # asField @"archived"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Segmented buttons" } $
-          MDC.segmentedButton @"size"
+          MDC.segmentedButton
             [ { value: "S", label: "S" }
             , { value: "M", label: "M" }
             , { value: "L", label: "L" }
             ]
+            # asField @"size"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Menus: exposed dropdown" } $
-          MDC.select @"theme" { floatingLabel: "Theme" }
+          MDC.select { floatingLabel: "Theme" }
             [ { value: "light", label: "Light" }
             , { value: "dark", label: "Dark" }
             , { value: "system", label: "System" }
             ]
+            # asField @"theme"
         -- the readout is a `tapped` stage after the slider (`Strong`: `second`
         -- retains the value, the display's echo forwards it): it displays every
         -- value the slider emits and passes it on (a plain record-merge sibling
         -- would update on load only)
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
-          MDC.slider @"volume" { label: "Volume", min: 0.0, max: 100.0, step: Nothing }
+          MDC.slider { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
           -- `feedback` (co-strength `Costrong`, dual of `Strong`): the `peak`
           -- field loops from this stage's output back to its input, invisible
           -- in the stage's outer `{volume} → {volume}` type; `seeded` primes
@@ -189,10 +192,11 @@ main =
         -- (`Profunctor`, contravariant side)
         MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" }
           ( ( RecordToRecord.do
-                MDC.tabBar @"selected"
+                MDC.tabBar
                   [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
                   , { value: "express", label: "Express", icon: Just "bolt" }
                   ]
+                  # asField @"selected"
                 HTML.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField { floatingLabel: "Delivery days" } # asField @"days" # lcmap daysOf)
                 HTML.shownWhen (\r -> r.selected == "express") (MDC.filledTextField { floatingLabel: "Express fee" } # asField @"price" # lcmap priceOf)
             ) # looped # dimap shippingState shippingCase
@@ -229,11 +233,11 @@ main =
       RecordToVariant.do
         MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
           MDC.button { label: Just "Save", icon: Just "save" } # asCase @"save"
-          MDC.fab @"like" { icon: "favorite", label: Just "Like" }
-          MDC.iconButton @"share" { icon: "share", label: "Share" }
+          MDC.fab { icon: "favorite", label: Just "Like" } # asCase @"like"
+          MDC.iconButton { icon: "share", label: "Share" } # asCase @"share"
           MDC.menu { label: "More" } RecordToVariant.do
-            MDC.menuItem @"export" { label: "Export settings" }
-            MDC.menuItem @"reset" { label: "Reset to defaults" }
+            MDC.menuItem { label: "Export settings" } # asCase @"export"
+            MDC.menuItem { label: "Reset to defaults" } # asCase @"reset"
         -- the wizard: `folding` (co-strength `Coresolving`, the retraction of
         -- `Resolving` — a terminating fold) makes this ×→+ operand loop: the
         -- "next" case carries the step state and re-enters silently
@@ -280,12 +284,12 @@ main =
       -- the statuses: the +→× merge (direction class `VariantToRecord`) —
       -- one receiver per message case
       VariantToRecord.do
-        MDC.snackbar @"saved"
-        MDC.snackbar @"liked"
-        MDC.snackbar @"shared"
-        MDC.banner @"exported"
-        MDC.snackbar @"resetDone"
-        MDC.snackbar @"published"
+        MDC.snackbar # forCase @"saved"
+        MDC.snackbar # forCase @"liked"
+        MDC.snackbar # forCase @"shared"
+        MDC.banner # forCase @"exported"
+        MDC.snackbar # forCase @"resetDone"
+        MDC.snackbar # forCase @"published"
       -- the sink: `silence`, the merges' variant-output unit (`pempty`)
       silence
   ) # with unit

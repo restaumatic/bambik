@@ -12,7 +12,7 @@
 -- | of the code maps 1-1 to the order of the PUI, with no inline type
 -- | annotations: MDC components are label-indexed row profunctors already
 -- | (`MDC.filledTextField @"total"` edits one field, `MDC.button @"submit"`
--- | fires one event case, `MDC.snackbar @"orderSubmitted"` shows one
+-- | fires one event case, `MDC.snackbar # forCase @"orderSubmitted"` shows one
 -- | message case), and every remaining row is closed either by a
 -- | label-pinning helper (`field` for nesting sub-composites, `reading`)
 -- | or by a model-function signature; inference propagates from the
@@ -51,6 +51,7 @@ import Data.Profunctor.Row.RecordToRecord (asField, field, tapped)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToRecord (forCase)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
 import Data.Symbol (class IsSymbol)
@@ -114,11 +115,12 @@ main =
         -- retain every pane's payload — switching away and back restores it
         MDC.card { caption: Just "Fulfillment" }
           ( ( RecordToRecord.do
-                MDC.tabBar @"selected"
+                MDC.tabBar
                   [ { value: "dineIn", label: "Dine in", icon: Nothing }
                   , { value: "takeaway", label: "Takeaway", icon: Nothing }
                   , { value: "delivery", label: "Delivery", icon: Nothing }
                   ]
+                  # asField @"selected"
                 HTML.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField { floatingLabel: "Table" } # asField @"table" # lcmap tableOf)
                 HTML.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField { floatingLabel: "Time" } # asField @"time" # lcmap timeOf)
                 HTML.shownWhen (\r -> r.selected == "delivery")
@@ -135,15 +137,15 @@ main =
               -- a unit-payload variant needs no panes and no loop — the bracket
               -- around a single selection component suffices (it echoes, so no
               -- `identity` echo wire either)
-              MDC.segmentedButton @"selected"
+              MDC.segmentedButton
                 [ { value: "cash", label: "Cash" }
                 , { value: "card", label: "Card" }
                 ]
-                # dimap methodState methodCase # field @"method"
+                # asField @"selected" # dimap methodState methodCase # field @"method"
               MDC.filledTextField { floatingLabel: "Paid" } # asField @"paid"
               MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
           ) # field @"payment"
-        MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
+        MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       -- a live view of the form's output: displays every emission and passes it
       -- on (a sibling inside the merge would update on load only)
       MDC.body1 (HTML.text # lcmap summarize) # debounced # tapped
@@ -154,9 +156,9 @@ main =
         MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"submit") submitOrder Variant.case_)
         MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"printReceipt") printReceipt Variant.case_)
       VariantToRecord.do
-        MDC.snackbar @"orderSubmitted"
-        MDC.snackbar @"submissionFailed"
-        MDC.snackbar @"receiptPrinted"
+        MDC.snackbar # forCase @"orderSubmitted"
+        MDC.snackbar # forCase @"submissionFailed"
+        MDC.snackbar # forCase @"receiptPrinted"
       silence
   ) # with unit
 

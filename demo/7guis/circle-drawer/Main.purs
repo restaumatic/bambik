@@ -6,7 +6,7 @@ import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (completed)
+import Data.Profunctor.Row.RecordToRecord (asField, completed)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.String (joinWith)
@@ -35,7 +35,7 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
       HTML.shownWhen hasSelection
-        ( MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
+        ( MDC.slider { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
             # lcmap diameterField
         ) # completed # rmap applyDiameter
       ( RecordToVariant.do

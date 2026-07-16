@@ -7,8 +7,8 @@ import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (asField, completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
@@ -28,7 +28,7 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap gauge)
           MDC.body1 (HTML.text # lcmap elapsedCaption)
-          MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
+          MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed
       every (Milliseconds 100.0) tick
       MDC.button { label: Just "Reset", icon: Just "replay" } # updates reset

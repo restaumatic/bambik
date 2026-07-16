@@ -45,6 +45,7 @@ module Data.Profunctor.Row.VariantToRecord
   , discard
   , pempty
   , caseToProperty
+  , forCase
   , caseToRecord
   , class Retaining
   , retain
@@ -57,12 +58,12 @@ module Data.Profunctor.Row.VariantToRecord
   where
 
 import Data.Either (Either(..), either)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, expand, inj, on)
+import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
@@ -187,6 +188,13 @@ discard :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
   OwnedRecordOutputs o1 o2 o o1l o2l =>
   p [ | i1 ] { | o1 } -> (Unit -> p [ | i2 ] { | o2 }) -> p [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
+
+-- | Adopt a **canonically-labeled** status component (`[ event :: a ]` in,
+-- | the citizenship-carrying interface) for business case `l`: renames the
+-- | incoming case, output untouched — `lcmap`-only, the `asCase` twin at
+-- | `+ → ×` (statuses receive; events emit).
+forCase :: forall @l p a o s. IsSymbol l => Profunctor p => Cons l a () s => p [ event :: a ] o -> p [ | s ] o
+forCase = lcmap (on (Proxy @l) (inj (Proxy @"event")) case_)
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
 -- | for this direction (the dual of `resolveProperty`). Where `case_`

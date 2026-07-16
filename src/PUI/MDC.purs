@@ -140,8 +140,8 @@ button config = recordToCase @"event" (containedButton config)
 -- | input, so it echoes unconditionally and sits happily inside `looped`
 -- | ensembles (selection field + `shownWhen` panes). One tab per option;
 -- | `MDCTab` drives the activation indicator.
-tabBar :: forall @l a s. IsSymbol l => Eq a => Cons l a () s => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web { | s } { | s }
-tabBar options = field @l (tabBarLeaf options)
+tabBar :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web { value :: a } { value :: a }
+tabBar options = field @"value" (tabBarLeaf options)
 
 tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
 tabBarLeaf options =
@@ -197,8 +197,8 @@ containedButton { label, icon } =
 -- | The `×→+` event FAB: like `button @l`, reads the whole record it is
 -- | shown and fires it as event case `l` on click. A `label` makes it the
 -- | extended FAB.
-fab :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: Maybe String } -> PUI Web { | r } [ | s ]
-fab config = recordToCase @l $
+fab :: forall r. { icon :: String, label :: Maybe String } -> PUI Web { | r } [ event :: { | r } ]
+fab config = recordToCase @"event" $
   HTML.button >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-fab__ripple" $ pempty
     span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText config.icon
@@ -212,16 +212,16 @@ fab config = recordToCase @l $
 
 -- | The `×→+` event icon button (the MD2 icon button; for the toggling
 -- | variant see the `×→×` editor `iconToggle @l`).
-iconButton :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: String } -> PUI Web { | r } [ | s ]
-iconButton config = recordToCase @l $
+iconButton :: forall r. { icon :: String, label :: String } -> PUI Web { | r } [ event :: { | r } ]
+iconButton config = recordToCase @"event" $
   HTML.button >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-icon-button__ripple" $ pempty
     staticText config.icon
 
 -- | The `×→+` event list item for the `menu` ocular: fires the record it
 -- | is shown as event case `l` on click (the menu closes itself).
-menuItem :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: String } -> PUI Web { | r } [ | s ]
-menuItem config = recordToCase @l (menuItemLeaf config.label)
+menuItem :: forall r. { label :: String } -> PUI Web { | r } [ event :: { | r } ]
+menuItem config = recordToCase @"event" (menuItemLeaf config.label)
 
 -- the raw list-item button — scalar, so private (same wiring as
 -- `HTML.button`: replay the last value fed on click, `li` chrome)
@@ -276,20 +276,20 @@ textFieldWith leaf { floatingLabel } =
     id = unsafePerformEffect uniqueId
     helperId = unsafePerformEffect uniqueId
 
-filledTextArea :: forall @l s. IsSymbol l => Cons l String () s => { columns :: Int, rows :: Int } -> PUI Web { | s } { | s }
+filledTextArea :: { columns :: Int, rows :: Int } -> PUI Web { value :: String } { value :: String }
 filledTextArea { columns, rows } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ wrap do
     _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
-    w <- unwrap (field @l $ span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label")
+    w <- unwrap (field @"value" $ span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label")
     _ <- unwrap (span >>> cl "mdc-line-ripple" $ pempty)
     pure w
 
 -- | Label content is chrome (`{} → {}`, announcing).
-checkbox :: forall @l a s. IsSymbol l => Cons l (Maybe a) () s => Default a => PUI Web {} {} -> PUI Web { | s } { | s }
+checkbox :: forall a. Default a => PUI Web {} {} -> PUI Web { value :: Maybe a } { value :: Maybe a }
 checkbox labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ wrap do
     w <- unwrap $ div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ wrap do
-      w' <- unwrap (field @l $ checkboxInput # cl "mdc-checkbox__native-control" # "id" := id)
+      w' <- unwrap (field @"value" $ checkboxInput # cl "mdc-checkbox__native-control" # "id" := id)
       _ <- unwrap (div >>> cl "mdc-checkbox__background" $ RecordToRecord.do
         staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
@@ -315,8 +315,8 @@ checkbox labelContent =
 -- | field the bare selection (`a`). One radio per option; the shared
 -- | native `name` gives browser-level exclusivity and the CSS keys off
 -- | `:checked`, so each option's emission is its statically known value.
-radioButton :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => Array { value :: a, label :: String } -> PUI Web { | si } { | so }
-radioButton options = field @l (radioLeaf options)
+radioButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
+radioButton options = field @"value" (radioLeaf options)
 
 radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 radioLeaf options =
@@ -354,8 +354,8 @@ radioLeaf options =
 
 -- | The MD2 Switch, a `×→×` `Boolean` editor (the name `switch` was
 -- | already taken by the `+→+` case selector).
-toggleSwitch :: forall @l s. IsSymbol l => Cons l Boolean () s => { label :: String } -> PUI Web { | s } { | s }
-toggleSwitch config = field @l (switchLeaf config.label)
+toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
+toggleSwitch config = field @"value" (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8px;" $ wrap do
@@ -396,8 +396,8 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | The `×→×` `Number` editor. A `step` makes it the discrete slider.
 -- | Mid-drag values emit continuously (like mid-typing text); a consumer
 -- | that doesn't want the burst wraps its stage in `debounced`.
-slider :: forall @l s. IsSymbol l => Cons l Number () s => { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { | s } { | s }
-slider config = field @l (sliderLeaf config)
+slider :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { value :: Number } { value :: Number }
+slider config = field @"value" (sliderLeaf config)
 
 sliderLeaf :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
 sliderLeaf config = wrap do
@@ -445,8 +445,8 @@ sliderLeaf config = wrap do
 -- | `radioButton @l`: the input field holds the selection state
 -- | (`Maybe a`), the output field the bare selection (`a`). Options are
 -- | design-system config.
-select :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { | si } { | so }
-select config options = field @l (selectLeaf config options)
+select :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
+select config options = field @"value" (selectLeaf config options)
 
 selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 selectLeaf config options = wrap do
@@ -505,8 +505,8 @@ selectLeaf config options = wrap do
 -- | The MD2 single-select segmented button, a `×→×` editor. Type-changing
 -- | like `select @l`; selection styling is CSS-class-driven, so the
 -- | wiring is hand-rolled per segment.
-segmentedButton :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => Array { value :: a, label :: String } -> PUI Web { | si } { | so }
-segmentedButton options = field @l (segmentedLeaf options)
+segmentedButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
+segmentedButton options = field @"value" (segmentedLeaf options)
 
 segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 segmentedLeaf options =
@@ -532,8 +532,8 @@ segmentedLeaf options =
 
 -- | The MD2 filter chip, a `×→×` `Boolean` editor. Selection styling is
 -- | CSS-class-driven. Group chips in the `chipSet` ocular.
-filterChip :: forall @l s. IsSymbol l => Cons l Boolean () s => { label :: String } -> PUI Web { | s } { | s }
-filterChip config = field @l (chipLeaf config.label)
+filterChip :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
+filterChip config = field @"value" (chipLeaf config.label)
 
 -- deprecated `mdc-chip` markup on purpose: the prebuilt v14 CSS bundle has
 -- no `mdc-evolution-chip` rules at all
@@ -577,8 +577,8 @@ chipLeaf lbl = wrap do
 
 -- | The MD2 icon button (toggle variant), a `×→×` `Boolean` editor —
 -- | `onIcon` shows while `true`, `offIcon` while `false`.
-iconToggle :: forall @l s. IsSymbol l => Cons l Boolean () s => { onIcon :: String, offIcon :: String, label :: String } -> PUI Web { | s } { | s }
-iconToggle config = field @l (iconToggleLeaf config)
+iconToggle :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
+iconToggle config = field @"value" (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = wrap do
@@ -755,8 +755,8 @@ simpleDialog { title, confirm } content =
 
 -- | The `+→×` status receiver: shows message case `l` in a snackbar,
 -- | contributing no fields (`text` echoes its `{}`, so it announces).
-snackbar :: forall @l r. IsSymbol l => Cons l String () r => PUI Web [ | r ] {}
-snackbar = snackbarContainer $ lcmap (Variant.on (Proxy @l) identity Variant.case_) text
+snackbar :: PUI Web [ event :: String ] {}
+snackbar = snackbarContainer $ lcmap (Variant.on (Proxy @"event") identity Variant.case_) text
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -771,8 +771,8 @@ snackbarContainer content =
 -- | The `+→×` status receiver in banner clothing: shows message case `l`
 -- | in an MDC banner, contributing no fields. Unlike the auto-dismissing
 -- | snackbar it stays until its own Dismiss action (foundation-handled).
-banner :: forall @l r. IsSymbol l => Cons l String () r => PUI Web [ | r ] {}
-banner = bannerContainer $ lcmap (Variant.on (Proxy @l) identity Variant.case_) text
+banner :: PUI Web [ event :: String ] {}
+banner = bannerContainer $ lcmap (Variant.on (Proxy @"event") identity Variant.case_) text
 
 bannerContainer :: Ocular (PUI Web)
 bannerContainer content =

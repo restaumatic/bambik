@@ -11,6 +11,7 @@ import Data.Profunctor.Row.RecordToRecord (asField, completed, field)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToRecord (forCase)
 import Data.String (Pattern(..), split)
 import Data.Variant (match) as Variant
 import Effect (Effect)
@@ -30,11 +31,11 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
   ( RecordToRecord.do
-      MDC.select @"selected" { floatingLabel: "Flight type" }
+      MDC.select { floatingLabel: "Flight type" }
         [ { value: "one-way", label: "one-way flight" }
         , { value: "return", label: "return flight" }
         ]
-        # dimap (\v -> { selected: Just v }) _.selected # field @"flightType"
+        # dimap (\v -> { value: Just v }) _.value # field @"flightType"
       MDC.filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
       HTML.shownWhen isReturn
         ( MDC.filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
@@ -46,8 +47,8 @@ main =
     MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
   MDC.indeterminateLinearProgress # action (Variant.match { book: bookFlight })
   VariantToRecord.do
-    MDC.snackbar @"booked"
-    MDC.snackbar @"rejected"
+    MDC.snackbar # forCase @"booked"
+    MDC.snackbar # forCase @"rejected"
 
 validationText :: Booking -> String
 validationText b = case validate b of

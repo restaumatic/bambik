@@ -10,13 +10,13 @@ module Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import PUI (PUI, silence, with)
-import PUI.HTML ((:=))
 import PUI.HTML (a, body, div, input, li, p, staticHTML, staticText, text, ul) as HTML
+import PUI.HTML ((:=))
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
