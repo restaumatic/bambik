@@ -49,7 +49,9 @@
       <pre><code id="src" class="language-haskell">loading…</code></pre>
     </section>
     <script>
-      const fmt = (n) => n.toLocaleString("en-US");
+      const fmt = (n) => n < 1024 ? n + " B"
+        : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + " kB"
+        : (n / 1048576).toFixed(1).replace(/\.0$/, "") + " MB";
       Promise.all([
         fetch("Main.purs").then(r => r.text()),
         fetch("bundle.js", { method: "HEAD" }).then(r => r.headers.get("content-length")),
@@ -59,8 +61,8 @@
         if (window.hljs) hljs.highlightElement(el);
         const srcBytes = new TextEncoder().encode(src).length;
         document.getElementById("src-heading").textContent =
-          "PureScript source (" + fmt(srcBytes) + " bytes of source code, "
-            + (bundleBytes ? fmt(+bundleBytes) + " bytes of compiled code)" : "compiled size unavailable)");
+          "PureScript source (" + fmt(srcBytes) + " of source code, "
+            + (bundleBytes ? fmt(+bundleBytes) + " of compiled code)" : "compiled size unavailable)");
       });
     </script>
   </body>
