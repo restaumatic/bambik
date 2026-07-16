@@ -61,9 +61,9 @@
         el.textContent = src;
         if (window.hljs) hljs.highlightElement(el);
         const srcBytes = new TextEncoder().encode(src).length;
-        document.getElementById("src-heading").textContent =
-          "PureScript source (" + fmt(srcBytes)
-            + (bundleBytes ? ", " + fmt(+bundleBytes) + " compiled)" : ")");
+        document.getElementById("src-heading").innerHTML =
+          'PureScript <a href="Main.purs">source</a> (' + fmt(srcBytes)
+            + (bundleBytes ? ', ' + fmt(+bundleBytes) + ' <a href="bundle.js">compiled</a>)' : ")");
       });
     </script>
   </body>
