@@ -13,7 +13,7 @@ Do `export PATH=$PWD/node_modules/.bin:$PATH` and then `spago build` (tests: `sp
 ## Building & Deploying Demos
 
 1. Verify the forked compiler: `node_modules/.bin/purs --version` must report `0.15.16 [development build ...]`; if it shows stock `0.15.15`, run `npm install` (stock purs fails with "Module Prim.Variant was not found").
-2. Bundle one-off (the npm `demo-*` scripts are watch-mode, not for deploys): `spago bundle-app --main Main --to demo/<d>/bundle.js --path "demo/<d>/**/*.purs"` for each of `1`, `2`, `mdc`.
+2. Bundle one-off (the npm `demo-*` scripts are watch-mode, not for deploys): `spago bundle-app --minify --main Main --to demo/<d>/bundle.js --path "demo/<d>/**/*.purs"` for each of `1`, `2`, `mdc`.
 3. Deploy: `npm run deploy-demo-1|deploy-demo-2|deploy-demo-mdc` — each scps the demo dir to host `xyz` (root@erykciepiela.xyz, see `~/.ssh/config`) at `/var/www/html/bambik/demo/`.
 4. Verify: `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP only).
 

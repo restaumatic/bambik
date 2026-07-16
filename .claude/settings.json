@@ -21,7 +21,8 @@
       "Bash(git commit -m 'chore: drop stray settings tmp file, ignore the pattern *)",
       "Bash(git commit -m 'fix: repair .gitignore corrupted by newline-less append; untrack bundles *)",
       "Bash(git commit -m 'feat\\(7guis\\): source/compiled byte counts in the source heading *)",
-      "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/counter/bundle.js)"
+      "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/counter/bundle.js)",
+      "Bash(git commit -m 'build: minified demo bundles \\(spago bundle-app --minify\\) *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
