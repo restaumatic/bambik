@@ -5,33 +5,24 @@ import Prelude
 import Data.Array (catMaybes, range)
 import Data.Char (fromCharCode, toCharCode)
 import Data.Either (Either(..))
-import Data.Foldable (foldl, for_)
+import Data.Foldable (foldl)
 import Data.Int (fromString, round, toNumber) as Int
 import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.String (Pattern(..), Replacement(..), joinWith, replaceAll)
+import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
-import Effect.Class (liftEffect)
-import Effect.Ref as Ref
-import Control.Monad.State (gets)
 import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (UI, looped, silence)
-import Web (Node, Web, body, staticHTML, text)
-
-foreign import setInnerHTML :: Node -> String -> Effect Unit
-foreign import onCellClick :: Node -> (String -> Effect Unit) -> Effect Unit
+import UI (UI, looped, updates)
+import Web (Web, bodyWith, escapeHtml, onKeyClick, text, viewEvents)
 
 cols :: Int
 cols = 26
@@ -46,18 +37,13 @@ type Model =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } Semigroupoid.do
-  lcmap (const initial) $ looped Semigroupoid.do
-    RecordToRecord.do
-      MDC.body1 $ lcmap (\(m :: Model) -> "Cell " <> fromMaybe "—" m.selected) text
-      MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
-      field @"cells" identity
-      field @"selected" identity
-    RecordToVariant.do
-      grid
-      (recordToCase @"state" identity :: UI Web Model [ state :: Model ])
-    rmap handle identity
-  silence
+main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
+  -- committing the formula field to the selected cell rides on every
+  -- form emission
+  rmap commit $ completed RecordToRecord.do
+    MDC.body1 $ lcmap (\(m :: Model) -> "Cell " <> fromMaybe "—" m.selected) text
+    MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
+  updates handle grid
 
 initial :: Model
 initial =
@@ -70,33 +56,26 @@ initial =
   , formula: ""
   }
 
-handle :: [ cellClicked :: { key :: String, model :: Model }, state :: Model ] -> Model
-handle = Variant.case_
-  # Variant.on (Proxy @"cellClicked") (\{ key, model: m } ->
-      m { selected = Just key, formula = fromMaybe "" (Obj.lookup key m.cells) })
-  # Variant.on (Proxy @"state") (\m -> case m.selected of
-      Just k | Obj.lookup k m.cells /= Just m.formula ->
-        m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
-      _ -> m)
+handle :: [ cellClicked :: String ] -> Model -> Model
+handle e m = e # (Variant.case_
+  # Variant.on (Proxy @"cellClicked") (\key ->
+      m { selected = Just key, formula = fromMaybe "" (Obj.lookup key m.cells) }))
+
+commit :: Model -> Model
+commit m = case m.selected of
+  Just k | Obj.lookup k m.cells /= Just m.formula ->
+    m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
+  _ -> m
 
 -- ===================================================================
 -- The grid leaf: model in, cell clicks out
 -- ===================================================================
 
-grid :: UI Web Model [ cellClicked :: { key :: String, model :: Model } ]
-grid = wrap do
-  _ <- unwrap (staticHTML """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>""")
-  node <- gets _.sibling
-  lastRef <- liftEffect $ Ref.new initial
-  pure
-    { toUser: \m -> do
-        Ref.write m lastRef
-        setInnerHTML node (renderTable m)
-    , fromUser: \prop ->
-        onCellClick node \key -> do
-          m <- Ref.read lastRef
-          void $ prop (.cellClicked { key, model: m })
-    }
+grid :: UI Web Model [ cellClicked :: String ]
+grid = viewEvents
+  """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
+  renderTable
+  (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
 
 renderTable :: Model -> String
 renderTable m =
@@ -109,16 +88,13 @@ renderTable m =
             let key = colName c <> show r
                 sel = m.selected == Just key
             in "<td data-key=\"" <> key <> "\" style=\"" <> tdStyle <> (if sel then "background: #cde;" else "") <> "\">"
-                 <> escape (fromMaybe "" (Obj.lookup key values)) <> "</td>") <> "</tr>"
+                 <> escapeHtml (fromMaybe "" (Obj.lookup key values)) <> "</td>") <> "</tr>"
   in "<table style=\"border-collapse: collapse; font-size: 13px;\">" <> header
        <> joinWith "" (range 0 (rows - 1) <#> row) <> "</table>"
   where
   thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
 
-escape :: String -> String
-escape s = replaceAll (Pattern "<") (Replacement "&lt;")
-  (replaceAll (Pattern "&") (Replacement "&amp;") s)
 
 -- ===================================================================
 -- Evaluation: every cell computed, refs resolved recursively

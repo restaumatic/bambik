@@ -41,6 +41,7 @@ module Data.Profunctor.Row.RecordToRecord
   , focusRecord
   , property
   , tapped
+  , completed
   )
   where
 
@@ -52,10 +53,11 @@ import Data.Profunctor.Strong (class Strong, first, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons, class Lacks, class Nub, class Union)
+import Prim.RowList (class RowToList)
 import Record (get, insert, union) as Record
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
+import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
@@ -164,6 +166,29 @@ field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 -- | would replay the retained upstream value on every edit.
 tapped :: forall p s x. Strong p => p s x -> p s s
 tapped display = dimap (\s -> Tuple s s) fst (second display)
+
+-- | **Complete** a widget's output to its full input row: fields the
+-- | widget doesn't produce are carried from the retained input, so a merge
+-- | of editors covering only part of the model needs no `field @l identity`
+-- | echo wires to close the loop. The emission is trimmed to its declared
+-- | row first (the `FieldNames` evidence), so the left-biased union is
+-- | runtime-exact — the same guarantee the merge gates give.
+completed
+  :: forall p n nx i o u ol
+   . Strong p
+  => Union n nx i
+  => Union o i u
+  => Nub u i
+  => RowToList o ol
+  => FieldNames ol o o
+  => p { | n } { | o }
+  -> p { | i } { | i }
+completed w = dimap (\i -> Tuple i i) (\(Tuple o i) -> overlay (exactRow o) i) (first (widenRecordInput w))
+  where
+  -- runtime-exact: keys of o ⊆ keys of i, and `exactRow` trimmed o,
+  -- so the union's runtime key set is exactly i's (justifying the Nub)
+  overlay :: { | o } -> { | i } -> { | i }
+  overlay o i = unsafeCoerce (Record.union o i)
 
 -- | The `×`-diagonal **trace at row granularity**, over ecosystem
 -- | `Costrong`: the **state** sub-record `fb` of the output loops back into
