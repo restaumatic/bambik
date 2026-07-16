@@ -39,5 +39,5 @@ to generate this file without the comments in this block.
   , "variant"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs", "showcase/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }

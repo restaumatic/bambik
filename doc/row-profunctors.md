@@ -416,7 +416,7 @@ Source locations cited in this document:
   - `src/Data/Profunctor/Row/RecordToVariant.purs`
   - `src/Data/Profunctor/Row/VariantToRecord.purs`
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
-- Merge examples: `src/Data/Profunctor/Row/Example.purs` (phantom carrier) + `showcase/App.purs` (four-direction pipeline)
+- Merge examples: `src/Data/Profunctor/Row/Example.purs` (phantom carrier)
 - Row strengths and their combinators (each beside its merge):
   - `RecordToRecord.purs` — `focusRecord` (on `Strong`); `property` (on `Strong`) / `field` (on bare `Profunctor`); `tapped` (on `Strong` — the display tap); `feedback` (on `Costrong` — the ×-trace row form)
   - `VariantToVariant.purs` — `case_` (on `Choice`, via `prismE`); `splitVariant`; `iterate` (on ecosystem `Cochoice` — the `+`-diagonal trace at row granularity)
