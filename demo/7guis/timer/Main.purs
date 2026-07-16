@@ -13,7 +13,7 @@ import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (every, looped, updates, with)
-import PUI.HTML (body, staticText, text) as HTML
+import PUI.HTML (body, reading, staticText, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, headline6, slider) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -28,9 +28,9 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap gauge)
           MDC.body1 RecordToRecord.do
-            HTML.text # lcmap format # lcmap _.elapsed
+            HTML.reading @"elapsed" format
             HTML.staticText "s / "
-            HTML.text # lcmap format # lcmap _.duration
+            HTML.reading @"duration" format
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed

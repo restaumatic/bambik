@@ -61,7 +61,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, announce, debounced, looped, seeded, silence, with)
-import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
+import PUI.HTML (attr, body, div, reading, shownWhen, staticText, text) as HTML
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, slider, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
 import PUI.Web (Web)
 import Prim.Row (class Cons)
@@ -133,7 +133,7 @@ main =
       -- own disjoint output fields, inputs may overlap; label-indexed MDC
       -- components are `field @l`-shaped inside (bare `Profunctor`)
       MDC.layoutGrid RecordToRecord.do
-        MDC.layoutCell { span: 12 } $ MDC.headline6 $ reading @"name" ("Settings — " <> _)
+        MDC.layoutCell { span: 12 } $ MDC.headline6 $ HTML.reading @"name" ("Settings — " <> _)
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
           MDC.filledTextArea { columns: 60, rows: 3 } # asField @"notes"
@@ -180,7 +180,7 @@ main =
               lcmap stepPeak identity
               MDC.body2 (HTML.text # lcmap peakLine) # tapped
           ) # feedback
-          MDC.body2 (reading @"volume" (\v -> "Volume " <> show v)) # tapped
+          MDC.body2 (HTML.reading @"volume" (\v -> "Volume " <> show v)) # tapped
         -- the variant model is edited through record-shaped editor state
         -- (`ShippingState` — all payloads persist, the merge gates retain them):
         -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
@@ -217,13 +217,13 @@ main =
           MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Name"
-              MDC.dataCell $ reading @"name" identity
+              MDC.dataCell $ HTML.reading @"name" identity
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Volume"
-              MDC.dataCell $ reading @"volume" show
+              MDC.dataCell $ HTML.reading @"volume" show
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Theme"
-              MDC.dataCell $ reading @"theme" identity
+              MDC.dataCell $ HTML.reading @"theme" identity
         MDC.layoutCell { span: 12 } MDC.divider
         MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # lcmap summarize) # debounced)
       ) # tapped
@@ -475,9 +475,3 @@ publishFlaky r = do
       pure $ .publish r { attempt = r.attempt + 1 }
     else pure $ .published ("Published " <> r.name <> " on the " <> r.plan <> " plan on attempt " <> show (r.attempt + 1))
 
--- row-generic helpers (candidates for the library once proven here)
-
--- | A single-field display as a record-merge operand: reads one field,
--- | contributes nothing.
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
-reading render = lcmap (\r -> render (get (Proxy @l) r)) HTML.text

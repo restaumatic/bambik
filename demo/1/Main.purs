@@ -61,7 +61,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, debounced, looped, silence, with)
-import PUI.HTML (attr, body, div, shownWhen, text) as HTML
+import PUI.HTML (attr, body, div, reading, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
 import PUI.Web (Web)
 import Prim.Row (class Cons)
@@ -99,7 +99,7 @@ main =
   HTML.body $ ( MDC.elevation20 Semigroupoid.do
       MDC.indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
-        MDC.headline6 $ reading @"shortId" ("Order " <> _)
+        MDC.headline6 $ HTML.reading @"shortId" ("Order " <> _)
         MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           MDC.filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
@@ -126,7 +126,7 @@ main =
                 HTML.shownWhen (\r -> r.selected == "delivery")
                   ( ( RecordToRecord.do
                         MDC.filledTextField { floatingLabel: "Address" } # asField @"address"
-                        MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
+                        MDC.body1 $ HTML.reading @"address" \address -> "Distance " <> distanceKm address <> " km"
                     ) # lcmap addressOf
                   )
             ) # looped # dimap fulfillmentState fulfillmentCase
@@ -143,7 +143,7 @@ main =
                 ]
                 # asField @"selected" # dimap methodState methodCase # field @"method"
               MDC.filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
+              MDC.body1 $ HTML.reading @"method" \method -> "Paying by " <> methodText method
           ) # field @"payment"
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       -- a live view of the form's output: displays every emission and passes it
@@ -294,12 +294,6 @@ printReceipt order = do
   liftEffect $ log $ "printed receipt for order " <> order.orderId
   pure $ .receiptPrinted ("Receipt for order " <> order.shortId <> " printed")
 
--- row-generic helpers (candidates for the library once proven here)
-
--- | A single-field display as a record-merge operand: reads one field,
--- | contributes nothing.
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
-reading render = lcmap (\r -> render (get (Proxy @l) r)) HTML.text
 
 
 

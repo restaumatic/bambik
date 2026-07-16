@@ -37,6 +37,7 @@ module PUI.HTML
   , p
   , path
   , radioButton
+  , reading
   , runWidgetInNode
   , runWidgetInSelectedNode
   , shownWhen
@@ -67,11 +68,16 @@ import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
+import Data.Profunctor (lcmap)
+import Data.Symbol (class IsSymbol)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Prim.Row (class Cons)
+import Record (get) as Record
+import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
 import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
@@ -446,6 +452,12 @@ variant w = wrap do
     , fromUser
     }
 
+
+-- | A single-field display: reads field `l` through a render function,
+-- | contributes nothing — the closed singleton row makes it annotation-free
+-- | as a record-merge operand ("`text` for field `l`").
+reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
+reading render = lcmap (\r -> render (Record.get (Proxy @l) r)) text
 
 -- | Value-dependent class for the last-built element: the class is present
 -- | exactly while the predicate holds for the value fed. (`shownWhen`'s
