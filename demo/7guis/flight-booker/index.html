@@ -6,7 +6,22 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <title>Bambik · 7GUIs · Flight Booker</title>
     <script type="module" src="bundle.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/haskell.min.js"></script>
   </head>
   <body>
+    <section style="max-width: 900px; margin: 40px auto; padding: 0 16px; font-family: Roboto, sans-serif;">
+      <h3 style="border-top: 1px solid #ddd; padding-top: 16px; color: #555;">Source &mdash; Main.purs</h3>
+      <pre style="overflow-x: auto; background: #f6f8fa; padding: 12px; border-radius: 6px; font-size: 13px;"><code id="src" class="language-haskell">loading&hellip;</code></pre>
+      <p><a href="../">&larr; all 7GUIs tasks</a></p>
+    </section>
+    <script>
+      fetch("Main.purs").then(r => r.text()).then(src => {
+        const el = document.getElementById("src");
+        el.textContent = src;
+        if (window.hljs) hljs.highlightElement(el);
+      });
+    </script>
   </body>
 </html>
