@@ -150,6 +150,13 @@ export function removeAllNodesBetweenSiblings(from) {
   };
 }
 
+// isFocused :: Node -> IOSync Boolean
+export function isFocused(node) {
+  return function () {
+    return document.activeElement === node;
+  };
+}
+
 // getValue :: Node -> IOSync String
 export function getValue(node) {
   return function () {
