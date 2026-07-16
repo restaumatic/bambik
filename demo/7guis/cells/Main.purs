@@ -20,7 +20,7 @@ import Effect (Effect)
 import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
 import PUI (PUI, looped, updates, with)
 import PUI.MDC as MDC
-import PUI.Web (Web, body, escapeHtml, onKeyClick, text, viewEvents)
+import PUI.Web as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
@@ -37,7 +37,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped
+main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped
   $ with
     { cells: Obj.empty
         # Obj.insert "A0" "Item"    # Obj.insert "B0" "Price" # Obj.insert "C0" "Qty" # Obj.insert "D0" "Total"
@@ -49,7 +49,7 @@ main = body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped
     }
   $ Semigroupoid.do
   ( completed RecordToRecord.do
-      MDC.body1 $ text # lcmap selectedCaption
+      MDC.body1 $ Web.text # lcmap selectedCaption
       MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
   )
     # rmap commit
@@ -66,11 +66,11 @@ commit m = case m.selected of
     m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
   _ -> m
 
-grid :: PUI Web Model [ cellClicked :: String ]
-grid = viewEvents
+grid :: PUI Web.Web Model [ cellClicked :: String ]
+grid = Web.viewEvents
   """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
   renderTable
-  (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
+  (\node emit -> Web.onKeyClick node \key -> emit (.cellClicked key))
 
 renderTable :: Model -> String
 renderTable m =
@@ -83,7 +83,7 @@ renderTable m =
             let key = colName c <> show r
                 sel = m.selected == Just key
             in "<td data-key=\"" <> key <> "\" style=\"" <> tdStyle <> (if sel then "background: #cde;" else "") <> "\">"
-                 <> escapeHtml (fromMaybe "" (Obj.lookup key values)) <> "</td>") <> "</tr>"
+                 <> Web.escapeHtml (fromMaybe "" (Obj.lookup key values)) <> "</td>") <> "</tr>"
   in "<table style=\"border-collapse: collapse; font-size: 13px;\">" <> header
        <> joinWith "" (range 0 (rows - 1) <#> row) <> "</table>"
   where

@@ -8,12 +8,12 @@ import Data.Profunctor.Row.RecordToRecord (completed)
 import Effect (Effect)
 import PUI (looped, updates, with)
 import PUI.MDC as MDC
-import PUI.Web (body, text)
+import PUI.Web as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped $ with { count: 0 } Semigroupoid.do
-  completed $ MDC.headline4 $ text # lcmap countCaption
+main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped $ with { count: 0 } Semigroupoid.do
+  completed $ MDC.headline4 $ Web.text # lcmap countCaption
   updates increment $ MDC.button @"count" { label: Just "Count", icon: Nothing }
 
 increment :: forall click. click -> { count :: Int } -> { count :: Int }

@@ -15,7 +15,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
 import PUI.MDC as MDC
-import PUI.Web (Web, body, escapeHtml, onKeyClick, viewEvents)
+import PUI.Web as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
@@ -30,7 +30,7 @@ type Model =
   }
 
 main :: Effect Unit
-main = body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped
+main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped
   $ with
     { prefix: ""
     , name: ""
@@ -73,15 +73,15 @@ handle e m = e # (Variant.case_
       Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
       Nothing -> m))
 
-listBox :: PUI Web Model [ picked :: Int ]
-listBox = viewEvents
+listBox :: PUI Web.Web Model [ picked :: Int ]
+listBox = Web.viewEvents
   """<ul class="mdc-deprecated-list" style="border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"></ul>"""
   render
-  (\node emit -> onKeyClick node \key -> for_ (Int.fromString key) \i -> emit (.picked i))
+  (\node emit -> Web.onKeyClick node \key -> for_ (Int.fromString key) \i -> emit (.picked i))
   where
   render m = joinWith "" (entries m <#> \e ->
     "<li class=\"mdc-deprecated-list-item" <> (if m.selected == Just e.key then " mdc-deprecated-list-item--selected" else "") <> "\" style=\"cursor: pointer;\" data-key=\"" <> show e.key <> "\">"
-      <> escapeHtml e.label <> "</li>")
+      <> Web.escapeHtml e.label <> "</li>")
   entries m = m.people
     # mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname })
     # filter (\e -> hasPrefix m.prefix e.surname)

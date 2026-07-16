@@ -13,11 +13,11 @@ import Data.Profunctor.Row.RecordToRecord (focusRecord)
 import Effect (Effect)
 import PUI (silence, with)
 import PUI.MDC as MDC
-import PUI.Web (body)
+import PUI.Web as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = body
+main = Web.body
   $ with
     { foo: "foo"
     , day: "1"

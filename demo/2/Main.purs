@@ -7,32 +7,34 @@
 -- | sink. Code order = DOM order.
 module Main (main) where
 
+import Prelude
+
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import PUI (PUI, silence, with)
-import PUI.Web (Web, a, body, div, input, li, p, staticHTML, staticText, text, ul, (:=))
-import Prelude hiding (div)
+import PUI.Web ((:=))
+import PUI.Web as Web
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = body $ with {} $ div $ Semigroupoid.do
+main = Web.body $ with {} $ Web.div $ Semigroupoid.do
   RecordToRecord.do
-    p $ staticText "Hello World!"
-    ul $ RecordToRecord.do
-      li $ staticText "One"
-      li $ staticText "Two"
-      li $ staticText "Three"
-    a >>> "href" := "https://www.google.com" $ staticText "Search for me!"
-    staticHTML "<hr/>"
+    Web.p $ Web.staticText "Hello World!"
+    Web.ul $ RecordToRecord.do
+      Web.li $ Web.staticText "One"
+      Web.li $ Web.staticText "Two"
+      Web.li $ Web.staticText "Three"
+    Web.a >>> "href" := "https://www.google.com" $ Web.staticText "Search for me!"
+    Web.staticHTML "<hr/>"
     lcmap seed Semigroupoid.do
       RecordToRecord.do
-        field @"greeting" $ input "text"
-        field @"name" $ input "text"
-      p $ text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!")
+        field @"greeting" $ Web.input "text"
+        field @"name" $ Web.input "text"
+      Web.p $ Web.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!")
   silence
 
 -- model seed: its closed signature pins the live operand's input row
