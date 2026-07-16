@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (field, tapped)
+import Data.Profunctor.Row.RecordToRecord (completed, field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -37,7 +37,7 @@ main = bodyWith { flightType: "one-way", start: "27.03.2026", return: "27.03.202
     MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
     shownWhen isReturn $ lcmap returnDate $
       MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
-  tapped $ debounced $ MDC.body1 $ lcmap validationText text
+  completed $ debounced $ MDC.body1 $ lcmap validationText text
   RecordToVariant.do
     MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
   action (Variant.case_ # Variant.on (Proxy @"book") bookFlight) MDC.indeterminateLinearProgress
@@ -61,7 +61,6 @@ validate b = case parseDate b.start of
           | return < start -> Left "the return date is before the start date"
           | otherwise -> Right ("A return flight: out " <> b.start <> ", back " <> b.return)
 
--- a date as a comparable (year, month, day) triple
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of
   [ dd, mm, yyyy ] -> do

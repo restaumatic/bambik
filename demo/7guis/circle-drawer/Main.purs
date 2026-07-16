@@ -32,8 +32,6 @@ type Model =
 
 main :: Effect Unit
 main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ looped Semigroupoid.do
-  -- the resize session: the slider edits `diameter`, applied to the
-  -- selected circle on every emission (undo snapshotted once per session)
   rmap applyDiameter $ completed $
     shownWhen hasSelection $ lcmap diameterField $
       MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
@@ -78,8 +76,6 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
--- | The canvas: a `×→+` view-with-events leaf — circles in (rendered as
--- | SVG), a bare click position out. Hit-testing lives in the fold.
 canvas :: UI Web Model [ clicked :: { x :: Number, y :: Number } ]
 canvas = viewEvents
   """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""

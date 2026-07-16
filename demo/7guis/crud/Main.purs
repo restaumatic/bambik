@@ -62,7 +62,6 @@ handle ::
   ]
   -> Model -> Model
 handle e m = e # (Variant.case_
-  -- selection is an event: it prefills the fields from the picked person
   # Variant.on (Proxy @"picked") (\i -> case index m.people i of
       Just p -> m { selected = Just i, name = p.name, surname = p.surname }
       Nothing -> m)
@@ -75,9 +74,6 @@ handle e m = e # (Variant.case_
       Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
       Nothing -> m))
 
--- | The list: a `×→+` view-with-events leaf — the model in (rendered as an
--- | MDC list of filtered entries, absolute keys surviving the filter), a
--- | bare `picked` index out.
 listBox :: UI Web Model [ picked :: Int ]
 listBox = viewEvents
   """<ul class="mdc-deprecated-list" style="border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"></ul>"""

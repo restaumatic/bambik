@@ -38,8 +38,6 @@ type Model =
 
 main :: Effect Unit
 main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
-  -- committing the formula field to the selected cell rides on every
-  -- form emission
   rmap commit $ completed RecordToRecord.do
     MDC.body1 $ lcmap selectedCaption text
     MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
@@ -67,10 +65,6 @@ commit m = case m.selected of
     m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
   _ -> m
 
--- ===================================================================
--- The grid leaf: model in, cell clicks out
--- ===================================================================
-
 grid :: UI Web Model [ cellClicked :: String ]
 grid = viewEvents
   """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
@@ -94,11 +88,6 @@ renderTable m =
   where
   thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
-
-
--- ===================================================================
--- Evaluation: every cell computed, refs resolved recursively
--- ===================================================================
 
 evalSheet :: Obj.Object String -> Obj.Object String
 evalSheet cells = foldl insertVal Obj.empty keys
@@ -138,19 +127,12 @@ evalCell cells visiting key
           Just n -> NumV n
           Nothing -> TextV src
 
--- numeric view of a cell for use inside formulas
 numAt :: Obj.Object String -> List String -> String -> Either String Number
 numAt cells visiting key = case evalCell cells visiting key of
   NumV n -> Right n
   TextV "" -> Right 0.0
   TextV _ -> Left "#REF!"
   ErrV e -> Left e
-
--- ===================================================================
--- Formula parser: expr = term (('+'|'-') term)*
---                  term = factor (('*'|'/') factor)*
---                  factor = number | SUM(range) | ref | '(' expr ')'
--- ===================================================================
 
 data Expr
   = Num Number
