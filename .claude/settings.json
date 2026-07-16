@@ -9,7 +9,9 @@
       "Bash(git commit -m 'docs: demo build/deploy procedure in CLAUDE.md; lockfile on variant.6 compiler *)",
       "Bash(git commit -m 'feat: the app vocabulary — updates, completed, every, echoCase, bodyWith, viewEvents *)",
       "Bash(git commit -m 'style\\(7guis\\): idiomatic bambik throughout *)",
-      "Bash(grep -rln \"Source — Main.purs\\\\|Source &mdash; Main.purs\" demo/ && sed -i 's/<h3>Source — Main.purs<\\\\/h3>/<h3>PureScript source<\\\\/h3>/; s/<h3>Source &mdash; Main.purs<\\\\/h3>/<h3>PureScript source<\\\\/h3>/' demo/7guis/*/index.html && grep -h \"<h3>\" demo/7guis/counter/index.html)"
+      "Bash(grep -rln \"Source — Main.purs\\\\|Source &mdash; Main.purs\" demo/ && sed -i 's/<h3>Source — Main.purs<\\\\/h3>/<h3>PureScript source<\\\\/h3>/; s/<h3>Source &mdash; Main.purs<\\\\/h3>/<h3>PureScript source<\\\\/h3>/' demo/7guis/*/index.html && grep -h \"<h3>\" demo/7guis/counter/index.html)",
+      "Bash(git commit -m 'chore\\(7guis\\): panel order — task title, links, then source *)",
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/counter/)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
