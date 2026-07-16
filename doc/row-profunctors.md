@@ -2,12 +2,12 @@
 
 bambik builds profunctor UIs over `Record`-shaped (**product** — all fields present at once)
 and `Variant`-shaped (**sum** — mutually exclusive cases) types. Two complementary families
-of **row profunctors** do this, both under [`src/Data/Profunctor/Row/`](../src/Data/Profunctor/Row/):
+of **row profunctors** do this, both under [`src/PUI/Data/Profunctor/Row/`](../src/PUI/Data/Profunctor/Row/):
 
 - **Focus** — `focusRecord`/`focusVariant`, the row-typed `Strong`/`Choice`: zoom into a **sub**-record/sub-variant, carrying the rest of the row. The single-field/single-case combinators (`property`, `case_`, …) are their single-label forms.
 - **Merge** — `recordToRecord`/`variantToVariant`/…: binary merges of **complete** row-shaped sub-profunctors. N-ary, tree-shaped.
 
-They produce the **same profunctor values** from different angles; this note explains the relationship. Each row-kind's focus machinery lives *alongside* the merge class of the same kind: `focusRecord` in [RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), `case_` (the single-case form; the sub-row `focusVariant` is pruned) in [VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs).
+They produce the **same profunctor values** from different angles; this note explains the relationship. Each row-kind's focus machinery lives *alongside* the merge class of the same kind: `focusRecord` in [RecordToRecord.purs](../src/PUI/Data/Profunctor/Row/RecordToRecord.purs), `case_` (the single-case form; the sub-row `focusVariant` is pruned) in [VariantToVariant.purs](../src/PUI/Data/Profunctor/Row/VariantToVariant.purs).
 
 > **Syntax note.** Variant types appear throughout in the fork's `[ … ]` sugar — `[ a :: X | r ]` is `Variant ( a :: X | r )`, `[ | r ]` is `Variant r`, `[]` is `Variant ()`; records use stock `{ … }`. bambik builds on a **forked `purs`** that adds this (plus `.label` constructor and `case _ of .label` pattern) sugar — see [variant-sugar.md](./variant-sugar.md).
 
@@ -29,7 +29,7 @@ See ["Materialized in code"](#materialized-in-code) for the module layout.
 | | |
 |---|---|
 | Type domain | Both build `p (X i) (Y o)` for `X, Y ∈ {Record, Variant}` |
-| Row mechanics | Both use `RowToList`, `Prim.Row.{Cons,Union,Nub}`, and the constraints in `Data.Profunctor.Row` |
+| Row mechanics | Both use `RowToList`, `Prim.Row.{Cons,Union,Nub}`, and the constraints in `PUI.Data.Profunctor.Row` |
 | Semantic role of types | `Record` = entity (product, all fields present at once); `Variant` = event channel (sum, mutually exclusive cases) |
 | Final values | A given profunctor value inhabits the same type either way (modulo `p` having the requisite instances) |
 
@@ -43,7 +43,7 @@ The canonical signatures sit side-by-side:
 
 ```purescript
 -- Merge: binary merge of two complete row-shaped sub-profunctors.
--- src/Data/Profunctor/Row/RecordToRecord.purs:37
+-- src/PUI/Data/Profunctor/Row/RecordToRecord.purs:37
 class Profunctor p <= RecordToRecord p where
   recordToRecord ::
     forall i1 o1 i2 o2 i12 i1x i2x i o.
@@ -56,7 +56,7 @@ class Profunctor p <= RecordToRecord p where
 
 ```purescript
 -- Single-field combinator: unary lift of one value-source into one new field.
--- src/Data/Profunctor/Row/RecordToRecord.purs:96
+-- src/PUI/Data/Profunctor/Row/RecordToRecord.purs:96
 recordToProperty
   :: forall @l p b s f
    . IsSymbol l
@@ -131,7 +131,7 @@ So the two diagonal classes are mixed Inclusive/Exclusive, and the two mixed cla
 
 ### Reshape vs focus: two axes, not a trio
 
-The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-resolve-and-retain)) — just not focuses. `Data.Profunctor.Row` — the shared floor of the row layer — exports the two widening reshapings the `UI` merge instances build on (`widenRecordInput`, `widenVariantOutput`); their narrowing duals and single-label `Cons`-pinned forms are pruned (all are `dimap` one-liners, reconstructible on demand). A both-sides reshape for a mixed shape is just a composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
+The mixed kinds still admit *unary* reshapings (and their own mode-crossing strengths, ["below"](#the-mixed-directions-own-strength-resolve-and-retain)) — just not focuses. `PUI.Data.Profunctor.Row` — the shared floor of the row layer — exports the two widening reshapings the `UI` merge instances build on (`widenRecordInput`, `widenVariantOutput`); their narrowing duals and single-label `Cons`-pinned forms are pruned (all are `dimap` one-liners, reconstructible on demand). A both-sides reshape for a mixed shape is just a composition (`widenVariantOutput ∘ widenRecordInput` for `Record → Variant`) — pure `dimap`, no dedicated combinator needed. It is tempting to read `widen`/`narrow`/`focus` as a flat trio of analogue names; they are not. They sit on **two orthogonal axes**:
 
 - **direction** — *widen* (grow, `f → s`) vs *narrow* (shrink, `s → f`).
 - **complement** — *reshape* drops the complement (pure `dimap`, `Profunctor`-only) vs *focus* threads it across the input→output boundary (needs `Strong`/`Choice`).
@@ -191,7 +191,7 @@ Each strength also **induces an optic** (its `p a b -> p s t` form, with the res
 | `resolve` | **`Shutter`** (`shutter`) | `(view : s→a) × (build : b→t) × (escape : s→t)` |
 | `retain` | **`Reel`** (`reel`) | `s → Either a (b→t)` |
 
-A **`Shutter`** is a lens that can *snap shut* — run the focus and rebuild (`Done`), or `escape` straight to `t` (`Loop`/short-circuit); like a camera shutter that opens, loops while held, then snaps to one captured value. A **`Reel`** is a wound transport that *holds its position and never finishes* — each step emits an output and the next state; like a film reel you scroll through. `Shutter`/`shutter` live beside `resolve` in [RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs); `Reel`/`reel` beside `retain` in [VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs).
+A **`Shutter`** is a lens that can *snap shut* — run the focus and rebuild (`Done`), or `escape` straight to `t` (`Loop`/short-circuit); like a camera shutter that opens, loops while held, then snaps to one captured value. A **`Reel`** is a wound transport that *holds its position and never finishes* — each step emits an output and the next state; like a film reel you scroll through. `Shutter`/`shutter` live beside `resolve` in [RecordToVariant.purs](../src/PUI/Data/Profunctor/Row/RecordToVariant.purs); `Reel`/`reel` beside `retain` in [VariantToRecord.purs](../src/PUI/Data/Profunctor/Row/VariantToRecord.purs).
 
 And they give the mixed directions the **`edit`-position single-field combinator** the diagonals have (`property`/`case_`) — here threading one label *across* the boundary instead of in place:
 
@@ -271,7 +271,7 @@ Likewise: expanded/collapsed tree nodes, the active tab, a carousel's slide inde
 
 **Rule of thumb:** if the interaction *begins, runs, and resolves to a value*, it's `Resolving` (the `c` dies at `Done`); if it's *state the widget simply has and keeps updating*, it's `Retaining` (the `c` lives on). Both are the same `c`-feedback in `UI m` — differing only in whether a `Done` ever short-circuits out (a gesture's `mouseup`) or the loop runs indefinitely (the viewport never completes).
 
-This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that deliver this — `Resolving (UI m)` / `Retaining (UI m)` in [UI.purs](../src/UI.purs) — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
+This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that deliver this — `Resolving (UI m)` / `Retaining (UI m)` in [UI.purs](../src/PUI/UI.purs) — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
 
 ## The optics as a domain model (DDD reading)
 
@@ -364,10 +364,10 @@ RecordToRecord.do
 
 This reads as "this record has these fields, one per line." It is the right style at the **leaf level** — when you start from atomic value-sources.
 
-### Merge style — `src/Data/Profunctor/Row/Example.purs`
+### Merge style — `src/PUI/Data/Profunctor/Row/Example.purs`
 
 ```purescript
--- src/Data/Profunctor/Row/Example.purs:102-108
+-- src/PUI/Data/Profunctor/Row/Example.purs:102-108
 recordToRecordExample :: MyRowToRowProfunctor
   { in1 :: MyData, in2 :: MyData, in3 :: MyData }
   { out1 :: MyData, out2 :: MyData, out3 :: MyData }
@@ -396,15 +396,15 @@ The merge style shines once you have separate sub-records (say a customer block,
 
 ## Materialized in code
 
-The repository implements this in `Data.Profunctor.Row.*` (pruned to demo-reachability — see the code-status note; pruned combinators below are marked):
+The repository implements this in `PUI.Data.Profunctor.Row.*` (pruned to demo-reachability — see the code-status note; pruned combinators below are marked):
 
-- **`focusRecord`** (in [Row/RecordToRecord.purs](../src/Data/Profunctor/Row/RecordToRecord.purs), alongside `RecordToRecord`) — `Strong p => p { | f } { | f' } -> p { | s } { | s' }` (`ExclusiveRows f b s`, `ExclusiveRows f' b s'`), the row-typed `first`/`second`: splits the shot `s` into focus `f` and background `b`, runs the argument on `f` via `first`, and re-merges. Its variant dual `focusVariant` is pruned; the dispatch it used, `splitVariant`, survives in [Row/VariantToVariant.purs](../src/Data/Profunctor/Row/VariantToVariant.purs) (`reelWrap` shares it).
-- **`Resolving`** (in [Row/RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs), alongside `RecordToVariant`) — `class Profunctor p <= Resolving p` with `resolve :: p a b -> p (Tuple a c) (Either b c)`, the bare product→sum (×→+) strength. No `(->)` instance. The row focus function `shutterWrap` sits atop it.
-- **`Retaining`** (in [Row/VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs), alongside `VariantToRecord`) — `class Profunctor p <= Retaining p` with `retain :: p a b -> p (Either a c) (Tuple b c)`, the bare sum→product (+→×) strength. No `(->)` instance. The row focus function `reelWrap` sits atop it.
+- **`focusRecord`** (in [Row/RecordToRecord.purs](../src/PUI/Data/Profunctor/Row/RecordToRecord.purs), alongside `RecordToRecord`) — `Strong p => p { | f } { | f' } -> p { | s } { | s' }` (`ExclusiveRows f b s`, `ExclusiveRows f' b s'`), the row-typed `first`/`second`: splits the shot `s` into focus `f` and background `b`, runs the argument on `f` via `first`, and re-merges. Its variant dual `focusVariant` is pruned; the dispatch it used, `splitVariant`, survives in [Row/VariantToVariant.purs](../src/PUI/Data/Profunctor/Row/VariantToVariant.purs) (`reelWrap` shares it).
+- **`Resolving`** (in [Row/RecordToVariant.purs](../src/PUI/Data/Profunctor/Row/RecordToVariant.purs), alongside `RecordToVariant`) — `class Profunctor p <= Resolving p` with `resolve :: p a b -> p (Tuple a c) (Either b c)`, the bare product→sum (×→+) strength. No `(->)` instance. The row focus function `shutterWrap` sits atop it.
+- **`Retaining`** (in [Row/VariantToRecord.purs](../src/PUI/Data/Profunctor/Row/VariantToRecord.purs), alongside `VariantToRecord`) — `class Profunctor p <= Retaining p` with `retain :: p a b -> p (Either a c) (Tuple b c)`, the bare sum→product (+→×) strength. No `(->)` instance. The row focus function `reelWrap` sits atop it.
 - **Single-field/case combinators** — living: `property` (on `Strong`; the value-level field lens) and `field` (its closed-singleton merge-operand form — on bare `Profunctor`: with an empty background `dimap` suffices, and its emissions are runtime-exact singletons, which the gates' left-biased `Record.union` requires of merge operands), `case_` via `prismE` (on `Choice`; the value-level case prism), `resolveProperty`/`propertyToCase` (on `Resolving`), `retainCase`/`caseToProperty`/`caseToRecord` (on `Retaining`; `caseToRecord` is the Mealy reducer — case `l` updates the record, other cases replay it), `recordToCase` (×→+ introduce, mere `Profunctor` — the ungated emission). Pruned: `recordToProperty`/`eliminateProperty` (×→× grow/drop), `caseToVariant` (+→+ absorb), `lensE`, `withRecordDefault(s)`. All row combinators are plain functions over the strengths; the mixed strengths' instances live on a genuinely stateful carrier — `Resolving (UI m)` / `Retaining (UI m)` (there is still no `(->)` instance: a pure function can't loop or retain state).
 - **Case-introduction** — injecting a *fresh* variant case (the one operation outside `Choice`, see the rationale above) exists only where nothing gates it: `recordToCase` on the ×→+ direction.
 - **Merge classes** — `RecordToRecord`/`RecordToVariant`/`VariantToRecord`/`VariantToVariant`, each with its nullary unit `pempty` and qualified-do sugar; the mixed direction modules additionally host their unary strength classes.
-- **The trace quartet** — every strength has a co-strength that ties the channel it adds, with the shared retraction law `co (strength g) ≅ g` (once the state channel is primed). Diagonals from the ecosystem: `Costrong`/`unfirst` (state feedback — emits each step) and `Cochoice`/`unleft` (iteration — emits at exit), `UI` instances knowledge-gated; mixed co-strengths coined beside their strengths: `Coresolving`/`coresolve` (terminating fold) in [Row/RecordToVariant.purs](../src/Data/Profunctor/Row/RecordToVariant.purs), `Coretaining`/`coretain` (productive unfold) in [Row/VariantToRecord.purs](../src/Data/Profunctor/Row/VariantToRecord.purs). Row forms, one per direction: `feedback` (over `Costrong`, in RecordToRecord — a state sub-record loops from output to input), `iterate` (over `Cochoice`, in VariantToVariant — `again` cases loop, `done` cases exit), `folding @w` (over `Coresolving`, in RecordToVariant — case `w` continues the fold silently, `done` cases exit), `unfolding @w` (over `Coretaining`, in VariantToRecord — value fields pass, state fields resume as case `w`), plus `tapped` (over plain `Strong` — a display tap on the diagonal). The ×-diagonal *self*-trace is the `UI` leaf `looped` (a gated `unfirst` cannot self-feed: no `c` before the first emission, no emission before the first input) — `dimap`-bracketed `looped` record merges replaced the deleted `synced`/`latch` ensembles, with per-pane retention supplied by the merge gates.
+- **The trace quartet** — every strength has a co-strength that ties the channel it adds, with the shared retraction law `co (strength g) ≅ g` (once the state channel is primed). Diagonals from the ecosystem: `Costrong`/`unfirst` (state feedback — emits each step) and `Cochoice`/`unleft` (iteration — emits at exit), `UI` instances knowledge-gated; mixed co-strengths coined beside their strengths: `Coresolving`/`coresolve` (terminating fold) in [Row/RecordToVariant.purs](../src/PUI/Data/Profunctor/Row/RecordToVariant.purs), `Coretaining`/`coretain` (productive unfold) in [Row/VariantToRecord.purs](../src/PUI/Data/Profunctor/Row/VariantToRecord.purs). Row forms, one per direction: `feedback` (over `Costrong`, in RecordToRecord — a state sub-record loops from output to input), `iterate` (over `Cochoice`, in VariantToVariant — `again` cases loop, `done` cases exit), `folding @w` (over `Coresolving`, in RecordToVariant — case `w` continues the fold silently, `done` cases exit), `unfolding @w` (over `Coretaining`, in VariantToRecord — value fields pass, state fields resume as case `w`), plus `tapped` (over plain `Strong` — a display tap on the diagonal). The ×-diagonal *self*-trace is the `UI` leaf `looped` (a gated `unfirst` cannot self-feed: no `c` before the first emission, no emission before the first input) — `dimap`-bracketed `looped` record merges replaced the deleted `synced`/`latch` ensembles, with per-pane retention supplied by the merge gates.
 - **Tests**: [test/Main.purs](../test/Main.purs) exercises the diagonals on `(->)` — `focusRecord`/`property`/`recordToCase` — plus the merge unit laws, knowledge-gating, and the trace quartet (`unfirst`/`unleft`/`coresolve`/`coretain`/`looped`/`iterate`) on the `UI` carrier via a probe harness; [test/BusinessOptics.purs](../test/BusinessOptics.purs), [test/RestaurantReel.purs](../test/RestaurantReel.purs), [test/EntityEventExample.purs](../test/EntityEventExample.purs) and [test/HelloShutterReel.purs](../test/HelloShutterReel.purs) exercise `Shutter`/`Reel`.
 
 ## References
@@ -412,16 +412,16 @@ The repository implements this in `Data.Profunctor.Row.*` (pruned to demo-reacha
 Source locations cited in this document:
 
 - Merge classes (each with `pempty` and qualified-do):
-  - `src/Data/Profunctor/Row/RecordToRecord.purs`
-  - `src/Data/Profunctor/Row/RecordToVariant.purs`
-  - `src/Data/Profunctor/Row/VariantToRecord.purs`
-  - `src/Data/Profunctor/Row/VariantToVariant.purs`
-- Merge examples: `src/Data/Profunctor/Row/Example.purs` (phantom carrier) + `showcase/App.purs` (four-direction pipeline)
+  - `src/PUI/Data/Profunctor/Row/RecordToRecord.purs`
+  - `src/PUI/Data/Profunctor/Row/RecordToVariant.purs`
+  - `src/PUI/Data/Profunctor/Row/VariantToRecord.purs`
+  - `src/PUI/Data/Profunctor/Row/VariantToVariant.purs`
+- Merge examples: `src/PUI/Data/Profunctor/Row/Example.purs` (phantom carrier) + `showcase/App.purs` (four-direction pipeline)
 - Row strengths and their combinators (each beside its merge):
   - `RecordToRecord.purs` — `focusRecord` (on `Strong`); `property` (on `Strong`) / `field` (on bare `Profunctor`); `tapped` (on `Strong` — the display tap); `feedback` (on `Costrong` — the ×-trace row form)
   - `VariantToVariant.purs` — `case_` (on `Choice`, via `prismE`); `splitVariant`; `iterate` (on ecosystem `Cochoice` — the `+`-diagonal trace at row granularity)
   - `RecordToVariant.purs` — bare `class Resolving`/`resolve` + co-strength `class Coresolving`/`coresolve` with row form `folding @w`; row focus `shutterWrap`; `resolveProperty`/`propertyToCase`; `recordToCase`; induced optic `Shutter`/`shutter`; existential constructor `shutterE`
   - `VariantToRecord.purs` — bare `class Retaining`/`retain` + co-strength `class Coretaining`/`coretain` with row form `unfolding @w`; row focus `reelWrap`; `retainCase`/`caseToProperty`/`caseToRecord`; induced optic `Reel`/`reel`; existential constructor `reelE`
-- Unary row reshapings (the two widenings): `Data.Profunctor.Row` — see "Reshape vs focus"
+- Unary row reshapings (the two widenings): `PUI.Data.Profunctor.Row` — see "Reshape vs focus"
 - Base product↔sum binary counterpart of `resolve`: `p a b -> p c d -> p (Tuple a c) (Either b d)` — cited in `resolve`'s docstring; no longer a module of its own
-- Row constraints (`InclusiveRows`/`ExclusiveRows`/`DispatchableVariants`): `src/Data/Profunctor/Row.purs`
+- Row constraints (`InclusiveRows`/`ExclusiveRows`/`DispatchableVariants`): `src/PUI/Data/Profunctor/Row.purs`

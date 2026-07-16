@@ -69,7 +69,7 @@ The input `i` and output `o` could be anything, but models worth having come
 in exactly two shapes: a **record** (`×`, "all of these at once" — a form, a
 settings page) and a **variant** (`+`, "one of these at a time" — an event,
 a status, a wizard step). Two shapes on each side give **four directions**,
-and each is its own module under `Data.Profunctor.Row`:
+and each is its own module under `PUI.Data.Profunctor.Row`:
 
 | direction | reading | typical citizen |
 |---|---|---|
@@ -78,7 +78,7 @@ and each is its own module under `Data.Profunctor.Row`:
 | `+ → ×` | status | snackbar, banner |
 | `+ → +` | dispatch | backend call routing |
 
-Every Material Design component in `MDC.purs` is a citizen of exactly one
+Every Material Design component in `PUI/MDC.purs` is a citizen of exactly one
 direction: `filledTextField @l` is `×→×`, `button @l` is `×→+`,
 `snackbar @l` is `+→×`. An application is a journey around the compass:
 
