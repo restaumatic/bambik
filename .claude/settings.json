@@ -23,7 +23,9 @@
       "Bash(git commit -m 'feat\\(7guis\\): source/compiled byte counts in the source heading *)",
       "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/counter/bundle.js)",
       "Bash(git commit -m 'build: minified demo bundles \\(spago bundle-app --minify\\) *)",
-      "Bash(git commit -m 'chore\\(7guis\\): restore the elevation'\\\\''s own top padding — the band was align-content, not padding *)"
+      "Bash(git commit -m 'chore\\(7guis\\): restore the elevation'\\\\''s own top padding — the band was align-content, not padding *)",
+      "Bash(sed -i 's/>Task description on 7GUIs</>description</' demo/7guis/*/index.html)",
+      "Bash(git commit -m 'chore\\(7guis\\): header link wording — '\\\\''description'\\\\'' *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
