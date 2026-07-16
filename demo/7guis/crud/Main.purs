@@ -29,28 +29,30 @@ type Model =
   }
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped
-  $ with
-    { prefix: ""
-    , name: ""
-    , surname: ""
-    , people:
-        [ { name: "Hans", surname: "Emil" }
-        , { name: "Max", surname: "Mustermann" }
-        , { name: "Roman", surname: "Tisch" }
-        ]
-    , selected: Nothing
-    }
-  $ Semigroupoid.do
-  completed RecordToRecord.do
-    MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
-    MDC.filledTextField @"name" { floatingLabel: "Name" }
-    MDC.filledTextField @"surname" { floatingLabel: "Surname" }
-  updates handle RecordToVariant.do
-    listBox
-    MDC.button @"create" { label: Just "Create", icon: Nothing }
-    MDC.button @"update" { label: Just "Update", icon: Nothing }
-    MDC.button @"delete" { label: Just "Delete", icon: Nothing }
+main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ ( Semigroupoid.do
+      ( RecordToRecord.do
+          MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
+          MDC.filledTextField @"name" { floatingLabel: "Name" }
+          MDC.filledTextField @"surname" { floatingLabel: "Surname" }
+      ) # completed
+      ( RecordToVariant.do
+          listBox
+          MDC.button @"create" { label: Just "Create", icon: Nothing }
+          MDC.button @"update" { label: Just "Update", icon: Nothing }
+          MDC.button @"delete" { label: Just "Delete", icon: Nothing }
+      ) # updates handle
+  ) # with
+      { prefix: ""
+      , name: ""
+      , surname: ""
+      , people:
+          [ { name: "Hans", surname: "Emil" }
+          , { name: "Max", surname: "Mustermann" }
+          , { name: "Roman", surname: "Tisch" }
+          ]
+      , selected: Nothing
+      }
+    # looped
 
 handle ::
   [ picked :: Int

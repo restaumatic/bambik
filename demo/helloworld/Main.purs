@@ -17,16 +17,15 @@ import PUI.Web (body) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = Web.body
-  $ with
-    { foo: "foo"
-    , day: "1"
-    , quantity: "1"
-    , price: "10"
-    }
-  $ Semigroupoid.do
-      focusRecord $ MDC.filledTextField @"foo" { floatingLabel: "Foo" }
-      focusRecord $ MDC.filledTextField @"day" { floatingLabel: "Day" }
-      focusRecord $ MDC.filledTextField @"quantity" { floatingLabel: "Quantity" }
-      focusRecord $ MDC.filledTextField @"price" { floatingLabel: "Price" }
+main = Web.body $ ( Semigroupoid.do
+      MDC.filledTextField @"foo" { floatingLabel: "Foo" } # focusRecord
+      MDC.filledTextField @"day" { floatingLabel: "Day" } # focusRecord
+      MDC.filledTextField @"quantity" { floatingLabel: "Quantity" } # focusRecord
+      MDC.filledTextField @"price" { floatingLabel: "Price" } # focusRecord
       silence
+  ) # with
+      { foo: "foo"
+      , day: "1"
+      , quantity: "1"
+      , price: "10"
+      }

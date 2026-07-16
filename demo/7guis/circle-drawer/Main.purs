@@ -30,23 +30,25 @@ type Model =
   }
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ looped
-  $ with
-    { circles: []
-    , selected: Nothing
-    , diameter: 40.0
-    , adjusting: false
-    , undoStack: []
-    , redoStack: []
-    }
-  $ Semigroupoid.do
-  rmap applyDiameter $ completed $
-    Web.shownWhen hasSelection $ lcmap diameterField $
-      MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
-  updates handle RecordToVariant.do
-    canvas
-    MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }
-    MDC.button @"redo" { label: Just "Redo", icon: Just "redo" }
+main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
+      Web.shownWhen hasSelection
+        ( MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
+            # lcmap diameterField
+        ) # completed # rmap applyDiameter
+      ( RecordToVariant.do
+          canvas
+          MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }
+          MDC.button @"redo" { label: Just "Redo", icon: Just "redo" }
+      ) # updates handle
+  ) # with
+      { circles: []
+      , selected: Nothing
+      , diameter: 40.0
+      , adjusting: false
+      , undoStack: []
+      , redoStack: []
+      }
+    # looped
 
 
 handle ::

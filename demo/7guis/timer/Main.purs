@@ -23,13 +23,15 @@ type Timer =
   }
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped $ with { duration: 10.0, elapsed: 0.0 } Semigroupoid.do
-  completed RecordToRecord.do
-    MDC.headline6 $ lcmap gauge $ Web.text
-    MDC.body1 $ lcmap elapsedCaption $ Web.text
-    MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
-  every (Milliseconds 100.0) tick
-  updates reset $ MDC.button @"reset" { label: Just "Reset", icon: Just "replay" }
+main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ ( Semigroupoid.do
+      ( RecordToRecord.do
+          MDC.headline6 (Web.text # lcmap gauge)
+          MDC.body1 (Web.text # lcmap elapsedCaption)
+          MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
+      ) # completed
+      every (Milliseconds 100.0) tick
+      MDC.button @"reset" { label: Just "Reset", icon: Just "replay" } # updates reset
+  ) # with { duration: 10.0, elapsed: 0.0 } # looped
 
 reset :: forall click. click -> Timer -> Timer
 reset _ t = t { elapsed = 0.0 }

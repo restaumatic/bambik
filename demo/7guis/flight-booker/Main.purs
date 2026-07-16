@@ -27,19 +27,22 @@ type Booking =
 
 main :: Effect Unit
 main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
-  looped $ with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } RecordToRecord.do
-    field @"flightType" $ dimap (\v -> { selected: Just v }) _.selected $
+  ( RecordToRecord.do
       MDC.select @"selected" { floatingLabel: "Flight type" }
         [ { value: "one-way", label: "one-way flight" }
         , { value: "return", label: "return flight" }
         ]
-    MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
-    Web.shownWhen isReturn $ lcmap returnDate $
-      MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
-  completed $ debounced $ MDC.body1 $ lcmap validationText $ Web.text
+        # dimap (\v -> { selected: Just v }) _.selected # field @"flightType"
+      MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
+      Web.shownWhen isReturn
+        ( MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
+            # lcmap returnDate
+        )
+  ) # with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } # looped
+  MDC.body1 (Web.text # lcmap validationText) # debounced # completed
   RecordToVariant.do
     MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
-  action (Variant.match { book: bookFlight }) MDC.indeterminateLinearProgress
+  MDC.indeterminateLinearProgress # action (Variant.match { book: bookFlight })
   VariantToRecord.do
     MDC.snackbar @"booked"
     MDC.snackbar @"rejected"

@@ -92,60 +92,70 @@ type Order =
   }
 
 main :: Effect Unit
-main = Web.body $ with unit $ MDC.elevation20 Semigroupoid.do
-  action loadOrder MDC.indeterminateLinearProgress
-  RecordToRecord.do
-    MDC.headline6 $ reading @"shortId" ("Order " <> _)
-    MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
-      MDC.filledTextField @"shortId" { floatingLabel: "Short ID" }
-      MDC.filledTextField @"orderId" { floatingLabel: "Unique ID" }
-    field @"customer" $ MDC.card { caption: Just "Customer" } $ RecordToRecord.do
-      MDC.filledTextField @"firstName" { floatingLabel: "First name" }
-      MDC.filledTextField @"lastName" { floatingLabel: "Last name" }
-    -- the fulfillment variant is edited through record-shaped editor state:
-    -- `dimap` brackets the variant in (seeding absent payloads) and out
-    -- (projecting the selection), `looped` re-broadcasts every emission so
-    -- the tab bar and panes stay mutually consistent, and the merge gates
-    -- retain every pane's payload — switching away and back restores it
-    field @"fulfillment" $ MDC.card { caption: Just "Fulfillment" } $
-      dimap fulfillmentState fulfillmentCase $ looped RecordToRecord.do
-        MDC.tabBar @"selected"
-          [ { value: "dineIn", label: "Dine in", icon: Nothing }
-          , { value: "takeaway", label: "Takeaway", icon: Nothing }
-          , { value: "delivery", label: "Delivery", icon: Nothing }
-          ]
-        Web.shownWhen (\r -> r.selected == "dineIn") $ lcmap tableOf $ MDC.filledTextField @"table" { floatingLabel: "Table" }
-        Web.shownWhen (\r -> r.selected == "takeaway") $ lcmap timeOf $ MDC.filledTextField @"time" { floatingLabel: "Time" }
-        Web.shownWhen (\r -> r.selected == "delivery") $ lcmap addressOf $ RecordToRecord.do
-          MDC.filledTextField @"address" { floatingLabel: "Address" }
-          MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
-    MDC.card { caption: Just "Total" } $ MDC.filledTextField @"total" { floatingLabel: "Total" }
-    field @"payment" $ MDC.card { caption: Just "Payment" } $ RecordToRecord.do
-      -- a unit-payload variant needs no panes and no loop — the bracket
-      -- around a single selection component suffices (it echoes, so no
-      -- `identity` echo wire either)
-      field @"method" $ dimap methodState methodCase $
-        MDC.segmentedButton @"selected"
-          [ { value: "cash", label: "Cash" }
-          , { value: "card", label: "Card" }
-          ]
-      MDC.filledTextField @"paid" { floatingLabel: "Paid" }
-      MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
-    MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
-  -- a live view of the form's output: displays every emission and passes it
-  -- on (a sibling inside the merge would update on load only)
-  tapped $ debounced $ MDC.body1 $ lcmap summarize $ Web.text
-  RecordToVariant.do
-    MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
-    MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
-  VariantToVariant.do
-    action (Variant.on (Proxy @"submit") submitOrder Variant.case_) MDC.indeterminateLinearProgress
-    action (Variant.on (Proxy @"printReceipt") printReceipt Variant.case_) MDC.indeterminateLinearProgress
-  VariantToRecord.do
-    MDC.snackbar @"orderSubmitted"
-    MDC.snackbar @"submissionFailed"
-    MDC.snackbar @"receiptPrinted"
-  silence
+main = Web.body $ ( MDC.elevation20 Semigroupoid.do
+      MDC.indeterminateLinearProgress # action loadOrder
+      RecordToRecord.do
+        MDC.headline6 $ reading @"shortId" ("Order " <> _)
+        MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
+          MDC.filledTextField @"shortId" { floatingLabel: "Short ID" }
+          MDC.filledTextField @"orderId" { floatingLabel: "Unique ID" }
+        MDC.card { caption: Just "Customer" }
+          ( RecordToRecord.do
+              MDC.filledTextField @"firstName" { floatingLabel: "First name" }
+              MDC.filledTextField @"lastName" { floatingLabel: "Last name" }
+          ) # field @"customer"
+        -- the fulfillment variant is edited through record-shaped editor state:
+        -- `dimap` brackets the variant in (seeding absent payloads) and out
+        -- (projecting the selection), `looped` re-broadcasts every emission so
+        -- the tab bar and panes stay mutually consistent, and the merge gates
+        -- retain every pane's payload — switching away and back restores it
+        MDC.card { caption: Just "Fulfillment" }
+          ( ( RecordToRecord.do
+                MDC.tabBar @"selected"
+                  [ { value: "dineIn", label: "Dine in", icon: Nothing }
+                  , { value: "takeaway", label: "Takeaway", icon: Nothing }
+                  , { value: "delivery", label: "Delivery", icon: Nothing }
+                  ]
+                Web.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField @"table" { floatingLabel: "Table" } # lcmap tableOf)
+                Web.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField @"time" { floatingLabel: "Time" } # lcmap timeOf)
+                Web.shownWhen (\r -> r.selected == "delivery")
+                  ( ( RecordToRecord.do
+                        MDC.filledTextField @"address" { floatingLabel: "Address" }
+                        MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
+                    ) # lcmap addressOf
+                  )
+            ) # looped # dimap fulfillmentState fulfillmentCase
+          ) # field @"fulfillment"
+        MDC.card { caption: Just "Total" } $ MDC.filledTextField @"total" { floatingLabel: "Total" }
+        MDC.card { caption: Just "Payment" }
+          ( RecordToRecord.do
+              -- a unit-payload variant needs no panes and no loop — the bracket
+              -- around a single selection component suffices (it echoes, so no
+              -- `identity` echo wire either)
+              MDC.segmentedButton @"selected"
+                [ { value: "cash", label: "Cash" }
+                , { value: "card", label: "Card" }
+                ]
+                # dimap methodState methodCase # field @"method"
+              MDC.filledTextField @"paid" { floatingLabel: "Paid" }
+              MDC.body1 $ reading @"method" \method -> "Paying by " <> methodText method
+          ) # field @"payment"
+        MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
+      -- a live view of the form's output: displays every emission and passes it
+      -- on (a sibling inside the merge would update on load only)
+      MDC.body1 (Web.text # lcmap summarize) # debounced # tapped
+      RecordToVariant.do
+        MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
+        MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
+      VariantToVariant.do
+        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"submit") submitOrder Variant.case_)
+        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"printReceipt") printReceipt Variant.case_)
+      VariantToRecord.do
+        MDC.snackbar @"orderSubmitted"
+        MDC.snackbar @"submissionFailed"
+        MDC.snackbar @"receiptPrinted"
+      silence
+  ) # with unit
 
 -- model functions
 

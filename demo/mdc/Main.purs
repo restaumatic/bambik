@@ -108,175 +108,185 @@ type SettingsOut =
   }
 
 main :: Effect Unit
-main = Web.body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
-  ( MDC.list RecordToRecord.do
-      MDC.listItem $ Web.staticText "Text fields"
-      MDC.listItem $ Web.staticText "Selection controls"
-      MDC.listItem $ Web.staticText "Chips"
-      MDC.listItem $ Web.staticText "Segmented buttons"
-      MDC.listItem $ Web.staticText "Menus"
-      MDC.listItem $ Web.staticText "Sliders"
-      MDC.listItem $ Web.staticText "Tabs"
-      MDC.listItem $ Web.staticText "Data tables"
-      MDC.listItem $ Web.staticText "Image lists"
-      MDC.divider
-      MDC.listItem $ Web.staticText "Buttons & FAB"
-      MDC.listItem $ Web.staticText "Wizard"
-      MDC.listItem $ Web.staticText "Progress indicators"
-      MDC.listItem $ Web.staticText "Banner & snackbars"
-  ) Semigroupoid.do
-  -- the pipeline: stages composed with `Semigroupoid` (`>>>` under the do)
-  action loadSettings MDC.indeterminateLinearProgress
-  -- the form: the ×→× merge (direction class `RecordToRecord`) — operands
-  -- own disjoint output fields, inputs may overlap; label-indexed MDC
-  -- components are `field @l`-shaped inside (bare `Profunctor`)
-  MDC.layoutGrid RecordToRecord.do
-    MDC.layoutCell { span: 12 } $ MDC.headline6 $ reading @"name" ("Settings — " <> _)
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
-      MDC.filledTextField @"name" { floatingLabel: "Name" }
-      MDC.filledTextArea @"notes" { columns: 60, rows: 3 }
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Selection controls" } RecordToRecord.do
-      MDC.checkbox @"subscribed" $ Web.staticText "Subscribe to the newsletter"
-      MDC.radioButton @"plan"
-        [ { value: "free", label: "Free plan" }
-        , { value: "pro", label: "Pro plan" }
-        , { value: "team", label: "Team plan" }
-        ]
-      MDC.tooltip { text: "Toggles connectivity" } $ MDC.toggleSwitch @"wifi" { label: "Wi-Fi" }
-      MDC.iconToggle @"dark" { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" }
-      Web.staticText "Dark mode"
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Chips" } $ MDC.chipSet RecordToRecord.do
-      MDC.filterChip @"favorite" { label: "Favorite" }
-      MDC.filterChip @"archived" { label: "Archived" }
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Segmented buttons" } $
-      MDC.segmentedButton @"size"
-        [ { value: "S", label: "S" }
-        , { value: "M", label: "M" }
-        , { value: "L", label: "L" }
-        ]
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Menus: exposed dropdown" } $
-      MDC.select @"theme" { floatingLabel: "Theme" }
-        [ { value: "light", label: "Light" }
-        , { value: "dark", label: "Dark" }
-        , { value: "system", label: "System" }
-        ]
-    -- the readout is a `tapped` stage after the slider (`Strong`: `second`
-    -- retains the value, the display's echo forwards it): it displays every
-    -- value the slider emits and passes it on (a plain record-merge sibling
-    -- would update on load only)
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
-      MDC.slider @"volume" { label: "Volume", min: 0.0, max: 100.0, step: Nothing }
-      -- `feedback` (co-strength `Costrong`, dual of `Strong`): the `peak`
-      -- field loops from this stage's output back to its input, invisible
-      -- in the stage's outer `{volume} → {volume}` type; `seeded` primes
-      -- the loop at registration
-      feedback $ Semigroupoid.do
-        seeded { volume: 0.0, peak: 0.0 }
-        lcmap stepPeak identity
-        tapped $ MDC.body2 $ lcmap peakLine $ Web.text
-      tapped $ MDC.body2 $ reading @"volume" (\v -> "Volume " <> show v)
-    -- the variant model is edited through record-shaped editor state
-    -- (`ShippingState` — all payloads persist, the merge gates retain them):
-    -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
-    -- payloads) and out (projecting the selected case); `looped` — the
-    -- ×-diagonal self-trace, `Costrong`'s self-feeding special case —
-    -- re-broadcasts every emission so the tab bar and panes stay mutually
-    -- consistent; panes stay attached (`shownWhen` only hides them — the
-    -- gates need their echoes), their inputs narrowed by `lcmap`
-    -- (`Profunctor`, contravariant side)
-    MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" } $ field @"shipping" $
-      dimap shippingState shippingCase $ looped RecordToRecord.do
-        MDC.tabBar @"selected"
-          [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
-          , { value: "express", label: "Express", icon: Just "bolt" }
-          ]
-        Web.shownWhen (\r -> r.selected == "standard") $ lcmap daysOf $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" }
-        Web.shownWhen (\r -> r.selected == "express") $ lcmap priceOf $ MDC.filledTextField @"price" { floatingLabel: "Express fee" }
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
-      MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
-      MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
-      MDC.imageListItem { src: swatch "00c9a7" 120, label: "Mint" }
-      MDC.imageListItem { src: swatch "0081cf" 110, label: "Sea" }
-      MDC.imageListItem { src: swatch "c34a36" 130, label: "Clay" }
-      MDC.imageListItem { src: swatch "936c00" 90, label: "Ochre" }
-  -- live views of the form's *output*: within the form merge, siblings never
-  -- see each other's emissions (`recordToRecord` has no cross-feed), so
-  -- whole-record displays go in a `tapped` stage (`Strong`) after it —
-  -- every form emission is displayed and passed on
-  tapped $ MDC.layoutGrid RecordToRecord.do
-    MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
-      MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
-        MDC.dataRow RecordToRecord.do
-          MDC.dataCell $ Web.staticText "Name"
-          MDC.dataCell $ reading @"name" identity
-        MDC.dataRow RecordToRecord.do
-          MDC.dataCell $ Web.staticText "Volume"
-          MDC.dataCell $ reading @"volume" show
-        MDC.dataRow RecordToRecord.do
-          MDC.dataCell $ Web.staticText "Theme"
-          MDC.dataCell $ reading @"theme" identity
-    MDC.layoutCell { span: 12 } MDC.divider
-    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize $ Web.text
-  -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
-  -- broadcast) — every operand reads the settings record, each emits its
-  -- own event cases (`recordToCase` inside the button components)
-  RecordToVariant.do
-    MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
-      MDC.button @"save" { label: Just "Save", icon: Just "save" }
-      MDC.fab @"like" { icon: "favorite", label: Just "Like" }
-      MDC.iconButton @"share" { icon: "share", label: "Share" }
-      MDC.menu { label: "More" } RecordToVariant.do
-        MDC.menuItem @"export" { label: "Export settings" }
-        MDC.menuItem @"reset" { label: "Reset to defaults" }
-    -- the wizard: `folding` (co-strength `Coresolving`, the retraction of
-    -- `Resolving` — a terminating fold) makes this ×→+ operand loop: the
-    -- "next" case carries the step state and re-enters silently
-    -- (re-rendering the step — the nullary `announce` primes the fold with
-    -- its initial state, the way units announce their `{}`), while the
-    -- "published" case exits into the dispatch like any other event
-    MDC.card { caption: Just "Wizard (folding)" } $ folding @"next" $ Semigroupoid.do
-      tapped $ RecordToRecord.do
-        Web.shownWhen (\r -> r.step == "review") $ MDC.body2 $ lcmap reviewLine $ Web.text
-        Web.shownWhen (\r -> r.step == "confirm") $ MDC.body2 $ lcmap confirmLine $ Web.text
-      Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
-        announce initialStep
-        Web.shownWhen (\r -> r.step == "review") $ lcmap (toStep "confirm") $ MDC.button @"next" { label: Just "Next", icon: Nothing }
-        Web.shownWhen (\r -> r.step == "confirm") $ lcmap (toStep "review") $ MDC.button @"next" { label: Just "Back", icon: Nothing }
-        Web.shownWhen (\r -> r.step == "confirm") $ lcmap essentials $ MDC.button @"publish" { label: Just "Publish", icon: Just "publish" }
-  -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —
-  -- exclusive inputs, one action handler per event case
-  VariantToVariant.do
-    action (Variant.on (Proxy @"save") saveSettings Variant.case_) MDC.indeterminateLinearProgress
-    action (Variant.on (Proxy @"like") like Variant.case_) MDC.indeterminateCircularProgress
-    action (Variant.on (Proxy @"share") share Variant.case_) MDC.indeterminateCircularProgress
-    action (Variant.on (Proxy @"export") exportSettings Variant.case_) MDC.indeterminateLinearProgress
-    action (Variant.on (Proxy @"reset") reset Variant.case_) MDC.indeterminateCircularProgress
-    -- retry: `iterate` (co-strength `Cochoice`, dual of `Choice`) loops
-    -- the flaky publish — a failed attempt re-emits the `publish` case
-    -- (attempt incremented), which re-enters this handler; success exits
-    -- as the `published` status like any other case
-    iterate $ action (Variant.on (Proxy @"publish") publishFlaky Variant.case_) MDC.indeterminateCircularProgress
-  -- the activity meter: `tapped` (`Strong`, shape-agnostic) duplicates the
-  -- status stream into a display arm, and the arm is an `unfolding`
-  -- (co-strength `Coretaining`, dual of `Retaining`): each status case
-  -- joins the running count via `retain` — the count re-enters as the
-  -- `resume` case, `countUp` does the event⋈state join, `seeded` primes
-  -- the state at registration
-  tapped $ unfolding @"resume" $ Semigroupoid.do
-    seeded resumeZero
-    dimap splitStatus countUp (retain identity)
-    tapped $ MDC.body2 $ lcmap activityLine $ Web.text
-  -- the statuses: the +→× merge (direction class `VariantToRecord`) —
-  -- one receiver per message case
-  VariantToRecord.do
-    MDC.snackbar @"saved"
-    MDC.snackbar @"liked"
-    MDC.snackbar @"shared"
-    MDC.banner @"exported"
-    MDC.snackbar @"resetDone"
-    MDC.snackbar @"published"
-  -- the sink: `silence`, the merges' variant-output unit (`pempty`)
-  silence
+main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
+    ( MDC.list RecordToRecord.do
+        MDC.listItem $ Web.staticText "Text fields"
+        MDC.listItem $ Web.staticText "Selection controls"
+        MDC.listItem $ Web.staticText "Chips"
+        MDC.listItem $ Web.staticText "Segmented buttons"
+        MDC.listItem $ Web.staticText "Menus"
+        MDC.listItem $ Web.staticText "Sliders"
+        MDC.listItem $ Web.staticText "Tabs"
+        MDC.listItem $ Web.staticText "Data tables"
+        MDC.listItem $ Web.staticText "Image lists"
+        MDC.divider
+        MDC.listItem $ Web.staticText "Buttons & FAB"
+        MDC.listItem $ Web.staticText "Wizard"
+        MDC.listItem $ Web.staticText "Progress indicators"
+        MDC.listItem $ Web.staticText "Banner & snackbars"
+    ) Semigroupoid.do
+      -- the pipeline: stages composed with `Semigroupoid` (`>>>` under the do)
+      MDC.indeterminateLinearProgress # action loadSettings
+      -- the form: the ×→× merge (direction class `RecordToRecord`) — operands
+      -- own disjoint output fields, inputs may overlap; label-indexed MDC
+      -- components are `field @l`-shaped inside (bare `Profunctor`)
+      MDC.layoutGrid RecordToRecord.do
+        MDC.layoutCell { span: 12 } $ MDC.headline6 $ reading @"name" ("Settings — " <> _)
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
+          MDC.filledTextField @"name" { floatingLabel: "Name" }
+          MDC.filledTextArea @"notes" { columns: 60, rows: 3 }
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Selection controls" } RecordToRecord.do
+          MDC.checkbox @"subscribed" $ Web.staticText "Subscribe to the newsletter"
+          MDC.radioButton @"plan"
+            [ { value: "free", label: "Free plan" }
+            , { value: "pro", label: "Pro plan" }
+            , { value: "team", label: "Team plan" }
+            ]
+          MDC.tooltip { text: "Toggles connectivity" } $ MDC.toggleSwitch @"wifi" { label: "Wi-Fi" }
+          MDC.iconToggle @"dark" { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" }
+          Web.staticText "Dark mode"
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Chips" } $ MDC.chipSet RecordToRecord.do
+          MDC.filterChip @"favorite" { label: "Favorite" }
+          MDC.filterChip @"archived" { label: "Archived" }
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Segmented buttons" } $
+          MDC.segmentedButton @"size"
+            [ { value: "S", label: "S" }
+            , { value: "M", label: "M" }
+            , { value: "L", label: "L" }
+            ]
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Menus: exposed dropdown" } $
+          MDC.select @"theme" { floatingLabel: "Theme" }
+            [ { value: "light", label: "Light" }
+            , { value: "dark", label: "Dark" }
+            , { value: "system", label: "System" }
+            ]
+        -- the readout is a `tapped` stage after the slider (`Strong`: `second`
+        -- retains the value, the display's echo forwards it): it displays every
+        -- value the slider emits and passes it on (a plain record-merge sibling
+        -- would update on load only)
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
+          MDC.slider @"volume" { label: "Volume", min: 0.0, max: 100.0, step: Nothing }
+          -- `feedback` (co-strength `Costrong`, dual of `Strong`): the `peak`
+          -- field loops from this stage's output back to its input, invisible
+          -- in the stage's outer `{volume} → {volume}` type; `seeded` primes
+          -- the loop at registration
+          ( Semigroupoid.do
+              seeded { volume: 0.0, peak: 0.0 }
+              lcmap stepPeak identity
+              MDC.body2 (Web.text # lcmap peakLine) # tapped
+          ) # feedback
+          MDC.body2 (reading @"volume" (\v -> "Volume " <> show v)) # tapped
+        -- the variant model is edited through record-shaped editor state
+        -- (`ShippingState` — all payloads persist, the merge gates retain them):
+        -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
+        -- payloads) and out (projecting the selected case); `looped` — the
+        -- ×-diagonal self-trace, `Costrong`'s self-feeding special case —
+        -- re-broadcasts every emission so the tab bar and panes stay mutually
+        -- consistent; panes stay attached (`shownWhen` only hides them — the
+        -- gates need their echoes), their inputs narrowed by `lcmap`
+        -- (`Profunctor`, contravariant side)
+        MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" }
+          ( ( RecordToRecord.do
+                MDC.tabBar @"selected"
+                  [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
+                  , { value: "express", label: "Express", icon: Just "bolt" }
+                  ]
+                Web.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField @"days" { floatingLabel: "Delivery days" } # lcmap daysOf)
+                Web.shownWhen (\r -> r.selected == "express") (MDC.filledTextField @"price" { floatingLabel: "Express fee" } # lcmap priceOf)
+            ) # looped # dimap shippingState shippingCase
+          ) # field @"shipping"
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
+          MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
+          MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
+          MDC.imageListItem { src: swatch "00c9a7" 120, label: "Mint" }
+          MDC.imageListItem { src: swatch "0081cf" 110, label: "Sea" }
+          MDC.imageListItem { src: swatch "c34a36" 130, label: "Clay" }
+          MDC.imageListItem { src: swatch "936c00" 90, label: "Ochre" }
+      -- live views of the form's *output*: within the form merge, siblings never
+      -- see each other's emissions (`recordToRecord` has no cross-feed), so
+      -- whole-record displays go in a `tapped` stage (`Strong`) after it —
+      -- every form emission is displayed and passed on
+      ( MDC.layoutGrid RecordToRecord.do
+        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
+          MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
+            MDC.dataRow RecordToRecord.do
+              MDC.dataCell $ Web.staticText "Name"
+              MDC.dataCell $ reading @"name" identity
+            MDC.dataRow RecordToRecord.do
+              MDC.dataCell $ Web.staticText "Volume"
+              MDC.dataCell $ reading @"volume" show
+            MDC.dataRow RecordToRecord.do
+              MDC.dataCell $ Web.staticText "Theme"
+              MDC.dataCell $ reading @"theme" identity
+        MDC.layoutCell { span: 12 } MDC.divider
+        MDC.layoutCell { span: 12 } (MDC.body1 (Web.text # lcmap summarize) # debounced)
+      ) # tapped
+      -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
+      -- broadcast) — every operand reads the settings record, each emits its
+      -- own event cases (`recordToCase` inside the button components)
+      RecordToVariant.do
+        MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
+          MDC.button @"save" { label: Just "Save", icon: Just "save" }
+          MDC.fab @"like" { icon: "favorite", label: Just "Like" }
+          MDC.iconButton @"share" { icon: "share", label: "Share" }
+          MDC.menu { label: "More" } RecordToVariant.do
+            MDC.menuItem @"export" { label: "Export settings" }
+            MDC.menuItem @"reset" { label: "Reset to defaults" }
+        -- the wizard: `folding` (co-strength `Coresolving`, the retraction of
+        -- `Resolving` — a terminating fold) makes this ×→+ operand loop: the
+        -- "next" case carries the step state and re-enters silently
+        -- (re-rendering the step — the nullary `announce` primes the fold with
+        -- its initial state, the way units announce their `{}`), while the
+        -- "published" case exits into the dispatch like any other event
+        MDC.card { caption: Just "Wizard (folding)" }
+          ( ( Semigroupoid.do
+                ( RecordToRecord.do
+                    Web.shownWhen (\r -> r.step == "review") $ MDC.body2 (Web.text # lcmap reviewLine)
+                    Web.shownWhen (\r -> r.step == "confirm") $ MDC.body2 (Web.text # lcmap confirmLine)
+                ) # tapped
+                Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
+                  announce initialStep
+                  Web.shownWhen (\r -> r.step == "review") (MDC.button @"next" { label: Just "Next", icon: Nothing } # lcmap (toStep "confirm"))
+                  Web.shownWhen (\r -> r.step == "confirm") (MDC.button @"next" { label: Just "Back", icon: Nothing } # lcmap (toStep "review"))
+                  Web.shownWhen (\r -> r.step == "confirm") (MDC.button @"publish" { label: Just "Publish", icon: Just "publish" } # lcmap essentials)
+            ) # folding @"next"
+          )
+      -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —
+      -- exclusive inputs, one action handler per event case
+      VariantToVariant.do
+        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"save") saveSettings Variant.case_)
+        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"like") like Variant.case_)
+        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"share") share Variant.case_)
+        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"export") exportSettings Variant.case_)
+        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"reset") reset Variant.case_)
+        -- retry: `iterate` (co-strength `Cochoice`, dual of `Choice`) loops
+        -- the flaky publish — a failed attempt re-emits the `publish` case
+        -- (attempt incremented), which re-enters this handler; success exits
+        -- as the `published` status like any other case
+        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"publish") publishFlaky Variant.case_) # iterate
+      -- the activity meter: `tapped` (`Strong`, shape-agnostic) duplicates the
+      -- status stream into a display arm, and the arm is an `unfolding`
+      -- (co-strength `Coretaining`, dual of `Retaining`): each status case
+      -- joins the running count via `retain` — the count re-enters as the
+      -- `resume` case, `countUp` does the event⋈state join, `seeded` primes
+      -- the state at registration
+      ( Semigroupoid.do
+          seeded resumeZero
+          retain identity # dimap splitStatus countUp
+          MDC.body2 (Web.text # lcmap activityLine) # tapped
+      ) # unfolding @"resume" # tapped
+      -- the statuses: the +→× merge (direction class `VariantToRecord`) —
+      -- one receiver per message case
+      VariantToRecord.do
+        MDC.snackbar @"saved"
+        MDC.snackbar @"liked"
+        MDC.snackbar @"shared"
+        MDC.banner @"exported"
+        MDC.snackbar @"resetDone"
+        MDC.snackbar @"published"
+      -- the sink: `silence`, the merges' variant-output unit (`pempty`)
+      silence
+  ) # with unit
 
 -- model functions
 

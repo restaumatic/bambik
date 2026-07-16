@@ -21,21 +21,23 @@ import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = Web.body $ with {} $ Web.div $ Semigroupoid.do
-  RecordToRecord.do
-    Web.p $ Web.staticText "Hello World!"
-    Web.ul $ RecordToRecord.do
-      Web.li $ Web.staticText "One"
-      Web.li $ Web.staticText "Two"
-      Web.li $ Web.staticText "Three"
-    Web.a >>> "href" := "https://www.google.com" $ Web.staticText "Search for me!"
-    Web.staticHTML "<hr/>"
-    lcmap seed Semigroupoid.do
+main = Web.body $ ( Web.div $ Semigroupoid.do
       RecordToRecord.do
-        field @"greeting" $ Web.input "text"
-        field @"name" $ Web.input "text"
-      Web.p $ lcmap (\r -> r.greeting <> ", " <> r.name <> "!") $ Web.text
-  silence
+        Web.p $ Web.staticText "Hello World!"
+        Web.ul $ RecordToRecord.do
+          Web.li $ Web.staticText "One"
+          Web.li $ Web.staticText "Two"
+          Web.li $ Web.staticText "Three"
+        Web.a >>> "href" := "https://www.google.com" $ Web.staticText "Search for me!"
+        Web.staticHTML "<hr/>"
+        ( Semigroupoid.do
+            RecordToRecord.do
+              Web.input "text" # field @"greeting"
+              Web.input "text" # field @"name"
+            Web.p (Web.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!"))
+        ) # lcmap seed
+      silence
+  ) # with {}
 
 -- model seed: its closed signature pins the live operand's input row
 seed :: {} -> { greeting :: String, name :: String }
