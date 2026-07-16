@@ -2,10 +2,9 @@ module Main (main) where
 
 import Prelude
 
-import Data.Array ((!!))
 import Data.Either (Either(..))
 import Data.Int (fromString) as Int
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord (field, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -18,8 +17,8 @@ import Effect.Aff (Aff)
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import UI (action, debounced, looped, silence)
-import Web (body, shownWhen, text)
+import UI (action, debounced, looped)
+import Web (bodyWith, shownWhen, text)
 
 type Booking =
   { flightType :: String
@@ -28,25 +27,23 @@ type Booking =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
-  lcmap (const { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" }) $ looped RecordToRecord.do
+main = bodyWith { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
+  looped RecordToRecord.do
     field @"flightType" $ dimap (\v -> { selected: Just v }) _.selected $
       MDC.select @"selected" { floatingLabel: "Flight type" }
         [ { value: "one-way", label: "one-way flight" }
         , { value: "return", label: "return flight" }
         ]
     MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
-    shownWhen (\(r :: Booking) -> r.flightType == "return") $ lcmap (\r -> { return: r.return }) $
+    shownWhen isReturn $ lcmap returnDate $
       MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
   tapped $ debounced $ MDC.body1 $ lcmap validationText text
   RecordToVariant.do
     MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
-  Semigroupoid.do
-    action (Variant.case_ # Variant.on (Proxy @"book") bookFlight) MDC.indeterminateLinearProgress
-    VariantToRecord.do
-      MDC.snackbar @"booked"
-      MDC.snackbar @"rejected"
-    silence
+  action (Variant.case_ # Variant.on (Proxy @"book") bookFlight) MDC.indeterminateLinearProgress
+  VariantToRecord.do
+    MDC.snackbar @"booked"
+    MDC.snackbar @"rejected"
 
 validationText :: Booking -> String
 validationText b = case validate b of
@@ -80,3 +77,9 @@ bookFlight :: Booking -> Aff [ booked :: String, rejected :: String ]
 bookFlight b = pure case validate b of
   Left err -> .rejected ("Cannot book: " <> err)
   Right summary -> .booked ("You have booked: " <> summary)
+
+isReturn :: Booking -> Boolean
+isReturn b = b.flightType == "return"
+
+returnDate :: Booking -> { return :: String }
+returnDate b = { return: b.return }

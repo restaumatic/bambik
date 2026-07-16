@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Cochoice (unleft)
 import Data.Profunctor.Costrong (unfirst)
-import Data.Profunctor.Row.RecordToRecord (colens, feedback, property, focusRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -22,7 +22,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import UI (PropagationStatus, UI(..), looped, resolveFor)
+import UI (PropagationStatus, UI(..), looped, resolveFor, updates)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -387,3 +387,34 @@ main = do
     fire gProp 7
     Ref.read outs >>= assertEqual "coreel: emission leaves" [ "7" ]
     Ref.read ins >>= assertEqual "coreel: emission resumes as next input" [ 5, 8 ]
+
+  -- updates (the Mealy update stage): each event emission is paired with
+  -- the retained model and folded; gated before a first model arrives.
+  do
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { n :: Int })
+    m <- unwrap (updates (\e s -> { n: s.n + e }) (probe gProp :: UI Effect { n :: Int } Int))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    fire gProp 3
+    Ref.read outs >>= assertEqual "updates: gated before a model" []
+    m.toUser { n: 10 }
+    Ref.read outs >>= assertEqual "updates: value passes through" [ { n: 10 } ]
+    fire gProp 3
+    Ref.read outs >>= assertEqual "updates: event folded into retained model" [ { n: 10 }, { n: 13 } ]
+
+  -- completed (output completion): fields the widget doesn't produce are
+  -- carried from the retained input; emissions are trimmed first, so a fat
+  -- runtime emission cannot shadow carried fields.
+  do
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+    m <- unwrap (completed (probe gProp :: UI Effect { a :: Int, b :: String } { a :: Int }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
+    fire gProp { a: 1 }
+    Ref.read outs >>= assertEqual "completed: gated before input" []
+    m.toUser { a: 0, b: "kept" }
+    fire gProp { a: 9 }
+    Ref.read outs >>= assertEqual "completed: emission over carried input" [ { a: 9, b: "kept" } ]
+    fire gProp (unsafeCoerce { a: 7, b: "stale" } :: { a :: Int })
+    Ref.read outs >>= assertEqual "completed: fat emission trimmed, carried field kept"
+      [ { a: 9, b: "kept" }, { a: 7, b: "kept" } ]

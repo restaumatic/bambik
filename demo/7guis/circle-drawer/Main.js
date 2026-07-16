@@ -1,12 +1,3 @@
-// setInnerHTML :: Node -> String -> Effect Unit
-export function setInnerHTML(node) {
-  return function (html) {
-    return function () {
-      node.innerHTML = html;
-    };
-  };
-}
-
 // onCanvasClick :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 // pointerdown works for mouse, touch and pen alike; coordinates are mapped
 // from CSS pixels into the SVG's viewBox space, so the responsive canvas

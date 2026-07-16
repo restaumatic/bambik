@@ -254,3 +254,26 @@ export function lastChild(node) {
     return node.lastChild;
   };
 }
+
+// setInnerHTML :: Node -> String -> Effect Unit
+export function setInnerHTML(node) {
+  return function (html) {
+    return function () {
+      node.innerHTML = html;
+    };
+  };
+}
+
+// onKeyClick :: Node -> (String -> Effect Unit) -> Effect Unit
+// Delegated: fires the callback with the data-key of the closest [data-key]
+// ancestor of the click target.
+export function onKeyClick(node) {
+  return function (callback) {
+    return function () {
+      node.addEventListener("click", function (event) {
+        const el = event.target.closest("[data-key]");
+        if (el) callback(el.dataset.key)();
+      });
+    };
+  };
+}

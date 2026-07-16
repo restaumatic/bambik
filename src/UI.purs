@@ -11,11 +11,13 @@ module UI
   , debounced
   , debounced'
   , effAdapter
+  , every
   , looped
   , resolveFor
   , seeded
   , silence
   , spied
+  , updates
   )
   where
 
@@ -325,6 +327,73 @@ seeded a = wrap $ pure unit <#> \_ ->
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         void $ prop a
+    }
+
+-- | The **Mealy update stage** on the `×`-diagonal: a pass-through wire
+-- | (every value fed flows on, so ticks and edits upstream keep driving
+-- | the loop) that retains the last value and, on each *event* emission of
+-- | the wrapped widget, folds it in and emits the updated value. Event
+-- | widgets emit **bare payloads** — no smuggling the model through event
+-- | cases, no pass-through `state` case in the event merge:
+-- |
+-- | ```
+-- | looped Semigroupoid.do
+-- |   form                                   -- ×→× editors
+-- |   updates handle RecordToVariant.do ...  -- ×→+ events, bare payloads
+-- | ```
+-- |
+-- | is the model–view–update shape as two named stages. Events arriving
+-- | before a first value are withheld (the usual knowledge gate).
+updates :: forall m s e. Functor m => (e -> s -> s) -> UI m s e -> UI m s s
+updates handler events = wrap $ unwrap events <#> \evts ->
+  let sRef = unsafePerformEffect $ Ref.new Nothing
+      mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \s -> do
+        Ref.write (Just s) sRef
+        evts.toUser s
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> void $ prop s
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        evts.fromUser \e -> do
+          ms <- Ref.read sRef
+          case ms of
+            Nothing -> pure Nothing
+            Just s -> do
+              let s' = handler e s
+              Ref.write (Just s') sRef
+              prop s'
+    }
+
+-- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
+-- | Retains the last value flowing through; every `interval`, applies
+-- | `step` to it — `Just` advances (retained and emitted), `Nothing`
+-- | pauses until fresh input arrives. Inside a `looped` chain this is a
+-- | tick source: the 7GUIs Timer is `every (Milliseconds 100.0) tick`.
+-- | The loop runs for the widget's whole life (no cancellation — a
+-- | prototype limitation shared with `action'`).
+every :: forall m a. Applicative m => Milliseconds -> (a -> Maybe a) -> UI m a a
+every interval step = wrap $ pure unit <#> \_ ->
+  let lastRef = unsafePerformEffect $ Ref.new Nothing
+      mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \a -> do
+        Ref.write (Just a) lastRef
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> void $ prop a
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        let
+          loop = do
+            delay interval
+            liftEffect do
+              ma <- Ref.read lastRef
+              for_ (ma >>= step) \a' -> do
+                Ref.write (Just a') lastRef
+                void $ prop a'
+            loop
+        launchAff_ loop
     }
 
 -- | The `×`-diagonal **self-trace**: feed a diagonal widget its own

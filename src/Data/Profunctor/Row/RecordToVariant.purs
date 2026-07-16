@@ -46,6 +46,7 @@ module Data.Profunctor.Row.RecordToVariant
   , recordToVariant
   , class Resolving
   , propertyToCase
+  , echoCase
   , recordToCase
   , resolve
   , resolveProperty
@@ -56,6 +57,7 @@ module Data.Profunctor.Row.RecordToVariant
   where
 
 import Data.Either (Either(..), either)
+import Control.Category (class Category, identity)
 import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -266,6 +268,21 @@ recordToCase
   => p { | r } f
   -> p { | r } [ | s ]
 recordToCase = rmap (inj (Proxy @l))
+
+-- | `recordToCase` over the echo wire, at the **closed singleton row** —
+-- | the `field` lesson applied to `× → +`: the pinned empty background
+-- | (`Cons l { | r } () s`) is what lets this infer with no annotations as
+-- | a merge operand, where `recordToCase @l identity`'s open output row is
+-- | ambiguous under the merges' `Nub`. Echoes every record fed as output
+-- | case `l` — the pass-through operand of an event merge.
+echoCase
+  :: forall @l p r s
+   . IsSymbol l
+  => Cons l { | r } () s
+  => Profunctor p
+  => Category p
+  => p { | r } [ | s ]
+echoCase = rmap (inj (Proxy @l)) identity
 
 -- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`
 -- | (instantiated to `s`) by co-Yoneda collapses `∃c. (s → a × c) × (b + c → t)`

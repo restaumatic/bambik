@@ -9,6 +9,7 @@ module Web
   , attr
   , attrDyn
   , body
+  , bodyWith
   , button
   , checkboxInput
   , cl
@@ -48,6 +49,9 @@ module Web
   , transient
   , ul
   , uniqueId
+  , viewEvents
+  , onKeyClick
+  , escapeHtml
   )
   where
 
@@ -58,6 +62,7 @@ import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
+import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
@@ -487,6 +492,36 @@ body ui = do
   node <- documentBody
   runWidgetInNode node default mempty ui
 
+-- | `body` with an explicit initial value and any output type — the
+-- | standalone-app entry: no `lcmap (const initial)` bracket, no trailing
+-- | `silence` (emissions are simply dropped).
+bodyWith :: forall a b. a -> UI Web a b -> Effect Unit
+bodyWith initial ui = do
+  node <- documentBody
+  runWidgetInNode node initial mempty ui
+
+-- | Build a `×→+` **view-with-events leaf**: `shell` is the container
+-- | markup (appended once), `render` fills it per value fed (no echo —
+-- | variant outputs don't echo), and `wire` attaches the event emitters to
+-- | the container node. Events carry **bare payloads** — pair them with
+-- | the model in an `updates` fold, not in the leaf.
+viewEvents :: forall i o. String -> (i -> String) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> UI Web i o
+viewEvents shell render wire = wrap do
+  _ <- unwrap (staticHTML shell)
+  node <- gets _.sibling
+  pure
+    { toUser: \i -> setInnerHTML node (render i)
+    , fromUser: \prop -> wire node (void <<< prop)
+    }
+
+-- | Escape text for interpolation into `viewEvents` render output.
+escapeHtml :: String -> String
+escapeHtml s =
+  replaceAll (Pattern "\"") (Replacement "&quot;")
+    (replaceAll (Pattern ">") (Replacement "&gt;")
+      (replaceAll (Pattern "<") (Replacement "&lt;")
+        (replaceAll (Pattern "&") (Replacement "&amp;") s)))
+
 runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
 runWidgetInSelectedNode selector initial callback ui = do
   node <- selectedNode selector
@@ -554,6 +589,8 @@ foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
+foreign import setInnerHTML :: Node -> String -> Effect Unit
+foreign import onKeyClick :: Node -> (String -> Effect Unit) -> Effect Unit
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }

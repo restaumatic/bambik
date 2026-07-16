@@ -2,27 +2,20 @@ module Main (main) where
 
 import Prelude
 
-import Data.Foldable (for_)
+import Data.Array (replicate)
 import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
-import Data.Newtype (wrap)
-import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Number.Format (fixed, toStringWith)
+import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith)
-import Data.Array (replicate)
-import Data.Variant (case_, on) as Variant
 import Effect (Effect)
-import Effect.Aff (Milliseconds(..), delay, launchAff_)
-import Effect.Class (liftEffect)
-import Effect.Ref as Ref
+import Effect.Aff (Milliseconds(..))
 import MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
-import UI (UI, looped, silence)
-import Web (Web, body, text)
+import UI (every, looped, updates)
+import Web (bodyWith, text)
 
 type Timer =
   { duration :: Number
@@ -30,25 +23,24 @@ type Timer =
   }
 
 main :: Effect Unit
-main = body @Unit $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } Semigroupoid.do
-  lcmap (const { duration: 10.0, elapsed: 0.0 }) $ looped Semigroupoid.do
-    RecordToRecord.do
-      MDC.headline6 $ lcmap gauge text
-      MDC.body1 $ lcmap (\(t :: Timer) -> format t.elapsed <> "s / " <> format t.duration <> "s") text
-      MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
-      -- elapsed has no editor; the echo wire carries it through the merge
-      field @"elapsed" identity
-    ticker 0.1
-    RecordToVariant.do
-      MDC.button @"reset" { label: Just "Reset", icon: Just "replay" }
-      (recordToCase @"state" identity :: UI Web Timer [ state :: Timer ])
-    rmap handle identity
-  silence
+main = bodyWith { duration: 10.0, elapsed: 0.0 } $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped Semigroupoid.do
+  completed RecordToRecord.do
+    MDC.headline6 $ lcmap gauge text
+    MDC.body1 $ lcmap elapsedCaption text
+    MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
+  every (Milliseconds 100.0) tick
+  updates reset $ MDC.button @"reset" { label: Just "Reset", icon: Just "replay" }
 
-handle :: [ reset :: Timer, state :: Timer ] -> Timer
-handle = Variant.case_
-  # Variant.on (Proxy @"reset") (_ { elapsed = 0.0 })
-  # Variant.on (Proxy @"state") identity
+reset :: forall e. e -> Timer -> Timer
+reset _ t = t { elapsed = 0.0 }
+
+elapsedCaption :: Timer -> String
+elapsedCaption t = format t.elapsed <> "s / " <> format t.duration <> "s"
+
+tick :: Timer -> Maybe Timer
+tick t
+  | t.elapsed < t.duration = Just (t { elapsed = min t.duration (t.elapsed + 0.1) })
+  | otherwise = Nothing
 
 gauge :: Timer -> String
 gauge t =
@@ -57,33 +49,4 @@ gauge t =
   in joinWith "" (replicate filled "█") <> joinWith "" (replicate (cells - filled) "░")
 
 format :: Number -> String
-format n = show (Int.round (n * 10.0) / 10) <> "." <> show (Int.round (n * 10.0) `mod` 10)
-
--- | The tick source: an echo wire with a heartbeat. Retains the last model
--- | fed; while `elapsed < duration`, emits an advanced copy every
--- | `intervalSeconds`. A candidate library leaf (`Web`-monad-free — it
--- | builds no DOM).
-ticker :: Number -> UI Web Timer Timer
-ticker intervalSeconds = wrap $ liftEffect do
-  lastRef <- Ref.new Nothing
-  mPropRef <- Ref.new Nothing
-  pure
-    { toUser: \t -> do
-        Ref.write (Just t) lastRef
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop t
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        let
-          loop = do
-            delay (Milliseconds (intervalSeconds * 1000.0))
-            liftEffect do
-              mt <- Ref.read lastRef
-              for_ mt \t ->
-                when (t.elapsed < t.duration) do
-                  let t' = t { elapsed = min t.duration (t.elapsed + intervalSeconds) }
-                  Ref.write (Just t') lastRef
-                  void $ prop t'
-            loop
-        launchAff_ loop
-    }
+format = toStringWith (fixed 1)
