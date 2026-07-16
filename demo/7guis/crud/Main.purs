@@ -1,17 +1,3 @@
--- | 7GUIs task 5: **CRUD** — a filterable name list with create, update
--- | and delete.
--- |
--- | One custom leaf (`listBox`, MDC list markup, delegated clicks) joins
--- | the standard vocabulary: the filter and name fields are `×→×` editors,
--- | the list is an editor of the `selected` field whose entries are
--- | *derived* input (`lcmap` from the whole model), `people` rides the
--- | echo wire through the merge, the three buttons are `×→+` events, and
--- | one fold (`handle`) is the entire business logic. `looped` keeps the
--- | ensemble consistent: filtering re-renders the list, mutations
--- | re-render everything.
--- |
--- | Selecting an entry prefills the name fields (a `picked` event through
--- | the fold), so update edits the selected person in place.
 module Main (main) where
 
 import Prelude

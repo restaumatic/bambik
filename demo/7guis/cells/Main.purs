@@ -1,17 +1,3 @@
--- | 7GUIs task 7: **Cells** — a spreadsheet with formulas and change
--- | propagation.
--- |
--- | The grid is a `×→+` citizen like Circle Drawer's canvas: the model in
--- | (rendered as a table of *computed* values), one click case out. The
--- | formula field is an ordinary `×→×` editor of the model's `formula`
--- | field; committing it to the selected cell is the fold's `state` case
--- | (the Circle Drawer resize pattern). Change propagation is free:
--- | every model emission re-evaluates the sheet, and references are
--- | resolved recursively with cycle detection.
--- |
--- | Formula language: a cell is a number, a text label, or `=expr` where
--- | expr has numbers, cell refs (`A0`), `+ - * /`, parentheses, and
--- | `SUM(A0:B5)` ranges. 26 columns (A–Z) × 30 rows.
 module Main (main) where
 
 import Prelude

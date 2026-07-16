@@ -1,13 +1,3 @@
--- | 7GUIs task 3: **Flight Booker** — a flight-type select, two date
--- | fields, and a book button with validation.
--- |
--- | The form is a `looped` record merge (the loop re-broadcasts the
--- | select's changes, so the return-date pane shows/hides live). The
--- | type-changing `select` is bracketed by `dimap` into a plain `String`
--- | field, as variant editors are in demo/1. Validation is a live `tapped`
--- | view of the form output plus the booking action itself: an invalid
--- | booking is refused with a status snackbar rather than a disabled
--- | button (value-driven `disabled` is the acknowledged adaptation).
 module Main (main) where
 
 import Prelude

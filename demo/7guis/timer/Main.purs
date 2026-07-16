@@ -1,13 +1,3 @@
--- | 7GUIs task 4: **Timer** — an elapsed gauge, an elapsed label, a
--- | duration slider, and a reset button; the timer ticks continuously.
--- |
--- | The tick source is a custom leaf (`ticker`): an echo wire with a
--- | heartbeat — it retains the last model and, while `elapsed < duration`,
--- | emits an advanced copy every interval. Everything else is standard
--- | vocabulary: the gauge and label are display operands of a record
--- | merge, the duration slider edits its field live, the reset button is
--- | the `×→+` event citizen, and `looped` ties the self-trace so every
--- | tick, drag, and click re-renders the whole ensemble.
 module Main (main) where
 
 import Prelude

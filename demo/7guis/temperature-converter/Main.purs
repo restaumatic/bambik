@@ -1,14 +1,3 @@
--- | 7GUIs task 2: **Temperature Converter** — bidirectional C ↔ F fields.
--- |
--- | The model holds one temperature (`{ celsius :: String }`); the
--- | Fahrenheit field is the same model seen through a `dimap` conversion
--- | bracket. `looped` ties the two stages into a self-trace, so an edit in
--- | either field flows around the loop and re-renders the other. The
--- | Fahrenheit stage is `debounced`, so mid-typing bursts settle before
--- | the loop canonicalizes the fields.
--- |
--- | Per the task, a non-numeric entry leaves the other field alone —
--- | here the conversion maps unparseable input to the empty string.
 module Main (main) where
 
 import Prelude

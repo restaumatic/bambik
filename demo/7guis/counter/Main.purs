@@ -1,10 +1,3 @@
--- | 7GUIs task 1: **Counter** — a label and a button that increments it.
--- |
--- | The whole app is one `×`-diagonal self-trace: display → event button →
--- | increment, `looped` so every emission re-renders the display. The
--- | count display is a `tapped` stage (a live view that passes the value
--- | on), the button is the `×→+` event citizen, and the increment is a
--- | plain model function on its output case.
 module Main (main) where
 
 import Prelude

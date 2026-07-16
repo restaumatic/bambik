@@ -1,18 +1,3 @@
--- | 7GUIs task 6: **Circle Drawer** — click to create circles, select and
--- | resize them, with undo/redo.
--- |
--- | The canvas is a `×→+` citizen like a button: it receives the whole
--- | model (and renders the circles), and emits one event case — a click
--- | with coordinates. It stays dumb: hit-testing, selection, creation,
--- | resizing and the undo/redo stacks all live in one fold (`handle`),
--- | plain model functions. The radius slider is an ordinary `×→×` editor
--- | of the model's `radius` field, shown only while a circle is selected;
--- | applying it to the selected circle (and snapshotting undo once per
--- | adjustment session) is the fold's `state` case.
--- |
--- | Adaptation: selection is by left click inside a circle (the reference
--- | uses hover + right-click popup); a resize session becomes one undoable
--- | action, snapshotted at its first slider change.
 module Main (main) where
 
 import Prelude
