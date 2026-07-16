@@ -11,13 +11,12 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith, stripPrefix)
 import Data.String (Pattern(..)) as String
-import Data.Variant (case_, on) as Variant
+import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
 import PUI.MDC (button, card, elevation20, filledTextField) as MDC
 import PUI.Web (Web, body, escapeHtml, onKeyClick, viewEvents) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 type Person = { name :: String, surname :: String }
 
@@ -60,18 +59,19 @@ handle ::
   , delete :: Model
   ]
   -> Model -> Model
-handle e m = e # (Variant.case_
-  # Variant.on (Proxy @"picked") (\i -> case index m.people i of
+handle e m = Variant.match
+  { picked: \i -> case index m.people i of
       Just p -> m { selected = Just i, name = p.name, surname = p.surname }
-      Nothing -> m)
-  # Variant.on (Proxy @"create") (\_ ->
-      m { people = snoc m.people { name: m.name, surname: m.surname } })
-  # Variant.on (Proxy @"update") (\_ -> case m.selected of
+      Nothing -> m
+  , create: \_ ->
+      m { people = snoc m.people { name: m.name, surname: m.surname } }
+  , update: \_ -> case m.selected of
       Just i -> m { people = fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people) }
-      Nothing -> m)
-  # Variant.on (Proxy @"delete") (\_ -> case m.selected of
+      Nothing -> m
+  , delete: \_ -> case m.selected of
       Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
-      Nothing -> m))
+      Nothing -> m
+  } e
 
 listBox :: PUI Web.Web Model [ picked :: Int ]
 listBox = Web.viewEvents
@@ -82,9 +82,8 @@ listBox = Web.viewEvents
   render m = joinWith "" (entries m <#> \e ->
     "<li class=\"mdc-deprecated-list-item" <> (if m.selected == Just e.key then " mdc-deprecated-list-item--selected" else "") <> "\" style=\"cursor: pointer;\" data-key=\"" <> show e.key <> "\">"
       <> Web.escapeHtml e.label <> "</li>")
-  entries m = m.people
-    # mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname })
-    # filter (\e -> hasPrefix m.prefix e.surname)
+  entries m = filter (\e -> hasPrefix m.prefix e.surname)
+    (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname }) m.people)
   hasPrefix p s = case stripPrefix (String.Pattern p) s of
     Just _ -> true
     Nothing -> false

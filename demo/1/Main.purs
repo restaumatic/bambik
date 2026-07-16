@@ -53,7 +53,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (case_, inj, on, prj) as Variant
+import Data.Variant (case_, inj, match, on, prj) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
@@ -114,8 +114,8 @@ main = Web.body $ with unit $ MDC.elevation20 Semigroupoid.do
           , { value: "takeaway", label: "Takeaway", icon: Nothing }
           , { value: "delivery", label: "Delivery", icon: Nothing }
           ]
-        Web.shownWhen (\r -> r.selected == "dineIn") $ MDC.filledTextField @"table" { floatingLabel: "Table" } # lcmap tableOf
-        Web.shownWhen (\r -> r.selected == "takeaway") $ MDC.filledTextField @"time" { floatingLabel: "Time" } # lcmap timeOf
+        Web.shownWhen (\r -> r.selected == "dineIn") $ lcmap tableOf $ MDC.filledTextField @"table" { floatingLabel: "Table" }
+        Web.shownWhen (\r -> r.selected == "takeaway") $ lcmap timeOf $ MDC.filledTextField @"time" { floatingLabel: "Time" }
         Web.shownWhen (\r -> r.selected == "delivery") $ lcmap addressOf $ RecordToRecord.do
           MDC.filledTextField @"address" { floatingLabel: "Address" }
           MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
@@ -134,7 +134,7 @@ main = Web.body $ with unit $ MDC.elevation20 Semigroupoid.do
     MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
   -- a live view of the form's output: displays every emission and passes it
   -- on (a sibling inside the merge would update on load only)
-  tapped $ debounced $ MDC.body1 $ Web.text # lcmap summarize
+  tapped $ debounced $ MDC.body1 $ lcmap summarize $ Web.text
   RecordToVariant.do
     MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
     MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
@@ -157,9 +157,10 @@ methodText ::
   , card :: Unit
   ]
   -> String
-methodText = Variant.case_
-  # Variant.on (Proxy @"cash") (const "cash")
-  # Variant.on (Proxy @"card") (const "card")
+methodText = Variant.match
+  { cash: const "cash"
+  , card: const "card"
+  }
 
 -- editor state for the fulfillment ensemble: the model holds one case at a
 -- time, the editor keeps every payload (retained by the merge gates while
@@ -178,10 +179,11 @@ fulfillmentState ::
   , delivery :: { address :: String }
   ]
   -> FulfillmentState
-fulfillmentState = Variant.case_
-  # Variant.on (Proxy @"dineIn") (\r -> { selected: "dineIn", table: r.table, time: "12:00", address: "" })
-  # Variant.on (Proxy @"takeaway") (\r -> { selected: "takeaway", table: "1", time: r.time, address: "" })
-  # Variant.on (Proxy @"delivery") (\r -> { selected: "delivery", table: "1", time: "12:00", address: r.address })
+fulfillmentState = Variant.match
+  { dineIn: \r -> { selected: "dineIn", table: r.table, time: "12:00", address: "" }
+  , takeaway: \r -> { selected: "takeaway", table: "1", time: r.time, address: "" }
+  , delivery: \r -> { selected: "delivery", table: "1", time: "12:00", address: r.address }
+  }
 
 fulfillmentCase :: FulfillmentState ->
   [ dineIn :: { table :: String }
@@ -207,9 +209,10 @@ methodState ::
   , card :: Unit
   ]
   -> { selected :: Maybe String }
-methodState = Variant.case_
-  # Variant.on (Proxy @"cash") (const { selected: Just "cash" })
-  # Variant.on (Proxy @"card") (const { selected: Just "card" })
+methodState = Variant.match
+  { cash: const { selected: Just "cash" }
+  , card: const { selected: Just "card" }
+  }
 
 methodCase :: { selected :: String } ->
   [ cash :: Unit
@@ -225,10 +228,11 @@ summarize order =
     <> ", fulfilled as " <> fulfillmentText order.fulfillment
     <> ", paid " <> order.payment.paid <> " by " <> methodText order.payment.method
   where
-  fulfillmentText = Variant.case_
-    # Variant.on (Proxy @"dineIn") (\r -> "dine in at table " <> r.table)
-    # Variant.on (Proxy @"takeaway") (\r -> "takeaway at " <> r.time)
-    # Variant.on (Proxy @"delivery") (\r -> "delivery to " <> r.address <> " (" <> distanceKm r.address <> " km away)")
+  fulfillmentText = Variant.match
+    { dineIn: \r -> "dine in at table " <> r.table
+    , takeaway: \r -> "takeaway at " <> r.time
+    , delivery: \r -> "delivery to " <> r.address <> " (" <> distanceKm r.address <> " km away)"
+    }
 
 -- asynchronous actions
 
@@ -280,7 +284,7 @@ printReceipt order = do
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web.Web { | r } {}
-reading render = Web.text # lcmap (\r -> render (get (Proxy @l) r))
+reading render = lcmap (\r -> render (get (Proxy @l) r)) Web.text
 
 
 

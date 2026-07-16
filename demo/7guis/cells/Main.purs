@@ -15,14 +15,13 @@ import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
-import Data.Variant (case_, on) as Variant
+import Data.Variant (match) as Variant
 import Effect (Effect)
-import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
+import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup) as Obj
 import PUI (PUI, looped, updates, with)
 import PUI.MDC (body1, card, elevation20, filledTextField) as MDC
 import PUI.Web (Web, body, escapeHtml, onKeyClick, text, viewEvents) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 cols :: Int
 cols = 26
@@ -39,26 +38,25 @@ type Model =
 main :: Effect Unit
 main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped
   $ with
-    { cells: Obj.empty
-        # Obj.insert "A0" "Item"    # Obj.insert "B0" "Price" # Obj.insert "C0" "Qty" # Obj.insert "D0" "Total"
-        # Obj.insert "A1" "Espresso" # Obj.insert "B1" "2.5"  # Obj.insert "C1" "2"   # Obj.insert "D1" "=B1*C1"
-        # Obj.insert "A2" "Cake"     # Obj.insert "B2" "4"    # Obj.insert "C2" "1"   # Obj.insert "D2" "=B2*C2"
-        # Obj.insert "A3" "Sum"      # Obj.insert "D3" "=SUM(D1:D2)"
+    { cells: Obj.fromHomogeneous
+        { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
+        , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
+        , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
+        , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
+        }
     , selected: Nothing
     , formula: ""
     }
   $ Semigroupoid.do
-  ( completed RecordToRecord.do
-      MDC.body1 $ Web.text # lcmap selectedCaption
-      MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
-  )
-    # rmap commit
+  rmap commit $ completed RecordToRecord.do
+    MDC.body1 $ lcmap selectedCaption Web.text
+    MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
   updates handle grid
 
 handle :: [ cellClicked :: String ] -> Model -> Model
-handle e m = e # (Variant.case_
-  # Variant.on (Proxy @"cellClicked") (\key ->
-      m { selected = Just key, formula = fromMaybe "" (Obj.lookup key m.cells) }))
+handle e m = Variant.match
+  { cellClicked: \key -> m { selected = Just key, formula = fromMaybe "" (Obj.lookup key m.cells) }
+  } e
 
 commit :: Model -> Model
 commit m = case m.selected of

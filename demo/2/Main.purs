@@ -34,7 +34,7 @@ main = Web.body $ with {} $ Web.div $ Semigroupoid.do
       RecordToRecord.do
         field @"greeting" $ Web.input "text"
         field @"name" $ Web.input "text"
-      Web.p $ Web.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!")
+      Web.p $ lcmap (\r -> r.greeting <> ", " <> r.name <> "!") $ Web.text
   silence
 
 -- model seed: its closed signature pins the live operand's input row

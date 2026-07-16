@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
 main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped $ with { count: 0 } Semigroupoid.do
-  completed $ MDC.headline4 $ Web.text # lcmap countCaption
+  completed $ MDC.headline4 $ lcmap countCaption $ Web.text
   updates increment $ MDC.button @"count" { label: Just "Count", icon: Nothing }
 
 increment :: forall click. click -> { count :: Int } -> { count :: Int }

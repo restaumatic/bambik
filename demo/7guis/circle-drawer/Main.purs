@@ -9,13 +9,12 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith)
-import Data.Variant (case_, on) as Variant
+import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
 import PUI.MDC (button, card, elevation20, slider) as MDC
 import PUI.Web (Node, Web, body, shownWhen, viewEvents) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 foreign import onCanvasClick :: Web.Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 
@@ -41,12 +40,9 @@ main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $
     , redoStack: []
     }
   $ Semigroupoid.do
-  completed
-    ( Web.shownWhen hasSelection $
-        MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
-          # lcmap diameterField
-    )
-    # rmap applyDiameter
+  rmap applyDiameter $ completed $
+    Web.shownWhen hasSelection $ lcmap diameterField $
+      MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
   updates handle RecordToVariant.do
     canvas
     MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }
@@ -59,19 +55,20 @@ handle ::
   , redo :: Model
   ]
   -> Model -> Model
-handle e m = e # (Variant.case_
-  # Variant.on (Proxy @"clicked") (\{ x, y } ->
+handle e m = Variant.match
+  { clicked: \{ x, y } ->
       case findIndex (\c -> dist c x y <= c.r) m.circles of
         Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
-        Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing })
-  # Variant.on (Proxy @"undo") (\_ -> case unsnoc m.undoStack of
+        Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
+  , undo: \_ -> case unsnoc m.undoStack of
       Just { init: rest, last: circles } ->
         m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
-      Nothing -> m)
-  # Variant.on (Proxy @"redo") (\_ -> case unsnoc m.redoStack of
+      Nothing -> m
+  , redo: \_ -> case unsnoc m.redoStack of
       Just { init: rest, last: circles } ->
         m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
-      Nothing -> m))
+      Nothing -> m
+  } e
 
 applyDiameter :: Model -> Model
 applyDiameter m = case m.selected of
@@ -92,9 +89,9 @@ canvas = Web.viewEvents
   render
   (\node emit -> onCanvasClick node \x y -> emit (.clicked { x, y }))
   where
-  render m = joinWith "" (m.circles # mapWithIndex \i c ->
+  render m = joinWith "" (mapWithIndex (\i c ->
     "<circle cx=\"" <> show c.x <> "\" cy=\"" <> show c.y <> "\" r=\"" <> show c.r
-      <> "\" stroke=\"#333\" fill=\"" <> (if m.selected == Just i then "#ddd" else "transparent") <> "\"/>")
+      <> "\" stroke=\"#333\" fill=\"" <> (if m.selected == Just i then "#ddd" else "transparent") <> "\"/>") m.circles)
 
 hasSelection :: Model -> Boolean
 hasSelection m = isJust m.selected

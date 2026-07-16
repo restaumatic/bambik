@@ -11,14 +11,13 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
-import Data.Variant (case_, on) as Variant
+import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff)
 import PUI (action, debounced, looped, with)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar) as MDC
 import PUI.Web (body, shownWhen, text) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 type Booking =
   { flightType :: String
@@ -35,13 +34,12 @@ main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Sem
         , { value: "return", label: "return flight" }
         ]
     MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
-    Web.shownWhen isReturn $
+    Web.shownWhen isReturn $ lcmap returnDate $
       MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
-        # lcmap returnDate
-  completed $ debounced $ MDC.body1 $ Web.text # lcmap validationText
+  completed $ debounced $ MDC.body1 $ lcmap validationText $ Web.text
   RecordToVariant.do
     MDC.button @"book" { label: Just "Book", icon: Just "flight_takeoff" }
-  action (Variant.case_ # Variant.on (Proxy @"book") bookFlight) MDC.indeterminateLinearProgress
+  action (Variant.match { book: bookFlight }) MDC.indeterminateLinearProgress
   VariantToRecord.do
     MDC.snackbar @"booked"
     MDC.snackbar @"rejected"

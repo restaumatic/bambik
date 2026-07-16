@@ -55,7 +55,7 @@ import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
-import Data.Variant (case_, inj, on, prj) as Variant
+import Data.Variant (case_, inj, match, on, prj) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
@@ -172,8 +172,8 @@ main = Web.body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" }
       -- the loop at registration
       feedback $ Semigroupoid.do
         seeded { volume: 0.0, peak: 0.0 }
-        identity # lcmap stepPeak
-        tapped $ MDC.body2 $ Web.text # lcmap peakLine
+        lcmap stepPeak identity
+        tapped $ MDC.body2 $ lcmap peakLine $ Web.text
       tapped $ MDC.body2 $ reading @"volume" (\v -> "Volume " <> show v)
     -- the variant model is edited through record-shaped editor state
     -- (`ShippingState` — all payloads persist, the merge gates retain them):
@@ -190,8 +190,8 @@ main = Web.body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" }
           [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
           , { value: "express", label: "Express", icon: Just "bolt" }
           ]
-        Web.shownWhen (\r -> r.selected == "standard") $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" } # lcmap daysOf
-        Web.shownWhen (\r -> r.selected == "express") $ MDC.filledTextField @"price" { floatingLabel: "Express fee" } # lcmap priceOf
+        Web.shownWhen (\r -> r.selected == "standard") $ lcmap daysOf $ MDC.filledTextField @"days" { floatingLabel: "Delivery days" }
+        Web.shownWhen (\r -> r.selected == "express") $ lcmap priceOf $ MDC.filledTextField @"price" { floatingLabel: "Express fee" }
     MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
       MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
       MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
@@ -216,7 +216,7 @@ main = Web.body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" }
           MDC.dataCell $ Web.staticText "Theme"
           MDC.dataCell $ reading @"theme" identity
     MDC.layoutCell { span: 12 } MDC.divider
-    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ Web.text # lcmap summarize
+    MDC.layoutCell { span: 12 } $ debounced $ MDC.body1 $ lcmap summarize $ Web.text
   -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
   -- broadcast) — every operand reads the settings record, each emits its
   -- own event cases (`recordToCase` inside the button components)
@@ -236,13 +236,13 @@ main = Web.body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" }
     -- "published" case exits into the dispatch like any other event
     MDC.card { caption: Just "Wizard (folding)" } $ folding @"next" $ Semigroupoid.do
       tapped $ RecordToRecord.do
-        Web.shownWhen (\r -> r.step == "review") $ MDC.body2 $ Web.text # lcmap reviewLine
-        Web.shownWhen (\r -> r.step == "confirm") $ MDC.body2 $ Web.text # lcmap confirmLine
+        Web.shownWhen (\r -> r.step == "review") $ MDC.body2 $ lcmap reviewLine $ Web.text
+        Web.shownWhen (\r -> r.step == "confirm") $ MDC.body2 $ lcmap confirmLine $ Web.text
       Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
         announce initialStep
-        Web.shownWhen (\r -> r.step == "review") $ MDC.button @"next" { label: Just "Next", icon: Nothing } # lcmap (toStep "confirm")
-        Web.shownWhen (\r -> r.step == "confirm") $ MDC.button @"next" { label: Just "Back", icon: Nothing } # lcmap (toStep "review")
-        Web.shownWhen (\r -> r.step == "confirm") $ MDC.button @"publish" { label: Just "Publish", icon: Just "publish" } # lcmap essentials
+        Web.shownWhen (\r -> r.step == "review") $ lcmap (toStep "confirm") $ MDC.button @"next" { label: Just "Next", icon: Nothing }
+        Web.shownWhen (\r -> r.step == "confirm") $ lcmap (toStep "review") $ MDC.button @"next" { label: Just "Back", icon: Nothing }
+        Web.shownWhen (\r -> r.step == "confirm") $ lcmap essentials $ MDC.button @"publish" { label: Just "Publish", icon: Just "publish" }
   -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —
   -- exclusive inputs, one action handler per event case
   VariantToVariant.do
@@ -265,7 +265,7 @@ main = Web.body $ with unit $ MDC.topAppBar { title: "Bambik · MDC2 showcase" }
   tapped $ unfolding @"resume" $ Semigroupoid.do
     seeded resumeZero
     dimap splitStatus countUp (retain identity)
-    tapped $ MDC.body2 $ Web.text # lcmap activityLine
+    tapped $ MDC.body2 $ lcmap activityLine $ Web.text
   -- the statuses: the +→× merge (direction class `VariantToRecord`) —
   -- one receiver per message case
   VariantToRecord.do
@@ -302,9 +302,10 @@ shippingText ::
   , express :: { price :: String }
   ]
   -> String
-shippingText = Variant.case_
-  # Variant.on (Proxy @"standard") (\r -> "standard (" <> r.days <> " days)")
-  # Variant.on (Proxy @"express") (\r -> "express (" <> r.price <> " fee)")
+shippingText = Variant.match
+  { standard: \r -> "standard (" <> r.days <> " days)"
+  , express: \r -> "express (" <> r.price <> " fee)"
+  }
 
 -- the shipping ensemble's editor state: the model holds one case at a
 -- time, the editor keeps every payload (retained by the merge gates while
@@ -317,9 +318,10 @@ shippingState ::
   , express :: { price :: String }
   ]
   -> ShippingState
-shippingState = Variant.case_
-  # Variant.on (Proxy @"standard") (\r -> { selected: "standard", days: r.days, price: "9.99" })
-  # Variant.on (Proxy @"express") (\r -> { selected: "express", days: "3", price: r.price })
+shippingState = Variant.match
+  { standard: \r -> { selected: "standard", days: r.days, price: "9.99" }
+  , express: \r -> { selected: "express", days: "3", price: r.price }
+  }
 
 shippingCase :: ShippingState ->
   [ standard :: { days :: String }
@@ -380,14 +382,15 @@ splitStatus ::
   , resume :: { count :: Int }
   ]
   -> Either String { count :: Int }
-splitStatus = Variant.case_
-  # Variant.on (Proxy @"saved") Left
-  # Variant.on (Proxy @"liked") Left
-  # Variant.on (Proxy @"shared") Left
-  # Variant.on (Proxy @"exported") Left
-  # Variant.on (Proxy @"resetDone") Left
-  # Variant.on (Proxy @"published") Left
-  # Variant.on (Proxy @"resume") Right
+splitStatus = Variant.match
+  { saved: Left
+  , liked: Left
+  , shared: Left
+  , exported: Left
+  , resetDone: Left
+  , published: Left
+  , resume: Right
+  }
 
 countUp :: Tuple String { count :: Int } -> { last :: String, count :: Int }
 countUp (Tuple message st) = { last: message, count: st.count + 1 }
@@ -461,4 +464,4 @@ publishFlaky r = do
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
 reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web.Web { | r } {}
-reading render = Web.text # lcmap (\r -> render (get (Proxy @l) r))
+reading render = lcmap (\r -> render (get (Proxy @l) r)) Web.text
