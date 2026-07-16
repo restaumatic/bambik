@@ -3,20 +3,18 @@ module Main (main) where
 import Prelude
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
-import Data.Foldable (for_)
-import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (completed)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.String (joinWith, stripPrefix)
+import Data.String (stripPrefix)
 import Data.String (Pattern(..)) as String
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (looped, updates, with)
-import PUI.HTML (attr, body, div, escapeHtml, viewEvents) as HTML
+import PUI.HTML (attr, body, cl, clWhen, clicked, div, foreach, li, text, ul) as HTML
 import PUI.MDC (button, card, elevation20, filledTextField) as MDC
-import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Person = { name :: String, surname :: String }
@@ -38,10 +36,11 @@ main =
           MDC.filledTextField @"surname" { floatingLabel: "Surname" }
       ) # completed
       ( RecordToVariant.do
-          HTML.viewEvents
-            """<ul class="mdc-deprecated-list" style="border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"></ul>"""
-            renderList
-            (\node emit -> onKeyClick node \key -> for_ (picked key) emit)
+          HTML.ul >>> HTML.cl "mdc-deprecated-list" >>> HTML.attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;" $ HTML.foreach
+            ( HTML.clicked $ HTML.clWhen _.selected "mdc-deprecated-list-item--selected"
+                $ HTML.li >>> HTML.cl "mdc-deprecated-list-item" >>> HTML.attr "style" "cursor: pointer;"
+                $ HTML.text # lcmap _.label
+            ) # rmap picked # lcmap entries
           HTML.div >>> HTML.attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
             MDC.button @"create" { label: Just "Create", icon: Nothing }
             MDC.button @"update" { label: Just "Update", icon: Nothing }
@@ -81,16 +80,15 @@ handle e m = Variant.match
       Nothing -> m
   } e
 
-picked :: String -> Maybe [ picked :: Int ]
-picked key = (\i -> .picked i) <$> Int.fromString key
+type Entry = { key :: Int, label :: String, surname :: String, selected :: Boolean }
 
-renderList :: Model -> String
-renderList m = joinWith "" (entries <#> \e ->
-  "<li class=\"mdc-deprecated-list-item" <> (if m.selected == Just e.key then " mdc-deprecated-list-item--selected" else "") <> "\" style=\"cursor: pointer;\" data-key=\"" <> show e.key <> "\">"
-    <> HTML.escapeHtml e.label <> "</li>")
+picked :: Entry -> [ picked :: Int ]
+picked e = .picked e.key
+
+entries :: Model -> Array Entry
+entries m = filter (\e -> hasPrefix m.prefix e.surname)
+  (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname, selected: m.selected == Just i }) m.people)
   where
-  entries = filter (\e -> hasPrefix m.prefix e.surname)
-    (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname }) m.people)
   hasPrefix p s = case stripPrefix (String.Pattern p) s of
     Just _ -> true
     Nothing -> false

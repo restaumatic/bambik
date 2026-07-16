@@ -294,3 +294,9 @@ export function onInputDebounced(node) {
     };
   };
 }
+
+export function removeAllChildren(node) {
+  return function () {
+    while (node.firstChild) node.removeChild(node.firstChild);
+  };
+}

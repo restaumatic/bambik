@@ -15,9 +15,12 @@ module PUI.HTML
   , button
   , checkboxInput
   , cl
+  , clWhen
+  , clicked
   , clDyn
   , div
   , escapeHtml
+  , foreach
   , h1
   , h2
   , h3
@@ -70,7 +73,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -443,6 +446,59 @@ variant w = wrap do
     , fromUser
     }
 
+
+-- | Value-dependent class for the last-built element: the class is present
+-- | exactly while the predicate holds for the value fed. (`shownWhen`'s
+-- | pattern, at class granularity.)
+clWhen :: forall i o. (i -> Boolean) -> String -> PUI Web i o -> PUI Web i o
+clWhen pred name w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  pure
+    { toUser: \i -> do
+        (if pred i then addClass else removeClass) node name
+        w'.toUser i
+    , fromUser: w'.fromUser
+    }
+
+-- | Make the last-built element a click emitter: content is display, the
+-- | element replays the last value fed on click — `button`'s protocol for
+-- | any element (a click before any value arrived is withheld).
+clicked :: forall i o. PUI Web i o -> PUI Web i i
+clicked w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  iRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \i -> do
+        Ref.write (Just i) iRef
+        w'.toUser i
+    , fromUser: \prop -> do
+        -- content is display-only: give its wiring a sink so echoes flow
+        w'.fromUser \_ -> pure Nothing
+        void $ addEventListener "click" node $ const do
+          mi <- Ref.read iRef
+          for_ mi \i -> void $ prop i
+    }
+
+-- | The dynamic collection: one instance of the item widget per array
+-- | element, rebuilt in the enclosing element on every value fed; every
+-- | instance's emissions share the collection's output channel. Wrap it in
+-- | a container ocular: `ul $ foreach item`.
+foreach :: forall a o. PUI Web a o -> PUI Web (Array a) o
+foreach w = wrap do
+  parent <- gets _.parent
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \items -> do
+        removeAllChildren parent
+        for_ items \item -> do
+          w' <- runDomInNode parent (unwrap w)
+          mProp <- Ref.read propRef
+          for_ mProp \prop -> w'.fromUser prop
+          void $ w'.toUser item
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
 
 -- Entry point
 
