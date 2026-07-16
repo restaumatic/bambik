@@ -59,7 +59,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, debounced, looped, silence, with)
-import PUI.HTML (body, shownWhen, text) as HTML
+import PUI.HTML (attr, body, div, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
 import PUI.Web (Web)
 import Prim.Row (class Cons)
@@ -146,7 +146,7 @@ main =
       -- a live view of the form's output: displays every emission and passes it
       -- on (a sibling inside the merge would update on load only)
       MDC.body1 (HTML.text # lcmap summarize) # debounced # tapped
-      RecordToVariant.do
+      HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
         MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
         MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
       VariantToVariant.do

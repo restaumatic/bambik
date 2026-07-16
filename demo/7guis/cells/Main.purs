@@ -18,10 +18,10 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup) as Obj
-import PUI (PUI, looped, updates, with)
+import PUI (looped, updates, with)
 import PUI.HTML (body, escapeHtml, text, viewEvents) as HTML
 import PUI.MDC (body1, card, elevation20, filledTextField) as MDC
-import PUI.Web (Web, onKeyClick)
+import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cols :: Int
@@ -43,7 +43,11 @@ main =
           MDC.body1 (HTML.text # lcmap selectedCaption)
           MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
       ) # completed # rmap commit
-      grid # updates handle
+      HTML.viewEvents
+        """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
+        renderTable
+        (\node emit -> onKeyClick node \key -> emit (clickedCell key))
+        # updates handle
   ) # with
       { cells: Obj.fromHomogeneous
           { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -67,11 +71,8 @@ commit m = case m.selected of
     m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
   _ -> m
 
-grid :: PUI Web Model [ cellClicked :: String ]
-grid = HTML.viewEvents
-  """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
-  renderTable
-  (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
+clickedCell :: String -> [ cellClicked :: String ]
+clickedCell key = .cellClicked key
 
 renderTable :: Model -> String
 renderTable m =

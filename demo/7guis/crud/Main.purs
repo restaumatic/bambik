@@ -14,7 +14,7 @@ import Data.String (Pattern(..)) as String
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
-import PUI.HTML (body, escapeHtml, viewEvents) as HTML
+import PUI.HTML (attr, body, div, escapeHtml, viewEvents) as HTML
 import PUI.MDC (button, card, elevation20, filledTextField) as MDC
 import PUI.Web (Web, onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -39,9 +39,10 @@ main =
       ) # completed
       ( RecordToVariant.do
           listBox
-          MDC.button @"create" { label: Just "Create", icon: Nothing }
-          MDC.button @"update" { label: Just "Update", icon: Nothing }
-          MDC.button @"delete" { label: Just "Delete", icon: Nothing }
+          HTML.div >>> HTML.attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
+            MDC.button @"create" { label: Just "Create", icon: Nothing }
+            MDC.button @"update" { label: Just "Update", icon: Nothing }
+            MDC.button @"delete" { label: Just "Delete", icon: Nothing }
       ) # updates handle
   ) # with
       { prefix: ""

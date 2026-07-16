@@ -11,10 +11,10 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith)
 import Data.Variant (match) as Variant
 import Effect (Effect)
-import PUI (PUI, looped, updates, with)
-import PUI.HTML (body, shownWhen, viewEvents) as HTML
+import PUI (looped, updates, with)
+import PUI.HTML (attr, body, div, shownWhen, viewEvents) as HTML
 import PUI.MDC (button, card, elevation20, slider) as MDC
-import PUI.Web (Node, Web)
+import PUI.Web (Node)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 foreign import onCanvasClick :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
@@ -38,9 +38,13 @@ main =
             # lcmap diameterField
         ) # completed # rmap applyDiameter
       ( RecordToVariant.do
-          canvas
-          MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }
-          MDC.button @"redo" { label: Just "Redo", icon: Just "redo" }
+          HTML.viewEvents
+            """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
+            renderCanvas
+            (\node emit -> onCanvasClick node \x y -> emit (clickedAt x y))
+          HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
+            MDC.button @"undo" { label: Just "Undo", icon: Just "undo" }
+            MDC.button @"redo" { label: Just "Redo", icon: Just "redo" }
       ) # updates handle
   ) # with
       { circles: []
@@ -87,15 +91,13 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
-canvas :: PUI Web Model [ clicked :: { x :: Number, y :: Number } ]
-canvas = HTML.viewEvents
-  """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
-  render
-  (\node emit -> onCanvasClick node \x y -> emit (.clicked { x, y }))
-  where
-  render m = joinWith "" (mapWithIndex (\i c ->
-    "<circle cx=\"" <> show c.x <> "\" cy=\"" <> show c.y <> "\" r=\"" <> show c.r
-      <> "\" stroke=\"#333\" fill=\"" <> (if m.selected == Just i then "#ddd" else "transparent") <> "\"/>") m.circles)
+clickedAt :: Number -> Number -> [ clicked :: { x :: Number, y :: Number } ]
+clickedAt x y = .clicked { x, y }
+
+renderCanvas :: Model -> String
+renderCanvas m = joinWith "" (mapWithIndex (\i c ->
+  "<circle cx=\"" <> show c.x <> "\" cy=\"" <> show c.y <> "\" r=\"" <> show c.r
+    <> "\" stroke=\"#333\" fill=\"" <> (if m.selected == Just i then "#ddd" else "transparent") <> "\"/>") m.circles)
 
 hasSelection :: Model -> Boolean
 hasSelection m = isJust m.selected
