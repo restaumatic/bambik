@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ ( Semigroupoid.do
-      MDC.headline4 (HTML.text # lcmap countCaption) # completed
+      MDC.headline4 (HTML.text # lcmap ({ value: _ } <<< countCaption)) # completed
       MDC.button { label: Just "Count", icon: Nothing } # updates increment
   ) # with { count: 0 } # looped
 

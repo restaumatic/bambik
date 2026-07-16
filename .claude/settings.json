@@ -46,7 +46,10 @@
       "Bash(git commit -q -m 'feat\\(rows\\): asField/asCase — canonical-label component interfaces \\(value/clicked\\); filledTextField, debouncedTextField, button converted; demos adopt '\\\\''# asField @l'\\\\'' style *)",
       "Bash(git commit -q -m 'timer: elapsed/duration readout composed from per-field text leaves glued with statics *)",
       "Bash(git commit -q -m 'circle-drawer: drop diameterField projection — completed absorbs the widening, shownWhen moved outside *)",
-      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/circle-drawer/Main.purs)"
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/circle-drawer/Main.purs)",
+      "Bash(grep -E 'lcmap|text$|text\\\\\\)|text #')",
+      "Bash(grep -n 'HTML.text\\\\|\\(text\\\\| text$\\\\| text\\)' test/HelloShutterReel.purs test/RestaurantReel.purs test/Main.purs)",
+      "Bash(git commit -q -m 'HTML: text is canonical \\({ value :: String } -> {}\\); formatters map value-records; forField sites drop the _.value bridge *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

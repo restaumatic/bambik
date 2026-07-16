@@ -40,7 +40,7 @@ main =
           HTML.ul >>> HTML.cl "mdc-deprecated-list" >>> HTML.attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;" $ HTML.foreach
             ( HTML.clicked $ HTML.clWhen _.selected "mdc-deprecated-list-item--selected"
                 $ HTML.li >>> HTML.cl "mdc-deprecated-list-item" >>> HTML.attr "style" "cursor: pointer;"
-                $ HTML.text # lcmap _.label
+                $ HTML.text # lcmap (\e -> { value: e.label })
             ) # rmap picked # lcmap entries
           HTML.div >>> HTML.attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
             MDC.button { label: Just "Create", icon: Nothing } # asCase @"create"

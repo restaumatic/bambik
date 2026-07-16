@@ -40,7 +40,7 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ ( Semigroupoid.do
       ( RecordToRecord.do
-          MDC.body1 (HTML.text # lcmap selectedCaption)
+          MDC.body1 (HTML.text # lcmap ({ value: _ } <<< selectedCaption))
           MDC.filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
       ) # completed # rmap commit
       HTML.viewEvents

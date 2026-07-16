@@ -35,7 +35,7 @@ main =
           RecordToRecord.do
             HTML.input "text" # field @"greeting"
             HTML.input "text" # field @"name"
-          HTML.p (HTML.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!"))
+          HTML.p (HTML.text # lcmap (\r -> { value: r.greeting <> ", " <> r.name <> "!" }))
       silence
   ) # with
       { greeting: "Hello"

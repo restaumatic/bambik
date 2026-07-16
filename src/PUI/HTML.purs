@@ -83,7 +83,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
 
-text :: PUI Web String {}
+text :: PUI Web { value :: String } {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -95,7 +95,7 @@ text = wrap do
   propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
     { toUser: \s -> do
-        setTextNodeValue node s
+        setTextNodeValue node s.value
         prop <- Ref.read propRef
         void $ prop {}
     , fromUser: \prop -> Ref.write prop propRef

@@ -99,7 +99,7 @@ main =
   HTML.body $ ( MDC.elevation20 Semigroupoid.do
       MDC.indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
-        MDC.headline6 (HTML.text # lcmap ("Order " <> _) # lcmap _.value # forField @"shortId")
+        MDC.headline6 (HTML.text # lcmap (\{ value: v } -> { value: "Order " <> v }) # forField @"shortId")
         MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           MDC.filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
@@ -126,7 +126,7 @@ main =
                 HTML.shownWhen (\r -> r.selected == "delivery")
                   ( ( RecordToRecord.do
                         MDC.filledTextField { floatingLabel: "Address" } # asField @"address"
-                        MDC.body1 (HTML.text # lcmap (\address -> "Distance " <> distanceKm address <> " km") # lcmap _.value # forField @"address")
+                        MDC.body1 (HTML.text # lcmap (\{ value: address } -> { value: "Distance " <> distanceKm address <> " km" }) # forField @"address")
                     ) # lcmap addressOf
                   )
             ) # looped # dimap fulfillmentState fulfillmentCase
@@ -143,12 +143,12 @@ main =
                 ]
                 # asField @"selected" # dimap methodState methodCase # field @"method"
               MDC.filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              MDC.body1 (HTML.text # lcmap (\method -> "Paying by " <> methodText method) # lcmap _.value # forField @"method")
+              MDC.body1 (HTML.text # lcmap (\{ value: method } -> { value: "Paying by " <> methodText method }) # forField @"method")
           ) # field @"payment"
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       -- a live view of the form's output: displays every emission and passes it
       -- on (a sibling inside the merge would update on load only)
-      MDC.body1 (HTML.text # lcmap summarize) # debounced # tapped
+      MDC.body1 (HTML.text # lcmap ({ value: _ } <<< summarize)) # debounced # tapped
       HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
         MDC.button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
         MDC.button { label: Just "Receipt", icon: Just "file" } # asCase @"printReceipt"

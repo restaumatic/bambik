@@ -42,7 +42,7 @@ main =
             # lcmap returnDate
         )
   ) # with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } # looped
-  MDC.body1 (HTML.text # lcmap validationText) # debounced # completed
+  MDC.body1 (HTML.text # lcmap ({ value: _ } <<< validationText)) # debounced # completed
   RecordToVariant.do
     MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
   MDC.indeterminateLinearProgress # action (Variant.match { book: bookFlight })

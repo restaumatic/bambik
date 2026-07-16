@@ -26,11 +26,11 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ ( Semigroupoid.do
       ( RecordToRecord.do
-          MDC.headline6 (HTML.text # lcmap gauge)
+          MDC.headline6 (HTML.text # lcmap ({ value: _ } <<< gauge))
           MDC.body1 RecordToRecord.do
-            HTML.text # lcmap (toStringWith (fixed 1)) # lcmap _.value # forField @"elapsed"
+            HTML.text # lcmap (\{ value: v } -> { value: toStringWith (fixed 1) v }) # forField @"elapsed"
             HTML.staticText "s / "
-            HTML.text # lcmap (toStringWith (fixed 1)) # lcmap _.value # forField @"duration"
+            HTML.text # lcmap (\{ value: v } -> { value: toStringWith (fixed 1) v }) # forField @"duration"
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed

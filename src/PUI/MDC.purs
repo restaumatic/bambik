@@ -756,7 +756,7 @@ simpleDialog { title, confirm } content =
 -- | The `+→×` status receiver: shows message case `l` in a snackbar,
 -- | contributing no fields (`text` echoes its `{}`, so it announces).
 snackbar :: PUI Web [ event :: String ] {}
-snackbar = snackbarContainer $ lcmap (Variant.on (Proxy @"event") identity Variant.case_) text
+snackbar = snackbarContainer $ lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -772,7 +772,7 @@ snackbarContainer content =
 -- | in an MDC banner, contributing no fields. Unlike the auto-dismissing
 -- | snackbar it stays until its own Dismiss action (foundation-handled).
 banner :: PUI Web [ event :: String ] {}
-banner = bannerContainer $ lcmap (Variant.on (Proxy @"event") identity Variant.case_) text
+banner = bannerContainer $ lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text
 
 bannerContainer :: Ocular (PUI Web)
 bannerContainer content =
