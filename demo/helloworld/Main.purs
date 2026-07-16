@@ -9,12 +9,12 @@ module Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import PUI.Data.Profunctor.Row.RecordToRecord (focusRecord)
 import Effect (Effect)
-import PUI.UI (silence, with)
+import PUI (silence, with)
+import PUI.Data.Profunctor.Row.RecordToRecord (focusRecord)
 import PUI.MDC as MDC
-import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI.Web (body)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
 main = body

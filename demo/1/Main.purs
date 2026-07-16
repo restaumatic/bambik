@@ -46,11 +46,6 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import PUI.Data.Profunctor.Row.RecordToRecord (field, tapped)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import PUI.Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (case_, inj, on, prj) as Variant
@@ -58,13 +53,18 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import PUI (UI, action, debounced, looped, silence, with)
+import PUI.Data.Profunctor.Row.RecordToRecord (field, tapped)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import PUI.Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import PUI.MDC as MDC
+import PUI.Web (Web, body, shownWhen, text)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import PUI.UI (UI, action, debounced, looped, silence, with)
-import PUI.Web (Web, body, shownWhen, text)
 
 -- The one named type — the aggregate the whole pipeline revolves around.
 -- Everything inside it is structural: anonymous record and variant rows.

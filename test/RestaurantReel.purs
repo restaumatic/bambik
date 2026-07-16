@@ -25,7 +25,7 @@ import Data.Profunctor (rmap)
 import PUI.Data.Profunctor.Row.VariantToRecord (reel)
 import Data.Variant (case_, on)
 import Type.Proxy (Proxy(..))
-import PUI.UI (UI)
+import PUI (UI)
 import PUI.Web (Web, button, staticText)
 
 type Money = Int

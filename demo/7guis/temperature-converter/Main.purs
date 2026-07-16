@@ -9,10 +9,10 @@ import Data.Profunctor (dimap)
 import Data.String (Pattern(..), stripSuffix)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
+import PUI (looped, with)
 import PUI.MDC as MDC
-import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI.UI (looped, with)
 import PUI.Web (body)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
 main = body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ looped $ with { celsius: "20" } Semigroupoid.do

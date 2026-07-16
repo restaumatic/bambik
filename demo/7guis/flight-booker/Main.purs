@@ -6,19 +6,19 @@ import Data.Either (Either(..))
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed, field)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff)
+import PUI (action, debounced, looped, with)
+import PUI.Data.Profunctor.Row.RecordToRecord (completed, field)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import PUI.MDC as MDC
+import PUI.Web (body, shownWhen, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import PUI.UI (action, debounced, looped, with)
-import PUI.Web (body, shownWhen, text)
 
 type Booking =
   { flightType :: String

@@ -271,7 +271,7 @@ Likewise: expanded/collapsed tree nodes, the active tab, a carousel's slide inde
 
 **Rule of thumb:** if the interaction *begins, runs, and resolves to a value*, it's `Resolving` (the `c` dies at `Done`); if it's *state the widget simply has and keeps updating*, it's `Retaining` (the `c` lives on). Both are the same `c`-feedback in `UI m` — differing only in whether a `Done` ever short-circuits out (a gesture's `mouseup`) or the loop runs indefinitely (the viewport never completes).
 
-This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that deliver this — `Resolving (UI m)` / `Retaining (UI m)` in [UI.purs](../src/PUI/UI.purs) — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
+This is why bambik wants them: today every bit of state must live in the business model and thread through every parent, so a counter's count or a panel's expanded-flag leaks into the domain types. `Retaining` keeps that state **local** to the widget; `Resolving` lets a drag / wizard / "add-another" widget **own its loop** instead of exposing each intermediate step. The instances that deliver this — `Resolving (UI m)` / `Retaining (UI m)` in [UI.purs](../src/PUI.purs) — wire the `c` feedback through `UI`'s `toUser`/`fromUser`.
 
 ## The optics as a domain model (DDD reading)
 

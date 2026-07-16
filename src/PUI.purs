@@ -1,4 +1,4 @@
-module PUI.UI
+module PUI
   ( Action
   , PropagationError
   , PropagationStatus

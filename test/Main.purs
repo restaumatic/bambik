@@ -22,7 +22,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI.UI (PropagationStatus, UI(..), looped, resolveFor, updates, with)
+import PUI (PropagationStatus, UI(..), looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit

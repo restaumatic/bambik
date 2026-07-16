@@ -7,17 +7,16 @@
 -- | sink. Code order = DOM order.
 module Main (main) where
 
-import Prelude hiding (div)
-
 import Data.Profunctor (lcmap)
-import PUI.Data.Profunctor.Row.RecordToRecord (field)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
+import PUI (UI, silence, with)
+import PUI.Data.Profunctor.Row.RecordToRecord (field)
+import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI.Web (Web, a, body, div, input, li, p, staticHTML, staticText, text, ul, (:=))
+import Prelude hiding (div)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI.UI (UI, silence, with)
-import PUI.Web (Web, a, body, div, input, li, p, staticHTML, staticText, text, ul, (:=))
 
 main :: Effect Unit
 main = body $ with {} $ div $ Semigroupoid.do

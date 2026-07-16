@@ -44,8 +44,15 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
 import Data.Profunctor (dimap, lcmap)
+import Data.Symbol (class IsSymbol)
+import Data.Tuple (Tuple(..))
+import Data.Variant (case_, inj, on, prj) as Variant
+import Effect (Effect)
+import Effect.Aff (Aff, Milliseconds(..), delay)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
+import PUI (UI, action, announce, debounced, looped, seeded, silence, with)
 import PUI.Data.Profunctor.Row.RecordToRecord (feedback, field, tapped)
 import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import PUI.Data.Profunctor.Row.RecordToVariant (folding)
@@ -54,20 +61,13 @@ import PUI.Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import PUI.Data.Profunctor.Row.VariantToVariant (iterate)
 import PUI.Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Symbol (class IsSymbol)
-import Data.Variant (case_, inj, on, prj) as Variant
-import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), delay)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import PUI.MDC as MDC
+import PUI.Web (Web, attr, body, shownWhen, staticText, text)
+import PUI.Web (div) as Web
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
 import Type.Proxy (Proxy(..))
-import PUI.UI (UI, action, announce, debounced, looped, seeded, silence, with)
-import PUI.Web (Web, attr, body, shownWhen, staticText, text)
-import PUI.Web (div) as Web
 
 -- The named types — the aggregate the whole pipeline revolves around,
 -- direction-split because the type-changing editors (radio, select,

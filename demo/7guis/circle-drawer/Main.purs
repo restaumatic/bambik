@@ -6,16 +6,16 @@ import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
 import Data.Profunctor (lcmap, rmap)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed)
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
+import PUI (UI, looped, updates, with)
+import PUI.Data.Profunctor.Row.RecordToRecord (completed)
+import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI.MDC as MDC
+import PUI.Web (Node, Web, body, shownWhen, viewEvents)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
-import PUI.UI (UI, looped, updates, with)
-import PUI.Web (Node, Web, body, shownWhen, viewEvents)
 
 foreign import onCanvasClick :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 

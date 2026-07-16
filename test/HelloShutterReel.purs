@@ -18,7 +18,7 @@ import PUI.Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI.UI (UI, silence, with)
+import PUI (UI, silence, with)
 import PUI.Web (Web, body, button, staticText, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the

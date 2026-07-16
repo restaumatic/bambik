@@ -123,7 +123,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI.UI (UI, effAdapter)
+import PUI (UI, effAdapter)
 import PUI.Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
 import PUI.Web (button) as Web
 
