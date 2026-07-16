@@ -16,7 +16,7 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToVariant (shutter)
 import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
-import PUI.MDC as MDC
+import PUI.MDC (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, silence, with)
 import PUI.Web (Web, body, button, staticText, text)
