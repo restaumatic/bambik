@@ -22,7 +22,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import UI (PropagationStatus, UI(..), looped, resolveFor, updates)
+import UI (PropagationStatus, UI(..), looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -418,3 +418,14 @@ main = do
     fire gProp (unsafeCoerce { a: 7, b: "stale" } :: { a :: Int })
     Ref.read outs >>= assertEqual "completed: fat emission trimmed, carried field kept"
       [ { a: 9, b: "kept" }, { a: 7, b: "kept" } ]
+
+  -- with (seeded's composition closure): the wrapped stage receives the
+  -- seed at registration, then inputs pass through
+  do
+    ins <- Ref.new ([] :: Array { n :: Int })
+    gProp <- Ref.new Nothing
+    m <- unwrap (with { n: 1 } (probeIO ins gProp :: UI Effect { n :: Int } { n :: Int }))
+    m.fromUser \_ -> pure Nothing
+    Ref.read ins >>= assertEqual "with: seed fed at registration" [ { n: 1 } ]
+    m.toUser { n: 2 }
+    Ref.read ins >>= assertEqual "with: inputs pass through" [ { n: 1 }, { n: 2 } ]

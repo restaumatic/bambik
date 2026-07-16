@@ -29,7 +29,8 @@
       "Bash(sed -i 's|<a href=\"../\">Go back to all 7GUIs tasks</a>|<a href=\"../\">&#171; Go back to all 7GUIs tasks</a>|' demo/7guis/*/index.html)",
       "Bash(git commit -m 'chore\\(7guis\\): « chevron on the back link *)",
       "Bash(git commit -m 'chore\\(7guis\\): landing page wording — 7GUIs and Bambik as links *)",
-      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/)"
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/)",
+      "Bash(git commit -m 'feat: with — seed any stage with an initial value *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

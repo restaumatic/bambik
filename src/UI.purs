@@ -18,6 +18,7 @@ module UI
   , silence
   , spied
   , updates
+  , with
   )
   where
 
@@ -308,6 +309,17 @@ announce o = wrap $ pure
   { toUser: mempty
   , fromUser: \prop -> void $ prop o
   }
+
+-- | Seed any stage with an initial value: `with a w` feeds `w` the value
+-- | `a` once at registration, then behaves as `w` — `seeded`'s composition
+-- | closure (`with a w = seeded a >>> w`, so `with a identity = seeded a`).
+-- | Insertable at every `UI m a b` position: in front of a form (the
+-- | initial model), around a merge operand (seeding just that operand's
+-- | gates), or in front of a knowledge-gated trace as its primer. At the
+-- | app entry use `bodyWith` instead — `body`'s own `default` feed would
+-- | arrive *after* the seed and overwrite it.
+with :: forall m a b. Applicative m => a -> UI m a b -> UI m a b
+with a w = seeded a >>> w
 
 -- | The **seeded echo wire**: `identity`'s pass-through plus one emission
 -- | of the seed at registration. As the first stage of a knowledge-gated
