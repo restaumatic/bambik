@@ -12,12 +12,13 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (focusRecord)
 import Effect (Effect)
 import PUI (silence, with)
+import PUI.HTML (body) as HTML
 import PUI.MDC (filledTextField) as MDC
-import PUI.Web (body) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = Web.body $ ( Semigroupoid.do
+main =
+  HTML.body $ ( Semigroupoid.do
       MDC.filledTextField @"foo" { floatingLabel: "Foo" } # focusRecord
       MDC.filledTextField @"day" { floatingLabel: "Day" } # focusRecord
       MDC.filledTextField @"quantity" { floatingLabel: "Quantity" } # focusRecord

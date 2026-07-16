@@ -12,11 +12,12 @@ import Data.String (joinWith)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
+import PUI.HTML (body, shownWhen, viewEvents) as HTML
 import PUI.MDC (button, card, elevation20, slider) as MDC
-import PUI.Web (Node, Web, body, shownWhen, viewEvents) as Web
+import PUI.Web (Node, Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-foreign import onCanvasClick :: Web.Node -> (Number -> Number -> Effect Unit) -> Effect Unit
+foreign import onCanvasClick :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 
 type Circle = { x :: Number, y :: Number, r :: Number }
 
@@ -30,8 +31,9 @@ type Model =
   }
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
-      Web.shownWhen hasSelection
+main =
+  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
+      HTML.shownWhen hasSelection
         ( MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
             # lcmap diameterField
         ) # completed # rmap applyDiameter
@@ -85,8 +87,8 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
-canvas :: PUI Web.Web Model [ clicked :: { x :: Number, y :: Number } ]
-canvas = Web.viewEvents
+canvas :: PUI Web Model [ clicked :: { x :: Number, y :: Number } ]
+canvas = HTML.viewEvents
   """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
   render
   (\node emit -> onCanvasClick node \x y -> emit (.clicked { x, y }))

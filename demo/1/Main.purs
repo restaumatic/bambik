@@ -59,8 +59,9 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, debounced, looped, silence, with)
+import PUI.HTML (body, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
-import PUI.Web (Web, body, shownWhen, text) as Web
+import PUI.Web (Web)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
@@ -92,7 +93,8 @@ type Order =
   }
 
 main :: Effect Unit
-main = Web.body $ ( MDC.elevation20 Semigroupoid.do
+main =
+  HTML.body $ ( MDC.elevation20 Semigroupoid.do
       MDC.indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
         MDC.headline6 $ reading @"shortId" ("Order " <> _)
@@ -116,9 +118,9 @@ main = Web.body $ ( MDC.elevation20 Semigroupoid.do
                   , { value: "takeaway", label: "Takeaway", icon: Nothing }
                   , { value: "delivery", label: "Delivery", icon: Nothing }
                   ]
-                Web.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField @"table" { floatingLabel: "Table" } # lcmap tableOf)
-                Web.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField @"time" { floatingLabel: "Time" } # lcmap timeOf)
-                Web.shownWhen (\r -> r.selected == "delivery")
+                HTML.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField @"table" { floatingLabel: "Table" } # lcmap tableOf)
+                HTML.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField @"time" { floatingLabel: "Time" } # lcmap timeOf)
+                HTML.shownWhen (\r -> r.selected == "delivery")
                   ( ( RecordToRecord.do
                         MDC.filledTextField @"address" { floatingLabel: "Address" }
                         MDC.body1 $ reading @"address" \address -> "Distance " <> distanceKm address <> " km"
@@ -143,7 +145,7 @@ main = Web.body $ ( MDC.elevation20 Semigroupoid.do
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea @"remarks" { columns: 80, rows: 3 }
       -- a live view of the form's output: displays every emission and passes it
       -- on (a sibling inside the merge would update on load only)
-      MDC.body1 (Web.text # lcmap summarize) # debounced # tapped
+      MDC.body1 (HTML.text # lcmap summarize) # debounced # tapped
       RecordToVariant.do
         MDC.button @"submit" { label: Just "Submit order", icon: Just "save" }
         MDC.button @"printReceipt" { label: Just "Receipt", icon: Just "file" }
@@ -293,8 +295,8 @@ printReceipt order = do
 
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web.Web { | r } {}
-reading render = lcmap (\r -> render (get (Proxy @l) r)) Web.text
+reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
+reading render = lcmap (\r -> render (get (Proxy @l) r)) HTML.text
 
 
 

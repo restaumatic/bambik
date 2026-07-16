@@ -61,8 +61,9 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, announce, debounced, looped, seeded, silence, with)
+import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, slider, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
-import PUI.Web (Web, attr, body, div, shownWhen, staticText, text) as Web
+import PUI.Web (Web)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Record (get)
@@ -108,22 +109,23 @@ type SettingsOut =
   }
 
 main :: Effect Unit
-main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
+main =
+  HTML.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
     ( MDC.list RecordToRecord.do
-        MDC.listItem $ Web.staticText "Text fields"
-        MDC.listItem $ Web.staticText "Selection controls"
-        MDC.listItem $ Web.staticText "Chips"
-        MDC.listItem $ Web.staticText "Segmented buttons"
-        MDC.listItem $ Web.staticText "Menus"
-        MDC.listItem $ Web.staticText "Sliders"
-        MDC.listItem $ Web.staticText "Tabs"
-        MDC.listItem $ Web.staticText "Data tables"
-        MDC.listItem $ Web.staticText "Image lists"
+        MDC.listItem $ HTML.staticText "Text fields"
+        MDC.listItem $ HTML.staticText "Selection controls"
+        MDC.listItem $ HTML.staticText "Chips"
+        MDC.listItem $ HTML.staticText "Segmented buttons"
+        MDC.listItem $ HTML.staticText "Menus"
+        MDC.listItem $ HTML.staticText "Sliders"
+        MDC.listItem $ HTML.staticText "Tabs"
+        MDC.listItem $ HTML.staticText "Data tables"
+        MDC.listItem $ HTML.staticText "Image lists"
         MDC.divider
-        MDC.listItem $ Web.staticText "Buttons & FAB"
-        MDC.listItem $ Web.staticText "Wizard"
-        MDC.listItem $ Web.staticText "Progress indicators"
-        MDC.listItem $ Web.staticText "Banner & snackbars"
+        MDC.listItem $ HTML.staticText "Buttons & FAB"
+        MDC.listItem $ HTML.staticText "Wizard"
+        MDC.listItem $ HTML.staticText "Progress indicators"
+        MDC.listItem $ HTML.staticText "Banner & snackbars"
     ) Semigroupoid.do
       -- the pipeline: stages composed with `Semigroupoid` (`>>>` under the do)
       MDC.indeterminateLinearProgress # action loadSettings
@@ -136,7 +138,7 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
           MDC.filledTextField @"name" { floatingLabel: "Name" }
           MDC.filledTextArea @"notes" { columns: 60, rows: 3 }
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Selection controls" } RecordToRecord.do
-          MDC.checkbox @"subscribed" $ Web.staticText "Subscribe to the newsletter"
+          MDC.checkbox @"subscribed" $ HTML.staticText "Subscribe to the newsletter"
           MDC.radioButton @"plan"
             [ { value: "free", label: "Free plan" }
             , { value: "pro", label: "Pro plan" }
@@ -144,7 +146,7 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
             ]
           MDC.tooltip { text: "Toggles connectivity" } $ MDC.toggleSwitch @"wifi" { label: "Wi-Fi" }
           MDC.iconToggle @"dark" { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" }
-          Web.staticText "Dark mode"
+          HTML.staticText "Dark mode"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Chips" } $ MDC.chipSet RecordToRecord.do
           MDC.filterChip @"favorite" { label: "Favorite" }
           MDC.filterChip @"archived" { label: "Archived" }
@@ -173,7 +175,7 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
           ( Semigroupoid.do
               seeded { volume: 0.0, peak: 0.0 }
               lcmap stepPeak identity
-              MDC.body2 (Web.text # lcmap peakLine) # tapped
+              MDC.body2 (HTML.text # lcmap peakLine) # tapped
           ) # feedback
           MDC.body2 (reading @"volume" (\v -> "Volume " <> show v)) # tapped
         -- the variant model is edited through record-shaped editor state
@@ -191,8 +193,8 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
                   [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
                   , { value: "express", label: "Express", icon: Just "bolt" }
                   ]
-                Web.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField @"days" { floatingLabel: "Delivery days" } # lcmap daysOf)
-                Web.shownWhen (\r -> r.selected == "express") (MDC.filledTextField @"price" { floatingLabel: "Express fee" } # lcmap priceOf)
+                HTML.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField @"days" { floatingLabel: "Delivery days" } # lcmap daysOf)
+                HTML.shownWhen (\r -> r.selected == "express") (MDC.filledTextField @"price" { floatingLabel: "Express fee" } # lcmap priceOf)
             ) # looped # dimap shippingState shippingCase
           ) # field @"shipping"
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
@@ -210,22 +212,22 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
           MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
             MDC.dataRow RecordToRecord.do
-              MDC.dataCell $ Web.staticText "Name"
+              MDC.dataCell $ HTML.staticText "Name"
               MDC.dataCell $ reading @"name" identity
             MDC.dataRow RecordToRecord.do
-              MDC.dataCell $ Web.staticText "Volume"
+              MDC.dataCell $ HTML.staticText "Volume"
               MDC.dataCell $ reading @"volume" show
             MDC.dataRow RecordToRecord.do
-              MDC.dataCell $ Web.staticText "Theme"
+              MDC.dataCell $ HTML.staticText "Theme"
               MDC.dataCell $ reading @"theme" identity
         MDC.layoutCell { span: 12 } MDC.divider
-        MDC.layoutCell { span: 12 } (MDC.body1 (Web.text # lcmap summarize) # debounced)
+        MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # lcmap summarize) # debounced)
       ) # tapped
       -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
       -- broadcast) — every operand reads the settings record, each emits its
       -- own event cases (`recordToCase` inside the button components)
       RecordToVariant.do
-        MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
+        MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
           MDC.button @"save" { label: Just "Save", icon: Just "save" }
           MDC.fab @"like" { icon: "favorite", label: Just "Like" }
           MDC.iconButton @"share" { icon: "share", label: "Share" }
@@ -241,14 +243,14 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
         MDC.card { caption: Just "Wizard (folding)" }
           ( ( Semigroupoid.do
                 ( RecordToRecord.do
-                    Web.shownWhen (\r -> r.step == "review") $ MDC.body2 (Web.text # lcmap reviewLine)
-                    Web.shownWhen (\r -> r.step == "confirm") $ MDC.body2 (Web.text # lcmap confirmLine)
+                    HTML.shownWhen (\r -> r.step == "review") $ MDC.body2 (HTML.text # lcmap reviewLine)
+                    HTML.shownWhen (\r -> r.step == "confirm") $ MDC.body2 (HTML.text # lcmap confirmLine)
                 ) # tapped
-                Web.div >>> Web.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
+                HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
                   announce initialStep
-                  Web.shownWhen (\r -> r.step == "review") (MDC.button @"next" { label: Just "Next", icon: Nothing } # lcmap (toStep "confirm"))
-                  Web.shownWhen (\r -> r.step == "confirm") (MDC.button @"next" { label: Just "Back", icon: Nothing } # lcmap (toStep "review"))
-                  Web.shownWhen (\r -> r.step == "confirm") (MDC.button @"publish" { label: Just "Publish", icon: Just "publish" } # lcmap essentials)
+                  HTML.shownWhen (\r -> r.step == "review") (MDC.button @"next" { label: Just "Next", icon: Nothing } # lcmap (toStep "confirm"))
+                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button @"next" { label: Just "Back", icon: Nothing } # lcmap (toStep "review"))
+                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button @"publish" { label: Just "Publish", icon: Just "publish" } # lcmap essentials)
             ) # folding @"next"
           )
       -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —
@@ -273,7 +275,7 @@ main = Web.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.dra
       ( Semigroupoid.do
           seeded resumeZero
           retain identity # dimap splitStatus countUp
-          MDC.body2 (Web.text # lcmap activityLine) # tapped
+          MDC.body2 (HTML.text # lcmap activityLine) # tapped
       ) # unfolding @"resume" # tapped
       -- the statuses: the +→× merge (direction class `VariantToRecord`) —
       -- one receiver per message case
@@ -473,5 +475,5 @@ publishFlaky r = do
 
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web.Web { | r } {}
-reading render = lcmap (\r -> render (get (Proxy @l) r)) Web.text
+reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
+reading render = lcmap (\r -> render (get (Proxy @l) r)) HTML.text

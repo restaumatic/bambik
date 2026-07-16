@@ -124,8 +124,9 @@ import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, effAdapter)
-import PUI.Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
-import PUI.Web (button) as Web
+import PUI.HTML (aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
+import PUI.HTML (button) as HTML
+import PUI.Web (Node, Web, uniqueId)
 
 -- UIs
 
@@ -184,7 +185,7 @@ tabBarLeaf options =
 -- shaped role (`button @l`)
 containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> PUI Web a a
 containedButton { label, icon } =
-  Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+  HTML.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-button__ripple" $ pempty
     case icon of
       Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon'
@@ -198,7 +199,7 @@ containedButton { label, icon } =
 -- | extended FAB.
 fab :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: Maybe String } -> PUI Web { | r } [ | s ]
 fab config = recordToCase @l $
-  Web.button >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+  HTML.button >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-fab__ripple" $ pempty
     span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText config.icon
     case config.label of
@@ -213,7 +214,7 @@ fab config = recordToCase @l $
 -- | variant see the `×→×` editor `iconToggle @l`).
 iconButton :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: String } -> PUI Web { | r } [ | s ]
 iconButton config = recordToCase @l $
-  Web.button >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+  HTML.button >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-icon-button__ripple" $ pempty
     staticText config.icon
 
@@ -223,7 +224,7 @@ menuItem :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: Strin
 menuItem config = recordToCase @l (menuItemLeaf config.label)
 
 -- the raw list-item button — scalar, so private (same wiring as
--- `Web.button`: replay the last value fed on click, `li` chrome)
+-- `HTML.button`: replay the last value fed on click, `li` chrome)
 menuItemLeaf :: forall a. String -> PUI Web a a
 menuItemLeaf lbl = wrap do
   _ <- unwrap (li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" $ RecordToRecord.do
@@ -743,7 +744,7 @@ simpleDialog { title, confirm } content =
             _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := id' $ content)
           div >>> cl "mdc-dialog__actions" $
-            Web.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ RecordToRecord.do
+            HTML.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ RecordToRecord.do
               div >>> cl "mdc-button__ripple" $ pempty
               span >>> cl "mdc-button__label" $ staticText confirm
     _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)

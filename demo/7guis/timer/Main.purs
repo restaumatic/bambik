@@ -13,8 +13,8 @@ import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (every, looped, updates, with)
+import PUI.HTML (body, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, headline6, slider) as MDC
-import PUI.Web (body, text) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Timer =
@@ -23,10 +23,11 @@ type Timer =
   }
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ ( Semigroupoid.do
+main =
+  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ ( Semigroupoid.do
       ( RecordToRecord.do
-          MDC.headline6 (Web.text # lcmap gauge)
-          MDC.body1 (Web.text # lcmap elapsedCaption)
+          MDC.headline6 (HTML.text # lcmap gauge)
+          MDC.body1 (HTML.text # lcmap elapsedCaption)
           MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
       ) # completed
       every (Milliseconds 100.0) tick

@@ -10,12 +10,13 @@ import Data.String (Pattern(..), stripSuffix)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (looped, with)
+import PUI.HTML (body) as HTML
 import PUI.MDC (card, debouncedTextField, elevation20) as MDC
-import PUI.Web (body) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
+main =
+  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
       MDC.debouncedTextField @"celsius" { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
       MDC.debouncedTextField @"fahrenheit" { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
         # dimap celsiusToFahrenheit fahrenheitToCelsius

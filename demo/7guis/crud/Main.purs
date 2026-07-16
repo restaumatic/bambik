@@ -14,8 +14,9 @@ import Data.String (Pattern(..)) as String
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (PUI, looped, updates, with)
+import PUI.HTML (body, escapeHtml, viewEvents) as HTML
 import PUI.MDC (button, card, elevation20, filledTextField) as MDC
-import PUI.Web (Web, body, escapeHtml, onKeyClick, viewEvents) as Web
+import PUI.Web (Web, onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Person = { name :: String, surname :: String }
@@ -29,7 +30,8 @@ type Model =
   }
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ ( Semigroupoid.do
+main =
+  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ ( Semigroupoid.do
       ( RecordToRecord.do
           MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
           MDC.filledTextField @"name" { floatingLabel: "Name" }
@@ -75,15 +77,15 @@ handle e m = Variant.match
       Nothing -> m
   } e
 
-listBox :: PUI Web.Web Model [ picked :: Int ]
-listBox = Web.viewEvents
+listBox :: PUI Web Model [ picked :: Int ]
+listBox = HTML.viewEvents
   """<ul class="mdc-deprecated-list" style="border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"></ul>"""
   render
-  (\node emit -> Web.onKeyClick node \key -> for_ (Int.fromString key) \i -> emit (.picked i))
+  (\node emit -> onKeyClick node \key -> for_ (Int.fromString key) \i -> emit (.picked i))
   where
   render m = joinWith "" (entries m <#> \e ->
     "<li class=\"mdc-deprecated-list-item" <> (if m.selected == Just e.key then " mdc-deprecated-list-item--selected" else "") <> "\" style=\"cursor: pointer;\" data-key=\"" <> show e.key <> "\">"
-      <> Web.escapeHtml e.label <> "</li>")
+      <> HTML.escapeHtml e.label <> "</li>")
   entries m = filter (\e -> hasPrefix m.prefix e.surname)
     (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname }) m.people)
   hasPrefix p s = case stripPrefix (String.Pattern p) s of

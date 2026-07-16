@@ -7,13 +7,14 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (completed)
 import Effect (Effect)
 import PUI (looped, updates, with)
+import PUI.HTML (body, text) as HTML
 import PUI.MDC (button, card, elevation20, headline4) as MDC
-import PUI.Web (body, text) as Web
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = Web.body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ ( Semigroupoid.do
-      MDC.headline4 (Web.text # lcmap countCaption) # completed
+main =
+  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ ( Semigroupoid.do
+      MDC.headline4 (HTML.text # lcmap countCaption) # completed
       MDC.button @"count" { label: Just "Count", icon: Nothing } # updates increment
   ) # with { count: 0 } # looped
 

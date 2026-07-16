@@ -15,26 +15,27 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import PUI (PUI, silence, with)
-import PUI.Web ((:=))
-import PUI.Web (a, body, div, input, li, p, staticHTML, staticText, text, ul) as Web
+import PUI.HTML ((:=))
+import PUI.HTML (a, body, div, input, li, p, staticHTML, staticText, text, ul) as HTML
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
-main = Web.body $ ( Web.div $ Semigroupoid.do
+main =
+  HTML.body $ ( HTML.div $ Semigroupoid.do
       RecordToRecord.do
-        Web.p $ Web.staticText "Hello World!"
-        Web.ul $ RecordToRecord.do
-          Web.li $ Web.staticText "One"
-          Web.li $ Web.staticText "Two"
-          Web.li $ Web.staticText "Three"
-        Web.a >>> "href" := "https://www.google.com" $ Web.staticText "Search for me!"
-        Web.staticHTML "<hr/>"
+        HTML.p $ HTML.staticText "Hello World!"
+        HTML.ul $ RecordToRecord.do
+          HTML.li $ HTML.staticText "One"
+          HTML.li $ HTML.staticText "Two"
+          HTML.li $ HTML.staticText "Three"
+        HTML.a >>> "href" := "https://www.google.com" $ HTML.staticText "Search for me!"
+        HTML.staticHTML "<hr/>"
         ( Semigroupoid.do
             RecordToRecord.do
-              Web.input "text" # field @"greeting"
-              Web.input "text" # field @"name"
-            Web.p (Web.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!"))
+              HTML.input "text" # field @"greeting"
+              HTML.input "text" # field @"name"
+            HTML.p (HTML.text # lcmap (\r -> r.greeting <> ", " <> r.name <> "!"))
         ) # lcmap seed
       silence
   ) # with {}

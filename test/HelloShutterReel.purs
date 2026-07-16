@@ -19,7 +19,8 @@ import Effect (Effect)
 import PUI.MDC (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, silence, with)
-import PUI.Web (Web, body, button, staticText, text)
+import PUI.HTML (body, button, staticText, text)
+import PUI.Web (Web)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
 -- | greeting **prefix**, installed from the model side (`Right` — the app's
