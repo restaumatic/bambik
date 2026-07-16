@@ -1,7 +1,7 @@
 -- | `Record → Variant` (× → +) row profunctors, organized (uniformly across
 -- | the four direction modules) as:
 -- |
--- |   * **strength** — `Resolving` (defined here; `UI m` instances only, no
+-- |   * **strength** — `Resolving` (defined here; `PUI m` instances only, no
 -- |     `(->)`): the unary power, a loop/iteration step.
 -- |   * **direction class** — `RecordToVariant`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
@@ -29,9 +29,9 @@
 -- | As nullary operator, `pempty` is the empty merge:
 -- | `recordToVariant pempty g = g`. Silence is forced on the output end (the
 -- | empty variant is uninhabited) and sufficient on the input end (the empty
--- | record demands nothing), so `UI` implements it as its silent widget:
+-- | record demands nothing), so `PUI` implements it as its silent widget:
 -- | `pempty = silence`.
-module PUI.Data.Profunctor.Row.RecordToVariant
+module Data.Profunctor.Row.RecordToVariant
   ( Coshutter
   , coshutter
   , coshutterE
@@ -68,7 +68,7 @@ import Record (get)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
-import PUI.Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
+import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** product→sum strength for this direction: a single **loop /
@@ -90,7 +90,7 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | unary form of `recordToRecord`.
 -- |
 -- | With no out-of-band loop signal in the wire protocol (values are just
--- | values), the `UI` instance derives the branch **from time**: every
+-- | values), the `PUI` instance derives the branch **from time**: every
 -- | emission loops (`Right`) while the widget is still moving, and the last
 -- | emission resolves (`Left`) at quiescence — so
 -- | `coresolve (resolve g) = debounced g ≅ g` up to time, once primed.
@@ -113,7 +113,7 @@ class Profunctor p <= Resolving p where
 -- | `Coretaining` = control that emits each step).
 -- |
 -- | Retraction law, shared by all four traces: `coresolve (resolve g) ≅ g` —
--- | once the state channel is primed (state must enter somewhere; the `UI`
+-- | once the state channel is primed (state must enter somewhere; the `PUI`
 -- | instance is knowledge-gated like `Costrong`, withholding inputs until a
 -- | first `c` exists).
 -- |
@@ -130,7 +130,7 @@ class Profunctor p <= Coresolving p where
 -- | here case `w` is unwrapped to *loop*. No coercions: `on` splits the
 -- | output variant exactly.
 -- |
--- | On a knowledge-gated carrier (`UI`) inputs are withheld until a first
+-- | On a knowledge-gated carrier (`PUI`) inputs are withheld until a first
 -- | fold state exists — the accumulating-wizard shape primes it with its
 -- | first continue emission.
 folding
@@ -154,7 +154,7 @@ folding g =
 -- | `∃c. (s × c → a) × (b → t + c)` to a single `step : b → t + (s → a)`:
 -- | each emission either exits with `t` or yields a **new way to read
 -- | inputs** — the fold state is a reader. The collapsed form has no initial
--- | reader, which is exactly why the `UI` carrier gates inputs until primed.
+-- | reader, which is exactly why the `PUI` carrier gates inputs until primed.
 -- | `folding @w` is this optic at row granularity.
 type Coshutter s t a b = forall p. Coresolving p => p a b -> p s t
 
@@ -177,7 +177,7 @@ class Profunctor p <= RecordToVariant p where
   -- | The **nullary** merge — the unit: reads nothing, emits no cases. The
   -- | silent source of the header's law; silence is forced on the uninhabited
   -- | variant output and sufficient on the empty record input, so any silent
-  -- | element implements it (`UI`: `pempty = silence`).
+  -- | element implements it (`PUI`: `pempty = silence`).
   pempty :: p {} (Variant ())
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.

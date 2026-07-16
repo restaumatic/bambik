@@ -1,5 +1,5 @@
 -- Add to profunctors package?
-module PUI.Data.Profunctor.Cont where
+module Data.Profunctor.Cont where
 
 import Prelude
 

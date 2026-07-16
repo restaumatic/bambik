@@ -10,8 +10,8 @@
 -- | `pempty :: p (Variant ()) (Variant ())`: `variantToVariant pempty g = g`.
 -- | Here silence is not merely lawful but forced — both empty-variant ends
 -- | are uninhabited, so the unit can neither receive nor emit — and any
--- | silent element implements it (`UI`: `pempty = silence`).
-module PUI.Data.Profunctor.Row.VariantToVariant
+-- | silent element implements it (`PUI`: `pempty = silence`).
+module Data.Profunctor.Row.VariantToVariant
   ( Coprism
   , bind
   , coprism
@@ -40,7 +40,7 @@ import Data.Variant (class Contractable, Variant, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
-import PUI.Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
@@ -49,7 +49,7 @@ class Profunctor p <= VariantToVariant p where
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
   -- | The **nullary** merge — the unit: handles no cases, emits no cases.
   -- | Both empty-variant ends are uninhabited, so silence is forced — any
-  -- | silent element implements it (`UI`: `pempty = silence`).
+  -- | silent element implements it (`PUI`: `pempty = silence`).
   pempty :: p (Variant ()) (Variant ())
 
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
@@ -112,7 +112,7 @@ case_ =
 -- | loop the `again` cases of the output back into the input, emit only the
 -- | `done` cases — **iteration** (retry/wizard flows). `splitVariant` is the
 -- | done/again dispatch. Unit law: at `again = ()` (no loop-back cases) the
--- | widget is unchanged. On `UI` the re-entry is a `toUser`, so the loop
+-- | widget is unchanged. On `PUI` the re-entry is a `toUser`, so the loop
 -- | advances on the widget's next emission — an event loop, not a busy loop.
 iterate
   :: forall p done again out

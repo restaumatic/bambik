@@ -1,5 +1,5 @@
 -- Material Design 2 (https://m2.material.io) components implemented as
--- UI Web/UIOcular (UI Web) datatypes, dogfooding intentional.
+-- PUI Web/UIOcular (PUI Web) datatypes, dogfooding intentional.
 -- The vocabulary is two-sorted:
 --
 --   * **components** — widgets with a model interface, every one a citizen
@@ -11,7 +11,7 @@
 --         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
 --       `×→×` displays — `indeterminateLinearProgress`,
 --         `indeterminateCircularProgress` (both `{ busy } → {}`, the shape
---         `UI.action`'s progress slot expects);
+--         `PUI.action`'s progress slot expects);
 --       `×→+` events — `button @l`, `fab @l`, `iconButton @l`,
 --         `menuItem @l`;
 --       `+→×` statuses — `snackbar @l`, `banner @l`.
@@ -102,16 +102,16 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Data.Array (findIndex, (!!))
-import PUI.Data.Default (class Default)
+import Data.Default (class Default)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
-import PUI.Data.Lens.Extra.Types (Ocular)
+import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
-import PUI.Data.Profunctor.Row.RecordToRecord (field, pempty)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant (recordToCase)
+import Data.Profunctor.Row.RecordToRecord (field, pempty)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Time.Duration (Milliseconds)
 import Data.Symbol (class IsSymbol)
 import Data.Traversable (for)
@@ -123,7 +123,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (UI, effAdapter)
+import PUI (PUI, effAdapter)
 import PUI.Web (Node, Web, aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, uniqueId, (:=))
 import PUI.Web (button) as Web
 
@@ -131,7 +131,7 @@ import PUI.Web (button) as Web
 
 -- | The `×→+` event button: reads the whole record it is shown and fires
 -- | it as event case `l` on click (`recordToCase` over the raw button).
-button :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: Maybe String, icon :: Maybe String } -> UI Web { | r } [ | s ]
+button :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: Maybe String, icon :: Maybe String } -> PUI Web { | r } [ | s ]
 button config = recordToCase @l (containedButton config)
 
 -- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
@@ -139,10 +139,10 @@ button config = recordToCase @l (containedButton config)
 -- | input, so it echoes unconditionally and sits happily inside `looped`
 -- | ensembles (selection field + `shownWhen` panes). One tab per option;
 -- | `MDCTab` drives the activation indicator.
-tabBar :: forall @l a s. IsSymbol l => Eq a => Cons l a () s => Array { value :: a, label :: String, icon :: Maybe String } -> UI Web { | s } { | s }
+tabBar :: forall @l a s. IsSymbol l => Eq a => Cons l a () s => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web { | s } { | s }
 tabBar options = field @l (tabBarLeaf options)
 
-tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> UI Web a a
+tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
 tabBarLeaf options =
   div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $
     div >>> cl "mdc-tab-scroller" $
@@ -182,7 +182,7 @@ tabBarLeaf options =
 
 -- the raw MDC button — scalar, so private: components expose it only in a
 -- shaped role (`button @l`)
-containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> UI Web a a
+containedButton :: forall a. { label :: Maybe String, icon :: Maybe String } -> PUI Web a a
 containedButton { label, icon } =
   Web.button >>> cl "mdc-button" >>> cl "mdc-button--raised" >>> cl "initAside-button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-button__ripple" $ pempty
@@ -196,7 +196,7 @@ containedButton { label, icon } =
 -- | The `×→+` event FAB: like `button @l`, reads the whole record it is
 -- | shown and fires it as event case `l` on click. A `label` makes it the
 -- | extended FAB.
-fab :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: Maybe String } -> UI Web { | r } [ | s ]
+fab :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: Maybe String } -> PUI Web { | r } [ | s ]
 fab config = recordToCase @l $
   Web.button >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-fab__ripple" $ pempty
@@ -211,7 +211,7 @@ fab config = recordToCase @l $
 
 -- | The `×→+` event icon button (the MD2 icon button; for the toggling
 -- | variant see the `×→×` editor `iconToggle @l`).
-iconButton :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: String } -> UI Web { | r } [ | s ]
+iconButton :: forall @l r s. IsSymbol l => Cons l { | r } () s => { icon :: String, label :: String } -> PUI Web { | r } [ | s ]
 iconButton config = recordToCase @l $
   Web.button >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-icon-button__ripple" $ pempty
@@ -219,12 +219,12 @@ iconButton config = recordToCase @l $
 
 -- | The `×→+` event list item for the `menu` ocular: fires the record it
 -- | is shown as event case `l` on click (the menu closes itself).
-menuItem :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: String } -> UI Web { | r } [ | s ]
+menuItem :: forall @l r s. IsSymbol l => Cons l { | r } () s => { label :: String } -> PUI Web { | r } [ | s ]
 menuItem config = recordToCase @l (menuItemLeaf config.label)
 
 -- the raw list-item button — scalar, so private (same wiring as
 -- `Web.button`: replay the last value fed on click, `li` chrome)
-menuItemLeaf :: forall a. String -> UI Web a a
+menuItemLeaf :: forall a. String -> PUI Web a a
 menuItemLeaf lbl = wrap do
   _ <- unwrap (li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" $ RecordToRecord.do
     span >>> cl "mdc-deprecated-list-item__ripple" $ pempty
@@ -242,16 +242,16 @@ menuItemLeaf lbl = wrap do
     }
 
 -- TODO support input types: email, text, password, number, search, tel, url
-filledTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String } -> UI Web { | s } { | s }
+filledTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String } -> PUI Web { | s } { | s }
 filledTextField = textFieldWith @l (input "text")
 
 -- | `filledTextField` over the debounced input leaf: keystrokes coalesce
 -- | at the DOM boundary (`Web.inputDebounced`), so the field is loop-safe
 -- | to debounce — the wire itself stays synchronous.
-debouncedTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String, millis :: Milliseconds } -> UI Web { | s } { | s }
+debouncedTextField :: forall @l s. IsSymbol l => Cons l String () s => { floatingLabel :: String, millis :: Milliseconds } -> PUI Web { | s } { | s }
 debouncedTextField { floatingLabel, millis } = textFieldWith @l (inputDebounced millis "text") { floatingLabel }
 
-textFieldWith :: forall @l s. IsSymbol l => Cons l String () s => UI Web String String -> { floatingLabel :: String } -> UI Web { | s } { | s }
+textFieldWith :: forall @l s. IsSymbol l => Cons l String () s => PUI Web String String -> { floatingLabel :: String } -> PUI Web { | s } { | s }
 textFieldWith leaf { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--label-floating" >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
@@ -275,7 +275,7 @@ textFieldWith leaf { floatingLabel } =
     id = unsafePerformEffect uniqueId
     helperId = unsafePerformEffect uniqueId
 
-filledTextArea :: forall @l s. IsSymbol l => Cons l String () s => { columns :: Int, rows :: Int } -> UI Web { | s } { | s }
+filledTextArea :: forall @l s. IsSymbol l => Cons l String () s => { columns :: Int, rows :: Int } -> PUI Web { | s } { | s }
 filledTextArea { columns, rows } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ wrap do
     _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
@@ -284,7 +284,7 @@ filledTextArea { columns, rows } =
     pure w
 
 -- | Label content is chrome (`{} → {}`, announcing).
-checkbox :: forall @l a s. IsSymbol l => Cons l (Maybe a) () s => Default a => UI Web {} {} -> UI Web { | s } { | s }
+checkbox :: forall @l a s. IsSymbol l => Cons l (Maybe a) () s => Default a => PUI Web {} {} -> PUI Web { | s } { | s }
 checkbox labelContent =
   div >>> cl "mdc-form-field" >>> init (newComponent material.formField."MDCFormField") mempty mempty $ wrap do
     w <- unwrap $ div >>> cl "mdc-checkbox" >>> init (newComponent material.checkbox."MDCCheckbox") mempty mempty $ wrap do
@@ -314,10 +314,10 @@ checkbox labelContent =
 -- | field the bare selection (`a`). One radio per option; the shared
 -- | native `name` gives browser-level exclusivity and the CSS keys off
 -- | `:checked`, so each option's emission is its statically known value.
-radioButton :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => Array { value :: a, label :: String } -> UI Web { | si } { | so }
+radioButton :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => Array { value :: a, label :: String } -> PUI Web { | si } { | so }
 radioButton options = field @l (radioLeaf options)
 
-radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> UI Web (Maybe a) a
+radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 radioLeaf options =
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start;" $ wrap do
     groupName <- liftEffect uniqueId
@@ -353,10 +353,10 @@ radioLeaf options =
 
 -- | The MD2 Switch, a `×→×` `Boolean` editor (the name `switch` was
 -- | already taken by the `+→+` case selector).
-toggleSwitch :: forall @l s. IsSymbol l => Cons l Boolean () s => { label :: String } -> UI Web { | s } { | s }
+toggleSwitch :: forall @l s. IsSymbol l => Cons l Boolean () s => { label :: String } -> PUI Web { | s } { | s }
 toggleSwitch config = field @l (switchLeaf config.label)
 
-switchLeaf :: String -> UI Web Boolean Boolean
+switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8px;" $ wrap do
   _ <- unwrap (staticHTML switchMarkup)
   node <- gets _.sibling
@@ -395,10 +395,10 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | The `×→×` `Number` editor. A `step` makes it the discrete slider.
 -- | Mid-drag values emit continuously (like mid-typing text); a consumer
 -- | that doesn't want the burst wraps its stage in `debounced`.
-slider :: forall @l s. IsSymbol l => Cons l Number () s => { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> UI Web { | s } { | s }
+slider :: forall @l s. IsSymbol l => Cons l Number () s => { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { | s } { | s }
 slider config = field @l (sliderLeaf config)
 
-sliderLeaf :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> UI Web Number Number
+sliderLeaf :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
 sliderLeaf config = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
@@ -444,10 +444,10 @@ sliderLeaf config = wrap do
 -- | `radioButton @l`: the input field holds the selection state
 -- | (`Maybe a`), the output field the bare selection (`a`). Options are
 -- | design-system config.
-select :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => { floatingLabel :: String } -> Array { value :: a, label :: String } -> UI Web { | si } { | so }
+select :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { | si } { | so }
 select config options = field @l (selectLeaf config options)
 
-selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> UI Web (Maybe a) a
+selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 selectLeaf config options = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
@@ -504,10 +504,10 @@ selectLeaf config options = wrap do
 -- | The MD2 single-select segmented button, a `×→×` editor. Type-changing
 -- | like `select @l`; selection styling is CSS-class-driven, so the
 -- | wiring is hand-rolled per segment.
-segmentedButton :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => Array { value :: a, label :: String } -> UI Web { | si } { | so }
+segmentedButton :: forall @l a si so. IsSymbol l => Eq a => Cons l (Maybe a) () si => Cons l a () so => Array { value :: a, label :: String } -> PUI Web { | si } { | so }
 segmentedButton options = field @l (segmentedLeaf options)
 
-segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> UI Web (Maybe a) a
+segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 segmentedLeaf options =
   div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ wrap do
     segments <- for options \o -> do
@@ -531,12 +531,12 @@ segmentedLeaf options =
 
 -- | The MD2 filter chip, a `×→×` `Boolean` editor. Selection styling is
 -- | CSS-class-driven. Group chips in the `chipSet` ocular.
-filterChip :: forall @l s. IsSymbol l => Cons l Boolean () s => { label :: String } -> UI Web { | s } { | s }
+filterChip :: forall @l s. IsSymbol l => Cons l Boolean () s => { label :: String } -> PUI Web { | s } { | s }
 filterChip config = field @l (chipLeaf config.label)
 
 -- deprecated `mdc-chip` markup on purpose: the prebuilt v14 CSS bundle has
 -- no `mdc-evolution-chip` rules at all
-chipLeaf :: String -> UI Web Boolean Boolean
+chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
@@ -576,10 +576,10 @@ chipLeaf lbl = wrap do
 
 -- | The MD2 icon button (toggle variant), a `×→×` `Boolean` editor —
 -- | `onIcon` shows while `true`, `offIcon` while `false`.
-iconToggle :: forall @l s. IsSymbol l => Cons l Boolean () s => { onIcon :: String, offIcon :: String, label :: String } -> UI Web { | s } { | s }
+iconToggle :: forall @l s. IsSymbol l => Cons l Boolean () s => { onIcon :: String, offIcon :: String, label :: String } -> PUI Web { | s } { | s }
 iconToggle config = field @l (iconToggleLeaf config)
 
-iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> UI Web Boolean Boolean
+iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
@@ -606,8 +606,8 @@ iconToggleLeaf config = wrap do
       <> "</button>"
 
 -- | The `×→×` display citizen for async progress: `{ busy } → {}`, the
--- | shape `UI.action`'s progress slot expects.
-indeterminateLinearProgress :: UI Web { busy :: Boolean } {}
+-- | shape `PUI.action`'s progress slot expects.
+indeterminateLinearProgress :: PUI Web { busy :: Boolean } {}
 indeterminateLinearProgress =
   div >>> "role" := "indeterminateLinearProgress" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" >>> effAdapter adapter $ RecordToRecord.do
     div >>> cl "mdc-linear-progress__buffer" $ RecordToRecord.do
@@ -628,7 +628,7 @@ indeterminateLinearProgress =
 
 -- | `indeterminateLinearProgress`'s circular sibling — the same
 -- | `{ busy } → {}` display citizen.
-indeterminateCircularProgress :: UI Web { busy :: Boolean } {}
+indeterminateCircularProgress :: PUI Web { busy :: Boolean } {}
 indeterminateCircularProgress =
   div >>> cl "mdc-circular-progress" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-label" := "Progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> effAdapter adapter $ staticHTML innards
     where
@@ -668,61 +668,61 @@ indeterminateCircularProgress =
 
 -- UIOculars
 
-headline1 :: Ocular (UI Web)
+headline1 :: Ocular (PUI Web)
 headline1 w = h1 w # cl "mdc-typography--headline1"
 
-headline2 :: Ocular (UI Web)
+headline2 :: Ocular (PUI Web)
 headline2 w = h2 w # cl "mdc-typography--headline2"
 
-headline3 :: Ocular (UI Web)
+headline3 :: Ocular (PUI Web)
 headline3 w = h3 w # cl "mdc-typography--headline3"
 
-headline4 :: Ocular (UI Web)
+headline4 :: Ocular (PUI Web)
 headline4 w = h4 w # cl "mdc-typography--headline4"
 
-headline5 :: Ocular (UI Web)
+headline5 :: Ocular (PUI Web)
 headline5 w = h5 w # cl "mdc-typography--headline5"
 
-headline6 :: Ocular (UI Web)
+headline6 :: Ocular (PUI Web)
 headline6 w = h6 w # cl "mdc-typography--headline6"
 
-subtitle1 :: Ocular (UI Web)
+subtitle1 :: Ocular (PUI Web)
 subtitle1 w = p w # cl "mdc-typography--subtitle1"
 
-subtitle2 :: Ocular (UI Web)
+subtitle2 :: Ocular (PUI Web)
 subtitle2 w = p w # cl "mdc-typography--subtitle2"
 
-caption :: Ocular (UI Web)
+caption :: Ocular (PUI Web)
 caption w = span w # cl "mdc-typography--caption"
 
-overline :: Ocular (UI Web)
+overline :: Ocular (PUI Web)
 overline w = span w # cl "mdc-typography--overline"
 
-body1 :: Ocular (UI Web)
+body1 :: Ocular (PUI Web)
 body1 w = p w # cl"mdc-typography--body1"
 
-body2 :: Ocular (UI Web)
+body2 :: Ocular (PUI Web)
 body2 w = p w # cl"mdc-typography--body2"
 
-elevation1 :: Ocular (UI Web)
+elevation1 :: Ocular (PUI Web)
 elevation1 w = div w # cl "mdc-elevation--z1"
 
-elevation10 :: Ocular (UI Web)
+elevation10 :: Ocular (PUI Web)
 elevation10 w = div w # cl "mdc-elevation--z10" # "style" := "padding: 25px"
 
-elevation20 :: Ocular (UI Web)
+elevation20 :: Ocular (PUI Web)
 elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 
 -- | A card with an optional caption — the caption is design-system config
 -- | (like `filledTextField`'s `floatingLabel`). The card is content-agnostic
 -- | (any polarity), so its caption chrome is hand-fused, not merged.
-card :: { caption :: Maybe String } -> Ocular (UI Web)
+card :: { caption :: Maybe String } -> Ocular (PUI Web)
 card { caption: mCaption } content =
   div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ wrap do
     for_ mCaption \c -> void $ unwrap (caption $ staticText c)
     unwrap content
 
-dialog :: { title :: String } -> Ocular (UI Web)
+dialog :: { title :: String } -> Ocular (PUI Web)
 dialog { title } content =
   aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ wrap do
     result <- unwrap $
@@ -733,7 +733,7 @@ dialog { title } content =
     _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
     pure result
 
-simpleDialog :: { title :: String, confirm :: String } -> Ocular (UI Web)
+simpleDialog :: { title :: String, confirm :: String } -> Ocular (PUI Web)
 simpleDialog { title, confirm } content =
   div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ wrap do
     result <- unwrap $
@@ -754,13 +754,13 @@ simpleDialog { title, confirm } content =
 
 -- | The `+→×` status receiver: shows message case `l` in a snackbar,
 -- | contributing no fields (`text` echoes its `{}`, so it announces).
-snackbar :: forall @l r. IsSymbol l => Cons l String () r => UI Web [ | r ] {}
+snackbar :: forall @l r. IsSymbol l => Cons l String () r => PUI Web [ | r ] {}
 snackbar = snackbarContainer $ lcmap (Variant.on (Proxy @l) identity Variant.case_) text
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
 -- synchronously inside every `toUser`)
-snackbarContainer :: Ocular (UI Web)
+snackbarContainer :: Ocular (PUI Web)
 snackbarContainer content =
   aside >>> cl "mdc-snackbar" >>> init (newComponent material.snackbar."MDCSnackbar") open mempty $
     div >>> cl "mdc-snackbar__surface" >>> "role" := "status" >>> "aria-relevant" := "additions" $
@@ -770,10 +770,10 @@ snackbarContainer content =
 -- | The `+→×` status receiver in banner clothing: shows message case `l`
 -- | in an MDC banner, contributing no fields. Unlike the auto-dismissing
 -- | snackbar it stays until its own Dismiss action (foundation-handled).
-banner :: forall @l r. IsSymbol l => Cons l String () r => UI Web [ | r ] {}
+banner :: forall @l r. IsSymbol l => Cons l String () r => PUI Web [ | r ] {}
 banner = bannerContainer $ lcmap (Variant.on (Proxy @l) identity Variant.case_) text
 
-bannerContainer :: Ocular (UI Web)
+bannerContainer :: Ocular (PUI Web)
 bannerContainer content =
   div >>> cl "mdc-banner" >>> "role" := "banner" >>> init (newComponent material.banner."MDCBanner") open mempty $
     div >>> cl "mdc-banner__content" >>> "role" := "alertdialog" >>> "aria-live" := "assertive" $ wrap do
@@ -783,7 +783,7 @@ bannerContainer content =
 
 -- | Anchor button plus menu surface around a merge of `menuItem @l`s; the
 -- | menu closes itself on item selection.
-menu :: { label :: String } -> Ocular (UI Web)
+menu :: { label :: String } -> Ocular (PUI Web)
 menu config content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
   _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> config.label <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
   anchorNode <- gets _.sibling
@@ -795,21 +795,21 @@ menu config content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "disp
   pure w
 
 -- | Chrome for a group of `filterChip @l`s.
-chipSet :: Ocular (UI Web)
+chipSet :: Ocular (PUI Web)
 chipSet content =
   div >>> cl "mdc-chip-set" >>> cl "mdc-chip-set--filter" >>> "role" := "grid" $ content
 
-list :: Ocular (UI Web)
+list :: Ocular (PUI Web)
 list content = ul >>> cl "mdc-deprecated-list" $ content
 
-listItem :: Ocular (UI Web)
+listItem :: Ocular (PUI Web)
 listItem content = li >>> cl "mdc-deprecated-list-item" $ wrap do
   _ <- unwrap (span >>> cl "mdc-deprecated-list-item__ripple" $ pempty)
   unwrap (span >>> cl "mdc-deprecated-list-item__text" $ content)
 
 -- | Table chrome with a static header from config; rows are `dataRow`s of
 -- | `dataCell`s.
-dataTable :: { label :: String, columns :: Array String } -> Ocular (UI Web)
+dataTable :: { label :: String, columns :: Array String } -> Ocular (PUI Web)
 dataTable config content =
   div >>> cl "mdc-data-table" $
     div >>> cl "mdc-data-table__table-container" $
@@ -817,7 +817,7 @@ dataTable config content =
         _ <- unwrap (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)
         unwrap (tbody >>> cl "mdc-data-table__content" $ content)
   where
-  headerCells :: UI Web {} {}
+  headerCells :: PUI Web {} {}
   headerCells = wrap do
     for_ config.columns \c -> void $ unwrap (th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText c)
     pure
@@ -825,25 +825,25 @@ dataTable config content =
       , fromUser: \prop -> void $ prop {}
       }
 
-dataRow :: Ocular (UI Web)
+dataRow :: Ocular (PUI Web)
 dataRow content = tr >>> cl "mdc-data-table__row" $ content
 
-dataCell :: Ocular (UI Web)
+dataCell :: Ocular (PUI Web)
 dataCell content = td >>> cl "mdc-data-table__cell" $ content
 
 -- | Masonry image list; the prebuilt MDC CSS leaves column layout to a
 -- | SCSS mixin, so it rides in an inline style here.
-imageList :: { columns :: Int } -> Ocular (UI Web)
+imageList :: { columns :: Int } -> Ocular (PUI Web)
 imageList config content =
   ul >>> cl "mdc-image-list" >>> cl "mdc-image-list--masonry" >>> "style" := ("column-count: " <> show config.columns <> "; column-gap: 16px; margin: 0;") $ content
 
-layoutGrid :: Ocular (UI Web)
+layoutGrid :: Ocular (PUI Web)
 layoutGrid content = div >>> cl "mdc-layout-grid" $ div >>> cl "mdc-layout-grid__inner" $ content
 
-layoutCell :: { span :: Int } -> Ocular (UI Web)
+layoutCell :: { span :: Int } -> Ocular (PUI Web)
 layoutCell config content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-layout-grid__cell--span-" <> show config.span) $ content
 
-topAppBar :: { title :: String } -> Ocular (UI Web)
+topAppBar :: { title :: String } -> Ocular (PUI Web)
 topAppBar config content = wrap do
   _ <- unwrap (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> config.title <> "</span></section></div></header>"))
   headerNode <- gets _.sibling
@@ -852,7 +852,7 @@ topAppBar config content = wrap do
 
 -- | Permanent navigation drawer beside the content; the drawer's own nav
 -- | is chrome (`{} → {}`, e.g. a `list` of `listItem`s).
-drawer :: { title :: String, subtitle :: String } -> UI Web {} {} -> Ocular (UI Web)
+drawer :: { title :: String, subtitle :: String } -> PUI Web {} {} -> Ocular (PUI Web)
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   _ <- unwrap (aside >>> cl "mdc-drawer" $ wrap do
     _ <- unwrap (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
@@ -861,7 +861,7 @@ drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
 
 -- | Attach a hover/focus tooltip to the wrapped element (single-element
 -- | content: the anchor is the content's root node).
-tooltip :: { text :: String } -> Ocular (UI Web)
+tooltip :: { text :: String } -> Ocular (PUI Web)
 tooltip config content = wrap do
   w <- unwrap ("aria-describedby" := tipId $ content)
   _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> config.text <> "</div></div>"))
@@ -873,10 +873,10 @@ tooltip config content = wrap do
 
 -- announcing statics (`{} → {}` chrome with a face)
 
-divider :: UI Web {} {}
+divider :: PUI Web {} {}
 divider = staticHTML "<hr class=\"mdc-deprecated-list-divider\" style=\"width: 100%;\">"
 
-imageListItem :: { src :: String, label :: String } -> UI Web {} {}
+imageListItem :: { src :: String, label :: String } -> PUI Web {} {}
 imageListItem config = staticHTML $
   "<li class=\"mdc-image-list__item\" style=\"margin-bottom: 16px;\">"
     <> "<img class=\"mdc-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.label <> "\">"

@@ -1,7 +1,7 @@
 -- | The smallest runnable app that goes through both a **Reel** and a **Shutter**.
 -- |
 -- | Neither optic has a `(->)` instance — they need a profunctor that can hold
--- | state / loop, so the only inhabitant is `UI`. That is why this is a rendered
+-- | state / loop, so the only inhabitant is `PUI`. That is why this is a rendered
 -- | app and not a pure-value trace.
 -- |
 -- | Flow: the app seeds the greeting prefix (the Reel's retained state) →
@@ -13,23 +13,23 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (lcmap)
-import PUI.Data.Profunctor.Row.RecordToVariant (shutter)
-import PUI.Data.Profunctor.Row.VariantToRecord (reel)
+import Data.Profunctor.Row.RecordToVariant (shutter)
+import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
 import PUI.MDC as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (UI, silence, with)
+import PUI (PUI, silence, with)
 import PUI.Web (Web, body, button, staticText, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
 -- | greeting **prefix**, installed from the model side (`Right` — the app's
 -- | initial render seeds `"Hello, "`, exactly the "install a finisher"
 -- | protocol of `retain`); the text field runs freely, and each typed name is
--- | finished against that retained prefix. Under the gated `Retaining (UI m)`
+-- | finished against that retained prefix. Under the gated `Retaining (PUI m)`
 -- | nothing is emitted before the prefix has arrived — there is no greeting
 -- | to fabricate. (For a reel whose state is *updated by events*, see
 -- | `RestaurantReel`/`BusinessOptics`.)
-greet :: UI Web String String
+greet :: PUI Web String String
 greet =
   reel
     (\prefix -> Right \typed -> prefix <> typed.name)
@@ -43,7 +43,7 @@ greet =
 -- | Clicking *Greet* before typing does nothing: the button has received no
 -- | value yet, so its click is withheld — the gates make a premature click
 -- | silent instead of letting it fabricate a greeting.
-confirm :: UI Web String String
+confirm :: PUI Web String String
 confirm =
   shutter identity (_ <> "!") identity
     (button $ staticText "Greet")

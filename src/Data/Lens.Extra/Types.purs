@@ -1,4 +1,4 @@
-module PUI.Data.Lens.Extra.Types where
+module Data.Lens.Extra.Types where
 
 import Data.Lens (Optic)
 

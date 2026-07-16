@@ -58,9 +58,9 @@ module PUI.Web
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
-import PUI.Data.Default (class Default, default)
+import Data.Default (class Default, default)
 import Data.Foldable (for_)
-import PUI.Data.Lens.Extra.Types (Ocular)
+import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Newtype (unwrap, wrap)
@@ -71,7 +71,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import PUI (PropagationStatus, UI)
+import PUI (PropagationStatus, PUI)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
@@ -97,7 +97,7 @@ uniqueId = randomElementId
 
 -- UIs
 
-text :: UI Web String {}
+text :: PUI Web String {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -120,7 +120,7 @@ text = wrap do
 -- | gates and downstream stages keep flowing). The channel stays live for
 -- | the field's whole life — an edited field resumes showing model updates
 -- | the moment it loses focus.
-input :: String -> UI Web String String
+input :: String -> PUI Web String String
 input type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
@@ -144,7 +144,7 @@ input type_ = "type" := type_ $ wrap do
 -- | terminates loop cycles. (Wire-level debouncing inside a loop turns
 -- | refeeds into a standing async ping-pong — the delay must sit in front
 -- | of the wire, not on it.)
-inputDebounced :: Milliseconds -> String -> UI Web String String
+inputDebounced :: Milliseconds -> String -> PUI Web String String
 inputDebounced (Milliseconds millis) type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
@@ -161,7 +161,7 @@ inputDebounced (Milliseconds millis) type_ = "type" := type_ $ wrap do
     }
 
 -- | See `input` — same focus-guarded protocol.
-textArea :: UI Web String String
+textArea :: PUI Web String String
 textArea = wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
@@ -180,7 +180,7 @@ textArea = wrap do
     }
 
 
-checkboxInput :: forall a . Default a => UI Web (Maybe a) (Maybe a)
+checkboxInput :: forall a . Default a => PUI Web (Maybe a) (Maybe a)
 checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
   aRef <- liftEffect $ Ref.new default
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -204,7 +204,7 @@ checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothi
           void $ prop (if checked then (Just a) else Nothing)
     }
 
-radioButton :: forall a. Default a => UI Web (Maybe a) a
+radioButton :: forall a. Default a => PUI Web (Maybe a) a
 radioButton = "type" := "radio" $ wrap do
   aRef <- liftEffect $ Ref.new default
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -230,7 +230,7 @@ radioButton = "type" := "radio" $ wrap do
 -- TODO disable button after click?
 -- | Content is chrome (`{} → {}`, announcing): a button contains decoration
 -- | only; its wiring is the click emitter, replaying the last value fed.
-button :: forall a. UI Web {} {} -> UI Web a a
+button :: forall a. PUI Web {} {} -> PUI Web a a
 button w = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
   -- a click before any value arrived has nothing valid to emit — withheld
@@ -252,7 +252,7 @@ button w = wrap do
 -- | fixed DOM and, like `RecordToRecord.pempty`, it announces its
 -- | informationless `{}` on registration — so chrome composes as a gated
 -- | record-merge operand without starving anything.
-staticText :: String -> UI Web {} {}
+staticText :: String -> PUI Web {} {}
 staticText text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -266,7 +266,7 @@ staticText text = wrap do
     }
 
 -- | See `staticText` — same announcing chrome typing.
-staticHTML :: String -> UI Web {} {}
+staticHTML :: String -> PUI Web {} {}
 staticHTML html = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent
@@ -278,7 +278,7 @@ staticHTML html = wrap do
 
 -- UIOculars
 
-attr :: String -> String -> Ocular (UI Web)
+attr :: String -> String -> Ocular (PUI Web)
 attr name value w = wrap do
   w' <- unwrap w
   attribute name value
@@ -286,7 +286,7 @@ attr name value w = wrap do
 
 infixr 10 attr as :=
 
-cl :: String -> Ocular (UI Web)
+cl :: String -> Ocular (PUI Web)
 cl name w = wrap do
   w' <- unwrap w
   clazz name
@@ -295,7 +295,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> Ocular (UI Web)
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> Ocular (PUI Web)
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -311,81 +311,81 @@ init nodeInitializer pre post w = wrap do
         pure status
     }
 
-div :: Ocular (UI Web)
+div :: Ocular (PUI Web)
 div = el "div"
 
-span :: Ocular (UI Web)
+span :: Ocular (PUI Web)
 span = el "span"
 
-aside :: Ocular (UI Web)
+aside :: Ocular (PUI Web)
 aside = el "aside"
 
-label :: Ocular (UI Web)
+label :: Ocular (PUI Web)
 label = el "label"
 
-svg :: Ocular (UI Web)
+svg :: Ocular (PUI Web)
 svg = el "svg"
 
-path :: Ocular (UI Web)
+path :: Ocular (PUI Web)
 path = el "path"
 
-p :: Ocular (UI Web)
+p :: Ocular (PUI Web)
 p = el "p"
 
-i :: Ocular (UI Web)
+i :: Ocular (PUI Web)
 i = el "i"
 
-a :: Ocular (UI Web)
+a :: Ocular (PUI Web)
 a = el "a"
 
-ul :: Ocular (UI Web)
+ul :: Ocular (PUI Web)
 ul = el "ul"
 
-ol :: Ocular (UI Web)
+ol :: Ocular (PUI Web)
 ol = el "ol"
 
-li :: Ocular (UI Web)
+li :: Ocular (PUI Web)
 li = el "li"
 
 -- table elements get real oculars (not `staticHTML`): the raw-HTML parser
 -- drops `tr`/`td`/`thead` fragments outside a table context
-table :: Ocular (UI Web)
+table :: Ocular (PUI Web)
 table = el "table"
 
-thead :: Ocular (UI Web)
+thead :: Ocular (PUI Web)
 thead = el "thead"
 
-tbody :: Ocular (UI Web)
+tbody :: Ocular (PUI Web)
 tbody = el "tbody"
 
-tr :: Ocular (UI Web)
+tr :: Ocular (PUI Web)
 tr = el "tr"
 
-th :: Ocular (UI Web)
+th :: Ocular (PUI Web)
 th = el "th"
 
-td :: Ocular (UI Web)
+td :: Ocular (PUI Web)
 td = el "td"
 
-h1 :: Ocular (UI Web)
+h1 :: Ocular (PUI Web)
 h1 = el "h1"
 
-h2 :: Ocular (UI Web)
+h2 :: Ocular (PUI Web)
 h2 = el "h2"
 
-h3 :: Ocular (UI Web)
+h3 :: Ocular (PUI Web)
 h3 = el "h3"
 
-h4 :: Ocular (UI Web)
+h4 :: Ocular (PUI Web)
 h4 = el "h4"
 
-h5 :: Ocular (UI Web)
+h5 :: Ocular (PUI Web)
 h5 = el "h5"
 
-h6 :: Ocular (UI Web)
+h6 :: Ocular (PUI Web)
 h6 = el "h6"
 
-attrDyn :: String -> (Maybe Unit -> Maybe String) -> Ocular (UI Web)
+attrDyn :: String -> (Maybe Unit -> Maybe String) -> Ocular (PUI Web)
 attrDyn name valueFunction w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -403,7 +403,7 @@ attrDyn name valueFunction w = wrap do
 
 infixr 10 attrDyn as :=>
 
-clDyn :: String -> (Maybe Unit -> Boolean) -> Ocular (UI Web)
+clDyn :: String -> (Maybe Unit -> Boolean) -> Ocular (PUI Web)
 clDyn name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -420,7 +420,7 @@ clDyn name pred w = wrap do
 -- | detached editor's wiring cannot echo — but is displayed only while the
 -- | predicate holds for the value fed. (Single-element content: the toggle
 -- | lands on the content's root node.)
-shownWhen :: forall i o. (i -> Boolean) -> UI Web i o -> UI Web i o
+shownWhen :: forall i o. (i -> Boolean) -> PUI Web i o -> PUI Web i o
 shownWhen pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -436,11 +436,11 @@ shownWhen pred w = wrap do
 
 -- others
 
--- Transient UI elements that appear temporarily and then disappear, for small content short focused interactions as opposed to long-term use or complex content.
--- It wraps provided UI element with the following behaviour:
+-- Transient PUI elements that appear temporarily and then disappear, for small content short focused interactions as opposed to long-term use or complex content.
+-- It wraps provided PUI element with the following behaviour:
 --   - when fed with a value (when `toUser` is called) it's ensured it's appearing
 --   - when emiting a value (when `fromUser` is called) it disappears
-transient :: Ocular (UI Web)
+transient :: Ocular (PUI Web)
 transient ui = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap ui
   pure
@@ -453,7 +453,7 @@ transient ui = wrap do
         prop x
     }
 
-variant :: forall a b. UI Web a b -> UI Web (Maybe a) b
+variant :: forall a b. PUI Web a b -> PUI Web (Maybe a) b
 variant w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
@@ -515,7 +515,7 @@ placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 -- | (`with initial`, `announce`, `seeded`) inside the widget itself, so
 -- | the standalone app reads `body $ with initial $ ...`; emissions are
 -- | simply dropped.
-body :: forall i o. UI Web i o -> Effect Unit
+body :: forall i o. PUI Web i o -> Effect Unit
 body ui = do
   node <- documentBody
   runDomInNode node do
@@ -527,7 +527,7 @@ body ui = do
 -- | variant outputs don't echo), and `wire` attaches the event emitters to
 -- | the container node. Events carry **bare payloads** — pair them with
 -- | the model in an `updates` fold, not in the leaf.
-viewEvents :: forall i o. String -> (i -> String) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> UI Web i o
+viewEvents :: forall i o. String -> (i -> String) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> PUI Web i o
 viewEvents shell render wire = wrap do
   _ <- unwrap (staticHTML shell)
   node <- gets _.sibling
@@ -544,12 +544,12 @@ escapeHtml s =
       (replaceAll (Pattern "<") (Replacement "&lt;")
         (replaceAll (Pattern "&") (Replacement "&amp;") s)))
 
-runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
+runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runWidgetInSelectedNode selector initial callback ui = do
   node <- selectedNode selector
   runWidgetInNode node initial callback ui
 
-runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> UI Web a b -> Effect Unit
+runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runWidgetInNode node initial callback ui = runDomInNode node do
   { toUser, fromUser } <- unwrap ui
   liftEffect $ fromUser \b -> do
@@ -559,7 +559,7 @@ runWidgetInNode node initial callback ui = runDomInNode node do
 
 --- private
 
-el :: String -> Ocular (UI Web)
+el :: String -> Ocular (PUI Web)
 el tagName = wrap <<< element tagName <<< unwrap
 
 element :: forall a. String -> Web a -> Web a

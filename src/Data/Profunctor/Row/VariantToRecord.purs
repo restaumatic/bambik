@@ -1,7 +1,7 @@
 -- | `Variant → Record` (+ → ×) row profunctors, organized (uniformly across
 -- | the four direction modules) as:
 -- |
--- |   * **strength** — `Retaining` (defined here; `UI m` instances only, no
+-- |   * **strength** — `Retaining` (defined here; `PUI m` instances only, no
 -- |     `(->)`): the unary power, a Mealy/coroutine step.
 -- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
@@ -14,7 +14,7 @@
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
--- | any case and contributing no field (`UI`'s parametric `silence` at that
+-- | any case and contributing no field (`PUI`'s parametric `silence` at that
 -- | type; the unit `pempty` is its `b = ()` special case). The unary
 -- | introduce operator is the **sink-pinned merge**,
 -- |
@@ -32,7 +32,7 @@
 -- | member (not a parametric silent element like `silence`): a lawful
 -- | record-output unit must *announce* its informationless `{}` so the merge
 -- | knows that side is complete, and parametric silence cannot.
-module PUI.Data.Profunctor.Row.VariantToRecord
+module Data.Profunctor.Row.VariantToRecord
   ( Coreel
   , Reel
   , bind
@@ -58,7 +58,7 @@ module PUI.Data.Profunctor.Row.VariantToRecord
 
 import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap)
-import PUI.Data.Profunctor.Row.VariantToVariant (splitVariant)
+import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
@@ -66,7 +66,7 @@ import Data.Variant (class Contractable, Variant, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import PUI.Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | The **unary** sum→product strength for this direction: a **Mealy /

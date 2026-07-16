@@ -11,14 +11,14 @@ import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor.Row.RecordToRecord (completed)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Foreign.Object (Object, empty, insert, lookup, delete) as Obj
-import PUI (UI, looped, updates, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI (PUI, looped, updates, with)
 import PUI.MDC as MDC
 import PUI.Web (Web, body, escapeHtml, onKeyClick, text, viewEvents)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -64,7 +64,7 @@ commit m = case m.selected of
     m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
   _ -> m
 
-grid :: UI Web Model [ cellClicked :: String ]
+grid :: PUI Web Model [ cellClicked :: String ]
 grid = viewEvents
   """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
   renderTable

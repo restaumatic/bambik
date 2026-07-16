@@ -9,12 +9,12 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Cochoice (unleft)
 import Data.Profunctor.Costrong (unfirst)
-import PUI.Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
-import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase)
-import PUI.Data.Profunctor.Row.VariantToVariant (coprism, iterate)
+import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase)
+import Data.Profunctor.Row.VariantToVariant (coprism, iterate)
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -22,7 +22,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PropagationStatus, UI(..), looped, resolveFor, updates, with)
+import PUI (PropagationStatus, PUI(..), looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -30,10 +30,10 @@ assertEqual msg expected actual =
   when (expected /= actual) $
     void $ throw (msg <> ": expected " <> show expected <> " but got " <> show actual)
 
--- A UI Effect operand whose user-output leg the test fires by hand: it ignores
+-- A PUI Effect operand whose user-output leg the test fires by hand: it ignores
 -- toUser and stores the callback the merge registers via fromUser.
-probe :: forall i o. Ref.Ref (Maybe (o -> Effect PropagationStatus)) -> UI Effect i o
-probe propRef = UI $ pure
+probe :: forall i o. Ref.Ref (Maybe (o -> Effect PropagationStatus)) -> PUI Effect i o
+probe propRef = PUI $ pure
   { toUser: \_ -> pure unit
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
@@ -44,8 +44,8 @@ fire propRef o = do
   for_ mProp \prop -> void $ prop o
 
 -- A probe that additionally records what its user-input leg receives.
-probeIO :: forall i o. Ref.Ref (Array i) -> Ref.Ref (Maybe (o -> Effect PropagationStatus)) -> UI Effect i o
-probeIO insRef propRef = UI $ pure
+probeIO :: forall i o. Ref.Ref (Array i) -> Ref.Ref (Maybe (o -> Effect PropagationStatus)) -> PUI Effect i o
+probeIO insRef propRef = PUI $ pure
   { toUser: \i -> Ref.modify_ (_ <> [ i ]) insRef
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
@@ -76,7 +76,7 @@ main = do
     (.total 8 :: [ total :: Int, other :: String ])
     (recordToCase @"total" (\r -> r.a + r.b) { a: 3, b: 5 })
 
-  -- == Merge unit laws on the UI carrier: each merge class carries its own ==
+  -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
   -- == nullary operator `pempty`. At record outputs the unit *announces* its ==
   -- == informationless {} (the parametric `silence` couldn't), so the merge ==
   -- == gates never starve against it; at variant outputs it coincides with ==
@@ -87,7 +87,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord RecordToRecord.pempty (probe gProp :: UI Effect {} { a :: Int }))
+    m <- unwrap (recordToRecord RecordToRecord.pempty (probe gProp :: PUI Effect {} { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp { a: 1 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord pempty g = g" [ { a: 1 } ]
@@ -96,7 +96,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord (probe gProp :: UI Effect {} { a :: Int }) RecordToRecord.pempty)
+    m <- unwrap (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) RecordToRecord.pempty)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp { a: 2 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g pempty = g" [ { a: 2 } ]
@@ -113,8 +113,8 @@ main = do
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
     m <- unwrap (recordToRecord
-      (probe p1Prop :: UI Effect {} { a :: Int })
-      (probe p2Prop :: UI Effect {} { b :: String }))
+      (probe p1Prop :: PUI Effect {} { a :: Int })
+      (probe p2Prop :: PUI Effect {} { b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire p2Prop { b: "fresh" }
     fire p1Prop (unsafeCoerce { a: 1, b: "stale" } :: { a :: Int })
@@ -126,8 +126,8 @@ main = do
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
     m <- unwrap (variantToRecord
-      (probe p1Prop :: UI Effect [ x :: Unit ] { a :: Int })
-      (probe p2Prop :: UI Effect [ y :: Unit ] { b :: String }))
+      (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int })
+      (probe p2Prop :: PUI Effect [ y :: Unit ] { b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire p2Prop { b: "fresh" }
     fire p1Prop (unsafeCoerce { a: 4, b: "stale" } :: { a :: Int })
@@ -137,7 +137,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord VariantToRecord.pempty (probe gProp :: UI Effect [ x :: Unit ] { a :: Int }))
+    m <- unwrap (variantToRecord VariantToRecord.pempty (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "unit law +→×: variantToRecord pempty g = g" [ { a: 3 } ]
@@ -150,8 +150,8 @@ main = do
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
     m <- unwrap (variantToRecord
-      (probe p1Prop :: UI Effect [ x :: Unit ] { a :: Int })
-      (probe p2Prop :: UI Effect [ y :: Unit ] { b :: String }))
+      (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int })
+      (probe p2Prop :: PUI Effect [ y :: Unit ] { b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire p1Prop { a: 1 }
     Ref.read outs >>= assertEqual "+→× gating: incomplete record withheld" []
@@ -168,7 +168,7 @@ main = do
     ins <- Ref.new ([] :: Array (Tuple Int Boolean))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unfirst (probeIO ins gProp :: UI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+    m <- unwrap (unfirst (probeIO ins gProp :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 1
     Ref.read ins >>= assertEqual "unfirst: gated before state exists" []
@@ -183,7 +183,7 @@ main = do
     ins <- Ref.new ([] :: Array (Either Int Int))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unleft (probeIO ins gProp :: UI Effect (Either Int Int) (Either String Int)))
+    m <- unwrap (unleft (probeIO ins gProp :: PUI Effect (Either Int Int) (Either String Int)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 5
     Ref.read ins >>= assertEqual "unleft: input enters Left" [ Left 5 ]
@@ -199,7 +199,7 @@ main = do
     ins <- Ref.new ([] :: Array (Tuple Int Boolean))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coresolve (probeIO ins gProp :: UI Effect (Tuple Int Boolean) (Either String Boolean)))
+    m <- unwrap (coresolve (probeIO ins gProp :: PUI Effect (Tuple Int Boolean) (Either String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 1
     Ref.read ins >>= assertEqual "coresolve: gated before state" []
@@ -217,7 +217,7 @@ main = do
     ins <- Ref.new ([] :: Array (Either Int Boolean))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coretain (probeIO ins gProp :: UI Effect (Either Int Boolean) (Tuple String Boolean)))
+    m <- unwrap (coretain (probeIO ins gProp :: PUI Effect (Either Int Boolean) (Tuple String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 1
     Ref.read ins >>= assertEqual "coretain: input enters fresh" [ Left 1 ]
@@ -231,7 +231,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (looped (probeIO ins gProp :: UI Effect Int Int))
+    m <- unwrap (looped (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 5
     Ref.read ins >>= assertEqual "looped: input feeds through" [ 5 ]
@@ -245,7 +245,7 @@ main = do
     ins <- Ref.new ([] :: Array [ again :: Int ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (iterate (probeIO ins gProp :: UI Effect [ again :: Int ] [ done :: String, again :: Int ]))
+    m <- unwrap (iterate (probeIO ins gProp :: PUI Effect [ again :: Int ] [ done :: String, again :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser (.again 1)
     fire gProp (.again 2)
@@ -262,7 +262,7 @@ main = do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: Int })
-    m <- unwrap (feedback (probeIO ins gProp :: UI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
+    m <- unwrap (feedback (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser { a: 1 }
     Ref.read ins >>= assertEqual "feedback: gated before state" []
@@ -277,7 +277,7 @@ main = do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (folding @"fold" (probeIO ins gProp :: UI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
+    m <- unwrap (folding @"fold" (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser { a: 1 }
     Ref.read ins >>= assertEqual "folding: gated before state" []
@@ -295,7 +295,7 @@ main = do
     ins <- Ref.new ([] :: Array [ start :: Int, resume :: { acc :: Int } ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: String })
-    m <- unwrap (unfolding @"resume" (probeIO ins gProp :: UI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
+    m <- unwrap (unfolding @"resume" (probeIO ins gProp :: PUI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser (.start 1)
     Ref.read ins >>= assertEqual "unfolding: fresh input enters" [ .start 1 ]
@@ -310,7 +310,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array (Either String Int))
-    m <- unwrap (resolveFor (Milliseconds 40.0) (probe gProp :: UI Effect Int String))
+    m <- unwrap (resolveFor (Milliseconds 40.0) (probe gProp :: PUI Effect Int String))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp "burst1"
     Ref.read outs >>= assertEqual "resolveFor: loop withheld before state" []
@@ -331,7 +331,7 @@ main = do
     ins <- Ref.new ([] :: Array String)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (colens (\s b -> s <> show b) (_ * 10) (probeIO ins gProp :: UI Effect String Int))
+    m <- unwrap (colens (\s b -> s <> show b) (_ * 10) (probeIO ins gProp :: PUI Effect String Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser "x"
     Ref.read ins >>= assertEqual "colens: gated before first emission" []
@@ -346,7 +346,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coprism identity (\b -> if b > 10 then Left (show b) else Right (b + 1)) (probeIO ins gProp :: UI Effect Int Int))
+    m <- unwrap (coprism identity (\b -> if b > 10 then Left (show b) else Right (b + 1)) (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 3
     Ref.read ins >>= assertEqual "coprism: input embeds as focus" [ 3 ]
@@ -363,7 +363,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coshutter (\b -> if b >= 100 then Left (show b) else Right (_ + b)) (probeIO ins gProp :: UI Effect Int Int))
+    m <- unwrap (coshutter (\b -> if b >= 100 then Left (show b) else Right (_ + b)) (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 1
     Ref.read ins >>= assertEqual "coshutter: gated before a first reader" []
@@ -380,7 +380,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coreel identity show (_ + 1) (probeIO ins gProp :: UI Effect Int Int))
+    m <- unwrap (coreel identity show (_ + 1) (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     m.toUser 5
     Ref.read ins >>= assertEqual "coreel: input embeds" [ 5 ]
@@ -393,7 +393,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (updates (\e s -> { n: s.n + e }) (probe gProp :: UI Effect { n :: Int } Int))
+    m <- unwrap (updates (\e s -> { n: s.n + e }) (probe gProp :: PUI Effect { n :: Int } Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp 3
     Ref.read outs >>= assertEqual "updates: gated before a model" []
@@ -408,7 +408,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (completed (probe gProp :: UI Effect { a :: Int, b :: String } { a :: Int }))
+    m <- unwrap (completed (probe gProp :: PUI Effect { a :: Int, b :: String } { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs $> Nothing
     fire gProp { a: 1 }
     Ref.read outs >>= assertEqual "completed: gated before input" []
@@ -424,7 +424,7 @@ main = do
   do
     ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
-    m <- unwrap (with { n: 1 } (probeIO ins gProp :: UI Effect { n :: Int } { n :: Int }))
+    m <- unwrap (with { n: 1 } (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
     m.fromUser \_ -> pure Nothing
     Ref.read ins >>= assertEqual "with: seed fed at registration" [ { n: 1 } ]
     m.toUser { n: 2 }

@@ -6,12 +6,12 @@ import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
 import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor.Row.RecordToRecord (completed)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
-import PUI (UI, looped, updates, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed)
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (PUI, looped, updates, with)
 import PUI.MDC as MDC
 import PUI.Web (Node, Web, body, shownWhen, viewEvents)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -83,7 +83,7 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
-canvas :: UI Web Model [ clicked :: { x :: Number, y :: Number } ]
+canvas :: PUI Web Model [ clicked :: { x :: Number, y :: Number } ]
 canvas = viewEvents
   """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
   render

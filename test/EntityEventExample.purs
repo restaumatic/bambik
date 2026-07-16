@@ -4,8 +4,8 @@ import Prelude
 
 import Data.Lens (Lens', Prism', preview, review, set, view)
 import Data.Maybe (Maybe)
-import PUI.Data.Profunctor.Row.RecordToRecord (property)
-import PUI.Data.Profunctor.Row.VariantToVariant (case_)
+import Data.Profunctor.Row.RecordToRecord (property)
+import Data.Profunctor.Row.VariantToVariant (case_)
 import Data.Variant (case_, on) as Variant
 import Type.Proxy (Proxy(..))
 

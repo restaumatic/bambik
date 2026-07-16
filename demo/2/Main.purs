@@ -8,11 +8,11 @@
 module Main (main) where
 
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
-import PUI (UI, silence, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (field)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import PUI (PUI, silence, with)
 import PUI.Web (Web, a, body, div, input, li, p, staticHTML, staticText, text, ul, (:=))
 import Prelude hiding (div)
 import Prim.Row (class Cons)

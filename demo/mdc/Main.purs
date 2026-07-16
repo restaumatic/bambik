@@ -45,6 +45,14 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
+import Data.Profunctor.Row.RecordToRecord (feedback, field, tapped)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant (folding)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant (iterate)
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Variant (case_, inj, on, prj) as Variant
@@ -52,15 +60,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (UI, action, announce, debounced, looped, seeded, silence, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (feedback, field, tapped)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant (folding)
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI.Data.Profunctor.Row.VariantToRecord (retain, unfolding)
-import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import PUI.Data.Profunctor.Row.VariantToVariant (iterate)
-import PUI.Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import PUI (PUI, action, announce, debounced, looped, seeded, silence, with)
 import PUI.MDC as MDC
 import PUI.Web (Web, attr, body, shownWhen, staticText, text)
 import PUI.Web (div) as Web
@@ -461,5 +461,5 @@ publishFlaky r = do
 
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> UI Web { | r } {}
+reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
 reading render = lcmap (\r -> render (get (Proxy @l) r)) text

@@ -6,14 +6,14 @@ import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Foldable (for_)
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Profunctor.Row.RecordToRecord (completed)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (joinWith, stripPrefix)
 import Data.String (Pattern(..)) as String
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
-import PUI (UI, looped, updates, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (PUI, looped, updates, with)
 import PUI.MDC as MDC
 import PUI.Web (Web, body, escapeHtml, onKeyClick, viewEvents)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -73,7 +73,7 @@ handle e m = e # (Variant.case_
       Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
       Nothing -> m))
 
-listBox :: UI Web Model [ picked :: Int ]
+listBox :: PUI Web Model [ picked :: Int ]
 listBox = viewEvents
   """<ul class="mdc-deprecated-list" style="border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"></ul>"""
   render

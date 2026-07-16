@@ -36,7 +36,7 @@ two remedies but one:
 > Optics *are* profunctor transformers. A lens is exactly a thing that turns
 > a `p field field` into a `p record record` — for any profunctor `p`.
 
-So if a *widget* is a profunctor — a value `UI i o` that consumes model
+So if a *widget* is a profunctor — a value `PUI i o` that consumes model
 values of type `i` and produces model values of type `o` — then optics stop
 being a way to talk *about* your model and become a way to *assemble your
 interface*. The lens that focuses the customer's name is the same value that
@@ -52,13 +52,13 @@ an application's architecture is readable off its types.
 ## The core type
 
 ```purescript
-newtype UI m i o = UI (m
+newtype PUI m i o = PUI (m
   { toUser   :: i -> Effect Unit
   , fromUser :: (o -> Effect PropagationStatus) -> Effect Unit
   })
 ```
 
-A `UI m i o` is a **wire with a face**: `toUser` pushes model values `i` at
+A `PUI m i o` is a **wire with a face**: `toUser` pushes model values `i` at
 it, `fromUser` registers a callback for the values `o` it emits. The `m` is
 the monad that builds its face (for the DOM, `Web = StateT DOM Effect`).
 Everything below is structure *on* this type, not machinery beside it.
@@ -69,7 +69,7 @@ The input `i` and output `o` could be anything, but models worth having come
 in exactly two shapes: a **record** (`×`, "all of these at once" — a form, a
 settings page) and a **variant** (`+`, "one of these at a time" — an event,
 a status, a wizard step). Two shapes on each side give **four directions**,
-and each is its own module under `PUI.Data.Profunctor.Row`:
+and each is its own module under `Data.Profunctor.Row`:
 
 | direction | reading | typical citizen |
 |---|---|---|
@@ -190,7 +190,7 @@ of their own, and here the library coins two:
 
 - **`Resolving`**: `p a b -> p (Tuple a c) (Either b c)` — a widget that
   sees everything but answers with a *decision*: `Left` done, `Right` keep
-  going. One step of a loop. It underlies the `Shutter` optic. On `UI` the
+  going. One step of a loop. It underlies the `Shutter` optic. On `PUI` the
   decision is derived **from time**: emissions loop while the widget is
   still moving (mid-typing, mid-drag), and the last emission of a burst
   resolves at quiescence. Note the values on the wire are just values — no
@@ -255,7 +255,7 @@ subsumed them, which is how you know a design is converging.
 
 ## The `Category` instance: the spine
 
-Finally the composition everything hangs on: `UI m` is a `Semigroupoid` and
+Finally the composition everything hangs on: `PUI m` is a `Semigroupoid` and
 `Category`. `ui1 >>> ui2` pipes one widget's output into the next widget's
 input, and `Semigroupoid.do` pipelines read top-to-bottom like the user's
 journey through the app — the compass walk from the Directions section is a

@@ -1,4 +1,4 @@
-module PUI.Data.Default
+module Data.Default
   ( class Default
   , class RecordDefault
   , defaultRecord

@@ -7,12 +7,12 @@ import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (completed)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (every, looped, updates, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import PUI.MDC as MDC
 import PUI.Web (body, text)
 import QualifiedDo.Semigroupoid as Semigroupoid

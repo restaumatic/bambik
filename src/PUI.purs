@@ -2,7 +2,7 @@ module PUI
   ( Action
   , PropagationError
   , PropagationStatus
-  , UI(..)
+  , PUI(..)
   , action
   , action'
   , affAdapter
@@ -27,18 +27,18 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic)
-import PUI.Data.Lens.Extra.Types (Ocular)
+import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import PUI.Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
-import PUI.Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
-import PUI.Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
-import PUI.Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
-import PUI.Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
+import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
+import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -52,8 +52,8 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (union) as Record
 
--- could it be: newtype UI m i o = UI ((o -> Effect Unit) -> m (i -> Effect Unit))
-newtype UI m i o = UI (m
+-- could it be: newtype PUI m i o = PUI ((o -> Effect Unit) -> m (i -> Effect Unit))
+newtype PUI m i o = PUI (m
   { toUser :: i -> Effect Unit
   , fromUser :: (o -> Effect PropagationStatus) -> Effect Unit
   })
@@ -63,9 +63,9 @@ type PropagationStatus = Maybe PropagationError
 
 type PropagationError = String
 
-derive instance Newtype (UI m i o) _
+derive instance Newtype (PUI m i o) _
 
-instance Functor m => Profunctor (UI m) where
+instance Functor m => Profunctor (PUI m) where
   dimap pre post p = wrap ado
     p' <- unwrap p
     in
@@ -77,7 +77,7 @@ instance Functor m => Profunctor (UI m) where
 -- record merges follow): state a widget hasn't received yet cannot be
 -- fabricated, so emissions needing it are withheld (`pure Nothing`) until
 -- the state channel has been fed.
-instance Functor m => Strong (UI m) where
+instance Functor m => Strong (PUI m) where
   first p = wrap ado
     let lastab = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
@@ -107,7 +107,7 @@ instance Functor m => Strong (UI m) where
               Just prevab -> prop (Tuple (fst prevab) b)
       }
 
-instance Functor m => Choice (UI m) where
+instance Functor m => Choice (PUI m) where
   left p = wrap ado
     let mPropRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
@@ -142,7 +142,7 @@ instance Functor m => Choice (UI m) where
 -- | through the widget's input where possible, or use `looped` for the
 -- | self-feeding diagonal special case, which has no gate. The retraction law
 -- | `unfirst (first g) ≅ g` holds once the state channel is primed.
-instance Functor m => Costrong (UI m) where
+instance Functor m => Costrong (PUI m) where
   unfirst p = wrap ado
     let cRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
@@ -171,10 +171,10 @@ instance Functor m => Costrong (UI m) where
 -- | The `+`-diagonal **trace** (dual of `Choice`): a looped-branch emission
 -- | re-enters the widget as input — feedback of **control**, i.e. iteration —
 -- | until an exit-branch emission passes through. The re-entry is a `toUser`,
--- | so in `UI` the loop is an *event* loop: it advances on the widget's next
+-- | so in `PUI` the loop is an *event* loop: it advances on the widget's next
 -- | emission (variant-output widgets do not echo, so the leaf protocol cannot
 -- | provoke a synchronous spin). Retraction law: `unleft (left g) ≅ g`.
-instance Functor m => Cochoice (UI m) where
+instance Functor m => Cochoice (PUI m) where
   unleft p = wrap $ unwrap p <#> \p' ->
     { toUser: \a -> p'.toUser $ Left a
     , fromUser: \prop -> p'.fromUser case _ of
@@ -198,7 +198,7 @@ instance Functor m => Cochoice (UI m) where
 -- | re-renders at every fold step; a `Left b` exits. Gated like `Costrong`
 -- | (a first `c` must arrive before inputs pass — `announce` an initial
 -- | state to prime it); `coresolve (resolve g) ≅ g` once primed.
-instance Functor m => Coresolving (UI m) where
+instance Functor m => Coresolving (PUI m) where
   coresolve p = wrap ado
     let aRef = unsafePerformEffect $ Ref.new Nothing
     let cRef = unsafePerformEffect $ Ref.new Nothing
@@ -226,7 +226,7 @@ instance Functor m => Coresolving (UI m) where
 -- | `Tuple b c` yields `b` and immediately re-enters the widget as a
 -- | `Right c` resume — a **productive unfold**/generator.
 -- | `coretain (retain g) ≅ g` once the state channel is primed.
-instance Functor m => Coretaining (UI m) where
+instance Functor m => Coretaining (PUI m) where
   coretain p = wrap $ unwrap p <#> \p' ->
     -- the resume re-entry is guarded: a record-output widget echoes on
     -- `toUser`, and an unguarded re-feed would loop on its own echo
@@ -243,7 +243,7 @@ instance Functor m => Coretaining (UI m) where
           pure status
       }
 
-instance Apply m => Semigroupoid (UI m) where
+instance Apply m => Semigroupoid (PUI m) where
   compose p2 p1 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -263,7 +263,7 @@ instance Apply m => Semigroupoid (UI m) where
 -- | `identity` forwards its input straight to its output: a wire. The unit
 -- | of `compose` (up to effect timing), the element the diagonal unary laws
 -- | pin, and — at `{}` — an alternative `RecordToRecord.pempty`.
-instance Applicative m => Category (UI m) where
+instance Applicative m => Category (PUI m) where
   -- the ref is created per unwrap (inside the functor map), NOT in a
   -- top-level `let`: `identity` is a constant, and a constant's `let` is
   -- evaluated once — every `identity` in the app would share one wire
@@ -291,7 +291,7 @@ instance Applicative m => Category (UI m) where
 -- | ```
 -- |
 -- | Implemented directly, as elsewhere laws are stated and bodies stay lean.
-silence :: forall m i o. Applicative m => UI m i o
+silence :: forall m i o. Applicative m => PUI m i o
 silence = wrap $ pure
   { toUser: mempty
   , fromUser: mempty
@@ -304,7 +304,7 @@ silence = wrap $ pure
 -- | trace (`folding`, `feedback`) it primes the state channel — the fold
 -- | announces its initial state the way `pempty` announces its
 -- | informationless `{}`.
-announce :: forall m o. Applicative m => o -> UI m {} o
+announce :: forall m o. Applicative m => o -> PUI m {} o
 announce o = wrap $ pure
   { toUser: mempty
   , fromUser: \prop -> void $ prop o
@@ -313,12 +313,12 @@ announce o = wrap $ pure
 -- | Seed any stage with an initial value: `with a w` feeds `w` the value
 -- | `a` once at registration, then behaves as `w` — `seeded`'s composition
 -- | closure (`with a w = seeded a >>> w`, so `with a identity = seeded a`).
--- | Insertable at every `UI m a b` position: in front of a form (the
+-- | Insertable at every `PUI m a b` position: in front of a form (the
 -- | initial model), around a merge operand (seeding just that operand's
 -- | gates), or in front of a knowledge-gated trace as its primer — and at
 -- | the app entry: `body` feeds nothing, so `body $ with initial $ ...`
 -- | is the standalone-app shape.
-with :: forall m a b. Applicative m => a -> UI m a b -> UI m a b
+with :: forall m a b. Applicative m => a -> PUI m a b -> PUI m a b
 with a w = seeded a >>> w
 
 -- | The **seeded echo wire**: `identity`'s pass-through plus one emission
@@ -327,7 +327,7 @@ with a w = seeded a >>> w
 -- | the following stages, they render and emit, and the trace's state
 -- | channel is primed before any input arrives — `announce`'s job, at a
 -- | pass-through type.
-seeded :: forall m a. Applicative m => a -> UI m a a
+seeded :: forall m a. Applicative m => a -> PUI m a a
 seeded a = wrap $ pure unit <#> \_ ->
   -- ref per unwrap, like `identity` (a shared `let` would wire all
   -- instantiations together)
@@ -356,7 +356,7 @@ seeded a = wrap $ pure unit <#> \_ ->
 -- |
 -- | is the model–view–update shape as two named stages. Events arriving
 -- | before a first value are withheld (the usual knowledge gate).
-updates :: forall m s e. Functor m => (e -> s -> s) -> UI m s e -> UI m s s
+updates :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
 updates handler events = wrap $ unwrap events <#> \evts ->
   let sRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
@@ -385,7 +385,7 @@ updates handler events = wrap $ unwrap events <#> \evts ->
 -- | tick source: the 7GUIs Timer is `every (Milliseconds 100.0) tick`.
 -- | The loop runs for the widget's whole life (no cancellation — a
 -- | prototype limitation shared with `action'`).
-every :: forall m a. Applicative m => Milliseconds -> (a -> Maybe a) -> UI m a a
+every :: forall m a. Applicative m => Milliseconds -> (a -> Maybe a) -> PUI m a a
 every interval step = wrap $ pure unit <#> \_ ->
   let lastRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
@@ -418,7 +418,7 @@ every interval step = wrap $ pure unit <#> \_ ->
 -- | `unfirst` cannot self-feed (no `c` before the first emission, no
 -- | emission before the first input — the gate deadlocks), so the
 -- | self-feeding special case ties the knot directly.
-looped :: forall m a. Functor m => UI m a a -> UI m a a
+looped :: forall m a. Functor m => PUI m a a -> PUI m a a
 looped p = wrap $ unwrap p <#> \p' ->
   let busyRef = unsafePerformEffect $ Ref.new false
   in
@@ -435,7 +435,7 @@ looped p = wrap $ unwrap p <#> \p' ->
               prop u
     }
 
-instance Applicative m => RecordToRecord (UI m) where
+instance Applicative m => RecordToRecord (PUI m) where
   -- the unit announces its informationless {} once, so the merge gates below
   -- never starve against it
   pempty = wrap $ pure
@@ -472,7 +472,7 @@ instance Applicative m => RecordToRecord (UI m) where
               Just p1val -> prop $ Record.union p1val exact
       }
 
-instance Applicative m => RecordToVariant (UI m) where
+instance Applicative m => RecordToVariant (PUI m) where
   pempty = silence
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
@@ -496,13 +496,13 @@ instance Applicative m => RecordToVariant (UI m) where
 -- | retraction law refines to `coresolve (resolve g) = debounced g ≅ g`
 -- | up to time (once primed). The window is `resolveFor`'s parameter;
 -- | the instance uses the same default as `debounced`.
-instance Functor m => Resolving (UI m) where
+instance Functor m => Resolving (PUI m) where
   resolve = resolveFor (Milliseconds 300.0)
 
 -- | `resolve` with an explicit quiescence window — see the `Resolving`
 -- | instance. `Done` needs no state and fires (after the window) even
 -- | unprimed; only the `Loop` branch is gated on a first `c`.
-resolveFor :: forall m a b c. Functor m => Milliseconds -> UI m a b -> UI m (Tuple a c) (Either b c)
+resolveFor :: forall m a b c. Functor m => Milliseconds -> PUI m a b -> PUI m (Tuple a c) (Either b c)
 resolveFor millis p = wrap ado
   let cRef = unsafePerformEffect $ Ref.new Nothing
   let mFiberRef = unsafePerformEffect $ Ref.new Nothing
@@ -534,7 +534,7 @@ resolveFor millis p = wrap ado
 -- | output pairs it with the retained `c` — and is **withheld until a `c`
 -- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
 -- | mirroring the knowledge-gated record merges.
-instance Functor m => Retaining (UI m) where
+instance Functor m => Retaining (PUI m) where
   retain p = wrap ado
     let cRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
@@ -550,7 +550,7 @@ instance Functor m => Retaining (UI m) where
               Just c -> prop $ Tuple b c
       }
 
-instance Applicative m => VariantToRecord (UI m) where
+instance Applicative m => VariantToRecord (PUI m) where
   pempty = wrap $ pure
     { toUser: mempty
     , fromUser: \prop -> void $ prop {}
@@ -584,7 +584,7 @@ instance Applicative m => VariantToRecord (UI m) where
               Just p1val -> prop $ Record.union p1val exact
       }
 
-instance Applicative m => VariantToVariant (UI m) where
+instance Applicative m => VariantToVariant (PUI m) where
   pempty = silence
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
@@ -601,7 +601,7 @@ instance Applicative m => VariantToVariant (UI m) where
 -- Optics
 
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
-constant :: forall a s t m. Functor m => a -> Optic (UI m) s t a Void
+constant :: forall a s t m. Functor m => a -> Optic (PUI m) s t a Void
 constant a w = wrap $ ado
   w' <- unwrap w
   let initializedRef = unsafePerformEffect $ Ref.new false
@@ -614,7 +614,7 @@ constant a w = wrap $ ado
     , fromUser: mempty
     }
 
-type Action s t a b = forall m. Functor m => Optic (UI m) s t a b
+type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 
 -- | The progress slot is row-shaped like every component interface: the
 -- | widget is a `{ busy :: Boolean } → {}` display citizen.
@@ -625,7 +625,7 @@ action arr = action' \i pro post -> do
   liftEffect $ pro { busy: false }
   liftEffect $ post o
 
-action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (UI m) i o a b
+action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
 action' arr w = wrap ado
   let oVar = unsafePerformEffect $ liftEffect AVar.empty
   w' <- unwrap w
@@ -643,7 +643,7 @@ action' arr w = wrap ado
 -- notice: this is not really optics, operates for given m
 -- TODO add release parameter?
 -- TODO is this needed?
-effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Optic (UI m) s t a b
+effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Optic (PUI m) s t a b
 effAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
@@ -658,7 +658,7 @@ effAdapter f w = wrap ado
     }
 
 -- TODO is this needed?
-affAdapter :: forall m a b s t. Apply m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Optic (UI m) s t a b
+affAdapter :: forall m a b s t. Apply m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Optic (PUI m) s t a b
 affAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
@@ -697,16 +697,16 @@ affAdapter f w = wrap ado
 -- | quiescence step composed with its retraction. Implemented directly
 -- | (ungated, on the input leg) as elsewhere laws are stated and bodies
 -- | stay lean.
-debounced' :: forall m. Applicative m => Milliseconds -> Ocular (UI m)
+debounced' :: forall m. Applicative m => Milliseconds -> Ocular (PUI m)
 debounced' millis = affAdapter $ pure
   { pre: \i -> delay millis *> pure i
   , post: pure
   }
 
-debounced :: forall m. Applicative m => Ocular (UI m)
+debounced :: forall m. Applicative m => Ocular (PUI m)
 debounced = debounced' (Milliseconds 300.0)
 
-spied :: forall m. Functor m => DebugWarning => String -> Ocular (UI m)
+spied :: forall m. Functor m => DebugWarning => String -> Ocular (PUI m)
 spied name w = wrap ado
   { toUser, fromUser } <- unwrap w
   in
@@ -719,4 +719,4 @@ spied name w = wrap ado
     }
   where
     spy' :: forall a. String -> a -> a
-    spy' text a = spy ("Spied UI \"" <> name <> "\" " <> text <> " new value") a
+    spy' text a = spy ("Spied PUI \"" <> name <> "\" " <> text <> " new value") a

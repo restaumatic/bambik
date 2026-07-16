@@ -9,7 +9,7 @@
 -- |   `+→+` backend dispatch → `+→×` status snackbars
 -- |
 -- | with real MDC widgets as the merge operands, laid out so that the order
--- | of the code maps 1-1 to the order of the UI, with no inline type
+-- | of the code maps 1-1 to the order of the PUI, with no inline type
 -- | annotations: MDC components are label-indexed row profunctors already
 -- | (`MDC.filledTextField @"total"` edits one field, `MDC.button @"submit"`
 -- | fires one event case, `MDC.snackbar @"orderSubmitted"` shows one
@@ -46,6 +46,11 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
+import Data.Profunctor.Row.RecordToRecord (field, tapped)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (case_, inj, on, prj) as Variant
@@ -53,12 +58,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (UI, action, debounced, looped, silence, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (field, tapped)
-import PUI.Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import PUI.Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI.Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import PUI.Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import PUI (PUI, action, debounced, looped, silence, with)
 import PUI.MDC as MDC
 import PUI.Web (Web, body, shownWhen, text)
 import Prim.Row (class Cons)
@@ -278,7 +278,7 @@ printReceipt order = do
 
 -- | A single-field display as a record-merge operand: reads one field,
 -- | contributes nothing.
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> UI Web { | r } {}
+reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
 reading render = lcmap (\r -> render (get (Proxy @l) r)) text
 
 

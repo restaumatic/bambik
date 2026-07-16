@@ -11,8 +11,8 @@ module BusinessOptics where
 import Prelude
 
 import Data.Either (Either(..))
-import PUI.Data.Profunctor.Row.RecordToVariant (Shutter, shutterE, shutterWrap)
-import PUI.Data.Profunctor.Row.VariantToRecord (Reel, reelE, reelWrap)
+import Data.Profunctor.Row.RecordToVariant (Shutter, shutterE, shutterWrap)
+import Data.Profunctor.Row.VariantToRecord (Reel, reelE, reelWrap)
 import Data.Tuple (Tuple(..))
 
 type Money = Int

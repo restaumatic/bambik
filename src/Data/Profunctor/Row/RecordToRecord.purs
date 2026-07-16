@@ -22,12 +22,12 @@
 -- | recordToRecord pempty g = g = recordToRecord g pempty
 -- | ```
 -- |
--- | It is a class member (not a parametric silent element like `UI`'s
+-- | It is a class member (not a parametric silent element like `PUI`'s
 -- | `silence`) because a lawful record-output unit must *announce* its
 -- | contribution — the informationless `{}` — to the merge machinery, and
 -- | anything typed `forall a b. p a b` is silent by parametricity (it can
 -- | never fabricate a `b`). For `Category` carriers, `pempty = identity @{}`.
-module PUI.Data.Profunctor.Row.RecordToRecord
+module Data.Profunctor.Row.RecordToRecord
   ( Colens
   , bind
   , colens
@@ -57,7 +57,7 @@ import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Record (get, insert, union) as Record
 import Type.Proxy (Proxy(..))
-import PUI.Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
+import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
@@ -198,7 +198,7 @@ completed w = dimap (\i -> Tuple i i) (\(Tuple o i) -> overlay (exactRow o) i) (
 -- | emitted `{ | o }` runtime-carries the looped fields — a `feedback`
 -- | stage belongs in a pipeline, not as a record-merge operand.
 -- |
--- | On a knowledge-gated carrier (`UI`) the state channel must be
+-- | On a knowledge-gated carrier (`PUI`) the state channel must be
 -- | **primed by the widget's first emission** — inputs are withheld until
 -- | then, so the inner widget must be able to emit unfed (editors that emit
 -- | on user input qualify; load-first ensembles use `looped`, the
@@ -225,7 +225,7 @@ feedback g =
 -- | to `(join : s → b → a) × (out : b → t)`: each input is read **against the
 -- | widget's own last output** — the residual a lens would carry visibly in
 -- | the type is hidden, threaded through state instead. The collapsed form
--- | shows why the `UI` carrier gates it (there is no last output before the
+-- | shows why the `PUI` carrier gates it (there is no last output before the
 -- | first emission). `feedback` is this optic at row granularity.
 type Colens s t a b = forall p. Costrong p => p a b -> p s t
 

@@ -4,9 +4,9 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (completed)
 import Effect (Effect)
 import PUI (looped, updates, with)
-import PUI.Data.Profunctor.Row.RecordToRecord (completed)
 import PUI.MDC as MDC
 import PUI.Web (body, text)
 import QualifiedDo.Semigroupoid as Semigroupoid

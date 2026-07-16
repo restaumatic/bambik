@@ -22,10 +22,10 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (rmap)
-import PUI.Data.Profunctor.Row.VariantToRecord (reel)
+import Data.Profunctor.Row.VariantToRecord (reel)
 import Data.Variant (case_, on)
 import Type.Proxy (Proxy(..))
-import PUI (UI)
+import PUI (PUI)
 import PUI.Web (Web, button, staticText)
 
 type Money = Int
@@ -41,7 +41,7 @@ type OrderEvent =
 
 -- | The inner transformer `p a b`: a fresh `DishId` in, a `PricedLine` out
 -- | (toy menu lookup; a real one would be an interactive picker with modifiers).
-priceDish :: UI Web DishId PricedLine
+priceDish :: PUI Web DishId PricedLine
 priceDish =
   rmap (\id -> { name: id, price: 1000 })
     (button $ staticText "Price dish")
@@ -49,7 +49,7 @@ priceDish =
 -- | The Reel: events folded into the running order. The order is real retained
 -- | state — it lives in the finisher's closure inside the carrier, installed by
 -- | `openOrder` and applied when `priceDish` yields a line.
-orderReel :: UI Web OrderEvent Order
+orderReel :: PUI Web OrderEvent Order
 orderReel = reel dispatch priceDish
   where
   dispatch :: OrderEvent -> Either DishId (PricedLine -> Order)
