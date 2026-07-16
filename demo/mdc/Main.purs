@@ -220,7 +220,7 @@ main =
               MDC.dataCell (HTML.text # forField @"name")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Volume"
-              MDC.dataCell (HTML.text # lcmap (\{ value: v } -> { value: show v }) # forField @"volume")
+              MDC.dataCell (HTML.text # forField @"volume")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Theme"
               MDC.dataCell (HTML.text # forField @"theme")
