@@ -10,7 +10,8 @@
     "demo-mdc": "parcel -p 1234 demo/mdc/index.html & spago bundle-app --main Main --to demo/mdc/bundle.js -w -l --path demo/mdc/**/*.purs",
     "deploy-demo-1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo-2": "scp -r demo/2/ xyz:/var/www/html/bambik/demo/",
-    "deploy-demo-mdc": "scp -r demo/mdc/ xyz:/var/www/html/bambik/demo/"
+    "deploy-demo-mdc": "scp -r demo/mdc/ xyz:/var/www/html/bambik/demo/",
+    "deploy-demo-7guis": "scp -r demo/7guis/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
     "material-components-web": "^14.0.0"

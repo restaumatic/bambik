@@ -109,6 +109,11 @@ text = wrap do
     , fromUser: \prop -> Ref.write prop propRef
     }
 
+-- | Model updates never clobber the field the user is typing in: `toUser`
+-- | skips `setValue` while the node is focused (but still echoes, so merge
+-- | gates and downstream stages keep flowing). The channel stays live for
+-- | the field's whole life — an edited field resumes showing model updates
+-- | the moment it loses focus.
 input :: String -> UI Web String String
 input type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
@@ -116,18 +121,18 @@ input type_ = "type" := type_ $ wrap do
   mPropRef <- liftEffect $ Ref.new $ Nothing
   pure
     { toUser: \newa -> do
+      focused <- isFocused node
+      unless focused $ setValue node newa
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> do
-        setValue node newa
-        void $ prop newa
+      for_ mProp \prop -> void $ prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
       void $ addEventListener "input" node $ const do
-        Ref.write Nothing mPropRef
         value <- getValue node
         void $ prop value
     }
 
+-- | See `input` — same focus-guarded protocol.
 textArea :: UI Web String String
 textArea = wrap do
   element "textArea" (pure unit)
@@ -135,14 +140,13 @@ textArea = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \newa -> do
+      focused <- isFocused node
+      unless focused $ setValue node newa
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> do
-        setValue node newa
-        void $ prop newa
+      for_ mProp \prop -> void $ prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
       void $ addEventListener "input" node $ const do
-        Ref.write Nothing mPropRef
         value <- getValue node
         void $ prop value
     }
@@ -524,6 +528,7 @@ clazz name = do
   pure unit
 
 foreign import data Event :: Type
+foreign import isFocused :: Node -> Effect Boolean
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
