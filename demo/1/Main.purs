@@ -47,7 +47,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToRecord (asField, field, tapped)
+import Data.Profunctor.Row.RecordToRecord (asField, field, forField, tapped)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -61,7 +61,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, debounced, looped, silence, with)
-import PUI.HTML (attr, body, div, reading, shownWhen, text) as HTML
+import PUI.HTML (attr, body, div, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
 import PUI.Web (Web)
 import Prim.Row (class Cons)
@@ -99,7 +99,7 @@ main =
   HTML.body $ ( MDC.elevation20 Semigroupoid.do
       MDC.indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
-        MDC.headline6 $ HTML.reading @"shortId" ("Order " <> _)
+        MDC.headline6 (HTML.text # lcmap ("Order " <> _) # forField @"shortId")
         MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           MDC.filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
@@ -126,7 +126,7 @@ main =
                 HTML.shownWhen (\r -> r.selected == "delivery")
                   ( ( RecordToRecord.do
                         MDC.filledTextField { floatingLabel: "Address" } # asField @"address"
-                        MDC.body1 $ HTML.reading @"address" \address -> "Distance " <> distanceKm address <> " km"
+                        MDC.body1 (HTML.text # lcmap (\address -> "Distance " <> distanceKm address <> " km") # forField @"address")
                     ) # lcmap addressOf
                   )
             ) # looped # dimap fulfillmentState fulfillmentCase
@@ -143,7 +143,7 @@ main =
                 ]
                 # asField @"selected" # dimap methodState methodCase # field @"method"
               MDC.filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              MDC.body1 $ HTML.reading @"method" \method -> "Paying by " <> methodText method
+              MDC.body1 (HTML.text # lcmap (\method -> "Paying by " <> methodText method) # forField @"method")
           ) # field @"payment"
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       -- a live view of the form's output: displays every emission and passes it

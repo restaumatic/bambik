@@ -7,13 +7,13 @@ import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed)
+import Data.Profunctor.Row.RecordToRecord (asField, completed, forField)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (every, looped, updates, with)
-import PUI.HTML (body, reading, staticText, text) as HTML
+import PUI.HTML (body, staticText, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, headline6, slider) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -28,9 +28,9 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap gauge)
           MDC.body1 RecordToRecord.do
-            HTML.reading @"elapsed" format
+            HTML.text # lcmap format # forField @"elapsed"
             HTML.staticText "s / "
-            HTML.reading @"duration" format
+            HTML.text # lcmap format # forField @"duration"
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed

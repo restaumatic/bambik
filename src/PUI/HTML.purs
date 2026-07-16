@@ -37,7 +37,6 @@ module PUI.HTML
   , p
   , path
   , radioButton
-  , reading
   , runWidgetInNode
   , runWidgetInSelectedNode
   , shownWhen
@@ -452,12 +451,6 @@ variant w = wrap do
     , fromUser
     }
 
-
--- | A single-field display: reads field `l` through a render function,
--- | contributes nothing — the closed singleton row makes it annotation-free
--- | as a record-merge operand ("`text` for field `l`").
-reading :: forall @l a r. IsSymbol l => Cons l a () r => (a -> String) -> PUI Web { | r } {}
-reading render = lcmap (\r -> render (Record.get (Proxy @l) r)) text
 
 -- | Value-dependent class for the last-built element: the class is present
 -- | exactly while the predicate holds for the value fed. (`shownWhen`'s

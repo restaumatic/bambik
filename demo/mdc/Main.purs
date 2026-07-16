@@ -45,7 +45,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, tapped)
+import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, forField, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase, folding)
@@ -61,7 +61,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, announce, debounced, looped, seeded, silence, with)
-import PUI.HTML (attr, body, div, reading, shownWhen, staticText, text) as HTML
+import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, slider, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
 import PUI.Web (Web)
 import Prim.Row (class Cons)
@@ -133,7 +133,7 @@ main =
       -- own disjoint output fields, inputs may overlap; label-indexed MDC
       -- components are `field @l`-shaped inside (bare `Profunctor`)
       MDC.layoutGrid RecordToRecord.do
-        MDC.layoutCell { span: 12 } $ MDC.headline6 $ HTML.reading @"name" ("Settings — " <> _)
+        MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # lcmap ("Settings — " <> _) # forField @"name")
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
           MDC.filledTextArea { columns: 60, rows: 3 } # asField @"notes"
@@ -180,7 +180,7 @@ main =
               lcmap stepPeak identity
               MDC.body2 (HTML.text # lcmap peakLine) # tapped
           ) # feedback
-          MDC.body2 (HTML.reading @"volume" (\v -> "Volume " <> show v)) # tapped
+          MDC.body2 (HTML.text # lcmap (\v -> "Volume " <> show v) # forField @"volume") # tapped
         -- the variant model is edited through record-shaped editor state
         -- (`ShippingState` — all payloads persist, the merge gates retain them):
         -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
@@ -217,13 +217,13 @@ main =
           MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Name"
-              MDC.dataCell $ HTML.reading @"name" identity
+              MDC.dataCell (HTML.text # forField @"name")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Volume"
-              MDC.dataCell $ HTML.reading @"volume" show
+              MDC.dataCell (HTML.text # lcmap show # forField @"volume")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Theme"
-              MDC.dataCell $ HTML.reading @"theme" identity
+              MDC.dataCell (HTML.text # forField @"theme")
         MDC.layoutCell { span: 12 } MDC.divider
         MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # lcmap summarize) # debounced)
       ) # tapped
