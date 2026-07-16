@@ -3,7 +3,7 @@ module Main (main) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor.Row.RecordToRecord (completed, forField)
+import Data.Profunctor.Row.RecordToRecord (completed, forField, projection)
 import Effect (Effect)
 import PUI (looped, updates, with)
 import PUI.HTML (body, text) as HTML
@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ ( Semigroupoid.do
-      MDC.headline4 (HTML.text # forField @"count") # completed
+      MDC.headline4 (HTML.text # projection show # forField @"count") # completed
       MDC.button { label: Just "Count", icon: Nothing } # updates increment
   ) # with { count: 0 } # looped
 

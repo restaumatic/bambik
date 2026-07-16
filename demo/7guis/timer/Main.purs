@@ -6,7 +6,7 @@ import Data.Array (replicate)
 import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed, forField)
+import Data.Profunctor.Row.RecordToRecord (asField, completed, forField, projection)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Effect (Effect)
@@ -27,9 +27,9 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # lcmap ({ value: _ } <<< gauge))
           MDC.body1 RecordToRecord.do
-            HTML.text # forField @"elapsed"
+            HTML.text # projection show # forField @"elapsed"
             HTML.staticText "s / "
-            HTML.text # forField @"duration"
+            HTML.text # projection show # forField @"duration"
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
             # dimap (\{ value: i } -> { value: Int.toNumber i }) (\{ value: n } -> { value: Int.round n })

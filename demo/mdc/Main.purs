@@ -45,7 +45,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, forField, tapped)
+import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, forField, projection, tapped)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.RecordToVariant (asCase, folding)
@@ -133,7 +133,7 @@ main =
       -- own disjoint output fields, inputs may overlap; label-indexed MDC
       -- components are `field @l`-shaped inside (bare `Profunctor`)
       MDC.layoutGrid RecordToRecord.do
-        MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # lcmap (\{ value: v } -> { value: "Settings — " <> v }) # forField @"name")
+        MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # projection ("Settings — " <> _) # forField @"name")
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
           MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
           MDC.filledTextArea { columns: 60, rows: 3 } # asField @"notes"
@@ -180,7 +180,7 @@ main =
               lcmap stepPeak identity
               MDC.body2 (HTML.text # lcmap ({ value: _ } <<< peakLine)) # tapped
           ) # feedback
-          MDC.body2 (HTML.text # lcmap (\{ value: v } -> { value: "Volume " <> show v }) # forField @"volume") # tapped
+          MDC.body2 (HTML.text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
         -- the variant model is edited through record-shaped editor state
         -- (`ShippingState` — all payloads persist, the merge gates retain them):
         -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
@@ -220,7 +220,7 @@ main =
               MDC.dataCell (HTML.text # forField @"name")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Volume"
-              MDC.dataCell (HTML.text # forField @"volume")
+              MDC.dataCell (HTML.text # projection show # forField @"volume")
             MDC.dataRow RecordToRecord.do
               MDC.dataCell $ HTML.staticText "Theme"
               MDC.dataCell (HTML.text # forField @"theme")

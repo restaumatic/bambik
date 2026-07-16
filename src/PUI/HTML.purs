@@ -45,11 +45,9 @@ module PUI.HTML
   , staticText
   , svg
   , table
-  , class TextValue
   , tbody
   , td
   , text
-  , textValue
   , textArea
   , th
   , thead
@@ -85,17 +83,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
 
--- | What `text` can display: `String` as itself, anything else via `Show` —
--- | so `text # forField @l` works directly for numeric/boolean fields.
-class TextValue a where
-  textValue :: a -> String
-
-instance TextValue String where
-  textValue s = s
-else instance Show a => TextValue a where
-  textValue = show
-
-text :: forall s. TextValue s => PUI Web { value :: s } {}
+text :: PUI Web { value :: String } {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -107,7 +95,7 @@ text = wrap do
   propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
     { toUser: \s -> do
-        setTextNodeValue node (textValue s.value)
+        setTextNodeValue node s.value
         prop <- Ref.read propRef
         void $ prop {}
     , fromUser: \prop -> Ref.write prop propRef

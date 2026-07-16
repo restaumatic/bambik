@@ -38,6 +38,7 @@ module Data.Profunctor.Row.RecordToRecord
   , feedback
   , asField
   , forField
+  , projection
   , field
   , pempty
   , focusRecord
@@ -157,6 +158,13 @@ property = prop (Proxy @l)
 -- | `Record.union` — so this is no longer a correctness obligation on
 -- | operands; `field` remains the preferred operand form for its
 -- | annotation-free inference.)
+-- | Map the **canonical value** on the input side: adapt a component
+-- | expecting `{ value :: a }` to accept `{ value :: a' }` through a
+-- | projection `a' -> a` — the explicit formatting stage for displays
+-- | (`text # projection show # forField @l`), `lcmap`-only.
+projection :: forall p a a' b. Profunctor p => (a' -> a) -> p { value :: a } b -> p { value :: a' } b
+projection f = lcmap (\r -> { value: f r.value })
+
 -- | Adopt a **canonically-labeled display** (`{ value :: a }` in) for field
 -- | `l`: renames the incoming field, output untouched — `lcmap`-only, the
 -- | input-side member of the adopter family (`asField` renames both sides
