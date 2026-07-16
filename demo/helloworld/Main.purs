@@ -17,16 +17,16 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 import Web (body)
 
 main :: Effect Unit
-main = body $ with seed $ Semigroupoid.do
-  focusRecord $ MDC.filledTextField @"foo" { floatingLabel: "Foo" }
-  focusRecord $ MDC.filledTextField @"day" { floatingLabel: "Day" }
-  focusRecord $ MDC.filledTextField @"quantity" { floatingLabel: "Quantity" }
-  focusRecord $ MDC.filledTextField @"price" { floatingLabel: "Price" }
-  silence
-  where
-  seed =
+main = body
+  $ with
     { foo: "foo"
     , day: "1"
     , quantity: "1"
     , price: "10"
     }
+  $ Semigroupoid.do
+      focusRecord $ MDC.filledTextField @"foo" { floatingLabel: "Foo" }
+      focusRecord $ MDC.filledTextField @"day" { floatingLabel: "Day" }
+      focusRecord $ MDC.filledTextField @"quantity" { floatingLabel: "Quantity" }
+      focusRecord $ MDC.filledTextField @"price" { floatingLabel: "Price" }
+      silence

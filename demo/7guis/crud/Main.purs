@@ -30,7 +30,19 @@ type Model =
   }
 
 main :: Effect Unit
-main = body $ with initial $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped Semigroupoid.do
+main = body
+  $ with
+    { prefix: ""
+    , name: ""
+    , surname: ""
+    , people:
+        [ { name: "Hans", surname: "Emil" }
+        , { name: "Max", surname: "Mustermann" }
+        , { name: "Roman", surname: "Tisch" }
+        ]
+    , selected: Nothing
+    }
+  $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" } $ looped Semigroupoid.do
   completed RecordToRecord.do
     MDC.filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
     MDC.filledTextField @"name" { floatingLabel: "Name" }
@@ -40,19 +52,6 @@ main = body $ with initial $ MDC.elevation20 $ MDC.card { caption: Just "CRUD" }
     MDC.button @"create" { label: Just "Create", icon: Nothing }
     MDC.button @"update" { label: Just "Update", icon: Nothing }
     MDC.button @"delete" { label: Just "Delete", icon: Nothing }
-
-initial :: Model
-initial =
-  { prefix: ""
-  , name: ""
-  , surname: ""
-  , people:
-      [ { name: "Hans", surname: "Emil" }
-      , { name: "Max", surname: "Mustermann" }
-      , { name: "Roman", surname: "Tisch" }
-      ]
-  , selected: Nothing
-  }
 
 handle ::
   [ picked :: Int

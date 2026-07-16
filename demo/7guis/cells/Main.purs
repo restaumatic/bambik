@@ -37,22 +37,21 @@ type Model =
   }
 
 main :: Effect Unit
-main = body $ with initial $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
+main = body
+  $ with
+    { cells: Obj.empty
+        # Obj.insert "A0" "Item"    # Obj.insert "B0" "Price" # Obj.insert "C0" "Qty" # Obj.insert "D0" "Total"
+        # Obj.insert "A1" "Espresso" # Obj.insert "B1" "2.5"  # Obj.insert "C1" "2"   # Obj.insert "D1" "=B1*C1"
+        # Obj.insert "A2" "Cake"     # Obj.insert "B2" "4"    # Obj.insert "C2" "1"   # Obj.insert "D2" "=B2*C2"
+        # Obj.insert "A3" "Sum"      # Obj.insert "D3" "=SUM(D1:D2)"
+    , selected: Nothing
+    , formula: ""
+    }
+  $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ looped Semigroupoid.do
   rmap commit $ completed RecordToRecord.do
     MDC.body1 $ lcmap selectedCaption text
     MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
   updates handle grid
-
-initial :: Model
-initial =
-  { cells: Obj.empty
-      # Obj.insert "A0" "Item"    # Obj.insert "B0" "Price" # Obj.insert "C0" "Qty" # Obj.insert "D0" "Total"
-      # Obj.insert "A1" "Espresso" # Obj.insert "B1" "2.5"  # Obj.insert "C1" "2"   # Obj.insert "D1" "=B1*C1"
-      # Obj.insert "A2" "Cake"     # Obj.insert "B2" "4"    # Obj.insert "C2" "1"   # Obj.insert "D2" "=B2*C2"
-      # Obj.insert "A3" "Sum"      # Obj.insert "D3" "=SUM(D1:D2)"
-  , selected: Nothing
-  , formula: ""
-  }
 
 handle :: [ cellClicked :: String ] -> Model -> Model
 handle e m = e # (Variant.case_
