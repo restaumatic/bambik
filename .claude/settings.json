@@ -7,7 +7,8 @@
       "Bash(node_modules/.bin/purs --version)",
       "Bash(npm run *)",
       "Bash(git commit -m 'docs: demo build/deploy procedure in CLAUDE.md; lockfile on variant.6 compiler *)",
-      "Bash(git commit -m 'feat: the app vocabulary — updates, completed, every, echoCase, bodyWith, viewEvents *)"
+      "Bash(git commit -m 'feat: the app vocabulary — updates, completed, every, echoCase, bodyWith, viewEvents *)",
+      "Bash(git commit -m 'style\\(7guis\\): idiomatic bambik throughout *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile"

@@ -54,7 +54,13 @@ initial =
   , selected: Nothing
   }
 
-handle :: [ picked :: Int, create :: Model, update :: Model, delete :: Model ] -> Model -> Model
+handle ::
+  [ picked :: Int
+  , create :: Model
+  , update :: Model
+  , delete :: Model
+  ]
+  -> Model -> Model
 handle e m = e # (Variant.case_
   -- selection is an event: it prefills the fields from the picked person
   # Variant.on (Proxy @"picked") (\i -> case index m.people i of

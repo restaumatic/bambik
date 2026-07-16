@@ -35,7 +35,7 @@ main = bodyWith { flightType: "one-way", start: "27.03.2026", return: "27.03.202
         , { value: "return", label: "return flight" }
         ]
     MDC.filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }
-    shownWhen (\(r :: Booking) -> r.flightType == "return") $ lcmap (\r -> { return: r.return }) $
+    shownWhen isReturn $ lcmap returnDate $
       MDC.filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" }
   tapped $ debounced $ MDC.body1 $ lcmap validationText text
   RecordToVariant.do
@@ -77,3 +77,9 @@ bookFlight :: Booking -> Aff [ booked :: String, rejected :: String ]
 bookFlight b = pure case validate b of
   Left err -> .rejected ("Cannot book: " <> err)
   Right summary -> .booked ("You have booked: " <> summary)
+
+isReturn :: Booking -> Boolean
+isReturn b = b.flightType == "return"
+
+returnDate :: Booking -> { return :: String }
+returnDate b = { return: b.return }

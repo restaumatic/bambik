@@ -14,4 +14,7 @@ import Web (bodyWith, text)
 main :: Effect Unit
 main = bodyWith { count: 0 } $ MDC.elevation20 $ MDC.card { caption: Just "Counter" } $ looped Semigroupoid.do
   tapped $ MDC.headline4 $ lcmap (\r -> show r.count) text
-  updates (\_ r -> { count: r.count + 1 }) $ MDC.button @"count" { label: Just "Count", icon: Nothing }
+  updates increment $ MDC.button @"count" { label: Just "Count", icon: Nothing }
+
+increment :: forall e. e -> { count :: Int } -> { count :: Int }
+increment _ r = { count: r.count + 1 }

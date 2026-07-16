@@ -35,7 +35,7 @@ main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Circle Dra
   -- the resize session: the slider edits `diameter`, applied to the
   -- selected circle on every emission (undo snapshotted once per session)
   rmap applyDiameter $ completed $
-    shownWhen (\(m :: Model) -> isJust m.selected) $ lcmap (\m -> { diameter: m.diameter }) $
+    shownWhen hasSelection $ lcmap diameterField $
       MDC.slider @"diameter" { label: "Diameter", min: 4.0, max: 200.0, step: Nothing }
   updates handle RecordToVariant.do
     canvas
@@ -45,7 +45,12 @@ main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Circle Dra
 initial :: Model
 initial = { circles: [], selected: Nothing, diameter: 40.0, adjusting: false, undoStack: [], redoStack: [] }
 
-handle :: [ clicked :: { x :: Number, y :: Number }, undo :: Model, redo :: Model ] -> Model -> Model
+handle ::
+  [ clicked :: { x :: Number, y :: Number }
+  , undo :: Model
+  , redo :: Model
+  ]
+  -> Model -> Model
 handle e m = e # (Variant.case_
   # Variant.on (Proxy @"clicked") (\{ x, y } ->
       case findIndex (\c -> dist c x y <= c.r) m.circles of
@@ -84,3 +89,9 @@ canvas = viewEvents
   render m = joinWith "" (m.circles # mapWithIndex \i c ->
     "<circle cx=\"" <> show c.x <> "\" cy=\"" <> show c.y <> "\" r=\"" <> show c.r
       <> "\" stroke=\"#333\" fill=\"" <> (if m.selected == Just i then "#ddd" else "transparent") <> "\"/>")
+
+hasSelection :: Model -> Boolean
+hasSelection m = isJust m.selected
+
+diameterField :: Model -> { diameter :: Number }
+diameterField m = { diameter: m.diameter }

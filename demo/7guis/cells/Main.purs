@@ -41,7 +41,7 @@ main = bodyWith initial $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $
   -- committing the formula field to the selected cell rides on every
   -- form emission
   rmap commit $ completed RecordToRecord.do
-    MDC.body1 $ lcmap (\(m :: Model) -> "Cell " <> fromMaybe "—" m.selected) text
+    MDC.body1 $ lcmap selectedCaption text
     MDC.filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }
   updates handle grid
 
@@ -262,3 +262,6 @@ evalExpr cells visiting = go
     in case foldl step (Right 0.0) ks of
       Right n -> NumV n
       Left e -> ErrV e
+
+selectedCaption :: Model -> String
+selectedCaption m = "Cell " <> fromMaybe "—" m.selected

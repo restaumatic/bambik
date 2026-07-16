@@ -26,10 +26,16 @@ main :: Effect Unit
 main = bodyWith { duration: 10.0, elapsed: 0.0 } $ MDC.elevation20 $ MDC.card { caption: Just "Timer" } $ looped Semigroupoid.do
   completed RecordToRecord.do
     MDC.headline6 $ lcmap gauge text
-    MDC.body1 $ lcmap (\(t :: Timer) -> format t.elapsed <> "s / " <> format t.duration <> "s") text
+    MDC.body1 $ lcmap elapsedCaption text
     MDC.slider @"duration" { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 }
   every (Milliseconds 100.0) tick
-  updates (\_ t -> t { elapsed = 0.0 }) $ MDC.button @"reset" { label: Just "Reset", icon: Just "replay" }
+  updates reset $ MDC.button @"reset" { label: Just "Reset", icon: Just "replay" }
+
+reset :: forall e. e -> Timer -> Timer
+reset _ t = t { elapsed = 0.0 }
+
+elapsedCaption :: Timer -> String
+elapsedCaption t = format t.elapsed <> "s / " <> format t.duration <> "s"
 
 tick :: Timer -> Maybe Timer
 tick t
