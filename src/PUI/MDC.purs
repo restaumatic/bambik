@@ -132,8 +132,8 @@ import PUI.Web (Node, Web, uniqueId)
 
 -- | The `×→+` event button: reads the whole record it is shown and fires
 -- | it as event case `l` on click (`recordToCase` over the raw button).
-button :: forall r. { label :: Maybe String, icon :: Maybe String } -> PUI Web { | r } [ clicked :: { | r } ]
-button config = recordToCase @"clicked" (containedButton config)
+button :: forall r. { label :: Maybe String, icon :: Maybe String } -> PUI Web { | r } [ event :: { | r } ]
+button config = recordToCase @"event" (containedButton config)
 
 -- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
 -- | **same-type** (`Cons l a () s`): the selection is always known from the

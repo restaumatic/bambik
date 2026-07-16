@@ -261,11 +261,11 @@ propertyToCase g =
 -- | plain `rmap (inj l)` on any `Profunctor`. (The **background** `b` of the
 -- | output **shot** `s` is simply never produced — the widening is free, as
 -- | with `inj` itself.)
--- | Adopt a **canonically-labeled** event component (`[ clicked :: a ]` out,
+-- | Adopt a **canonically-labeled** event component (`[ event :: a ]` out,
 -- | the citizenship-carrying interface) as business case `l`: renames the
 -- | case, input untouched — `rmap`-only, the `asField` twin at `× → +`.
-asCase :: forall @l p i a s. IsSymbol l => Profunctor p => Cons l a () s => p i [ clicked :: a ] -> p i [ | s ]
-asCase = rmap (on (Proxy @"clicked") (inj (Proxy @l)) case_)
+asCase :: forall @l p i a s. IsSymbol l => Profunctor p => Cons l a () s => p i [ event :: a ] -> p i [ | s ]
+asCase = rmap (on (Proxy @"event") (inj (Proxy @l)) case_)
 
 recordToCase
   :: forall @l p r b s f
