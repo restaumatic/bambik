@@ -1,3 +1,23 @@
+-- | The core profunctor UI type and its combinators.
+-- |
+-- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
+-- | stages are composed with `Semigroupoid.do`, every emission travels
+-- | left-to-right through the stages, and `mvu` loops the final emission
+-- | back to the top — so a stage placed *before* another is not "above" it
+-- | semantically; all stages see every model value on the next loop turn.
+-- |
+-- | A trace of the 7GUIs counter (`display # completed`, then
+-- | `button # updates increment`, under `mvu { count: 0 }`):
+-- |
+-- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
+-- |  2. the display shows `0` and echoes; `completed` widens the echo to
+-- |     the full model, which flows on and arms the button's replay value
+-- |     and `updates`' retained state;
+-- |  3. the user clicks: the button emits, `updates` folds `increment`
+-- |     into the retained model and emits `{ count: 1 }`;
+-- |  4. the loop re-feeds `{ count: 1 }` to the top; the display re-renders;
+-- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
+-- |     guard, so exactly one turn happens per event.
 module PUI
   ( Action
   , PropagationError
@@ -13,12 +33,14 @@ module PUI
   , effAdapter
   , every
   , looped
+  , mvu
   , resolveFor
   , seeded
   , silence
   , spied
   , updates
   , with
+  , module Adopters
   )
   where
 
@@ -35,6 +57,11 @@ import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+-- the adopter family and its companions, re-exported so demos need the row
+-- modules only for the `.do` merges and the trace forms
+import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecord, forField, forValue, projection, tapped) as Adopters
+import Data.Profunctor.Row.RecordToVariant (asCase) as Adopters
+import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
@@ -434,6 +461,16 @@ looped p = wrap $ unwrap p <#> \p' ->
               Ref.write false busyRef
               prop u
     }
+
+-- | The model–view–update shape, named: `mvu seed w = looped (with seed w)`.
+-- | `w` is a same-type pipeline over the model — editors (`# completed`
+-- | where they don't produce the whole model), displays, wires (`every`),
+-- | and event stages folded in with `updates`. The seed primes the loop at
+-- | registration; from then on every emission of any stage re-enters at
+-- | the top, re-entrancy-guarded. The standalone app reads
+-- | `body $ ... $ mvu seed pipeline`.
+mvu :: forall m model. Applicative m => model -> PUI m model model -> PUI m model model
+mvu seed w = looped (with seed w)
 
 instance Applicative m => RecordToRecord (PUI m) where
   -- the unit announces its informationless {} once, so the merge gates below

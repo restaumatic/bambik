@@ -7,22 +7,23 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToRecord (asField, completed, field, forValue, projection)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToRecord (forCase)
 import Data.String (Pattern(..), split)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, debounced, looped, with)
+import PUI (action, asCase, asField, completed, debounced, field, forCase, forValue, mvu, projection)
 import PUI.HTML (body, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 
+data FlightType = OneWay | Return
+
+derive instance Eq FlightType
+
 type Booking =
-  { flightType :: String
+  { flightType :: FlightType
   , start :: String
   , return :: String
   }
@@ -32,8 +33,8 @@ main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
   ( RecordToRecord.do
       MDC.select { floatingLabel: "Flight type" }
-        [ { value: "one-way", label: "one-way flight" }
-        , { value: "return", label: "return flight" }
+        [ { value: OneWay, label: "one-way flight" }
+        , { value: Return, label: "return flight" }
         ]
         # dimap (\v -> { value: Just v }) _.value # field @"flightType"
       MDC.filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
@@ -41,7 +42,7 @@ main =
         ( MDC.filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
             # lcmap returnDate
         )
-  ) # with { flightType: "one-way", start: "27.03.2026", return: "27.03.2026" } # looped
+  ) # mvu { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
   MDC.body1 (HTML.text # projection validationText # forValue) # debounced # completed
   RecordToVariant.do
     MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
@@ -59,7 +60,7 @@ validate :: Booking -> Either String String
 validate b = case parseDate b.start of
   Nothing -> Left ("start date " <> show b.start <> " is not a valid DD.MM.YYYY date")
   Just start
-    | b.flightType /= "return" -> Right ("A one-way flight on " <> b.start)
+    | b.flightType /= Return -> Right ("A one-way flight on " <> b.start)
     | otherwise -> case parseDate b.return of
         Nothing -> Left ("return date " <> show b.return <> " is not a valid DD.MM.YYYY date")
         Just return
@@ -83,7 +84,7 @@ bookFlight b = pure case validate b of
   Right summary -> .booked ("You have booked: " <> summary)
 
 isReturn :: Booking -> Boolean
-isReturn b = b.flightType == "return"
+isReturn b = b.flightType == Return
 
 returnDate :: Booking -> { return :: String }
 returnDate b = { return: b.return }

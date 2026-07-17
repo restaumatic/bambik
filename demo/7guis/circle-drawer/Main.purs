@@ -5,14 +5,12 @@ import Prelude
 import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
-import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed)
+import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.String (joinWith)
 import Data.Variant (match) as Variant
 import Effect (Effect)
-import PUI (looped, updates, with)
+import PUI (asCase, asField, completed, mvu, updates)
 import PUI.HTML (attr, body, div, shownWhen, viewEvents) as HTML
 import PUI.MDC (button, card, elevation20, slider) as MDC
 import PUI.Web (Node)
@@ -45,7 +43,7 @@ main =
             MDC.button { label: Just "Undo", icon: Just "undo" } # asCase @"undo"
             MDC.button { label: Just "Redo", icon: Just "redo" } # asCase @"redo"
       ) # updates handle
-  ) # with
+  ) # mvu
       { circles: []
       , selected: Nothing
       , diameter: 40.0
@@ -53,7 +51,6 @@ main =
       , undoStack: []
       , redoStack: []
       }
-    # looped
 
 
 handle ::

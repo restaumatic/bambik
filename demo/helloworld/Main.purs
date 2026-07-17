@@ -9,9 +9,8 @@ module Main (main) where
 import Prelude
 
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, focusRecord)
 import Effect (Effect)
-import PUI (silence, with)
+import PUI (asField, focusRecord, silence, with)
 import PUI.HTML (body) as HTML
 import PUI.MDC (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid

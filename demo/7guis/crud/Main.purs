@@ -5,15 +5,13 @@ import Prelude
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed, forValue, projection)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.String (Pattern(..)) as String
 import Data.String (stripPrefix)
 import Data.Variant (match) as Variant
 import Effect (Effect)
-import PUI (looped, updates, with)
+import PUI (asCase, asField, completed, forValue, mvu, projection, updates)
 import PUI.HTML (attr, body, cl, clWhen, clicked, div, foreach, li, text, ul) as HTML
 import PUI.MDC (button, card, elevation20, filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -47,7 +45,7 @@ main =
             MDC.button { label: Just "Update", icon: Nothing } # asCase @"update"
             MDC.button { label: Just "Delete", icon: Nothing } # asCase @"delete"
       ) # updates handle
-  ) # with
+  ) # mvu
       { prefix: ""
       , name: ""
       , surname: ""
@@ -58,7 +56,6 @@ main =
           ]
       , selected: Nothing
       }
-    # looped
 
 handle ::
   [ picked :: Int

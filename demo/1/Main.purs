@@ -47,11 +47,8 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToRecord (asField, field, forField, forValue, projection, tapped)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.RecordToVariant (asCase)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToRecord (forCase)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
 import Data.Symbol (class IsSymbol)
@@ -60,7 +57,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, debounced, looped, silence, with)
+import PUI (PUI, action, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
 import PUI.Web (Web)

@@ -5,13 +5,12 @@ import Prelude
 import Data.Array (replicate)
 import Data.Int (round, toNumber) as Int
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed, forField, forValue, projection)
+import Data.Profunctor (dimap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (every, looped, updates, with)
+import PUI (asField, completed, every, forField, forValue, mvu, projection, updates)
 import PUI.HTML (body, staticText, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, headline6, slider) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -37,7 +36,7 @@ main =
       ) # completed
       every (Milliseconds 1000.0) tick
       MDC.button { label: Just "Reset", icon: Just "replay" } # updates reset
-  ) # with { duration: 10, elapsed: 0 } # looped
+  ) # mvu { duration: 10, elapsed: 0 }
 
 reset :: forall click. click -> Timer -> Timer
 reset _ t = t { elapsed = 0 }

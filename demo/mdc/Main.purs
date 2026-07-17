@@ -45,12 +45,12 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor.Row.RecordToRecord (asField, feedback, field, forField, forValue, projection, tapped)
+import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.RecordToVariant (asCase, folding)
+import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToRecord (forCase, retain, unfolding)
+import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Symbol (class IsSymbol)
@@ -60,7 +60,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, announce, debounced, looped, seeded, silence, with)
+import PUI (PUI, action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, seeded, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, slider, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
 import PUI.Web (Web)

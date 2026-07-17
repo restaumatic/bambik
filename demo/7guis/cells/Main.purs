@@ -10,15 +10,14 @@ import Data.Int (fromString, round, toNumber) as Int
 import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString) as Number
-import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (asField, completed, forValue, projection)
+import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup) as Obj
-import PUI (looped, updates, with)
+import PUI (asField, completed, forValue, mvu, projection, updates)
 import PUI.HTML (body, escapeHtml, text, viewEvents) as HTML
 import PUI.MDC (body1, card, elevation20, filledTextField) as MDC
 import PUI.Web (onKeyClick)
@@ -48,7 +47,7 @@ main =
         renderTable
         (\node emit -> onKeyClick node \key -> emit (clickedCell key))
         # updates handle
-  ) # with
+  ) # mvu
       { cells: Obj.fromHomogeneous
           { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
           , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
@@ -58,7 +57,6 @@ main =
       , selected: Nothing
       , formula: ""
       }
-    # looped
 
 handle :: [ cellClicked :: String ] -> Model -> Model
 handle e m = Variant.match
