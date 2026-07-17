@@ -8,11 +8,11 @@ import Data.Number (sqrt)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Tuple (Tuple(..))
-import Data.Variant (match) as Variant
+import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, completed, mvu, updates)
-import PUI.HTML (Markup(..), attr, body, div, shownWhen, view) as HTML
-import PUI.MDC (button, card, elevation20, sliderLive) as MDC
+import PUI.HTML (Markup(..), attr, body, div, shownWhen, view)
+import PUI.MDC (button, card, elevation20, sliderLive)
 import PUI.Web (onClickXY)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -29,17 +29,17 @@ type Model =
 
 main :: Effect Unit
 main =
-  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
-      MDC.sliderLive { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
-        # completed # HTML.shownWhen hasSelection # rmap applyDiameter
+  body $ elevation20 $ card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
+      sliderLive { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
+        # completed # shownWhen hasSelection # rmap applyDiameter
       ( RecordToVariant.do
-          HTML.view
+          view
             """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
             renderCanvas
             (\node emit -> onClickXY node \x y -> emit (clickedAt x y))
-          HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-            MDC.button { label: Just "Undo", icon: Just "undo" } # asCase @"undo"
-            MDC.button { label: Just "Redo", icon: Just "redo" } # asCase @"redo"
+          div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
+            button { label: Just "Undo", icon: Just "undo" } # asCase @"undo"
+            button { label: Just "Redo", icon: Just "redo" } # asCase @"redo"
       ) # updates handle
   ) # mvu
       { circles: []
@@ -56,7 +56,7 @@ handle ::
   , redo :: Model
   ]
   -> Model -> Model
-handle e m = Variant.match
+handle e m = match
   { clicked: \{ x, y } ->
       case findIndex (\c -> dist c x y <= c.r) m.circles of
         Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
@@ -87,10 +87,10 @@ dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 clickedAt :: Number -> Number -> [ clicked :: { x :: Number, y :: Number } ]
 clickedAt x y = .clicked { x, y }
 
-renderCanvas :: Model -> Array HTML.Markup
+renderCanvas :: Model -> Array Markup
 renderCanvas m = mapWithIndex circle m.circles
   where
-  circle i c = HTML.Element "circle"
+  circle i c = Element "circle"
     [ Tuple "cx" (show c.x)
     , Tuple "cy" (show c.y)
     , Tuple "r" (show c.r)

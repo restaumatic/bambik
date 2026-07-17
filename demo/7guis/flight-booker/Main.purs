@@ -3,19 +3,19 @@ module Main (main) where
 import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), class Eq, Unit, bind, otherwise, pure, show)
 
 import Data.Either (Either(..), either)
-import Data.Int (fromString) as Int
+import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
 import Data.Variant (expand)
-import Data.Variant (match) as Variant
+import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import PUI (action, asCase, asField, completed, debounced, forCase, forValue, mvu, projection, required)
-import PUI.HTML (body, shownWhen, text) as HTML
-import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar) as MDC
+import PUI.HTML (body, shownWhen, text)
+import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 data FlightType = OneWay | Return
@@ -41,25 +41,25 @@ returnBetween out back
 
 main :: Effect Unit
 main =
-  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Book Flight" } Semigroupoid.do
+  body $ elevation20 $ card { caption: Just "Book Flight" } Semigroupoid.do
   ( RecordToRecord.do
-      MDC.select { floatingLabel: "Flight type" }
+      select { floatingLabel: "Flight type" }
         [ { value: OneWay, label: "one-way flight" }
         , { value: Return, label: "return flight" }
         ]
         # required # asField @"flightType"
-      MDC.filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
-      HTML.shownWhen isReturn
-        ( MDC.filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
+      filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
+      shownWhen isReturn
+        ( filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
             # lcmap returnDate
         )
   ) # mvu { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
-  MDC.body1 (HTML.text # projection validationText # forValue) # debounced # completed
-  MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
-  MDC.indeterminateLinearProgress # action (Variant.match { book: submit })
+  body1 (text # projection validationText # forValue) # debounced # completed
+  button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
+  indeterminateLinearProgress # action (match { book: submit })
   VariantToRecord.do
-    MDC.snackbar # forCase @"booked"
-    MDC.snackbar # forCase @"rejected"
+    snackbar # forCase @"booked"
+    snackbar # forCase @"rejected"
 
 parse :: Booking -> Either String Itinerary
 parse b = case parseDate b.start of
@@ -90,9 +90,9 @@ bookFlight itinerary = pure (.booked ("You have booked: " <> summary itinerary))
 parseDate :: String -> Maybe Date
 parseDate s = case split (Pattern ".") s of
   [ dd, mm, yyyy ] -> do
-    d <- Int.fromString dd
-    m <- Int.fromString mm
-    y <- Int.fromString yyyy
+    d <- fromString dd
+    m <- fromString mm
+    y <- fromString yyyy
     if d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1000
       then Just { y, m, d }
       else Nothing

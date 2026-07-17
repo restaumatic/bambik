@@ -14,14 +14,14 @@ import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
-import Data.Variant (case_, match, on) as Variant
+import Data.Variant (case_, match, on)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, seeded, silence, tapped, with)
-import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
-import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
+import PUI.HTML (attr, body, div, shownWhen, staticText, text)
+import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
@@ -63,138 +63,138 @@ type SettingsOut =
 
 main :: Effect Unit
 main =
-  HTML.body $ ( MDC.topAppBar { title: "Bambik · MDC2 showcase" } $ MDC.drawer { title: "MDC2", subtitle: "the full catalog" }
-    ( MDC.list RecordToRecord.do
-        MDC.listItem $ HTML.staticText "Text fields"
-        MDC.listItem $ HTML.staticText "Selection controls"
-        MDC.listItem $ HTML.staticText "Chips"
-        MDC.listItem $ HTML.staticText "Segmented buttons"
-        MDC.listItem $ HTML.staticText "Menus"
-        MDC.listItem $ HTML.staticText "Sliders"
-        MDC.listItem $ HTML.staticText "Tabs"
-        MDC.listItem $ HTML.staticText "Data tables"
-        MDC.listItem $ HTML.staticText "Image lists"
-        MDC.divider
-        MDC.listItem $ HTML.staticText "Buttons & FAB"
-        MDC.listItem $ HTML.staticText "Wizard"
-        MDC.listItem $ HTML.staticText "Progress indicators"
-        MDC.listItem $ HTML.staticText "Banner & snackbars"
+  body $ ( topAppBar { title: "Bambik · MDC2 showcase" } $ drawer { title: "MDC2", subtitle: "the full catalog" }
+    ( list RecordToRecord.do
+        listItem $ staticText "Text fields"
+        listItem $ staticText "Selection controls"
+        listItem $ staticText "Chips"
+        listItem $ staticText "Segmented buttons"
+        listItem $ staticText "Menus"
+        listItem $ staticText "Sliders"
+        listItem $ staticText "Tabs"
+        listItem $ staticText "Data tables"
+        listItem $ staticText "Image lists"
+        divider
+        listItem $ staticText "Buttons & FAB"
+        listItem $ staticText "Wizard"
+        listItem $ staticText "Progress indicators"
+        listItem $ staticText "Banner & snackbars"
     ) Semigroupoid.do
-      MDC.indeterminateLinearProgress # action loadSettings
-      MDC.layoutGrid RecordToRecord.do
-        MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # projection ("Settings — " <> _) # forField @"name")
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
-          MDC.filledTextField { floatingLabel: "Name" } # asField @"name"
-          MDC.filledTextArea { columns: 60, rows: 3 } # asField @"notes"
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Selection controls" } RecordToRecord.do
-          MDC.checkbox (HTML.staticText "Subscribe to the newsletter") # asField @"subscribed"
-          MDC.radioButton
+      indeterminateLinearProgress # action loadSettings
+      layoutGrid RecordToRecord.do
+        layoutCell { span: 12 } $ headline6 (text # projection ("Settings — " <> _) # forField @"name")
+        layoutCell { span: 6 } $ card { caption: Just "Text fields" } RecordToRecord.do
+          filledTextField { floatingLabel: "Name" } # asField @"name"
+          filledTextArea { columns: 60, rows: 3 } # asField @"notes"
+        layoutCell { span: 6 } $ card { caption: Just "Selection controls" } RecordToRecord.do
+          checkbox (staticText "Subscribe to the newsletter") # asField @"subscribed"
+          radioButton
             [ { value: "free", label: "Free plan" }
             , { value: "pro", label: "Pro plan" }
             , { value: "team", label: "Team plan" }
             ]
             # asField @"plan"
-          MDC.tooltip { text: "Toggles connectivity" } $ MDC.toggleSwitch { label: "Wi-Fi" } # asField @"wifi"
-          MDC.iconToggle { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" } # asField @"dark"
-          HTML.staticText "Dark mode"
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Chips" } $ MDC.chipSet RecordToRecord.do
-          MDC.filterChip { label: "Favorite" } # asField @"favorite"
-          MDC.filterChip { label: "Archived" } # asField @"archived"
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Segmented buttons" } $
-          MDC.segmentedButton
+          tooltip { text: "Toggles connectivity" } $ toggleSwitch { label: "Wi-Fi" } # asField @"wifi"
+          iconToggle { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" } # asField @"dark"
+          staticText "Dark mode"
+        layoutCell { span: 6 } $ card { caption: Just "Chips" } $ chipSet RecordToRecord.do
+          filterChip { label: "Favorite" } # asField @"favorite"
+          filterChip { label: "Archived" } # asField @"archived"
+        layoutCell { span: 6 } $ card { caption: Just "Segmented buttons" } $
+          segmentedButton
             [ { value: "S", label: "S" }
             , { value: "M", label: "M" }
             , { value: "L", label: "L" }
             ]
             # asField @"size"
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Menus: exposed dropdown" } $
-          MDC.select { floatingLabel: "Theme" }
+        layoutCell { span: 6 } $ card { caption: Just "Menus: exposed dropdown" } $
+          select { floatingLabel: "Theme" }
             [ { value: "light", label: "Light" }
             , { value: "dark", label: "Dark" }
             , { value: "system", label: "System" }
             ]
             # asField @"theme"
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
-          MDC.sliderLive { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
+        layoutCell { span: 6 } $ card { caption: Just "Sliders" } $ Semigroupoid.do
+          sliderLive { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
           ( Semigroupoid.do
               seeded { volume: 0.0, peak: 0.0 }
               lcmap stepPeak identity
-              MDC.body2 (HTML.text # projection peakLine # forValue) # tapped
+              body2 (text # projection peakLine # forValue) # tapped
           ) # feedback
-          MDC.body2 (HTML.text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
-        MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" }
+          body2 (text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
+        layoutCell { span: 12 } $ card { caption: Just "Tabs" }
           ( ( RecordToRecord.do
-                MDC.tabBar
+                tabBar
                   [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
                   , { value: "express", label: "Express", icon: Just "bolt" }
                   ]
                   # asField @"selected"
-                HTML.shownWhen (\r -> r.selected == "standard") (MDC.filledTextField { floatingLabel: "Delivery days" } # asField @"days" # lcmap daysOf)
-                HTML.shownWhen (\r -> r.selected == "express") (MDC.filledTextField { floatingLabel: "Express fee" } # asField @"price" # lcmap priceOf)
+                shownWhen (\r -> r.selected == "standard") (filledTextField { floatingLabel: "Delivery days" } # asField @"days" # lcmap daysOf)
+                shownWhen (\r -> r.selected == "express") (filledTextField { floatingLabel: "Express fee" } # asField @"price" # lcmap priceOf)
             ) # looped # dimap shippingState shippingCase
           ) # field @"shipping"
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Image lists" } $ MDC.imageList { columns: 3 } RecordToRecord.do
-          MDC.imageListItem { src: swatch "845ec2" 140, label: "Iris" }
-          MDC.imageListItem { src: swatch "ff9671" 100, label: "Coral" }
-          MDC.imageListItem { src: swatch "00c9a7" 120, label: "Mint" }
-          MDC.imageListItem { src: swatch "0081cf" 110, label: "Sea" }
-          MDC.imageListItem { src: swatch "c34a36" 130, label: "Clay" }
-          MDC.imageListItem { src: swatch "936c00" 90, label: "Ochre" }
-      ( MDC.layoutGrid RecordToRecord.do
-        MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
-          MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
-            MDC.dataRow RecordToRecord.do
-              MDC.dataCell $ HTML.staticText "Name"
-              MDC.dataCell (HTML.text # forField @"name")
-            MDC.dataRow RecordToRecord.do
-              MDC.dataCell $ HTML.staticText "Volume"
-              MDC.dataCell (HTML.text # projection show # forField @"volume")
-            MDC.dataRow RecordToRecord.do
-              MDC.dataCell $ HTML.staticText "Theme"
-              MDC.dataCell (HTML.text # forField @"theme")
-        MDC.layoutCell { span: 12 } MDC.divider
-        MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # projection summarize # forValue) # debounced)
+        layoutCell { span: 6 } $ card { caption: Just "Image lists" } $ imageList { columns: 3 } RecordToRecord.do
+          imageListItem { src: swatch "845ec2" 140, label: "Iris" }
+          imageListItem { src: swatch "ff9671" 100, label: "Coral" }
+          imageListItem { src: swatch "00c9a7" 120, label: "Mint" }
+          imageListItem { src: swatch "0081cf" 110, label: "Sea" }
+          imageListItem { src: swatch "c34a36" 130, label: "Clay" }
+          imageListItem { src: swatch "936c00" 90, label: "Ochre" }
+      ( layoutGrid RecordToRecord.do
+        layoutCell { span: 6 } $ card { caption: Just "Data tables" } $
+          dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
+            dataRow RecordToRecord.do
+              dataCell $ staticText "Name"
+              dataCell (text # forField @"name")
+            dataRow RecordToRecord.do
+              dataCell $ staticText "Volume"
+              dataCell (text # projection show # forField @"volume")
+            dataRow RecordToRecord.do
+              dataCell $ staticText "Theme"
+              dataCell (text # forField @"theme")
+        layoutCell { span: 12 } divider
+        layoutCell { span: 12 } (body1 (text # projection summarize # forValue) # debounced)
       ) # tapped
       RecordToVariant.do
-        MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
-          MDC.button { label: Just "Save", icon: Just "save" } # asCase @"save"
-          MDC.fab { icon: "favorite", label: Just "Like" } # asCase @"like"
-          MDC.iconButton { icon: "share", label: "Share" } # asCase @"share"
-          MDC.menu { label: "More" } RecordToVariant.do
-            MDC.menuItem { label: "Export settings" } # asCase @"export"
-            MDC.menuItem { label: "Reset to defaults" } # asCase @"reset"
-        MDC.card { caption: Just "Wizard (folding)" }
+        card { caption: Just "Buttons, FAB, icon buttons, menus" } $ div >>> attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
+          button { label: Just "Save", icon: Just "save" } # asCase @"save"
+          fab { icon: "favorite", label: Just "Like" } # asCase @"like"
+          iconButton { icon: "share", label: "Share" } # asCase @"share"
+          menu { label: "More" } RecordToVariant.do
+            menuItem { label: "Export settings" } # asCase @"export"
+            menuItem { label: "Reset to defaults" } # asCase @"reset"
+        card { caption: Just "Wizard (folding)" }
           ( ( Semigroupoid.do
                 ( RecordToRecord.do
-                    HTML.shownWhen (\r -> r.step == "review") $ MDC.body2 (HTML.text # projection reviewLine # forValue)
-                    HTML.shownWhen (\r -> r.step == "confirm") $ MDC.body2 (HTML.text # projection confirmLine # forValue)
+                    shownWhen (\r -> r.step == "review") $ body2 (text # projection reviewLine # forValue)
+                    shownWhen (\r -> r.step == "confirm") $ body2 (text # projection confirmLine # forValue)
                 ) # tapped
-                HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
+                div >>> attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
                   announce initialStep
-                  HTML.shownWhen (\r -> r.step == "review") (MDC.button { label: Just "Next", icon: Nothing } # asCase @"next" # lcmap (toStep "confirm"))
-                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button { label: Just "Back", icon: Nothing } # asCase @"next" # lcmap (toStep "review"))
-                  HTML.shownWhen (\r -> r.step == "confirm") (MDC.button { label: Just "Publish", icon: Just "publish" } # asCase @"publish" # lcmap essentials)
+                  shownWhen (\r -> r.step == "review") (button { label: Just "Next", icon: Nothing } # asCase @"next" # lcmap (toStep "confirm"))
+                  shownWhen (\r -> r.step == "confirm") (button { label: Just "Back", icon: Nothing } # asCase @"next" # lcmap (toStep "review"))
+                  shownWhen (\r -> r.step == "confirm") (button { label: Just "Publish", icon: Just "publish" } # asCase @"publish" # lcmap essentials)
             ) # folding @"next"
           )
       VariantToVariant.do
-        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"save") saveSettings Variant.case_)
-        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"like") like Variant.case_)
-        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"share") share Variant.case_)
-        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"export") exportSettings Variant.case_)
-        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"reset") reset Variant.case_)
-        MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"publish") publishFlaky Variant.case_) # iterate
+        indeterminateLinearProgress # action (on (Proxy @"save") saveSettings case_)
+        indeterminateCircularProgress # action (on (Proxy @"like") like case_)
+        indeterminateCircularProgress # action (on (Proxy @"share") share case_)
+        indeterminateLinearProgress # action (on (Proxy @"export") exportSettings case_)
+        indeterminateCircularProgress # action (on (Proxy @"reset") reset case_)
+        indeterminateCircularProgress # action (on (Proxy @"publish") publishFlaky case_) # iterate
       ( Semigroupoid.do
           seeded resumeZero
           retain identity # dimap splitStatus countUp
-          MDC.body2 (HTML.text # projection activityLine # forValue) # tapped
+          body2 (text # projection activityLine # forValue) # tapped
       ) # unfolding @"resume" # tapped
       VariantToRecord.do
-        MDC.snackbar # forCase @"saved"
-        MDC.snackbar # forCase @"liked"
-        MDC.snackbar # forCase @"shared"
-        MDC.banner # forCase @"exported"
-        MDC.snackbar # forCase @"resetDone"
-        MDC.snackbar # forCase @"published"
+        snackbar # forCase @"saved"
+        snackbar # forCase @"liked"
+        snackbar # forCase @"shared"
+        banner # forCase @"exported"
+        snackbar # forCase @"resetDone"
+        snackbar # forCase @"published"
       silence
   ) # with unit
 
@@ -219,7 +219,7 @@ shippingText ::
   , express :: { price :: String }
   ]
   -> String
-shippingText = Variant.match
+shippingText = match
   { standard: \r -> "standard (" <> r.days <> " days)"
   , express: \r -> "express (" <> r.price <> " fee)"
   }
@@ -231,7 +231,7 @@ shippingState ::
   , express :: { price :: String }
   ]
   -> ShippingState
-shippingState = Variant.match
+shippingState = match
   { standard: \r -> { selected: "standard", days: r.days, price: "9.99" }
   , express: \r -> { selected: "express", days: "3", price: r.price }
   }
@@ -293,7 +293,7 @@ splitStatus ::
   , resume :: { count :: Int }
   ]
   -> Either String { count :: Int }
-splitStatus = Variant.match
+splitStatus = match
   { saved: Left
   , liked: Left
   , shared: Left

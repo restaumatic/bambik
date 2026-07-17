@@ -9,17 +9,17 @@ import Data.Foldable (foldl)
 import Data.Int (fromString, round, toNumber) as Int
 import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Number (fromString) as Number
+import Data.Number (fromString)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
+import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length)
 import Data.Tuple (Tuple(..))
-import Data.Variant (match) as Variant
+import Data.Variant (match)
 import Effect (Effect)
-import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup) as Obj
+import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 import PUI (asField, completed, forValue, mvu, projection, updates)
-import PUI.HTML (Markup(..), body, text, view) as HTML
-import PUI.MDC (body1, card, elevation20, filledTextField) as MDC
+import PUI.HTML (Markup(..), body, text, view)
+import PUI.MDC (body1, card, elevation20, filledTextField)
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -30,25 +30,25 @@ rows :: Int
 rows = 30
 
 type Model =
-  { cells :: Obj.Object String
+  { cells :: Object String
   , selected :: Maybe String
   , formula :: String
   }
 
 main :: Effect Unit
 main =
-  HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Cells" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: Just "Cells" } $ ( Semigroupoid.do
       ( RecordToRecord.do
-          MDC.body1 (HTML.text # projection selectedCaption # forValue)
-          MDC.filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
+          body1 (text # projection selectedCaption # forValue)
+          filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
       ) # completed # rmap commit
-      HTML.view
+      view
         """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
         renderTable
         (\node emit -> onKeyClick node \key -> emit (clickedCell key))
         # updates handle
   ) # mvu
-      { cells: Obj.fromHomogeneous
+      { cells: fromHomogeneous
           { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
           , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
           , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
@@ -59,51 +59,51 @@ main =
       }
 
 handle :: [ cellClicked :: String ] -> Model -> Model
-handle e m = Variant.match
-  { cellClicked: \key -> m { selected = Just key, formula = fromMaybe "" (Obj.lookup key m.cells) }
+handle e m = match
+  { cellClicked: \key -> m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
   } e
 
 commit :: Model -> Model
 commit m = case m.selected of
-  Just k | Obj.lookup k m.cells /= Just m.formula ->
-    m { cells = if m.formula == "" then Obj.delete k m.cells else Obj.insert k m.formula m.cells }
+  Just k | lookup k m.cells /= Just m.formula ->
+    m { cells = if m.formula == "" then delete k m.cells else insert k m.formula m.cells }
   _ -> m
 
 clickedCell :: String -> [ cellClicked :: String ]
 clickedCell key = .cellClicked key
 
-renderTable :: Model -> Array HTML.Markup
+renderTable :: Model -> Array Markup
 renderTable m =
-  [ HTML.Element "table" [ Tuple "style" "border-collapse: collapse; font-size: 13px;" ]
+  [ Element "table" [ Tuple "style" "border-collapse: collapse; font-size: 13px;" ]
       ([ header ] <> (range 0 (rows - 1) <#> row))
   ]
   where
   values = evalSheet m.cells
-  colName c = fromMaybe "" (S.singleton <$> fromCharCode (toCharCode 'A' + c))
-  th content = HTML.Element "th" [ Tuple "style" thStyle ] [ HTML.Text content ]
-  header = HTML.Element "tr" [] ([ th "" ] <> (range 0 (cols - 1) <#> \c -> th (colName c)))
-  row r = HTML.Element "tr" [] ([ th (show r) ] <> (range 0 (cols - 1) <#> cell r))
+  colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
+  th content = Element "th" [ Tuple "style" thStyle ] [ Text content ]
+  header = Element "tr" [] ([ th "" ] <> (range 0 (cols - 1) <#> \c -> th (colName c)))
+  row r = Element "tr" [] ([ th (show r) ] <> (range 0 (cols - 1) <#> cell r))
   cell r c =
     let key = colName c <> show r
         sel = m.selected == Just key
-    in HTML.Element "td"
+    in Element "td"
         [ Tuple "data-key" key
         , Tuple "style" (tdStyle <> (if sel then "background: #cde;" else ""))
         ]
-        [ HTML.Text (fromMaybe "" (Obj.lookup key values)) ]
+        [ Text (fromMaybe "" (lookup key values)) ]
   thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
 
-evalSheet :: Obj.Object String -> Obj.Object String
-evalSheet cells = foldl insertVal Obj.empty keys
+evalSheet :: Object String -> Object String
+evalSheet cells = foldl insertVal empty keys
   where
   keys = catMaybes do
     c <- range 0 (cols - 1)
     r <- range 0 (rows - 1)
-    pure ((\ch -> S.singleton ch <> show r) <$> fromCharCode (toCharCode 'A' + c))
-  insertVal acc key = case Obj.lookup key cells of
+    pure ((\ch -> singleton ch <> show r) <$> fromCharCode (toCharCode 'A' + c))
+  insertVal acc key = case lookup key cells of
     Nothing -> acc
-    Just _ -> Obj.insert key (display (evalCell cells Nil key)) acc
+    Just _ -> insert key (display (evalCell cells Nil key)) acc
 
 data Value = NumV Number | TextV String | ErrV String
 
@@ -119,20 +119,20 @@ formatNum n =
      then show (scaled / 100)
      else show (Int.toNumber scaled / 100.0)
 
-evalCell :: Obj.Object String -> List String -> String -> Value
+evalCell :: Object String -> List String -> String -> Value
 evalCell cells visiting key
   | key `elem` visiting = ErrV "#CYCLE"
-  | otherwise = case Obj.lookup key cells of
+  | otherwise = case lookup key cells of
       Nothing -> TextV ""
-      Just src -> case S.charAt 0 src of
-        Just '=' -> case parseExpr (S.drop 1 src) of
-          Just { val, rest } | S.length (skipSpace rest) == 0 -> evalExpr cells (key : visiting) val
+      Just src -> case charAt 0 src of
+        Just '=' -> case parseExpr (drop 1 src) of
+          Just { val, rest } | length (skipSpace rest) == 0 -> evalExpr cells (key : visiting) val
           _ -> ErrV "#PARSE"
-        _ -> case Number.fromString src of
+        _ -> case fromString src of
           Just n -> NumV n
           Nothing -> TextV src
 
-numAt :: Obj.Object String -> List String -> String -> Either String Number
+numAt :: Object String -> List String -> String -> Either String Number
 numAt cells visiting key = case evalCell cells visiting key of
   NumV n -> Right n
   TextV "" -> Right 0.0
@@ -148,15 +148,15 @@ data Expr
 type P a = Maybe { val :: a, rest :: String }
 
 skipSpace :: String -> String
-skipSpace = S.dropWhile (_ == ' ')
+skipSpace = dropWhile (_ == ' ')
 
 parseExpr :: String -> P Expr
 parseExpr s0 = do
   { val: t, rest } <- parseTerm (skipSpace s0)
   chain t rest
   where
-  chain acc s = case S.charAt 0 (skipSpace s) of
-    Just op | op == '+' || op == '-' -> case parseTerm (S.drop 1 (skipSpace s)) of
+  chain acc s = case charAt 0 (skipSpace s) of
+    Just op | op == '+' || op == '-' -> case parseTerm (drop 1 (skipSpace s)) of
       Just { val, rest } -> chain (Bin op acc val) rest
       Nothing -> Nothing
     _ -> Just { val: acc, rest: s }
@@ -166,8 +166,8 @@ parseTerm s0 = do
   { val: f, rest } <- parseFactor (skipSpace s0)
   chain f rest
   where
-  chain acc s = case S.charAt 0 (skipSpace s) of
-    Just op | op == '*' || op == '/' -> case parseFactor (S.drop 1 (skipSpace s)) of
+  chain acc s = case charAt 0 (skipSpace s) of
+    Just op | op == '*' || op == '/' -> case parseFactor (drop 1 (skipSpace s)) of
       Just { val, rest } -> chain (Bin op acc val) rest
       Nothing -> Nothing
     _ -> Just { val: acc, rest: s }
@@ -175,21 +175,21 @@ parseTerm s0 = do
 parseFactor :: String -> P Expr
 parseFactor s0 =
   let s = skipSpace s0
-  in case S.charAt 0 s of
+  in case charAt 0 s of
     Just '(' -> do
-      { val, rest } <- parseExpr (S.drop 1 s)
-      case S.charAt 0 (skipSpace rest) of
-        Just ')' -> Just { val, rest: S.drop 1 (skipSpace rest) }
+      { val, rest } <- parseExpr (drop 1 s)
+      case charAt 0 (skipSpace rest) of
+        Just ')' -> Just { val, rest: drop 1 (skipSpace rest) }
         _ -> Nothing
     Just c
       | isDigit c || c == '.' -> parseNumber s
-      | c == 'S' && S.take 4 s == "SUM(" -> do
-          { val: from, rest: r1 } <- parseRef (S.drop 4 s)
-          case S.charAt 0 r1 of
+      | c == 'S' && take 4 s == "SUM(" -> do
+          { val: from, rest: r1 } <- parseRef (drop 4 s)
+          case charAt 0 r1 of
             Just ':' -> do
-              { val: to, rest: r2 } <- parseRef (S.drop 1 r1)
-              case S.charAt 0 r2 of
-                Just ')' -> Just { val: Sum { from, to }, rest: S.drop 1 r2 }
+              { val: to, rest: r2 } <- parseRef (drop 1 r1)
+              case charAt 0 r2 of
+                Just ')' -> Just { val: Sum { from, to }, rest: drop 1 r2 }
                 _ -> Nothing
             _ -> Nothing
       | isUpper c -> map (\{ val, rest } -> { val: Ref (refKey val), rest }) (parseRef s)
@@ -203,24 +203,24 @@ isUpper c = c >= 'A' && c <= 'Z'
 
 parseNumber :: String -> P Expr
 parseNumber s =
-  let digits = S.takeWhile (\c -> isDigit c || c == '.') s
-  in case Number.fromString digits of
-    Just n -> Just { val: Num n, rest: S.drop (S.length digits) s }
+  let digits = takeWhile (\c -> isDigit c || c == '.') s
+  in case fromString digits of
+    Just n -> Just { val: Num n, rest: drop (length digits) s }
     Nothing -> Nothing
 
 parseRef :: String -> P { c :: Int, r :: Int }
-parseRef s = case S.charAt 0 s of
+parseRef s = case charAt 0 s of
   Just col | isUpper col ->
-    let digits = S.takeWhile isDigit (S.drop 1 s)
+    let digits = takeWhile isDigit (drop 1 s)
     in case Int.fromString digits of
-      Just r -> Just { val: { c: toCharCode col - toCharCode 'A', r }, rest: S.drop (1 + S.length digits) s }
+      Just r -> Just { val: { c: toCharCode col - toCharCode 'A', r }, rest: drop (1 + length digits) s }
       Nothing -> Nothing
   _ -> Nothing
 
 refKey :: { c :: Int, r :: Int } -> String
-refKey { c, r } = fromMaybe "" (S.singleton <$> fromCharCode (toCharCode 'A' + c)) <> show r
+refKey { c, r } = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c)) <> show r
 
-evalExpr :: Obj.Object String -> List String -> Expr -> Value
+evalExpr :: Object String -> List String -> Expr -> Value
 evalExpr cells visiting = go
   where
   go (Num n) = NumV n

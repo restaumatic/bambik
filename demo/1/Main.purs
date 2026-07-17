@@ -9,14 +9,14 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
-import Data.Variant (case_, match, on) as Variant
+import Data.Variant (case_, match, on)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (action, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, silence, tapped, with)
-import PUI.HTML (attr, body, div, shownWhen, text) as HTML
-import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
+import PUI.HTML (attr, body, div, shownWhen, text)
+import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
@@ -45,59 +45,59 @@ type Order =
 
 main :: Effect Unit
 main =
-  HTML.body $ ( MDC.elevation20 Semigroupoid.do
-      MDC.indeterminateLinearProgress # action loadOrder
+  body $ ( elevation20 Semigroupoid.do
+      indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
-        MDC.headline6 (HTML.text # projection ("Order " <> _) # forField @"shortId")
-        MDC.card { caption: Just "Identifier" } $ RecordToRecord.do
-          MDC.filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
-          MDC.filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
-        MDC.card { caption: Just "Customer" }
+        headline6 (text # projection ("Order " <> _) # forField @"shortId")
+        card { caption: Just "Identifier" } $ RecordToRecord.do
+          filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
+          filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
+        card { caption: Just "Customer" }
           ( RecordToRecord.do
-              MDC.filledTextField { floatingLabel: "First name" } # asField @"firstName"
-              MDC.filledTextField { floatingLabel: "Last name" } # asField @"lastName"
+              filledTextField { floatingLabel: "First name" } # asField @"firstName"
+              filledTextField { floatingLabel: "Last name" } # asField @"lastName"
           ) # field @"customer"
-        MDC.card { caption: Just "Fulfillment" }
+        card { caption: Just "Fulfillment" }
           ( ( RecordToRecord.do
-                MDC.tabBar
+                tabBar
                   [ { value: "dineIn", label: "Dine in", icon: Nothing }
                   , { value: "takeaway", label: "Takeaway", icon: Nothing }
                   , { value: "delivery", label: "Delivery", icon: Nothing }
                   ]
                   # asField @"selected"
-                HTML.shownWhen (\r -> r.selected == "dineIn") (MDC.filledTextField { floatingLabel: "Table" } # asField @"table" # lcmap tableOf)
-                HTML.shownWhen (\r -> r.selected == "takeaway") (MDC.filledTextField { floatingLabel: "Time" } # asField @"time" # lcmap timeOf)
-                HTML.shownWhen (\r -> r.selected == "delivery")
+                shownWhen (\r -> r.selected == "dineIn") (filledTextField { floatingLabel: "Table" } # asField @"table" # lcmap tableOf)
+                shownWhen (\r -> r.selected == "takeaway") (filledTextField { floatingLabel: "Time" } # asField @"time" # lcmap timeOf)
+                shownWhen (\r -> r.selected == "delivery")
                   ( ( RecordToRecord.do
-                        MDC.filledTextField { floatingLabel: "Address" } # asField @"address"
-                        MDC.body1 (HTML.text # projection (\address -> "Distance " <> distanceKm address <> " km") # forField @"address")
+                        filledTextField { floatingLabel: "Address" } # asField @"address"
+                        body1 (text # projection (\address -> "Distance " <> distanceKm address <> " km") # forField @"address")
                     ) # lcmap addressOf
                   )
             ) # looped # dimap fulfillmentState fulfillmentCase
           ) # field @"fulfillment"
-        MDC.card { caption: Just "Total" } $ MDC.filledTextField { floatingLabel: "Total" } # asField @"total"
-        MDC.card { caption: Just "Payment" }
+        card { caption: Just "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
+        card { caption: Just "Payment" }
           ( RecordToRecord.do
-              MDC.segmentedButton
+              segmentedButton
                 [ { value: "cash", label: "Cash" }
                 , { value: "card", label: "Card" }
                 ]
                 # asField @"selected" # dimap methodState methodCase # field @"method"
-              MDC.filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              MDC.body1 (HTML.text # projection (\method -> "Paying by " <> methodText method) # forField @"method")
+              filledTextField { floatingLabel: "Paid" } # asField @"paid"
+              body1 (text # projection (\method -> "Paying by " <> methodText method) # forField @"method")
           ) # field @"payment"
-        MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      MDC.body1 (HTML.text # projection summarize # forValue) # debounced # tapped
-      HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-        MDC.button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
-        MDC.button { label: Just "Receipt", icon: Just "file" } # asCase @"printReceipt"
+        card { caption: Just "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
+      body1 (text # projection summarize # forValue) # debounced # tapped
+      div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
+        button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
+        button { label: Just "Receipt", icon: Just "file" } # asCase @"printReceipt"
       VariantToVariant.do
-        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"submit") submitOrder Variant.case_)
-        MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"printReceipt") printReceipt Variant.case_)
+        indeterminateLinearProgress # action (on (Proxy @"submit") submitOrder case_)
+        indeterminateLinearProgress # action (on (Proxy @"printReceipt") printReceipt case_)
       VariantToRecord.do
-        MDC.snackbar # forCase @"orderSubmitted"
-        MDC.snackbar # forCase @"submissionFailed"
-        MDC.snackbar # forCase @"receiptPrinted"
+        snackbar # forCase @"orderSubmitted"
+        snackbar # forCase @"submissionFailed"
+        snackbar # forCase @"receiptPrinted"
       silence
   ) # with unit
 
@@ -109,7 +109,7 @@ methodText ::
   , card :: Unit
   ]
   -> String
-methodText = Variant.match
+methodText = match
   { cash: const "cash"
   , card: const "card"
   }
@@ -127,7 +127,7 @@ fulfillmentState ::
   , delivery :: { address :: String }
   ]
   -> FulfillmentState
-fulfillmentState = Variant.match
+fulfillmentState = match
   { dineIn: \r -> { selected: "dineIn", table: r.table, time: "12:00", address: "" }
   , takeaway: \r -> { selected: "takeaway", table: "1", time: r.time, address: "" }
   , delivery: \r -> { selected: "delivery", table: "1", time: "12:00", address: r.address }
@@ -157,7 +157,7 @@ methodState ::
   , card :: Unit
   ]
   -> { selected :: Maybe String }
-methodState = Variant.match
+methodState = match
   { cash: const { selected: Just "cash" }
   , card: const { selected: Just "card" }
   }
@@ -176,7 +176,7 @@ summarize order =
     <> ", fulfilled as " <> fulfillmentText order.fulfillment
     <> ", paid " <> order.payment.paid <> " by " <> methodText order.payment.method
   where
-  fulfillmentText = Variant.match
+  fulfillmentText = match
     { dineIn: \r -> "dine in at table " <> r.table
     , takeaway: \r -> "takeaway at " <> r.time
     , delivery: \r -> "delivery to " <> r.address <> " (" <> distanceKm r.address <> " km away)"
