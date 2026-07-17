@@ -69,8 +69,8 @@
         : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
         : (n / 1048576).toFixed(1).replace(/\.0$/, "") + "MB";
       Promise.all([
-        fetch("Main.purs").then(r => r.text()),
-        fetch("bundle.js", { method: "HEAD" }).then(r => r.headers.get("content-length")),
+        fetch("Main.purs", { cache: "no-cache" }).then(r => r.text()),
+        fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
       ]).then(([src, bundleBytes]) => {
         const el = document.getElementById("src");
         el.textContent = src;
