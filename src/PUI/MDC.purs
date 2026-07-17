@@ -41,6 +41,16 @@
 -- bars) have concrete rows and stay literal `RecordToRecord.do` merges of
 -- announcing chrome (`staticText`/`staticHTML`/`pempty` at `{} → {}`).
 -- Code order = DOM order throughout.
+--
+-- **The `dimap` round-trip contract for editors.** An editor bracketed by
+-- `dimap f g` behaves as an iso lens: `f` maps the model into the editor's
+-- canonical value, `g` maps edits back. If `g >>> f` is not the identity
+-- on the values the user actually enters, the field visibly *normalizes*
+-- input on each echo — the focus guard suppresses this only for the field
+-- currently being typed in. Conversions that can fail or lose information
+-- (parse-then-format, unit conversion over strings) belong in the model
+-- (`rmap` a total `Model -> Model` after `completed`), not in a leaf
+-- bracket — see the temperature-converter demo.
 module PUI.MDC
   ( banner
   , body1
