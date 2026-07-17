@@ -58,6 +58,15 @@ export function close(component) {
   };
 }
 
+// setProgress :: Component -> Number -> Effect Unit
+export function setProgress(component) {
+  return function (value) {
+    return function () {
+      component.progress = value;
+    };
+  };
+}
+
 // setDeterminate :: Component -> Boolean -> Effect Unit
 export function setDeterminate(component) {
   return function (determinate) {

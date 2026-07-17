@@ -86,6 +86,7 @@ module PUI.MDC
   , imageListItem
   , indeterminateCircularProgress
   , indeterminateLinearProgress
+  , linearProgress
   , layoutCell
   , layoutGrid
   , list
@@ -645,6 +646,27 @@ indeterminateLinearProgress =
           { pre: \r -> (if r.busy then open comp else close comp) $> {}
           , post: pure }
 
+-- | The **determinate** linear progress display, a `{ value :: Number } → {}`
+-- | display citizen: `value` is the filled fraction (0.0–1.0). The gauge
+-- | shape: `linearProgress # projection fraction # forValue`.
+linearProgress :: PUI Web { value :: Number } {}
+linearProgress =
+  div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> effAdapter adapter $ RecordToRecord.do
+    div >>> cl "mdc-linear-progress__buffer" $ RecordToRecord.do
+      div >>> cl "mdc-linear-progress__buffer-bar" $ pempty
+      div >>> cl "mdc-linear-progress__buffer-dots" $ pempty
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ pempty
+    div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
+      span >>> cl "mdc-linear-progress__bar-inner" $ pempty
+    where
+      adapter = do
+        comp <- gets _.sibling >>= (liftEffect <<< newComponent material.linearProgress."MDCLinearProgress")
+        liftEffect $ setDeterminate comp true
+        pure
+          { pre: \r -> setProgress comp r.value $> {}
+          , post: pure }
+
 -- | `indeterminateLinearProgress`'s circular sibling — the same
 -- | `{ busy } → {}` display citizen.
 indeterminateCircularProgress :: PUI Web { busy :: Boolean } {}
@@ -921,6 +943,7 @@ foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
 foreign import newComponent :: ComponentClass -> Node -> Effect Component
 foreign import setDeterminate :: Component -> Boolean -> Effect Unit
+foreign import setProgress :: Component -> Number -> Effect Unit
 foreign import listen :: Component -> String -> Effect Unit -> Effect Unit
 foreign import listenNode :: Node -> String -> Effect Unit -> Effect Unit
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
