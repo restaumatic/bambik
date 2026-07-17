@@ -5,7 +5,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (dimap, lcmap)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -13,7 +13,7 @@ import Data.String (Pattern(..), split)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, field, forCase, forValue, mvu, projection)
+import PUI (action, asCase, asField, completed, debounced, forCase, forValue, mvu, projection, required)
 import PUI.HTML (body, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -36,7 +36,7 @@ main =
         [ { value: OneWay, label: "one-way flight" }
         , { value: Return, label: "return flight" }
         ]
-        # dimap (\v -> { value: Just v }) _.value # field @"flightType"
+        # required # asField @"flightType"
       MDC.filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
       HTML.shownWhen isReturn
         ( MDC.filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"

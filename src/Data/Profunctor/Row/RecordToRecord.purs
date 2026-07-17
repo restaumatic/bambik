@@ -40,6 +40,7 @@ module Data.Profunctor.Row.RecordToRecord
   , forField
   , forValue
   , projection
+  , required
   , field
   , pempty
   , focusRecord
@@ -50,6 +51,7 @@ module Data.Profunctor.Row.RecordToRecord
   where
 
 import Data.Lens.Record (prop)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
@@ -172,6 +174,15 @@ forValue = lcmap { value: _ }
 -- | (`text # projection show # forField @l`), `lcmap`-only.
 projection :: forall p a a' b. Profunctor p => (a' -> a) -> p { value :: a } b -> p { value :: a' } b
 projection f = lcmap (\r -> { value: f r.value })
+
+-- | Mark a type-changing selector (`{ value :: Maybe a } → { value :: a }`)
+-- | as **always selected**: the `Maybe` input exists for the unselected
+-- | display state, so when the model guarantees a selection it is vacuous —
+-- | every model value shows as chosen. Dissolves the
+-- | `dimap (\v -> { value: Just v }) _.value` bracket into a named stage:
+-- | `select config options # required # asField @l`.
+required :: forall p a b. Profunctor p => p { value :: Maybe a } b -> p { value :: a } b
+required = lcmap (\r -> { value: Just r.value })
 
 -- | Adopt a **canonically-labeled display** (`{ value :: a }` in) for field
 -- | `l`: renames the incoming field, output untouched — `lcmap`-only, the
