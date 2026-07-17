@@ -26,7 +26,7 @@ main =
             staticText "s / "
             text # projection show # forField @"duration"
             staticText "s"
-          sliderLive { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
+          sliderLive { label: "Duration", min: 0.0, max: 60.0, step: 1.0 } # asField @"duration"
       ) # completed
       every (Milliseconds 1000.0) tick
       button { label: "Reset", icon: "replay" } # updates reset

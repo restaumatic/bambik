@@ -30,7 +30,7 @@ type Model =
 main :: Effect Unit
 main =
   body $ elevation20 $ card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-      sliderLive { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
+      sliderLive { label: "Diameter", min: 4.0, max: 200.0 } # asField @"diameter"
         # completed # shownWhen hasSelection # rmap applyDiameter
       ( RecordToVariant.do
           view

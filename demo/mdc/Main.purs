@@ -115,7 +115,7 @@ main =
             ]
             # asField @"theme"
         layoutCell { span: 6 } $ card { caption: "Sliders" } $ Semigroupoid.do
-          sliderLive { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
+          sliderLive { label: "Volume", min: 0.0, max: 100.0 } # asField @"volume"
           ( Semigroupoid.do
               seeded { volume: 0.0, peak: 0.0 }
               lcmap stepPeak identity
@@ -158,7 +158,7 @@ main =
       RecordToVariant.do
         card { caption: "Buttons, FAB, icon buttons, menus" } $ div >>> attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
           button { label: "Save", icon: "save" } # asCase @"save"
-          fab { icon: "favorite", label: Just "Like" } # asCase @"like"
+          fab { icon: "favorite", label: "Like" } # asCase @"like"
           iconButton { icon: "share", label: "Share" } # asCase @"share"
           menu { label: "More" } RecordToVariant.do
             menuItem { label: "Export settings" } # asCase @"export"

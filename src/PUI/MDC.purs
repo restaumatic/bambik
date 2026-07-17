@@ -52,7 +52,9 @@
 -- (`rmap` a total `Model -> Model` after `completed`), not in a leaf
 -- bracket — see the temperature-converter demo.
 module PUI.MDC
-  ( OptText(..)
+  ( OptLabelIcon(..)
+  , OptLabel(..)
+  , OptStep(..)
   , banner
   , body1
   , body2
@@ -145,17 +147,37 @@ import PUI.Web (Node, Web, uniqueId)
 
 -- UIs
 
--- | Conversion tag for optional-text component fields (`label`, `icon`):
--- | a bare `String` is accepted and lifted to `Just`, an existing
--- | `Maybe String` passes through. Combined with `convertOptionsWithDefaults`
--- | it lets `button { label: "Count" }` mean `{ label: Just "Count",
--- | icon: Nothing }` — omitted fields fall to their defaults, present ones
--- | coerce.
-data OptText = OptText
+-- Conversion tags scope which field names lift a bare value to `Just` (an
+-- existing `Maybe` passes through, every other field passes through at its
+-- given type). A field name is optional on some components and required on
+-- others — `label` is optional on `button`, required on `slider`; `icon` is
+-- optional on `button`, required on `fab` — so the *tag*, not a global
+-- per-symbol instance, decides which fields are optional for a given widget.
+-- One tag per distinct optional-field set: `OptLabelIcon` (button),
+-- `OptLabel` (fab, caption via card), `OptStep` (sliders).
+data OptLabelIcon = OptLabelIcon
 
-instance ConvertOption OptText sym String (Maybe String) where
+instance ConvertOption OptLabelIcon "label" String (Maybe String) where
   convertOption _ _ = Just
-else instance ConvertOption OptText sym a a where
+else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptLabelIcon sym a a where
+  convertOption _ _ = identity
+
+data OptLabel = OptLabel
+
+instance ConvertOption OptLabel "label" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptLabel "caption" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptLabel sym a a where
+  convertOption _ _ = identity
+
+data OptStep = OptStep
+
+instance ConvertOption OptStep "step" Number (Maybe Number) where
+  convertOption _ _ = Just
+else instance ConvertOption OptStep sym a a where
   convertOption _ _ = identity
 
 -- | The `×→+` event button: reads the whole record it is shown and fires it
@@ -164,12 +186,12 @@ else instance ConvertOption OptText sym a a where
 -- | `button { label: "Count" }` labels it, `icon: "add"` adds an icon.
 button
   :: forall provided r
-   . ConvertOptionsWithDefaults OptText { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ event :: { | r } ]
 button provided = recordToCase @"event" (containedButton config)
   where
-  config = convertOptionsWithDefaults OptText { label: Nothing, icon: Nothing } provided
+  config = convertOptionsWithDefaults OptLabelIcon { label: Nothing, icon: Nothing } provided
 
 -- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
 -- | **same-type** (`Cons l a () s`): the selection is always known from the
@@ -231,10 +253,14 @@ containedButton { label, icon } =
       Nothing -> pempty
 
 -- | The `×→+` event FAB: like `button @l`, reads the whole record it is
--- | shown and fires it as event case `l` on click. A `label` makes it the
--- | extended FAB.
-fab :: forall r. { icon :: String, label :: Maybe String } -> PUI Web { | r } [ event :: { | r } ]
-fab config = recordToCase @"event" $
+-- | shown and fires it as event case `l` on click. `icon` is required; a
+-- | `label` (bare string) makes it the extended FAB.
+fab
+  :: forall provided r
+   . ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
+  => { | provided }
+  -> PUI Web { | r } [ event :: { | r } ]
+fab provided = recordToCase @"event" $
   HTML.button >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-fab__ripple" $ pempty
     span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText config.icon
@@ -242,6 +268,7 @@ fab config = recordToCase @"event" $
       Just label' -> span >>> cl "mdc-fab__label" $ staticText label'
       Nothing -> pempty
   where
+  config = convertOptionsWithDefaults OptLabel { label: Nothing } provided :: { icon :: String, label :: Maybe String }
   extended = case config.label of
     Just _ -> cl "mdc-fab--extended"
     Nothing -> identity
@@ -433,13 +460,28 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | Emits on **commit** only (thumb release): one emission per adjustment,
 -- | so an `updates` fold sees each drag as a single transaction. For
 -- | continuous mid-drag emissions (live readouts), use `sliderLive`.
-slider :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { value :: Number } { value :: Number }
-slider config = field @"value" (sliderLeaf false config)
+slider
+  :: forall provided
+   . ConvertOptionsWithDefaults OptStep { step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+  => { | provided }
+  -> PUI Web { value :: Number } { value :: Number }
+slider provided = field @"value" (sliderLeaf false (sliderConfig provided))
 
 -- | `slider` emitting continuously mid-drag (like mid-typing text); a
 -- | consumer that doesn't want the burst wraps its stage in `debounced`.
-sliderLive :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { value :: Number } { value :: Number }
-sliderLive config = field @"value" (sliderLeaf true config)
+sliderLive
+  :: forall provided
+   . ConvertOptionsWithDefaults OptStep { step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+  => { | provided }
+  -> PUI Web { value :: Number } { value :: Number }
+sliderLive provided = field @"value" (sliderLeaf true (sliderConfig provided))
+
+sliderConfig
+  :: forall provided
+   . ConvertOptionsWithDefaults OptStep { step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+  => { | provided }
+  -> { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+sliderConfig provided = convertOptionsWithDefaults OptStep { step: Nothing } provided
 
 sliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
 sliderLeaf live config = wrap do
@@ -784,7 +826,7 @@ elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 -- | "Title" }` labels it.
 card
   :: forall provided
-   . ConvertOptionsWithDefaults OptText { caption :: Maybe String } { | provided } { caption :: Maybe String }
+   . ConvertOptionsWithDefaults OptLabel { caption :: Maybe String } { | provided } { caption :: Maybe String }
   => { | provided }
   -> Ocular (PUI Web)
 card provided content =
@@ -792,7 +834,7 @@ card provided content =
     for_ mCaption \c -> void $ unwrap (caption $ staticText c)
     unwrap content
   where
-  { caption: mCaption } = convertOptionsWithDefaults OptText { caption: Nothing } provided :: { caption :: Maybe String }
+  { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
 
 dialog :: { title :: String } -> Ocular (PUI Web)
 dialog { title } content =
