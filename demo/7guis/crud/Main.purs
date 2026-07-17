@@ -12,8 +12,8 @@ import Data.String (stripPrefix)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (asCase, asField, completed, forValue, mvu, projection, updates)
-import PUI.HTML (attr, body, cl, clWhen, clicked, div, foreach, li, text, ul) as HTML
-import PUI.MDC (button, card, elevation20, filledTextField) as MDC
+import PUI.HTML (attr, body, div, text) as HTML
+import PUI.MDC (button, card, elevation20, filledTextField, listOf) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Person = { name :: String, surname :: String }
@@ -35,10 +35,8 @@ main =
           MDC.filledTextField { floatingLabel: "Surname" } # asField @"surname"
       ) # completed
       ( RecordToVariant.do
-          HTML.ul >>> HTML.cl "mdc-deprecated-list" >>> HTML.attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;" $ HTML.foreach
-            ( HTML.clicked $ HTML.clWhen _.selected "mdc-deprecated-list-item--selected"
-                $ HTML.li >>> HTML.cl "mdc-deprecated-list-item" >>> HTML.attr "style" "cursor: pointer;"
-                $ HTML.text # projection _.label # forValue
+          HTML.attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px;"
+            ( MDC.listOf { selected: _.selected } (HTML.text # projection _.label # forValue)
             ) # rmap picked # lcmap entries
           HTML.div >>> HTML.attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
             MDC.button { label: Just "Create", icon: Nothing } # asCase @"create"

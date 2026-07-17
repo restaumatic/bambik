@@ -80,6 +80,7 @@ module PUI.MDC
   , layoutGrid
   , list
   , listItem
+  , listOf
   , menu
   , menuItem
   , overline
@@ -124,7 +125,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, effAdapter)
-import PUI.HTML (aside, checkboxInput, cl, clDyn, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
+import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, foreach, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
 import PUI.HTML (button) as HTML
 import PUI.Web (Node, Web, uniqueId)
 
@@ -802,6 +803,17 @@ chipSet content =
 
 list :: Ocular (PUI Web)
 list content = ul >>> cl "mdc-deprecated-list" $ content
+
+-- | The MD2 list as a **dynamic collection component**: one item widget per
+-- | array element, rebuilt per value fed; items satisfying `selected` get
+-- | the MD2 selected styling; every item is a click emitter replaying its
+-- | own value, so the component's output is the clicked item.
+listOf :: forall a o. { selected :: a -> Boolean } -> PUI Web a o -> PUI Web (Array a) a
+listOf config item =
+  ul >>> cl "mdc-deprecated-list" >>> attr "style" "overflow-y: auto;" $ foreach
+    ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
+        $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "cursor: pointer;" $ item
+    )
 
 listItem :: Ocular (PUI Web)
 listItem content = li >>> cl "mdc-deprecated-list-item" $ wrap do
