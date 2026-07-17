@@ -62,6 +62,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecord, forField, forValue, projection, required, tapped) as Adopters
 import Data.Profunctor.Row.RecordToVariant (asCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
+import Data.Profunctor.Row (widenRecordInput) as Adopters
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)

@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number (fromString) as Number
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
-import PUI (forValue, mvu, projection, updates)
+import PUI (forField, mvu, projection, updates, widenRecordInput)
 import PUI.HTML (body) as HTML
 import PUI.MDC (card, debouncedTextField, elevation20) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,9 +17,9 @@ main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
       MDC.debouncedTextField { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
-        # projection (show <<< _.celsius) # forValue # updates fromCelsius
+        # projection show # forField @"celsius" # widenRecordInput # updates fromCelsius
       MDC.debouncedTextField { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
-        # projection (show <<< _.fahrenheit) # forValue # updates fromFahrenheit
+        # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
   ) # mvu { celsius: 20.0, fahrenheit: 68.0 }
 
 -- 7GUIs: a non-numeric entry leaves the model untouched
