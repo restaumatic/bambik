@@ -4,32 +4,31 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Number (fromString) as Number
-import Data.Profunctor (rmap)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
-import PUI (asField, completed, mvu)
+import PUI (forValue, mvu, projection, updates)
 import PUI.HTML (body) as HTML
 import PUI.MDC (card, debouncedTextField, elevation20) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Model = { celsius :: String, fahrenheit :: String }
+type Model = { celsius :: Number, fahrenheit :: Number }
 
 main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
-      MDC.debouncedTextField { floatingLabel: "Celsius", millis: Milliseconds 300.0 } # asField @"celsius"
-        # completed # rmap fromCelsius
-      MDC.debouncedTextField { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 } # asField @"fahrenheit"
-        # completed # rmap fromFahrenheit
-  ) # mvu { celsius: "20", fahrenheit: "68" }
+      MDC.debouncedTextField { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
+        # projection (show <<< _.celsius) # forValue # updates fromCelsius
+      MDC.debouncedTextField { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
+        # projection (show <<< _.fahrenheit) # forValue # updates fromFahrenheit
+  ) # mvu { celsius: 20.0, fahrenheit: 68.0 }
 
--- 7GUIs: a non-numeric entry leaves the other field untouched
-fromCelsius :: Model -> Model
-fromCelsius m = case Number.fromString m.celsius of
-  Just c -> m { fahrenheit = show (c * 9.0 / 5.0 + 32.0) }
+-- 7GUIs: a non-numeric entry leaves the model untouched
+fromCelsius :: { value :: String } -> Model -> Model
+fromCelsius { value } m = case Number.fromString value of
+  Just c -> m { celsius = c, fahrenheit = c * 9.0 / 5.0 + 32.0 }
   Nothing -> m
 
-fromFahrenheit :: Model -> Model
-fromFahrenheit m = case Number.fromString m.fahrenheit of
-  Just f -> m { celsius = show ((f - 32.0) * 5.0 / 9.0) }
+fromFahrenheit :: { value :: String } -> Model -> Model
+fromFahrenheit { value } m = case Number.fromString value of
+  Just f -> m { fahrenheit = f, celsius = (f - 32.0) * 5.0 / 9.0 }
   Nothing -> m
