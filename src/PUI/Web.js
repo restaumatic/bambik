@@ -300,3 +300,22 @@ export function removeAllChildren(node) {
     while (node.firstChild) node.removeChild(node.firstChild);
   };
 }
+
+// onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
+// pointerdown works for mouse, touch and pen alike; coordinates are mapped
+// from CSS pixels into the SVG's viewBox space when the node has one, so a
+// responsive canvas stays accurate on any screen width.
+export function onClickXY(node) {
+  return function (callback) {
+    return function () {
+      node.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        const rect = node.getBoundingClientRect();
+        const vb = node.viewBox && node.viewBox.baseVal;
+        const x = vb ? (event.clientX - rect.left) * (vb.width / rect.width) : event.clientX - rect.left;
+        const y = vb ? (event.clientY - rect.top) * (vb.height / rect.height) : event.clientY - rect.top;
+        callback(x)(y)();
+      });
+    };
+  };
+}

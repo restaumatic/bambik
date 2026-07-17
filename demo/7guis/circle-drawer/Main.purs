@@ -7,16 +7,14 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.String (joinWith)
+import Data.Tuple (Tuple(..))
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (asCase, asField, completed, mvu, updates)
-import PUI.HTML (attr, body, div, shownWhen, viewEvents) as HTML
+import PUI.HTML (Markup(..), attr, body, div, shownWhen, view) as HTML
 import PUI.MDC (button, card, elevation20, slider) as MDC
-import PUI.Web (Node)
+import PUI.Web (onClickXY)
 import QualifiedDo.Semigroupoid as Semigroupoid
-
-foreign import onCanvasClick :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 
 type Circle = { x :: Number, y :: Number, r :: Number }
 
@@ -35,10 +33,10 @@ main =
       MDC.slider { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
         # completed # HTML.shownWhen hasSelection # rmap applyDiameter
       ( RecordToVariant.do
-          HTML.viewEvents
+          HTML.view
             """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
             renderCanvas
-            (\node emit -> onCanvasClick node \x y -> emit (clickedAt x y))
+            (\node emit -> onClickXY node \x y -> emit (clickedAt x y))
           HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
             MDC.button { label: Just "Undo", icon: Just "undo" } # asCase @"undo"
             MDC.button { label: Just "Redo", icon: Just "redo" } # asCase @"redo"
@@ -90,10 +88,17 @@ dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 clickedAt :: Number -> Number -> [ clicked :: { x :: Number, y :: Number } ]
 clickedAt x y = .clicked { x, y }
 
-renderCanvas :: Model -> String
-renderCanvas m = joinWith "" (mapWithIndex (\i c ->
-  "<circle cx=\"" <> show c.x <> "\" cy=\"" <> show c.y <> "\" r=\"" <> show c.r
-    <> "\" stroke=\"#333\" fill=\"" <> (if m.selected == Just i then "#ddd" else "transparent") <> "\"/>") m.circles)
+renderCanvas :: Model -> Array HTML.Markup
+renderCanvas m = mapWithIndex circle m.circles
+  where
+  circle i c = HTML.Element "circle"
+    [ Tuple "cx" (show c.x)
+    , Tuple "cy" (show c.y)
+    , Tuple "r" (show c.r)
+    , Tuple "stroke" "#333"
+    , Tuple "fill" (if m.selected == Just i then "#ddd" else "transparent")
+    ]
+    []
 
 hasSelection :: Model -> Boolean
 hasSelection m = isJust m.selected

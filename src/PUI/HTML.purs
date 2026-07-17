@@ -33,9 +33,11 @@ module PUI.HTML
   , inputDebounced
   , label
   , li
+  , Markup(..)
   , ol
   , p
   , path
+  , renderMarkup
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
@@ -55,6 +57,7 @@ module PUI.HTML
   , transient
   , ul
   , variant
+  , view
   , viewEvents
   )
   where
@@ -63,7 +66,8 @@ import Prelude
 
 import Control.Monad.State (gets, modify_)
 import Data.Default (class Default, default)
-import Data.Foldable (for_)
+import Data.Foldable (foldMap, for_)
+import Data.Tuple (Tuple(..))
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
@@ -532,6 +536,32 @@ viewEvents shell render wire = wrap do
     { toUser: \i -> setInnerHTML node (render i)
     , fromUser: \prop -> wire node (void <<< prop)
     }
+
+-- | Typed markup for custom-leaf render functions: a plain tree, rendered
+-- | to a string with all text and attribute values escaped automatically —
+-- | injection-proof by construction, no `escapeHtml` at call sites. Not a
+-- | virtual DOM: `view` still replaces the container's content per value
+-- | fed, exactly like `viewEvents`.
+data Markup
+  = Element String (Array (Tuple String String)) (Array Markup)
+  | Text String
+
+renderMarkup :: Markup -> String
+renderMarkup (Text s) = escapeHtml s
+renderMarkup (Element tag attrs children) =
+  "<" <> tag <> foldMap renderAttr attrs <> ">"
+    <> foldMap renderMarkup children
+    <> "</" <> tag <> ">"
+  where
+  renderAttr (Tuple name value) = " " <> name <> "=\"" <> escapeHtml value <> "\""
+
+-- | `viewEvents` with a typed render function: `shell` is the container
+-- | markup (appended once), each value fed renders to a `Markup` fragment
+-- | that replaces the container's content, `wire` attaches the event
+-- | emitters. Events carry bare payloads — pair them with the model in an
+-- | `updates` fold, not in the leaf.
+view :: forall i o. String -> (i -> Array Markup) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> PUI Web i o
+view shell render = viewEvents shell (render >>> foldMap renderMarkup)
 
 -- | Escape text for interpolation into `viewEvents` render output.
 escapeHtml :: String -> String

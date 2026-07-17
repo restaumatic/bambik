@@ -22,6 +22,7 @@ module PUI.Web
   , getValue
   , isFocused
   , onInputDebounced
+  , onClickXY
   , onKeyClick
   , removeAllChildren
   , removeAttribute
@@ -175,6 +176,11 @@ foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
 foreign import setInnerHTML :: Node -> String -> Effect Unit
 foreign import onKeyClick :: Node -> (String -> Effect Unit) -> Effect Unit
+
+-- | Pointer-down emitter with coordinates mapped into the element's local
+-- | space (an SVG's viewBox units when present, CSS pixels otherwise) —
+-- | works for mouse, touch and pen alike.
+foreign import onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
 
 runDomInNode :: forall a. Node -> Web a -> Effect a

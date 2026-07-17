@@ -12,13 +12,13 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.String (joinWith)
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length) as S
+import Data.Tuple (Tuple(..))
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup) as Obj
 import PUI (asField, completed, forValue, mvu, projection, updates)
-import PUI.HTML (body, escapeHtml, text, viewEvents) as HTML
+import PUI.HTML (Markup(..), body, text, view) as HTML
 import PUI.MDC (body1, card, elevation20, filledTextField) as MDC
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -42,7 +42,7 @@ main =
           MDC.body1 (HTML.text # projection selectedCaption # forValue)
           MDC.filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
       ) # completed # rmap commit
-      HTML.viewEvents
+      HTML.view
         """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
         renderTable
         (\node emit -> onKeyClick node \key -> emit (clickedCell key))
@@ -72,21 +72,25 @@ commit m = case m.selected of
 clickedCell :: String -> [ cellClicked :: String ]
 clickedCell key = .cellClicked key
 
-renderTable :: Model -> String
+renderTable :: Model -> Array HTML.Markup
 renderTable m =
-  let values = evalSheet m.cells
-      colName c = fromMaybe "" (S.singleton <$> fromCharCode (toCharCode 'A' + c))
-      header = "<tr><th style=\"" <> thStyle <> "\"></th>"
-        <> joinWith "" (range 0 (cols - 1) <#> \c -> "<th style=\"" <> thStyle <> "\">" <> colName c <> "</th>") <> "</tr>"
-      row r = "<tr><th style=\"" <> thStyle <> "\">" <> show r <> "</th>"
-        <> joinWith "" (range 0 (cols - 1) <#> \c ->
-            let key = colName c <> show r
-                sel = m.selected == Just key
-            in "<td data-key=\"" <> key <> "\" style=\"" <> tdStyle <> (if sel then "background: #cde;" else "") <> "\">"
-                 <> HTML.escapeHtml (fromMaybe "" (Obj.lookup key values)) <> "</td>") <> "</tr>"
-  in "<table style=\"border-collapse: collapse; font-size: 13px;\">" <> header
-       <> joinWith "" (range 0 (rows - 1) <#> row) <> "</table>"
+  [ HTML.Element "table" [ Tuple "style" "border-collapse: collapse; font-size: 13px;" ]
+      ([ header ] <> (range 0 (rows - 1) <#> row))
+  ]
   where
+  values = evalSheet m.cells
+  colName c = fromMaybe "" (S.singleton <$> fromCharCode (toCharCode 'A' + c))
+  th content = HTML.Element "th" [ Tuple "style" thStyle ] [ HTML.Text content ]
+  header = HTML.Element "tr" [] ([ th "" ] <> (range 0 (cols - 1) <#> \c -> th (colName c)))
+  row r = HTML.Element "tr" [] ([ th (show r) ] <> (range 0 (cols - 1) <#> cell r))
+  cell r c =
+    let key = colName c <> show r
+        sel = m.selected == Just key
+    in HTML.Element "td"
+        [ Tuple "data-key" key
+        , Tuple "style" (tdStyle <> (if sel then "background: #cde;" else ""))
+        ]
+        [ HTML.Text (fromMaybe "" (Obj.lookup key values)) ]
   thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
 
