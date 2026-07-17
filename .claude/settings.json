@@ -57,7 +57,8 @@
       "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/cells/bundle.js)",
       "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/cells/bundle.js)",
       "Bash(git commit -q -m 'temperature-converter: immediate updates per the 7GUIs spec — debouncing dropped, Milliseconds import gone *)",
-      "Bash(git commit -q -m '7guis pages: footer note reworded — code style in three sentences *)"
+      "Bash(git commit -q -m '7guis pages: footer note reworded — code style in three sentences *)",
+      "Bash(grep -rn \"status <- \\\\|status$\\\\|pure status\" src/)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

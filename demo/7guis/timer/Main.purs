@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude ((#), ($), (+), (/), (<), (<=), Unit, min, otherwise, show)
+import Prelude ((#), ($), (+), (/), (<), (<=), Unit, min, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -36,9 +36,9 @@ reset :: forall click. click -> Timer -> Timer
 reset _ t = t { elapsed = 0.0 }
 
 tick :: Timer -> Maybe Timer
-tick t
-  | t.elapsed < t.duration = Just (t { elapsed = min t.duration (t.elapsed + 1.0) })
-  | otherwise = Nothing
+tick t =
+  if t.elapsed < t.duration then Just (t { elapsed = min t.duration (t.elapsed + 1.0) })
+  else Nothing
 
 fraction :: Timer -> Number
 fraction t = if t.duration <= 0.0 then 1.0 else min 1.0 (t.elapsed / t.duration)

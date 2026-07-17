@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), Unit, bind, map, max, min, mod, otherwise, pure, show, (||))
+import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), Unit, bind, map, max, min, mod, pure, show, (||))
 
 import Data.Array (catMaybes, range)
 import Data.Char (fromCharCode, toCharCode)
@@ -120,9 +120,9 @@ formatNum n =
      else show (Int.toNumber scaled / 100.0)
 
 evalCell :: Object String -> List String -> String -> Value
-evalCell cells visiting key
-  | key `elem` visiting = ErrV "#CYCLE"
-  | otherwise = case lookup key cells of
+evalCell cells visiting key =
+  if key `elem` visiting then ErrV "#CYCLE"
+  else case lookup key cells of
       Nothing -> TextV ""
       Just src -> case charAt 0 src of
         Just '=' -> case parseExpr (drop 1 src) of

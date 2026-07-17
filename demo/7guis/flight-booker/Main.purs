@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), class Eq, Unit, bind, otherwise, pure, show)
+import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), class Eq, Unit, bind, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
@@ -35,9 +35,9 @@ data Itinerary
 type Date = { y :: Int, m :: Int, d :: Int }
 
 returnBetween :: Date -> Date -> Maybe Itinerary
-returnBetween out back
-  | dateKey back >= dateKey out = Just (ReturnBetween { out, back })
-  | otherwise = Nothing
+returnBetween out back =
+  if dateKey back >= dateKey out then Just (ReturnBetween { out, back })
+  else Nothing
 
 main :: Effect Unit
 main =
@@ -64,9 +64,9 @@ main =
 parse :: Booking -> Either String Itinerary
 parse b = case parseDate b.start of
   Nothing -> Left ("start date " <> show b.start <> " is not a valid DD.MM.YYYY date")
-  Just start
-    | b.flightType /= Return -> Right (OneWayOn start)
-    | otherwise -> case parseDate b.return of
+  Just start ->
+    if b.flightType /= Return then Right (OneWayOn start)
+    else case parseDate b.return of
         Nothing -> Left ("return date " <> show b.return <> " is not a valid DD.MM.YYYY date")
         Just back -> case returnBetween start back of
           Nothing -> Left "the return date is before the start date"
