@@ -37,26 +37,28 @@ type Model =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: "Cells" } $ ( Semigroupoid.do
-      ( RecordToRecord.do
-          body1 (text # projection selectedCaption # forValue)
-          filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
-      ) # completed # rmap commit
-      view
-        """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
-        renderTable
-        (\node emit -> onKeyClick node \key -> emit (clickedCell key))
-        # updates handle
-  ) # mvu
-      { cells: fromHomogeneous
-          { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
-          , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
-          , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
-          , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
+  body $
+    elevation20 $
+      card { caption: "Cells" } $ ( Semigroupoid.do
+          ( RecordToRecord.do
+              body1 (text # projection selectedCaption # forValue)
+              filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
+          ) # completed # rmap commit
+          view
+            """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
+            renderTable
+            (\node emit -> onKeyClick node \key -> emit (clickedCell key))
+            # updates handle
+      ) # mvu
+          { cells: fromHomogeneous
+              { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
+              , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
+              , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
+              , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
+              }
+          , selected: Nothing
+          , formula: ""
           }
-      , selected: Nothing
-      , formula: ""
-      }
 
 handle :: [ cellClicked :: String ] -> Model -> Model
 handle e m = match

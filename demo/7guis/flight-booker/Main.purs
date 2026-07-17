@@ -41,25 +41,27 @@ returnBetween out back =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: "Book Flight" } Semigroupoid.do
-  ( RecordToRecord.do
-      select { floatingLabel: "Flight type" }
-        [ { value: OneWay, label: "one-way flight" }
-        , { value: Return, label: "return flight" }
-        ]
-        # required # asField @"flightType"
-      filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
-      shownWhen isReturn
-        ( filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
-            # lcmap returnDate
-        )
-  ) # mvu { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
-  body1 (text # projection validationText # forValue) # debounced # completed
-  button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
-  indeterminateLinearProgress # action (match { book: submit })
-  VariantToRecord.do
-    snackbar # forCase @"booked"
-    snackbar # forCase @"rejected"
+  body $
+    elevation20 $
+      card { caption: "Book Flight" } Semigroupoid.do
+      ( RecordToRecord.do
+          select { floatingLabel: "Flight type" }
+            [ { value: OneWay, label: "one-way flight" }
+            , { value: Return, label: "return flight" }
+            ]
+            # required # asField @"flightType"
+          filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
+          shownWhen isReturn
+            ( filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
+                # lcmap returnDate
+            )
+      ) # mvu { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
+      body1 (text # projection validationText # forValue) # debounced # completed
+      button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
+      indeterminateLinearProgress # action (match { book: submit })
+      VariantToRecord.do
+        snackbar # forCase @"booked"
+        snackbar # forCase @"rejected"
 
 parse :: Booking -> Either String Itinerary
 parse b = case parseDate b.start of

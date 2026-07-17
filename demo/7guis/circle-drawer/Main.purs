@@ -29,26 +29,28 @@ type Model =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-      sliderLive { label: "Diameter", min: 4.0, max: 200.0 } # asField @"diameter"
-        # completed # shownWhen hasSelection # rmap applyDiameter
-      ( RecordToVariant.do
-          view
-            """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
-            renderCanvas
-            (\node emit -> onClickXY node \x y -> emit (clickedAt x y))
-          div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-            button { label: "Undo", icon: "undo" } # asCase @"undo"
-            button { label: "Redo", icon: "redo" } # asCase @"redo"
-      ) # updates handle
-  ) # mvu
-      { circles: []
-      , selected: Nothing
-      , diameter: 40.0
-      , adjusting: false
-      , undoStack: []
-      , redoStack: []
-      }
+  body $
+    elevation20 $
+      card { caption: "Circle Drawer" } $ ( Semigroupoid.do
+          sliderLive { label: "Diameter", min: 4.0, max: 200.0 } # asField @"diameter"
+            # completed # shownWhen hasSelection # rmap applyDiameter
+          ( RecordToVariant.do
+              view
+                """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
+                renderCanvas
+                (\node emit -> onClickXY node \x y -> emit (clickedAt x y))
+              div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
+                button { label: "Undo", icon: "undo" } # asCase @"undo"
+                button { label: "Redo", icon: "redo" } # asCase @"redo"
+          ) # updates handle
+      ) # mvu
+          { circles: []
+          , selected: Nothing
+          , diameter: 40.0
+          , adjusting: false
+          , undoStack: []
+          , redoStack: []
+          }
 
 handle ::
   [ clicked :: { x :: Number, y :: Number }

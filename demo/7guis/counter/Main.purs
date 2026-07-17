@@ -10,10 +10,12 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: "Counter" } $ ( Semigroupoid.do
-      headline4 (text # projection show # forField @"count") # completed
-      button { label: "Count" } # updates increment
-  ) # mvu { count: 0 }
+  body $
+    elevation20 $
+      card { caption: "Counter" } $ ( Semigroupoid.do
+          headline4 (text # projection show # forField @"count") # completed
+          button { label: "Count" } # updates increment
+      ) # mvu { count: 0 }
 
 increment :: forall click. click -> { count :: Int } -> { count :: Int }
 increment _ r = { count: r.count + 1 }

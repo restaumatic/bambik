@@ -28,32 +28,34 @@ type Model =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: "CRUD" } $ ( Semigroupoid.do
-      ( RecordToRecord.do
-          filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
-          filledTextField { floatingLabel: "Name" } # asField @"name"
-          filledTextField { floatingLabel: "Surname" } # asField @"surname"
-      ) # completed
-      ( RecordToVariant.do
-          attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px;"
-            ( listOf { selected: _.selected } (text # projection _.label # forValue)
-            ) # rmap picked # lcmap entries
-          div >>> attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
-            button { label: "Create" } # asCase @"create"
-            button { label: "Update" } # asCase @"update"
-            button { label: "Delete" } # asCase @"delete"
-      ) # updates handle
-  ) # mvu
-      { prefix: ""
-      , name: ""
-      , surname: ""
-      , people:
-          [ { name: "Hans", surname: "Emil" }
-          , { name: "Max", surname: "Mustermann" }
-          , { name: "Roman", surname: "Tisch" }
-          ]
-      , selected: Nothing
-      }
+  body $
+    elevation20 $
+      card { caption: "CRUD" } $ ( Semigroupoid.do
+          ( RecordToRecord.do
+              filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
+              filledTextField { floatingLabel: "Name" } # asField @"name"
+              filledTextField { floatingLabel: "Surname" } # asField @"surname"
+          ) # completed
+          ( RecordToVariant.do
+              attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px;"
+                ( listOf { selected: _.selected } (text # projection _.label # forValue)
+                ) # rmap picked # lcmap entries
+              div >>> attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
+                button { label: "Create" } # asCase @"create"
+                button { label: "Update" } # asCase @"update"
+                button { label: "Delete" } # asCase @"delete"
+          ) # updates handle
+      ) # mvu
+          { prefix: ""
+          , name: ""
+          , surname: ""
+          , people:
+              [ { name: "Hans", surname: "Emil" }
+              , { name: "Max", surname: "Mustermann" }
+              , { name: "Roman", surname: "Tisch" }
+              ]
+          , selected: Nothing
+          }
 
 handle ::
   [ picked :: Int

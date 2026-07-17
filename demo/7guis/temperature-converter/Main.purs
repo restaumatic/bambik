@@ -14,12 +14,14 @@ type Model = { celsius :: Number, fahrenheit :: Number }
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: "Temperature Converter" } $ ( Semigroupoid.do
-      filledTextField { floatingLabel: "Celsius" }
-        # projection show # forField @"celsius" # widenRecordInput # updates fromCelsius
-      filledTextField { floatingLabel: "Fahrenheit" }
-        # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
-  ) # mvu { celsius: 20.0, fahrenheit: 68.0 }
+  body $
+    elevation20 $
+      card { caption: "Temperature Converter" } $ ( Semigroupoid.do
+          filledTextField { floatingLabel: "Celsius" }
+            # projection show # forField @"celsius" # widenRecordInput # updates fromCelsius
+          filledTextField { floatingLabel: "Fahrenheit" }
+            # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
+      ) # mvu { celsius: 20.0, fahrenheit: 68.0 }
 
 fromCelsius :: { value :: String } -> Model -> Model
 fromCelsius { value } m = case fromString value of
