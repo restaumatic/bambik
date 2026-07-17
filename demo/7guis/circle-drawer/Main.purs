@@ -50,7 +50,6 @@ main =
       , redoStack: []
       }
 
-
 handle ::
   [ clicked :: { x :: Number, y :: Number }
   , undo :: Model
@@ -72,8 +71,6 @@ handle e m = Variant.match
       Nothing -> m
   } e
 
--- the slider emits mid-drag, so an adjustment session (drag start until the
--- next selection/undo/redo) is coalesced into one undo transaction
 applyDiameter :: Model -> Model
 applyDiameter m = case m.selected of
   Just i | Just c <- index m.circles i, c.r /= m.diameter / 2.0 ->

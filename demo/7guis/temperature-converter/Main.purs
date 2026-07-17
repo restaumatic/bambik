@@ -22,7 +22,6 @@ main =
         # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
   ) # mvu { celsius: 20.0, fahrenheit: 68.0 }
 
--- 7GUIs: a non-numeric entry leaves the model untouched
 fromCelsius :: { value :: String } -> Model -> Model
 fromCelsius { value } m = case Number.fromString value of
   Just c -> m { celsius = c, fahrenheit = c * 9.0 / 5.0 + 32.0 }

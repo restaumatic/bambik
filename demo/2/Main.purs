@@ -1,10 +1,3 @@
--- | Plain-HTML demo — no design system, just `Web` primitives. The whole
--- | page is one `×→×` merge (`RecordToRecord.do`): static content is
--- | announcing chrome (`staticText`/`staticHTML :: … {} {}` — units with a
--- | face, so gates never starve on them), and the live part — a `×→×`
--- | record merge of two plain `input`s feeding a `text` display — is just
--- | one more operand; the page's `{}` output drains into the `silence`
--- | sink. Code order = DOM order.
 module Main (main) where
 
 import Prelude

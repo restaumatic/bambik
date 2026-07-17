@@ -1,43 +1,3 @@
--- | The full-catalog MDC (Material Design 2, https://m2.material.io)
--- | showcase — every component the `MDC` module offers, exercised in one
--- | genuine four-direction row pipeline:
--- |
--- |   load (action) → `×→×` settings form → `×→+` event buttons →
--- |   `+→+` backend dispatch → `+→×` status snackbars/banner
--- |
--- | The page chrome is oculars all the way down: `topAppBar` over a
--- | permanent `drawer` (whose nav is a `list` of `listItem`s — pure
--- | `{} → {}` chrome), cards per catalog section, a `layoutGrid` for the
--- | form. Editors cover every `×→×` citizen (`filledTextField`,
--- | `filledTextArea`, `checkbox`, `radioButton`, `toggleSwitch`, `slider`,
--- | `select`, `segmentedButton`, `tabBar`, `filterChip`, `iconToggle`).
--- | The shipping variant is edited through **record-shaped editor state**:
--- | `dimap` brackets the variant into `ShippingState` (seeding absent
--- | payloads) and back out (projecting the selection), and `looped` — the
--- | `×`-diagonal self-trace — re-broadcasts every emission so the tab bar
--- | and its `shownWhen` panes stay mutually consistent, with payload
--- | retention falling out of the merge gates. The slider readout and the
--- | data-table/summary live views are `tapped` stages (display every
--- | emission flowing through, pass it on). The image list and dividers
--- | are announcing statics. Events cover `button`, `fab`, `iconButton`
--- | and a `menu` of `menuItem`s — plus a two-step publish **wizard as a
--- | `folding @"next"` stage**: the step state loops silently as the
--- | `next` case (an `announce` operand primes the fold with its initial
--- | state), and `published` exits into the dispatch like any other event.
--- | Dispatch shows both progress displays (`indeterminateLinearProgress`
--- | and `indeterminateCircularProgress`); a shape-agnostic `tapped` line
--- | logs the status *variant* flowing past; statuses cover `snackbar`s
--- | and a `banner`.
--- |
--- | Type-changing editors make the form's input and output rows differ:
--- | `radioButton`/`select`/`segmentedButton` consume `Maybe`-selection
--- | fields (`SettingsIn`) and produce bare selections (`SettingsOut`).
--- | Those editors echo only a `Just` (there is no bare selection to
--- | announce otherwise), so `loadSettings` seeds every selection —
--- | otherwise the record-merge gates would hold until the user picks.
--- |
--- | (The MD2 dialog is the one omission: its open/close protocol needs a
--- | flow of its own — see `MDC.dialog`/`MDC.simpleDialog`.)
 module Main (main) where
 
 import Prelude
@@ -65,9 +25,6 @@ import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell,
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
--- The named types — the aggregate the whole pipeline revolves around,
--- direction-split because the type-changing editors (radio, select,
--- segmented button) consume selection state and produce bare selections.
 type SettingsIn =
   { name :: String
   , notes :: String
@@ -123,11 +80,7 @@ main =
         MDC.listItem $ HTML.staticText "Progress indicators"
         MDC.listItem $ HTML.staticText "Banner & snackbars"
     ) Semigroupoid.do
-      -- the pipeline: stages composed with `Semigroupoid` (`>>>` under the do)
       MDC.indeterminateLinearProgress # action loadSettings
-      -- the form: the ×→× merge (direction class `RecordToRecord`) — operands
-      -- own disjoint output fields, inputs may overlap; label-indexed MDC
-      -- components are `field @l`-shaped inside (bare `Profunctor`)
       MDC.layoutGrid RecordToRecord.do
         MDC.layoutCell { span: 12 } $ MDC.headline6 (HTML.text # projection ("Settings — " <> _) # forField @"name")
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Text fields" } RecordToRecord.do
@@ -161,31 +114,14 @@ main =
             , { value: "system", label: "System" }
             ]
             # asField @"theme"
-        -- the readout is a `tapped` stage after the slider (`Strong`: `second`
-        -- retains the value, the display's echo forwards it): it displays every
-        -- value the slider emits and passes it on (a plain record-merge sibling
-        -- would update on load only)
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
           MDC.sliderLive { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
-          -- `feedback` (co-strength `Costrong`, dual of `Strong`): the `peak`
-          -- field loops from this stage's output back to its input, invisible
-          -- in the stage's outer `{volume} → {volume}` type; `seeded` primes
-          -- the loop at registration
           ( Semigroupoid.do
               seeded { volume: 0.0, peak: 0.0 }
               lcmap stepPeak identity
               MDC.body2 (HTML.text # projection peakLine # forValue) # tapped
           ) # feedback
           MDC.body2 (HTML.text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
-        -- the variant model is edited through record-shaped editor state
-        -- (`ShippingState` — all payloads persist, the merge gates retain them):
-        -- `dimap` (bare `Profunctor`) brackets the variant in (seeding absent
-        -- payloads) and out (projecting the selected case); `looped` — the
-        -- ×-diagonal self-trace, `Costrong`'s self-feeding special case —
-        -- re-broadcasts every emission so the tab bar and panes stay mutually
-        -- consistent; panes stay attached (`shownWhen` only hides them — the
-        -- gates need their echoes), their inputs narrowed by `lcmap`
-        -- (`Profunctor`, contravariant side)
         MDC.layoutCell { span: 12 } $ MDC.card { caption: Just "Tabs" }
           ( ( RecordToRecord.do
                 MDC.tabBar
@@ -204,10 +140,6 @@ main =
           MDC.imageListItem { src: swatch "0081cf" 110, label: "Sea" }
           MDC.imageListItem { src: swatch "c34a36" 130, label: "Clay" }
           MDC.imageListItem { src: swatch "936c00" 90, label: "Ochre" }
-      -- live views of the form's *output*: within the form merge, siblings never
-      -- see each other's emissions (`recordToRecord` has no cross-feed), so
-      -- whole-record displays go in a `tapped` stage (`Strong`) after it —
-      -- every form emission is displayed and passed on
       ( MDC.layoutGrid RecordToRecord.do
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Data tables" } $
           MDC.dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
@@ -223,9 +155,6 @@ main =
         MDC.layoutCell { span: 12 } MDC.divider
         MDC.layoutCell { span: 12 } (MDC.body1 (HTML.text # projection summarize # forValue) # debounced)
       ) # tapped
-      -- the events: the ×→+ merge (direction class `RecordToVariant`, ungated
-      -- broadcast) — every operand reads the settings record, each emits its
-      -- own event cases (`recordToCase` inside the button components)
       RecordToVariant.do
         MDC.card { caption: Just "Buttons, FAB, icon buttons, menus" } $ HTML.div >>> HTML.attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
           MDC.button { label: Just "Save", icon: Just "save" } # asCase @"save"
@@ -234,12 +163,6 @@ main =
           MDC.menu { label: "More" } RecordToVariant.do
             MDC.menuItem { label: "Export settings" } # asCase @"export"
             MDC.menuItem { label: "Reset to defaults" } # asCase @"reset"
-        -- the wizard: `folding` (co-strength `Coresolving`, the retraction of
-        -- `Resolving` — a terminating fold) makes this ×→+ operand loop: the
-        -- "next" case carries the step state and re-enters silently
-        -- (re-rendering the step — the nullary `announce` primes the fold with
-        -- its initial state, the way units announce their `{}`), while the
-        -- "published" case exits into the dispatch like any other event
         MDC.card { caption: Just "Wizard (folding)" }
           ( ( Semigroupoid.do
                 ( RecordToRecord.do
@@ -253,32 +176,18 @@ main =
                   HTML.shownWhen (\r -> r.step == "confirm") (MDC.button { label: Just "Publish", icon: Just "publish" } # asCase @"publish" # lcmap essentials)
             ) # folding @"next"
           )
-      -- the dispatch: the +→+ merge (direction class `VariantToVariant`) —
-      -- exclusive inputs, one action handler per event case
       VariantToVariant.do
         MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"save") saveSettings Variant.case_)
         MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"like") like Variant.case_)
         MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"share") share Variant.case_)
         MDC.indeterminateLinearProgress # action (Variant.on (Proxy @"export") exportSettings Variant.case_)
         MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"reset") reset Variant.case_)
-        -- retry: `iterate` (co-strength `Cochoice`, dual of `Choice`) loops
-        -- the flaky publish — a failed attempt re-emits the `publish` case
-        -- (attempt incremented), which re-enters this handler; success exits
-        -- as the `published` status like any other case
         MDC.indeterminateCircularProgress # action (Variant.on (Proxy @"publish") publishFlaky Variant.case_) # iterate
-      -- the activity meter: `tapped` (`Strong`, shape-agnostic) duplicates the
-      -- status stream into a display arm, and the arm is an `unfolding`
-      -- (co-strength `Coretaining`, dual of `Retaining`): each status case
-      -- joins the running count via `retain` — the count re-enters as the
-      -- `resume` case, `countUp` does the event⋈state join, `seeded` primes
-      -- the state at registration
       ( Semigroupoid.do
           seeded resumeZero
           retain identity # dimap splitStatus countUp
           MDC.body2 (HTML.text # projection activityLine # forValue) # tapped
       ) # unfolding @"resume" # tapped
-      -- the statuses: the +→× merge (direction class `VariantToRecord`) —
-      -- one receiver per message case
       VariantToRecord.do
         MDC.snackbar # forCase @"saved"
         MDC.snackbar # forCase @"liked"
@@ -286,13 +195,9 @@ main =
         MDC.banner # forCase @"exported"
         MDC.snackbar # forCase @"resetDone"
         MDC.snackbar # forCase @"published"
-      -- the sink: `silence`, the merges' variant-output unit (`pempty`)
       silence
   ) # with unit
 
--- model functions
-
--- a self-contained placeholder image: a colored SVG swatch data URI
 swatch :: String -> Int -> String
 swatch color height =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='" <> show height
@@ -319,10 +224,6 @@ shippingText = Variant.match
   , express: \r -> "express (" <> r.price <> " fee)"
   }
 
--- the shipping ensemble's editor state: the model holds one case at a
--- time, the editor keeps every payload (retained by the merge gates while
--- the `looped` ensemble runs); `shippingState`/`shippingCase` bracket the
--- variant in (seeding absent payloads) and out (projecting the selection)
 type ShippingState = { selected :: String, days :: String, price :: String }
 
 shippingState ::
@@ -347,8 +248,6 @@ daysOf s = { days: s.days }
 priceOf :: ShippingState -> { price :: String }
 priceOf s = { price: s.price }
 
--- wizard view/model functions (their signatures close the wizard's rows:
--- inputs name/plan joined with the fold state step)
 initialStep ::
   [ publish :: { name :: String, plan :: String, attempt :: Int }
   , next :: { step :: String }
@@ -410,8 +309,6 @@ countUp (Tuple message st) = { last: message, count: st.count + 1 }
 activityLine :: { last :: String, count :: Int } -> String
 activityLine r = show r.count <> (if r.count == 1 then " action" else " actions") <> " — last: " <> r.last
 
--- asynchronous actions
-
 loadSettings :: Unit -> Aff SettingsIn
 loadSettings _ = do
   liftEffect $ log "loading settings"
@@ -425,8 +322,6 @@ loadSettings _ = do
     , favorite: true
     , archived: false
     , subscribed: Just unit
-    -- selections are seeded: type-changing editors echo only a `Just`,
-    -- so an unseeded selection would hold the record-merge gate shut
     , plan: Just "free"
     , theme: Just "light"
     , size: Just "M"

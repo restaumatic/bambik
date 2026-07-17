@@ -1,9 +1,3 @@
--- | Illustrative only — this demo is NOT part of `spago build` (sources are `src`/`test`).
--- |
--- | MDC components are row-typed at their labels (`filledTextField @l` is a
--- | singleton-record editor), so a stage of this pipeline is `focusRecord`
--- | of a labeled leaf: the focused field is edited, the background fields
--- | pass through, and each stage hands the whole seeded record to the next.
 module Main (main) where
 
 import Prelude

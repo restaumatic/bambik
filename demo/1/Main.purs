@@ -1,45 +1,3 @@
--- | Demo 1, ported to **row profunctors** — a single standalone module.
--- |
--- | The model is row-shaped and structural: the order is a `Record` row (all
--- | fields at once), every choice point an anonymous `Variant` row (one case
--- | at a time) — no ADTs, no nominal wrappers, no optics. The app is the
--- | four-direction pipeline over it:
--- |
--- |   load (action) → `×→×` order form → `×→+` event buttons →
--- |   `+→+` backend dispatch → `+→×` status snackbars
--- |
--- | with real MDC widgets as the merge operands, laid out so that the order
--- | of the code maps 1-1 to the order of the PUI, with no inline type
--- | annotations: MDC components are label-indexed row profunctors already
--- | (`MDC.filledTextField @"total"` edits one field, `MDC.button @"submit"`
--- | fires one event case, `MDC.snackbar # forCase @"orderSubmitted"` shows one
--- | message case), and every remaining row is closed either by a
--- | label-pinning helper (`field` for nesting sub-composites, `reading`)
--- | or by a model-function signature; inference propagates from the
--- | pipeline ends inward. Decoration is data or design-system config, not
--- | composition: the headline prefix rides in `reading`'s render function,
--- | card captions in `MDC.card`'s config.
--- |
--- | Variant editors (fulfillment, method) work through **record-shaped
--- | editor state**: the model keeps the variant (one case at a time), the
--- | editor keeps every payload. `dimap` brackets the variant in
--- | (`fulfillmentState` seeds absent payloads) and out (`fulfillmentCase`
--- | projects the selection); inside, a plain record merge of a `tabBar`
--- | selection component and `shownWhen` panes — wrapped in `looped`, the
--- | `×`-diagonal self-trace, so every emission is re-broadcast and the
--- | ensemble stays mutually consistent. Per-pane payload retention falls
--- | out of the merge gates (each gate holds its side's last contribution):
--- | switching a case away and back restores its state. A unit-payload
--- | variant (method) needs no panes and no loop — the bracket around one
--- | selection component suffices. The summary line is a `tapped` stage on
--- | the form's output, re-rendering on every emission.
--- |
--- | Merge-gate protocol: every record-merge operand must contain at least
--- | one element that echoes on `toUser` (text fields, `text` displays,
--- | selection components), so all gates open on the initial `loadOrder`
--- | render and the merged order flows to the buttons. Panes stay attached
--- | (`shownWhen` only hides them) — a detached editor cannot echo, which
--- | would starve the gates.
 module Main (main) where
 
 import Prelude
@@ -62,8 +20,6 @@ import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextFiel
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
--- The one named type — the aggregate the whole pipeline revolves around.
--- Everything inside it is structural: anonymous record and variant rows.
 type Order =
   { shortId :: String
   , orderId :: String
@@ -101,11 +57,6 @@ main =
               MDC.filledTextField { floatingLabel: "First name" } # asField @"firstName"
               MDC.filledTextField { floatingLabel: "Last name" } # asField @"lastName"
           ) # field @"customer"
-        -- the fulfillment variant is edited through record-shaped editor state:
-        -- `dimap` brackets the variant in (seeding absent payloads) and out
-        -- (projecting the selection), `looped` re-broadcasts every emission so
-        -- the tab bar and panes stay mutually consistent, and the merge gates
-        -- retain every pane's payload — switching away and back restores it
         MDC.card { caption: Just "Fulfillment" }
           ( ( RecordToRecord.do
                 MDC.tabBar
@@ -127,9 +78,6 @@ main =
         MDC.card { caption: Just "Total" } $ MDC.filledTextField { floatingLabel: "Total" } # asField @"total"
         MDC.card { caption: Just "Payment" }
           ( RecordToRecord.do
-              -- a unit-payload variant needs no panes and no loop — the bracket
-              -- around a single selection component suffices (it echoes, so no
-              -- `identity` echo wire either)
               MDC.segmentedButton
                 [ { value: "cash", label: "Cash" }
                 , { value: "card", label: "Card" }
@@ -139,8 +87,6 @@ main =
               MDC.body1 (HTML.text # projection (\method -> "Paying by " <> methodText method) # forField @"method")
           ) # field @"payment"
         MDC.card { caption: Just "Remarks" } $ MDC.filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      -- a live view of the form's output: displays every emission and passes it
-      -- on (a sibling inside the merge would update on load only)
       MDC.body1 (HTML.text # projection summarize # forValue) # debounced # tapped
       HTML.div >>> HTML.attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
         MDC.button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
@@ -155,8 +101,6 @@ main =
       silence
   ) # with unit
 
--- model functions
-
 distanceKm :: String -> String
 distanceKm address = show (length address)
 
@@ -170,10 +114,6 @@ methodText = Variant.match
   , card: const "card"
   }
 
--- editor state for the fulfillment ensemble: the model holds one case at a
--- time, the editor keeps every payload (retained by the merge gates while
--- the `looped` ensemble runs); `fulfillmentState`/`fulfillmentCase` bracket
--- the variant in (seeding absent payloads) and out (projecting the selection)
 type FulfillmentState =
   { selected :: String
   , table :: String
@@ -242,8 +182,6 @@ summarize order =
     , delivery: \r -> "delivery to " <> r.address <> " (" <> distanceKm r.address <> " km away)"
     }
 
--- asynchronous actions
-
 loadOrder :: Unit -> Aff Order
 loadOrder _ = do
   liftEffect $ log "loading order"
@@ -286,7 +224,4 @@ printReceipt order = do
   delay (Milliseconds 2000.0)
   liftEffect $ log $ "printed receipt for order " <> order.orderId
   pure $ .receiptPrinted ("Receipt for order " <> order.shortId <> " printed")
-
-
-
 

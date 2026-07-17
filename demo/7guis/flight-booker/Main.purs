@@ -22,16 +22,12 @@ data FlightType = OneWay | Return
 
 derive instance Eq FlightType
 
--- editor state: raw strings, every payload retained — a date mid-typing or
--- a return date parked while one-way is selected must stay representable
 type Booking =
   { flightType :: FlightType
   , start :: String
   , return :: String
   }
 
--- domain type: correct at construction — dates already parsed, no return
--- field on a one-way flight, no return-before-start (`returnBetween`)
 data Itinerary
   = OneWayOn Date
   | ReturnBetween { out :: Date, back :: Date }
@@ -65,8 +61,6 @@ main =
     MDC.snackbar # forCase @"booked"
     MDC.snackbar # forCase @"rejected"
 
--- parse, don't validate: the editor state either parses into an Itinerary
--- or explains why not
 parse :: Booking -> Either String Itinerary
 parse b = case parseDate b.start of
   Nothing -> Left ("start date " <> show b.start <> " is not a valid DD.MM.YYYY date")
@@ -85,8 +79,6 @@ summary :: Itinerary -> String
 summary (OneWayOn out) = "A one-way flight on " <> formatDate out
 summary (ReturnBetween r) = "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
 
--- rejection is a UI concern: parse once at the boundary; the backend can
--- only ever be handed a well-formed itinerary
 submit :: Booking -> Aff [ booked :: String, rejected :: String ]
 submit b = case parse b of
   Left err -> pure (.rejected ("Cannot book: " <> err))
