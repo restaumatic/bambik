@@ -25,9 +25,9 @@ main =
       ( RecordToRecord.do
           MDC.headline6 (HTML.text # projection gauge # forValue)
           MDC.body1 RecordToRecord.do
-            HTML.text # projection seconds # forField @"elapsed"
+            HTML.text # projection show # forField @"elapsed"
             HTML.staticText "s / "
-            HTML.text # projection seconds # forField @"duration"
+            HTML.text # projection show # forField @"duration"
             HTML.staticText "s"
           MDC.slider { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed
@@ -42,9 +42,6 @@ tick :: Timer -> Maybe Timer
 tick t
   | t.elapsed < t.duration = Just (t { elapsed = min t.duration (t.elapsed + 1.0) })
   | otherwise = Nothing
-
-seconds :: Number -> String
-seconds = show <<< Int.round
 
 gauge :: Timer -> String
 gauge t =
