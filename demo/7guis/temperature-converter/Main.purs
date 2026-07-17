@@ -2,11 +2,9 @@ module Main (main) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Number (fromString) as Number
-import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (rmap)
-import Data.String (Pattern(..), stripSuffix)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (asField, completed, mvu)
@@ -28,13 +26,10 @@ main =
 -- 7GUIs: a non-numeric entry leaves the other field untouched
 fromCelsius :: Model -> Model
 fromCelsius m = case Number.fromString m.celsius of
-  Just c -> m { fahrenheit = format (c * 9.0 / 5.0 + 32.0) }
+  Just c -> m { fahrenheit = show (c * 9.0 / 5.0 + 32.0) }
   Nothing -> m
 
 fromFahrenheit :: Model -> Model
 fromFahrenheit m = case Number.fromString m.fahrenheit of
-  Just f -> m { celsius = format ((f - 32.0) * 5.0 / 9.0) }
+  Just f -> m { celsius = show ((f - 32.0) * 5.0 / 9.0) }
   Nothing -> m
-
-format :: Number -> String
-format n = let s = toStringWith (fixed 1) n in fromMaybe s (stripSuffix (Pattern ".0") s)
