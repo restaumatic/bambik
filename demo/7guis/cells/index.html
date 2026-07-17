@@ -59,7 +59,9 @@
       <span class="sep">·</span>
       <a href="https://eugenkiss.github.io/7guis/tasks/#cells">description</a>
       <span class="sep">·</span>
-      <span id="src-sizes"></span>
+      <span id="src-size"></span>
+      <span class="sep" id="bundle-sep" hidden>·</span>
+      <span id="bundle-size"></span>
     </header>
     <section id="source-panel">
       <pre><code id="src" class="language-haskell">loading…</code></pre>
@@ -77,9 +79,13 @@
         el.textContent = src;
         if (window.hljs) hljs.highlightElement(el);
         const srcBytes = new TextEncoder().encode(src).length;
-        document.getElementById("src-sizes").innerHTML =
-          '<a href="Main.purs">source</a> (' + fmt(srcBytes) + ')'
-            + (bundleBytes ? ' \u00b7 <a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')' : "");
+        document.getElementById("src-size").innerHTML =
+          '<a href="Main.purs">source</a> (' + fmt(srcBytes) + ')';
+        if (bundleBytes) {
+          document.getElementById("bundle-sep").hidden = false;
+          document.getElementById("bundle-size").innerHTML =
+            '<a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')';
+        }
       });
     </script>
   </body>
