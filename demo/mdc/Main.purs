@@ -53,20 +53,16 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
-import Data.Variant (case_, inj, match, on, prj) as Variant
+import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, seeded, silence, tapped, with)
+import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, seeded, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
-import PUI.Web (Web)
-import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Record (get)
 import Type.Proxy (Proxy(..))
 
 -- The named types — the aggregate the whole pipeline revolves around,

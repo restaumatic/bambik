@@ -8,7 +8,6 @@ module Main (main) where
 
 import Prelude
 
-import Data.Profunctor (lcmap)
 import Effect (Effect)
 import PUI (asField, focusRecord, silence, with)
 import PUI.HTML (body) as HTML

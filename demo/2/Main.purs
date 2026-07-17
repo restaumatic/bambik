@@ -9,14 +9,11 @@ module Main (main) where
 
 import Prelude
 
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Symbol (class IsSymbol)
 import Effect (Effect)
-import PUI (PUI, field, forValue, projection, silence, with)
+import PUI (field, forValue, projection, silence, with)
 import PUI.HTML (a, body, div, input, li, p, staticHTML, staticText, text, ul) as HTML
 import PUI.HTML ((:=))
-import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit

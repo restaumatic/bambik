@@ -51,19 +51,15 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
-import Data.Symbol (class IsSymbol)
-import Data.Variant (case_, inj, match, on, prj) as Variant
+import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, silence, tapped, with)
+import PUI (action, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, text) as HTML
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar) as MDC
-import PUI.Web (Web)
-import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Record (get)
 import Type.Proxy (Proxy(..))
 
 -- The one named type — the aggregate the whole pipeline revolves around.

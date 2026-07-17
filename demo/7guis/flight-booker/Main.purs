@@ -7,7 +7,6 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
 import Data.Variant (expand)
@@ -60,8 +59,7 @@ main =
         )
   ) # mvu { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
   MDC.body1 (HTML.text # projection validationText # forValue) # debounced # completed
-  RecordToVariant.do
-    MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
+  MDC.button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
   MDC.indeterminateLinearProgress # action (Variant.match { book: submit })
   VariantToRecord.do
     MDC.snackbar # forCase @"booked"
