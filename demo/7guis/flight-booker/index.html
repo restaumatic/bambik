@@ -62,7 +62,7 @@
     <section id="source-panel">
       <h3 id="src-heading">PureScript source</h3>
       <pre><code id="src" class="language-haskell">loading…</code></pre>
-      <p class="note">Doc comments are deliberately absent — a test of whether the code reads and reasons on its own. Imports are 100% explicit — even Prelude is imported by name, so the import list shows exactly which modules export what and how little the code needs. Each line leads with the UI part via <code>$</code> and trails with the data plumbing via <code>#</code> — the visible page first, the wiring after.</p>
+      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. Each line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing.</p>
     </section>
     <script>
       const fmt = (n) => n < 1024 ? n + "B"
