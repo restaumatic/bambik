@@ -41,7 +41,7 @@ returnBetween out back =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "Book Flight" } Semigroupoid.do
+  body $ elevation20 $ card { caption: "Book Flight" } Semigroupoid.do
   ( RecordToRecord.do
       select { floatingLabel: "Flight type" }
         [ { value: OneWay, label: "one-way flight" }
@@ -55,7 +55,7 @@ main =
         )
   ) # mvu { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
   body1 (text # projection validationText # forValue) # debounced # completed
-  button { label: Just "Book", icon: Just "flight_takeoff" } # asCase @"book"
+  button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
   indeterminateLinearProgress # action (match { book: submit })
   VariantToRecord.do
     snackbar # forCase @"booked"

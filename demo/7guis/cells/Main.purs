@@ -37,7 +37,7 @@ type Model =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "Cells" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: "Cells" } $ ( Semigroupoid.do
       ( RecordToRecord.do
           body1 (text # projection selectedCaption # forValue)
           filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"

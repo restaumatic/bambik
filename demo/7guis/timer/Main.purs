@@ -18,7 +18,7 @@ type Timer =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "Timer" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: "Timer" } $ ( Semigroupoid.do
       ( RecordToRecord.do
           linearProgress # projection fraction # forValue
           body1 RecordToRecord.do
@@ -29,7 +29,7 @@ main =
           sliderLive { label: "Duration", min: 0.0, max: 60.0, step: Just 1.0 } # asField @"duration"
       ) # completed
       every (Milliseconds 1000.0) tick
-      button { label: Just "Reset", icon: Just "replay" } # updates reset
+      button { label: "Reset", icon: "replay" } # updates reset
   ) # mvu { duration: 10.0, elapsed: 0.0 }
 
 reset :: forall click. click -> Timer -> Timer

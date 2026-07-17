@@ -52,7 +52,8 @@
 -- (`rmap` a total `Model -> Model` after `completed`), not in a leaf
 -- bracket — see the temperature-converter demo.
 module PUI.MDC
-  ( banner
+  ( OptText(..)
+  , banner
   , body1
   , body2
   , button
@@ -135,6 +136,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
+import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOption, convertOptionsWithDefaults)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, effAdapter)
 import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, foreach, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
@@ -143,10 +145,31 @@ import PUI.Web (Node, Web, uniqueId)
 
 -- UIs
 
--- | The `×→+` event button: reads the whole record it is shown and fires
--- | it as event case `l` on click (`recordToCase` over the raw button).
-button :: forall r. { label :: Maybe String, icon :: Maybe String } -> PUI Web { | r } [ event :: { | r } ]
-button config = recordToCase @"event" (containedButton config)
+-- | Conversion tag for optional-text component fields (`label`, `icon`):
+-- | a bare `String` is accepted and lifted to `Just`, an existing
+-- | `Maybe String` passes through. Combined with `convertOptionsWithDefaults`
+-- | it lets `button { label: "Count" }` mean `{ label: Just "Count",
+-- | icon: Nothing }` — omitted fields fall to their defaults, present ones
+-- | coerce.
+data OptText = OptText
+
+instance ConvertOption OptText sym String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptText sym a a where
+  convertOption _ _ = identity
+
+-- | The `×→+` event button: reads the whole record it is shown and fires it
+-- | as event case `l` on click (`recordToCase` over the raw button). Both
+-- | fields are optional and default to `Nothing`: `button {}` is bare,
+-- | `button { label: "Count" }` labels it, `icon: "add"` adds an icon.
+button
+  :: forall provided r
+   . ConvertOptionsWithDefaults OptText { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  => { | provided }
+  -> PUI Web { | r } [ event :: { | r } ]
+button provided = recordToCase @"event" (containedButton config)
+  where
+  config = convertOptionsWithDefaults OptText { label: Nothing, icon: Nothing } provided
 
 -- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
 -- | **same-type** (`Cons l a () s`): the selection is always known from the
@@ -756,12 +779,20 @@ elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 
 -- | A card with an optional caption — the caption is design-system config
 -- | (like `filledTextField`'s `floatingLabel`). The card is content-agnostic
--- | (any polarity), so its caption chrome is hand-fused, not merged.
-card :: { caption :: Maybe String } -> Ocular (PUI Web)
-card { caption: mCaption } content =
+-- | (any polarity), so its caption chrome is hand-fused, not merged. The
+-- | caption defaults to none: `card {}` is captionless, `card { caption:
+-- | "Title" }` labels it.
+card
+  :: forall provided
+   . ConvertOptionsWithDefaults OptText { caption :: Maybe String } { | provided } { caption :: Maybe String }
+  => { | provided }
+  -> Ocular (PUI Web)
+card provided content =
   div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ wrap do
     for_ mCaption \c -> void $ unwrap (caption $ staticText c)
     unwrap content
+  where
+  { caption: mCaption } = convertOptionsWithDefaults OptText { caption: Nothing } provided :: { caption :: Maybe String }
 
 dialog :: { title :: String } -> Ocular (PUI Web)
 dialog { title } content =

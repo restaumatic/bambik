@@ -2,7 +2,6 @@ module Main (main) where
 
 import Prelude ((#), ($), (+), Unit, show)
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import PUI (completed, forField, mvu, projection, updates)
 import PUI.HTML (body, text)
@@ -11,9 +10,9 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "Counter" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: "Counter" } $ ( Semigroupoid.do
       headline4 (text # projection show # forField @"count") # completed
-      button { label: Just "Count", icon: Nothing } # updates increment
+      button { label: "Count" } # updates increment
   ) # mvu { count: 0 }
 
 increment :: forall click. click -> { count :: Int } -> { count :: Int }

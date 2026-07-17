@@ -49,15 +49,15 @@ main =
       indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
         headline6 (text # projection ("Order " <> _) # forField @"shortId")
-        card { caption: Just "Identifier" } $ RecordToRecord.do
+        card { caption: "Identifier" } $ RecordToRecord.do
           filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
-        card { caption: Just "Customer" }
+        card { caption: "Customer" }
           ( RecordToRecord.do
               filledTextField { floatingLabel: "First name" } # asField @"firstName"
               filledTextField { floatingLabel: "Last name" } # asField @"lastName"
           ) # field @"customer"
-        card { caption: Just "Fulfillment" }
+        card { caption: "Fulfillment" }
           ( ( RecordToRecord.do
                 tabBar
                   [ { value: "dineIn", label: "Dine in", icon: Nothing }
@@ -75,8 +75,8 @@ main =
                   )
             ) # looped # dimap fulfillmentState fulfillmentCase
           ) # field @"fulfillment"
-        card { caption: Just "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
-        card { caption: Just "Payment" }
+        card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
+        card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton
                 [ { value: "cash", label: "Cash" }
@@ -86,11 +86,11 @@ main =
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
               body1 (text # projection (\method -> "Paying by " <> methodText method) # forField @"method")
           ) # field @"payment"
-        card { caption: Just "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
+        card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       body1 (text # projection summarize # forValue) # debounced # tapped
       div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-        button { label: Just "Submit order", icon: Just "save" } # asCase @"submit"
-        button { label: Just "Receipt", icon: Just "file" } # asCase @"printReceipt"
+        button { label: "Submit order", icon: "save" } # asCase @"submit"
+        button { label: "Receipt", icon: "file" } # asCase @"printReceipt"
       VariantToVariant.do
         indeterminateLinearProgress # action (on (Proxy @"submit") submitOrder case_)
         indeterminateLinearProgress # action (on (Proxy @"printReceipt") printReceipt case_)

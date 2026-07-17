@@ -83,10 +83,10 @@ main =
       indeterminateLinearProgress # action loadSettings
       layoutGrid RecordToRecord.do
         layoutCell { span: 12 } $ headline6 (text # projection ("Settings — " <> _) # forField @"name")
-        layoutCell { span: 6 } $ card { caption: Just "Text fields" } RecordToRecord.do
+        layoutCell { span: 6 } $ card { caption: "Text fields" } RecordToRecord.do
           filledTextField { floatingLabel: "Name" } # asField @"name"
           filledTextArea { columns: 60, rows: 3 } # asField @"notes"
-        layoutCell { span: 6 } $ card { caption: Just "Selection controls" } RecordToRecord.do
+        layoutCell { span: 6 } $ card { caption: "Selection controls" } RecordToRecord.do
           checkbox (staticText "Subscribe to the newsletter") # asField @"subscribed"
           radioButton
             [ { value: "free", label: "Free plan" }
@@ -97,24 +97,24 @@ main =
           tooltip { text: "Toggles connectivity" } $ toggleSwitch { label: "Wi-Fi" } # asField @"wifi"
           iconToggle { onIcon: "dark_mode", offIcon: "light_mode", label: "Dark mode" } # asField @"dark"
           staticText "Dark mode"
-        layoutCell { span: 6 } $ card { caption: Just "Chips" } $ chipSet RecordToRecord.do
+        layoutCell { span: 6 } $ card { caption: "Chips" } $ chipSet RecordToRecord.do
           filterChip { label: "Favorite" } # asField @"favorite"
           filterChip { label: "Archived" } # asField @"archived"
-        layoutCell { span: 6 } $ card { caption: Just "Segmented buttons" } $
+        layoutCell { span: 6 } $ card { caption: "Segmented buttons" } $
           segmentedButton
             [ { value: "S", label: "S" }
             , { value: "M", label: "M" }
             , { value: "L", label: "L" }
             ]
             # asField @"size"
-        layoutCell { span: 6 } $ card { caption: Just "Menus: exposed dropdown" } $
+        layoutCell { span: 6 } $ card { caption: "Menus: exposed dropdown" } $
           select { floatingLabel: "Theme" }
             [ { value: "light", label: "Light" }
             , { value: "dark", label: "Dark" }
             , { value: "system", label: "System" }
             ]
             # asField @"theme"
-        layoutCell { span: 6 } $ card { caption: Just "Sliders" } $ Semigroupoid.do
+        layoutCell { span: 6 } $ card { caption: "Sliders" } $ Semigroupoid.do
           sliderLive { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
           ( Semigroupoid.do
               seeded { volume: 0.0, peak: 0.0 }
@@ -122,7 +122,7 @@ main =
               body2 (text # projection peakLine # forValue) # tapped
           ) # feedback
           body2 (text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
-        layoutCell { span: 12 } $ card { caption: Just "Tabs" }
+        layoutCell { span: 12 } $ card { caption: "Tabs" }
           ( ( RecordToRecord.do
                 tabBar
                   [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
@@ -133,7 +133,7 @@ main =
                 shownWhen (\r -> r.selected == "express") (filledTextField { floatingLabel: "Express fee" } # asField @"price" # lcmap priceOf)
             ) # looped # dimap shippingState shippingCase
           ) # field @"shipping"
-        layoutCell { span: 6 } $ card { caption: Just "Image lists" } $ imageList { columns: 3 } RecordToRecord.do
+        layoutCell { span: 6 } $ card { caption: "Image lists" } $ imageList { columns: 3 } RecordToRecord.do
           imageListItem { src: swatch "845ec2" 140, label: "Iris" }
           imageListItem { src: swatch "ff9671" 100, label: "Coral" }
           imageListItem { src: swatch "00c9a7" 120, label: "Mint" }
@@ -141,7 +141,7 @@ main =
           imageListItem { src: swatch "c34a36" 130, label: "Clay" }
           imageListItem { src: swatch "936c00" 90, label: "Ochre" }
       ( layoutGrid RecordToRecord.do
-        layoutCell { span: 6 } $ card { caption: Just "Data tables" } $
+        layoutCell { span: 6 } $ card { caption: "Data tables" } $
           dataTable { label: "Live summary", columns: [ "Setting", "Value" ] } RecordToRecord.do
             dataRow RecordToRecord.do
               dataCell $ staticText "Name"
@@ -156,14 +156,14 @@ main =
         layoutCell { span: 12 } (body1 (text # projection summarize # forValue) # debounced)
       ) # tapped
       RecordToVariant.do
-        card { caption: Just "Buttons, FAB, icon buttons, menus" } $ div >>> attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
-          button { label: Just "Save", icon: Just "save" } # asCase @"save"
+        card { caption: "Buttons, FAB, icon buttons, menus" } $ div >>> attr "style" "display: flex; align-items: center; gap: 16px; flex-wrap: wrap;" $ RecordToVariant.do
+          button { label: "Save", icon: "save" } # asCase @"save"
           fab { icon: "favorite", label: Just "Like" } # asCase @"like"
           iconButton { icon: "share", label: "Share" } # asCase @"share"
           menu { label: "More" } RecordToVariant.do
             menuItem { label: "Export settings" } # asCase @"export"
             menuItem { label: "Reset to defaults" } # asCase @"reset"
-        card { caption: Just "Wizard (folding)" }
+        card { caption: "Wizard (folding)" }
           ( ( Semigroupoid.do
                 ( RecordToRecord.do
                     shownWhen (\r -> r.step == "review") $ body2 (text # projection reviewLine # forValue)
@@ -171,9 +171,9 @@ main =
                 ) # tapped
                 div >>> attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
                   announce initialStep
-                  shownWhen (\r -> r.step == "review") (button { label: Just "Next", icon: Nothing } # asCase @"next" # lcmap (toStep "confirm"))
-                  shownWhen (\r -> r.step == "confirm") (button { label: Just "Back", icon: Nothing } # asCase @"next" # lcmap (toStep "review"))
-                  shownWhen (\r -> r.step == "confirm") (button { label: Just "Publish", icon: Just "publish" } # asCase @"publish" # lcmap essentials)
+                  shownWhen (\r -> r.step == "review") (button { label: "Next" } # asCase @"next" # lcmap (toStep "confirm"))
+                  shownWhen (\r -> r.step == "confirm") (button { label: "Back" } # asCase @"next" # lcmap (toStep "review"))
+                  shownWhen (\r -> r.step == "confirm") (button { label: "Publish", icon: "publish" } # asCase @"publish" # lcmap essentials)
             ) # folding @"next"
           )
       VariantToVariant.do

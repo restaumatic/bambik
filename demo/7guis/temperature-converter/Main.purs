@@ -14,7 +14,7 @@ type Model = { celsius :: Number, fahrenheit :: Number }
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: "Temperature Converter" } $ ( Semigroupoid.do
       filledTextField { floatingLabel: "Celsius" }
         # projection show # forField @"celsius" # widenRecordInput # updates fromCelsius
       filledTextField { floatingLabel: "Fahrenheit" }

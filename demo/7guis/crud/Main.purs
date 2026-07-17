@@ -28,7 +28,7 @@ type Model =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "CRUD" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: "CRUD" } $ ( Semigroupoid.do
       ( RecordToRecord.do
           filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
           filledTextField { floatingLabel: "Name" } # asField @"name"
@@ -39,9 +39,9 @@ main =
             ( listOf { selected: _.selected } (text # projection _.label # forValue)
             ) # rmap picked # lcmap entries
           div >>> attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
-            button { label: Just "Create", icon: Nothing } # asCase @"create"
-            button { label: Just "Update", icon: Nothing } # asCase @"update"
-            button { label: Just "Delete", icon: Nothing } # asCase @"delete"
+            button { label: "Create" } # asCase @"create"
+            button { label: "Update" } # asCase @"update"
+            button { label: "Delete" } # asCase @"delete"
       ) # updates handle
   ) # mvu
       { prefix: ""

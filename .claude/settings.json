@@ -58,11 +58,25 @@
       "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/cells/bundle.js)",
       "Bash(git commit -q -m 'temperature-converter: immediate updates per the 7GUIs spec — debouncing dropped, Milliseconds import gone *)",
       "Bash(git commit -q -m '7guis pages: footer note reworded — code style in three sentences *)",
-      "Bash(grep -rn \"status <- \\\\|status$\\\\|pure status\" src/)"
+      "Bash(grep -rn \"status <- \\\\|status$\\\\|pure status\" src/)",
+      "Bash(grep -oE \"\\\\b\\(div|span|ul|li|aside|label|h1|h2|h3|h4|h5|h6|i|p|table|thead|tbody|tr|th|td\\) \\(>>>|\\\\$\\)\" src/PUI/MDC.purs)",
+      "Bash(awk '{print $1}')",
+      "Bash(git commit -q -m '7guis pages: source/compiled sizes move into the header as two links after description *)",
+      "Bash(git commit -q -m '7guis pages: source \\(x\\) · bundle \\(y\\); drop the PureScript source heading *)",
+      "Bash(git commit -q -m '7guis pages: even header spacing — source/bundle sizes are flex children with .sep dots, uniform 10px gap *)",
+      "Read(//home/eryk/mine/bambik/**)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/purescript/package-sets/psc-0.15.10-20231023/packages.dhall\")",
+      "Bash(curl -s \"https://api.github.com/repos/natefaubion/purescript-convertable-options/tags\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\([t['name'] for t in d][:6]\\)\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/natefaubion/purescript-convertable-options/v1.0.0/spago.dhall\")",
+      "Bash(sed -n '1,70p' .spago/convertable-options/*/src/ConvertableOptions.purs)",
+      "Bash(grep -n \"^  \\( banner\\\\|^  , button$\" src/PUI/MDC.purs)",
+      "Bash(git commit -q -m 'MDC: optional config fields via convertable-options — button/card take bare strings, omit defaults *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
-      "/home/eryk/mine/bambik/demo/7guis/*"
+      "/home/eryk/mine/bambik/demo/7guis/*",
+      "/home/eryk/mine/bambik/.spago/convertable-options/*/src"
     ]
   }
 }

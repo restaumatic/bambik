@@ -29,7 +29,7 @@ type Model =
 
 main :: Effect Unit
 main =
-  body $ elevation20 $ card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
+  body $ elevation20 $ card { caption: "Circle Drawer" } $ ( Semigroupoid.do
       sliderLive { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
         # completed # shownWhen hasSelection # rmap applyDiameter
       ( RecordToVariant.do
@@ -38,8 +38,8 @@ main =
             renderCanvas
             (\node emit -> onClickXY node \x y -> emit (clickedAt x y))
           div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-            button { label: Just "Undo", icon: Just "undo" } # asCase @"undo"
-            button { label: Just "Redo", icon: Just "redo" } # asCase @"redo"
+            button { label: "Undo", icon: "undo" } # asCase @"undo"
+            button { label: "Redo", icon: "redo" } # asCase @"redo"
       ) # updates handle
   ) # mvu
       { circles: []

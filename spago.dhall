@@ -15,6 +15,7 @@ to generate this file without the comments in this block.
   [ "aff"
   , "arrays"
   , "avar"
+  , "convertable-options"
   , "datetime"
   , "debug"
   , "effect"

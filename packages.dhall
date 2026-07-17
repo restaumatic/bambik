@@ -83,3 +83,8 @@ let upstream =
 
 in  upstream
   with variant = /home/eryk/mine/purescript-variant/spago.dhall as Location
+  with convertable-options =
+    { dependencies = [ "console", "effect", "maybe", "record" ]
+    , repo = "https://github.com/natefaubion/purescript-convertable-options.git"
+    , version = "v1.0.0"
+    }
