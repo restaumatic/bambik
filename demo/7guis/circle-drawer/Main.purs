@@ -12,7 +12,7 @@ import Data.Variant (match) as Variant
 import Effect (Effect)
 import PUI (asCase, asField, completed, mvu, updates)
 import PUI.HTML (Markup(..), attr, body, div, shownWhen, view) as HTML
-import PUI.MDC (button, card, elevation20, slider) as MDC
+import PUI.MDC (button, card, elevation20, sliderLive) as MDC
 import PUI.Web (onClickXY)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -22,6 +22,7 @@ type Model =
   { circles :: Array Circle
   , selected :: Maybe Int
   , diameter :: Number
+  , adjusting :: Boolean
   , undoStack :: Array (Array Circle)
   , redoStack :: Array (Array Circle)
   }
@@ -29,7 +30,7 @@ type Model =
 main :: Effect Unit
 main =
   HTML.body $ MDC.elevation20 $ MDC.card { caption: Just "Circle Drawer" } $ ( Semigroupoid.do
-      MDC.slider { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
+      MDC.sliderLive { label: "Diameter", min: 4.0, max: 200.0, step: Nothing } # asField @"diameter"
         # completed # HTML.shownWhen hasSelection # rmap applyDiameter
       ( RecordToVariant.do
           HTML.view
@@ -44,6 +45,7 @@ main =
       { circles: []
       , selected: Nothing
       , diameter: 40.0
+      , adjusting: false
       , undoStack: []
       , redoStack: []
       }
@@ -58,24 +60,25 @@ handle ::
 handle e m = Variant.match
   { clicked: \{ x, y } ->
       case findIndex (\c -> dist c x y <= c.r) m.circles of
-        Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i) }
+        Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
         Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
   , undo: \_ -> case unsnoc m.undoStack of
       Just { init: rest, last: circles } ->
-        m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing }
+        m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
       Nothing -> m
   , redo: \_ -> case unsnoc m.redoStack of
       Just { init: rest, last: circles } ->
-        m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing }
+        m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
       Nothing -> m
   } e
 
--- the slider emits once per committed adjustment, so every resize is one
--- undo transaction
+-- the slider emits mid-drag, so an adjustment session (drag start until the
+-- next selection/undo/redo) is coalesced into one undo transaction
 applyDiameter :: Model -> Model
 applyDiameter m = case m.selected of
   Just i | Just c <- index m.circles i, c.r /= m.diameter / 2.0 ->
-    (pushUndo m) { circles = fromMaybe m.circles (updateAt i (c { r = m.diameter / 2.0 }) m.circles) }
+    let m' = if m.adjusting then m else (pushUndo m) { adjusting = true }
+    in m' { circles = fromMaybe m.circles (updateAt i (c { r = m.diameter / 2.0 }) m.circles) }
   _ -> m
 
 pushUndo :: Model -> Model
