@@ -41,6 +41,13 @@
       #source-panel pre { background: #f6f8fa; padding: 12px; border-radius: 6px; font-size: 12.5px; margin: 0; }
       #source-panel p { font-size: 14px; }
       #source-panel .note { color: #888; font-style: italic; margin: 4px 0 8px 0; }
+      @media (max-width: 700px) {
+        html, body { height: auto; }
+        body { overflow: auto; }
+        body > .mdc-elevation--z20 { flex-basis: 100%; min-width: 0; max-height: none; overflow: visible; }
+        #source-panel { flex-basis: 100%; min-width: 0; }
+        #source-panel pre { max-height: none; overflow-x: auto; font-size: 14px; }
+      }
     </style>
     <script type="module" src="bundle.js"></script>
   </head>
