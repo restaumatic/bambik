@@ -22,7 +22,6 @@ type Model =
   { circles :: Array Circle
   , selected :: Maybe Int
   , diameter :: Number
-  , adjusting :: Boolean
   , undoStack :: Array (Array Circle)
   , redoStack :: Array (Array Circle)
   }
@@ -45,7 +44,6 @@ main =
       { circles: []
       , selected: Nothing
       , diameter: 40.0
-      , adjusting: false
       , undoStack: []
       , redoStack: []
       }
@@ -60,23 +58,24 @@ handle ::
 handle e m = Variant.match
   { clicked: \{ x, y } ->
       case findIndex (\c -> dist c x y <= c.r) m.circles of
-        Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
+        Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i) }
         Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
   , undo: \_ -> case unsnoc m.undoStack of
       Just { init: rest, last: circles } ->
-        m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
+        m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing }
       Nothing -> m
   , redo: \_ -> case unsnoc m.redoStack of
       Just { init: rest, last: circles } ->
-        m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
+        m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing }
       Nothing -> m
   } e
 
+-- the slider emits once per committed adjustment, so every resize is one
+-- undo transaction
 applyDiameter :: Model -> Model
 applyDiameter m = case m.selected of
   Just i | Just c <- index m.circles i, c.r /= m.diameter / 2.0 ->
-    let m' = if m.adjusting then m else (pushUndo m) { adjusting = true }
-    in m' { circles = fromMaybe m.circles (updateAt i (c { r = m.diameter / 2.0 }) m.circles) }
+    (pushUndo m) { circles = fromMaybe m.circles (updateAt i (c { r = m.diameter / 2.0 }) m.circles) }
   _ -> m
 
 pushUndo :: Model -> Model

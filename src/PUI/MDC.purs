@@ -89,6 +89,7 @@ module PUI.MDC
   , select
   , simpleDialog
   , slider
+  , sliderLive
   , snackbar
   , subtitle1
   , subtitle2
@@ -395,18 +396,24 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
     </button>"""
 
 -- | The `×→×` `Number` editor. A `step` makes it the discrete slider.
--- | Mid-drag values emit continuously (like mid-typing text); a consumer
--- | that doesn't want the burst wraps its stage in `debounced`.
+-- | Emits on **commit** only (thumb release): one emission per adjustment,
+-- | so an `updates` fold sees each drag as a single transaction. For
+-- | continuous mid-drag emissions (live readouts), use `sliderLive`.
 slider :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { value :: Number } { value :: Number }
-slider config = field @"value" (sliderLeaf config)
+slider config = field @"value" (sliderLeaf false config)
 
-sliderLeaf :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
-sliderLeaf config = wrap do
+-- | `slider` emitting continuously mid-drag (like mid-typing text); a
+-- | consumer that doesn't want the burst wraps its stage in `debounced`.
+sliderLive :: { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web { value :: Number } { value :: Number }
+sliderLive config = field @"value" (sliderLeaf true config)
+
+sliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
+sliderLeaf live config = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.slider."MDCSlider" node
   mPropRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ listen comp "MDCSlider:input" do
+  when live $ liftEffect $ listen comp "MDCSlider:input" do
     v <- getSliderValue comp
     mProp <- Ref.read mPropRef
     for_ mProp \prop -> void $ prop v

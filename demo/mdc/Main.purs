@@ -62,7 +62,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, seeded, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, staticText, text) as HTML
-import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, slider, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
+import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar) as MDC
 import PUI.Web (Web)
 import Prim.Row (class Cons)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -170,7 +170,7 @@ main =
         -- value the slider emits and passes it on (a plain record-merge sibling
         -- would update on load only)
         MDC.layoutCell { span: 6 } $ MDC.card { caption: Just "Sliders" } $ Semigroupoid.do
-          MDC.slider { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
+          MDC.sliderLive { label: "Volume", min: 0.0, max: 100.0, step: Nothing } # asField @"volume"
           -- `feedback` (co-strength `Costrong`, dual of `Strong`): the `peak`
           -- field loops from this stage's output back to its input, invisible
           -- in the stage's outer `{volume} → {volume}` type; `seeded` primes
