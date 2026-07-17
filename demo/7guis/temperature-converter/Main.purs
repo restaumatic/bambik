@@ -4,11 +4,10 @@ import Prelude ((#), ($), (*), (+), (-), (/), Unit, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Number (fromString)
-import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (forField, mvu, projection, updates, widenRecordInput)
 import PUI.HTML (body)
-import PUI.MDC (card, debouncedTextField, elevation20)
+import PUI.MDC (card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Model = { celsius :: Number, fahrenheit :: Number }
@@ -16,9 +15,9 @@ type Model = { celsius :: Number, fahrenheit :: Number }
 main :: Effect Unit
 main =
   body $ elevation20 $ card { caption: Just "Temperature Converter" } $ ( Semigroupoid.do
-      debouncedTextField { floatingLabel: "Celsius", millis: Milliseconds 300.0 }
+      filledTextField { floatingLabel: "Celsius" }
         # projection show # forField @"celsius" # widenRecordInput # updates fromCelsius
-      debouncedTextField { floatingLabel: "Fahrenheit", millis: Milliseconds 300.0 }
+      filledTextField { floatingLabel: "Fahrenheit" }
         # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
   ) # mvu { celsius: 20.0, fahrenheit: 68.0 }
 

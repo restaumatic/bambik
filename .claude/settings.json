@@ -55,7 +55,8 @@
       "Bash(awk '{print $5, $9}')",
       "Bash(curl -sI -H 'Accept-Encoding: gzip' http://erykciepiela.xyz/bambik/demo/7guis/counter/bundle.js)",
       "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/cells/bundle.js)",
-      "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/cells/bundle.js)"
+      "Bash(curl -sI http://erykciepiela.xyz/bambik/demo/7guis/cells/bundle.js)",
+      "Bash(git commit -q -m 'temperature-converter: immediate updates per the 7GUIs spec — debouncing dropped, Milliseconds import gone *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
