@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude ((#), ($), (<>), (==), (>>>), Unit, const, discard, pure, show, unit)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)

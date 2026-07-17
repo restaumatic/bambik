@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude ((#), ($), (*), (+), (-), (/), Unit, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Number (fromString) as Number

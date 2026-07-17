@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), class Eq, Unit, bind, otherwise, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString) as Int

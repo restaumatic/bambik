@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PUI (asField, focusRecord, silence, with)

@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude ((#), ($), (*), (+), (-), (/), (/=), (<$>), (<=), (==), (>>>), Unit, show)
 
 import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)

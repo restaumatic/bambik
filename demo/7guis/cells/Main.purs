@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Prelude
+import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), Unit, bind, map, max, min, mod, otherwise, pure, show, (||))
 
 import Data.Array (catMaybes, range)
 import Data.Char (fromCharCode, toCharCode)
