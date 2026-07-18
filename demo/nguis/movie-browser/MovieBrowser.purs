@@ -1,16 +1,16 @@
 module MovieBrowser (movieBrowser) where
 
-import Prelude ((#), ($), (&&), (||), (<>), (==), (>>>), class Eq, Unit, map, not, show)
+import Prelude ((#), ($), (&&), (||), (<>), (==), (>>>), class Eq, Unit, map, show)
 
-import Data.Array (all, catMaybes, elem, filter, length)
+import Data.Array (any, catMaybes, elem, filter, length, null)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap, rmap)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, forField, forValue, mvu, projection, tapped, updates)
-import PUI.HTML (attr, body, div, span, text)
-import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, listOf, subtitle1, tabBar)
+import PUI.HTML (attr, body, cl, clWhen, foreach, li, span, text, ul)
+import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 
@@ -26,16 +26,18 @@ movieBrowser =
               filterChip { label: "Oscar" } # asField @"oscar"
           ) # completed
           elevation1 (subtitle1 (text # projection favoritesLine # forValue)) # tapped
-          listOf { selected: _.favorite }
-            ( div >>> attr "style" "display: flex; align-items: center; gap: 8px;" $ RecordToRecord.do
-                span (text # forField @"title")
-                span (text # projection show # forField @"year")
-                span (text # projection ratingLine # forField @"rating")
-                iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"
+          ul >>> cl "mdc-deprecated-list" $ foreach
+            ( clWhen _.favorite "mdc-deprecated-list-item--selected"
+                $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "display: flex; align-items: center; gap: 8px;" $ ( RecordToRecord.do
+                    span (text # forField @"title")
+                    span (text # projection show # forField @"year")
+                    span (text # projection ratingLine # forField @"rating")
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"
+                ) # completed
             )
-            # rmap (\m -> .favorited m :: [ favorited :: MovieCard ])
+            # rmap (\m -> .favored m :: [ favored :: MovieCard ])
             # lcmap visibleMovies
-            # updates (match { favorited: toggleFavorite })
+            # updates (match { favored: markFavorite })
       ) # mvu movieCatalogue
 
 data Category = All | Action | Drama | Comedy
@@ -97,16 +99,16 @@ categoryTabs =
   ]
 
 visibleMovies :: MovieCatalogue -> Array MovieCard
-visibleMovies m = map card (filter (\movie -> inCategory movie && taggedAsRequired movie) m.movies)
+visibleMovies m = map card (filter (\movie -> inCategory movie && taggedAsChosen movie) m.movies)
   where
   inCategory movie = m.category == All || movie.category == m.category
-  taggedAsRequired movie = all (\tag -> elem tag movie.tags) requiredTags
-  requiredTags = catMaybes [ requiredIf m.classic "classic", requiredIf m.cult "cult", requiredIf m.oscar "oscar" ]
-  requiredIf on tag = if on then Just tag else Nothing
+  taggedAsChosen movie = null chosenTags || any (\tag -> elem tag movie.tags) chosenTags
+  chosenTags = catMaybes [ chosenIf m.classic "classic", chosenIf m.cult "cult", chosenIf m.oscar "oscar" ]
+  chosenIf on tag = if on then Just tag else Nothing
   card movie = { title: movie.title, year: movie.year, rating: movie.rating, favorite: movie.favorite }
 
-toggleFavorite :: MovieCard -> MovieCatalogue -> MovieCatalogue
-toggleFavorite chosen m = m { movies = map (\movie -> if movie.title == chosen.title then movie { favorite = not movie.favorite } else movie) m.movies }
+markFavorite :: MovieCard -> MovieCatalogue -> MovieCatalogue
+markFavorite chosen m = m { movies = map (\movie -> if movie.title == chosen.title then movie { favorite = chosen.favorite } else movie) m.movies }
 
 ratingLine :: Number -> String
 ratingLine rating = "★ " <> toStringWith (fixed 1) rating
