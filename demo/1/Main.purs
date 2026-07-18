@@ -91,8 +91,8 @@ main =
         button { label: "Submit order", icon: "save" } # asCase @"submit"
         button { label: "Receipt", icon: "file" } # asCase @"printReceipt"
       VariantToVariant.do
-        indeterminateLinearProgress # action (onCase @"submit" submitOrder)
-        indeterminateLinearProgress # action (onCase @"printReceipt" printReceipt)
+        indeterminateLinearProgress # action submitOrder # onCase @"submit"
+        indeterminateLinearProgress # action printReceipt # onCase @"printReceipt"
       VariantToRecord.do
         snackbar # forCase @"orderSubmitted"
         snackbar # forCase @"submissionFailed"

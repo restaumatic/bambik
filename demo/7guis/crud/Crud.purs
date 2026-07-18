@@ -54,9 +54,9 @@ crud = do
                     button { label: "Update" } # asCase @"update"
                     button { label: "Delete" } # asCase @"delete"
                   VariantToVariant.do
-                    indeterminateLinearProgress # action (onCase @"create" (createPerson catalogue))
-                    indeterminateLinearProgress # action (onCase @"update" (updatePerson catalogue))
-                    indeterminateLinearProgress # action (onCase @"delete" (deletePerson catalogue))
+                    indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
+                    indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
+                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete"
               ) # updates (match { created: refreshPeople, updated: refreshPeople, deleted: \people -> refreshPeople people >>> deselect })
           ) # looped
       ) # with unit

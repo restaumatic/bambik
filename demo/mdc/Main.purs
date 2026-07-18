@@ -176,12 +176,12 @@ main =
             ) # folding @"next"
           )
       VariantToVariant.do
-        indeterminateLinearProgress # action (onCase @"save" saveSettings)
-        indeterminateCircularProgress # action (onCase @"like" like)
-        indeterminateCircularProgress # action (onCase @"share" share)
-        indeterminateLinearProgress # action (onCase @"export" exportSettings)
-        indeterminateCircularProgress # action (onCase @"reset" reset)
-        indeterminateCircularProgress # action (onCase @"publish" publishFlaky) # iterate
+        indeterminateLinearProgress # action saveSettings # onCase @"save"
+        indeterminateCircularProgress # action like # onCase @"like"
+        indeterminateCircularProgress # action share # onCase @"share"
+        indeterminateLinearProgress # action exportSettings # onCase @"export"
+        indeterminateCircularProgress # action reset # onCase @"reset"
+        indeterminateCircularProgress # action publishFlaky # onCase @"publish" # iterate
       ( Semigroupoid.do
           seeded resumeZero
           retain identity # dimap splitStatus countUp

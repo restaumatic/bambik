@@ -53,7 +53,7 @@ import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
@@ -688,11 +688,11 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 
 -- | The progress slot is row-shaped like every component interface: the
 -- | widget is a `{ busy :: Boolean } → {}` display citizen.
--- | Label-indexed single-case dispatch for `action` stages inside
--- | `VariantToVariant.do` merges: each operand owns exactly one input case,
--- | so it reads `action (onCase @"create" createPerson)`.
-onCase :: forall @l a b r. IsSymbol l => Cons l a () r => (a -> b) -> Variant r -> b
-onCase f = on (Proxy @l) f case_
+-- | Adopt a bare-input widget as the owner of input case `l` inside a
+-- | `VariantToVariant.do` merge — `lcmap`-only, the input-side sibling of
+-- | `asCase`: `action createPerson # onCase @"create"`.
+onCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p (Variant s) b
+onCase = lcmap (on (Proxy @l) identity case_)
 
 action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
 action arr = action' \i pro post -> do

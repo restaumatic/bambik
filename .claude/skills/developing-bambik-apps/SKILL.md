@@ -48,30 +48,15 @@ write-action dispatch, cells and circle-drawer show custom `view`
 leaves), demo/1 (loop-free pipeline), and demo/mdc (full catalog plus
 the trace forms).
 
-- `body` registers the wiring and feeds nothing; initial data enters via
-  `# mvu seed` (`mvu seed w = looped (with seed w)`), `# with seed`, or
-  an `action` load stage.
-- `# completed` after a form merge widens its output back to the full
-  model row (unproduced fields carried from the retained input).
-- `# updates (match { case: handler, ... })` folds each event into the
-  model; each handler is `payload -> Model -> Model`.
-- Nest sub-composites with `# field @l` (wrap a group as one model
-  field) or `focusRecord` (sub-record focus).
-- Live readouts are pipeline stages: `# tapped` (display and pass on),
-  `text # projection f # forValue`, `debounced` for summaries.
-- Variant editing: keep the variant in the model, a record of every
-  payload in the editor — `dimap` brackets around
-  `looped RecordToRecord.do { selector; shownWhen panes }`.
-- Custom leaves: `view` with a typed `i -> Array Markup` render function
-  (auto-escaped, injection-proof) plus event wiring (`onKeyClick`,
-  `onClickXY`); dynamic collections via `foreach` or `MDC.listOf`.
-- Async: `indeterminateLinearProgress # action (s -> Aff t)` as a
-  pipeline stage; dispatch variants with
-  `action (onCase @"case" handler)` inside `VariantToVariant.do`.
-- State/loop semantics beyond MVU: the trace forms — `feedback`
-  (state sub-record loops output→input), `iterate` (retry loops),
-  `folding @w` (wizards), `unfolding @w` (generators) — and the
-  `Shutter`/`Reel` business optics.
+The API and its semantics are documented in the source module headers —
+read them, not a summary: src/PUI.purs (the core type, pipeline
+semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/
+`action`/`onCase`/`tapped`/the adopter family re-exports),
+src/PUI/HTML.purs (HTML vocabulary, `body`, `foreach`, custom-leaf
+toolkit `view`/`Markup`), src/PUI/MDC.purs (the MDC component and
+ocular catalog, the editors' `dimap` round-trip contract), and
+src/Data/Profunctor/Row/ (the four merges, adopters, trace forms,
+business optics — laws in the module headers).
 
 Type errors from the row layer are catalogued with reproduced output in
 doc/type-errors.md — read it before fighting a merge error.
