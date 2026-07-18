@@ -15,6 +15,11 @@ const demos = {
   'shopping-cart': ['ShoppingCart', 'shoppingCart'],
   'password-generator': ['PasswordGenerator', 'passwordGenerator'],
   'color-mixer': ['ColorMixer', 'colorMixer'],
+  'signup-form': ['SignupForm', 'signupForm'],
+  'photo-gallery': ['PhotoGallery', 'photoGallery'],
+  'inbox': ['Inbox', 'inbox'],
+  'movie-browser': ['MovieBrowser', 'movieBrowser'],
+  'weather': ['Weather', 'weather'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {
