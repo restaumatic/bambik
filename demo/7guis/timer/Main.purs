@@ -4,6 +4,7 @@ import Prelude ((#), ($), (+), (/), (<), (<=), Unit, min, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (asField, completed, every, forField, forValue, mvu, projection, updates)
@@ -31,11 +32,11 @@ main =
               sliderLive { label: "Duration", min: 0.0, max: 60.0, step: 1.0 } # asField @"duration"
           ) # completed
           every (Milliseconds 1000.0) tick
-          button { label: "Reset", icon: "replay" } # updates reset
+          button { label: "Reset", icon: "replay" } # updates (match { event: \t _ -> reset t })
       ) # mvu { duration: 10.0, elapsed: 0.0 }
 
-reset :: forall click. click -> Timer -> Timer
-reset _ t = t { elapsed = 0.0 }
+reset :: Timer -> Timer
+reset t = t { elapsed = 0.0 }
 
 tick :: Timer -> Maybe Timer
 tick t =

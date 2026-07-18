@@ -75,8 +75,20 @@ belong to the business class — leave them standalone.
 - `Model -> Array Markup` render functions are UI but too large to inline —
   they stay standalone; that is fine (they are *purely* UI-related).
 - `Model -> String` caption/validation formatters are pure business — keep.
-- `forall click. click -> Model -> Model` handlers (case-agnostic buttons)
-  are already business-shaped — keep, no dispatcher needed.
+- **A `forall click. click -> Model -> Model` handler is a smell**: the
+  phantom payload parameter is UI (the event) smuggled into an otherwise
+  pure business function. Strip it — the business function is
+  `Model -> Model` — and absorb the event in the inline dispatch. Note the
+  bare (un-`asCase`d) button emits the canonical variant `[ event :: _ ]`,
+  so the dispatch is a one-case match applying the business function to the
+  payload snapshot (which also pins the button's row):
+
+  ```purescript
+  button { label: "Count" } # updates (match { event: \m _ -> increment m })
+
+  increment :: { count :: Int } -> { count :: Int }
+  increment r = { count: r.count + 1 }
+  ```
 
 ## After reorganizing
 

@@ -2,6 +2,7 @@ module Main (main) where
 
 import Prelude ((#), ($), (+), Unit, show)
 
+import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, forField, mvu, projection, updates)
 import PUI.HTML (body, text)
@@ -14,8 +15,8 @@ main =
     elevation20 $
       card { caption: "Counter" } $ ( Semigroupoid.do
           headline4 (text # projection show # forField @"count") # completed
-          button { label: "Count" } # updates increment
+          button { label: "Count" } # updates (match { event: \m _ -> increment m })
       ) # mvu { count: 0 }
 
-increment :: forall click. click -> { count :: Int } -> { count :: Int }
-increment _ r = { count: r.count + 1 }
+increment :: { count :: Int } -> { count :: Int }
+increment r = { count: r.count + 1 }
