@@ -78,8 +78,9 @@ shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 (`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
 `sliderLive` with a `view` swatch, markdown-previewer renders typed
 `Markup` from a hand-rolled parser, helloworld is the bare minimum),
-demo/1 (loop-free pipeline), and demo/mdc (full catalog plus the trace
-forms).
+demo/1 (loop-free pipeline), and the trace-quartet demos in demo/nguis —
+auction (`feedback`), checkout (`folding`), payment (`iterate`),
+ticket-dispenser (`unfolding`), one focused combinator each.
 
 Conditional visibility is view-model data, never an in-UI predicate:
 `provided :: PUI Web a b -> PUI Web (Maybe a) b` attaches and feeds its
@@ -307,14 +308,14 @@ gate-withheld emissions (the otherwise-invisible ones) — as
 2. **Agent loop: use watch mode.** Keep `spago build -w` running in the
    background and read its output after each edit (~0.7s incremental)
    instead of one-shot builds — it covers library, tests, and all 7GUIs
-   demos (project sources; the `Main`-module demos — 1, 2, mdc,
+   and nGUIs demos (project sources; the `Main`-module demos — 1, 2,
    helloworld — need their own `--path`, one at a time). Caveats:
    spago -w reads stdin and dies on EOF, so keep stdin open (never
    `</dev/null`); run only one watcher over the shared `output/` at a
    time. Tests: `spago test`.
 3. Interactive dev loop: `npm run dev <demo>` serves the demo at
    `http://127.0.0.1:1234/` with auto-rebuild and browser auto-reload.
-4. Bundle with `npm run bundle-demo-7guis` (or `bundle-demo-1|2|mdc`;
+4. Bundle with `npm run bundle-demo-7guis` (or `bundle-demo-1|2|nguis`;
    7guis demos are named modules entered at their own function, bundled
    via scripts/bundle-7guis.mjs — `spago bundle-app` can only call
    `Main.main`).

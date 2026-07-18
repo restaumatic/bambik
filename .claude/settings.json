@@ -134,7 +134,9 @@
       "Bash(sed -n '/export function appendChild/,/^}/p' src/PUI/Web.js)",
       "Bash(grep -n \"viewEvents\\\\|\\\\bview\\\\b\\\\|Markup\\\\|escapeHtml\\\\|custom-leaf\\\\|Data/Profunctor/Row/\\\\`\\\\| src/PUI/Web.purs\" /home/eryk/mine/bambik/CLAUDE.md)",
       "Bash(node /tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad/cdp9333.mjs /tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad/t-circle2.js \"http://127.0.0.1:8000/demo/7guis/circle-drawer/index.html\")",
-      "Bash(kill 2754982)"
+      "Bash(kill 2754982)",
+      "Bash(pkill -f user-data-dir=/tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad/chrome9333)",
+      "Bash(kill %1)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

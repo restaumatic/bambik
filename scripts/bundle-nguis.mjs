@@ -20,6 +20,10 @@ const demos = {
   'inbox': ['Inbox', 'inbox'],
   'movie-browser': ['MovieBrowser', 'movieBrowser'],
   'weather': ['Weather', 'weather'],
+  'auction': ['Auction', 'auction'],
+  'checkout': ['Checkout', 'checkout'],
+  'payment': ['Payment', 'payment'],
+  'ticket-dispenser': ['TicketDispenser', 'ticketDispenser'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {
