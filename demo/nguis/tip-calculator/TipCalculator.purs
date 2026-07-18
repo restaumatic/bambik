@@ -22,6 +22,7 @@ tipCalculator =
           slider { label: "Tip percentage", min: minTipPercent, max: maxTipPercent, step: tipPercentStep }
             # asField @"tipPercent" # completed
           body2 (text # projection tipPercentLine # forValue) # tapped
+          body2 (text # projection peopleLine # forValue) # tapped
           slider { label: "Split between", min: minPeople, max: maxPeople, step: peopleStep }
             # asField @"people" # completed
           body2 (text # projection tipAmountLine # forValue) # tapped
@@ -31,6 +32,9 @@ tipCalculator =
 
 tipPercentLine :: Bill -> String
 tipPercentLine bill = "Tip: " <> toStringWith (fixed 0) bill.tipPercent <> "%"
+
+peopleLine :: Bill -> String
+peopleLine bill = "Split between: " <> toStringWith (fixed 0) bill.people <> " people"
 
 tipAmountLine :: Bill -> String
 tipAmountLine bill = "Tip amount: " <> money (tipAmount bill)
