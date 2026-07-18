@@ -94,7 +94,17 @@
       "Bash(git commit -m 'row diagnostics: also catch a label duplicated within one operand'\\\\''s inferred row *)",
       "Bash(git commit -m 'skill: business naming applies to type aliases too \\(Model is architecture language\\) *)",
       "Bash(git commit -m 'CLAUDE.md: agent loop should use spago build -w \\(background watcher\\) instead of one-shot builds *)",
-      "Bash(git commit -m 'settings: accumulated permission allowlist entries *)"
+      "Bash(git commit -m 'settings: accumulated permission allowlist entries *)",
+      "Bash(git commit -m 'spago: 7guis demos join project sources; lists promoted to direct dependency *)",
+      "Bash(git commit -m 'docs: plain spago build now covers the 7guis demos *)",
+      "Edit(/.claude/skills/writing-bambik-apps/**)",
+      "Bash(git commit -m 'skill: app shape follows the app, MVU not blessed as the standard *)",
+      "Bash(git commit -m 'skill: business-naming hint covers the entry function — Model/initial/main are the same smell *)",
+      "Bash(git commit -m 'skill: default joins the smell list *)",
+      "Bash(sed -i 's/^name: writing-bambik-apps/name: developing-bambik-apps/;s/^# Writing bambik applications/# Developing bambik applications/' .claude/skills/developing-bambik-apps/SKILL.md)",
+      "Bash(git commit -m 'skill: writing-bambik-apps -> developing-bambik-apps *)",
+      "Edit(/.claude/skills/developing-bambik-apps/**)",
+      "Bash(git commit -m 'skill: demo-page conventions refer to the 7guis pages instead of inlining them *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
