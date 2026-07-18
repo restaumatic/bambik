@@ -35,10 +35,15 @@ canonical row, adopted to the business label at the use site:
   displays (the display's echo triggers the forwarding — an editor
   inside would replay stale upstream values on every edit). So: editor
   or record display stage → `# completed`; display over a non-record
-  value (a `projection`-formatted readout) → `# tapped`. An event-less
-  `view` leaf fits neither (it never echoes, so `tapped` would forward
-  nothing): put it last in the pipeline and let its free output type
-  unify with the loop
+  value (a `projection`-formatted readout) → `# tapped`. Displays that
+  **cannot echo** fit neither: event-less `view` leaves never echo, and
+  `foreach` collections are silent on an empty array — inside a gated
+  merge they starve the gate (nothing downstream ever gets the seed),
+  and as a `mvu` pipeline's last stage they kill the loop. Wrap those in
+  `# displayed`, the unconditional pass-through (every value fed is
+  shown and forwarded, no echo needed). A constant-fed stage (a fixed
+  catalogue driving `listOf`/`foreach`) reads `constantly catalogue`
+  instead of an input-annotated `lcmap (const catalogue)`
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
   `[ clicked :: _ ]`; adopt with `# asCase @l`
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt

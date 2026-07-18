@@ -499,7 +499,13 @@ clicked w = wrap do
 -- | The dynamic collection: one instance of the item widget per array
 -- | element, rebuilt in the enclosing element on every value fed; every
 -- | instance's emissions share the collection's output channel. Wrap it in
--- | a container ocular: `ul $ foreach item`.
+-- | a container ocular: `ul $ foreach item`. Two consequences of the
+-- | rebuild-per-value protocol: the rebuild is wholesale (no keyed diff —
+-- | fine at collection sizes where re-rendering is cheap), and an empty
+-- | array builds nothing, so the collection **never echoes on empty input**
+-- | — a `foreach` display inside a gated merge starves the gate, and as a
+-- | `mvu` pipeline's last stage it kills the loop; wrap it in `displayed`
+-- | to make it an unconditional pass-through stage.
 foreach :: forall a o. PUI Web a o -> PUI Web (Array a) o
 foreach w = wrap do
   parent <- gets _.parent

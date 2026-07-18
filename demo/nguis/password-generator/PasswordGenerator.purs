@@ -1,6 +1,6 @@
 module PasswordGenerator (passwordGenerator) where
 
-import Prelude ((#), ($), (*), (/), (<), (<>), (>>>), Unit, bind, otherwise, pure)
+import Prelude ((#), ($), (*), (-), (/), (<), (<>), (>>>), Unit, bind, otherwise, pure)
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
@@ -12,6 +12,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
+import Effect.Random (randomInt)
 import PUI (action, asCase, asField, completed, forValue, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (attr, body, div, text)
 import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
@@ -56,10 +57,8 @@ samplePassword recipe = liftEffect do
 
 randomCharacter :: Array Char -> Effect Char
 randomCharacter alphabet = do
-  i <- randomBelow (length alphabet)
+  i <- randomInt 0 (length alphabet - 1)
   pure (fromMaybe 'a' (index alphabet i))
-
-foreign import randomBelow :: Int -> Effect Int
 
 rememberPassword :: String -> PasswordRecipe -> PasswordRecipe
 rememberPassword password recipe = recipe { password = password }

@@ -32,6 +32,7 @@ to generate this file without the comments in this block.
   , "profunctor"
   , "profunctor-lenses"
   , "qualified-do"
+  , "random"
   , "record"
   , "refs"
   , "strings"

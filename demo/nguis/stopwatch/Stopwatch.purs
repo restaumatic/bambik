@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (asCase, completed, every, forValue, mvu, projection, updates)
+import PUI (asCase, completed, displayed, every, forValue, mvu, projection, updates)
 import PUI.HTML (attr, body, div, foreach, li, shownWhen, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -39,7 +39,7 @@ stopwatch =
               , lap: \sw _ -> recordLap sw
               , reset: \sw _ -> clearStopwatch sw
               })
-          ul (foreach (li (text # forValue))) # lcmap lapLines # updates (\_ sw -> sw)
+          ul (foreach (li (text # forValue))) # lcmap lapLines # displayed
       ) # mvu zeroedStopwatch
 
 beginTiming :: Stopwatch -> Stopwatch

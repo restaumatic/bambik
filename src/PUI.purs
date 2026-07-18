@@ -28,8 +28,10 @@ module PUI
   , affAdapter
   , announce
   , constant
+  , constantly
   , debounced
   , debounced'
+  , displayed
   , effAdapter
   , every
   , looped
@@ -436,6 +438,25 @@ updates handler events = wrap $ unwrap events <#> \evts ->
               Ref.write (Just s') sRef
               prop s'
     }
+
+-- | Make any display an **unconditional pass-through stage**: every value
+-- | fed is shown and forwarded, no echo required. The honest wrapper for
+-- | displays that cannot echo — `foreach` collections (silent on an empty
+-- | array, so inside a gated merge they starve the gate, and as a `mvu`
+-- | pipeline's last stage they kill the loop) and event-less `view`
+-- | leaves. `tapped` and `completed` both rely on the display's echo;
+-- | `displayed` does not. (The trivial `updates` fold: any event the
+-- | wrapped widget does emit re-emits the retained value.)
+displayed :: forall m s e. Functor m => PUI m s e -> PUI m s s
+displayed = updates \_ s -> s
+
+-- | Pin a stage's input to a known value: the wrapped widget is fed `a`
+-- | for every value flowing through, and the stage's own input type stays
+-- | free — so a constant-fed stage (a fixed catalogue driving a collection
+-- | component) needs no input-type annotation where `lcmap (const a)`
+-- | would.
+constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
+constantly a = lcmap (const a)
 
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
 -- | Retains the last value flowing through; every `interval`, applies
