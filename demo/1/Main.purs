@@ -9,16 +9,15 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (length)
-import Data.Variant (case_, match, on)
+import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, silence, tapped, with)
+import PUI (action, asCase, asField, debounced, field, forCase, forField, forValue, looped, onCase, projection, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 type Order =
   { shortId :: String
@@ -92,8 +91,8 @@ main =
         button { label: "Submit order", icon: "save" } # asCase @"submit"
         button { label: "Receipt", icon: "file" } # asCase @"printReceipt"
       VariantToVariant.do
-        indeterminateLinearProgress # action (on (Proxy @"submit") submitOrder case_)
-        indeterminateLinearProgress # action (on (Proxy @"printReceipt") printReceipt case_)
+        indeterminateLinearProgress # action (onCase @"submit" submitOrder)
+        indeterminateLinearProgress # action (onCase @"printReceipt" printReceipt)
       VariantToRecord.do
         snackbar # forCase @"orderSubmitted"
         snackbar # forCase @"submissionFailed"

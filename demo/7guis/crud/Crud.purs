@@ -9,17 +9,16 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (Pattern(..), stripPrefix)
-import Data.Variant (case_, match, on)
+import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, forValue, looped, projection, updates, with)
+import PUI (action, asCase, asField, completed, forValue, looped, onCase, projection, updates, with)
 import PUI.HTML (attr, body, div, text)
 import PUI.MDC (button, card, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 type Person = { name :: String, surname :: String }
 
@@ -55,9 +54,9 @@ crud = do
                     button { label: "Update" } # asCase @"update"
                     button { label: "Delete" } # asCase @"delete"
                   VariantToVariant.do
-                    indeterminateLinearProgress # action (on (Proxy @"create") (createPerson catalogue) case_)
-                    indeterminateLinearProgress # action (on (Proxy @"update") (updatePerson catalogue) case_)
-                    indeterminateLinearProgress # action (on (Proxy @"delete") (deletePerson catalogue) case_)
+                    indeterminateLinearProgress # action (onCase @"create" (createPerson catalogue))
+                    indeterminateLinearProgress # action (onCase @"update" (updatePerson catalogue))
+                    indeterminateLinearProgress # action (onCase @"delete" (deletePerson catalogue))
               ) # updates (match { created: refreshPeople, updated: refreshPeople, deleted: \people -> refreshPeople people >>> deselect })
           ) # looped
       ) # with unit

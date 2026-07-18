@@ -34,6 +34,7 @@ module PUI
   , every
   , looped
   , mvu
+  , onCase
   , resolveFor
   , seeded
   , silence
@@ -70,7 +71,10 @@ import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
-import Data.Variant (contract)
+import Data.Symbol (class IsSymbol)
+import Data.Variant (Variant, case_, contract, on)
+import Prim.Row (class Cons)
+import Type.Proxy (Proxy(..))
 import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -684,6 +688,12 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 
 -- | The progress slot is row-shaped like every component interface: the
 -- | widget is a `{ busy :: Boolean } → {}` display citizen.
+-- | Label-indexed single-case dispatch for `action` stages inside
+-- | `VariantToVariant.do` merges: each operand owns exactly one input case,
+-- | so it reads `action (onCase @"create" createPerson)`.
+onCase :: forall @l a b r. IsSymbol l => Cons l a () r => (a -> b) -> Variant r -> b
+onCase f = on (Proxy @l) f case_
+
 action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
 action arr = action' \i pro post -> do
   liftEffect $ pro { busy: true }

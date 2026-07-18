@@ -42,19 +42,11 @@ self-feeding loop reads `# mvu seed`, a loop-free flow reads
 `# with seed` (demo/1: load action → form → events → backend dispatch →
 statuses → `silence`), and the two combine freely (crud: load action
 feeding a `looped` form whose commands dispatch through write actions).
-A minimal MVU example:
-
-```purescript
-module Counter (counter) where
-
-counter :: Effect Unit
-counter =
-  body $
-    elevation20 $ card { caption: "Counter" } $ ( Semigroupoid.do
-        ...form merge... # completed
-        ...event merge... # updates (match { ... })
-    ) # mvu freshCount
-```
+For worked examples read the 7GUIs demos (demo/7guis/ — counter is the
+smallest MVU shape, crud combines a load action with a looped form and
+write-action dispatch, cells and circle-drawer show custom `view`
+leaves), demo/1 (loop-free pipeline), and demo/mdc (full catalog plus
+the trace forms).
 
 - `body` registers the wiring and feeds nothing; initial data enters via
   `# mvu seed` (`mvu seed w = looped (with seed w)`), `# with seed`, or
@@ -75,8 +67,7 @@ counter =
   `onClickXY`); dynamic collections via `foreach` or `MDC.listOf`.
 - Async: `indeterminateLinearProgress # action (s -> Aff t)` as a
   pipeline stage; dispatch variants with
-  `action (on (Proxy @"case") handler case_)` inside
-  `VariantToVariant.do`.
+  `action (onCase @"case" handler)` inside `VariantToVariant.do`.
 - State/loop semantics beyond MVU: the trace forms — `feedback`
   (state sub-record loops output→input), `iterate` (retry loops),
   `folding @w` (wizards), `unfolding @w` (generators) — and the

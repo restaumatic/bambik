@@ -14,16 +14,15 @@ import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
-import Data.Variant (case_, match, on)
+import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, projection, seeded, silence, tapped, with)
+import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, onCase, projection, seeded, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, staticText, text)
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Type.Proxy (Proxy(..))
 
 type SettingsIn =
   { name :: String
@@ -177,12 +176,12 @@ main =
             ) # folding @"next"
           )
       VariantToVariant.do
-        indeterminateLinearProgress # action (on (Proxy @"save") saveSettings case_)
-        indeterminateCircularProgress # action (on (Proxy @"like") like case_)
-        indeterminateCircularProgress # action (on (Proxy @"share") share case_)
-        indeterminateLinearProgress # action (on (Proxy @"export") exportSettings case_)
-        indeterminateCircularProgress # action (on (Proxy @"reset") reset case_)
-        indeterminateCircularProgress # action (on (Proxy @"publish") publishFlaky case_) # iterate
+        indeterminateLinearProgress # action (onCase @"save" saveSettings)
+        indeterminateCircularProgress # action (onCase @"like" like)
+        indeterminateCircularProgress # action (onCase @"share" share)
+        indeterminateLinearProgress # action (onCase @"export" exportSettings)
+        indeterminateCircularProgress # action (onCase @"reset" reset)
+        indeterminateCircularProgress # action (onCase @"publish" publishFlaky) # iterate
       ( Semigroupoid.do
           seeded resumeZero
           retain identity # dimap splitStatus countUp
