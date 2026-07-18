@@ -189,16 +189,45 @@ export function setMenuOpen(component) {
   };
 }
 
-// setTabActive :: Component -> Boolean -> Effect Unit (MDCTab)
-export function setTabActive(component) {
-  return function (active) {
+// activateTab :: Component -> Int -> Effect Unit (MDCTabBar)
+export function activateTab(component) {
+  return function (index) {
     return function () {
-      if (active) {
-        component.activate();
-      } else {
-        component.deactivate();
-      }
+      component.activateTab(index);
     };
+  };
+}
+
+// onTabBarActivated :: Component -> (Int -> Effect Unit) -> Effect Unit (MDCTabBar)
+export function onTabBarActivated(component) {
+  return function (handler) {
+    return function () {
+      component.listen('MDCTabBar:activated', function (e) { handler(e.detail.index)(); });
+    };
+  };
+}
+
+// setFormFieldInput :: Component -> Component -> Effect Unit (MDCFormField.input, wires label-click ripple)
+export function setFormFieldInput(formField) {
+  return function (input) {
+    return function () {
+      formField.input = input;
+    };
+  };
+}
+
+// fixListTabIndexes :: Node -> Effect Unit — MD2 list roving-tabindex baseline
+export function fixListTabIndexes(node) {
+  return function () {
+    var items = node.querySelectorAll('li');
+    items.forEach(function (li, i) { li.setAttribute('tabindex', i === 0 ? '0' : '-1'); });
+  };
+}
+
+// layoutComponent :: Component -> Effect Unit
+export function layoutComponent(component) {
+  return function () {
+    component.layout();
   };
 }
 
