@@ -1,18 +1,16 @@
 module TicTacToe (ticTacToe) where
 
-import Prelude ((#), ($), (&&), (/=), (<#>), (<<<), (<>), (==), Unit, bind, const, mod, show)
+import Prelude ((#), ($), (&&), (/=), (<#>), (<<<), (<>), (==), (>>>), Unit, bind, const, mod, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, forValue, mvu, projection, updates)
-import PUI.HTML (body, text, view)
-import PUI.Markup (Markup)
-import PUI.Markup as H
+import PUI (PUI, completed, forValue, mvu, projection, toCase, updates)
+import PUI.HTML (body, div, dynamic, each, onKeyClicked, staticText, text, (:=))
+import PUI.Web (Web)
 import PUI.MDC (button, card, elevation20, headline6)
-import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 ticTacToe :: Effect Unit
@@ -21,32 +19,27 @@ ticTacToe =
     elevation20 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headline6 (text # projection standing # forValue) # completed
-          view "div" [ H.style "display: inline-block; margin-bottom: 10px;" ]
-            renderBoard
-            (\node emit -> onKeyClick node \key -> emit (.cellPicked key))
-            # updates (match { cellPicked: claimCell })
+          ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
+              (onKeyClicked (dynamic renderBoard) # toCase @"cellPicked")
+          ) # updates (match { cellPicked: claimCell })
           button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
       ) # mvu openingPosition
 
-renderBoard :: Match -> Array Markup
+renderBoard :: Match -> PUI Web {} {}
 renderBoard game =
-  [ H.div
-      [ H.style "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" ]
-      (range 0 8 <#> cell)
-  ]
+  div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
+    each cells cell
   where
   winners = fromMaybe [] (winningLine game.board)
-  cell i =
-    H.div
-      [ H.dataKey (show i)
-      , H.cl "cell"
-      , H.style
-          ( "height: 72px; display: flex; align-items: center; justify-content: center; "
+  cells = range 0 8 <#> \i ->
+    { key: show i, mark: fromMaybe "" (index game.board i), win: i `elem` winners }
+  cell c =
+    div >>> "data-key" := c.key >>> "class" := "cell"
+      >>> "style"
+        := ( "height: 72px; display: flex; align-items: center; justify-content: center; "
               <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
-              <> if i `elem` winners then "background: #a5d6a7;" else "background: #eceff1;"
-          )
-      ]
-      [ H.text (fromMaybe "" (index game.board i)) ]
+              <> if c.win then "background: #a5d6a7;" else "background: #eceff1;"
+          ) $ staticText c.mark
 
 type Match = { board :: Array String }
 

@@ -1,11 +1,12 @@
 -- | The HTML vocabulary — a 1-1 correspondence with HTML: element oculars
 -- | (`div`, `p`, `ul`, `li`, `a`, ...), attribute/class decorators
 -- | (`attr`/`:=`, `cl`), the live leaves (`text`, `input`, `textArea`,
--- | `button`, ...), announcing statics (`staticText`, `static`, `staticHTML`),
--- | the `body` entry, and the `view` custom-leaf (a `×→+` leaf whose container
--- | and per-value content are typed `PUI.Markup` trees materialized straight
--- | to real DOM nodes — no HTML strings). The carrier they are built over
--- | lives in `PUI.Web`; the markup DSL lives in `PUI.Markup`.
+-- | `button`, ...), announcing statics (`staticText`, `staticHTML`, the void
+-- | `hr` leaf), the `body` entry, and — for **structure computed from data at
+-- | runtime** without a markup DSL — `dynamic` (build a whole widget from the
+-- | fed value, rebuilt per feed; the single-value `foreach`) with the delegated
+-- | event emitters `onKeyClicked`/`onClickedXY`. The carrier they are built
+-- | over lives in `PUI.Web`.
 module PUI.HTML
   ( (:=)
   , (:=>)
@@ -20,30 +21,42 @@ module PUI.HTML
   , clWhen
   , clicked
   , clDyn
+  , blockquote
+  , circle
+  , code
   , div
+  , dynamic
+  , each
+  , el
+  , em
   , foreach
+  , foreachWith
   , h1
   , h2
   , h3
   , h4
   , h5
   , h6
+  , hr
   , i
+  , img
   , init
   , input
   , inputDebounced
   , label
   , li
   , ol
+  , onClickedXY
+  , onKeyClicked
   , p
   , path
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
   , span
-  , static
   , staticHTML
   , staticText
+  , strong
   , svg
   , table
   , tbody
@@ -56,7 +69,6 @@ module PUI.HTML
   , transient
   , ul
   , provided
-  , view
   )
   where
 
@@ -78,9 +90,7 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Markup (Attr, Markup) as M
-import PUI.Markup (buildInto, buildNode, el, htmlNS, svgNS) as M
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -264,13 +274,13 @@ staticHTML html = wrap do
     , fromUser: \prop -> void $ prop {}
     }
 
--- | Announcing chrome from a typed `PUI.Markup` tree — the string-free
--- | `staticHTML`: materialized once to real DOM nodes, no HTML string.
-static :: M.Markup -> PUI Web {} {}
-static markup = wrap do
+-- | The void `hr` element as announcing chrome (`{} → {}`): a self-closing
+-- | rule, no content ocular needed.
+hr :: PUI Web {} {}
+hr = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ do
-    node <- M.buildNode markup
+    node <- createElementNS htmlNS "hr"
     appendChild node parent
     pure node
   modify_ _ { sibling = newNode }
@@ -331,6 +341,24 @@ svg = el "svg"
 
 path :: Ocular (PUI Web)
 path = el "path"
+
+circle :: Ocular (PUI Web)
+circle = el "circle"
+
+img :: Ocular (PUI Web)
+img = el "img"
+
+strong :: Ocular (PUI Web)
+strong = el "strong"
+
+em :: Ocular (PUI Web)
+em = el "em"
+
+code :: Ocular (PUI Web)
+code = el "code"
+
+blockquote :: Ocular (PUI Web)
+blockquote = el "blockquote"
 
 p :: Ocular (PUI Web)
 p = el "p"
@@ -492,6 +520,38 @@ clicked w = wrap do
           for_ mi \i -> void $ prop i
     }
 
+-- | Delegated click emitter: one listener on the container emits the
+-- | `data-key` of whichever descendant was clicked. The `clicked` sibling for
+-- | `dynamic`-rendered grids — the content is display-only (its own echoes are
+-- | drained), events arrive by delegation, so the single listener survives the
+-- | wholesale rebuild. Pair with a container ocular: `div $ onKeyClicked $
+-- | dynamic renderGrid`, then adopt the bare key with `toCase`/`rmap`.
+onKeyClicked :: forall i o. PUI Web i o -> PUI Web i String
+onKeyClicked content = wrap do
+  w' <- unwrap content
+  node <- gets _.parent
+  pure
+    { toUser: w'.toUser
+    , fromUser: \prop -> do
+        w'.fromUser \_ -> pure Nothing
+        onKeyClick node \key -> void $ prop key
+    }
+
+-- | Pointer-coordinate click emitter: emits the local/viewBox `{ x, y }` of a
+-- | click on the container (an `<svg>` gives viewBox coords). The coordinate
+-- | analogue of `onKeyClicked`, for canvases: `svg [...] $ onClickedXY $
+-- | dynamic renderScene`.
+onClickedXY :: forall i o. PUI Web i o -> PUI Web i { x :: Number, y :: Number }
+onClickedXY content = wrap do
+  w' <- unwrap content
+  node <- gets _.parent
+  pure
+    { toUser: w'.toUser
+    , fromUser: \prop -> do
+        w'.fromUser \_ -> pure Nothing
+        onClickXY node \x y -> void $ prop { x, y }
+    }
+
 -- | The dynamic collection: one instance of the item widget per array
 -- | element, rebuilt in the enclosing element on every value fed; every
 -- | instance's emissions share the collection's output channel. Wrap it in
@@ -517,6 +577,44 @@ foreach w = wrap do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
+-- | **Structure computed from data at runtime**, in `PUI Web` rather than a
+-- | markup DSL: the builder form of `foreach`. Each element of the fed array
+-- | is turned into a whole widget *by the builder* — the value is in the
+-- | builder's closure, so tags and attributes are ordinary computed strings
+-- | (`el ("h" <> show level)`, `circle >>> "cx" := show c.x`) — and the enclosing
+-- | element is rebuilt wholesale per value (clear once, append each). Like
+-- | `foreach` it owns its container, so wrap it in a container ocular
+-- | (`ul $ foreachWith item`, `svg [...] $ foreachWith circle`) and give any
+-- | fixed siblings their own container. Built widgets are fed `{}` (content
+-- | comes from the closure, not the channel); emissions share the output.
+foreachWith :: forall a o. (a -> PUI Web {} o) -> PUI Web (Array a) o
+foreachWith build = wrap do
+  parent <- gets _.parent
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \items -> do
+        removeAllChildren parent
+        for_ items \item -> do
+          w' <- runDomInNode parent (unwrap (build item))
+          mProp <- Ref.read propRef
+          for_ mProp \prop -> w'.fromUser prop
+          void $ w'.toUser {}
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- | The single-value case of `foreachWith`: rebuild one widget from the fed
+-- | value (a `foreachWith` over the one-element array). Owns its container:
+-- | `svg [...] $ dynamic renderScene`, `div $ dynamic renderSwatch`.
+dynamic :: forall a o. (a -> PUI Web {} o) -> PUI Web a o
+dynamic build = lcmap (\a -> [ a ]) (foreachWith build)
+
+-- | Build a **fixed** (closure-known) list of items into the container now —
+-- | `foreachWith` fed a constant array, with the input pinned to `{}` so it
+-- | drops into a `{} → {}` chrome merge without an annotation: `ul $ each rows
+-- | renderRow`, `tr $ each cells cellWidget`.
+each :: forall a o. Array a -> (a -> PUI Web {} o) -> PUI Web {} o
+each items build = lcmap (\_ -> items) (foreachWith build)
+
 -- Entry point
 
 -- | The app entry: builds the widget in `<body>` and registers its
@@ -530,28 +628,6 @@ body ui = do
   runDomInNode node do
     { fromUser } <- unwrap ui
     liftEffect $ fromUser \_ -> pure Nothing
-
--- | Build a `×→+` **view-with-events leaf** from a typed `PUI.Markup` tree:
--- | `tag`/`attrs` describe the container element (built once as a real DOM
--- | node, so `wire`'s event listeners survive), `render` produces the content
--- | fragment rebuilt wholesale per value fed (no echo — variant outputs don't
--- | echo), and `wire` attaches the event emitters to the container node.
--- | Nothing is ever an HTML string: the fragment is materialized straight to
--- | DOM nodes (`PUI.Markup.buildInto`), auto-escaped by the browser. Events
--- | carry **bare payloads** — pair them with the model in an `updates` fold,
--- | not in the leaf.
-view :: forall i o. String -> Array M.Attr -> (i -> Array M.Markup) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> PUI Web i o
-view tag attrs render wire = wrap do
-  parent <- gets _.parent
-  node <- liftEffect do
-    n <- M.buildNode (M.el tag attrs [])
-    appendChild n parent
-    pure n
-  modify_ _ { sibling = node }
-  pure
-    { toUser: \i -> M.buildInto (if tag == "svg" then M.svgNS else M.htmlNS) node (render i)
-    , fromUser: \prop -> wire node (void <<< prop)
-    }
 
 runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runWidgetInSelectedNode selector initial callback ui = do

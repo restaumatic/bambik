@@ -1,6 +1,6 @@
 module Cells (cells) where
 
-import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), Unit, bind, map, max, min, mod, pure, show, (||))
+import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, const, map, max, min, mod, otherwise, pure, show, (||))
 
 import Data.Array (catMaybes, range)
 import Data.Char (fromCharCode, toCharCode)
@@ -16,12 +16,10 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, forValue, mvu, projection, updates)
-import PUI.HTML (body, text, view)
-import PUI.Markup (Markup)
-import PUI.Markup as H
+import PUI (PUI, asField, completed, forValue, mvu, projection, toCase, updates)
+import PUI.HTML (body, div, dynamic, each, onKeyClicked, staticText, table, tbody, td, text, th, thead, tr, (:=))
+import PUI.Web (Web)
 import PUI.MDC (body1, card, elevation20, filledTextField)
-import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Sheet =
@@ -39,10 +37,9 @@ cells =
               body1 (text # projection selectedCaption # forValue)
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
           ) # completed # rmap commit
-          view "div" [ H.style "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" ]
-            renderTable
-            (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
-            # updates (match { cellClicked: selectCell })
+          ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
+              (onKeyClicked (dynamic renderTable) # toCase @"cellClicked")
+          ) # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
 cols :: Int
@@ -60,25 +57,25 @@ commit m = case m.selected of
     m { cells = if m.formula == "" then delete k m.cells else insert k m.formula m.cells }
   _ -> m
 
-renderTable :: Sheet -> Array Markup
+renderTable :: Sheet -> PUI Web {} {}
 renderTable m =
-  [ H.table [ H.style "border-collapse: collapse; font-size: 13px;" ]
-      ([ header ] <> (range 0 (rows - 1) <#> row))
-  ]
+  table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ RecordToRecord.do
+    thead (tr $ each headerCells cellW)
+    tbody (each (range 0 (rows - 1)) row)
   where
   values = evalSheet m.cells
   colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
-  th content = H.th [ H.style thStyle ] [ H.text content ]
-  header = H.tr [] ([ th "" ] <> (range 0 (cols - 1) <#> \c -> th (colName c)))
-  row r = H.tr [] ([ th (show r) ] <> (range 0 (cols - 1) <#> cell r))
-  cell r c =
+  colIndices = range 0 (cols - 1)
+  labelCell text = { header: true, key: "", text, sel: false }
+  headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
+  row r = tr $ each (rowCells r) cellW
+  rowCells r = [ labelCell (show r) ] <> (colIndices <#> \c -> dataCell r c)
+  dataCell r c =
     let key = colName c <> show r
-        sel = m.selected == Just key
-    in H.td
-        [ H.dataKey key
-        , H.style (tdStyle <> (if sel then "background: #cde;" else ""))
-        ]
-        [ H.text (fromMaybe "" (lookup key values)) ]
+    in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key }
+  cellW cell
+    | cell.header = th >>> "style" := thStyle $ staticText cell.text
+    | otherwise = td >>> "data-key" := cell.key >>> "style" := (tdStyle <> (if cell.sel then "background: #cde;" else "")) $ staticText cell.text
   thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
 

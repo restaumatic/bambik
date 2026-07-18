@@ -6,15 +6,14 @@ import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, mvu, updates)
-import PUI.HTML (attr, body, div, provided, view)
-import PUI.Markup (Markup)
-import PUI.Markup as H
+import PUI (PUI, asCase, asField, mvu, toCase, updates)
+import PUI.HTML (body, circle, div, foreachWith, onClickedXY, provided, svg, (:=))
+import PUI.Web (Web)
 import PUI.MDC (button, card, elevation20, sliderLive)
-import PUI.Web (onClickXY)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Circle = { x :: Number, y :: Number, r :: Number }
@@ -36,10 +35,9 @@ circleDrawer =
           sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter"
             # provided # lcmap selectedDiameter # updates adjustDiameter
           ( RecordToVariant.do
-              view "svg" [ H.attr "viewBox" "0 0 500 300", H.style "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" ]
-                renderCanvas
-                (\node emit -> onClickXY node \x y -> emit (.clicked { x, y } :: [ clicked :: { x :: Number, y :: Number } ]))
-              div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
+              svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
+                (onClickedXY (lcmap paintCircles (foreachWith circleAt)) # toCase @"clicked")
+              div >>> "style" := "display: flex; gap: 8px;" $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
           ) # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
@@ -81,17 +79,13 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
-renderCanvas :: Canvas -> Array Markup
-renderCanvas m = mapWithIndex circle m.circles
+paintCircles :: Canvas -> Array { cx :: String, cy :: String, r :: String, fill :: String }
+paintCircles m = mapWithIndex paint m.circles
   where
-  circle i c = H.circle
-    [ H.attr "cx" (show c.x)
-    , H.attr "cy" (show c.y)
-    , H.attr "r" (show c.r)
-    , H.attr "stroke" "#333"
-    , H.attr "fill" (if m.selected == Just i then "#ddd" else "transparent")
-    ]
-    []
+  paint i c = { cx: show c.x, cy: show c.y, r: show c.r, fill: if m.selected == Just i then "#ddd" else "transparent" }
+
+circleAt :: { cx :: String, cy :: String, r :: String, fill :: String } -> PUI Web {} {}
+circleAt c = circle >>> "cx" := c.cx >>> "cy" := c.cy >>> "r" := c.r >>> "stroke" := "#333" >>> "fill" := c.fill $ pempty
 
 emptyCanvas :: Canvas
 emptyCanvas =

@@ -14,16 +14,19 @@ module PUI.Web
   , appendRawHtml
   , attachable
   , attribute
+  , childNS
   , clazz
   , createElementNS
   , createTextNode
   , documentBody
   , element
   , elementsInRange
+  , htmlNS
   , getChecked
   , getValue
   , isFocused
   , lastChild
+  , namespaceURI
   , onInputDebounced
   , onClickXY
   , onKeyClick
@@ -37,6 +40,7 @@ module PUI.Web
   , setInnerHTML
   , setTextNodeValue
   , setValue
+  , svgNS
   , uniqueId
   )
   where
@@ -127,10 +131,28 @@ placeholderAfterSlot slotNo = createCommentNode $ "end slot " <> show slotNo
 
 --- private
 
+-- | The two namespaces the DOM builder distinguishes; SVG needs its elements
+-- | created with `createElementNS`, or the browser treats them as unknown HTML.
+htmlNS :: String
+htmlNS = "http://www.w3.org/1999/xhtml"
+
+svgNS :: String
+svgNS = "http://www.w3.org/2000/svg"
+
+-- | The namespace rule for `element`: an `svg` tag opens the SVG namespace;
+-- | every other element inherits its parent's.
+childNS :: String -> String -> String
+childNS parentNS tagName = if tagName == "svg" then svgNS else parentNS
+
 element :: forall a. String -> Web a -> Web a
 element tagName contents = do
-  newNode <- liftEffect $ createElement tagName
   parentNode <- gets _.parent
+  parentNS <- liftEffect $ namespaceURI parentNode
+  -- HTML elements go through plain createElement (MDC's component init is
+  -- sensitive to how form controls are created); only SVG-namespaced elements
+  -- need createElementNS.
+  let ns = childNS parentNS tagName
+  newNode <- liftEffect $ if ns == svgNS then createElementNS ns tagName else createElement tagName
   liftEffect $ appendChild newNode parentNode
   modify_ _ { parent = newNode}
   result <- contents
@@ -161,6 +183,7 @@ foreign import createTextNode :: String -> Effect Node
 foreign import createDocumentFragment :: Effect Node
 foreign import createElement :: String -> Effect Node
 foreign import createElementNS :: String -> String -> Effect Node
+foreign import namespaceURI :: Node -> Effect String
 foreign import insertBefore :: Node -> Node -> Effect Unit
 foreign import appendChild :: Node -> Node -> Effect Unit
 foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit

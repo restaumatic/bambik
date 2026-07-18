@@ -452,10 +452,10 @@ updates handler events = wrap $ unwrap events <#> \evts ->
 
 -- | Make any display an **unconditional pass-through stage**: every value
 -- | fed is shown and forwarded, no echo required. The honest wrapper for
--- | displays that cannot echo — `foreach` collections (silent on an empty
--- | array, so inside a gated merge they starve the gate, and as a `mvu`
--- | pipeline's last stage they kill the loop) and event-less `view`
--- | leaves. `tapped` and `completed` both rely on the display's echo;
+-- | displays that cannot echo — `foreach`/`foreachWith` collections (silent on
+-- | an empty array, so inside a gated merge they starve the gate, and as a
+-- | `mvu` pipeline's last stage they kill the loop). `tapped` and `completed`
+-- | both rely on the display's echo;
 -- | `displayed` does not. (The trivial `updates` fold: any event the
 -- | wrapped widget does emit re-emits the retained value.)
 displayed :: forall m s e. Functor m => PUI m s e -> PUI m s s

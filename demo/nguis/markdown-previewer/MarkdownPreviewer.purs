@@ -1,17 +1,17 @@
 module MarkdownPreviewer (markdownPreviewer) where
 
-import Prelude (Unit, map, otherwise, pure, show, unit, ($), (#), (&&), (+), (/=), (<#>), (<>), (==), (>))
+import Prelude (Unit, otherwise, show, ($), (#), (&&), (+), (/=), (<#>), (<<<), (<>), (==), (>), (>>>))
 
 import Data.Array (cons, span, uncons)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor (lcmap)
 import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Effect (Effect)
-import PUI (asField, completed, mvu)
-import PUI.HTML (body, view)
-import PUI.Markup (Markup)
-import PUI.Markup as H
+import PUI (PUI, asField, completed, displayed, mvu)
+import PUI.HTML (blockquote, body, code, div, each, el, em, foreachWith, li, p, staticText, strong, ul, (:=))
+import PUI.Web (Web)
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -23,28 +23,25 @@ markdownPreviewer =
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
             layoutCell { span: 6 } $
-              view "div" [ H.cl "markdown-preview", H.style "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" ]
-                renderPreview
-                (\_ _ -> pure unit)
+              div >>> "class" := "markdown-preview" >>> "style" := "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" $
+                (lcmap (parseMarkdown <<< _.source) (foreachWith renderBlock) # displayed)
         ) # mvu welcomeDocument
 
-renderPreview :: Document -> Array Markup
-renderPreview doc = parseMarkdown doc.source <#> renderBlock
-
-renderBlock :: Block -> Markup
-renderBlock (Heading level inlines) = H.el ("h" <> show level) [] (map renderInline inlines)
-renderBlock (Paragraph inlines) = H.p [] (map renderInline inlines)
-renderBlock (Bullets items) = H.ul [] (items <#> \inlines -> H.li [] (map renderInline inlines))
+renderBlock :: Block -> PUI Web {} {}
+renderBlock (Heading level inlines) = el ("h" <> show level) (inlinesW inlines)
+renderBlock (Paragraph inlines) = p (inlinesW inlines)
+renderBlock (Bullets items) = ul (each items \inlines -> li (inlinesW inlines))
 renderBlock (Quote inlines) =
-  H.blockquote
-    [ H.style "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" ]
-    (map renderInline inlines)
+  blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlinesW inlines
 
-renderInline :: Inline -> Markup
-renderInline (Plain s) = H.text s
-renderInline (Bold s) = H.strong [] [ H.text s ]
-renderInline (Italic s) = H.em [] [ H.text s ]
-renderInline (Code s) = H.code [ H.style "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" ] [ H.text s ]
+inlinesW :: Array Inline -> PUI Web {} {}
+inlinesW inlines = each inlines renderInline
+
+renderInline :: Inline -> PUI Web {} {}
+renderInline (Plain s) = staticText s
+renderInline (Bold s) = strong (staticText s)
+renderInline (Italic s) = em (staticText s)
+renderInline (Code s) = code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
 
 type Document = { source :: String }
 

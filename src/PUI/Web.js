@@ -49,6 +49,13 @@ export function createElementNS(ns) {
   };
 }
 
+// namespaceURI :: Node -> IOSync String
+export function namespaceURI(node) {
+  return function () {
+    return node.namespaceURI || "http://www.w3.org/1999/xhtml";
+  };
+}
+
 // insertBefore :: Node -> Node -> IOSync Unit
 export function insertBefore(newNode) {
   return function (existingNode) {

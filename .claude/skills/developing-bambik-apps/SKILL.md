@@ -36,8 +36,8 @@ canonical row, adopted to the business label at the use site:
   inside would replay stale upstream values on every edit). So: editor
   or record display stage → `# completed`; display over a non-record
   value (a `projection`-formatted readout) → `# tapped`. Displays that
-  **cannot echo** fit neither: event-less `view` leaves never echo, and
-  `foreach` collections are silent on an empty array — inside a gated
+  **cannot echo** fit neither: `foreach`/`foreachWith`/`dynamic`
+  collections are silent on an empty array — inside a gated
   merge they starve the gate (nothing downstream ever gets the seed),
   and as a `mvu` pipeline's last stage they kill the loop. Wrap those in
   `# displayed`, the unconditional pass-through (every value fed is
@@ -66,18 +66,20 @@ statuses → `silence`), and the two combine freely (crud: load action
 feeding a `looped` form whose commands dispatch through write actions).
 For worked examples read the 7GUIs demos (demo/7guis/ — counter is the
 smallest MVU shape, crud combines a load action with a looped form and
-write-action dispatch, cells and circle-drawer show custom `view`
-leaves), the nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
+write-action dispatch, cells and circle-drawer show structure-from-data
+in `PUI Web` — `foreachWith`/`each`/`dynamic` over element/SVG oculars
+with `onKeyClicked`/`onClickedXY` events), the nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
 click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
 form with `tapped` readouts, quiz shows `provided` panes over
-multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and calculator are `view`-grid apps
-(`data-key` cells + `onKeyClick` + `updates`), stopwatch drives `every`
+multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and calculator are `foreachWith`/`each` grid apps
+(`data-key` cells + `onKeyClicked` + `updates`), stopwatch drives `every`
 with pause-by-`Nothing` and a `foreach # displayed` laps list,
 shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 `constantly`-fed catalogue, password-generator is the effectful shape
 (`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
-`sliderLive` with a `view` swatch, markdown-previewer renders typed
-`Markup` from a hand-rolled parser, helloworld is the bare minimum),
+`sliderLive` with a `dynamic` swatch, markdown-previewer renders a
+recursive `PUI Web` tree (`foreachWith`/`each`, `el ("h" <> show level)`)
+from a hand-rolled parser, helloworld is the bare minimum),
 demo/1 (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
 ticket-dispenser (`unfolding`), one focused combinator each.
@@ -114,9 +116,9 @@ The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/
 `action`/`onCase`/`tapped`/the adopter family re-exports),
-src/PUI/HTML.purs (HTML vocabulary, `body`, `foreach`, the `view`
-custom-leaf), src/PUI/Markup.purs (the typed element-function markup DSL
-that `view` renders to real DOM), src/PUI/MDC.purs (the MDC component and
+src/PUI/HTML.purs (HTML vocabulary, `body`, element/SVG oculars,
+`foreach`/`foreachWith`/`dynamic`/`each` for structure-from-data, the
+`onKeyClicked`/`onClickedXY` delegated events), src/PUI/MDC.purs (the MDC component and
 ocular catalog, the editors' `dimap` round-trip contract), and
 src/Data/Profunctor/Row/ (the four merges, adopters, trace forms,
 business optics — laws in the module headers).
@@ -130,8 +132,8 @@ Organize each module (by inlining and extracting) until every function
 belongs to exactly one of two classes:
 
 1. **UI wiring** — lives inline in the entry function (or is unavoidably
-   standalone like a `Model -> Array Markup` render function). Anything
-   that mentions PUI types, variants-as-events, `Markup`, DOM wiring.
+   standalone like a `a -> PUI Web {} o` builder for `dynamic`/`foreachWith`).
+   Anything that mentions PUI types, variants-as-events, DOM wiring.
 2. **Pure business** — standalone functions over the model and plain
    data: `Model -> Model`, `Model -> String`, parsers, evaluators, Aff
    actions. No variant types, no PUI types, no UI vocabulary in their
@@ -157,10 +159,11 @@ pages' code-style note; keep the two in sync.)
   `payload -> Model -> Model`.
 
 - **Event constructors** — a `clickedCell :: String -> [ cellClicked :: String ]`
-  wrapper becomes the variant sugar applied inline at the wire:
+  wrapper is unnecessary: the delegated emitter yields the bare key and
+  `toCase` introduces the case:
 
   ```purescript
-  (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
+  div $ onKeyClicked (dynamic renderBoard) # toCase @"cellClicked"
   ```
 
 ### What to extract (name the business)
@@ -225,12 +228,13 @@ used in a single projection's return type can stay anonymous.
     # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
   ```
 
-  A `view` wiring lambda still constructs its case inline and
-  *does* need the closed-row annotation (the merge's `Nub` fails on an open
-  row), since it runs below the combinator layer:
+  The delegated event emitters produce a **bare** payload — `onKeyClicked`
+  a `String` key, `onClickedXY` an `{ x, y }` — so introduce the case with
+  `toCase @l` (which closes the row itself, no annotation needed) rather than
+  an inline `inj`/`.label` lambda:
 
   ```purescript
-  emit (.clicked { x, y } :: [ clicked :: { x :: Number, y :: Number } ])
+  svg [...] $ onClickedXY (foreachWith circleAt) # toCase @"clicked"
   ```
 
 - **Ignored button payloads still pin rows.** A `button # asCase @l`
@@ -247,8 +251,9 @@ used in a single projection's return type can stay anonymous.
 
 ### Boundary cases
 
-- `Model -> Array Markup` render functions are UI but too large to inline —
-  they stay standalone; that is fine (they are *purely* UI-related).
+- `a -> PUI Web {} o` builder functions (for `dynamic`/`foreachWith`) are UI
+  but too large to inline — they stay standalone; that is fine (they are
+  *purely* UI-related).
 - `Model -> String` caption/validation formatters are pure business — keep.
 - **A `forall click. click -> Model -> Model` handler is a smell**: the
   phantom payload parameter is UI (the event) smuggled into an otherwise

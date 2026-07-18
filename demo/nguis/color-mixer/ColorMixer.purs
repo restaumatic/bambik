@@ -1,19 +1,19 @@
 module ColorMixer (colorMixer) where
 
-import Prelude ((#), ($), (<#>), (<>), (<<<), (==), Unit, max, min, show)
+import Prelude ((#), ($), (<>), (<<<), (==), (>>>), Unit, max, min, show)
 
 import Data.Array (find)
 import Data.Int (hexadecimal, round, toStringAs)
 import Data.Maybe (maybe)
+import Data.Profunctor.Row.RecordToRecord (pempty)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (length, toUpper)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, forValue, mvu, projection, tapped, updates)
-import PUI.HTML (body, text, view)
-import PUI.Markup (Markup)
-import PUI.Markup as H
+import PUI (PUI, asField, completed, forValue, mvu, projection, tapped, toCase, updates)
+import PUI.HTML (body, div, dynamic, each, onKeyClicked, text, (:=))
+import PUI.Web (Web)
 import PUI.MDC (body2, card, elevation20, sliderLive)
-import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Mix = { red :: Number, green :: Number, blue :: Number }
@@ -29,40 +29,29 @@ colorMixer =
             # asField @"green" # completed
           sliderLive { label: "Blue", min: minChannel, max: maxChannel, step: channelStep }
             # asField @"blue" # completed
-          view "div" [ H.style "margin: 10px 0;" ]
-            renderSwatch
-            (\node emit -> onKeyClick node \key -> emit (.preset key :: [ preset :: String ]))
-            # updates (match { preset: applyPreset })
+          ( div >>> "style" := "margin: 10px 0;" $
+              (onKeyClicked (dynamic renderSwatch) # toCase @"preset")
+          ) # updates (match { preset: applyPreset })
           body2 (text # projection hex # forValue) # tapped
           body2 (text # projection rgb # forValue) # tapped
       ) # mvu duskViolet
 
-renderSwatch :: Mix -> Array Markup
-renderSwatch m =
-  [ H.div
-      [ H.id "swatch"
-      , H.style
-          ( "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; "
-              <> "border: 1px solid #ccc; background-color: " <> rgb m <> ";"
-          )
-      ]
-      []
-  , H.div
-      [ H.style "display: flex; gap: 8px; margin-top: 10px;" ]
-      (palette <#> chip)
-  ]
+renderSwatch :: Mix -> PUI Web {} {}
+renderSwatch m = RecordToRecord.do
+  div >>> "id" := "swatch"
+    >>> "style"
+      := ( "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; "
+            <> "border: 1px solid #ccc; background-color: " <> rgb m <> ";"
+        ) $ pempty
+  div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
+    each palette chip
   where
   chip p =
-    H.div
-      [ H.dataKey p.name
-      , H.cl "preset"
-      , H.title p.name
-      , H.style
-          ( "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; "
+    div >>> "data-key" := p.name >>> "class" := "preset" >>> "title" := p.name
+      >>> "style"
+        := ( "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; "
               <> "border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
-          )
-      ]
-      []
+          ) $ pempty
 
 applyPreset :: String -> Mix -> Mix
 applyPreset name current = maybe current _.mix (find (\p -> p.name == name) palette)

@@ -5,9 +5,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (field, forValue, projection, silence, with)
-import PUI.HTML (a, body, div, input, li, p, static, staticText, text, ul)
-import PUI.HTML ((:=))
-import PUI.Markup as H
+import PUI.HTML (a, body, div, hr, input, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 main :: Effect Unit
@@ -20,7 +18,7 @@ main =
           li $ staticText "Two"
           li $ staticText "Three"
         a >>> "href" := "https://www.google.com" $ staticText "Search for me!"
-        static (H.el "hr" [] [])
+        hr
         Semigroupoid.do
           RecordToRecord.do
             input "text" # field @"greeting"
