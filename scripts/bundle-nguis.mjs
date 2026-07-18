@@ -7,6 +7,7 @@ const demos = {
   'todomvc': ['TodoMvc', 'todoMvc'],
   'tip-calculator': ['TipCalculator', 'tipCalculator'],
   'quiz': ['Quiz', 'quiz'],
+  'tic-tac-toe': ['TicTacToe', 'ticTacToe'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {
