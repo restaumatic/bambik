@@ -46,7 +46,7 @@ crud = do
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname"
               ) # completed
-              attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px;"
+              attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"
                 ( listOf { selected: _.selected } (text # projection _.label # forValue)
                 ) # rmap (\e -> .picked e.key :: [ picked :: Int ]) # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
