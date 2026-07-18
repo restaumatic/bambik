@@ -19,9 +19,14 @@ Every MDC component is a citizen of exactly one direction and speaks a
 canonical row, adopted to the business label at the use site:
 
 - editors (`filledTextField`, `checkbox`, `slider`, ...) are
-  `{ value :: _ } → { value :: _ }`; adopt with `# asField @l`
+  `{ value :: _ } → { value :: _ }`; adopt with `# asField @l` — a lone
+  adopted editor (`filledTextField {...} # asField @l # completed`) is a
+  complete `×→×` stage on its own, no `RecordToRecord.do` needed for one
+  field (slider's `step` is optional)
 - displays adopt with `# forField @l` (read one field) or
-  `# projection f # forValue` (format the whole value)
+  `# projection f # forValue` (format the whole value); a live readout
+  as a pipeline stage is the same display made pass-through with
+  `# tapped`: `body2 (text # projection f # forValue) # tapped`
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
   `[ clicked :: _ ]`; adopt with `# asCase @l`
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt
@@ -45,8 +50,16 @@ feeding a `looped` form whose commands dispatch through write actions).
 For worked examples read the 7GUIs demos (demo/7guis/ — counter is the
 smallest MVU shape, crud combines a load action with a looped form and
 write-action dispatch, cells and circle-drawer show custom `view`
-leaves), demo/1 (loop-free pipeline), and demo/mdc (full catalog plus
-the trace forms).
+leaves), the nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
+click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
+form with `tapped` readouts, quiz shows `shownWhen` panes over
+multi-stage pipelines), demo/1 (loop-free pipeline), and demo/mdc (full
+catalog plus the trace forms).
+
+Conditional panes: `shownWhen pred` hides every element its content
+builds, so it wraps multi-stage `Semigroupoid.do` pipelines directly —
+no wrapper `div` needed. `clWhen pred name` is deliberately
+last-element-only (a class over several siblings is rarely meant).
 
 The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline

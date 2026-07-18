@@ -319,3 +319,22 @@ export function onClickXY(node) {
     };
   };
 }
+
+// elementsInRange :: Node -> Node -> Effect (Array Node)
+// from-exclusive, to-inclusive sibling walk collecting element nodes only;
+// either end may be null (null from = start at to's parent's first child,
+// null to with null from = empty range).
+export function elementsInRange(from) {
+  return function (to) {
+    return function () {
+      const elements = [];
+      let node = from ? from.nextSibling : (to ? to.parentNode.firstChild : null);
+      while (node) {
+        if (node.nodeType === 1) elements.push(node);
+        if (node === to) break;
+        node = node.nextSibling;
+      }
+      return elements;
+    };
+  };
+}

@@ -82,7 +82,7 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, elementsInRange, getChecked, getValue, isFocused, lastChild, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -408,18 +408,23 @@ clDyn name pred w = wrap do
 -- | Value-aware visibility for a record-merge operand: the wrapped element
 -- | stays in the DOM — detachment would starve the merge gates, since a
 -- | detached editor's wiring cannot echo — but is displayed only while the
--- | predicate holds for the value fed. (Single-element content: the toggle
--- | lands on the content's root node.)
+-- | predicate holds for the value fed. The toggle covers every element the
+-- | content builds — multi-stage panes need no wrapper `div`.
 shownWhen :: forall i o. (i -> Boolean) -> PUI Web i o -> PUI Web i o
 shownWhen pred w = wrap do
+  parent <- gets _.parent
+  before <- liftEffect $ lastChild parent
   w' <- unwrap w
-  node <- gets _.sibling
-  liftEffect $ setAttribute node "style" "display: none;"
-  pure
-    { toUser: \i -> do
-        if pred i
+  after <- liftEffect $ lastChild parent
+  nodes <- liftEffect $ elementsInRange before after
+  let display shown = for_ nodes \node ->
+        if shown
           then removeAttribute node "style"
           else setAttribute node "style" "display: none;"
+  liftEffect $ display false
+  pure
+    { toUser: \i -> do
+        display (pred i)
         w'.toUser i
     , fromUser: w'.fromUser
     }
@@ -458,7 +463,8 @@ variant w = wrap do
 
 -- | Value-dependent class for the last-built element: the class is present
 -- | exactly while the predicate holds for the value fed. (`shownWhen`'s
--- | pattern, at class granularity.)
+-- | pattern, at class granularity — but deliberately last-element-only:
+-- | a class spread over several siblings is rarely what is meant.)
 clWhen :: forall i o. (i -> Boolean) -> String -> PUI Web i o -> PUI Web i o
 clWhen pred name w = wrap do
   w' <- unwrap w

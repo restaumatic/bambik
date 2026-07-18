@@ -18,9 +18,11 @@ module PUI.Web
   , createTextNode
   , documentBody
   , element
+  , elementsInRange
   , getChecked
   , getValue
   , isFocused
+  , lastChild
   , onInputDebounced
   , onClickXY
   , onKeyClick
@@ -174,6 +176,7 @@ foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
+foreign import elementsInRange :: Node -> Node -> Effect (Array Node)
 foreign import setInnerHTML :: Node -> String -> Effect Unit
 foreign import onKeyClick :: Node -> (String -> Effect Unit) -> Effect Unit
 

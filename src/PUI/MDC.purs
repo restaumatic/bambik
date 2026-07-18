@@ -54,6 +54,7 @@
 module PUI.MDC
   ( OptLabelIcon(..)
   , OptLabel(..)
+  , OptSelected(..)
   , OptStep(..)
   , banner
   , body1
@@ -154,7 +155,8 @@ import PUI.Web (Node, Web, uniqueId)
 -- optional on `button`, required on `fab` — so the *tag*, not a global
 -- per-symbol instance, decides which fields are optional for a given widget.
 -- One tag per distinct optional-field set: `OptLabelIcon` (button),
--- `OptLabel` (fab, caption via card), `OptStep` (sliders).
+-- `OptLabel` (fab, caption via card), `OptStep` (sliders), `OptSelected`
+-- (listOf — no lifted fields, `selected` just defaults).
 data OptLabelIcon = OptLabelIcon
 
 instance ConvertOption OptLabelIcon "label" String (Maybe String) where
@@ -171,6 +173,11 @@ instance ConvertOption OptLabel "label" String (Maybe String) where
 else instance ConvertOption OptLabel "caption" String (Maybe String) where
   convertOption _ _ = Just
 else instance ConvertOption OptLabel sym a a where
+  convertOption _ _ = identity
+
+data OptSelected = OptSelected
+
+instance ConvertOption OptSelected sym a a where
   convertOption _ _ = identity
 
 data OptStep = OptStep
@@ -456,7 +463,7 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
       </div>
     </button>"""
 
--- | The `×→×` `Number` editor. A `step` makes it the discrete slider.
+-- | The `×→×` `Number` editor. An optional `step` makes it the discrete slider.
 -- | Emits on **commit** only (thumb release): one emission per adjustment,
 -- | so an `updates` fold sees each drag as a single transaction. For
 -- | continuous mid-drag emissions (live readouts), use `sliderLive`.
@@ -918,14 +925,22 @@ list content = ul >>> cl "mdc-deprecated-list" $ content
 
 -- | The MD2 list as a **dynamic collection component**: one item widget per
 -- | array element, rebuilt per value fed; items satisfying `selected` get
--- | the MD2 selected styling; every item is a click emitter replaying its
--- | own value, so the component's output is the clicked item.
-listOf :: forall a o. { selected :: a -> Boolean } -> PUI Web a o -> PUI Web (Array a) a
-listOf config item =
+-- | the MD2 selected styling (optional — `listOf {}` selects nothing);
+-- | every item is a click emitter replaying its own value, so the
+-- | component's output is the clicked item.
+listOf
+  :: forall provided a o
+   . ConvertOptionsWithDefaults OptSelected { selected :: a -> Boolean } { | provided } { selected :: a -> Boolean }
+  => { | provided }
+  -> PUI Web a o
+  -> PUI Web (Array a) a
+listOf provided item =
   ul >>> cl "mdc-deprecated-list" >>> attr "style" "overflow-y: auto;" $ foreach
     ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
         $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "cursor: pointer;" $ item
     )
+  where
+  config = convertOptionsWithDefaults OptSelected { selected: const false } provided
 
 listItem :: Ocular (PUI Web)
 listItem content = li >>> cl "mdc-deprecated-list-item" $ wrap do

@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, forValue, mvu, projection, updates)
-import PUI.HTML (attr, body, div, shownWhen, text)
+import PUI.HTML (attr, body, shownWhen, text)
 import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -28,18 +28,14 @@ quiz =
               linearProgress # projection progressFraction # forValue
               body1 (text # projection standing # forValue)
           ) # completed
-          shownWhen inProgress $ div
-            ( Semigroupoid.do
-                headline5 (text # projection currentPrompt # forValue) # completed
-                attr "style" "border: 1px solid #ccc;"
-                  ( listOf { selected: noSelection } (text # projection _.label # forValue)
-                  ) # rmap (\e -> .picked e.key :: [ picked :: Int ]) # lcmap choiceEntries # updates (match { picked: answer })
-            )
-          shownWhen finished $ div
-            ( Semigroupoid.do
-                headline6 (text # projection finalScore # forValue) # completed
-                button { label: "Restart", icon: "replay" } # updates (match { clicked: \r _ -> restart r })
-            )
+          shownWhen inProgress $ Semigroupoid.do
+            headline5 (text # projection currentPrompt # forValue) # completed
+            attr "style" "border: 1px solid #ccc;"
+              ( listOf {} (text # projection _.label # forValue)
+              ) # rmap (\e -> .picked e.key :: [ picked :: Int ]) # lcmap choiceEntries # updates (match { picked: answer })
+          shownWhen finished $ Semigroupoid.do
+            headline6 (text # projection finalScore # forValue) # completed
+            button { label: "Restart", icon: "replay" } # updates (match { clicked: \r _ -> restart r })
       ) # mvu freshQuizRun
 
 type Question =
@@ -85,9 +81,6 @@ choiceEntries :: QuizRun -> Array Choice
 choiceEntries run = case index questionCatalogue run.question of
   Just q -> mapWithIndex (\i label -> { key: i, label }) q.choices
   Nothing -> []
-
-noSelection :: Choice -> Boolean
-noSelection _ = false
 
 progressFraction :: QuizRun -> Number
 progressFraction run = toNumber run.question / toNumber (length questionCatalogue)
