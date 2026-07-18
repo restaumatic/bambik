@@ -65,7 +65,7 @@
     </header>
     <section id="source-panel">
       <pre><code id="src" class="language-haskell">loading…</code></pre>
-      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. The listing is a complete standalone application, entered at its single exported function. The code is structured as one purely UI-related function followed by pure business functions. Each UI-related line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing.</p>
+      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. The listing is a complete standalone application, entered at its single exported function. The code is structured as one purely UI-related function followed by pure business functions. Each UI-related line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing. The code is compiled with a custom PureScript compiler with improved support for variants - anonymous sum types, dual to records: a variant type is written <code>[ ok :: Int, err :: String ]</code> the way a record is written <code>{ ok :: Int, err :: String }</code>, and its cases are constructed with <code>.ok 42</code>.</p>
       <p class="note">Tracing: This page runs with enabled tracing, so data propagation is logged to the browser console with <code>[bambik]</code> prefix.</p>
     </section>
     <script>
