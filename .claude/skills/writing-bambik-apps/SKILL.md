@@ -34,9 +34,15 @@ Oculars (`card { caption }`, `dialog`, `layoutGrid`, `topAppBar`,
 typography, elevations, ...) are shape-preserving decorators — wrap
 freely; code order = DOM order.
 
-## Standard app shape (MVU)
+## App shape
 
-Demos are standalone modules exporting a single entry function:
+Demos are standalone modules exporting a single entry function. The
+shape of the pipeline follows the app, not a blessed template — a pure
+self-feeding loop reads `# mvu seed`, a loop-free flow reads
+`# with seed` (demo/1: load action → form → events → backend dispatch →
+statuses → `silence`), and the two combine freely (crud: load action
+feeding a `looped` form whose commands dispatch through write actions).
+A minimal MVU example:
 
 ```purescript
 module Counter (counter) where
@@ -50,10 +56,9 @@ counter =
     ) # mvu freshCount
 ```
 
-- `body` registers the wiring and feeds nothing; the seed enters via
-  `# mvu seed` (`mvu seed w = looped (with seed w)`) — or `# with seed`
-  for loop-free pipelines (demo/1 style: load action → form → events →
-  backend dispatch → statuses → `silence`).
+- `body` registers the wiring and feeds nothing; initial data enters via
+  `# mvu seed` (`mvu seed w = looped (with seed w)`), `# with seed`, or
+  an `action` load stage.
 - `# completed` after a form merge widens its output back to the full
   model row (unproduced fields carried from the retained input).
 - `# updates (match { case: handler, ... })` folds each event into the
