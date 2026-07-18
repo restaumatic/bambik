@@ -5,7 +5,7 @@ description: Reorganize a bambik demo's functions into exactly two classes — U
 
 # Separation of concerns in demos
 
-Reorganize a demo `Main.purs` (by inlining and extracting) until every
+Reorganize a demo module (by inlining and extracting) until every
 function belongs to exactly one of two classes:
 
 1. **UI wiring** — lives inline in `main` (or is unavoidably standalone
@@ -15,7 +15,8 @@ function belongs to exactly one of two classes:
    `Model -> Model`, `Model -> String`, parsers, evaluators. No variant
    types, no PUI types, no UI vocabulary in their signatures.
 
-**File order**: one purely UI-related function — `main` — comes first,
+**File order**: one purely UI-related function — the demo's entry
+function (`counter`, `cells`, ...) — comes first,
 followed by the pure business functions over the model. (This structure is
 also stated in the 7guis pages' code-style note; keep the two in sync.)
 
@@ -106,12 +107,12 @@ Say what the value *is*: `roomTemperature`, `peopleCatalogue`, `emptyCanvas`,
   phantom payload parameter is UI (the event) smuggled into an otherwise
   pure business function. Strip it — the business function is
   `Model -> Model` — and absorb the event in the inline dispatch. Note the
-  bare (un-`asCase`d) button emits the canonical variant `[ event :: _ ]`,
+  bare (un-`asCase`d) button emits the canonical variant `[ clicked :: _ ]`,
   so the dispatch is a one-case match applying the business function to the
   payload snapshot (which also pins the button's row):
 
   ```purescript
-  button { label: "Count" } # updates (match { event: \m _ -> increment m })
+  button { label: "Count" } # updates (match { clicked: \m _ -> increment m })
 
   increment :: { count :: Int } -> { count :: Int }
   increment r = { count: r.count + 1 }
@@ -124,7 +125,8 @@ Say what the value *is*: `roomTemperature`, `peopleCatalogue`, `emptyCanvas`,
    (including Prelude — add/remove names the change touched), UI leads with
    `$`, data plumbing trails with `#`.
 3. Verify: `export PATH=$PWD/node_modules/.bin:$PATH`, then
-   `spago build --path "demo/<d>/**/*.purs"`, bundle with
-   `spago bundle-app --minify --main Main --to demo/<d>/bundle.js --path "demo/<d>/**/*.purs"`,
+   `spago build --path "demo/7guis/*/*.purs"` (7guis demos are named
+   modules and compile together), bundle with `npm run bundle-demo-7guis`
+   (or `bundle-demo-1|2|mdc` — spago bundle-app can only call `Main.main`),
    run the demo's CDP suite from the scratchpad harness, commit to main,
    `npm run deploy-demo-7guis` (or the matching deploy script).
