@@ -1,9 +1,9 @@
 ---
-name: writing-bambik-apps
+name: developing-bambik-apps
 description: How to write web/MDC applications with bambik in the style of the repo's demos — app shape, vocabulary choice, separation of concerns, code style, demo-page conventions, tracing, build/verify workflow. Use when creating or reworking a bambik application or demo.
 ---
 
-# Writing bambik applications
+# Developing bambik applications
 
 A bambik application is one profunctor pipeline. Every widget is a
 `PUI m i o` — it displays `i` and emits `o` — and the app composes
