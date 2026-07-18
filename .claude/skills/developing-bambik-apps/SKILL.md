@@ -35,7 +35,10 @@ canonical row, adopted to the business label at the use site:
   displays (the display's echo triggers the forwarding — an editor
   inside would replay stale upstream values on every edit). So: editor
   or record display stage → `# completed`; display over a non-record
-  value (a `projection`-formatted readout) → `# tapped`
+  value (a `projection`-formatted readout) → `# tapped`. An event-less
+  `view` leaf fits neither (it never echoes, so `tapped` would forward
+  nothing): put it last in the pipeline and let its free output type
+  unify with the loop
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
   `[ clicked :: _ ]`; adopt with `# asCase @l`
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt

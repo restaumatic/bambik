@@ -350,7 +350,7 @@ filledTextArea :: { columns :: Int, rows :: Int } -> PUI Web { value :: String }
 filledTextArea { columns, rows } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> cl "mdc-text-field--textarea" >>> cl "mdc-text-field--no-label" $ wrap do
     _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
-    w <- unwrap (field @"value" $ span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "columns" := show columns >>> "aria-label" := "Label")
+    w <- unwrap (field @"value" $ span >>> cl "mdc-text-field__resizer" $ textArea # cl "mdc-text-field__input" >>> "rows" := show rows >>> "cols" := show columns >>> "aria-label" := "Label")
     _ <- unwrap (span >>> cl "mdc-line-ripple" $ pempty)
     pure w
 
