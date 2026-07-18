@@ -64,7 +64,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
 import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecord, forField, forValue, projection, required, tapped) as Adopters
-import Data.Profunctor.Row.RecordToVariant (asCase) as Adopters
+import Data.Profunctor.Row.RecordToVariant (asCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
 import Data.Profunctor.Row (widenRecordInput) as Adopters
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)

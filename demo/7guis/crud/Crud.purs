@@ -15,7 +15,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, forValue, looped, onCase, projection, updates, with)
+import PUI (action, asCase, asField, completed, forValue, looped, onCase, projection, toCase, updates, with)
 import PUI.HTML (attr, body, div, text)
 import PUI.MDC (button, card, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -47,7 +47,7 @@ crud = do
               ) # completed
               attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"
                 ( listOf { selected: _.selected } (text # projection _.label # forValue)
-                ) # rmap (\e -> .picked e.key :: [ picked :: Int ]) # lcmap entries # updates (match { picked: pick })
+                ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
                   div >>> attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
@@ -57,7 +57,7 @@ crud = do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
                     indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete"
-              ) # updates (match { created: refreshPeople, updated: refreshPeople, deleted: \people -> refreshPeople people >>> deselect })
+              ) # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })
           ) # looped
       ) # with unit
 
@@ -84,6 +84,9 @@ refreshPeople people m = m { people = people }
 
 deselect :: PeopleCatalogue -> PeopleCatalogue
 deselect m = m { selected = Nothing }
+
+peopleDeleted :: Array Person -> PeopleCatalogue -> PeopleCatalogue
+peopleDeleted people = refreshPeople people >>> deselect
 
 loadPeopleCatalogue :: SharedPeopleCatalogue -> Unit -> Aff PeopleCatalogue
 loadPeopleCatalogue catalogue _ = do

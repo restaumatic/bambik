@@ -69,8 +69,8 @@ smallest MVU shape, crud combines a load action with a looped form and
 write-action dispatch, cells and circle-drawer show custom `view`
 leaves), the nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
 click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
-form with `tapped` readouts, quiz shows `shownWhen` panes over
-multi-stage pipelines, tic-tac-toe and calculator are `view`-grid apps
+form with `tapped` readouts, quiz shows `provided` panes over
+multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and calculator are `view`-grid apps
 (`data-key` cells + `onKeyClick` + `updates`), stopwatch drives `every`
 with pause-by-`Nothing` and a `foreach # displayed` laps list,
 shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
@@ -81,13 +81,21 @@ shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 demo/1 (loop-free pipeline), and demo/mdc (full catalog plus the trace
 forms).
 
-Conditional panes: `shownWhen pred` hides every element its content
-builds, so it wraps multi-stage `Semigroupoid.do` pipelines directly —
-no wrapper `div` needed. `clWhen pred name` is deliberately
-last-element-only (a class over several siblings is rarely meant).
+Conditional visibility is view-model data, never an in-UI predicate:
+`provided :: PUI Web a b -> PUI Web (Maybe a) b` attaches and feeds its
+content on `Just`, detaches on `Nothing`. Pair it with a named
+`Maybe`-valued projection so the pane consumes the payload, not the whole
+model, and the visibility logic is a testable business function:
+`pane # provided # lcmap currentQuestion`. A pane whose content only
+exists sometimes is exactly this; the mode-of-a-live-editor case (a
+variant editor's per-selection panes) is the same shape inside a `looped`
+pipeline — selection component `# completed`, then each pane
+`# provided # lcmap <paneOf> # updates <setPane>`. `clWhen pred name`
+stays predicate-driven — it toggles a class (styling), not visibility,
+and is deliberately last-element-only.
 
 Modals: `dialog`/`simpleDialog` open on feed and close on emission —
-feed them selectively (`# variant # lcmap toMaybe` off a model flag, or
+feed them selectively (`# provided # lcmap toMaybe` off a model flag, or
 behind an event case via `onCase`), put the deciding emitters inside
 (their emission closes the dialog and flows on), and keep echoing
 displays off the content's final stage (an echo would close the dialog
@@ -198,27 +206,41 @@ application (`crud`, `counter`, `temperatureConverter`), not `main` —
 `Model`, `initial`, `default`, even `main` are all the same smell: architecture
 words where business words belong. Models stay row-shaped and structural as far as
 readable — anonymous Record rows for all-at-once, anonymous Variant rows
-for one-at-a-time; a named alias only for the top aggregate.
+for one-at-a-time; a named alias for the top aggregate, and for any
+view-model row (a collection entry, a pane payload) reused across two or
+more signatures — e.g. `type Entry`, `type Choice`, `type Photo`. A row
+used in a single projection's return type can stay anonymous.
 
 ### Type-inference gotchas (both hit in practice)
 
-- **Inline variant sugar needs a closed-row annotation.** A named
-  constructor wrapper pinned the row via its signature; inlined, the sugar
-  is open and the merge's `Nub` fails. Annotate at the use site:
+- **Introduce an output case with `toCase @l`, not an annotated lambda.**
+  At a collection site the item's bare output becomes a business case
+  through `toCase` — no inline variant sugar, no annotation, and the label
+  shows up in tracing:
+
+  ```purescript
+  listOf { selected: _.selected } (text # projection _.label # forValue)
+    # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+  ```
+
+  A `view`/`viewEvents` wiring lambda still constructs its case inline and
+  *does* need the closed-row annotation (the merge's `Nub` fails on an open
+  row), since it runs below the combinator layer:
 
   ```purescript
   emit (.clicked { x, y } :: [ clicked :: { x :: Number, y :: Number } ])
-  # rmap (\e -> .picked e.key :: [ picked :: Int ])
   ```
 
 - **Ignored button payloads still pin rows.** A `button # asCase @l`
-  emission's payload row is inferred *from the handler*. `const f` leaves
-  it free and the whole merge becomes ambiguous (the error surfaces at a
-  sibling stage). Dispatch by applying the business function to the payload
-  snapshot instead — it is the same model value:
+  emission's payload row is inferred *from the handler*. `const f`
+  (`\_ -> f`) ignores the payload and leaves the row free — the whole merge
+  becomes ambiguous, the error surfacing at a sibling stage. Write
+  `const <<< f` instead: it is `\payload model -> f payload`, applying the
+  business function to the payload snapshot (the same model value), which
+  pins the row while staying point-free:
 
   ```purescript
-  # updates (match { create: \m _ -> createPerson m, ... })
+  # updates (match { create: const <<< createPerson, ... })
   ```
 
 ### Boundary cases

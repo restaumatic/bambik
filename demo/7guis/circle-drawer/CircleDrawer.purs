@@ -1,17 +1,17 @@
 module CircleDrawer (circleDrawer) where
 
-import Prelude ((#), ($), (*), (+), (-), (/), (/=), (<$>), (<=), (==), (>>>), Unit, show)
+import Prelude ((#), ($), (*), (+), (-), (/), (/=), (<$>), (<<<), (<=), (==), (>>>), Unit, const, show)
 
 import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Number (sqrt)
-import Data.Profunctor (rmap)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, completed, mvu, updates)
-import PUI.HTML (Markup(..), attr, body, div, shownWhen, view)
+import PUI (asCase, asField, mvu, updates)
+import PUI.HTML (Markup(..), attr, body, div, provided, view)
 import PUI.MDC (button, card, elevation20, sliderLive)
 import PUI.Web (onClickXY)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,7 +33,7 @@ circleDrawer =
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
           sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter"
-            # completed # shownWhen hasSelection # rmap applyDiameter
+            # provided # lcmap selectedDiameter # updates adjustDiameter
           ( RecordToVariant.do
               view
                 """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
@@ -42,7 +42,7 @@ circleDrawer =
               div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
-          ) # updates (match { clicked: selectOrAddCircle, undo: \m _ -> undo m, redo: \m _ -> redo m })
+          ) # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
       ) # mvu emptyCanvas
 
 selectOrAddCircle :: { x :: Number, y :: Number } -> Canvas -> Canvas
@@ -61,6 +61,12 @@ redo m = case unsnoc m.redoStack of
   Just { init: rest, last: circles } ->
     m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
   Nothing -> m
+
+selectedDiameter :: Canvas -> Maybe { diameter :: Number }
+selectedDiameter m = if isJust m.selected then Just { diameter: m.diameter } else Nothing
+
+adjustDiameter :: { diameter :: Number } -> Canvas -> Canvas
+adjustDiameter { diameter } m = applyDiameter (m { diameter = diameter })
 
 applyDiameter :: Canvas -> Canvas
 applyDiameter m = case m.selected of
@@ -86,9 +92,6 @@ renderCanvas m = mapWithIndex circle m.circles
     , Tuple "fill" (if m.selected == Just i then "#ddd" else "transparent")
     ]
     []
-
-hasSelection :: Canvas -> Boolean
-hasSelection m = isJust m.selected
 
 emptyCanvas :: Canvas
 emptyCanvas =

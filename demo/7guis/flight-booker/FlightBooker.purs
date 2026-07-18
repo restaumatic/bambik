@@ -13,8 +13,8 @@ import Data.Variant (expand)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, forCase, forValue, mvu, projection, required)
-import PUI.HTML (body, shownWhen, text)
+import PUI (action, asCase, asField, completed, debounced, forCase, forValue, mvu, projection, required, updates)
+import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -39,17 +39,17 @@ flightBooker =
   body $
     elevation20 $
       card { caption: "Book Flight" } Semigroupoid.do
-      ( RecordToRecord.do
-          select { floatingLabel: "Flight type" }
-            [ { value: OneWay, label: "one-way flight" }
-            , { value: Return, label: "return flight" }
-            ]
-            # required # asField @"flightType"
-          filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
-          shownWhen isReturn
-            ( filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
-                # lcmap returnDate
-            )
+      ( Semigroupoid.do
+          ( RecordToRecord.do
+              select { floatingLabel: "Flight type" }
+                [ { value: OneWay, label: "one-way flight" }
+                , { value: Return, label: "return flight" }
+                ]
+                # required # asField @"flightType"
+              filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
+          ) # completed
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
+            # provided # lcmap returnLeg # updates setReturn
       ) # mvu plannedTrip
       body1 (text # projection validationText # forValue) # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
@@ -108,11 +108,11 @@ formatDate dt = pad dt.d <> "." <> pad dt.m <> "." <> show dt.y
 dateKey :: Date -> Int
 dateKey dt = dt.y * 10000 + dt.m * 100 + dt.d
 
-isReturn :: Booking -> Boolean
-isReturn b = b.flightType == Return
+returnLeg :: Booking -> Maybe { return :: String }
+returnLeg b = if b.flightType == Return then Just { return: b.return } else Nothing
 
-returnDate :: Booking -> { return :: String }
-returnDate b = { return: b.return }
+setReturn :: { return :: String } -> Booking -> Booking
+setReturn { return } b = b { return = return }
 
 plannedTrip :: Booking
 plannedTrip = { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }

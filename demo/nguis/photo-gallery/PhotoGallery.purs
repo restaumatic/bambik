@@ -13,7 +13,7 @@ import Data.String.CodeUnits (toCharArray)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, displayed, forValue, mvu, projection, tapped, updates)
+import PUI (PUI, displayed, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.Web (Web)
 import PUI.HTML (Markup(..), attr, body, div, foreach, span, staticText, text, view)
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
@@ -26,7 +26,7 @@ photoGallery =
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
               listOf { selected: _.current } (span (text # projection _.name # forValue))
-                # rmap (\a -> .albumPicked a.name :: [ albumPicked :: String ]) # lcmap albumChoices # updates (match { albumPicked: openAlbum })
+                # rmap _.name # toCase @"albumPicked" # lcmap albumChoices # updates (match { albumPicked: openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
@@ -45,7 +45,9 @@ photoGallery =
           )
       ) # mvu landscapesOpen
 
-photoTile :: PUI Web { src :: String, caption :: String } {}
+type Photo = { src :: String, caption :: String }
+
+photoTile :: PUI Web Photo {}
 photoTile =
   view """<li class="mdc-image-list__item" style="margin-bottom: 16px;"></li>"""
     ( \p ->
@@ -90,7 +92,7 @@ albumChoices g = albumCatalogue <#> \a -> { name: a.name, current: a.name == g.a
 openAlbum :: String -> Gallery -> Gallery
 openAlbum name g = g { album = name }
 
-albumPhotos :: Gallery -> Array { src :: String, caption :: String }
+albumPhotos :: Gallery -> Array Photo
 albumPhotos g =
   maybe [] (\a -> a.shots <#> \caption -> { src: developedPhoto caption, caption })
     (find (\a -> a.name == g.album) albumCatalogue)

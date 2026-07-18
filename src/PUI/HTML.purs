@@ -41,7 +41,6 @@ module PUI.HTML
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
-  , shownWhen
   , span
   , staticHTML
   , staticText
@@ -56,7 +55,7 @@ module PUI.HTML
   , tr
   , transient
   , ul
-  , variant
+  , provided
   , view
   , viewEvents
   )
@@ -82,7 +81,7 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, elementsInRange, getChecked, getValue, isFocused, lastChild, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -405,31 +404,6 @@ clDyn name pred w = wrap do
     , fromUser: w'.fromUser
     }
 
--- | Value-aware visibility for a record-merge operand: the wrapped element
--- | stays in the DOM — detachment would starve the merge gates, since a
--- | detached editor's wiring cannot echo — but is displayed only while the
--- | predicate holds for the value fed. The toggle covers every element the
--- | content builds — multi-stage panes need no wrapper `div`.
-shownWhen :: forall i o. (i -> Boolean) -> PUI Web i o -> PUI Web i o
-shownWhen pred w = wrap do
-  parent <- gets _.parent
-  before <- liftEffect $ lastChild parent
-  w' <- unwrap w
-  after <- liftEffect $ lastChild parent
-  nodes <- liftEffect $ elementsInRange before after
-  let display shown = for_ nodes \node ->
-        if shown
-          then removeAttribute node "style"
-          else setAttribute node "style" "display: none;"
-  liftEffect $ display false
-  pure
-    { toUser: \i -> do
-        display (pred i)
-        w'.toUser i
-    , fromUser: w'.fromUser
-    }
-
-
 -- Transient PUI elements that appear temporarily and then disappear, for small content short focused interactions as opposed to long-term use or complex content.
 -- It wraps provided PUI element with the following behaviour:
 --   - when fed with a value (when `toUser` is called) it's ensured it's appearing
@@ -447,8 +421,16 @@ transient ui = wrap do
         prop x
     }
 
-variant :: forall a b. PUI Web a b -> PUI Web (Maybe a) b
-variant w = wrap do
+-- | The view-model conditional: visibility is the **presence of data**, not a
+-- | predicate. Feed `Just a` and the content is attached and fed `a`; feed
+-- | `Nothing` and it is detached. Pair with a named `Maybe`-valued business
+-- | projection — `pane # provided # lcmap currentQuestion` reads "shown,
+-- | provided there is a current question" — so the pane consumes the payload,
+-- | never the whole model, and the visibility logic lives in testable business
+-- | code. Detachment means no echoes while absent: a pipeline-stage combinator,
+-- | not a gated-merge operand.
+provided :: forall a b. PUI Web a b -> PUI Web (Maybe a) b
+provided w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
     { toUser: case _ of
@@ -462,9 +444,9 @@ variant w = wrap do
 
 
 -- | Value-dependent class for the last-built element: the class is present
--- | exactly while the predicate holds for the value fed. (`shownWhen`'s
--- | pattern, at class granularity — but deliberately last-element-only:
--- | a class spread over several siblings is rarely what is meant.)
+-- | exactly while the predicate holds for the value fed — styling, not
+-- | visibility, so it stays a predicate (deliberately last-element-only:
+-- | a class spread over several siblings is rarely what is meant).
 clWhen :: forall i o. (i -> Boolean) -> String -> PUI Web i o -> PUI Web i o
 clWhen pred name w = wrap do
   w' <- unwrap w

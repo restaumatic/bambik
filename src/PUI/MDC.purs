@@ -17,9 +17,10 @@
 --       `+→×` statuses — `snackbar @l`, `banner @l`.
 --     No scalar or polymorphic component interfaces. Variant *editing* has
 --     no `+→+` component citizens: it goes through record-shaped editor
---     state (`dimap`-bracketed `looped` merges of a selection component
---     plus `shownWhen` panes — see the demos); `+→+` remains the dispatch
---     direction (`VariantToVariant.do` of action stages).
+--     state (`dimap`-bracketed `looped` pipelines — a selection component
+--     followed by payload-typed panes, each `# provided # lcmap <paneOf>`
+--     shown by the presence of its `Maybe` payload — see the demos); `+→+`
+--     remains the dispatch direction (`VariantToVariant.do` of action stages).
 --   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
 --     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/
 --     `dataCell`, `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`,
@@ -213,7 +214,7 @@ button provided = recordToCase @"clicked" (containedButton config)
 -- | The MD2 tab bar, a `×→×` editor like `segmentedButton @l` but
 -- | **same-type** (`Cons l a () s`): the selection is always known from the
 -- | input, so it echoes unconditionally and sits happily inside `looped`
--- | ensembles (selection field + `shownWhen` panes). One tab per option;
+-- | ensembles (selection field + `provided` payload panes). One tab per option;
 -- | `MDCTabBar` drives activation — indicator transitions, `aria-selected`,
 -- | and arrow-key navigation come from the foundation.
 tabBar

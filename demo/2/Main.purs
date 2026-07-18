@@ -24,9 +24,12 @@ main =
           RecordToRecord.do
             input "text" # field @"greeting"
             input "text" # field @"name"
-          p (text # projection (\r -> r.greeting <> ", " <> r.name <> "!") # forValue)
+          p (text # projection greetingLine # forValue)
       silence
   ) # with helloWorld
+
+greetingLine :: { greeting :: String, name :: String } -> String
+greetingLine r = r.greeting <> ", " <> r.name <> "!"
 
 helloWorld :: { greeting :: String, name :: String }
 helloWorld = { greeting: "Hello", name: "World" }

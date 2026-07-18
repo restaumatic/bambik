@@ -14,8 +14,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, debounced, field, forCase, forField, forValue, looped, onCase, projection, silence, tapped, with)
-import PUI.HTML (attr, body, div, shownWhen, text)
+import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, forValue, looped, onCase, projection, silence, tapped, updates, with)
+import PUI.HTML (attr, body, div, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -57,21 +57,21 @@ main =
               filledTextField { floatingLabel: "Last name" } # asField @"lastName"
           ) # field @"customer"
         card { caption: "Fulfillment" }
-          ( ( RecordToRecord.do
+          ( ( Semigroupoid.do
                 tabBar
                   [ { value: "dineIn", label: "Dine in" }
                   , { value: "takeaway", label: "Takeaway" }
                   , { value: "delivery", label: "Delivery" }
                   ]
-                  # asField @"selected"
-                shownWhen (\r -> r.selected == "dineIn") (filledTextField { floatingLabel: "Table" } # asField @"table" # lcmap tableOf)
-                shownWhen (\r -> r.selected == "takeaway") (filledTextField { floatingLabel: "Time" } # asField @"time" # lcmap timeOf)
-                shownWhen (\r -> r.selected == "delivery")
-                  ( ( RecordToRecord.do
-                        filledTextField { floatingLabel: "Address" } # asField @"address"
-                        body1 (text # projection (\address -> "Distance " <> distanceKm address <> " km") # forField @"address")
-                    ) # lcmap addressOf
-                  )
+                  # asField @"selected" # completed
+                filledTextField { floatingLabel: "Table" } # asField @"table"
+                  # provided # lcmap dineInPane # updates setTable
+                filledTextField { floatingLabel: "Time" } # asField @"time"
+                  # provided # lcmap takeawayPane # updates setTime
+                ( RecordToRecord.do
+                    filledTextField { floatingLabel: "Address" } # asField @"address"
+                    body1 (text # projection distanceLine # forField @"address")
+                ) # provided # lcmap deliveryPane # updates setAddress
             ) # looped # dimap fulfillmentState fulfillmentCase
           ) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
@@ -83,7 +83,7 @@ main =
                 ]
                 # asField @"selected" # dimap methodState methodCase # field @"method"
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              body1 (text # projection (\method -> "Paying by " <> methodText method) # forField @"method")
+              body1 (text # projection paymentLine # forField @"method")
           ) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       body1 (text # projection summarize # forValue) # debounced # tapped
@@ -102,6 +102,16 @@ main =
 
 distanceKm :: String -> String
 distanceKm address = show (length address)
+
+distanceLine :: String -> String
+distanceLine address = "Distance " <> distanceKm address <> " km"
+
+paymentLine ::
+  [ cash :: Unit
+  , card :: Unit
+  ]
+  -> String
+paymentLine method = "Paying by " <> methodText method
 
 methodText ::
   [ cash :: Unit
@@ -142,14 +152,23 @@ fulfillmentCase s =
   else if s.selected == "takeaway" then .takeaway { time: s.time }
   else .delivery { address: s.address }
 
-tableOf :: FulfillmentState -> { table :: String }
-tableOf s = { table: s.table }
+dineInPane :: FulfillmentState -> Maybe { table :: String }
+dineInPane s = if s.selected == "dineIn" then Just { table: s.table } else Nothing
 
-timeOf :: FulfillmentState -> { time :: String }
-timeOf s = { time: s.time }
+takeawayPane :: FulfillmentState -> Maybe { time :: String }
+takeawayPane s = if s.selected == "takeaway" then Just { time: s.time } else Nothing
 
-addressOf :: FulfillmentState -> { address :: String }
-addressOf s = { address: s.address }
+deliveryPane :: FulfillmentState -> Maybe { address :: String }
+deliveryPane s = if s.selected == "delivery" then Just { address: s.address } else Nothing
+
+setTable :: { table :: String } -> FulfillmentState -> FulfillmentState
+setTable { table } s = s { table = table }
+
+setTime :: { time :: String } -> FulfillmentState -> FulfillmentState
+setTime { time } s = s { time = time }
+
+setAddress :: { address :: String } -> FulfillmentState -> FulfillmentState
+setAddress { address } s = s { address = address }
 
 methodState ::
   [ cash :: Unit

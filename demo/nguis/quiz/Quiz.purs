@@ -1,6 +1,6 @@
 module Quiz (quiz) where
 
-import Prelude ((#), ($), (+), (/), (<), (<>), (==), Unit, min, show)
+import Prelude ((#), ($), (+), (/), (<), (<#>), (<>), (==), Unit, const, min, show)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
@@ -9,8 +9,8 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, forValue, mvu, projection, updates)
-import PUI.HTML (attr, body, shownWhen, text)
+import PUI (asCase, completed, displayed, forField, forValue, mvu, projection, toCase, updates)
+import PUI.HTML (attr, body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -28,14 +28,16 @@ quiz =
               linearProgress # projection progressFraction # forValue
               body1 (text # projection standing # forValue)
           ) # completed
-          shownWhen inProgress $ Semigroupoid.do
-            headline5 (text # projection currentPrompt # forValue) # completed
-            attr "style" "border: 1px solid #ccc;"
-              ( listOf {} (text # projection _.label # forValue)
-              ) # rmap (\e -> .picked e.key :: [ picked :: Int ]) # lcmap choiceEntries # updates (match { picked: answer })
-          shownWhen finished $ Semigroupoid.do
-            headline6 (text # projection finalScore # forValue) # completed
-            button { label: "Restart", icon: "replay" } # updates (match { clicked: \r _ -> restart r })
+          ( Semigroupoid.do
+              headline5 (text # projection questionPrompt # forValue) # completed
+              attr "style" "border: 1px solid #ccc;"
+                ( listOf {} (text # projection _.label # forValue)
+                ) # rmap _.key # toCase @"picked" # lcmap questionChoices
+          ) # provided # lcmap currentQuestion # updates (match { picked: answer })
+          ( Semigroupoid.do
+              headline6 (text # forField @"summary") # displayed
+              button { label: "Restart", icon: "replay" } # asCase @"restarted"
+          ) # provided # lcmap finalOutcome # updates (match { restarted: const restart })
       ) # mvu freshQuizRun
 
 type Question =
@@ -64,29 +66,27 @@ answer choice run = case index questionCatalogue run.question of
   Just q -> { question: run.question + 1, correct: run.correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-inProgress :: QuizRun -> Boolean
-inProgress run = run.question < length questionCatalogue
-
-finished :: QuizRun -> Boolean
-finished run = length questionCatalogue < run.question + 1
-
-currentPrompt :: QuizRun -> String
-currentPrompt run = case index questionCatalogue run.question of
-  Just q -> q.prompt
-  Nothing -> ""
-
 type Choice = { key :: Int, label :: String }
 
-choiceEntries :: QuizRun -> Array Choice
-choiceEntries run = case index questionCatalogue run.question of
-  Just q -> mapWithIndex (\i label -> { key: i, label }) q.choices
-  Nothing -> []
+type OpenQuestion = { prompt :: String, choices :: Array Choice }
+
+currentQuestion :: QuizRun -> Maybe OpenQuestion
+currentQuestion run = index questionCatalogue run.question <#> \q ->
+  { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
+
+questionPrompt :: OpenQuestion -> String
+questionPrompt q = q.prompt
+
+questionChoices :: OpenQuestion -> Array Choice
+questionChoices q = q.choices
+
+finalOutcome :: QuizRun -> Maybe { summary :: String }
+finalOutcome run =
+  if run.question < length questionCatalogue then Nothing
+  else Just { summary: "Final score: " <> show run.correct <> " / " <> show (length questionCatalogue) }
 
 progressFraction :: QuizRun -> Number
 progressFraction run = toNumber run.question / toNumber (length questionCatalogue)
 
 standing :: QuizRun -> String
 standing run = "Question " <> show (min (run.question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show run.correct
-
-finalScore :: QuizRun -> String
-finalScore run = "Final score: " <> show run.correct <> " / " <> show (length questionCatalogue)

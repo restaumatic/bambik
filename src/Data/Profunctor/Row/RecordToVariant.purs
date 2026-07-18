@@ -49,6 +49,7 @@ module Data.Profunctor.Row.RecordToVariant
   , echoCase
   , asCase
   , recordToCase
+  , toCase
   , resolve
   , resolveProperty
   , shutter
@@ -275,6 +276,15 @@ recordToCase
   => p { | r } f
   -> p { | r } [ | s ]
 recordToCase = rmap (inj (Proxy @l))
+
+-- | Introduce a widget's **bare** output as case `l` — `recordToCase` freed
+-- | from the record-input constraint, at the **closed singleton row** (the
+-- | `field`/`echoCase` lesson: pinned empty background, so it infers with no
+-- | annotations). The output-side dual of `onCase` and the general sibling of
+-- | `asCase` (which renames the canonical `clicked` case):
+-- | `listOf {} item # rmap _.key # toCase @"picked"`.
+toCase :: forall @l p i a s. IsSymbol l => Cons l a () s => Profunctor p => p i a -> p i [ | s ]
+toCase = rmap (inj (Proxy @l))
 
 -- | `recordToCase` over the echo wire, at the **closed singleton row** —
 -- | the `field` lesson applied to `× → +`: the pinned empty background

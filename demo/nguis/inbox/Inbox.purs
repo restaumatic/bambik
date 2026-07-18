@@ -1,17 +1,17 @@
 module Inbox (inbox) where
 
-import Prelude ((#), ($), (+), (<>), (==), (/=), (||), (>>>), Unit, comparing, identity, map, not, show)
+import Prelude ((#), ($), (+), (<<<), (<>), (==), (/=), (||), (>>>), Unit, comparing, const, identity, map, not, show)
 
 import Data.Array (filter, find, length, snoc, sortBy)
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, completed, forCase, forValue, mvu, onCase, projection, tapped, updates)
-import PUI.HTML (attr, body, div, shownWhen, span, text, variant)
+import PUI (PUI, asCase, completed, forCase, forValue, mvu, onCase, projection, tapped, toCase, updates)
+import PUI.HTML (attr, body, div, provided, span, text)
 import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,31 +23,31 @@ inbox =
       card { caption: "Inbox" } $ ( Semigroupoid.do
           caption (text # projection unreadLine # forValue) # completed
           listOf { selected: _.attention } (span (text # projection _.line # forValue))
-            # lcmap mailboxRows # rmap (\e -> .opened e.id :: [ opened :: Int ]) # updates (match { opened: openMessage })
-          shownWhen messageOpen
-            ( RecordToRecord.do
-                headline6 (text # projection subjectLine # forValue)
-                body2 (text # projection senderLine # forValue)
-                body1 (text # projection bodyLine # forValue)
-            ) # tapped
-          shownWhen messageOpen (iconButton { icon: "delete", label: "Delete message" })
-            # updates (match { clicked: \m _ -> requestDelete m })
+            # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
+          ( Semigroupoid.do
+              ( RecordToRecord.do
+                  headline6 (text # projection subjectLine # forValue)
+                  body2 (text # projection senderLine # forValue)
+                  body1 (text # projection bodyLine # forValue)
+              ) # tapped
+              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested"
+          ) # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ div >>> attr "style" "display: flex; gap: 16px;" $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
                   button { label: "Keep" } # asCase @"kept"
-              ) # variant # lcmap confirmingDelete
+              ) # provided # lcmap confirmingDelete
               VariantToVariant.do
-                banner # forCase @"emptied" # lcmap (match { emptied: \m -> .emptied (emptiedNote m) :: [ emptied :: String ] }) # tapped
-                (identity :: PUI Web Mailbox Mailbox) # onCase @"kept" # rmap (\m -> .kept m :: [ kept :: Mailbox ])
-          ) # updates (match { emptied: \m _ -> deleteOpened m, kept: \m _ -> keepMessages m })
+                banner # forCase @"emptied" # lcmap (match { emptied: .emptied <<< emptiedNote }) # tapped
+                (identity :: PUI Web Mailbox Mailbox) # onCase @"kept" # toCase @"kept"
+          ) # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
           div >>> attr "style" "display: flex; gap: 16px; align-items: center; margin-top: 8px;" $ ( RecordToVariant.do
               fab { icon: "edit", label: "Compose" } # asCase @"compose"
               menu { label: "Sort" } RecordToVariant.do
                 menuItem { label: "By sender" } # asCase @"bySender"
                 menuItem { label: "By subject" } # asCase @"bySubject"
                 menuItem { label: "Unread first" } # asCase @"unreadFirst"
-          ) # updates (match { compose: \m _ -> composeMessage m, bySender: \m _ -> sortBySender m, bySubject: \m _ -> sortBySubject m, unreadFirst: \m _ -> sortUnreadFirst m })
+          ) # updates (match { compose: const <<< composeMessage, bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
       ) # mvu mondayMail
 
 type Message = { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }
@@ -79,20 +79,17 @@ mailboxRows m = m.messages # map \g ->
 openMessage :: Int -> Mailbox -> Mailbox
 openMessage id m = m { messages = map (\g -> if g.id == id then g { read = true } else g) m.messages, opened = Just id }
 
-messageOpen :: Mailbox -> Boolean
-messageOpen m = isJust m.opened
-
 openedMessage :: Mailbox -> Maybe Message
 openedMessage m = find (\g -> Just g.id == m.opened) m.messages
 
-senderLine :: Mailbox -> String
-senderLine m = maybe "" (\g -> "From: " <> g.sender) (openedMessage m)
+senderLine :: Message -> String
+senderLine g = "From: " <> g.sender
 
-subjectLine :: Mailbox -> String
-subjectLine m = maybe "" _.subject (openedMessage m)
+subjectLine :: Message -> String
+subjectLine g = g.subject
 
-bodyLine :: Mailbox -> String
-bodyLine m = maybe "" _.body (openedMessage m)
+bodyLine :: Message -> String
+bodyLine g = g.body
 
 lastMessage :: Mailbox -> Boolean
 lastMessage m = length m.messages == 1

@@ -1,6 +1,6 @@
 module ShoppingCart (shoppingCart) where
 
-import Prelude ((#), ($), (*), (+), (-), (/), (<), (<>), (==), Unit, map, mod, otherwise, show)
+import Prelude ((#), ($), (*), (+), (-), (/), (<), (<<<), (<>), (==), Unit, const, map, mod, otherwise, show)
 
 import Data.Array (any, foldl, mapMaybe, snoc)
 import Data.Maybe (Maybe(..))
@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (constantly, forField, forValue, mvu, projection, tapped, updates)
+import PUI (constantly, forField, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (attr, body, clicked, foreach, text)
 import PUI.MDC (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,15 +20,15 @@ shoppingCart =
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
           attr "style" "border: 1px solid #ccc; margin-bottom: 8px;"
             ( listOf {} (text # projection productOffer # forValue)
-            ) # constantly productCatalogue # rmap (\p -> .productPicked p :: [ productPicked :: Product ]) # updates (match { productPicked: addUnit })
+            ) # constantly productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( foreach $ clicked $ dataRow RecordToRecord.do
                 dataCell (text # forField @"product")
                 dataCell (text # forField @"quantity")
                 dataCell (text # forField @"lineTotal")
-            ) # lcmap cartLines # rmap (\l -> .linePicked l.product :: [ linePicked :: String ]) # updates (match { linePicked: removeUnit })
+            ) # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
           body1 (text # projection grandTotal # forValue) # tapped
-          button { label: "Empty cart" } # updates (match { clicked: \m _ -> clearCart m })
+          button { label: "Empty cart" } # updates (match { clicked: const <<< clearCart })
       ) # mvu emptyCart
 
 type Product = { name :: String, unitPrice :: Int }

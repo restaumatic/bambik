@@ -5,10 +5,10 @@ import Prelude ((#), ($), (&&), (||), (<>), (==), (>>>), class Eq, Unit, map, sh
 import Data.Array (any, catMaybes, elem, filter, length, null)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
-import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, forField, forValue, mvu, projection, tapped, updates)
+import PUI (asField, completed, forField, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (attr, body, cl, clWhen, foreach, li, span, text, ul)
 import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -35,7 +35,7 @@ movieBrowser =
                     iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"
                 ) # completed
             )
-            # rmap (\m -> .favored m :: [ favored :: MovieCard ])
+            # toCase @"favored"
             # lcmap visibleMovies
             # updates (match { favored: markFavorite })
       ) # mvu movieCatalogue

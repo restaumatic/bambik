@@ -13,7 +13,7 @@ import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase)
+import Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase, toCase)
 import Data.Profunctor.Row.VariantToVariant (coprism, iterate)
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
@@ -75,6 +75,12 @@ main = do
   assertEqual "recordToCase"
     (.total 8 :: [ total :: Int, other :: String ])
     (recordToCase @"total" (\r -> r.a + r.b) { a: 3, b: 5 })
+
+  -- toCase: a bare output introduced as case l at the closed singleton row —
+  -- recordToCase without the record-input constraint.
+  assertEqual "toCase"
+    (.picked 7 :: [ picked :: Int ])
+    (toCase @"picked" _.key { key: 7, label: "x" })
 
   -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
   -- == nullary operator `pempty`. At record outputs the unit *announces* its ==

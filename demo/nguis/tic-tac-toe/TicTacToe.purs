@@ -1,6 +1,6 @@
 module TicTacToe (ticTacToe) where
 
-import Prelude ((#), ($), (&&), (/=), (<#>), (<>), (==), Unit, bind, mod, show)
+import Prelude ((#), ($), (&&), (/=), (<#>), (<<<), (<>), (==), Unit, bind, const, mod, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
@@ -25,7 +25,7 @@ ticTacToe =
             renderBoard
             (\node emit -> onKeyClick node \key -> emit (.cellPicked key))
             # updates (match { cellPicked: claimCell })
-          button { label: "New game", icon: "replay" } # updates (match { clicked: \g _ -> startOver g })
+          button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
       ) # mvu openingPosition
 
 renderBoard :: Match -> Array Markup

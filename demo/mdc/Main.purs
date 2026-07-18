@@ -19,8 +19,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, muted, onCase, projection, seeded, silence, tapped, with)
-import PUI.HTML (attr, body, div, shownWhen, staticText, text)
+import PUI (action, announce, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, muted, onCase, projection, seeded, silence, tapped, updates, with)
+import PUI.HTML (attr, body, div, provided, staticText, text)
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -120,16 +120,18 @@ main =
               lcmap stepPeak identity
               body2 (text # projection peakLine # forValue) # tapped
           ) # feedback
-          body2 (text # projection (\v -> "Volume " <> show v) # forField @"volume") # tapped
+          body2 (text # projection volumeLine # forField @"volume") # tapped
         layoutCell { span: 12 } $ card { caption: "Tabs" }
-          ( ( RecordToRecord.do
+          ( ( Semigroupoid.do
                 tabBar
                   [ { value: "standard", label: "Standard", icon: "local_shipping" }
                   , { value: "express", label: "Express", icon: "bolt" }
                   ]
-                  # asField @"selected"
-                shownWhen (\r -> r.selected == "standard") (filledTextField { floatingLabel: "Delivery days" } # asField @"days" # lcmap daysOf)
-                shownWhen (\r -> r.selected == "express") (filledTextField { floatingLabel: "Express fee" } # asField @"price" # lcmap priceOf)
+                  # asField @"selected" # completed
+                filledTextField { floatingLabel: "Delivery days" } # asField @"days"
+                  # provided # lcmap standardPane # updates setDays
+                filledTextField { floatingLabel: "Express fee" } # asField @"price"
+                  # provided # lcmap expressPane # updates setPrice
             ) # looped # dimap shippingState shippingCase
           ) # field @"shipping"
         layoutCell { span: 6 } $ card { caption: "Image lists" } $ imageList { columns: 3 } RecordToRecord.do
@@ -164,15 +166,13 @@ main =
             menuItem { label: "Reset to defaults" } # asCase @"reset"
         card { caption: "Wizard (folding)" }
           ( ( Semigroupoid.do
-                ( RecordToRecord.do
-                    shownWhen (\r -> r.step == "review") $ body2 (text # projection reviewLine # forValue)
-                    shownWhen (\r -> r.step == "confirm") $ body2 (text # projection confirmLine # forValue)
-                ) # tapped
+                body2 (text # projection reviewLine # forValue) # provided # lcmap atReview # displayed
+                body2 (text # projection confirmLine # forValue) # provided # lcmap atConfirm # displayed
                 div >>> attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
                   announce reviewStep
-                  shownWhen (\r -> r.step == "review") (button { label: "Next" } # asCase @"next" # lcmap (toStep "confirm"))
-                  shownWhen (\r -> r.step == "confirm") (button { label: "Back" } # asCase @"next" # lcmap (toStep "review"))
-                  shownWhen (\r -> r.step == "confirm") (button { label: "Publish", icon: "publish" } # asCase @"publish" # lcmap essentials)
+                  button { label: "Next" } # asCase @"next" # provided # lcmap nextAtReview
+                  button { label: "Back" } # asCase @"next" # provided # lcmap backAtConfirm
+                  button { label: "Publish", icon: "publish" } # asCase @"publish" # provided # lcmap publishAtConfirm
             ) # folding @"next"
           )
       VariantToVariant.do
@@ -241,11 +241,17 @@ shippingCase :: ShippingState ->
   ]
 shippingCase s = if s.selected == "standard" then .standard { days: s.days } else .express { price: s.price }
 
-daysOf :: ShippingState -> { days :: String }
-daysOf s = { days: s.days }
+standardPane :: ShippingState -> Maybe { days :: String }
+standardPane s = if s.selected == "standard" then Just { days: s.days } else Nothing
 
-priceOf :: ShippingState -> { price :: String }
-priceOf s = { price: s.price }
+expressPane :: ShippingState -> Maybe { price :: String }
+expressPane s = if s.selected == "express" then Just { price: s.price } else Nothing
+
+setDays :: { days :: String } -> ShippingState -> ShippingState
+setDays { days } s = s { days = days }
+
+setPrice :: { price :: String } -> ShippingState -> ShippingState
+setPrice { price } s = s { price = price }
 
 reviewStep ::
   [ publish :: { name :: String, plan :: String, attempt :: Int }
@@ -259,17 +265,29 @@ reviewLine r = "Step 1 of 2 — review: publish " <> r.name <> " (" <> r.plan <>
 confirmLine :: { name :: String, plan :: String, step :: String } -> String
 confirmLine r = "Step 2 of 2 — confirm publishing " <> r.name <> "."
 
-toStep :: String -> { name :: String, plan :: String, step :: String } -> { step :: String }
-toStep s _ = { step: s }
+atReview :: { name :: String, plan :: String, step :: String } -> Maybe { name :: String, plan :: String, step :: String }
+atReview r = if r.step == "review" then Just r else Nothing
 
-essentials :: { name :: String, plan :: String, step :: String } -> { name :: String, plan :: String, attempt :: Int }
-essentials r = { name: r.name, plan: r.plan, attempt: 0 }
+atConfirm :: { name :: String, plan :: String, step :: String } -> Maybe { name :: String, plan :: String, step :: String }
+atConfirm r = if r.step == "confirm" then Just r else Nothing
+
+nextAtReview :: { name :: String, plan :: String, step :: String } -> Maybe { step :: String }
+nextAtReview r = if r.step == "review" then Just { step: "confirm" } else Nothing
+
+backAtConfirm :: { name :: String, plan :: String, step :: String } -> Maybe { step :: String }
+backAtConfirm r = if r.step == "confirm" then Just { step: "review" } else Nothing
+
+publishAtConfirm :: { name :: String, plan :: String, step :: String } -> Maybe { name :: String, plan :: String, attempt :: Int }
+publishAtConfirm r = if r.step == "confirm" then Just { name: r.name, plan: r.plan, attempt: 0 } else Nothing
 
 stepPeak :: { volume :: Number, peak :: Number } -> { volume :: Number, peak :: Number }
 stepPeak r = { volume: r.volume, peak: max r.volume r.peak }
 
 peakLine :: { volume :: Number, peak :: Number } -> String
 peakLine r = "Session peak " <> show r.peak
+
+volumeLine :: Number -> String
+volumeLine v = "Volume " <> show v
 
 resumeZero ::
   [ saved :: String

@@ -1,6 +1,6 @@
 module Timer (timer) where
 
-import Prelude ((#), ($), (+), (/), (<), (<=), Unit, min, show)
+import Prelude ((#), ($), (+), (/), (<), (<<<), (<=), Unit, const, min, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -32,7 +32,7 @@ timer =
               sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration"
           ) # completed
           every tickPeriod tick
-          button { label: "Reset", icon: "replay" } # updates (match { clicked: \t _ -> reset t })
+          button { label: "Reset", icon: "replay" } # updates (match { clicked: const <<< reset })
       ) # mvu tenSecondFreshTimer
 
 reset :: Timer -> Timer

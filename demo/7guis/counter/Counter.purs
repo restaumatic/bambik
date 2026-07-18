@@ -1,6 +1,6 @@
 module Counter (counter) where
 
-import Prelude ((#), ($), (+), Unit, show)
+import Prelude ((#), ($), (+), (<<<), Unit, const, show)
 
 import Data.Variant (match)
 import Effect (Effect)
@@ -15,7 +15,7 @@ counter =
     elevation20 $
       card { caption: "Counter" } $ ( Semigroupoid.do
           headline4 (text # projection show # forField @"count") # completed
-          button { label: "Count" } # updates (match { clicked: \m _ -> increment m })
+          button { label: "Count" } # updates (match { clicked: const <<< increment })
       ) # mvu freshCount
 
 increment :: { count :: Int } -> { count :: Int }

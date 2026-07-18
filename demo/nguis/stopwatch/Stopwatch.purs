@@ -1,6 +1,6 @@
 module Stopwatch (stopwatch) where
 
-import Prelude ((#), ($), (+), (<), (<>), (>>>), Unit, not, show)
+import Prelude ((#), ($), (+), (<), (<<<), (<>), (>>>), Unit, const, not, show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (asCase, completed, displayed, every, forValue, mvu, projection, updates)
-import PUI.HTML (attr, body, div, foreach, li, shownWhen, text, ul)
+import PUI.HTML (attr, body, div, foreach, li, provided, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -29,15 +29,15 @@ stopwatch =
           headline3 (text # projection readout # forValue) # completed
           every tickPeriod tick
           ( div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
-              shownWhen halted $ button { label: "Start", icon: "play_arrow" } # asCase @"start"
-              shownWhen _.running $ button { label: "Stop", icon: "stop" } # asCase @"stop"
-              shownWhen _.running $ button { label: "Lap", icon: "flag" } # asCase @"lap"
-              shownWhen halted $ button { label: "Reset", icon: "replay" } # asCase @"reset"
+              button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided # lcmap whenHalted
+              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning
+              button { label: "Lap", icon: "flag" } # asCase @"lap" # provided # lcmap whenRunning
+              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided # lcmap whenHalted
           ) # updates (match
-              { start: \sw _ -> beginTiming sw
-              , stop: \sw _ -> haltTiming sw
-              , lap: \sw _ -> recordLap sw
-              , reset: \sw _ -> clearStopwatch sw
+              { start: const <<< beginTiming
+              , stop: const <<< haltTiming
+              , lap: const <<< recordLap
+              , reset: const <<< clearStopwatch
               })
           ul (foreach (li (text # forValue))) # lcmap lapLines # displayed
       ) # mvu zeroedStopwatch
@@ -59,8 +59,11 @@ tick sw =
   if sw.running then Just (sw { elapsedTenths = sw.elapsedTenths + 1 })
   else Nothing
 
-halted :: Stopwatch -> Boolean
-halted sw = not sw.running
+whenHalted :: Stopwatch -> Maybe Stopwatch
+whenHalted sw = if not sw.running then Just sw else Nothing
+
+whenRunning :: Stopwatch -> Maybe Stopwatch
+whenRunning sw = if sw.running then Just sw else Nothing
 
 readout :: Stopwatch -> String
 readout sw = formatTime sw.elapsedTenths
