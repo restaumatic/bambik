@@ -35,6 +35,8 @@ module Data.Profunctor.Row
   , class DisjointLabels
   , class LabelAbsent
   , class LabelAbsentK
+  , class NoDuplicateLabels
+  , class NoDuplicateLabelsK
   , exactRow
   , fieldNames
   , widenRecordInput
@@ -231,20 +233,51 @@ instance Fail
 instance LabelAbsent l rest => LabelAbsentK LT l rest
 instance LabelAbsent l rest => LabelAbsentK GT l rest
 
+-- The same defect can also surface *within* one operand's inferred row:
+-- unification can build a single row carrying a label twice (e.g. the tail
+-- of a `do` block against a pinned total row). `RowToList` sorts, so
+-- duplicates are adjacent — one pass catches them.
+
+class NoDuplicateLabels :: forall k. RowList k -> Constraint
+class NoDuplicateLabels rl
+
+instance NoDuplicateLabels RL.Nil
+instance NoDuplicateLabels (RL.Cons l a RL.Nil)
+instance (Symbol.Compare l l' ord, NoDuplicateLabelsK ord l (RL.Cons l' b rest)) => NoDuplicateLabels (RL.Cons l a (RL.Cons l' b rest))
+
+class NoDuplicateLabelsK :: forall k. Ordering -> Symbol -> RowList k -> Constraint
+class NoDuplicateLabelsK ord l rest
+
+instance Fail
+  ( Above
+      (Beside (Beside (Text "Two merge operands own the label \"") (Text l)) (Text "\"."))
+      (Above
+        (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
+        (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block. (doc/type-errors.md #2)"))
+  ) => NoDuplicateLabelsK EQ l rest
+instance NoDuplicateLabels rest => NoDuplicateLabelsK LT l rest
+instance NoDuplicateLabels rest => NoDuplicateLabelsK GT l rest
+
 -- | A merge's **variant-input side**: every case has exactly one handler
 -- | (disjoint rows), and routing a value to its handler is label-driven —
 -- | `DispatchableVariants` supplies the runtime tags `contract` compares.
 class OwnedVariantInputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
 class
-  ( ExclusiveRows i1 i2 i
-  , DispatchableVariants i1 i2 i1l i2l
+  ( NoDuplicateLabels i1l
+  , NoDuplicateLabels i2l
   , DisjointLabels i1l i2l
+  , ExclusiveRows i1 i2 i
+  , DispatchableVariants i1 i2 i1l i2l
   ) <= OwnedVariantInputs i1 i2 i i1l i2l
 
 instance
-  ( ExclusiveRows i1 i2 i
-  , DispatchableVariants i1 i2 i1l i2l
+  ( RowToList i1 i1l
+  , RowToList i2 i2l
+  , NoDuplicateLabels i1l
+  , NoDuplicateLabels i2l
   , DisjointLabels i1l i2l
+  , ExclusiveRows i1 i2 i
+  , DispatchableVariants i1 i2 i1l i2l
   ) => OwnedVariantInputs i1 i2 i i1l i2l
 
 -- | A merge's **record-output side**: every field has exactly one producer
@@ -253,15 +286,21 @@ instance
 -- | with before the gates' union.
 class OwnedRecordOutputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
 class
-  ( ExclusiveRows o1 o2 o
-  , MergeableRecords o1 o2 o1l o2l
+  ( NoDuplicateLabels o1l
+  , NoDuplicateLabels o2l
   , DisjointLabels o1l o2l
+  , ExclusiveRows o1 o2 o
+  , MergeableRecords o1 o2 o1l o2l
   ) <= OwnedRecordOutputs o1 o2 o o1l o2l
 
 instance
-  ( ExclusiveRows o1 o2 o
-  , MergeableRecords o1 o2 o1l o2l
+  ( RowToList o1 o1l
+  , RowToList o2 o2l
+  , NoDuplicateLabels o1l
+  , NoDuplicateLabels o2l
   , DisjointLabels o1l o2l
+  , ExclusiveRows o1 o2 o
+  , MergeableRecords o1 o2 o1l o2l
   ) => OwnedRecordOutputs o1 o2 o o1l o2l
 
 -- =====================================================================
