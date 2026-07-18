@@ -32,7 +32,7 @@ circleDrawer =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { label: "Diameter", min: 4.0, max: 200.0 } # asField @"diameter"
+          sliderLive { label: "Diameter", min: minDiameter, max: maxDiameter } # asField @"diameter"
             # completed # shownWhen hasSelection # rmap applyDiameter
           ( RecordToVariant.do
               view
@@ -43,14 +43,7 @@ circleDrawer =
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
           ) # updates (match { clicked: clickAt, undo: \m _ -> undo m, redo: \m _ -> redo m })
-      ) # mvu
-          { circles: []
-          , selected: Nothing
-          , diameter: 40.0
-          , adjusting: false
-          , undoStack: []
-          , redoStack: []
-          }
+      ) # mvu initial
 
 clickAt :: { x :: Number, y :: Number } -> Model -> Model
 clickAt { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
@@ -96,3 +89,19 @@ renderCanvas m = mapWithIndex circle m.circles
 
 hasSelection :: Model -> Boolean
 hasSelection m = isJust m.selected
+
+initial :: Model
+initial =
+  { circles: []
+  , selected: Nothing
+  , diameter: 40.0
+  , adjusting: false
+  , undoStack: []
+  , redoStack: []
+  }
+
+minDiameter :: Number
+minDiameter = 4.0
+
+maxDiameter :: Number
+maxDiameter = 200.0

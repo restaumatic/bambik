@@ -26,7 +26,7 @@ main =
             input "text" # field @"name"
           p (text # projection (\r -> r.greeting <> ", " <> r.name <> "!") # forValue)
       silence
-  ) # with
-      { greeting: "Hello"
-      , name: "World"
-      }
+  ) # with initial
+
+initial :: { greeting :: String, name :: String }
+initial = { greeting: "Hello", name: "World" }

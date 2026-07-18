@@ -16,9 +16,7 @@ main =
       filledTextField { floatingLabel: "Quantity" } # asField @"quantity" # focusRecord
       filledTextField { floatingLabel: "Price" } # asField @"price" # focusRecord
       silence
-  ) # with
-      { foo: "foo"
-      , day: "1"
-      , quantity: "1"
-      , price: "10"
-      }
+  ) # with initial
+
+initial :: { foo :: String, day :: String, quantity :: String, price :: String }
+initial = { foo: "foo", day: "1", quantity: "1", price: "10" }

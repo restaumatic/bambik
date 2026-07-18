@@ -53,6 +53,25 @@ selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m
 Existing `Model -> Model` functions (`commit`, `applyDiameter`, …) already
 belong to the business class — leave them standalone.
 
+**Business literals hiding in UI code are a smell.** Numeric bounds and
+steps (slider `min`/`max`/`step`), seed/initial models (`mvu`/`with`/`seeded`
+arguments), tick periods, default payload values — extract each as a named
+business definition in the business section:
+
+```purescript
+) # mvu initial
+sliderLive { label: "Duration", min: minDuration, max: maxDuration, step: durationStep }
+every tickPeriod tick
+
+initial :: Timer
+initial = { duration: 10.0, elapsed: 0.0 }
+
+minDuration :: Number
+minDuration = 0.0
+```
+
+UI code keeps only presentation: labels, captions, icons, styles, structure.
+
 ## Type-inference gotchas (both hit in practice)
 
 - **Inline variant sugar needs a closed-row annotation.** A named

@@ -115,9 +115,9 @@ main =
             ]
             # asField @"theme"
         layoutCell { span: 6 } $ card { caption: "Sliders" } $ Semigroupoid.do
-          sliderLive { label: "Volume", min: 0.0, max: 100.0 } # asField @"volume"
+          sliderLive { label: "Volume", min: minVolume, max: maxVolume } # asField @"volume"
           ( Semigroupoid.do
-              seeded { volume: 0.0, peak: 0.0 }
+              seeded initialVolume
               lcmap stepPeak identity
               body2 (text # projection peakLine # forValue) # tapped
           ) # feedback
@@ -366,3 +366,11 @@ publishFlaky r = do
       pure $ .publish r { attempt = r.attempt + 1 }
     else pure $ .published ("Published " <> r.name <> " on the " <> r.plan <> " plan on attempt " <> show (r.attempt + 1))
 
+minVolume :: Number
+minVolume = 0.0
+
+maxVolume :: Number
+maxVolume = 100.0
+
+initialVolume :: { volume :: Number, peak :: Number }
+initialVolume = { volume: 0.0, peak: 0.0 }

@@ -43,16 +43,7 @@ cells =
             renderTable
             (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
             # updates (match { cellClicked: selectCell })
-      ) # mvu
-          { cells: fromHomogeneous
-              { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
-              , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
-              , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
-              , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
-              }
-          , selected: Nothing
-          , formula: ""
-          }
+      ) # mvu initial
 
 cols :: Int
 cols = 26
@@ -249,3 +240,15 @@ evalExpr cells visiting = go
 
 selectedCaption :: Model -> String
 selectedCaption m = "Cell " <> fromMaybe "—" m.selected
+
+initial :: Model
+initial =
+  { cells: fromHomogeneous
+      { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
+      , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
+      , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
+      , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
+      }
+  , selected: Nothing
+  , formula: ""
+  }
