@@ -39,12 +39,12 @@ main =
           ( RecordToVariant.do
               attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px;"
                 ( listOf { selected: _.selected } (text # projection _.label # forValue)
-                ) # rmap picked # lcmap entries
+                ) # rmap (\e -> .picked e.key :: [ picked :: Int ]) # lcmap entries
               div >>> attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
                 button { label: "Create" } # asCase @"create"
                 button { label: "Update" } # asCase @"update"
                 button { label: "Delete" } # asCase @"delete"
-          ) # updates handle
+          ) # updates (match { picked: pick, create: \m _ -> createPerson m, update: \m _ -> updatePerson m, delete: \m _ -> deletePerson m })
       ) # mvu
           { prefix: ""
           , name: ""
@@ -57,31 +57,25 @@ main =
           , selected: Nothing
           }
 
-handle ::
-  [ picked :: Int
-  , create :: Model
-  , update :: Model
-  , delete :: Model
-  ]
-  -> Model -> Model
-handle e m = match
-  { picked: \i -> case index m.people i of
-      Just p -> m { selected = Just i, name = p.name, surname = p.surname }
-      Nothing -> m
-  , create: \_ ->
-      m { people = snoc m.people { name: m.name, surname: m.surname } }
-  , update: \_ -> case m.selected of
-      Just i -> m { people = fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people) }
-      Nothing -> m
-  , delete: \_ -> case m.selected of
-      Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
-      Nothing -> m
-  } e
+pick :: Int -> Model -> Model
+pick i m = case index m.people i of
+  Just p -> m { selected = Just i, name = p.name, surname = p.surname }
+  Nothing -> m
+
+createPerson :: Model -> Model
+createPerson m = m { people = snoc m.people { name: m.name, surname: m.surname } }
+
+updatePerson :: Model -> Model
+updatePerson m = case m.selected of
+  Just i -> m { people = fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people) }
+  Nothing -> m
+
+deletePerson :: Model -> Model
+deletePerson m = case m.selected of
+  Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
+  Nothing -> m
 
 type Entry = { key :: Int, label :: String, surname :: String, selected :: Boolean }
-
-picked :: Entry -> [ picked :: Int ]
-picked e = .picked e.key
 
 entries :: Model -> Array Entry
 entries m = filter (\e -> hasPrefix m.prefix e.surname)

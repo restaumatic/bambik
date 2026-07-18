@@ -49,6 +49,27 @@ selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m
 Existing `Model -> Model` functions (`commit`, `applyDiameter`, …) already
 belong to the business class — leave them standalone.
 
+## Type-inference gotchas (both hit in practice)
+
+- **Inline variant sugar needs a closed-row annotation.** A named
+  constructor wrapper pinned the row via its signature; inlined, the sugar
+  is open and the merge's `Nub` fails. Annotate at the use site:
+
+  ```purescript
+  emit (.clicked { x, y } :: [ clicked :: { x :: Number, y :: Number } ])
+  # rmap (\e -> .picked e.key :: [ picked :: Int ])
+  ```
+
+- **Ignored button payloads still pin rows.** A `button # asCase @l`
+  emission's payload row is inferred *from the handler*. `const f` leaves
+  it free and the whole merge becomes ambiguous (the error surfaces at a
+  sibling stage). Dispatch by applying the business function to the payload
+  snapshot instead — it is the same model value:
+
+  ```purescript
+  # updates (match { create: \m _ -> createPerson m, ... })
+  ```
+
 ## Boundary cases
 
 - `Model -> Array Markup` render functions are UI but too large to inline —

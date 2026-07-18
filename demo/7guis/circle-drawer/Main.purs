@@ -38,11 +38,11 @@ main =
               view
                 """<svg viewBox="0 0 500 300" style="border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;"></svg>"""
                 renderCanvas
-                (\node emit -> onClickXY node \x y -> emit (clickedAt x y))
+                (\node emit -> onClickXY node \x y -> emit (.clicked { x, y } :: [ clicked :: { x :: Number, y :: Number } ]))
               div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
-          ) # updates handle
+          ) # updates (match { clicked: clickAt, undo: \m _ -> undo m, redo: \m _ -> redo m })
       ) # mvu
           { circles: []
           , selected: Nothing
@@ -52,26 +52,22 @@ main =
           , redoStack: []
           }
 
-handle ::
-  [ clicked :: { x :: Number, y :: Number }
-  , undo :: Model
-  , redo :: Model
-  ]
-  -> Model -> Model
-handle e m = match
-  { clicked: \{ x, y } ->
-      case findIndex (\c -> dist c x y <= c.r) m.circles of
-        Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
-        Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
-  , undo: \_ -> case unsnoc m.undoStack of
-      Just { init: rest, last: circles } ->
-        m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
-      Nothing -> m
-  , redo: \_ -> case unsnoc m.redoStack of
-      Just { init: rest, last: circles } ->
-        m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
-      Nothing -> m
-  } e
+clickAt :: { x :: Number, y :: Number } -> Model -> Model
+clickAt { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
+  Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
+  Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
+
+undo :: Model -> Model
+undo m = case unsnoc m.undoStack of
+  Just { init: rest, last: circles } ->
+    m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
+  Nothing -> m
+
+redo :: Model -> Model
+redo m = case unsnoc m.redoStack of
+  Just { init: rest, last: circles } ->
+    m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
+  Nothing -> m
 
 applyDiameter :: Model -> Model
 applyDiameter m = case m.selected of
@@ -85,9 +81,6 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
-
-clickedAt :: Number -> Number -> [ clicked :: { x :: Number, y :: Number } ]
-clickedAt x y = .clicked { x, y }
 
 renderCanvas :: Model -> Array Markup
 renderCanvas m = mapWithIndex circle m.circles
