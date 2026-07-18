@@ -166,7 +166,7 @@ models — `PeopleCatalogue`, `Canvas`, `Temperature`, `Sheet` — typically
 the seed's name capitalized (`mvu peopleCatalogue` seeds a
 `PeopleCatalogue`). And to the **entry function**: name it after the
 application (`crud`, `counter`, `temperatureConverter`), not `main` —
-`Model`, `initial`, even `main` are all the same smell: architecture
+`Model`, `initial`, `default`, even `main` are all the same smell: architecture
 words where business words belong. Models stay row-shaped and structural as far as
 readable — anonymous Record rows for all-at-once, anonymous Variant rows
 for one-at-a-time; a named alias only for the top aggregate.
