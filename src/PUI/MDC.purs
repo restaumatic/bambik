@@ -188,8 +188,8 @@ button
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ event :: { | r } ]
-button provided = recordToCase @"event" (containedButton config)
+  -> PUI Web { | r } [ clicked :: { | r } ]
+button provided = recordToCase @"clicked" (containedButton config)
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Nothing, icon: Nothing } provided
 
@@ -259,8 +259,8 @@ fab
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ event :: { | r } ]
-fab provided = recordToCase @"event" $
+  -> PUI Web { | r } [ clicked :: { | r } ]
+fab provided = recordToCase @"clicked" $
   HTML.button >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-fab__ripple" $ pempty
     span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText config.icon
@@ -275,16 +275,16 @@ fab provided = recordToCase @"event" $
 
 -- | The `×→+` event icon button (the MD2 icon button; for the toggling
 -- | variant see the `×→×` editor `iconToggle @l`).
-iconButton :: forall r. { icon :: String, label :: String } -> PUI Web { | r } [ event :: { | r } ]
-iconButton config = recordToCase @"event" $
+iconButton :: forall r. { icon :: String, label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
+iconButton config = recordToCase @"clicked" $
   HTML.button >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-icon-button__ripple" $ pempty
     staticText config.icon
 
 -- | The `×→+` event list item for the `menu` ocular: fires the record it
 -- | is shown as event case `l` on click (the menu closes itself).
-menuItem :: forall r. { label :: String } -> PUI Web { | r } [ event :: { | r } ]
-menuItem config = recordToCase @"event" (menuItemLeaf config.label)
+menuItem :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
+menuItem config = recordToCase @"clicked" (menuItemLeaf config.label)
 
 -- the raw list-item button — scalar, so private (same wiring as
 -- `HTML.button`: replay the last value fed on click, `li` chrome)

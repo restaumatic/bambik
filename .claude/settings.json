@@ -78,7 +78,9 @@
       "Bash(git commit -q -m 'crud, circle-drawer: separate-concerns applied — dispatchers inlined, pick/createPerson/updatePerson/deletePerson/clickAt/undo/redo extracted as pure Model functions; skill gains the two row-pinning gotchas *)",
       "Bash(git commit -q -m 'counter, timer: strip the forall-click payload from business functions; skill marks it a smell; page note documents the main-then-business structure *)",
       "Bash(node_modules/.bin/esbuild --version)",
-      "Bash(git commit -q -m '7guis demos: named modules and entry functions — Counter.purs/module Counter/counter etc. *)"
+      "Bash(git commit -q -m '7guis demos: named modules and entry functions — Counter.purs/module Counter/counter etc. *)",
+      "Bash(curl -s \"http://erykciepiela.xyz/bambik/demo/7guis/counter/Counter.purs\")",
+      "Bash(git commit -q -m 'click emitters emit [ clicked ] — button/fab/iconButton/menuItem canonical case renamed from event; asCase follows *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
