@@ -131,8 +131,8 @@ the seed's name capitalized (`mvu peopleCatalogue` seeds a
    (including Prelude — add/remove names the change touched), UI leads with
    `$`, data plumbing trails with `#`.
 3. Verify: `export PATH=$PWD/node_modules/.bin:$PATH`, then
-   `spago build --path "demo/7guis/*/*.purs"` (7guis demos are named
-   modules and compile together), bundle with `npm run bundle-demo-7guis`
+   `spago build` (7guis demos are project sources and compile with the
+   library), bundle with `npm run bundle-demo-7guis`
    (or `bundle-demo-1|2|mdc` — spago bundle-app can only call `Main.main`),
    run the demo's CDP suite from the scratchpad harness, commit to main,
    `npm run deploy-demo-7guis` (or the matching deploy script).
