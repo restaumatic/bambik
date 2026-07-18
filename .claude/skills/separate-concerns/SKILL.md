@@ -77,6 +77,12 @@ Name the extracted values in **business language**, not lifecycle language —
 Say what the value *is*: `roomTemperature`, `peopleCatalogue`, `emptyCanvas`,
 `tenSecondTimer`, `plannedTrip`.
 
+The same rule applies to **type aliases**: `type Model = ...` is
+architecture language, not business language. Name the type after what it
+models — `PeopleCatalogue`, `Canvas`, `Temperature`, `Sheet` — typically
+the seed's name capitalized (`mvu peopleCatalogue` seeds a
+`PeopleCatalogue`).
+
 ## Type-inference gotchas (both hit in practice)
 
 - **Inline variant sugar needs a closed-row annotation.** A named
