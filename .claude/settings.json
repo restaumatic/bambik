@@ -1,6 +1,21 @@
 {
   "permissions": {
     "allow": [
+      "Bash(spago build)",
+      "Bash(spago build *)",
+      "Bash(spago test)",
+      "Bash(spago test *)",
+      "Bash(spago bundle-app *)",
+      "Bash(flock -w 900 /tmp/claude-1000/bambik-spago.lock spago build)",
+      "Bash(curl -s http://127.0.0.1*)",
+      "Bash(curl -s http://erykciepiela.xyz*)",
+      "Bash(curl -sI http://erykciepiela.xyz*)",
+      "Bash(curl -s -o /dev/null *)",
+      "Bash(node cdp.mjs *)",
+      "Bash(google-chrome --headless*)",
+      "Bash(python3 -m http.server 8000)",
+      "Bash(pkill -f 'remote-debugging-port=9222')",
+      "Bash(pkill -f 'http.server 8000')",
       "Bash(git commit -m ' *)",
       "Bash(grep -oE \"Session peak [0-9.]+|Step 1 of 2[^<]{0,40}\")",
       "Bash(node_modules/purescript/purs.bin --version)",
@@ -104,12 +119,16 @@
       "Bash(sed -i 's/^name: writing-bambik-apps/name: developing-bambik-apps/;s/^# Writing bambik applications/# Developing bambik applications/' .claude/skills/developing-bambik-apps/SKILL.md)",
       "Bash(git commit -m 'skill: writing-bambik-apps -> developing-bambik-apps *)",
       "Edit(/.claude/skills/developing-bambik-apps/**)",
-      "Bash(git commit -m 'skill: demo-page conventions refer to the 7guis pages instead of inlining them *)"
+      "Bash(git commit -m 'skill: demo-page conventions refer to the 7guis pages instead of inlining them *)",
+      "Bash(cat /home/eryk/mine/bambik/demo/7guis/index.html | head -80; ls /tmp/claude-1000/-home-eryk-mine-bambik/*/scratchpad/cdp.mjs 2>/dev/null; ls ~/mine/bambik/deploy* 2>/dev/null; grep -rn cdp -l ~/mine/bambik/doc 2>/dev/null | head)",
+      "Read(//tmp/claude-1000/-home-eryk-mine-bambik/**)",
+      "Bash(cp /tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad/cdp.mjs /tmp/claude-1000/-home-eryk-mine-bambik/854dce24-15b3-4ce2-96e3-a5fc0e2e1758/scratchpad/cdp.mjs && cat /tmp/claude-1000/-home-eryk-mine-bambik/854dce24-15b3-4ce2-96e3-a5fc0e2e1758/scratchpad/cdp.mjs)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
       "/home/eryk/mine/bambik/demo/7guis/*",
-      "/home/eryk/mine/bambik/.spago/convertable-options/*/src"
+      "/home/eryk/mine/bambik/.spago/convertable-options/*/src",
+      "/tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad"
     ]
   }
 }
