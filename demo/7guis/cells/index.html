@@ -65,14 +65,14 @@
     </header>
     <section id="source-panel">
       <pre><code id="src" class="language-haskell">loading…</code></pre>
-      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. Each line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing. The listing is a complete standalone application, entered at <code>main</code>. The code is structured as one purely UI-related function — <code>main</code> — followed by pure business functions over the model.</p>
+      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. Each line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing. The listing is a complete standalone application, entered at <code>cells</code>. The code is structured as one purely UI-related function — <code>main</code> — followed by pure business functions over the model.</p>
     </section>
     <script>
       const fmt = (n) => n < 1024 ? n + "B"
         : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
         : (n / 1048576).toFixed(1).replace(/\.0$/, "") + "MB";
       Promise.all([
-        fetch("Main.purs", { cache: "no-cache" }).then(r => r.text()),
+        fetch("Cells.purs", { cache: "no-cache" }).then(r => r.text()),
         fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
       ]).then(([src, bundleBytes]) => {
         const el = document.getElementById("src");
@@ -80,7 +80,7 @@
         if (window.hljs) hljs.highlightElement(el);
         const srcBytes = new TextEncoder().encode(src).length;
         document.getElementById("src-size").innerHTML =
-          '<a href="Main.purs">source</a> (' + fmt(srcBytes) + ')';
+          '<a href="Cells.purs">source</a> (' + fmt(srcBytes) + ')';
         if (bundleBytes) {
           document.getElementById("bundle-sep").hidden = false;
           document.getElementById("bundle-size").innerHTML =

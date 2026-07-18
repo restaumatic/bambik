@@ -1,4 +1,4 @@
-module Main (main) where
+module Crud (crud) where
 
 import Prelude ((#), ($), (<>), (==), (>>>), Unit)
 
@@ -26,8 +26,8 @@ type Model =
   , selected :: Maybe Int
   }
 
-main :: Effect Unit
-main =
+crud :: Effect Unit
+crud =
   body $
     elevation20 $
       card { caption: "CRUD" } $ ( Semigroupoid.do

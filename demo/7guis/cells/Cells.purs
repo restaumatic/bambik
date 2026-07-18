@@ -1,4 +1,4 @@
-module Main (main) where
+module Cells (cells) where
 
 import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), Unit, bind, map, max, min, mod, pure, show, (||))
 
@@ -29,8 +29,8 @@ type Model =
   , formula :: String
   }
 
-main :: Effect Unit
-main =
+cells :: Effect Unit
+cells =
   body $
     elevation20 $
       card { caption: "Cells" } $ ( Semigroupoid.do

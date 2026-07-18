@@ -1,4 +1,4 @@
-module Main (main) where
+module CircleDrawer (circleDrawer) where
 
 import Prelude ((#), ($), (*), (+), (-), (/), (/=), (<$>), (<=), (==), (>>>), Unit, show)
 
@@ -27,8 +27,8 @@ type Model =
   , redoStack :: Array (Array Circle)
   }
 
-main :: Effect Unit
-main =
+circleDrawer :: Effect Unit
+circleDrawer =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do

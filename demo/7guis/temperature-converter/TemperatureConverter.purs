@@ -1,4 +1,4 @@
-module Main (main) where
+module TemperatureConverter (temperatureConverter) where
 
 import Prelude ((#), ($), (*), (+), (-), (/), Unit, show)
 
@@ -12,8 +12,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Model = { celsius :: Number, fahrenheit :: Number }
 
-main :: Effect Unit
-main =
+temperatureConverter :: Effect Unit
+temperatureConverter =
   body $
     elevation20 $
       card { caption: "Temperature Converter" } $ ( Semigroupoid.do

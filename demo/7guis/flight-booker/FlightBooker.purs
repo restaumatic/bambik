@@ -1,4 +1,4 @@
-module Main (main) where
+module FlightBooker (flightBooker) where
 
 import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), class Eq, Unit, bind, pure, show)
 
@@ -34,8 +34,8 @@ data Itinerary
 
 type Date = { y :: Int, m :: Int, d :: Int }
 
-main :: Effect Unit
-main =
+flightBooker :: Effect Unit
+flightBooker =
   body $
     elevation20 $
       card { caption: "Book Flight" } Semigroupoid.do

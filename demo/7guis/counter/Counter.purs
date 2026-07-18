@@ -1,4 +1,4 @@
-module Main (main) where
+module Counter (counter) where
 
 import Prelude ((#), ($), (+), Unit, show)
 
@@ -9,8 +9,8 @@ import PUI.HTML (body, text)
 import PUI.MDC (button, card, elevation20, headline4)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-main :: Effect Unit
-main =
+counter :: Effect Unit
+counter =
   body $
     elevation20 $
       card { caption: "Counter" } $ ( Semigroupoid.do

@@ -71,7 +71,14 @@
       "Bash(curl -s \"https://raw.githubusercontent.com/natefaubion/purescript-convertable-options/v1.0.0/spago.dhall\")",
       "Bash(sed -n '1,70p' .spago/convertable-options/*/src/ConvertableOptions.purs)",
       "Bash(grep -n \"^  \\( banner\\\\|^  , button$\" src/PUI/MDC.purs)",
-      "Bash(git commit -q -m 'MDC: optional config fields via convertable-options — button/card take bare strings, omit defaults *)"
+      "Bash(git commit -q -m 'MDC: optional config fields via convertable-options — button/card take bare strings, omit defaults *)",
+      "Bash(git commit -q -m 'cells: UI/business split — variant dispatch inlined at the wire, selectCell extracted as a pure Model function *)",
+      "Edit(/.claude/skills/separate-concerns/**)",
+      "Bash(git commit -q -m 'skill: separate-concerns — reorganize demo functions into UI wiring \\(inlined\\) vs pure business \\(extracted\\) *)",
+      "Bash(git commit -q -m 'crud, circle-drawer: separate-concerns applied — dispatchers inlined, pick/createPerson/updatePerson/deletePerson/clickAt/undo/redo extracted as pure Model functions; skill gains the two row-pinning gotchas *)",
+      "Bash(git commit -q -m 'counter, timer: strip the forall-click payload from business functions; skill marks it a smell; page note documents the main-then-business structure *)",
+      "Bash(node_modules/.bin/esbuild --version)",
+      "Bash(git commit -q -m '7guis demos: named modules and entry functions — Counter.purs/module Counter/counter etc. *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

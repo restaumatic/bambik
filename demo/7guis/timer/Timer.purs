@@ -1,4 +1,4 @@
-module Main (main) where
+module Timer (timer) where
 
 import Prelude ((#), ($), (+), (/), (<), (<=), Unit, min, show)
 
@@ -17,8 +17,8 @@ type Timer =
   , elapsed :: Number
   }
 
-main :: Effect Unit
-main =
+timer :: Effect Unit
+timer =
   body $
     elevation20 $
       card { caption: "Timer" } $ ( Semigroupoid.do
