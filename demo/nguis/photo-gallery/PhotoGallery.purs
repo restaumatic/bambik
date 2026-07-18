@@ -10,12 +10,12 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
-import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, displayed, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.Web (Web)
-import PUI.HTML (Markup(..), attr, body, div, foreach, span, staticText, text, view)
+import PUI.HTML (attr, body, div, foreach, span, staticText, text, view)
+import PUI.Markup as H
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -49,11 +49,11 @@ type Photo = { src :: String, caption :: String }
 
 photoTile :: PUI Web Photo {}
 photoTile =
-  view """<li class="mdc-image-list__item" style="margin-bottom: 16px;"></li>"""
+  view "li" [ H.cl "mdc-image-list__item", H.style "margin-bottom: 16px;" ]
     ( \p ->
-        [ Element "img" [ Tuple "class" "mdc-image-list__image", Tuple "src" p.src, Tuple "alt" p.caption ] []
-        , Element "div" [ Tuple "class" "mdc-image-list__supporting" ]
-            [ Element "span" [ Tuple "class" "mdc-image-list__label" ] [ Text p.caption ] ]
+        [ H.img [ H.cl "mdc-image-list__image", H.src p.src, H.alt p.caption ] []
+        , H.div [ H.cl "mdc-image-list__supporting" ]
+            [ H.span [ H.cl "mdc-image-list__label" ] [ H.text p.caption ] ]
         ]
     )
     (\_ _ -> pure unit)

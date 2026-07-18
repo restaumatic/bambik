@@ -7,10 +7,11 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import PUI (asField, completed, mvu)
-import PUI.HTML (Markup(..), body, view)
+import PUI.HTML (body, view)
+import PUI.Markup (Markup)
+import PUI.Markup as H
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -22,8 +23,7 @@ markdownPreviewer =
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
             layoutCell { span: 6 } $
-              view
-                """<div class="markdown-preview" style="border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;"></div>"""
+              view "div" [ H.cl "markdown-preview", H.style "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" ]
                 renderPreview
                 (\_ _ -> pure unit)
         ) # mvu welcomeDocument
@@ -32,19 +32,19 @@ renderPreview :: Document -> Array Markup
 renderPreview doc = parseMarkdown doc.source <#> renderBlock
 
 renderBlock :: Block -> Markup
-renderBlock (Heading level inlines) = Element ("h" <> show level) [] (map renderInline inlines)
-renderBlock (Paragraph inlines) = Element "p" [] (map renderInline inlines)
-renderBlock (Bullets items) = Element "ul" [] (items <#> \inlines -> Element "li" [] (map renderInline inlines))
+renderBlock (Heading level inlines) = H.el ("h" <> show level) [] (map renderInline inlines)
+renderBlock (Paragraph inlines) = H.p [] (map renderInline inlines)
+renderBlock (Bullets items) = H.ul [] (items <#> \inlines -> H.li [] (map renderInline inlines))
 renderBlock (Quote inlines) =
-  Element "blockquote"
-    [ Tuple "style" "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" ]
+  H.blockquote
+    [ H.style "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" ]
     (map renderInline inlines)
 
 renderInline :: Inline -> Markup
-renderInline (Plain s) = Text s
-renderInline (Bold s) = Element "strong" [] [ Text s ]
-renderInline (Italic s) = Element "em" [] [ Text s ]
-renderInline (Code s) = Element "code" [ Tuple "style" "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" ] [ Text s ]
+renderInline (Plain s) = H.text s
+renderInline (Bold s) = H.strong [] [ H.text s ]
+renderInline (Italic s) = H.em [] [ H.text s ]
+renderInline (Code s) = H.code [ H.style "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" ] [ H.text s ]
 
 type Document = { source :: String }
 

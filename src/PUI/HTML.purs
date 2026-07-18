@@ -1,9 +1,11 @@
 -- | The HTML vocabulary — a 1-1 correspondence with HTML: element oculars
 -- | (`div`, `p`, `ul`, `li`, `a`, ...), attribute/class decorators
 -- | (`attr`/`:=`, `cl`), the live leaves (`text`, `input`, `textArea`,
--- | `button`, ...), announcing statics (`staticText`, `staticHTML`), the
--- | `body` entry, and the custom-leaf toolkit (`viewEvents`, `escapeHtml`).
--- | The carrier they are built over lives in `PUI.Web`.
+-- | `button`, ...), announcing statics (`staticText`, `static`, `staticHTML`),
+-- | the `body` entry, and the `view` custom-leaf (a `×→+` leaf whose container
+-- | and per-value content are typed `PUI.Markup` trees materialized straight
+-- | to real DOM nodes — no HTML strings). The carrier they are built over
+-- | lives in `PUI.Web`; the markup DSL lives in `PUI.Markup`.
 module PUI.HTML
   ( (:=)
   , (:=>)
@@ -19,7 +21,6 @@ module PUI.HTML
   , clicked
   , clDyn
   , div
-  , escapeHtml
   , foreach
   , h1
   , h2
@@ -33,15 +34,14 @@ module PUI.HTML
   , inputDebounced
   , label
   , li
-  , Markup(..)
   , ol
   , p
   , path
-  , renderMarkup
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
   , span
+  , static
   , staticHTML
   , staticText
   , svg
@@ -57,7 +57,6 @@ module PUI.HTML
   , ul
   , provided
   , view
-  , viewEvents
   )
   where
 
@@ -65,14 +64,12 @@ import Prelude
 
 import Control.Monad.State (gets, modify_)
 import Data.Default (class Default, default)
-import Data.Foldable (foldMap, for_)
-import Data.Tuple (Tuple(..))
+import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
 import Data.Symbol (class IsSymbol)
-import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -81,7 +78,9 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setInnerHTML, setTextNodeValue, setValue)
+import PUI.Markup (Attr, Markup) as M
+import PUI.Markup (buildInto, buildNode, el, htmlNS, svgNS) as M
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createTextNode, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -260,6 +259,21 @@ staticHTML html = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent
   modify_ _ { sibling = newNode}
+  pure
+    { toUser: mempty
+    , fromUser: \prop -> void $ prop {}
+    }
+
+-- | Announcing chrome from a typed `PUI.Markup` tree — the string-free
+-- | `staticHTML`: materialized once to real DOM nodes, no HTML string.
+static :: M.Markup -> PUI Web {} {}
+static markup = wrap do
+  parent <- gets _.parent
+  newNode <- liftEffect $ do
+    node <- M.buildNode markup
+    appendChild node parent
+    pure node
+  modify_ _ { sibling = newNode }
   pure
     { toUser: mempty
     , fromUser: \prop -> void $ prop {}
@@ -517,53 +531,27 @@ body ui = do
     { fromUser } <- unwrap ui
     liftEffect $ fromUser \_ -> pure Nothing
 
--- | Build a `×→+` **view-with-events leaf**: `shell` is the container
--- | markup (appended once), `render` fills it per value fed (no echo —
--- | variant outputs don't echo), and `wire` attaches the event emitters to
--- | the container node. Events carry **bare payloads** — pair them with
--- | the model in an `updates` fold, not in the leaf.
-viewEvents :: forall i o. String -> (i -> String) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> PUI Web i o
-viewEvents shell render wire = wrap do
-  _ <- unwrap (staticHTML shell)
-  node <- gets _.sibling
+-- | Build a `×→+` **view-with-events leaf** from a typed `PUI.Markup` tree:
+-- | `tag`/`attrs` describe the container element (built once as a real DOM
+-- | node, so `wire`'s event listeners survive), `render` produces the content
+-- | fragment rebuilt wholesale per value fed (no echo — variant outputs don't
+-- | echo), and `wire` attaches the event emitters to the container node.
+-- | Nothing is ever an HTML string: the fragment is materialized straight to
+-- | DOM nodes (`PUI.Markup.buildInto`), auto-escaped by the browser. Events
+-- | carry **bare payloads** — pair them with the model in an `updates` fold,
+-- | not in the leaf.
+view :: forall i o. String -> Array M.Attr -> (i -> Array M.Markup) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> PUI Web i o
+view tag attrs render wire = wrap do
+  parent <- gets _.parent
+  node <- liftEffect do
+    n <- M.buildNode (M.el tag attrs [])
+    appendChild n parent
+    pure n
+  modify_ _ { sibling = node }
   pure
-    { toUser: \i -> setInnerHTML node (render i)
+    { toUser: \i -> M.buildInto (if tag == "svg" then M.svgNS else M.htmlNS) node (render i)
     , fromUser: \prop -> wire node (void <<< prop)
     }
-
--- | Typed markup for custom-leaf render functions: a plain tree, rendered
--- | to a string with all text and attribute values escaped automatically —
--- | injection-proof by construction, no `escapeHtml` at call sites. Not a
--- | virtual DOM: `view` still replaces the container's content per value
--- | fed, exactly like `viewEvents`.
-data Markup
-  = Element String (Array (Tuple String String)) (Array Markup)
-  | Text String
-
-renderMarkup :: Markup -> String
-renderMarkup (Text s) = escapeHtml s
-renderMarkup (Element tag attrs children) =
-  "<" <> tag <> foldMap renderAttr attrs <> ">"
-    <> foldMap renderMarkup children
-    <> "</" <> tag <> ">"
-  where
-  renderAttr (Tuple name value) = " " <> name <> "=\"" <> escapeHtml value <> "\""
-
--- | `viewEvents` with a typed render function: `shell` is the container
--- | markup (appended once), each value fed renders to a `Markup` fragment
--- | that replaces the container's content, `wire` attaches the event
--- | emitters. Events carry bare payloads — pair them with the model in an
--- | `updates` fold, not in the leaf.
-view :: forall i o. String -> (i -> Array Markup) -> (Node -> (o -> Effect Unit) -> Effect Unit) -> PUI Web i o
-view shell render = viewEvents shell (render >>> foldMap renderMarkup)
-
--- | Escape text for interpolation into `viewEvents` render output.
-escapeHtml :: String -> String
-escapeHtml s =
-  replaceAll (Pattern "\"") (Replacement "&quot;")
-    (replaceAll (Pattern ">") (Replacement "&gt;")
-      (replaceAll (Pattern "<") (Replacement "&lt;")
-        (replaceAll (Pattern "&") (Replacement "&amp;") s)))
 
 runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runWidgetInSelectedNode selector initial callback ui = do

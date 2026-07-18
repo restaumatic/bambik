@@ -113,8 +113,9 @@ The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/
 `action`/`onCase`/`tapped`/the adopter family re-exports),
-src/PUI/HTML.purs (HTML vocabulary, `body`, `foreach`, custom-leaf
-toolkit `view`/`Markup`), src/PUI/MDC.purs (the MDC component and
+src/PUI/HTML.purs (HTML vocabulary, `body`, `foreach`, the `view`
+custom-leaf), src/PUI/Markup.purs (the typed element-function markup DSL
+that `view` renders to real DOM), src/PUI/MDC.purs (the MDC component and
 ocular catalog, the editors' `dimap` round-trip contract), and
 src/Data/Profunctor/Row/ (the four merges, adopters, trace forms,
 business optics — laws in the module headers).
@@ -223,7 +224,7 @@ used in a single projection's return type can stay anonymous.
     # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
   ```
 
-  A `view`/`viewEvents` wiring lambda still constructs its case inline and
+  A `view` wiring lambda still constructs its case inline and
   *does* need the closed-row annotation (the merge's `Nub` fails on an open
   row), since it runs below the combinator layer:
 

@@ -5,11 +5,12 @@ import Prelude ((#), ($), (&&), (/=), (<#>), (<<<), (<>), (==), Unit, bind, cons
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, forValue, mvu, projection, updates)
-import PUI.HTML (Markup(..), body, text, view)
+import PUI.HTML (body, text, view)
+import PUI.Markup (Markup)
+import PUI.Markup as H
 import PUI.MDC (button, card, elevation20, headline6)
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,8 +21,7 @@ ticTacToe =
     elevation20 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headline6 (text # projection standing # forValue) # completed
-          view
-            """<div style="display: inline-block; margin-bottom: 10px;"></div>"""
+          view "div" [ H.style "display: inline-block; margin-bottom: 10px;" ]
             renderBoard
             (\node emit -> onKeyClick node \key -> emit (.cellPicked key))
             # updates (match { cellPicked: claimCell })
@@ -30,23 +30,23 @@ ticTacToe =
 
 renderBoard :: Match -> Array Markup
 renderBoard game =
-  [ Element "div"
-      [ Tuple "style" "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" ]
+  [ H.div
+      [ H.style "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" ]
       (range 0 8 <#> cell)
   ]
   where
   winners = fromMaybe [] (winningLine game.board)
   cell i =
-    Element "div"
-      [ Tuple "data-key" (show i)
-      , Tuple "class" "cell"
-      , Tuple "style"
+    H.div
+      [ H.dataKey (show i)
+      , H.cl "cell"
+      , H.style
           ( "height: 72px; display: flex; align-items: center; justify-content: center; "
               <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
               <> if i `elem` winners then "background: #a5d6a7;" else "background: #eceff1;"
           )
       ]
-      [ Text (fromMaybe "" (index game.board i)) ]
+      [ H.text (fromMaybe "" (index game.board i)) ]
 
 type Match = { board :: Array String }
 

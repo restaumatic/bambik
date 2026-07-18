@@ -6,11 +6,12 @@ import Data.Array (find)
 import Data.Int (hexadecimal, round, toStringAs)
 import Data.Maybe (maybe)
 import Data.String (length, toUpper)
-import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, forValue, mvu, projection, tapped, updates)
-import PUI.HTML (Markup(..), body, text, view)
+import PUI.HTML (body, text, view)
+import PUI.Markup (Markup)
+import PUI.Markup as H
 import PUI.MDC (body2, card, elevation20, sliderLive)
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,8 +29,7 @@ colorMixer =
             # asField @"green" # completed
           sliderLive { label: "Blue", min: minChannel, max: maxChannel, step: channelStep }
             # asField @"blue" # completed
-          view
-            """<div style="margin: 10px 0;"></div>"""
+          view "div" [ H.style "margin: 10px 0;" ]
             renderSwatch
             (\node emit -> onKeyClick node \key -> emit (.preset key :: [ preset :: String ]))
             # updates (match { preset: applyPreset })
@@ -39,25 +39,25 @@ colorMixer =
 
 renderSwatch :: Mix -> Array Markup
 renderSwatch m =
-  [ Element "div"
-      [ Tuple "id" "swatch"
-      , Tuple "style"
+  [ H.div
+      [ H.id "swatch"
+      , H.style
           ( "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; "
               <> "border: 1px solid #ccc; background-color: " <> rgb m <> ";"
           )
       ]
       []
-  , Element "div"
-      [ Tuple "style" "display: flex; gap: 8px; margin-top: 10px;" ]
+  , H.div
+      [ H.style "display: flex; gap: 8px; margin-top: 10px;" ]
       (palette <#> chip)
   ]
   where
   chip p =
-    Element "div"
-      [ Tuple "data-key" p.name
-      , Tuple "class" "preset"
-      , Tuple "title" p.name
-      , Tuple "style"
+    H.div
+      [ H.dataKey p.name
+      , H.cl "preset"
+      , H.title p.name
+      , H.style
           ( "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; "
               <> "border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
           )

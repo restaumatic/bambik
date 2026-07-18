@@ -13,12 +13,13 @@ import Data.Number (fromString)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length)
-import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 import PUI (asField, completed, forValue, mvu, projection, updates)
-import PUI.HTML (Markup(..), body, text, view)
+import PUI.HTML (body, text, view)
+import PUI.Markup (Markup)
+import PUI.Markup as H
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -38,8 +39,7 @@ cells =
               body1 (text # projection selectedCaption # forValue)
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
           ) # completed # rmap commit
-          view
-            """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
+          view "div" [ H.style "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" ]
             renderTable
             (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
             # updates (match { cellClicked: selectCell })
@@ -62,23 +62,23 @@ commit m = case m.selected of
 
 renderTable :: Sheet -> Array Markup
 renderTable m =
-  [ Element "table" [ Tuple "style" "border-collapse: collapse; font-size: 13px;" ]
+  [ H.table [ H.style "border-collapse: collapse; font-size: 13px;" ]
       ([ header ] <> (range 0 (rows - 1) <#> row))
   ]
   where
   values = evalSheet m.cells
   colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
-  th content = Element "th" [ Tuple "style" thStyle ] [ Text content ]
-  header = Element "tr" [] ([ th "" ] <> (range 0 (cols - 1) <#> \c -> th (colName c)))
-  row r = Element "tr" [] ([ th (show r) ] <> (range 0 (cols - 1) <#> cell r))
+  th content = H.th [ H.style thStyle ] [ H.text content ]
+  header = H.tr [] ([ th "" ] <> (range 0 (cols - 1) <#> \c -> th (colName c)))
+  row r = H.tr [] ([ th (show r) ] <> (range 0 (cols - 1) <#> cell r))
   cell r c =
     let key = colName c <> show r
         sel = m.selected == Just key
-    in Element "td"
-        [ Tuple "data-key" key
-        , Tuple "style" (tdStyle <> (if sel then "background: #cde;" else ""))
+    in H.td
+        [ H.dataKey key
+        , H.style (tdStyle <> (if sel then "background: #cde;" else ""))
         ]
-        [ Text (fromMaybe "" (lookup key values)) ]
+        [ H.text (fromMaybe "" (lookup key values)) ]
   thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
 

@@ -15,6 +15,7 @@ module PUI.Web
   , attachable
   , attribute
   , clazz
+  , createElementNS
   , createTextNode
   , documentBody
   , element
@@ -159,6 +160,7 @@ foreign import selectedNode :: String -> Effect Node
 foreign import createTextNode :: String -> Effect Node
 foreign import createDocumentFragment :: Effect Node
 foreign import createElement :: String -> Effect Node
+foreign import createElementNS :: String -> String -> Effect Node
 foreign import insertBefore :: Node -> Node -> Effect Unit
 foreign import appendChild :: Node -> Node -> Effect Unit
 foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit

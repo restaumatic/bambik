@@ -6,11 +6,12 @@ import Data.Array (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
-import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (mvu, updates)
-import PUI.HTML (Markup(..), body, view)
+import PUI.HTML (body, view)
+import PUI.Markup (Markup)
+import PUI.Markup as H
 import PUI.MDC (card, elevation20)
 import PUI.Web (onKeyClick)
 
@@ -19,8 +20,7 @@ calculator =
   body $
     elevation20 $
       card { caption: "Calculator" } $
-        view
-          """<div style="display: inline-block;"></div>"""
+        view "div" [ H.style "display: inline-block;" ]
           renderCalculator
           (\node emit -> onKeyClick node \key -> emit (.keyPressed key))
           # updates (match { keyPressed: pressKey })
@@ -28,27 +28,27 @@ calculator =
 
 renderCalculator :: Tally -> Array Markup
 renderCalculator tally =
-  [ Element "div"
-      [ Tuple "style" "width: 296px;" ]
-      [ Element "div"
-          [ Tuple "style"
+  [ H.div
+      [ H.style "width: 296px;" ]
+      [ H.div
+          [ H.style
               ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                   <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                   <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;"
               )
           ]
-          [ Text (readout tally) ]
-      , Element "div"
-          [ Tuple "style" "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" ]
+          [ H.text (readout tally) ]
+      , H.div
+          [ H.style "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" ]
           (keyPad <#> padButton)
       ]
   ]
   where
   padButton key =
-    Element "div"
-      [ Tuple "data-key" key
-      , Tuple "class" "key"
-      , Tuple "style"
+    H.div
+      [ H.dataKey key
+      , H.cl "key"
+      , H.style
           ( "height: 52px; display: flex; align-items: center; justify-content: center; "
               <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "
               <> "border-radius: 4px; user-select: none; "
@@ -57,7 +57,7 @@ renderCalculator tally =
                  else "background: #eceff1; color: #263238;"
           )
       ]
-      [ Text key ]
+      [ H.text key ]
 
 keyPad :: Array String
 keyPad =
