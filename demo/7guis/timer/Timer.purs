@@ -29,7 +29,7 @@ timer =
                 staticText "s / "
                 text # projection show # forField @"duration"
                 staticText "s"
-              sliderLive { label: "Duration", min: minDuration, max: maxDuration, step: durationStep } # asField @"duration"
+              sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration"
           ) # completed
           every tickPeriod tick
           button { label: "Reset", icon: "replay" } # updates (match { clicked: \t _ -> reset t })

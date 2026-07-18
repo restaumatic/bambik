@@ -462,7 +462,7 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | continuous mid-drag emissions (live readouts), use `sliderLive`.
 slider
   :: forall provided
-   . ConvertOptionsWithDefaults OptStep { step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
   => { | provided }
   -> PUI Web { value :: Number } { value :: Number }
 slider provided = field @"value" (sliderLeaf false (sliderConfig provided))
@@ -471,17 +471,17 @@ slider provided = field @"value" (sliderLeaf false (sliderConfig provided))
 -- | consumer that doesn't want the burst wraps its stage in `debounced`.
 sliderLive
   :: forall provided
-   . ConvertOptionsWithDefaults OptStep { step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
   => { | provided }
   -> PUI Web { value :: Number } { value :: Number }
 sliderLive provided = field @"value" (sliderLeaf true (sliderConfig provided))
 
 sliderConfig
   :: forall provided
-   . ConvertOptionsWithDefaults OptStep { step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
+   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
   => { | provided }
   -> { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-sliderConfig provided = convertOptionsWithDefaults OptStep { step: Nothing } provided
+sliderConfig provided = convertOptionsWithDefaults OptStep { label: "", step: Nothing } provided
 
 sliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
 sliderLeaf live config = wrap do

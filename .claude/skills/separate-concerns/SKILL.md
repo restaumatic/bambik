@@ -60,7 +60,7 @@ business definition in the business section:
 
 ```purescript
 ) # mvu tenSecondTimer
-sliderLive { label: "Duration", min: minDuration, max: maxDuration, step: durationStep }
+sliderLive { min: minDuration, max: maxDuration, step: durationStep }
 every tickPeriod tick
 
 tenSecondTimer :: Timer

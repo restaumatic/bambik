@@ -32,7 +32,7 @@ circleDrawer =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { label: "Diameter", min: minDiameter, max: maxDiameter } # asField @"diameter"
+          sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter"
             # completed # shownWhen hasSelection # rmap applyDiameter
           ( RecordToVariant.do
               view
