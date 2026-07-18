@@ -86,7 +86,15 @@
       "Bash(grep -n \"with$\\\\|with {\" demo/2/Main.purs demo/helloworld/Main.purs)",
       "Bash(git commit -q -m 'demos: business literals extracted from UI code — initial models, slider bounds/steps, tick period as named business definitions; skill gains the rule *)",
       "Bash(git commit -q -m 'demos: seed values get business names — roomTemperature, peopleCatalogue, emptyCanvas, tenSecondTimer, plannedTrip, orderSheet, zeroCount, helloWorld, firstOrder, muted, reviewStep; skill: name in business language, not lifecycle language *)",
-      "Bash(git commit -q -m 'MDC: slider label optional \\(defaults to empty aria-label\\); 7guis sliders drop it *)"
+      "Bash(git commit -q -m 'MDC: slider label optional \\(defaults to empty aria-label\\); 7guis sliders drop it *)",
+      "Bash(git commit -q -m 'skill: sync with clicked canonical case, named demo modules, npm bundle scripts *)",
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/circle-drawer/CircleDrawer.purs)",
+      "Bash(curl -s http://erykciepiela.xyz/bambik/demo/7guis/circle-drawer/bundle.js)",
+      "Bash(git commit -m 'dev server: inotify only — exit with sysctl instructions on ENOSPC, no poll fallback *)",
+      "Bash(git commit -m 'row diagnostics: also catch a label duplicated within one operand'\\\\''s inferred row *)",
+      "Bash(git commit -m 'skill: business naming applies to type aliases too \\(Model is architecture language\\) *)",
+      "Bash(git commit -m 'CLAUDE.md: agent loop should use spago build -w \\(background watcher\\) instead of one-shot builds *)",
+      "Bash(git commit -m 'settings: accumulated permission allowlist entries *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
