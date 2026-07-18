@@ -18,7 +18,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Circle = { x :: Number, y :: Number, r :: Number }
 
-type Model =
+type Canvas =
   { circles :: Array Circle
   , selected :: Maybe Int
   , diameter :: Number
@@ -45,37 +45,37 @@ circleDrawer =
           ) # updates (match { clicked: selectOrAddCircle, undo: \m _ -> undo m, redo: \m _ -> redo m })
       ) # mvu emptyCanvas
 
-selectOrAddCircle :: { x :: Number, y :: Number } -> Model -> Model
+selectOrAddCircle :: { x :: Number, y :: Number } -> Canvas -> Canvas
 selectOrAddCircle { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
   Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
   Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
 
-undo :: Model -> Model
+undo :: Canvas -> Canvas
 undo m = case unsnoc m.undoStack of
   Just { init: rest, last: circles } ->
     m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
   Nothing -> m
 
-redo :: Model -> Model
+redo :: Canvas -> Canvas
 redo m = case unsnoc m.redoStack of
   Just { init: rest, last: circles } ->
     m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
   Nothing -> m
 
-applyDiameter :: Model -> Model
+applyDiameter :: Canvas -> Canvas
 applyDiameter m = case m.selected of
   Just i | Just c <- index m.circles i, c.r /= m.diameter / 2.0 ->
     let m' = if m.adjusting then m else (pushUndo m) { adjusting = true }
     in m' { circles = fromMaybe m.circles (updateAt i (c { r = m.diameter / 2.0 }) m.circles) }
   _ -> m
 
-pushUndo :: Model -> Model
+pushUndo :: Canvas -> Canvas
 pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = [] }
 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
-renderCanvas :: Model -> Array Markup
+renderCanvas :: Canvas -> Array Markup
 renderCanvas m = mapWithIndex circle m.circles
   where
   circle i c = Element "circle"
@@ -87,10 +87,10 @@ renderCanvas m = mapWithIndex circle m.circles
     ]
     []
 
-hasSelection :: Model -> Boolean
+hasSelection :: Canvas -> Boolean
 hasSelection m = isJust m.selected
 
-emptyCanvas :: Model
+emptyCanvas :: Canvas
 emptyCanvas =
   { circles: []
   , selected: Nothing

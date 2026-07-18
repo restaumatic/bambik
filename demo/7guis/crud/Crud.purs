@@ -18,7 +18,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Person = { name :: String, surname :: String }
 
-type Model =
+type PeopleCatalogue =
   { prefix :: String
   , name :: String
   , surname :: String
@@ -47,27 +47,27 @@ crud =
           ) # updates (match { picked: pick, create: \m _ -> createPerson m, update: \m _ -> updatePerson m, delete: \m _ -> deletePerson m })
       ) # mvu peopleCatalogue
 
-pick :: Int -> Model -> Model
+pick :: Int -> PeopleCatalogue -> PeopleCatalogue
 pick i m = case index m.people i of
   Just p -> m { selected = Just i, name = p.name, surname = p.surname }
   Nothing -> m
 
-createPerson :: Model -> Model
+createPerson :: PeopleCatalogue -> PeopleCatalogue
 createPerson m = m { people = snoc m.people { name: m.name, surname: m.surname } }
 
-updatePerson :: Model -> Model
+updatePerson :: PeopleCatalogue -> PeopleCatalogue
 updatePerson m = case m.selected of
   Just i -> m { people = fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people) }
   Nothing -> m
 
-deletePerson :: Model -> Model
+deletePerson :: PeopleCatalogue -> PeopleCatalogue
 deletePerson m = case m.selected of
   Just i -> m { people = fromMaybe m.people (deleteAt i m.people), selected = Nothing }
   Nothing -> m
 
 type Entry = { key :: Int, label :: String, surname :: String, selected :: Boolean }
 
-entries :: Model -> Array Entry
+entries :: PeopleCatalogue -> Array Entry
 entries m = filter (\e -> hasPrefix m.prefix e.surname)
   (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname, selected: m.selected == Just i }) m.people)
   where
@@ -75,7 +75,7 @@ entries m = filter (\e -> hasPrefix m.prefix e.surname)
     Just _ -> true
     Nothing -> false
 
-peopleCatalogue :: Model
+peopleCatalogue :: PeopleCatalogue
 peopleCatalogue =
   { prefix: ""
   , name: ""

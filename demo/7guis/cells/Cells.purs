@@ -23,7 +23,7 @@ import PUI.MDC (body1, card, elevation20, filledTextField)
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Model =
+type Sheet =
   { cells :: Object String
   , selected :: Maybe String
   , formula :: String
@@ -51,16 +51,16 @@ cols = 26
 rows :: Int
 rows = 30
 
-selectCell :: String -> Model -> Model
+selectCell :: String -> Sheet -> Sheet
 selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
 
-commit :: Model -> Model
+commit :: Sheet -> Sheet
 commit m = case m.selected of
   Just k | lookup k m.cells /= Just m.formula ->
     m { cells = if m.formula == "" then delete k m.cells else insert k m.formula m.cells }
   _ -> m
 
-renderTable :: Model -> Array Markup
+renderTable :: Sheet -> Array Markup
 renderTable m =
   [ Element "table" [ Tuple "style" "border-collapse: collapse; font-size: 13px;" ]
       ([ header ] <> (range 0 (rows - 1) <#> row))
@@ -238,10 +238,10 @@ evalExpr cells visiting = go
       Right n -> NumV n
       Left e -> ErrV e
 
-selectedCaption :: Model -> String
+selectedCaption :: Sheet -> String
 selectedCaption m = "Cell " <> fromMaybe "—" m.selected
 
-orderSheet :: Model
+orderSheet :: Sheet
 orderSheet =
   { cells: fromHomogeneous
       { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
