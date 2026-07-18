@@ -24,6 +24,7 @@ to generate this file without the comments in this block.
   , "foldable-traversable"
   , "foreign-object"
   , "integers"
+  , "lists"
   , "maybe"
   , "numbers"
   , "newtype"
@@ -40,5 +41,5 @@ to generate this file without the comments in this block.
   , "variant"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs", "demo/7guis/**/*.purs" ]
 }
