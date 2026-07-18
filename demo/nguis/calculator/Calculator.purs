@@ -9,9 +9,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, mvu, toCase, updates)
+import PUI (mvu, toCase, updates)
 import PUI.HTML (body, div, dynamic, each, onKeyClicked, staticText, (:=))
-import PUI.Web (Web)
 import PUI.MDC (card, elevation20)
 
 calculator :: Effect Unit
@@ -20,32 +19,30 @@ calculator =
     elevation20 $
       card { caption: "Calculator" } $
         ( div >>> "style" := "display: inline-block;" $
-            (onKeyClicked (dynamic renderCalculator) # toCase @"keyPressed")
+            ( onKeyClicked
+                ( dynamic \tally ->
+                    div >>> "style" := "width: 296px;" $ RecordToRecord.do
+                      div >>> "style"
+                        := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
+                              <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
+                              <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;"
+                          ) $ staticText (readout tally)
+                      div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
+                        each keyPad \key ->
+                          div >>> "data-key" := key >>> "class" := "key"
+                            >>> "style"
+                              := ( "height: 52px; display: flex; align-items: center; justify-content: center; "
+                                    <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "
+                                    <> "border-radius: 4px; user-select: none; "
+                                    <> if key `elem` operatorKeys then "background: #ffab40; color: #263238;"
+                                       else if key `elem` [ "C", "±" ] then "background: #b0bec5; color: #263238;"
+                                       else "background: #eceff1; color: #263238;"
+                                ) $ staticText key
+                ) # toCase @"keyPressed"
+            )
         )
           # updates (match { keyPressed: pressKey })
           # mvu blankTally
-
-renderCalculator :: Tally -> PUI Web {} {}
-renderCalculator tally =
-  div >>> "style" := "width: 296px;" $ RecordToRecord.do
-    div >>> "style"
-      := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
-            <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-            <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;"
-        ) $ staticText (readout tally)
-    div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-      each keyPad padButton
-  where
-  padButton key =
-    div >>> "data-key" := key >>> "class" := "key"
-      >>> "style"
-        := ( "height: 52px; display: flex; align-items: center; justify-content: center; "
-              <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "
-              <> "border-radius: 4px; user-select: none; "
-              <> if key `elem` operatorKeys then "background: #ffab40; color: #263238;"
-                 else if key `elem` [ "C", "±" ] then "background: #b0bec5; color: #263238;"
-                 else "background: #eceff1; color: #263238;"
-          ) $ staticText key
 
 keyPad :: Array String
 keyPad =

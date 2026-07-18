@@ -16,9 +16,8 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (PUI, asField, completed, forValue, mvu, projection, toCase, updates)
+import PUI (asField, completed, forValue, mvu, projection, toCase, updates)
 import PUI.HTML (body, div, dynamic, each, onKeyClicked, staticText, table, tbody, td, text, th, thead, tr, (:=))
-import PUI.Web (Web)
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -38,7 +37,27 @@ cells =
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
           ) # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
-              (onKeyClicked (dynamic renderTable) # toCase @"cellClicked")
+              ( onKeyClicked
+                  ( dynamic \(m :: Sheet) ->
+                      let
+                        values = evalSheet m.cells
+                        colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
+                        colIndices = range 0 (cols - 1)
+                        thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
+                        tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
+                        labelCell text = { header: true, key: "", text, sel: false }
+                        headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
+                        rowCells r = [ labelCell (show r) ] <>
+                          (colIndices <#> \c -> let key = colName c <> show r in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
+                        cellW cell
+                          | cell.header = th >>> "style" := thStyle $ staticText cell.text
+                          | otherwise = td >>> "data-key" := cell.key >>> "style" := (tdStyle <> (if cell.sel then "background: #cde;" else "")) $ staticText cell.text
+                      in
+                        table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ RecordToRecord.do
+                          thead (tr $ each headerCells cellW)
+                          tbody (each (range 0 (rows - 1)) \r -> tr $ each (rowCells r) cellW)
+                  ) # toCase @"cellClicked"
+              )
           ) # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
@@ -56,28 +75,6 @@ commit m = case m.selected of
   Just k | lookup k m.cells /= Just m.formula ->
     m { cells = if m.formula == "" then delete k m.cells else insert k m.formula m.cells }
   _ -> m
-
-renderTable :: Sheet -> PUI Web {} {}
-renderTable m =
-  table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ RecordToRecord.do
-    thead (tr $ each headerCells cellW)
-    tbody (each (range 0 (rows - 1)) row)
-  where
-  values = evalSheet m.cells
-  colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
-  colIndices = range 0 (cols - 1)
-  labelCell text = { header: true, key: "", text, sel: false }
-  headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
-  row r = tr $ each (rowCells r) cellW
-  rowCells r = [ labelCell (show r) ] <> (colIndices <#> \c -> dataCell r c)
-  dataCell r c =
-    let key = colName c <> show r
-    in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key }
-  cellW cell
-    | cell.header = th >>> "style" := thStyle $ staticText cell.text
-    | otherwise = td >>> "data-key" := cell.key >>> "style" := (tdStyle <> (if cell.sel then "background: #cde;" else "")) $ staticText cell.text
-  thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
-  tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
 
 evalSheet :: Object String -> Object String
 evalSheet cells = foldl insertVal empty keys

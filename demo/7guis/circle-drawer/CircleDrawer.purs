@@ -10,9 +10,8 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, mvu, toCase, updates)
+import PUI (asCase, asField, mvu, toCase, updates)
 import PUI.HTML (body, circle, div, foreachWith, onClickedXY, provided, svg, (:=))
-import PUI.Web (Web)
 import PUI.MDC (button, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -36,7 +35,11 @@ circleDrawer =
             # provided # lcmap selectedDiameter # updates adjustDiameter
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
-                (onClickedXY (lcmap paintCircles (foreachWith circleAt)) # toCase @"clicked")
+                ( onClickedXY
+                    ( lcmap (\(m :: Canvas) -> mapWithIndex (\i c -> { x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)
+                        (foreachWith \c -> circle >>> "cx" := c.x >>> "cy" := c.y >>> "r" := c.r >>> "stroke" := "#333" >>> "fill" := (if c.on then "#ddd" else "transparent") $ pempty)
+                    ) # toCase @"clicked"
+                )
               div >>> "style" := "display: flex; gap: 8px;" $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
@@ -78,14 +81,6 @@ pushUndo m = m { undoStack = take 100 (snoc m.undoStack m.circles), redoStack = 
 
 dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
-
-paintCircles :: Canvas -> Array { cx :: String, cy :: String, r :: String, fill :: String }
-paintCircles m = mapWithIndex paint m.circles
-  where
-  paint i c = { cx: show c.x, cy: show c.y, r: show c.r, fill: if m.selected == Just i then "#ddd" else "transparent" }
-
-circleAt :: { cx :: String, cy :: String, r :: String, fill :: String } -> PUI Web {} {}
-circleAt c = circle >>> "cx" := c.cx >>> "cy" := c.cy >>> "r" := c.r >>> "stroke" := "#333" >>> "fill" := c.fill $ pempty
 
 emptyCanvas :: Canvas
 emptyCanvas =

@@ -13,8 +13,7 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, displayed, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.Web (Web)
+import PUI (displayed, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (body, div, foreachWith, img, li, span, staticText, text, (:=))
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -41,18 +40,17 @@ photoGallery =
           )
           ( div >>> "style" := "flex: 1; min-width: 0;" $ Semigroupoid.do
               headline2 (text # projection _.album # forValue) # tapped
-              imageList { columns: 3 } (foreachWith photoTile) # lcmap albumPhotos # displayed
+              imageList { columns: 3 }
+                ( foreachWith \p ->
+                    li >>> "class" := "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
+                      img >>> "class" := "mdc-image-list__image" >>> "src" := p.src >>> "alt" := p.caption $ pempty
+                      div >>> "class" := "mdc-image-list__supporting" $
+                        span >>> "class" := "mdc-image-list__label" $ staticText p.caption
+                ) # lcmap albumPhotos # displayed
           )
       ) # mvu landscapesOpen
 
 type Photo = { src :: String, caption :: String }
-
-photoTile :: Photo -> PUI Web {} {}
-photoTile p =
-  li >>> "class" := "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
-    img >>> "class" := "mdc-image-list__image" >>> "src" := p.src >>> "alt" := p.caption $ pempty
-    div >>> "class" := "mdc-image-list__supporting" $
-      span >>> "class" := "mdc-image-list__label" $ staticText p.caption
 
 type Gallery = { album :: String }
 

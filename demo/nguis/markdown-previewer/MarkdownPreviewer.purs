@@ -9,9 +9,8 @@ import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Effect (Effect)
-import PUI (PUI, asField, completed, displayed, mvu)
+import PUI (asField, completed, displayed, mvu)
 import PUI.HTML (blockquote, body, code, div, each, el, em, foreachWith, li, p, staticText, strong, ul, (:=))
-import PUI.Web (Web)
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -24,24 +23,23 @@ markdownPreviewer =
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
             layoutCell { span: 6 } $
               div >>> "class" := "markdown-preview" >>> "style" := "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" $
-                (lcmap (parseMarkdown <<< _.source) (foreachWith renderBlock) # displayed)
+                ( lcmap (parseMarkdown <<< _.source)
+                    ( foreachWith \block ->
+                        let
+                          inline = case _ of
+                            Plain s -> staticText s
+                            Bold s -> strong (staticText s)
+                            Italic s -> em (staticText s)
+                            Code s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
+                          inlines is = each is inline
+                        in case block of
+                          Heading level is -> el ("h" <> show level) (inlines is)
+                          Paragraph is -> p (inlines is)
+                          Bullets items -> ul (each items \is -> li (inlines is))
+                          Quote is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
+                    ) # displayed
+                )
         ) # mvu welcomeDocument
-
-renderBlock :: Block -> PUI Web {} {}
-renderBlock (Heading level inlines) = el ("h" <> show level) (inlinesW inlines)
-renderBlock (Paragraph inlines) = p (inlinesW inlines)
-renderBlock (Bullets items) = ul (each items \inlines -> li (inlinesW inlines))
-renderBlock (Quote inlines) =
-  blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlinesW inlines
-
-inlinesW :: Array Inline -> PUI Web {} {}
-inlinesW inlines = each inlines renderInline
-
-renderInline :: Inline -> PUI Web {} {}
-renderInline (Plain s) = staticText s
-renderInline (Bold s) = strong (staticText s)
-renderInline (Italic s) = em (staticText s)
-renderInline (Code s) = code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
 
 type Document = { source :: String }
 
