@@ -47,8 +47,8 @@ main =
           view
             """<div style="overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;"></div>"""
             renderTable
-            (\node emit -> onKeyClick node \key -> emit (clickedCell key))
-            # updates handle
+            (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
+            # updates (match { cellClicked: selectCell })
       ) # mvu
           { cells: fromHomogeneous
               { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -60,19 +60,14 @@ main =
           , formula: ""
           }
 
-handle :: [ cellClicked :: String ] -> Model -> Model
-handle e m = match
-  { cellClicked: \key -> m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
-  } e
+selectCell :: String -> Model -> Model
+selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
 
 commit :: Model -> Model
 commit m = case m.selected of
   Just k | lookup k m.cells /= Just m.formula ->
     m { cells = if m.formula == "" then delete k m.cells else insert k m.formula m.cells }
   _ -> m
-
-clickedCell :: String -> [ cellClicked :: String ]
-clickedCell key = .cellClicked key
 
 renderTable :: Model -> Array Markup
 renderTable m =
