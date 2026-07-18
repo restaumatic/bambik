@@ -42,11 +42,11 @@ circleDrawer =
               div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
-          ) # updates (match { clicked: clickAt, undo: \m _ -> undo m, redo: \m _ -> redo m })
+          ) # updates (match { clicked: selectOrDrawCircle, undo: \m _ -> undo m, redo: \m _ -> redo m })
       ) # mvu emptyCanvas
 
-clickAt :: { x :: Number, y :: Number } -> Model -> Model
-clickAt { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
+selectOrDrawCircle :: { x :: Number, y :: Number } -> Model -> Model
+selectOrDrawCircle { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
   Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
   Nothing -> (pushUndo m) { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing }
 
