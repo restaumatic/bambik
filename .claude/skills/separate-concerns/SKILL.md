@@ -60,12 +60,12 @@ arguments), tick periods, default payload values — extract each as a named
 business definition in the business section:
 
 ```purescript
-) # mvu tenSecondTimer
+) # mvu tenSecondFreshTimer
 sliderLive { min: minDuration, max: maxDuration, step: durationStep }
 every tickPeriod tick
 
-tenSecondTimer :: Timer
-tenSecondTimer = { duration: 10.0, elapsed: 0.0 }
+tenSecondFreshTimer :: Timer
+tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }
 
 minDuration :: Number
 minDuration = 0.0
@@ -75,7 +75,7 @@ UI code keeps only presentation: labels, captions, icons, styles, structure.
 Name the extracted values in **business language**, not lifecycle language —
 `initial`/`default`/`seed` are UI-lifecycle words and a smell of their own.
 Say what the value *is*: `roomTemperature`, `peopleCatalogue`, `emptyCanvas`,
-`tenSecondTimer`, `plannedTrip`.
+`tenSecondFreshTimer`, `plannedTrip`.
 
 The same rule applies to **type aliases**: `type Model = ...` is
 architecture language, not business language. Name the type after what it

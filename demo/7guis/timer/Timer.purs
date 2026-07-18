@@ -33,7 +33,7 @@ timer =
           ) # completed
           every tickPeriod tick
           button { label: "Reset", icon: "replay" } # updates (match { clicked: \t _ -> reset t })
-      ) # mvu tenSecondTimer
+      ) # mvu tenSecondFreshTimer
 
 reset :: Timer -> Timer
 reset t = t { elapsed = 0.0 }
@@ -46,8 +46,8 @@ tick t =
 fraction :: Timer -> Number
 fraction t = if t.duration <= 0.0 then 1.0 else min 1.0 (t.elapsed / t.duration)
 
-tenSecondTimer :: Timer
-tenSecondTimer = { duration: 10.0, elapsed: 0.0 }
+tenSecondFreshTimer :: Timer
+tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }
 
 minDuration :: Number
 minDuration = 0.0
