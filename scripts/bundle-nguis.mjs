@@ -10,6 +10,11 @@ const demos = {
   'tic-tac-toe': ['TicTacToe', 'ticTacToe'],
   'markdown-previewer': ['MarkdownPreviewer', 'markdownPreviewer'],
   'helloworld': ['HelloWorld', 'helloWorld'],
+  'calculator': ['Calculator', 'calculator'],
+  'stopwatch': ['Stopwatch', 'stopwatch'],
+  'shopping-cart': ['ShoppingCart', 'shoppingCart'],
+  'password-generator': ['PasswordGenerator', 'passwordGenerator'],
+  'color-mixer': ['ColorMixer', 'colorMixer'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {

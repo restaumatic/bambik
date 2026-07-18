@@ -1,0 +1,117 @@
+module PasswordGenerator (passwordGenerator) where
+
+import Prelude ((#), ($), (*), (/), (<), (<>), (>>>), Unit, bind, otherwise, pure)
+
+import Data.Array (index, length, null, replicate)
+import Data.Int (round, toNumber)
+import Data.Maybe (fromMaybe)
+import Data.Number (log)
+import Data.String.CodeUnits (fromCharArray, toCharArray)
+import Data.Traversable (sequence)
+import Data.Variant (match)
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import PUI (action, asCase, asField, completed, forValue, mvu, onCase, projection, tapped, updates)
+import PUI.HTML (attr, body, div, text)
+import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import QualifiedDo.Semigroupoid as Semigroupoid
+
+type PasswordRecipe =
+  { length :: Number
+  , uppercase :: Boolean
+  , lowercase :: Boolean
+  , digits :: Boolean
+  , symbols :: Boolean
+  , password :: String
+  }
+
+passwordGenerator :: Effect Unit
+passwordGenerator =
+  body $
+    elevation20 $
+      card { caption: "Password Generator" } $ ( Semigroupoid.do
+          ( RecordToRecord.do
+              slider { label: "Length", min: minLength, max: maxLength, step: lengthStep } # asField @"length"
+              toggleSwitch { label: "Uppercase letters" } # asField @"uppercase"
+              toggleSwitch { label: "Lowercase letters" } # asField @"lowercase"
+              toggleSwitch { label: "Digits" } # asField @"digits"
+              toggleSwitch { label: "Symbols" } # asField @"symbols"
+          ) # completed
+          body2 (text # projection strengthLine # forValue) # tapped
+          div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
+            (text # projection _.password # forValue) # tapped
+          ( Semigroupoid.do
+              button { label: "Generate" } # asCase @"generate"
+              indeterminateLinearProgress # action samplePassword # onCase @"generate"
+          ) # updates (match { generated: rememberPassword })
+      ) # mvu strongMixRecipe
+
+samplePassword :: PasswordRecipe -> Aff [ generated :: String ]
+samplePassword recipe = liftEffect do
+  let alphabet = effectiveAlphabet recipe
+  chars <- sequence (replicate (round recipe.length) (randomCharacter alphabet))
+  pure (.generated (fromCharArray chars))
+
+randomCharacter :: Array Char -> Effect Char
+randomCharacter alphabet = do
+  i <- randomBelow (length alphabet)
+  pure (fromMaybe 'a' (index alphabet i))
+
+foreign import randomBelow :: Int -> Effect Int
+
+rememberPassword :: String -> PasswordRecipe -> PasswordRecipe
+rememberPassword password recipe = recipe { password = password }
+
+effectiveAlphabet :: PasswordRecipe -> Array Char
+effectiveAlphabet recipe =
+  let chosen = (if recipe.uppercase then uppercaseLetters else [])
+            <> (if recipe.lowercase then lowercaseLetters else [])
+            <> (if recipe.digits then digitCharacters else [])
+            <> (if recipe.symbols then symbolCharacters else [])
+  in if null chosen then lowercaseLetters else chosen
+
+strengthLine :: PasswordRecipe -> String
+strengthLine recipe = "Strength: " <> strengthGrade (entropyBits recipe)
+
+entropyBits :: PasswordRecipe -> Number
+entropyBits recipe = recipe.length * log (toNumber (length (effectiveAlphabet recipe))) / log 2.0
+
+strengthGrade :: Number -> String
+strengthGrade bits
+  | bits < 45.0 = "weak"
+  | bits < 70.0 = "fair"
+  | bits < 100.0 = "strong"
+  | otherwise = "very strong"
+
+uppercaseLetters :: Array Char
+uppercaseLetters = toCharArray "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+lowercaseLetters :: Array Char
+lowercaseLetters = toCharArray "abcdefghijklmnopqrstuvwxyz"
+
+digitCharacters :: Array Char
+digitCharacters = toCharArray "0123456789"
+
+symbolCharacters :: Array Char
+symbolCharacters = toCharArray "!@#$%^&*()-_=+[]{};:,.<>?/"
+
+strongMixRecipe :: PasswordRecipe
+strongMixRecipe =
+  { length: 16.0
+  , uppercase: true
+  , lowercase: true
+  , digits: true
+  , symbols: false
+  , password: ""
+  }
+
+minLength :: Number
+minLength = 8.0
+
+maxLength :: Number
+maxLength = 64.0
+
+lengthStep :: Number
+lengthStep = 1.0
