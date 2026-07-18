@@ -220,23 +220,15 @@ honor it, and changes to either side keep the two in sync:
 
 ## Demo page conventions (index.html)
 
-Each demo page follows the 7guis template: CDN `<link>`s for MDC CSS,
-Material Icons, and highlight.js (CSS is never bundled into JS), a
-header with back link / task description / source and bundle sizes, a
-source panel fetching and highlighting the module beside the running
-app, and — before `bundle.js` — tracing enabled:
-
-```html
-<script>window.__bambikTrace = true</script>
-<script type="module" src="bundle.js"></script>
-```
-
-The source panel footer carries two notes (exact wording):
-
-```html
-<p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. The listing is a complete standalone application, entered at its single exported function. The code is structured as one purely UI-related function followed by pure business functions. Each UI-related line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing.</p>
-<p class="note">Tracing: This page runs with enabled tracing, so data propagation is logged to the browser console with <code>[bambik]</code> prefix.</p>
-```
+Follow any 7guis demo's index.html (e.g. demo/7guis/counter/) as the
+template: CDN `<link>`s for MDC CSS, Material Icons, and highlight.js
+(CSS is never bundled into JS), a header with back link / task
+description / source and bundle sizes, a source panel fetching and
+highlighting the module beside the running app,
+`<script>window.__bambikTrace = true</script>` before `bundle.js`, and
+the two footer notes (code style, tracing) — copy their wording
+verbatim; they state the code-style contract above, so changes to
+either side keep the two in sync.
 
 Tracing can also be toggled at runtime:
 `localStorage.setItem("bambik-trace", "true")`. It logs every propagation
