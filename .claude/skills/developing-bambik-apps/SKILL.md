@@ -86,6 +86,21 @@ builds, so it wraps multi-stage `Semigroupoid.do` pipelines directly —
 no wrapper `div` needed. `clWhen pred name` is deliberately
 last-element-only (a class over several siblings is rarely meant).
 
+Modals: `dialog`/`simpleDialog` open on feed and close on emission —
+feed them selectively (`# variant # lcmap toMaybe` off a model flag, or
+behind an event case via `onCase`), put the deciding emitters inside
+(their emission closes the dialog and flows on), and keep echoing
+displays off the content's final stage (an echo would close the dialog
+on open). `drawer`'s nav slot is live: nav and content are sibling
+stages over the same types (a selectable nav merges its selector with
+static chrome in one `RecordToRecord.do`); pure chrome nav embeds via
+`# muted`.
+
+Collection items may hold stateful stages (`completed`, `updates`) —
+refs are per-instance — but `foreach` rebuilds items wholesale per
+value fed, so item-local state resets on every rebuild; durable state
+belongs in the model, with `listOf`'s click-replay folding it back.
+
 The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/

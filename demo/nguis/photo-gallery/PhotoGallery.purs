@@ -23,29 +23,27 @@ photoGallery :: Effect Unit
 photoGallery =
   body $
     topAppBar { title: "Photo Gallery" } $
-      drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
-        ( RecordToRecord.do
-            list RecordToRecord.do
-              listItem $ staticText "Every photo is an SVG"
-              listItem $ staticText "developed from its caption"
-              listItem $ staticText "No network involved"
-            divider
-            overline $ staticText "Favorites"
-            imageList { columns: 2 } RecordToRecord.do
-              imageListItem { src: developedPhoto "Dawn Ridge", label: "Dawn Ridge" }
-              imageListItem { src: developedPhoto "Half Smile", label: "Half Smile" }
-              imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
-              imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" }
-        )
-        $ ( div >>> attr "style" "display: flex; gap: 24px; align-items: flex-start;" $ Semigroupoid.do
-              ( attr "style" "flex: 0 0 180px; border-right: 1px solid #eee;"
-                  ( listOf { selected: _.current } (span (text # projection _.name # forValue))
-                  )
-              ) # rmap (\a -> .albumPicked a.name :: [ albumPicked :: String ]) # lcmap albumChoices # updates (match { albumPicked: openAlbum })
-              div >>> attr "style" "flex: 1; min-width: 0;" $ Semigroupoid.do
-                headline2 (text # projection _.album # forValue) # tapped
-                imageList { columns: 3 } (foreach photoTile) # lcmap albumPhotos # displayed
-          ) # mvu landscapesOpen
+      ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
+          ( RecordToRecord.do
+              listOf { selected: _.current } (span (text # projection _.name # forValue))
+                # rmap (\a -> .albumPicked a.name :: [ albumPicked :: String ]) # lcmap albumChoices # updates (match { albumPicked: openAlbum })
+              divider
+              list RecordToRecord.do
+                listItem $ staticText "Every photo is an SVG"
+                listItem $ staticText "developed from its caption"
+                listItem $ staticText "No network involved"
+              overline $ staticText "Favorites"
+              imageList { columns: 2 } RecordToRecord.do
+                imageListItem { src: developedPhoto "Dawn Ridge", label: "Dawn Ridge" }
+                imageListItem { src: developedPhoto "Half Smile", label: "Half Smile" }
+                imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
+                imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" }
+          )
+          ( div >>> attr "style" "flex: 1; min-width: 0;" $ Semigroupoid.do
+              headline2 (text # projection _.album # forValue) # tapped
+              imageList { columns: 3 } (foreach photoTile) # lcmap albumPhotos # displayed
+          )
+      ) # mvu landscapesOpen
 
 photoTile :: PUI Web { src :: String, caption :: String } {}
 photoTile =

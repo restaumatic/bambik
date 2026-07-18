@@ -35,6 +35,7 @@ module PUI
   , effAdapter
   , every
   , looped
+  , muted
   , mvu
   , onCase
   , resolveFor
@@ -128,9 +129,13 @@ instance Functor m => Profunctor (PUI m) where
 -- the state channel has been fed.
 instance Functor m => Strong (PUI m) where
   first p = wrap ado
-    let lastab = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      -- ref per build (inside the applicative's result), NOT in an ado
+      -- statement: a statement-position let is evaluated once per PUI
+      -- value, so every `foreach` row would share one ref
+      let lastab = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: \ab -> do
           Ref.write (Just ab) lastab
           p'.toUser $ fst ab
@@ -142,9 +147,10 @@ instance Functor m => Strong (PUI m) where
               Just prevab -> prop (Tuple b (snd prevab))
       }
   second p = wrap ado
-    let lastab = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      let lastab = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: \ab -> do
           Ref.write (Just ab) lastab
           p'.toUser $ snd ab
@@ -158,9 +164,10 @@ instance Functor m => Strong (PUI m) where
 
 instance Functor m => Choice (PUI m) where
   left p = wrap ado
-    let mPropRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      let mPropRef = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: case _ of
         Right c -> do
           mProp <- Ref.read mPropRef
@@ -171,9 +178,10 @@ instance Functor m => Choice (PUI m) where
         p'.fromUser \b -> prop (Left b)
       }
   right p = wrap ado
-    let mPropRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      let mPropRef = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: case _ of
         Left c -> do
           mProp <- Ref.read mPropRef
@@ -193,9 +201,10 @@ instance Functor m => Choice (PUI m) where
 -- | `unfirst (first g) ≅ g` holds once the state channel is primed.
 instance Functor m => Costrong (PUI m) where
   unfirst p = wrap ado
-    let cRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      let cRef = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: \a -> do
           mc <- Ref.read cRef
           case mc of
@@ -207,9 +216,10 @@ instance Functor m => Costrong (PUI m) where
             prop b
       }
   unsecond p = wrap ado
-    let aRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      let aRef = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: \b -> do
           ma <- Ref.read aRef
           case ma of
@@ -255,11 +265,12 @@ instance Functor m => Cochoice (PUI m) where
 -- | state to prime it); `coresolve (resolve g) ≅ g` once primed.
 instance Functor m => Coresolving (PUI m) where
   coresolve p = wrap ado
-    let aRef = unsafePerformEffect $ Ref.new Nothing
-    let cRef = unsafePerformEffect $ Ref.new Nothing
-    let busyRef = unsafePerformEffect $ Ref.new false
     p' <- unwrap p
     in
+      let aRef = unsafePerformEffect $ Ref.new Nothing
+          cRef = unsafePerformEffect $ Ref.new Nothing
+          busyRef = unsafePerformEffect $ Ref.new false
+      in
       { toUser: \a -> do
           Ref.write (Just a) aRef
           mc <- Ref.read cRef
@@ -450,6 +461,17 @@ updates handler events = wrap $ unwrap events <#> \evts ->
 displayed :: forall m s e. Functor m => PUI m s e -> PUI m s s
 displayed = updates \_ s -> s
 
+-- | Embed `{}`-typed chrome at ANY position: the wrapped widget is fed
+-- | `{}` for every value flowing through and its emissions (the statics'
+-- | registration announcement) are dropped, so static chrome fits a live
+-- | slot — `drawer config (muted staticNav) content` — without touching
+-- | the slot's types.
+muted :: forall m b i o. Functor m => PUI m {} b -> PUI m i o
+muted w = wrap $ unwrap w <#> \w' ->
+  { toUser: \_ -> w'.toUser {}
+  , fromUser: \_ -> w'.fromUser \_ -> pure Nothing
+  }
+
 -- | Pin a stage's input to a known value: the wrapped widget is fed `a`
 -- | for every value flowing through, and the stage's own input type stays
 -- | free — so a constant-fed stage (a fixed catalogue driving a collection
@@ -534,11 +556,12 @@ instance Applicative m => RecordToRecord (PUI m) where
     , fromUser: \prop -> void $ prop {}
     }
   recordToRecord p1 p2 = wrap ado
-    let p1Last = unsafePerformEffect $ Ref.new Nothing
-    let p2Last = unsafePerformEffect $ Ref.new Nothing
     p1' <- unwrap (widenRecordInput p1)
     p2' <- unwrap (widenRecordInput p2)
     in
+      let p1Last = unsafePerformEffect $ Ref.new Nothing
+          p2Last = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: \new -> do
             p1'.toUser new
             p2'.toUser new
@@ -595,10 +618,11 @@ instance Functor m => Resolving (PUI m) where
 -- | unprimed; only the `Loop` branch is gated on a first `c`.
 resolveFor :: forall m a b c. Functor m => Milliseconds -> PUI m a b -> PUI m (Tuple a c) (Either b c)
 resolveFor millis p = wrap ado
-  let cRef = unsafePerformEffect $ Ref.new Nothing
-  let mFiberRef = unsafePerformEffect $ Ref.new Nothing
   p' <- unwrap p
   in
+    let cRef = unsafePerformEffect $ Ref.new Nothing
+        mFiberRef = unsafePerformEffect $ Ref.new Nothing
+    in
     { toUser: \(Tuple a c) -> do
         Ref.write (Just c) cRef
         p'.toUser a
@@ -627,9 +651,10 @@ resolveFor millis p = wrap ado
 -- | mirroring the knowledge-gated record merges.
 instance Functor m => Retaining (PUI m) where
   retain p = wrap ado
-    let cRef = unsafePerformEffect $ Ref.new Nothing
     p' <- unwrap p
     in
+      let cRef = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: case _ of
           Left a -> p'.toUser a
           Right c -> Ref.write (Just c) cRef
@@ -647,13 +672,14 @@ instance Applicative m => VariantToRecord (PUI m) where
     , fromUser: \prop -> void $ prop {}
     }
   variantToRecord p1 p2 = wrap ado
-    -- gate like `recordToRecord`: hold propagation until both sides' fields
-    -- are known (each operand emits its complete sub-record)
-    let p1Last = unsafePerformEffect $ Ref.new Nothing
-    let p2Last = unsafePerformEffect $ Ref.new Nothing
     p1' <- unwrap p1
     p2' <- unwrap p2
     in
+      -- gate like `recordToRecord`: hold propagation until both sides' fields
+      -- are known (each operand emits its complete sub-record)
+      let p1Last = unsafePerformEffect $ Ref.new Nothing
+          p2Last = unsafePerformEffect $ Ref.new Nothing
+      in
       { toUser: \v -> do
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
@@ -724,9 +750,10 @@ action arr = action' \i pro post -> do
 
 action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
 action' arr w = wrap ado
-  let oVar = unsafePerformEffect $ liftEffect AVar.empty
   w' <- unwrap w
   in
+    let oVar = unsafePerformEffect $ liftEffect AVar.empty
+    in
     { toUser: \i -> launchAff_ $ arr i (\a -> void $ w'.toUser a) (\o -> void $ AVar.put o oVar mempty)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
@@ -759,9 +786,10 @@ affAdapter :: forall m a b s t. Apply m => m { pre :: s -> Aff a, post ::  b -> 
 affAdapter f w = wrap ado
   { toUser, fromUser } <- unwrap w
   { pre, post } <- f
-  let mInputFiberRef = unsafePerformEffect $ Ref.new Nothing
-  let mOutputFiberRef = unsafePerformEffect $ Ref.new Nothing
   in
+    let mInputFiberRef = unsafePerformEffect $ Ref.new Nothing
+        mOutputFiberRef = unsafePerformEffect $ Ref.new Nothing
+    in
     { toUser: \s -> launchAff_ do
         mFiber <- liftEffect $ Ref.read mInputFiberRef
         for_ mFiber $ killFiber (error "Obsolete input")

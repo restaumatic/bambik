@@ -11,7 +11,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, completed, forCase, forValue, mvu, onCase, projection, tapped, updates)
-import PUI.HTML (attr, body, clWhen, div, shownWhen, span, text)
+import PUI.HTML (attr, body, div, shownWhen, span, text, variant)
 import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -36,7 +36,7 @@ inbox =
               ( dialog { title: "Delete the last message?" } $ div >>> attr "style" "display: flex; gap: 16px;" $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
                   button { label: "Keep" } # asCase @"kept"
-              ) # clWhen _.confirming "mdc-dialog--open"
+              ) # variant # lcmap confirmingDelete
               VariantToVariant.do
                 banner # forCase @"emptied" # lcmap (match { emptied: \m -> .emptied (emptiedNote m) :: [ emptied :: String ] }) # tapped
                 (identity :: PUI Web Mailbox Mailbox) # onCase @"kept" # rmap (\m -> .kept m :: [ kept :: Mailbox ])
@@ -99,6 +99,9 @@ lastMessage m = length m.messages == 1
 
 requestDelete :: Mailbox -> Mailbox
 requestDelete m = if lastMessage m then m { confirming = true } else deleteOpened m
+
+confirmingDelete :: Mailbox -> Maybe Mailbox
+confirmingDelete m = if m.confirming then Just m else Nothing
 
 deleteOpened :: Mailbox -> Mailbox
 deleteOpened m = m { messages = filter (\g -> Just g.id /= m.opened) m.messages, opened = Nothing, confirming = false }

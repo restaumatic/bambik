@@ -19,7 +19,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, onCase, projection, seeded, silence, tapped, with)
+import PUI (action, announce, asCase, asField, debounced, field, forCase, forField, forValue, looped, muted, onCase, projection, seeded, silence, tapped, with)
 import PUI.HTML (attr, body, div, shownWhen, staticText, text)
 import PUI.MDC (banner, body1, body2, button, card, checkbox, chipSet, dataCell, dataRow, dataTable, divider, drawer, fab, filledTextArea, filledTextField, filterChip, headline6, iconButton, iconToggle, imageList, imageListItem, indeterminateCircularProgress, indeterminateLinearProgress, layoutCell, layoutGrid, list, listItem, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -63,7 +63,7 @@ type SettingsOut =
 main :: Effect Unit
 main =
   body $ ( topAppBar { title: "Bambik · MDC2 showcase" } $ drawer { title: "MDC2", subtitle: "the full catalog" }
-    ( list RecordToRecord.do
+    ( muted $ list RecordToRecord.do
         listItem $ staticText "Text fields"
         listItem $ staticText "Selection controls"
         listItem $ staticText "Chips"
@@ -116,7 +116,7 @@ main =
         layoutCell { span: 6 } $ card { caption: "Sliders" } $ Semigroupoid.do
           sliderLive { label: "Volume", min: minVolume, max: maxVolume } # asField @"volume"
           ( Semigroupoid.do
-              seeded muted
+              seeded zeroVolume
               lcmap stepPeak identity
               body2 (text # projection peakLine # forValue) # tapped
           ) # feedback
@@ -371,5 +371,5 @@ minVolume = 0.0
 maxVolume :: Number
 maxVolume = 100.0
 
-muted :: { volume :: Number, peak :: Number }
-muted = { volume: 0.0, peak: 0.0 }
+zeroVolume :: { volume :: Number, peak :: Number }
+zeroVolume = { volume: 0.0, peak: 0.0 }

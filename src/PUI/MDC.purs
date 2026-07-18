@@ -141,7 +141,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOption, convertOptionsWithDefaults)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (PUI, effAdapter)
+import PUI (PUI, constantly, effAdapter)
 import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, foreach, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
 import PUI.HTML (button) as HTML
 import PUI.Web (Node, Web, uniqueId)
@@ -843,9 +843,16 @@ card provided content =
   where
   { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
 
+-- | Modal ocular with the open-on-feed/close-on-emission protocol: the
+-- | dialog opens (via the MDC foundation — animation, scrim, Esc) whenever
+-- | a value is fed, and closes when its content emits, so feed it
+-- | selectively (behind an event case), put the deciding emitters inside,
+-- | and the emission both closes the dialog and flows on. The content's
+-- | final stage must emit only on decision (buttons, `clicked`) — an
+-- | echoing display there would close the dialog the moment it opens.
 dialog :: { title :: String } -> Ocular (PUI Web)
 dialog { title } content =
-  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") mempty mempty $ wrap do
+  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a _ -> close a) $ wrap do
     result <- unwrap $
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ wrap do
@@ -854,19 +861,24 @@ dialog { title } content =
     _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
     pure result
 
+-- | `dialog` with a built-in confirm action: same open-on-feed protocol,
+-- | and the confirm button is a `clicked` pass-through — clicking it
+-- | emits the content's last output (so give displays a `# tapped`),
+-- | which closes the dialog and flows on.
 simpleDialog :: { title :: String, confirm :: String } -> Ocular (PUI Web)
 simpleDialog { title, confirm } content =
-  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a propStatus -> close a) $ wrap do
+  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a _ -> close a) $ wrap do
     result <- unwrap $
       div >>> cl "mdc-dialog__container" $
-        div >>> cl "mdc-dialog__surface" >>> "role" := "altertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ Semigroupoid.do
+        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ Semigroupoid.do
           wrap do
             _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := id $ staticText title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := id' $ content)
-          div >>> cl "mdc-dialog__actions" $
-            HTML.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ RecordToRecord.do
-              div >>> cl "mdc-button__ripple" $ pempty
-              span >>> cl "mdc-button__label" $ staticText confirm
+          div >>> cl "mdc-dialog__actions" $ clicked $
+            HTML.button >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" $ ( RecordToRecord.do
+                div >>> cl "mdc-button__ripple" $ pempty
+                span >>> cl "mdc-button__label" $ staticText confirm
+            ) # constantly {}
     _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
     pure result
     where
@@ -992,12 +1004,25 @@ topAppBar config content = wrap do
 
 -- | Permanent navigation drawer beside the content; the drawer's own nav
 -- | is chrome (`{} → {}`, e.g. a `list` of `listItem`s).
-drawer :: { title :: String, subtitle :: String } -> PUI Web {} {} -> Ocular (PUI Web)
+-- | The permanent drawer with a **live nav slot**: nav and content are
+-- | sibling stages over the same types — both see every value fed, and
+-- | either side's emissions exit the drawer, so a selectable nav (a
+-- | `listOf` of sections folded via `updates`) drives the content beside
+-- | it. Static chrome nav embeds via `muted`.
+drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
-  _ <- unwrap (aside >>> cl "mdc-drawer" $ wrap do
+  nav' <- unwrap (aside >>> cl "mdc-drawer" $ wrap do
     _ <- unwrap (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
     unwrap (div >>> cl "mdc-drawer__content" $ nav))
-  unwrap (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
+  content' <- unwrap (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
+  pure
+    { toUser: \i -> do
+        nav'.toUser i
+        content'.toUser i
+    , fromUser: \prop -> do
+        nav'.fromUser prop
+        content'.fromUser prop
+    }
 
 -- | Attach a hover/focus tooltip to the wrapped element (single-element
 -- | content: the anchor is the content's root node).
