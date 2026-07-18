@@ -59,9 +59,9 @@ main =
         card { caption: "Fulfillment" }
           ( ( RecordToRecord.do
                 tabBar
-                  [ { value: "dineIn", label: "Dine in", icon: Nothing }
-                  , { value: "takeaway", label: "Takeaway", icon: Nothing }
-                  , { value: "delivery", label: "Delivery", icon: Nothing }
+                  [ { value: "dineIn", label: "Dine in" }
+                  , { value: "takeaway", label: "Takeaway" }
+                  , { value: "delivery", label: "Delivery" }
                   ]
                   # asField @"selected"
                 shownWhen (\r -> r.selected == "dineIn") (filledTextField { floatingLabel: "Table" } # asField @"table" # lcmap tableOf)

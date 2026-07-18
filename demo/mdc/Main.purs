@@ -124,8 +124,8 @@ main =
         layoutCell { span: 12 } $ card { caption: "Tabs" }
           ( ( RecordToRecord.do
                 tabBar
-                  [ { value: "standard", label: "Standard", icon: Just "local_shipping" }
-                  , { value: "express", label: "Express", icon: Just "bolt" }
+                  [ { value: "standard", label: "Standard", icon: "local_shipping" }
+                  , { value: "express", label: "Express", icon: "bolt" }
                   ]
                   # asField @"selected"
                 shownWhen (\r -> r.selected == "standard") (filledTextField { floatingLabel: "Delivery days" } # asField @"days" # lcmap daysOf)

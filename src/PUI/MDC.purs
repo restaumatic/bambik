@@ -54,6 +54,7 @@
 module PUI.MDC
   ( OptLabelIcon(..)
   , OptLabel(..)
+  , OptIcon(..)
   , OptSelected(..)
   , OptStep(..)
   , banner
@@ -156,7 +157,9 @@ import PUI.Web (Node, Web, uniqueId)
 -- per-symbol instance, decides which fields are optional for a given widget.
 -- One tag per distinct optional-field set: `OptLabelIcon` (button),
 -- `OptLabel` (fab, caption via card), `OptStep` (sliders), `OptSelected`
--- (listOf — no lifted fields, `selected` just defaults).
+-- (listOf — no lifted fields, `selected` just defaults), `OptIcon`
+-- (tabBar options — per-element: a bare `icon` string lifts, omitted
+-- defaults to none).
 data OptLabelIcon = OptLabelIcon
 
 instance ConvertOption OptLabelIcon "label" String (Maybe String) where
@@ -178,6 +181,13 @@ else instance ConvertOption OptLabel sym a a where
 data OptSelected = OptSelected
 
 instance ConvertOption OptSelected sym a a where
+  convertOption _ _ = identity
+
+data OptIcon = OptIcon
+
+instance ConvertOption OptIcon "icon" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptIcon sym a a where
   convertOption _ _ = identity
 
 data OptStep = OptStep
@@ -205,8 +215,13 @@ button provided = recordToCase @"clicked" (containedButton config)
 -- | input, so it echoes unconditionally and sits happily inside `looped`
 -- | ensembles (selection field + `shownWhen` panes). One tab per option;
 -- | `MDCTab` drives the activation indicator.
-tabBar :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web { value :: a } { value :: a }
-tabBar options = field @"value" (tabBarLeaf options)
+tabBar
+  :: forall provided a
+   . Eq a
+  => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String }
+  => Array { | provided }
+  -> PUI Web { value :: a } { value :: a }
+tabBar options = field @"value" (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options))
 
 tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
 tabBarLeaf options =

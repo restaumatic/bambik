@@ -90,12 +90,12 @@ movieCatalogue =
       ]
   }
 
-categoryTabs :: Array { value :: Category, label :: String, icon :: Maybe String }
+categoryTabs :: Array { value :: Category, label :: String }
 categoryTabs =
-  [ { value: All, label: "All", icon: Nothing }
-  , { value: Action, label: "Action", icon: Nothing }
-  , { value: Drama, label: "Drama", icon: Nothing }
-  , { value: Comedy, label: "Comedy", icon: Nothing }
+  [ { value: All, label: "All" }
+  , { value: Action, label: "Action" }
+  , { value: Drama, label: "Drama" }
+  , { value: Comedy, label: "Comedy" }
   ]
 
 visibleMovies :: MovieCatalogue -> Array MovieCard
