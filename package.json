@@ -13,11 +13,13 @@
     "bundle-demo-2": "spago bundle-app --minify --main Main --to demo/2/bundle.js --path \"demo/2/**/*.purs\"",
     "bundle-demo-mdc": "spago bundle-app --minify --main Main --to demo/mdc/bundle.js --path \"demo/mdc/**/*.purs\"",
     "bundle-demo-7guis": "spago build --path \"demo/7guis/*/*.purs\" && node scripts/bundle-7guis.mjs",
+    "bundle-demo-nguis": "spago build --path \"demo/nguis/*/*.purs\" && node scripts/bundle-nguis.mjs",
     "bundle-demos": "npm run bundle-demo-1 && npm run bundle-demo-2 && npm run bundle-demo-mdc && npm run bundle-demo-7guis",
     "deploy-demo-1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo-2": "scp -r demo/2/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo-mdc": "scp -r demo/mdc/ xyz:/var/www/html/bambik/demo/",
-    "deploy-demo-7guis": "scp -r demo/7guis/ xyz:/var/www/html/bambik/demo/"
+    "deploy-demo-7guis": "scp -r demo/7guis/ xyz:/var/www/html/bambik/demo/",
+    "deploy-demo-nguis": "scp -r demo/nguis/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
     "material-components-web": "^14.0.0"
