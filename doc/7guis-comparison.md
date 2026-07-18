@@ -119,6 +119,111 @@ means dependency *reach* — which library modules a demo pulls in — drives
 the variance, not source length; flight-booker's +4.2% residual comes from
 its Aff/action/select reach, not its line count.
 
+## Developer experience (expert steady-state)
+
+Size is only half the story. This section compares the day-to-day
+experience of *fluent* practitioners — the bambik programmer is assumed to
+know profunctors, strengths, optics, and categories and to be at home in
+PureScript/Haskell; the others are assumed equally expert in their own
+stacks. Learning curve is deliberately out of scope.
+
+### Writing new UI
+
+For the expert, bambik is closest to *specification transcription*: a form
+is a `RecordToRecord.do` block whose lines are the fields, and there is no
+separate design step of "what messages exist, where does state live, how do
+components communicate" — the row types are derived from the components
+composed, mostly inferred. The wiring layer has nearly zero degrees of
+freedom, which is the expert's gain: there is usually exactly one way to
+write it, and effort goes to the actual domain (the formula parser, the
+`Itinerary` invariant).
+
+Elm cannot buy back its ceremony with expertise — every interaction costs
+the four-place ritual (Msg constructor, update branch, view code, sometimes
+a lens); fluency makes it fast and error-free but not shorter. Vue and
+Svelte experts write at thought-speed, but the degrees of freedom that make
+them fast persist as design decisions (where state lives, watch vs
+computed): two Vue experts write visibly different code for the same task,
+two bambik experts write nearly the same code. The React+MobX expert *is*
+the architecture — the framework doesn't enforce the
+actions/observables/components discipline; the developer does.
+
+### The type system: collaborator vs gatekeeper
+
+Fluency changes the character of bambik's row errors. The expert reads a
+`Nub` failure as "open row", an ambiguity at a sibling stage as "unpinned
+payload" — a diagnostic pointing at a specific known cause, the way a
+Haskell veteran reads a missing-instance error (`doc/type-errors.md` is
+this pattern table, written down). One honest asymmetry remains: bambik
+errors report the symptom at the wrong location — the merge, not the
+offending operand — so even the expert does one mental dereference Elm
+never asks of anyone. Elm's errors are simply never a cost; TypeScript's
+are middling; in Vue/Svelte the type system barely participates and the
+expert substitutes runtime discipline and tests.
+
+### Feedback loop
+
+Expertise does not change the tooling gap — this is bambik's main remaining
+deficit. Vue/Svelte experts live in state-preserving HMR; the bambik expert
+waits seconds per edit–spago–esbuild–refresh cycle and re-establishes UI
+state each time (`tapped` probes partially compensate as in-pipeline
+inspection). What changes with fluency is how often the loop is *needed*:
+the bambik and Elm experts open the browser to check aesthetics and event
+feel — if it compiles, the wiring is right — while the Vue/Svelte expert
+opens it to check correctness, continuously. Fewer slow iterations vs many
+instant ones: roughly a wash at 7GUIs scale, tilting typed as logic grows
+(the cells evaluator was developed almost entirely against the compiler).
+
+### Reading and modifying existing code
+
+Arguably bambik's strongest axis. The density that inflates its token
+counts is exactly what an expert wants when reading:
+`slider { min: minVolume, max: maxVolume } # asField @"volume"` is the
+whole story of that widget — model binding, direction, adoption — in one
+line, locally, with nothing to cross-reference. Elm requires mentally
+joining view/Msg/update even when fluent; MobX requires tracing implicit
+reactive graphs; Vue templates hide bindings in string attributes invisible
+to find-references. For modifications, bambik and Elm are compiler-guided
+and total, and the bambik change is also smaller — one pipeline line versus
+Elm's four sites. Vue/Svelte experts do textual archaeology and lean on
+tests.
+
+### Debugging runtime behavior
+
+The one axis where the comparison flips against bambik. When something is
+wrong at runtime despite compiling — an emission not propagating, a merge
+gate retaining stale state, a `looped` re-entrancy surprise — the expert
+has `tapped` and the console, versus Elm's time-travel debugger and
+Vue/React's mature devtools showing the live state tree. Bambik's runtime
+semantics (gates, retention, propagation order) live in module-header prose
+and the expert's head, not in a tool. Rare events, but the costliest
+minutes in the bambik expert's week.
+
+### Steady-state summary
+
+| Axis | Bambik | Elm | React+MobX | Vue | Svelte |
+|---|---|---|---|---|---|
+| Writing (expert-speed) | high — near-spec transcription | medium — ceremony floor | medium | highest | highest |
+| Wiring correctness by construction | strongest | strong | weak | weak | weak |
+| Error diagnostics | good for the fluent (wrong-location tax) | best | fair | minimal | minimal |
+| Iteration loop | worst (no HMR) | good | good | best | best |
+| Reading/modifying | best (local, dense, total) | good (4-site joins) | fair | fair | fair |
+| Runtime debugging tools | weakest | best | good | good | good |
+| Code uniformity across experts | near-canonical | high | low | low | medium |
+
+With fluency assumed, bambik's profile is **strong where the compiler
+participates** (writing, reading, refactoring, correctness — arguably the
+best of the five at reading and change-safety) and **weak where tooling
+participates** (iteration loop, runtime inspection). Vue/Svelte keep the
+throughput crown but lose their biggest relative advantage — expert bambik
+writing is much closer to their speed than the token counts suggest, since
+most of bambik's extra tokens are inferred-checkable structure typed
+without thought. Elm remains the safest, most tool-supported typed option
+but is the only one where expertise cannot reduce the ceremony. Bambik's
+remaining gap is infrastructural, not conceptual: HMR, a devtools story for
+the propagation graph, and errors that point at the offending operand
+instead of the merge — all buildable, none paradigm-inherent.
+
 ## Conclusion
 
 In every size metric the landscape splits into three tiers:
