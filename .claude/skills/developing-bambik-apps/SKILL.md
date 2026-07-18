@@ -26,7 +26,16 @@ canonical row, adopted to the business label at the use site:
 - displays adopt with `# forField @l` (read one field) or
   `# projection f # forValue` (format the whole value); a live readout
   as a pipeline stage is the same display made pass-through with
-  `# tapped`: `body2 (text # projection f # forValue) # tapped`
+  `# tapped`: `body2 (text # projection f # forValue) # tapped`.
+  Two wrappers make a stage pass-through, and they are not
+  interchangeable: `# completed` widens a *row-shaped* stage's output to
+  its full input row from the retained input — safe over editors and
+  displays alike, the default inside record pipelines; `# tapped`
+  forwards the whole input value of *any* shape but is honest only over
+  displays (the display's echo triggers the forwarding — an editor
+  inside would replay stale upstream values on every edit). So: editor
+  or record display stage → `# completed`; display over a non-record
+  value (a `projection`-formatted readout) → `# tapped`
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
   `[ clicked :: _ ]`; adopt with `# asCase @l`
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt
