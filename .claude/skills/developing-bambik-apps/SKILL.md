@@ -70,8 +70,16 @@ write-action dispatch, cells and circle-drawer show custom `view`
 leaves), the nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
 click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
 form with `tapped` readouts, quiz shows `shownWhen` panes over
-multi-stage pipelines), demo/1 (loop-free pipeline), and demo/mdc (full
-catalog plus the trace forms).
+multi-stage pipelines, tic-tac-toe and calculator are `view`-grid apps
+(`data-key` cells + `onKeyClick` + `updates`), stopwatch drives `every`
+with pause-by-`Nothing` and a `foreach # displayed` laps list,
+shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
+`constantly`-fed catalogue, password-generator is the effectful shape
+(`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
+`sliderLive` with a `view` swatch, markdown-previewer renders typed
+`Markup` from a hand-rolled parser, helloworld is the bare minimum),
+demo/1 (loop-free pipeline), and demo/mdc (full catalog plus the trace
+forms).
 
 Conditional panes: `shownWhen pred` hides every element its content
 builds, so it wraps multi-stage `Semigroupoid.do` pipelines directly —
