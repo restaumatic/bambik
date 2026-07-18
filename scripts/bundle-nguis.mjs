@@ -8,6 +8,7 @@ const demos = {
   'tip-calculator': ['TipCalculator', 'tipCalculator'],
   'quiz': ['Quiz', 'quiz'],
   'tic-tac-toe': ['TicTacToe', 'ticTacToe'],
+  'markdown-previewer': ['MarkdownPreviewer', 'markdownPreviewer'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {
