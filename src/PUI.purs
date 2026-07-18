@@ -80,6 +80,21 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (union) as Record
 
+-- | Dev-mode emission trace: set `window.__bambikTrace = true` (or
+-- | `localStorage.setItem("bambik-trace", "true")`) in the browser console
+-- | and reload to log every propagation decision — values flowing between
+-- | pipeline stages, loop re-feeds and swallowed echoes, and (most
+-- | importantly) emissions *withheld* by knowledge gates, which are
+-- | otherwise invisible. Zero cost when off beyond one flag check per
+-- | emission.
+foreign import traceEnabled :: Effect Boolean
+foreign import traceImpl :: forall a. String -> a -> Effect Unit
+
+tr :: forall a. String -> a -> Effect Unit
+tr tag a = do
+  on <- traceEnabled
+  when on $ traceImpl tag a
+
 -- could it be: newtype PUI m i o = PUI ((o -> Effect Unit) -> m (i -> Effect Unit))
 newtype PUI m i o = PUI (m
   { toUser :: i -> Effect Unit
@@ -117,7 +132,7 @@ instance Functor m => Strong (PUI m) where
           p'.fromUser \b -> do
             mab <- Ref.read lastab
             case mab of
-              Nothing -> pure Nothing
+              Nothing -> tr "Strong.first: emission withheld (pair state unknown)" b $> Nothing
               Just prevab -> prop (Tuple b (snd prevab))
       }
   second p = wrap ado
@@ -131,7 +146,7 @@ instance Functor m => Strong (PUI m) where
           p'.fromUser \b -> do
             mab <- Ref.read lastab
             case mab of
-              Nothing -> pure Nothing
+              Nothing -> tr "Strong.second: emission withheld (pair state unknown)" b $> Nothing
               Just prevab -> prop (Tuple (fst prevab) b)
       }
 
@@ -177,7 +192,9 @@ instance Functor m => Costrong (PUI m) where
     in
       { toUser: \a -> do
           mc <- Ref.read cRef
-          for_ mc \c -> p'.toUser $ Tuple a c
+          case mc of
+            Nothing -> tr "Costrong.unfirst: input withheld (state unprimed)" a
+            Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
           p'.fromUser \(Tuple b c) -> do
             Ref.write (Just c) cRef
@@ -189,7 +206,9 @@ instance Functor m => Costrong (PUI m) where
     in
       { toUser: \b -> do
           ma <- Ref.read aRef
-          for_ ma \a -> p'.toUser $ Tuple a b
+          case ma of
+            Nothing -> tr "Costrong.unsecond: input withheld (state unprimed)" b
+            Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
           p'.fromUser \(Tuple a c) -> do
             Ref.write (Just a) aRef
@@ -208,6 +227,7 @@ instance Functor m => Cochoice (PUI m) where
     , fromUser: \prop -> p'.fromUser case _ of
         Left b -> prop b
         Right c -> do
+          tr "Cochoice.unleft: looping back" c
           p'.toUser $ Right c
           pure Nothing
     }
@@ -216,6 +236,7 @@ instance Functor m => Cochoice (PUI m) where
     , fromUser: \prop -> p'.fromUser case _ of
         Right b -> prop b
         Left c -> do
+          tr "Cochoice.unright: looping back" c
           p'.toUser $ Left c
           pure Nothing
     }
@@ -236,10 +257,13 @@ instance Functor m => Coresolving (PUI m) where
       { toUser: \a -> do
           Ref.write (Just a) aRef
           mc <- Ref.read cRef
-          for_ mc \c -> p'.toUser $ Tuple a c
+          case mc of
+            Nothing -> tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
+            Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop -> p'.fromUser case _ of
           Left b -> prop b
           Right c -> do
+            tr "Coresolving.coresolve: fold step, re-feeding" c
             Ref.write (Just c) cRef
             busy <- Ref.read busyRef
             unless busy do
@@ -265,6 +289,7 @@ instance Functor m => Coretaining (PUI m) where
           status <- prop b
           busy <- Ref.read busyRef
           unless busy do
+            tr "Coretaining.coretain: resuming with state" c
             Ref.write true busyRef
             p'.toUser $ Right c
             Ref.write false busyRef
@@ -284,6 +309,7 @@ instance Apply m => Semigroupoid (PUI m) where
           -- wiring already listening
           p2'.fromUser prop
           p1'.fromUser \x -> do
+            tr "stage → stage" x
             p2'.toUser x
             pure Nothing
       }
@@ -399,8 +425,9 @@ updates handler events = wrap $ unwrap events <#> \evts ->
         evts.fromUser \e -> do
           ms <- Ref.read sRef
           case ms of
-            Nothing -> pure Nothing
+            Nothing -> tr "updates: event withheld (no retained state yet)" e $> Nothing
             Just s -> do
+              tr "updates: folding event" e
               let s' = handler e s
               Ref.write (Just s') sRef
               prop s'
@@ -455,8 +482,9 @@ looped p = wrap $ unwrap p <#> \p' ->
         p'.fromUser \u -> do
           busy <- Ref.read busyRef
           if busy
-            then pure Nothing
+            then tr "looped: echo swallowed (re-entrant)" u $> Nothing
             else do
+              tr "looped: re-feeding emission" u
               Ref.write true busyRef
               p'.toUser u
               Ref.write false busyRef
@@ -499,14 +527,14 @@ instance Applicative m => RecordToRecord (PUI m) where
             let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
             let mp2 = unsafePerformEffect $ Ref.read p2Last
             case mp2 of
-              Nothing -> pure Nothing
+              Nothing -> tr "merge ×→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
               Just p2val -> prop $ Record.union exact p2val
           p2'.fromUser \partial -> do
             let exact = exactRow partial
             let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
             let mp1 = unsafePerformEffect $ Ref.read p1Last
             case mp1 of
-              Nothing -> pure Nothing
+              Nothing -> tr "merge ×→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
               Just p1val -> prop $ Record.union p1val exact
       }
 
@@ -563,7 +591,7 @@ resolveFor millis p = wrap ado
           -- loop immediately with the retained state
           mc <- Ref.read cRef
           case mc of
-            Nothing -> pure Nothing
+            Nothing -> tr "Resolving.resolve: loop branch withheld (state unprimed)" b $> Nothing
             Just c -> prop $ Right c
     }
 
@@ -584,7 +612,7 @@ instance Functor m => Retaining (PUI m) where
           p'.fromUser \b -> do
             mc <- Ref.read cRef
             case mc of
-              Nothing -> pure Nothing
+              Nothing -> tr "Retaining.retain: emission withheld (state unprimed)" b $> Nothing
               Just c -> prop $ Tuple b c
       }
 
@@ -611,14 +639,14 @@ instance Applicative m => VariantToRecord (PUI m) where
             let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
             let mp2 = unsafePerformEffect $ Ref.read p2Last
             case mp2 of
-              Nothing -> pure Nothing
+              Nothing -> tr "merge +→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
               Just p2val -> prop $ Record.union exact p2val
           p2'.fromUser \partial -> do
             let exact = exactRow partial
             let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
             let mp1 = unsafePerformEffect $ Ref.read p1Last
             case mp1 of
-              Nothing -> pure Nothing
+              Nothing -> tr "merge +→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
               Just p1val -> prop $ Record.union p1val exact
       }
 

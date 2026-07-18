@@ -32,23 +32,27 @@ at the adopter application.
 ## 2. Two operands owning the same output field
 
 Record-merge output fields are **owned**: exactly one producer per field
-(`OwnedRecordOutputs`). Giving two operands the same `asField` label fails
-the `Lacks` constraint of the merge's exactness evidence:
+(`OwnedRecordOutputs`); dually, variant-merge input cases have exactly one
+handler (`OwnedVariantInputs`). Giving two operands the same `asField`
+label (or two handlers the same case) is caught by the owned sides'
+`DisjointLabels` detector, which fails with a custom error naming the
+duplicated label, spanned at an offending operand line:
 
 ```
-No type class instance was found for
+at demo/7guis/counter/Counter.purs:16:9 - 16:68
 
-  Prim.Row.Lacks "name" ( name :: String )
+  Custom error:
 
-while solving type class constraint
-  Data.Profunctor.Row.FieldNames t11 t8 t8
-...
-while applying a function discard
+    Two merge operands own the label "name".
+    On an owned merge side each label belongs to exactly one operand: every
+    record-output field has ONE producer, every variant-input case has ONE
+    handler.
+    Look for the duplicated `asField`/`field`/`forCase` label in this `do`
+    block. (doc/type-errors.md #2)
 ```
 
-**Read it as:** `Lacks "x" ( x :: _ )` = the field `x` appears twice on the
-merge's output side — two operands both claim to produce it. The span covers
-the whole `RecordToRecord.do` block; look for the duplicated label.
+**Read it as:** exactly what it says — the named label has two producers
+(or two handlers); remove or rename one of them.
 
 ## 3. Missing (or extra) case handler
 

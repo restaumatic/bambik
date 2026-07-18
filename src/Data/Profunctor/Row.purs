@@ -32,6 +32,9 @@ module Data.Profunctor.Row
   , class SharedVariantOutputs
   , class OwnedVariantInputs
   , class OwnedRecordOutputs
+  , class DisjointLabels
+  , class LabelAbsent
+  , class LabelAbsentK
   , exactRow
   , fieldNames
   , widenRecordInput
@@ -45,9 +48,12 @@ import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (expand)
 import Data.Variant.Internal (class VariantTags)
+import Prim.Ordering (Ordering, LT, EQ, GT)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union) as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList (Cons, Nil) as RL
+import Prim.Symbol (class Compare) as Symbol
+import Prim.TypeError (class Fail, Above, Beside, Text)
 import Record (get) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
@@ -191,6 +197,40 @@ class InclusiveRows o1 o2 o o12 o1x o2x <= SharedVariantOutputs o1 o2 o o12 o1x 
 
 instance InclusiveRows o1 o2 o o12 o1x o2x => SharedVariantOutputs o1 o2 o o12 o1x o2x
 
+-- =====================================================================
+-- Custom diagnostics
+-- =====================================================================
+--
+-- A duplicated label on an owned merge side otherwise dies deep inside the
+-- exactness evidence as an anonymous `Lacks` failure (doc/type-errors.md
+-- #2). This detector walks both label lists and, on the first shared
+-- label, fails with a message that *names* it.
+
+class DisjointLabels :: forall k1 k2. RowList k1 -> RowList k2 -> Constraint
+class DisjointLabels l1 l2
+
+instance DisjointLabels RL.Nil l2
+instance (LabelAbsent l l2, DisjointLabels rest l2) => DisjointLabels (RL.Cons l a rest) l2
+
+class LabelAbsent :: forall k. Symbol -> RowList k -> Constraint
+class LabelAbsent l rl
+
+instance LabelAbsent l RL.Nil
+instance (Symbol.Compare l l' ord, LabelAbsentK ord l rest) => LabelAbsent l (RL.Cons l' a rest)
+
+class LabelAbsentK :: forall k. Ordering -> Symbol -> RowList k -> Constraint
+class LabelAbsentK ord l rest
+
+instance Fail
+  ( Above
+      (Beside (Beside (Text "Two merge operands own the label \"") (Text l)) (Text "\"."))
+      (Above
+        (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
+        (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block. (doc/type-errors.md #2)"))
+  ) => LabelAbsentK EQ l rest
+instance LabelAbsent l rest => LabelAbsentK LT l rest
+instance LabelAbsent l rest => LabelAbsentK GT l rest
+
 -- | A merge's **variant-input side**: every case has exactly one handler
 -- | (disjoint rows), and routing a value to its handler is label-driven —
 -- | `DispatchableVariants` supplies the runtime tags `contract` compares.
@@ -198,11 +238,13 @@ class OwnedVariantInputs :: Row Type -> Row Type -> Row Type -> RowList Type -> 
 class
   ( ExclusiveRows i1 i2 i
   , DispatchableVariants i1 i2 i1l i2l
+  , DisjointLabels i1l i2l
   ) <= OwnedVariantInputs i1 i2 i i1l i2l
 
 instance
   ( ExclusiveRows i1 i2 i
   , DispatchableVariants i1 i2 i1l i2l
+  , DisjointLabels i1l i2l
   ) => OwnedVariantInputs i1 i2 i i1l i2l
 
 -- | A merge's **record-output side**: every field has exactly one producer
@@ -213,11 +255,13 @@ class OwnedRecordOutputs :: Row Type -> Row Type -> Row Type -> RowList Type -> 
 class
   ( ExclusiveRows o1 o2 o
   , MergeableRecords o1 o2 o1l o2l
+  , DisjointLabels o1l o2l
   ) <= OwnedRecordOutputs o1 o2 o o1l o2l
 
 instance
   ( ExclusiveRows o1 o2 o
   , MergeableRecords o1 o2 o1l o2l
+  , DisjointLabels o1l o2l
   ) => OwnedRecordOutputs o1 o2 o o1l o2l
 
 -- =====================================================================
