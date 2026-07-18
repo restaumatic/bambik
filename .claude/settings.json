@@ -84,7 +84,8 @@
       "Bash(git commit -q -m '7guis pages: code-style structure sentence simplified *)",
       "Bash(git commit -q -m '7guis pages: entry-point sentence generalized to the single exported function *)",
       "Bash(grep -n \"with$\\\\|with {\" demo/2/Main.purs demo/helloworld/Main.purs)",
-      "Bash(git commit -q -m 'demos: business literals extracted from UI code — initial models, slider bounds/steps, tick period as named business definitions; skill gains the rule *)"
+      "Bash(git commit -q -m 'demos: business literals extracted from UI code — initial models, slider bounds/steps, tick period as named business definitions; skill gains the rule *)",
+      "Bash(git commit -q -m 'demos: seed values get business names — roomTemperature, peopleCatalogue, emptyCanvas, tenSecondTimer, plannedTrip, orderSheet, zeroCount, helloWorld, firstOrder, muted, reviewStep; skill: name in business language, not lifecycle language *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

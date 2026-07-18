@@ -43,7 +43,7 @@ circleDrawer =
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
           ) # updates (match { clicked: clickAt, undo: \m _ -> undo m, redo: \m _ -> redo m })
-      ) # mvu initial
+      ) # mvu emptyCanvas
 
 clickAt :: { x :: Number, y :: Number } -> Model -> Model
 clickAt { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
@@ -90,8 +90,8 @@ renderCanvas m = mapWithIndex circle m.circles
 hasSelection :: Model -> Boolean
 hasSelection m = isJust m.selected
 
-initial :: Model
-initial =
+emptyCanvas :: Model
+emptyCanvas =
   { circles: []
   , selected: Nothing
   , diameter: 40.0

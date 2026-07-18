@@ -50,7 +50,7 @@ flightBooker =
             ( filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
                 # lcmap returnDate
             )
-      ) # mvu initial
+      ) # mvu plannedTrip
       body1 (text # projection validationText # forValue) # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
@@ -114,5 +114,5 @@ isReturn b = b.flightType == Return
 returnDate :: Booking -> { return :: String }
 returnDate b = { return: b.return }
 
-initial :: Booking
-initial = { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
+plannedTrip :: Booking
+plannedTrip = { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }

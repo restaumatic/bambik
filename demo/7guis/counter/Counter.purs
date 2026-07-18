@@ -16,10 +16,10 @@ counter =
       card { caption: "Counter" } $ ( Semigroupoid.do
           headline4 (text # projection show # forField @"count") # completed
           button { label: "Count" } # updates (match { clicked: \m _ -> increment m })
-      ) # mvu initial
+      ) # mvu zeroCount
 
 increment :: { count :: Int } -> { count :: Int }
 increment r = { count: r.count + 1 }
 
-initial :: { count :: Int }
-initial = { count: 0 }
+zeroCount :: { count :: Int }
+zeroCount = { count: 0 }

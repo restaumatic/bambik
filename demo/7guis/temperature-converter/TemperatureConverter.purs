@@ -21,7 +21,7 @@ temperatureConverter =
             # projection show # forField @"celsius" # widenRecordInput # updates fromCelsius
           filledTextField { floatingLabel: "Fahrenheit" }
             # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
-      ) # mvu initial
+      ) # mvu roomTemperature
 
 fromCelsius :: { value :: String } -> Model -> Model
 fromCelsius { value } m = case fromString value of
@@ -33,5 +33,5 @@ fromFahrenheit { value } m = case fromString value of
   Just f -> m { fahrenheit = f, celsius = (f - 32.0) * 5.0 / 9.0 }
   Nothing -> m
 
-initial :: Model
-initial = { celsius: 20.0, fahrenheit: 68.0 }
+roomTemperature :: Model
+roomTemperature = { celsius: 20.0, fahrenheit: 68.0 }

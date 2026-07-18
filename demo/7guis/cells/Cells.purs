@@ -43,7 +43,7 @@ cells =
             renderTable
             (\node emit -> onKeyClick node \key -> emit (.cellClicked key))
             # updates (match { cellClicked: selectCell })
-      ) # mvu initial
+      ) # mvu orderSheet
 
 cols :: Int
 cols = 26
@@ -241,8 +241,8 @@ evalExpr cells visiting = go
 selectedCaption :: Model -> String
 selectedCaption m = "Cell " <> fromMaybe "—" m.selected
 
-initial :: Model
-initial =
+orderSheet :: Model
+orderSheet =
   { cells: fromHomogeneous
       { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
       , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"

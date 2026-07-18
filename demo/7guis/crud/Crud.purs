@@ -45,7 +45,7 @@ crud =
                 button { label: "Update" } # asCase @"update"
                 button { label: "Delete" } # asCase @"delete"
           ) # updates (match { picked: pick, create: \m _ -> createPerson m, update: \m _ -> updatePerson m, delete: \m _ -> deletePerson m })
-      ) # mvu initial
+      ) # mvu peopleCatalogue
 
 pick :: Int -> Model -> Model
 pick i m = case index m.people i of
@@ -75,8 +75,8 @@ entries m = filter (\e -> hasPrefix m.prefix e.surname)
     Just _ -> true
     Nothing -> false
 
-initial :: Model
-initial =
+peopleCatalogue :: Model
+peopleCatalogue =
   { prefix: ""
   , name: ""
   , surname: ""

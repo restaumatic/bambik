@@ -117,7 +117,7 @@ main =
         layoutCell { span: 6 } $ card { caption: "Sliders" } $ Semigroupoid.do
           sliderLive { label: "Volume", min: minVolume, max: maxVolume } # asField @"volume"
           ( Semigroupoid.do
-              seeded initialVolume
+              seeded muted
               lcmap stepPeak identity
               body2 (text # projection peakLine # forValue) # tapped
           ) # feedback
@@ -170,7 +170,7 @@ main =
                     shownWhen (\r -> r.step == "confirm") $ body2 (text # projection confirmLine # forValue)
                 ) # tapped
                 div >>> attr "style" "display: flex; align-items: center; gap: 16px;" $ RecordToVariant.do
-                  announce initialStep
+                  announce reviewStep
                   shownWhen (\r -> r.step == "review") (button { label: "Next" } # asCase @"next" # lcmap (toStep "confirm"))
                   shownWhen (\r -> r.step == "confirm") (button { label: "Back" } # asCase @"next" # lcmap (toStep "review"))
                   shownWhen (\r -> r.step == "confirm") (button { label: "Publish", icon: "publish" } # asCase @"publish" # lcmap essentials)
@@ -248,11 +248,11 @@ daysOf s = { days: s.days }
 priceOf :: ShippingState -> { price :: String }
 priceOf s = { price: s.price }
 
-initialStep ::
+reviewStep ::
   [ publish :: { name :: String, plan :: String, attempt :: Int }
   , next :: { step :: String }
   ]
-initialStep = .next { step: "review" }
+reviewStep = .next { step: "review" }
 
 reviewLine :: { name :: String, plan :: String, step :: String } -> String
 reviewLine r = "Step 1 of 2 — review: publish " <> r.name <> " (" <> r.plan <> " plan)?"
@@ -372,5 +372,5 @@ minVolume = 0.0
 maxVolume :: Number
 maxVolume = 100.0
 
-initialVolume :: { volume :: Number, peak :: Number }
-initialVolume = { volume: 0.0, peak: 0.0 }
+muted :: { volume :: Number, peak :: Number }
+muted = { volume: 0.0, peak: 0.0 }
