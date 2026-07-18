@@ -8,7 +8,7 @@
 //   node scripts/dev.mjs 1|2|mdc|helloworld
 import { context } from 'esbuild'
 import { spawn } from 'node:child_process'
-import { readdirSync, statSync } from 'node:fs'
+import { readdirSync, statSync, watch } from 'node:fs'
 import path from 'node:path'
 
 const sevenGuis = {
@@ -49,20 +49,37 @@ function build() {
     })
 }
 
-// mtime polling instead of inotify: the watched set is small (~100 files)
-// and inotify budgets are routinely exhausted by editors on dev machines
+// inotify when available (instant), mtime polling as fallback — inotify
+// budgets (fs.inotify.max_user_instances/max_user_watches) are routinely
+// exhausted by editors on dev machines, surfacing as ENOSPC
+const isSource = f => /\.(purs|js)$/.test(f) && !f.includes('bundle')
+const subdirs = d => [d, ...readdirSync(d, { withFileTypes: true })
+  .filter(e => e.isDirectory())
+  .flatMap(e => subdirs(path.join(d, e.name)))]
 const sources = d => readdirSync(d, { withFileTypes: true }).flatMap(e => {
   const p = path.join(d, e.name)
   if (e.isDirectory()) return sources(p)
-  return /\.(purs|js)$/.test(e.name) && !e.name.includes('bundle') ? [p] : []
+  return isSource(e.name) ? [p] : []
 })
-const stamp = () => watchDirs.flatMap(sources)
-  .map(p => `${p}:${statSync(p, { throwIfNoEntry: false })?.mtimeMs ?? 0}`).join('\n')
-let last = stamp()
-setInterval(() => {
-  const now = stamp()
-  if (now !== last) { last = now; build() }
-}, 300)
+
+let timer
+const changed = () => { clearTimeout(timer); timer = setTimeout(build, 50) }
+const watchers = []
+try {
+  for (const d of watchDirs.flatMap(subdirs))
+    watchers.push(watch(d, (_, file) => file && isSource(file) && changed()))
+  console.log(`watching via inotify (${watchers.length} dirs)`)
+} catch (e) {
+  for (const w of watchers) w.close()
+  console.log(`inotify unavailable (${e.code}) — polling mtimes every 300ms`)
+  const stamp = () => watchDirs.flatMap(sources)
+    .map(p => `${p}:${statSync(p, { throwIfNoEntry: false })?.mtimeMs ?? 0}`).join('\n')
+  let last = stamp()
+  setInterval(() => {
+    const now = stamp()
+    if (now !== last) { last = now; changed() }
+  }, 300)
+}
 
 build()
 
