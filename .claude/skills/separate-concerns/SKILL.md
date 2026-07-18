@@ -15,6 +15,10 @@ function belongs to exactly one of two classes:
    `Model -> Model`, `Model -> String`, parsers, evaluators. No variant
    types, no PUI types, no UI vocabulary in their signatures.
 
+**File order**: one purely UI-related function — `main` — comes first,
+followed by the pure business functions over the model. (This structure is
+also stated in the 7guis pages' code-style note; keep the two in sync.)
+
 ## What to inline (delete the named glue)
 
 - **Update dispatchers** — a `handle :: [ cases ] -> Model -> Model` that

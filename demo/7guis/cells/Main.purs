@@ -23,12 +23,6 @@ import PUI.MDC (body1, card, elevation20, filledTextField)
 import PUI.Web (onKeyClick)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-cols :: Int
-cols = 26
-
-rows :: Int
-rows = 30
-
 type Model =
   { cells :: Object String
   , selected :: Maybe String
@@ -59,6 +53,12 @@ main =
           , selected: Nothing
           , formula: ""
           }
+
+cols :: Int
+cols = 26
+
+rows :: Int
+rows = 30
 
 selectCell :: String -> Model -> Model
 selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }

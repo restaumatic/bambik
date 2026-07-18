@@ -34,11 +34,6 @@ data Itinerary
 
 type Date = { y :: Int, m :: Int, d :: Int }
 
-returnBetween :: Date -> Date -> Maybe Itinerary
-returnBetween out back =
-  if dateKey back >= dateKey out then Just (ReturnBetween { out, back })
-  else Nothing
-
 main :: Effect Unit
 main =
   body $
@@ -62,6 +57,11 @@ main =
       VariantToRecord.do
         snackbar # forCase @"booked"
         snackbar # forCase @"rejected"
+
+returnBetween :: Date -> Date -> Maybe Itinerary
+returnBetween out back =
+  if dateKey back >= dateKey out then Just (ReturnBetween { out, back })
+  else Nothing
 
 parse :: Booking -> Either String Itinerary
 parse b = case parseDate b.start of
