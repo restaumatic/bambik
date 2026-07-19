@@ -10,7 +10,7 @@ import PUI.HTML (a, blockquote, body, circle, cl, el, foreach, h1, h2, h3, hr, p
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
-  body $ with { courses } $ el "article" >>> cl "menu" $ RecordToRecord.do
+  body $ ( el "article" >>> cl "menu" $ RecordToRecord.do
     el "header" >>> cl "menu-header" $ RecordToRecord.do
       svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
         circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
@@ -51,6 +51,7 @@ restaurantMenu =
         staticText "A static page composed from HTML oculars with "
         a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"
         staticText " — no Material components, just structure."
+  ) # with { courses }
 
 type Dish =
   { name :: String
