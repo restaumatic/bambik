@@ -17,7 +17,7 @@ import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import PUI (action, asCase, asField, completed, forValue, looped, onCase, projection, toCase, updates, with)
 import PUI.HTML (body, text)
-import PUI.MDC (button, card, elevation20, filledTextField, indeterminateLinearProgress, listOf)
+import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Person = { name :: String, surname :: String }
@@ -48,7 +48,7 @@ crud = do
               ( listOf { selected: _.selected } (text # projection _.label # forValue)
               ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
-                  RecordToVariant.do
+                  cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
                     button { label: "Update" } # asCase @"update"
                     button { label: "Delete" } # asCase @"delete"

@@ -64,6 +64,7 @@ module PUI.MDC
   , button
   , caption
   , card
+  , cardActions
   , checkbox
   , chipSet
   , dataCell
@@ -893,6 +894,12 @@ card provided content =
     unwrap content
   where
   { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
+
+-- | The MD2 card button-row area: a flex row for a group of buttons, so they
+-- | sit inline at their natural width instead of stretching down the card's
+-- | flex column. Wrap a button group: `cardActions $ RecordToVariant.do …`.
+cardActions :: Ocular (PUI Web)
+cardActions = div >>> cl "mdc-card__actions"
 
 -- | Modal ocular with the open-on-feed/close-on-emission protocol: the
 -- | dialog opens (via the MDC foundation — animation, scrim, Esc) whenever

@@ -481,9 +481,11 @@ provided w = wrap do
     { toUser: case _ of
       Nothing -> ensureDetached
       Just y -> do
-        status <- toUser y
+        -- attach before feeding: a widget that measures itself on toUser (the
+        -- MDC slider positions its thumb from the track width) needs to be in
+        -- the document first, or it lays out against a zero-width detached node
         ensureAttached
-        pure status
+        toUser y
     , fromUser
     }
 
