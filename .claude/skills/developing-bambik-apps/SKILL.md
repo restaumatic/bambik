@@ -35,15 +35,17 @@ canonical row, adopted to the business label at the use site:
   displays (the display's echo triggers the forwarding — an editor
   inside would replay stale upstream values on every edit). So: editor
   or record display stage → `# completed`; display over a non-record
-  value (a `projection`-formatted readout) → `# tapped`. Displays that
-  **cannot echo** fit neither: `foreach`/`foreachWith`/`dynamic`
-  collections are silent on an empty array — inside a gated
-  merge they starve the gate (nothing downstream ever gets the seed),
-  and as a `mvu` pipeline's last stage they kill the loop. Wrap those in
-  `# displayed`, the unconditional pass-through (every value fed is
-  shown and forwarded, no echo needed). A constant-fed stage (a fixed
-  catalogue driving `listOf`/`foreach`) reads `constantly catalogue`
-  instead of an input-annotated `lcmap (const catalogue)`
+  value (a `projection`-formatted readout) → `# tapped`. A terminal
+  **collection display** (a projection rendered as a list/grid, passing
+  the model through) is neither: use the self-announcing collection
+  stage `foreachModel proj item` (channel-fed items) or `foreachWithModel
+  proj build` (structure-from-value builder) — both render `proj s` and
+  echo the carrier `s`, so they never starve on an empty array (they
+  replace the old `… # lcmap proj (foreach …) # displayed` idiom).
+  `# displayed` remains only for **non-collection** passthroughs (a
+  static chrome sibling, a `provided` pane line). A constant-fed stage (a
+  fixed catalogue driving `listOf`/`foreach`) reads `constantly
+  catalogue` instead of an input-annotated `lcmap (const catalogue)`
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
   `[ clicked :: _ ]`; adopt with `# asCase @l`
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt
@@ -66,20 +68,27 @@ statuses → `silence`), and the two combine freely (crud: load action
 feeding a `looped` form whose commands dispatch through write actions).
 For worked examples read the 7GUIs demos (demo/7guis/ — counter is the
 smallest MVU shape, crud combines a load action with a looped form and
-write-action dispatch, cells and circle-drawer show structure-from-data
-in `PUI Web` — `foreachWith`/`each`/`dynamic` over element/SVG oculars
-with `onKeyClicked`/`onClickedXY` events), the nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
+write-action dispatch, cells and circle-drawer show **channel-fed
+structure-from-data** in `PUI Web` — a fixed grid/canvas fed as data
+through the retaining `foreach`, each cell built once and updated in
+place via `attrWith` (value-computed attribute) + `text`, emitting its
+key via `clicked # rmap`; `onClickedXY` for canvas coordinates), the
+nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
 click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
 form with `tapped` readouts, quiz shows `provided` panes over
-multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and calculator are `foreachWith`/`each` grid apps
-(`data-key` cells + `onKeyClicked` + `updates`), stopwatch drives `every`
-with pause-by-`Nothing` and a `foreach # displayed` laps list,
+multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and
+calculator are channel-fed `foreach` grid apps (cells styled by
+`attrWith`, keys emitted via `clicked # rmap`, folded by `updates` — no
+`data-*`, no wholesale rebuild), stopwatch drives `every`
+with pause-by-`Nothing` and a `foreachModel` laps list,
 shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 `constantly`-fed catalogue, password-generator is the effectful shape
 (`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
-`sliderLive` with a `dynamic` swatch, markdown-previewer renders a
-recursive `PUI Web` tree (`foreachWith`/`each`, `el ("h" <> show level)`)
-from a hand-rolled parser, helloworld is the bare minimum),
+`sliderLive` with an `attrWith` swatch + static `foreach` chips,
+markdown-previewer renders a recursive `PUI Web` tree via
+`foreachWithModel` (`each`, `el ("h" <> show level)`) — structure genuinely
+varies per block, so it stays builder-built — from a hand-rolled parser,
+helloworld is the bare minimum),
 demo/1 (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
 ticket-dispenser (`unfolding`), one focused combinator each.
@@ -108,17 +117,28 @@ static chrome in one `RecordToRecord.do`); pure chrome nav embeds via
 `# muted`.
 
 Collection items may hold stateful stages (`completed`, `updates`) —
-refs are per-instance — but `foreach` rebuilds items wholesale per
-value fed, so item-local state resets on every rebuild; durable state
-belongs in the model, with `listOf`'s click-replay folding it back.
+refs are per-instance. `foreach` (and `listOf`, `foreachModel`)
+**retains** items: it reconciles positionally — survivors are re-fed in
+place, entrants appended, a shrink rebuilds — so a channel-fed item keeps
+its DOM/state across feeds (fixed-size grids never rebuild; growing lists
+only append). The closure-built builders (`foreachWith`/`dynamic`/`each`,
+and `foreachWithModel`) still rebuild per value, since their content lives
+in the builder closure — reach for them only when an element's *structure*
+genuinely varies with the data (markdown blocks); when only *values*
+change over a fixed structure, feed the structure as data through
+`foreach` and compute per-element attributes with `attrWith`. Durable
+state still belongs in the model, with `listOf`'s click-replay folding it
+back.
 
 The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/
 `action`/`onCase`/`tapped`/the adopter family re-exports),
-src/PUI/HTML.purs (HTML vocabulary, `body`, element/SVG oculars,
-`foreach`/`foreachWith`/`dynamic`/`each` for structure-from-data, the
-`onKeyClicked`/`onClickedXY` delegated events), src/PUI/MDC.purs (the MDC component and
+src/PUI/HTML.purs (HTML vocabulary, `body`, element/SVG oculars, the
+retaining collections `foreach`/`foreachModel` + `attrWith` for
+channel-fed structure-from-data, the builders
+`foreachWith`/`foreachWithModel`/`dynamic`/`each` for structure-from-value,
+`clicked`/`onClickedXY` events), src/PUI/MDC.purs (the MDC component and
 ocular catalog, the editors' `dimap` round-trip contract), and
 src/Data/Profunctor/Row/ (the four merges, adopters, trace forms,
 business optics — laws in the module headers).
@@ -159,11 +179,14 @@ pages' code-style note; keep the two in sync.)
   `payload -> Model -> Model`.
 
 - **Event constructors** — a `clickedCell :: String -> [ cellClicked :: String ]`
-  wrapper is unnecessary: the delegated emitter yields the bare key and
-  `toCase` introduces the case:
+  wrapper is unnecessary: a channel-fed cell replays its own value on
+  click and `toCase` introduces the case. The grid is fed as data through
+  the retaining `foreach`; each cell renders from its fed value and emits
+  its key:
 
   ```purescript
-  div $ onKeyClicked (dynamic renderBoard) # toCase @"cellClicked"
+  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text })) # rmap _.key
+  table $ foreach (tr $ foreach cellWidget) # lcmap gridRows # toCase @"cellClicked"
   ```
 
 ### What to extract (name the business)
@@ -228,13 +251,13 @@ used in a single projection's return type can stay anonymous.
     # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
   ```
 
-  The delegated event emitters produce a **bare** payload — `onKeyClicked`
-  a `String` key, `onClickedXY` an `{ x, y }` — so introduce the case with
-  `toCase @l` (which closes the row itself, no annotation needed) rather than
-  an inline `inj`/`.label` lambda:
+  A channel-fed cell (`clicked … # rmap _.key`) and the container coordinate
+  emitter `onClickedXY` both produce a **bare** payload — a `String` key, an
+  `{ x, y }` — so introduce the case with `toCase @l` (which closes the row
+  itself, no annotation needed) rather than an inline `inj`/`.label` lambda:
 
   ```purescript
-  svg [...] $ onClickedXY (foreachWith circleAt) # toCase @"clicked"
+  svg [...] $ onClickedXY (foreach circleWidget # lcmap renderData) # toCase @"clicked"
   ```
 
 - **Ignored button payloads still pin rows.** A `button # asCase @l`
