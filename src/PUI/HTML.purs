@@ -32,6 +32,7 @@ module PUI.HTML
   , el
   , em
   , foreach
+  , foreachModel
   , foreachWith
   , h1
   , h2
@@ -76,12 +77,15 @@ module PUI.HTML
 import Prelude
 
 import Control.Monad.State (gets, modify_)
+import Data.Array (drop, length, zip) as Array
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
+import Data.Traversable (for)
+import Data.Tuple (Tuple(..))
 import Data.Symbol (class IsSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -536,28 +540,99 @@ onClickedXY content = wrap do
         onClickXY node \x y -> void $ prop { x, y }
     }
 
--- | The dynamic collection: one instance of the item widget per array
--- | element, rebuilt in the enclosing element on every value fed; every
--- | instance's emissions share the collection's output channel. Wrap it in
--- | a container ocular: `ul $ foreach item`. Two consequences of the
--- | rebuild-per-value protocol: the rebuild is wholesale (no keyed diff —
--- | fine at collection sizes where re-rendering is cheap), and an empty
--- | array builds nothing, so the collection **never echoes on empty input**
--- | — a `foreach` display inside a gated merge starves the gate, and as a
--- | `mvu` pipeline's last stage it kills the loop; wrap it in `displayed`
--- | to make it an unconditional pass-through stage.
+-- | The dynamic collection — the **runtime-sized homogeneous sequence merge**:
+-- | one instance of the item widget per array element, all sharing the
+-- | collection's output channel. Wrap it in a container ocular: `ul $
+-- | foreach item`.
+-- |
+-- | **Retaining (PoC — sequence-merge branch).** The static row merges keep
+-- | each operand's last contribution in a `Ref` and reuse it across feeds;
+-- | this is that gate lifted to a runtime vector of element *instances*. On
+-- | each fed array the collection **reconciles positionally** instead of
+-- | rebuilding wholesale: survivors are re-fed through their channel (no DOM
+-- | teardown — the win over the old `removeAllChildren`), entrants are built
+-- | and appended, and a shrink falls back to a wholesale rebuild (the one
+-- | remaining churn case, a keyed diff away). Because items are **channel-fed**
+-- | (`w'.toUser item`), re-feeding a survivor updates it in place — unlike the
+-- | closure-built `foreachWith`, whose content lives in the builder closure and
+-- | so still rebuilds per value. See doc/collections-sequence-merge.md.
+-- |
+-- | Still collapses to `o`, so like a variant-output merge it cannot announce
+-- | on an empty array (parametricity: no `o` to fabricate). For the
+-- | structure-preserving, self-announcing stage use `foreachModel`.
 foreach :: forall a o. PUI Web a o -> PUI Web (Array a) o
 foreach w = wrap do
   parent <- gets _.parent
   propRef <- liftEffect $ Ref.new Nothing
+  instancesRef <- liftEffect $ Ref.new []
+  let
+    build1 = do
+      w' <- runDomInNode parent (unwrap w)
+      mProp <- Ref.read propRef
+      for_ mProp \prop -> w'.fromUser prop
+      pure w'
   pure
     { toUser: \items -> do
-        removeAllChildren parent
-        for_ items \item -> do
-          w' <- runDomInNode parent (unwrap w)
-          mProp <- Ref.read propRef
-          for_ mProp \prop -> w'.fromUser prop
-          void $ w'.toUser item
+        existing <- Ref.read instancesRef
+        if Array.length items < Array.length existing then do
+          -- shrink: wholesale rebuild (PoC fallback — a keyed diff would retain)
+          removeAllChildren parent
+          built <- for items \item -> do
+            w' <- build1
+            void $ w'.toUser item
+            pure w'
+          Ref.write built instancesRef
+        else do
+          -- reuse survivors (re-fed in place, no DOM teardown), append entrants
+          for_ (Array.zip existing items) \(Tuple inst item) -> inst.toUser item
+          entrants <- for (Array.drop (Array.length existing) items) \item -> do
+            w' <- build1
+            void $ w'.toUser item
+            pure w'
+          Ref.write (existing <> entrants) instancesRef
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- | The **structure-preserving, self-announcing** sequence collection — the
+-- | owned-output flavor with a nullary unit, as a self-contained stage. Renders
+-- | `proj s` as a retaining `foreach` (element emissions dropped — this is a
+-- | display) and **echoes the carrier `s`** on every feed, so it is an
+-- | unconditional `PUI Web s s` pass-through that announces even when `proj s`
+-- | is empty. This is the collection's answer to the empty-array starvation:
+-- | where a terminal collection used to need `… # lcmap proj # displayed`, the
+-- | announcing unit is built in — `ul $ foreachModel proj item`. Dissolves the
+-- | `displayed` patch (doc/collections-sequence-merge.md).
+foreachModel :: forall s a o. (s -> Array a) -> PUI Web a o -> PUI Web s s
+foreachModel proj item = wrap do
+  parent <- gets _.parent
+  propRef <- liftEffect $ Ref.new Nothing
+  instancesRef <- liftEffect $ Ref.new []
+  let
+    build1 = do
+      w' <- runDomInNode parent (unwrap item)
+      w'.fromUser \_ -> pure Nothing -- display-only: element emissions dropped
+      pure w'
+  pure
+    { toUser: \s -> do
+        let items = proj s
+        existing <- Ref.read instancesRef
+        if Array.length items < Array.length existing then do
+          removeAllChildren parent
+          built <- for items \i -> do
+            w' <- build1
+            void $ w'.toUser i
+            pure w'
+          Ref.write built instancesRef
+        else do
+          for_ (Array.zip existing items) \(Tuple inst i) -> inst.toUser i
+          entrants <- for (Array.drop (Array.length existing) items) \i -> do
+            w' <- build1
+            void $ w'.toUser i
+            pure w'
+          Ref.write (existing <> entrants) instancesRef
+        -- announcing unit: echo the carrier, so an empty collection never starves
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> void $ prop s
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
