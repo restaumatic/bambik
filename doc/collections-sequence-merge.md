@@ -111,62 +111,66 @@ because `pempty` announces.
   announcing on empty. This is the flavor whose unit *announces*, and it is the
   honest replacement for `displayed`-wrapped terminal collections.
 
-`foreach`/`foreachWith`/`dynamic`/`each`/`listOf` all become derived forms of the
-one direction.
+In the rollout both flavors collapse to **one keyed `foreach`** (the collapsed
+output) composed with **`displayed`** (which supplies the structure-preserving,
+carrier-echoing announcing unit) — see "Rolled out," below.
 
 ## Rolled out (this branch)
 
-The approach is the adopted mechanism, not a sketch. Vocabulary in
-[HTML.purs](../src/PUI/HTML.purs):
+The approach is the adopted mechanism, collapsed to a single collection
+combinator. Vocabulary in [Sequence.purs](../src/Data/Profunctor/Row/Sequence.purs)
+and [HTML.purs](../src/PUI/HTML.purs):
 
-- **Retaining `foreach`** — positional reconciliation: survivors re-fed in place
-  (no DOM teardown), entrants appended, a shrink rebuilds. Same type and name, so
-  `listOf` and every `foreach`-based list inherit the win transparently.
-- **`foreachModel :: (s -> Array a) -> PUI Web a o -> PUI Web s s`** — the
-  structure-preserving, self-announcing collection stage (channel-fed items):
-  renders `proj s` and echoes the carrier `s`, so it never starves on an empty
-  array. The nullary-unit flavor as a self-contained stage.
-- **`foreachWithModel :: (s -> Array a) -> (a -> PUI Web {} o) -> PUI Web s s`** —
-  the same self-announcing stage for **structure-from-value** collections whose
-  element structure genuinely varies (so they stay closure-built).
+- **The `Sequencing` class** — `class Profunctor p <= Sequencing p where
+  sequenced :: (a -> String) -> p a o -> p (Array a) o`, the sequence direction as
+  a formal member of the row-profunctor family, with its law in the module header.
+  `PUI Web`-only instance (a DOM collection has no `(->)`/general-carrier meaning,
+  exactly as `Resolving`/`Retaining` are `PUI`-only).
+- **`foreach = sequenced`** — the single collection combinator, **keyed and
+  retaining**. Written trailing (`item # foreach _.key`), it reconciles *by key*:
+  matched elements re-fed in place, new keys built, absent removed, DOM reordered
+  only when the key sequence changed. So a fixed-key grid never rebuilds, a growing
+  list appends, and a **reordered list moves each element's DOM node with its key**
+  — focus/scroll/local state follow the item. A re-entrancy guard stops an element
+  echo (looping back through `displayed`/`mvu`) from double-building mid-reconcile.
 - **`attrWith :: String -> (i -> String) -> PUI Web i o -> PUI Web i o`** — the
   value-computed attribute, the channel-fed counterpart of static `attr`/`:=`.
-  This is the enabler that lets a **fixed structure** whose *values* vary be fed
-  as data through the retaining `foreach` (built once, updated in place) instead
-  of rebuilt by a `dynamic`/`foreachWith` closure. It splits the collection story
-  cleanly: `attrWith` + `foreach` when only values change over a fixed structure;
-  `foreachWith`/`dynamic`/`each`/`foreachWithModel` when structure itself varies.
+  The enabler that lets a **fixed structure** whose *values* vary be fed as data
+  through `foreach` (built once, updated in place) instead of rebuilt by a closure.
+- **`foreachWith`/`dynamic`/`each`** — the structure-from-value builders (wholesale
+  rebuild per feed), for when an element's *structure* genuinely varies.
+
+This is the collapse: two apparent families (`foreach*` retaining, `*Model`
+announcing) reduce to **one keyed `foreach`** plus **`displayed`** as its announcing
+unit. `foreachModel`/`foreachWithModel` are gone — a terminal collection display is
+just `item # foreach _.key # lcmap proj # displayed`.
 
 ### Demos retrofitted (all verified, headless Chrome / CDP)
 
 - **Channel-fed grids/canvas** — tic-tac-toe, calculator, color-mixer, cells, and
-  circle-drawer dropped their `dynamic`+`each`/`foreachWith` closure rebuild for a
-  retaining `foreach` fed the structure as data (content via `text`, style/coords
-  via `attrWith`, identity via `clicked … # rmap`). Verified: a move / keypress /
-  preset / selection / edit / resize keeps every cell or circle DOM node — cells'
-  **837 `<td>` nodes survive an edit or selection** (the headline win); no
-  `data-*` anywhere.
-- **Self-announcing terminal collections** — stopwatch laps (`foreachModel`),
-  markdown-previewer preview and photo-gallery content pane (`foreachWithModel`)
-  dropped their `# lcmap proj … # displayed`. Verified: empty input no longer
-  starves and the `mvu` loop stays alive.
+  circle-drawer use a keyed `foreach` fed the structure as data (content via
+  `text`, style/coords via `attrWith`, identity via `clicked … # rmap`). Verified:
+  a move / keypress / preset / selection / edit / resize keeps every cell or circle
+  DOM node — cells' **837 `<td>` nodes survive an edit or selection**; no `data-*`.
+- **Terminal collection displays** — stopwatch laps, markdown-previewer preview,
+  photo-gallery content pane render via `foreach`/`dynamic` + `# displayed`.
+  Verified: empty input no longer starves and the `mvu` loop stays alive.
 - **Lists** (`listOf`: todomvc, crud, inbox, weather, quiz, shopping-cart,
-  movie-browser) retain automatically through the new `foreach`: grow/append and
-  same-length refeed keep their `<li>` nodes and update styling in place.
+  movie-browser) retain through `foreach` (`listOf` index-keys internally).
+- **reorder** — the new demo that is the **keyed-reconciliation law test**: a
+  playlist keyed by track id, each row carrying a bare (channel-unbound) checkbox
+  whose `checked` is DOM-local. Rotating moves each row's DOM node with its track —
+  verified (CDP): the tagged nodes move (node 0 → last) and the ticked checkbox
+  follows its track, which a positional reconciler could not do.
 
 `# displayed` now appears only on **non-collection** passthroughs (a static chrome
-sibling in calculator/color-mixer, the `provided` pane lines in checkout/quiz).
+sibling in calculator/color-mixer, `provided` pane lines in checkout/quiz) and as
+the announcing unit of terminal collections.
 
 ### Deferred
 
-- The **formal `Sequence` typeclass** + its `Co`-retraction and qualified-do sugar
-  (following the `RecordToVariant`/`VariantToRecord` template). The runtime and
-  vocabulary are fully adopted; lifting them to a named class member of the
-  row-profunctor family is the remaining formalization.
-- **Keyed reconciliation** for reorder/insert (the current reconciliation is
-  positional; a `key`/`Eq` diff would retain identity under reordering, and
-  de-churn the closure builders too — not needed by any current demo, whose
-  collections are fixed-order or human-paced).
+- The `Co`-retraction of `Sequencing` and qualified-do sugar (not demo-reachable —
+  a homogeneous collection has no binary merge to sequence).
 
 ## Why this framing
 

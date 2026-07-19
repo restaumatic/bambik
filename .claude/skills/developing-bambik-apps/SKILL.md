@@ -37,13 +37,10 @@ canonical row, adopted to the business label at the use site:
   or record display stage → `# completed`; display over a non-record
   value (a `projection`-formatted readout) → `# tapped`. A terminal
   **collection display** (a projection rendered as a list/grid, passing
-  the model through) is neither: use the self-announcing collection
-  stage `foreachModel proj item` (channel-fed items) or `foreachWithModel
-  proj build` (structure-from-value builder) — both render `proj s` and
-  echo the carrier `s`, so they never starve on an empty array (they
-  replace the old `… # lcmap proj (foreach …) # displayed` idiom).
-  `# displayed` remains only for **non-collection** passthroughs (a
-  static chrome sibling, a `provided` pane line). A constant-fed stage (a
+  the model through) writes `item # foreach _.key # lcmap proj #
+  displayed` — the keyed `foreach` renders the projection, and
+  `displayed`'s unconditional carrier echo is the collection's announcing
+  unit (so an empty array never starves). A constant-fed stage (a
   fixed catalogue driving `listOf`/`foreach`) reads `constantly
   catalogue` instead of an input-annotated `lcmap (const catalogue)`
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
@@ -80,15 +77,18 @@ multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and
 calculator are channel-fed `foreach` grid apps (cells styled by
 `attrWith`, keys emitted via `clicked # rmap`, folded by `updates` — no
 `data-*`, no wholesale rebuild), stopwatch drives `every`
-with pause-by-`Nothing` and a `foreachModel` laps list,
+with pause-by-`Nothing` and a keyed `foreach identity … # lcmap lapLines
+# displayed` laps list, reorder is the keyed-reconciliation showcase (a
+playlist keyed by track id, Rotate moves each row's DOM node with its
+track so a DOM-local checkbox tick follows it),
 shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 `constantly`-fed catalogue, password-generator is the effectful shape
 (`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
-`sliderLive` with an `attrWith` swatch + static `foreach` chips,
+`sliderLive` with an `attrWith` swatch + static `foreach _.name` chips,
 markdown-previewer renders a recursive `PUI Web` tree via
-`foreachWithModel` (`each`, `el ("h" <> show level)`) — structure genuinely
-varies per block, so it stays builder-built — from a hand-rolled parser,
-helloworld is the bare minimum),
+`displayed (dynamic \doc -> each …)` (`el ("h" <> show level)`) — structure
+genuinely varies per block, so it stays builder-built — from a hand-rolled
+parser, helloworld is the bare minimum),
 demo/1 (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
 ticket-dispenser (`unfolding`), one focused combinator each.
@@ -117,27 +117,28 @@ static chrome in one `RecordToRecord.do`); pure chrome nav embeds via
 `# muted`.
 
 Collection items may hold stateful stages (`completed`, `updates`) —
-refs are per-instance. `foreach` (and `listOf`, `foreachModel`)
-**retains** items: it reconciles positionally — survivors are re-fed in
-place, entrants appended, a shrink rebuilds — so a channel-fed item keeps
-its DOM/state across feeds (fixed-size grids never rebuild; growing lists
-only append). The closure-built builders (`foreachWith`/`dynamic`/`each`,
-and `foreachWithModel`) still rebuild per value, since their content lives
-in the builder closure — reach for them only when an element's *structure*
-genuinely varies with the data (markdown blocks); when only *values*
-change over a fixed structure, feed the structure as data through
-`foreach` and compute per-element attributes with `attrWith`. Durable
-state still belongs in the model, with `listOf`'s click-replay folding it
-back.
+refs are per-instance. `foreach _.key` (and `listOf`, which index-keys
+internally) **retains** items: it reconciles *by key* — matched keys
+re-fed in place, new built, absent removed, DOM reordered only when the
+key sequence changed — so a channel-fed item keeps its DOM/state across
+feeds (fixed-key grids never rebuild; growing lists append; a reordered
+list moves each node with its key, so focus/local state follows the
+item). The closure builders (`foreachWith`/`dynamic`/`each`) rebuild per
+value, since their content lives in the builder closure — reach for them
+only when an element's *structure* genuinely varies with the data
+(markdown blocks); when only *values* change over a fixed structure, feed
+the structure as data through `foreach` and compute per-element
+attributes with `attrWith`. Durable state still belongs in the model,
+with `listOf`'s click-replay folding it back.
 
 The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/
 `action`/`onCase`/`tapped`/the adopter family re-exports),
 src/PUI/HTML.purs (HTML vocabulary, `body`, element/SVG oculars, the
-retaining collections `foreach`/`foreachModel` + `attrWith` for
-channel-fed structure-from-data, the builders
-`foreachWith`/`foreachWithModel`/`dynamic`/`each` for structure-from-value,
+keyed retaining collection `foreach` (= `Sequence.sequenced`) + `attrWith`
+for channel-fed structure-from-data, the builders
+`foreachWith`/`dynamic`/`each` for structure-from-value,
 `clicked`/`onClickedXY` events), src/PUI/MDC.purs (the MDC component and
 ocular catalog, the editors' `dimap` round-trip contract), and
 src/Data/Profunctor/Row/ (the four merges, adopters, trace forms,
