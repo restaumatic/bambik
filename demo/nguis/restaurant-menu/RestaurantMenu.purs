@@ -1,16 +1,16 @@
 module RestaurantMenu (restaurantMenu) where
 
-import Prelude (($), (>>>), Unit)
+import Prelude ((#), ($), (>>>), Unit, identity)
 
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (with)
-import PUI.HTML (a, blockquote, body, circle, cl, each, el, h1, h2, h3, hr, p, span, staticText, svg, ul, (:=))
+import PUI (forField, forValue, with)
+import PUI.HTML (a, blockquote, body, circle, cl, el, foreach, h1, h2, h3, hr, p, span, staticText, svg, text, ul, (:=))
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
-  body $ with {} $ el "article" >>> cl "menu" $ RecordToRecord.do
+  body $ with { courses } $ el "article" >>> cl "menu" $ RecordToRecord.do
     el "header" >>> cl "menu-header" $ RecordToRecord.do
       svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
         circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
@@ -19,18 +19,24 @@ restaurantMenu =
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
       hr
-    el "div" >>> cl "courses" $ each courses \c ->
-      el "section" >>> cl "course" $ RecordToRecord.do
-        h2 (staticText c.name)
-        ul >>> cl "dishes" $ each c.dishes \d ->
-          el "li" >>> cl "dish" $ RecordToRecord.do
-            el "div" >>> cl "dish-head" $ RecordToRecord.do
-              span >>> cl "dish-name" $ staticText d.name
-              span >>> cl "dish-dots" $ pempty
-              span >>> cl "dish-price" $ staticText d.price
-            p >>> cl "dish-desc" $ staticText d.description
-            span >>> cl "tags" $ each d.tags \t ->
-              span >>> cl "tag" $ staticText t
+    el "div" >>> cl "courses" $
+      ( el "section" >>> cl "course" $ RecordToRecord.do
+          h2 (text # forValue # forField @"name")
+          ul >>> cl "dishes" $
+            ( el "li" >>> cl "dish" $ RecordToRecord.do
+                el "div" >>> cl "dish-head" $ RecordToRecord.do
+                  span >>> cl "dish-name" $ text # forValue # forField @"name"
+                  span >>> cl "dish-dots" $ pempty
+                  span >>> cl "dish-price" $ text # forValue # forField @"price"
+                p >>> cl "dish-desc" $ text # forValue # forField @"description"
+                span >>> cl "tags" $
+                  ( span >>> cl "tag" $ text # forValue ) # foreach identity # forField @"tags"
+            )
+            # foreach _.name
+            # forField @"dishes"
+      )
+      # foreach _.name
+      # forField @"courses"
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
