@@ -26,7 +26,6 @@ module PUI.HTML
   , clicked
   , clDyn
   , blockquote
-  , circle
   , code
   , div
   , dynamic
@@ -54,7 +53,6 @@ module PUI.HTML
   , ol
   , onClickedXY
   , p
-  , path
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
@@ -63,7 +61,6 @@ module PUI.HTML
   , staticHTML
   , staticText
   , strong
-  , svg
   , table
   , tbody
   , td
@@ -354,15 +351,6 @@ section = el "section"
 
 label :: Ocular (PUI Web)
 label = el "label"
-
-svg :: Ocular (PUI Web)
-svg = el "svg"
-
-path :: Ocular (PUI Web)
-path = el "path"
-
-circle :: Ocular (PUI Web)
-circle = el "circle"
 
 img :: Ocular (PUI Web)
 img = el "img"

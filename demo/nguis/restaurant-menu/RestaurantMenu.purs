@@ -6,15 +6,16 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (forField, forValue, with)
-import PUI.HTML (a, article, blockquote, body, circle, cl, div, el, footer, foreach, h1, h2, h3, header, hr, li, p, section, span, staticText, svg, text, ul, (:=))
+import PUI.HTML (a, article, blockquote, body, cl, div, footer, foreach, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
+import PUI.SVG as SVG
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
   body $ ( article >>> cl "menu" $ RecordToRecord.do
     header >>> cl "menu-header" $ RecordToRecord.do
-      svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
-        circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
-        el "text" >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
+      SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
+        SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
+        SVG.text >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
           >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"

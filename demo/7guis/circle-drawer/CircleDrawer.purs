@@ -11,8 +11,9 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, mvu, toCase, updates)
-import PUI.HTML (attrWith, body, circle, foreach, onClickedXY, provided, svg, (:=))
+import PUI.HTML (attrWith, body, foreach, onClickedXY, provided, (:=))
 import PUI.MDC (button, card, cardActions, elevation20, sliderLive)
+import PUI.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Circle = { x :: Number, y :: Number, r :: Number }
