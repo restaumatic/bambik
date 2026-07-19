@@ -12,8 +12,8 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.HTML (body, foreachWith, span, staticText, text)
+import PUI (forValue, mvu, projection, tapped, toCase, updates)
+import PUI.HTML (body, foreachWithModel, span, staticText, text)
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -39,9 +39,8 @@ photoGallery =
           )
           ( Semigroupoid.do
               headline2 (text # projection _.album # forValue) # tapped
-              imageList { columns: 3 }
-                ( foreachWith \p -> imageListItem { src: p.src, label: p.caption }
-                ) # lcmap albumPhotos # displayed
+              imageList { columns: 3 } $
+                foreachWithModel albumPhotos \p -> imageListItem { src: p.src, label: p.caption }
           )
       ) # mvu landscapesOpen
 
