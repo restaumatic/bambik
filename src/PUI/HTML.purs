@@ -16,6 +16,7 @@ module PUI.HTML
   , aside
   , attr
   , attrDyn
+  , attrWith
   , body
   , button
   , checkboxInput
@@ -501,6 +502,25 @@ clWhen pred name w = wrap do
   pure
     { toUser: \i -> do
         (if pred i then addClass else removeClass) node name
+        w'.toUser i
+    , fromUser: w'.fromUser
+    }
+
+-- | Value-computed attribute for the last-built element: the attribute is set
+-- | to `valueOf i` on every value fed. The channel-fed counterpart of the
+-- | static `attr`/`:=` — it lets **structure-from-data stay retaining**: a cell
+-- | whose style, SVG coordinate, or colour depends on data is built once and
+-- | updated in place through its channel (`circle >>> attrWith "cx" (show <<<
+-- | _.x)`, `div >>> attrWith "style" cellStyle`), rather than rebuilt wholesale
+-- | by a `dynamic`/`foreachWith` closure. Pair with `foreach` for a collection
+-- | that never tears its elements down.
+attrWith :: forall i o. String -> (i -> String) -> PUI Web i o -> PUI Web i o
+attrWith name valueOf w = wrap do
+  w' <- unwrap w
+  node <- gets _.sibling
+  pure
+    { toUser: \i -> do
+        setAttribute node name (valueOf i)
         w'.toUser i
     , fromUser: w'.fromUser
     }
