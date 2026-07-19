@@ -98,7 +98,6 @@
       "Bash(git commit -q -m 'click emitters emit [ clicked ] — button/fab/iconButton/menuItem canonical case renamed from event; asCase follows *)",
       "Bash(git commit -q -m '7guis pages: code-style structure sentence simplified *)",
       "Bash(git commit -q -m '7guis pages: entry-point sentence generalized to the single exported function *)",
-      "Bash(grep -n \"with$\\\\|with {\" demo/2/Main.purs demo/helloworld/Main.purs)",
       "Bash(git commit -q -m 'demos: business literals extracted from UI code — initial models, slider bounds/steps, tick period as named business definitions; skill gains the rule *)",
       "Bash(git commit -q -m 'demos: seed values get business names — roomTemperature, peopleCatalogue, emptyCanvas, tenSecondTimer, plannedTrip, orderSheet, zeroCount, helloWorld, firstOrder, muted, reviewStep; skill: name in business language, not lifecycle language *)",
       "Bash(git commit -q -m 'MDC: slider label optional \\(defaults to empty aria-label\\); 7guis sliders drop it *)",
@@ -137,7 +136,13 @@
       "Bash(kill 2754982)",
       "Bash(pkill -f user-data-dir=/tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad/chrome9333)",
       "Bash(kill %1)",
-      "Bash(grep -rn \"\\\\.key {\\\\|\\\\.cell {\\\\|\\\\.preset {\\\\|class=\\\\\"key\\\\\"\\\\|\\\\.key,\" demo src)"
+      "Bash(grep -rn \"\\\\.key {\\\\|\\\\.cell {\\\\|\\\\.preset {\\\\|class=\\\\\"key\\\\\"\\\\|\\\\.key,\" demo src)",
+      "Bash(curl -s \"http://erykciepiela.xyz/bambik/demo/nguis/\")",
+      "Bash(awk '/^button /{f=1} f{print} f&&/^$/{exit}' src/PUI/MDC.purs)",
+      "Bash(grep -n \"^  , card\\\\b\\\\|^  , card$\\\\|, card\\\\b\\\\|  , caption\\\\b\" src/PUI/MDC.purs)",
+      "Bash(grep -nA3 \"^button ::\" src/PUI/MDC.purs)",
+      "Bash(grep -nA2 \"^asCase ::\" src/PUI.purs src/Data/Profunctor/Row/RecordToVariant.purs)",
+      "Bash(grep -nB1 -A4 \"button ::\" src/PUI/MDC.purs)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

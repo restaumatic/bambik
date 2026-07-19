@@ -1,0 +1,244 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/haskell.min.js"></script>
+    <title>Bambik · nGUIs · Restaurant Menu</title>
+    <style>
+      :root {
+        --paper: #fbf7f0;
+        --ink: #2c2620;
+        --muted: #8a7d6d;
+        --accent: #8a3324;
+        --gold: #d8c3a0;
+        --hairline: #e7dcc8;
+      }
+      html, body { height: 100%; }
+      body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        align-items: flex-start;
+        align-content: flex-start;
+        margin: 0;
+        padding: 16px;
+        box-sizing: border-box;
+        overflow: auto;
+        background: #efe9df;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      #page-header {
+        flex-basis: 100%;
+        order: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+      }
+      #page-title { font-size: 1.4rem; font-weight: 500; }
+      #page-header .sep { color: #bbb; }
+
+      /* the widget column — a static <article class="menu"> rendered by bambik */
+      body > .menu {
+        flex: 0 1 520px;
+        min-width: 320px;
+        order: 1;
+        max-height: calc(100vh - 100px);
+        overflow: auto;
+        box-sizing: border-box;
+        background: var(--paper);
+        color: var(--ink);
+        border: 1px solid var(--hairline);
+        border-radius: 3px;
+        box-shadow: 0 12px 40px rgba(60, 45, 30, 0.14);
+        padding: 44px 48px 36px;
+        font-family: "EB Garamond", Georgia, serif;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      .menu-header { text-align: center; margin-bottom: 8px; }
+      .monogram { width: 58px; height: 58px; display: block; margin: 0 auto 12px; }
+      .monogram .ring { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+      .monogram .initial {
+        fill: var(--accent);
+        font-family: "Cormorant Garamond", serif;
+        font-size: 56px;
+        font-weight: 600;
+      }
+      .restaurant-name {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 2.6rem;
+        letter-spacing: 0.02em;
+        margin: 0;
+      }
+      .tagline {
+        color: var(--muted);
+        font-style: italic;
+        font-size: 1.05rem;
+        margin: 4px 0 0;
+      }
+      .menu-header hr {
+        border: none;
+        border-top: 1px solid var(--gold);
+        width: 64px;
+        margin: 18px auto 0;
+      }
+
+      .course { margin-top: 30px; }
+      .course h2 {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 1.05rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--accent);
+        text-align: center;
+        margin: 0 0 18px;
+      }
+      .dishes { list-style: none; margin: 0; padding: 0; }
+      .dish { margin: 0 0 18px; }
+      .dish:last-child { margin-bottom: 0; }
+      .dish-head { display: flex; align-items: baseline; gap: 10px; }
+      .dish-name {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 1.3rem;
+        white-space: nowrap;
+      }
+      .dish-dots {
+        flex: 1 1 auto;
+        align-self: flex-end;
+        border-bottom: 1.5px dotted var(--gold);
+        transform: translateY(-6px);
+      }
+      .dish-price {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: var(--accent);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .dish-desc { color: var(--muted); font-style: italic; margin: 2px 0 0; }
+      .tags { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+      .tag {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8a6d3b;
+        background: #f1e7d4;
+        border: 1px solid var(--gold);
+        border-radius: 999px;
+        padding: 2px 9px;
+      }
+
+      .chef-note {
+        margin: 34px 0 0;
+        padding: 22px 0 0;
+        border-top: 1px solid var(--hairline);
+        text-align: center;
+      }
+      .chef-note p { font-style: italic; font-size: 1.12rem; margin: 0; }
+      .chef-note .attribution {
+        font-style: normal;
+        font-size: 0.9rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+
+      .menu-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        justify-content: space-between;
+        margin-top: 32px;
+        padding-top: 22px;
+        border-top: 1px solid var(--hairline);
+      }
+      .menu-footer .info { flex: 1 1 160px; }
+      .menu-footer h3 {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 4px;
+      }
+      .menu-footer .info p { margin: 0; color: var(--ink); }
+      .colophon {
+        flex-basis: 100%;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin: 8px 0 0;
+      }
+      .colophon a { color: var(--accent); }
+
+      /* source panel (shared nGUIs convention) */
+      #source-panel pre { max-height: calc(100vh - 230px); overflow: auto; }
+      #source-panel { flex: 1 1 480px; min-width: 320px; order: 2; }
+      #source-panel h3 { color: #555; margin: 8px 0; }
+      #source-panel pre { background: #f6f8fa; padding: 12px; border-radius: 6px; font-size: 12.5px; margin: 0; }
+      #source-panel p { font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      #source-panel .note { color: #888; font-style: italic; margin: 4px 0 8px 0; }
+      @media (max-width: 700px) {
+        html, body { height: auto; }
+        body { overflow: auto; }
+        body > .menu { flex-basis: 100%; min-width: 0; max-height: none; overflow: visible; padding: 32px 24px; }
+        #source-panel { flex-basis: 100%; min-width: 0; }
+        #source-panel pre { max-height: none; overflow-x: auto; font-size: 14px; }
+      }
+    </style>
+    <script>window.__bambikTrace = true</script>
+    <script type="module" src="bundle.js"></script>
+  </head>
+  <body>
+    <header id="page-header">
+      <a href="../">&#171; Go back to all nGUIs tasks</a>
+      <span class="sep">·</span>
+      <span id="page-title">Restaurant Menu</span>
+      <span class="sep">·</span>
+      <span id="src-size"></span>
+      <span class="sep" id="bundle-sep" hidden>·</span>
+      <span id="bundle-size"></span>
+    </header>
+    <section id="source-panel">
+      <pre><code id="src" class="language-haskell">loading…</code></pre>
+      <p class="note">This is the plain-HTML showcase: a full page with <strong>no Material components at all</strong> — just bambik's element oculars (<code>el</code>, <code>h1</code>–<code>h3</code>, <code>p</code>, <code>span</code>, <code>ul</code>/<code>li</code>, <code>blockquote</code>, <code>svg</code>/<code>circle</code>, <code>a</code>, <code>hr</code>) with <code>cl</code>/<code>:=</code> decorators and <code>staticText</code> leaves. Sibling elements are combined with the <code>RecordToRecord.do</code> merge of announcing chrome (every piece typed <code>{} → {}</code>); the repeated courses, dishes and dietary tags come from data through <code>each</code>. Structure is bambik; the fine-dining look is ordinary CSS on the page.</p>
+      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. The listing is a complete standalone application, entered at its single exported function. The code is structured as one purely UI-related function followed by pure business data. Each UI-related line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing.</p>
+      <p class="note">Tracing: This page runs with enabled tracing, so data propagation is logged to the browser console with <code>[bambik]</code> prefix.</p>
+    </section>
+    <script>
+      const fmt = (n) => n < 1024 ? n + "B"
+        : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
+        : (n / 1048576).toFixed(1).replace(/\.0$/, "") + "MB";
+      Promise.all([
+        fetch("RestaurantMenu.purs", { cache: "no-cache" }).then(r => r.text()),
+        fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
+      ]).then(([src, bundleBytes]) => {
+        const el = document.getElementById("src");
+        el.textContent = src;
+        if (window.hljs) hljs.highlightElement(el);
+        const srcBytes = new TextEncoder().encode(src).length;
+        document.getElementById("src-size").innerHTML =
+          '<a href="RestaurantMenu.purs">source</a> (' + fmt(srcBytes) + ')';
+        if (bundleBytes) {
+          document.getElementById("bundle-sep").hidden = false;
+          document.getElementById("bundle-size").innerHTML =
+            '<a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')';
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -27,8 +27,8 @@ Demo of [Material Design Component-based UI](demo/1/Main.purs):
 $ npm run demo-1
 ```
 
-Demo of [plain HTML-based UI](demo/2/Main.purs):
+Demo of [plain HTML-based UI](demo/nguis/restaurant-menu/RestaurantMenu.purs) — a fancy static page with no Material components, part of the nGUIs set:
 
 ```bash
-$ npm run demo-2
+$ npm run bundle-demo-nguis
 ```

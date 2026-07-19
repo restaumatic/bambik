@@ -5,7 +5,7 @@
 // the JS banner).
 //
 //   node scripts/dev.mjs counter          (7guis demos, by directory name)
-//   node scripts/dev.mjs 1|2|helloworld
+//   node scripts/dev.mjs 1                 (the demo/1 Main-module demo)
 import { context } from 'esbuild'
 import { spawn } from 'node:child_process'
 import { readdirSync, watch } from 'node:fs'
@@ -23,7 +23,7 @@ const sevenGuis = {
 
 const name = process.argv[2]
 if (!name) {
-  console.error(`usage: node scripts/dev.mjs <demo>\ndemos: ${[...Object.keys(sevenGuis), '1', '2', 'helloworld'].join(', ')}`)
+  console.error(`usage: node scripts/dev.mjs <demo>\ndemos: ${[...Object.keys(sevenGuis), '1'].join(', ')}`)
   process.exit(1)
 }
 

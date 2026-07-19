@@ -90,7 +90,10 @@ shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 markdown-previewer renders a recursive `PUI Web` tree via
 `displayed (dynamic \doc -> each …)` (`el ("h" <> show level)`) — structure
 genuinely varies per block, so it stays builder-built — from a hand-rolled
-parser, helloworld is the bare minimum),
+parser, helloworld is the bare minimum, restaurant-menu is the plain-HTML
+showcase — no MDC at all, a fancy static page built purely from element
+oculars + `staticText` merged with `RecordToRecord.do` of `{} → {}` chrome,
+with courses/dishes from data via `each` and the look supplied by page CSS),
 demo/1 (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
 ticket-dispenser (`unfolding`), one focused combinator each.
@@ -351,8 +354,8 @@ gate-withheld emissions (the otherwise-invisible ones) — as
 2. **Agent loop: use watch mode.** Keep `spago build -w` running in the
    background and read its output after each edit (~0.7s incremental)
    instead of one-shot builds — it covers library, tests, and all 7GUIs
-   and nGUIs demos (project sources; the `Main`-module demos — 1, 2,
-   helloworld — need their own `--path`, one at a time). Caveats:
+   and nGUIs demos (project sources; the `Main`-module demo — 1 —
+   needs its own `--path`). Caveats:
    spago -w reads stdin and dies on EOF, so keep stdin open (never
    `</dev/null`); run only one watcher over the shared `output/` at a
    time. Tests: `spago test`.
