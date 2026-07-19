@@ -1,17 +1,24 @@
 module Reorder (reorder) where
 
-import Prelude ((#), ($), (<<<), (>>>), Unit, const)
+import Prelude ((#), ($), (<$>), (>>>), Unit, bind, compare, map, pure)
 
-import Data.Array (snoc, uncons)
+import Data.Array (snoc, sortBy, uncons)
 import Data.Maybe (maybe)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Traversable (traverse)
+import Data.Tuple (Tuple(..), fst, snd)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, mvu, updates)
+import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import Effect.Random (randomInt)
+import PUI (action, asCase, displayed, mvu, onCase, silence, updates)
 import PUI.HTML (body, el, foreach, li, span, text, ul, (:=))
-import PUI.MDC (button, card, elevation20)
+import PUI.MDC (button, card, cardActions, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Track = { id :: String, title :: String }
@@ -22,7 +29,14 @@ reorder =
   body $
     elevation20 $
       card { caption: "Reorder" } $ ( Semigroupoid.do
-          button { label: "Rotate", icon: "sync" } # updates (match { clicked: const <<< rotate })
+          ( Semigroupoid.do
+              cardActions $ RecordToVariant.do
+                button { label: "Rotate", icon: "sync" } # asCase @"rotate"
+                button { label: "Shuffle", icon: "shuffle" } # asCase @"shuffle"
+              VariantToVariant.do
+                silence # action rotateAction # onCase @"rotate"
+                silence # action shuffleAction # onCase @"shuffle"
+          ) # updates (match { reordered: setOrder })
           ul
             ( ( li >>> "style" := "display: flex; gap: 10px; align-items: center; list-style: none; margin: 6px 0;" $ RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
@@ -31,8 +45,26 @@ reorder =
             ) # lcmap _.order # displayed
       ) # mvu openingSetlist
 
-rotate :: Playlist -> Playlist
-rotate pl = pl { order = maybe pl.order (\{ head, tail } -> snoc tail head) (uncons pl.order) }
+rotateAction :: Playlist -> Aff [ reordered :: Array Track ]
+rotateAction pl = pure (.reordered (rotate pl))
+
+shuffleAction :: Playlist -> Aff [ reordered :: Array Track ]
+shuffleAction pl = liftEffect (.reordered <$> shuffleOrder pl.order)
+
+rotate :: Playlist -> Array Track
+rotate pl = maybe pl.order (\{ head, tail } -> snoc tail head) (uncons pl.order)
+
+setOrder :: Array Track -> Playlist -> Playlist
+setOrder order pl = pl { order = order }
+
+shuffleOrder :: Array Track -> Effect (Array Track)
+shuffleOrder tracks = do
+  keyed <- traverse withKey tracks
+  pure (map snd (sortBy (\a b -> compare (fst a) (fst b)) keyed))
+  where
+  withKey t = do
+    k <- randomInt 0 1000000
+    pure (Tuple k t)
 
 openingSetlist :: Playlist
 openingSetlist =
