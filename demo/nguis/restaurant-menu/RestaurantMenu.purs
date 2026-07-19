@@ -5,19 +5,32 @@ import Prelude (($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (PUI, with)
+import PUI (with)
 import PUI.HTML (a, blockquote, body, circle, cl, each, el, h1, h2, h3, hr, p, span, staticText, svg, ul, (:=))
-import PUI.Web (Web)
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
   body $ with {} $ el "article" >>> cl "menu" $ RecordToRecord.do
     el "header" >>> cl "menu-header" $ RecordToRecord.do
-      monogram
+      svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
+        circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
+        el "text" >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
+          >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
       hr
-    el "div" >>> cl "courses" $ each courses courseView
+    el "div" >>> cl "courses" $ each courses \c ->
+      el "section" >>> cl "course" $ RecordToRecord.do
+        h2 (staticText c.name)
+        ul >>> cl "dishes" $ each c.dishes \d ->
+          el "li" >>> cl "dish" $ RecordToRecord.do
+            el "div" >>> cl "dish-head" $ RecordToRecord.do
+              span >>> cl "dish-name" $ staticText d.name
+              span >>> cl "dish-dots" $ pempty
+              span >>> cl "dish-price" $ staticText d.price
+            p >>> cl "dish-desc" $ staticText d.description
+            span >>> cl "tags" $ each d.tags \t ->
+              span >>> cl "tag" $ staticText t
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
@@ -32,29 +45,6 @@ restaurantMenu =
         staticText "A static page composed from HTML oculars with "
         a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"
         staticText " — no Material components, just structure."
-
-monogram :: PUI Web {} {}
-monogram = svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
-  circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
-  el "text" >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
-    >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
-
-courseView :: Course -> PUI Web {} {}
-courseView c = el "section" >>> cl "course" $ RecordToRecord.do
-  h2 (staticText c.name)
-  ul >>> cl "dishes" $ each c.dishes dishView
-
-dishView :: Dish -> PUI Web {} {}
-dishView d = el "li" >>> cl "dish" $ RecordToRecord.do
-  el "div" >>> cl "dish-head" $ RecordToRecord.do
-    span >>> cl "dish-name" $ staticText d.name
-    span >>> cl "dish-dots" $ pempty
-    span >>> cl "dish-price" $ staticText d.price
-  p >>> cl "dish-desc" $ staticText d.description
-  span >>> cl "tags" $ each d.tags tagView
-
-tagView :: String -> PUI Web {} {}
-tagView t = span >>> cl "tag" $ staticText t
 
 type Dish =
   { name :: String
