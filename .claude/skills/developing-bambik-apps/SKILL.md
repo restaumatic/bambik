@@ -23,10 +23,12 @@ canonical row, adopted to the business label at the use site:
   adopted editor (`filledTextField {...} # asField @l # completed`) is a
   complete `×→×` stage on its own, no `RecordToRecord.do` needed for one
   field (slider's `step` is optional)
-- displays adopt with `# forField @l` (read one field) or
-  `# projection f # forValue` (format the whole value); a live readout
-  as a pipeline stage is the same display made pass-through with
-  `# tapped`: `body2 (text # projection f # forValue) # tapped`.
+- displays adopt with `# projection f` (feed `f` of the whole value —
+  `forValue` is `projection identity`, the verbatim case) or
+  `# forValue # forField @l` / `# projection f # forField @l` (read one
+  field, verbatim or formatted; `forField` takes the bare-value display
+  `projection` produces); a live readout as a pipeline stage is the same
+  display made pass-through with `# tapped`: `body2 (text # projection f) # tapped`.
   Two wrappers make a stage pass-through, and they are not
   interchangeable: `# completed` widens a *row-shaped* stage's output to
   its full input row from the retained input — safe over editors and
@@ -248,7 +250,7 @@ used in a single projection's return type can stay anonymous.
   shows up in tracing:
 
   ```purescript
-  listOf { selected: _.selected } (text # projection _.label # forValue)
+  listOf { selected: _.selected } (text # projection _.label)
     # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
   ```
 

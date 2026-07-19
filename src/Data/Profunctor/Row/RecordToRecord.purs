@@ -162,18 +162,22 @@ property = prop (Proxy @l)
 -- | operands; `field` remains the preferred operand form for its
 -- | annotation-free inference.)
 -- | Adopt a canonically-labeled component for the **whole input**: what
--- | flows in becomes its `value` — `forField`'s zero-focus sibling
--- | (`forField @l` reads one field; `forValue` reads everything), for
--- | displays of a function of the whole model: `text # projection f # forValue`.
+-- | flows in becomes its `value` — the verbatim display (`text # forValue`),
+-- | and `projection identity`. `projection f` is the formatting generalization
+-- | (`text # projection readout`); `forField @l` reads one field into such a
+-- | bare-value display.
 forValue :: forall p a b. Profunctor p => p { value :: a } b -> p a b
 forValue = lcmap { value: _ }
 
--- | Map the **canonical value** on the input side: adapt a component
--- | expecting `{ value :: a }` to accept `{ value :: a' }` through a
--- | projection `a' -> a` — the explicit formatting stage for displays
--- | (`text # projection show # forField @l`), `lcmap`-only.
-projection :: forall p a a' b. Profunctor p => (a' -> a) -> p { value :: a } b -> p { value :: a' } b
-projection f = lcmap (\r -> { value: f r.value })
+-- | Feed a canonically-labeled component a **function of the whole input**:
+-- | `projection f` turns a `{ value :: b }` component into one fed a bare `a`,
+-- | with `f a` flowing in as its `value` — so `forValue` is exactly
+-- | `projection identity`, and formatted displays read `text # projection
+-- | readout` with no trailing `# forValue`. Composes straight into `forField`
+-- | (which now reads a field into a *bare*-value display): `text # projection
+-- | show # forField @l` formats field `l`. `lcmap`-only.
+projection :: forall p a b o. Profunctor p => (a -> b) -> p { value :: b } o -> p a o
+projection f = lcmap \a -> { value: f a }
 
 -- | Mark a type-changing selector (`{ value :: Maybe a } → { value :: a }`)
 -- | as **always selected**: the `Maybe` input exists for the unselected
@@ -184,14 +188,14 @@ projection f = lcmap (\r -> { value: f r.value })
 required :: forall p a b. Profunctor p => p { value :: Maybe a } b -> p { value :: a } b
 required = lcmap (\r -> { value: Just r.value })
 
--- | Adopt a **canonically-labeled display** (`{ value :: a }` in) for field
--- | `l`: renames the incoming field, output untouched — `lcmap`-only, the
--- | input-side member of the adopter family (`asField` renames both sides
--- | of an editor, `forField` reads one field into a display). Closed
--- | singleton row: annotation-free as a merge operand, and a display owns
--- | no output fields.
-forField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p { value :: a } o -> p { | r } o
-forField = lcmap (\r -> { value: Record.get (Proxy @l) r })
+-- | Read field `l` into a **bare-value** display — the display expecting a
+-- | plain `a`, as produced by `forValue`/`projection`: `text # projection show
+-- | # forField @l` formats field `l`, and `text # forValue # forField @l`
+-- | shows it verbatim. `lcmap`-only, the input-side member of the adopter
+-- | family (`asField` renames both sides of an editor). Closed singleton row:
+-- | annotation-free as a merge operand, and a display owns no output fields.
+forField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
+forField = lcmap (Record.get (Proxy @l))
 
 -- | Adopt a **canonically-labeled** component (`{ value :: a }` in and out,
 -- | the citizenship-carrying scalar interface) as business field `l`: a pure

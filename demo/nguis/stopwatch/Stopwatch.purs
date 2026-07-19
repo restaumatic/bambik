@@ -26,7 +26,7 @@ stopwatch =
   body $
     elevation20 $
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
-          headline3 (text # projection readout # forValue) # completed
+          headline3 (text # projection readout) # completed
           every tickPeriod tick
           ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided # lcmap whenHalted

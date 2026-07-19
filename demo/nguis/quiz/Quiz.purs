@@ -25,16 +25,16 @@ quiz =
     elevation20 $
       card { caption: "Quiz" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projection progressFraction # forValue
-              body1 (text # projection standing # forValue)
+              linearProgress # projection progressFraction
+              body1 (text # projection standing)
           ) # completed
           ( Semigroupoid.do
-              headline5 (text # projection questionPrompt # forValue) # completed
-              ( listOf {} (text # projection _.label # forValue)
+              headline5 (text # projection questionPrompt) # completed
+              ( listOf {} (text # projection _.label)
               ) # rmap _.key # toCase @"picked" # lcmap questionChoices
           ) # provided # lcmap currentQuestion # updates (match { picked: answer })
           ( Semigroupoid.do
-              headline6 (text # forField @"summary") # displayed
+              headline6 (text # forValue # forField @"summary") # displayed
               button { label: "Restart", icon: "replay" } # asCase @"restarted"
           ) # provided # lcmap finalOutcome # updates (match { restarted: const restart })
       ) # mvu freshQuizRun

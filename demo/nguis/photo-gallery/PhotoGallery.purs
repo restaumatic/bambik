@@ -12,7 +12,7 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forValue, mvu, projection, tapped, toCase, updates)
+import PUI (displayed, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (body, dynamic, each, span, staticText, text)
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,7 +23,7 @@ photoGallery =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } (span (text # projection _.name # forValue))
+              listOf { selected: _.current } (span (text # projection _.name))
                 # rmap _.name # toCase @"albumPicked" # lcmap albumChoices # updates (match { albumPicked: openAlbum })
               divider
               list RecordToRecord.do
@@ -38,7 +38,7 @@ photoGallery =
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" }
           )
           ( Semigroupoid.do
-              headline2 (text # projection _.album # forValue) # tapped
+              headline2 (text # projection _.album) # tapped
               imageList { columns: 3 } $ displayed $ dynamic \m ->
                 each (albumPhotos m) \p -> imageListItem { src: p.src, label: p.caption }
           )

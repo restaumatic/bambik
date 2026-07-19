@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, forValue, looped, onCase, projection, silence, tapped, updates, with)
+import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updates, with)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -86,7 +86,7 @@ main =
               body1 (text # projection paymentLine # forField @"method")
           ) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      body1 (text # projection summarize # forValue) # debounced # tapped
+      body1 (text # projection summarize) # debounced # tapped
       RecordToVariant.do
         button { label: "Submit order", icon: "save" } # asCase @"submit"
         button { label: "Receipt", icon: "file" } # asCase @"printReceipt"

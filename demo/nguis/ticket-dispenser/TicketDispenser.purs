@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, forValue, mvu, projection, seeded, tapped, updates)
+import PUI (asCase, mvu, projection, seeded, tapped, updates)
 import PUI.HTML (body, text)
 import PUI.MDC (body2, button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,8 +20,8 @@ ticketDispenser =
   body $
     elevation20 $
       card { caption: "Ticket Dispenser" } $ ( Semigroupoid.do
-          headline3 (text # projection nowServing # forValue) # tapped
-          body2 (text # projection hint # forValue) # tapped
+          headline3 (text # projection nowServing) # tapped
+          body2 (text # projection hint) # tapped
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"
               ( Semigroupoid.do

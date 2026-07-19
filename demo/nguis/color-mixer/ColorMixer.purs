@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.String (length, toUpper)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, forValue, mvu, projection, tapped, toCase, updates)
+import PUI (asField, completed, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, foreach, text, (:=))
 import PUI.MDC (body2, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -40,8 +40,8 @@ colorMixer =
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipStyle $ pempty # lcmap (const {}) ) # rmap _.name )
                   # foreach _.name # lcmap (const palette)
           ) # toCase @"preset" # updates (match { preset: applyPreset })
-          body2 (text # projection hex # forValue) # tapped
-          body2 (text # projection rgb # forValue) # tapped
+          body2 (text # projection hex) # tapped
+          body2 (text # projection rgb) # tapped
       ) # mvu duskViolet
 
 applyPreset :: String -> Mix -> Mix

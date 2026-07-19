@@ -4,7 +4,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (field, forValue, projection, silence, with)
+import PUI (field, projection, silence, with)
 import PUI.HTML (a, body, div, hr, input, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -23,7 +23,7 @@ main =
           RecordToRecord.do
             input "text" # field @"greeting"
             input "text" # field @"name"
-          p (text # projection greetingLine # forValue)
+          p (text # projection greetingLine)
       silence
   ) # with helloWorld
 

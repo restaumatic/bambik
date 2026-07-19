@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, asCase, displayed, forValue, mvu, projection, tapped, updates)
+import PUI (announce, asCase, displayed, mvu, projection, tapped, updates)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -34,9 +34,9 @@ checkout =
     elevation20 $
       card { caption: "Checkout" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              body2 (text # projection cartLine # forValue) # provided # lcmap atCart # displayed
-              body2 (text # projection shippingLine # forValue) # provided # lcmap atShipping # displayed
-              body2 (text # projection paymentLine # forValue) # provided # lcmap atPayment # displayed
+              body2 (text # projection cartLine) # provided # lcmap atCart # displayed
+              body2 (text # projection shippingLine) # provided # lcmap atShipping # displayed
+              body2 (text # projection paymentLine) # provided # lcmap atPayment # displayed
               RecordToVariant.do
                 announce cartStep
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtCart
@@ -45,7 +45,7 @@ checkout =
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtPayment
                 button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment
           ) # folding @"next" # updates (match { placed: recordPlaced })
-          body2 (text # projection _.confirmation # forValue) # tapped
+          body2 (text # projection _.confirmation) # tapped
       ) # mvu freshOrder
 
 cartStep ::

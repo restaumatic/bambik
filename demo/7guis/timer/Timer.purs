@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (asField, completed, every, forField, forValue, mvu, projection, updates)
+import PUI (asField, completed, every, forField, mvu, projection, updates)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,7 +23,7 @@ timer =
     elevation20 $
       card { caption: "Timer" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projection fraction # forValue
+              linearProgress # projection fraction
               body1 RecordToRecord.do
                 text # projection show # forField @"elapsed"
                 staticText "s / "

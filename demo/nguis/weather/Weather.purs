@@ -9,7 +9,7 @@ import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, forValue, mvu, onCase, projection, tapped, toCase, updates)
+import PUI (action, mvu, onCase, projection, tapped, toCase, updates)
 import PUI.HTML (body, text)
 import PUI.MDC (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,18 +25,18 @@ weather =
     elevation20 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              ( listOf { selected: _.shown } (text # projection _.city # forValue)
+              ( listOf { selected: _.shown } (text # projection _.city)
               ) # toCase @"cityPicked" # lcmap forecastRequests
               indeterminateCircularProgress # action fetchReport # onCase @"cityPicked"
           ) # updates (match { reportServed: rememberReport })
-          headline1 (text # projection temperatureLine # forValue) # tapped
-          headline5 (text # projection conditionLine # forValue) # tapped
-          body1 (text # projection detailsLine # forValue) # tapped
-          caption (text # projection serviceLine # forValue) # tapped
+          headline1 (text # projection temperatureLine) # tapped
+          headline5 (text # projection conditionLine) # tapped
+          body1 (text # projection detailsLine) # tapped
+          caption (text # projection serviceLine) # tapped
           ( Semigroupoid.do
               iconButton { icon: "info", label: "About this dashboard" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
-                ( body1 (text # projection serviceStory # forValue) # tapped
+                ( body1 (text # projection serviceStory) # tapped
                 ) # onCase @"clicked" # toCase @"dashboardResumed"
           ) # updates (match { dashboardResumed: const identity })
       ) # mvu warsawBulletin

@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<>), Unit, identity, max, show)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Effect (Effect)
-import PUI (asField, forField, forValue, mvu, projection, seeded, tapped)
+import PUI (asField, forField, mvu, projection, seeded, tapped)
 import PUI.HTML (body, text)
 import PUI.MDC (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +22,7 @@ auction =
           ( Semigroupoid.do
               seeded noBids
               lcmap raiseTop identity
-              headline6 (text # projection topLine # forValue) # tapped
+              headline6 (text # projection topLine) # tapped
           ) # feedback
       ) # mvu openingBid
 

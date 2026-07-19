@@ -13,7 +13,7 @@ import Data.Variant (expand)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, forCase, forValue, mvu, projection, required, updates)
+import PUI (action, asCase, asField, completed, debounced, forCase, mvu, projection, required, updates)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -51,7 +51,7 @@ flightBooker =
           filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
             # provided # lcmap returnLeg # updates setReturn
       ) # mvu plannedTrip
-      body1 (text # projection validationText # forValue) # debounced # completed
+      body1 (text # projection validationText) # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
       VariantToRecord.do

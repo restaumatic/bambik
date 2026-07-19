@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, completed, forCase, forValue, mvu, onCase, projection, tapped, toCase, updates)
+import PUI (asCase, completed, forCase, mvu, onCase, projection, PUI, tapped, toCase, updates)
 import PUI.HTML (body, provided, span, text)
 import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import PUI.Web (Web)
@@ -21,14 +21,14 @@ inbox =
   body $
     elevation20 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
-          caption (text # projection unreadLine # forValue) # completed
-          listOf { selected: _.attention } (span (text # projection _.line # forValue))
+          caption (text # projection unreadLine) # completed
+          listOf { selected: _.attention } (span (text # projection _.line))
             # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headline6 (text # projection subjectLine # forValue)
-                  body2 (text # projection senderLine # forValue)
-                  body1 (text # projection bodyLine # forValue)
+                  headline6 (text # projection subjectLine)
+                  body2 (text # projection senderLine)
+                  body1 (text # projection bodyLine)
               ) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested"
           ) # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })

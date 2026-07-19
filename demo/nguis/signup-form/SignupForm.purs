@@ -12,7 +12,7 @@ import Data.String (Pattern(..), contains, trim)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, forCase, forValue, mvu, projection, required, tapped)
+import PUI (asCase, asField, forCase, mvu, projection, required, tapped)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -50,8 +50,8 @@ signupForm =
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox (staticText "I accept the terms of service") # asField @"terms"
         ) # mvu newApplicant
-        body2 (text # projection availabilityHint # forValue) # tapped
-        subtitle2 (text # projection validationSummary # forValue) # tapped
+        body2 (text # projection availabilityHint) # tapped
+        subtitle2 (text # projection validationSummary) # tapped
         button { label: "Sign up", icon: "person_add" } # asCase @"signUp"
           # rmap (match { signUp: register })
         VariantToRecord.do

@@ -25,11 +25,11 @@ movieBrowser =
               filterChip { label: "Cult" } # asField @"cult"
               filterChip { label: "Oscar" } # asField @"oscar"
           ) # completed
-          elevation1 (subtitle1 (text # projection favoritesLine # forValue)) # tapped
+          elevation1 (subtitle1 (text # projection favoritesLine)) # tapped
           ul >>> cl "mdc-deprecated-list" $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "display: flex; align-items: center; gap: 8px;" $ ( RecordToRecord.do
-                    span (text # forField @"title")
+                    span (text # forValue # forField @"title")
                     span (text # projection show # forField @"year")
                     span (text # projection ratingLine # forField @"rating")
                     iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"

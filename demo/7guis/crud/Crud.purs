@@ -15,7 +15,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, forValue, looped, onCase, projection, toCase, updates, with)
+import PUI (action, asCase, asField, completed, looped, onCase, projection, toCase, updates, with)
 import PUI.HTML (body, text)
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -45,7 +45,7 @@ crud = do
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname"
               ) # completed
-              ( listOf { selected: _.selected } (text # projection _.label # forValue)
+              ( listOf { selected: _.selected } (text # projection _.label)
               ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do

@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, completed, forValue, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, asField, completed, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (attr, body, div, text)
 import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -40,9 +40,9 @@ passwordGenerator =
               toggleSwitch { label: "Digits" } # asField @"digits"
               toggleSwitch { label: "Symbols" } # asField @"symbols"
           ) # completed
-          body2 (text # projection strengthLine # forValue) # tapped
+          body2 (text # projection strengthLine) # tapped
           div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
-            (text # projection _.password # forValue) # tapped
+            (text # projection _.password) # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"generate"
               indeterminateLinearProgress # action samplePassword # onCase @"generate"

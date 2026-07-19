@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Profunctor (lcmap, rmap)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, forValue, mvu, projection, toCase, updates)
+import PUI (completed, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, foreach, text, (:=))
 import PUI.MDC (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,7 +18,7 @@ ticTacToe =
   body $
     elevation20 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
-          headline6 (text # projection standing # forValue) # completed
+          headline6 (text # projection standing) # completed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
               ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
                   ( ( clicked

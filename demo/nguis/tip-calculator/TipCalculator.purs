@@ -6,7 +6,7 @@ import Data.Maybe (Maybe, maybe)
 import Data.Number (fromString)
 import Data.Number.Format (fixed, toStringWith)
 import Effect (Effect)
-import PUI (asField, completed, forValue, mvu, projection, tapped)
+import PUI (asField, completed, mvu, projection, tapped)
 import PUI.HTML (body, text)
 import PUI.MDC (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,13 +21,13 @@ tipCalculator =
           filledTextField { floatingLabel: "Bill amount" } # asField @"amount" # completed
           slider { label: "Tip percentage", min: minTipPercent, max: maxTipPercent, step: tipPercentStep }
             # asField @"tipPercent" # completed
-          body2 (text # projection tipPercentLine # forValue) # tapped
-          body2 (text # projection peopleLine # forValue) # tapped
+          body2 (text # projection tipPercentLine) # tapped
+          body2 (text # projection peopleLine) # tapped
           slider { label: "Split between", min: minPeople, max: maxPeople, step: peopleStep }
             # asField @"people" # completed
-          body2 (text # projection tipAmountLine # forValue) # tapped
-          body2 (text # projection totalLine # forValue) # tapped
-          body2 (text # projection perPersonLine # forValue) # tapped
+          body2 (text # projection tipAmountLine) # tapped
+          body2 (text # projection totalLine) # tapped
+          body2 (text # projection perPersonLine) # tapped
       ) # mvu dinnerBill
 
 tipPercentLine :: Bill -> String

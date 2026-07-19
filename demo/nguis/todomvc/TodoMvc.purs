@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, forValue, mvu, projection, required, toCase, updates)
+import PUI (asField, completed, mvu, projection, required, toCase, updates)
 import PUI.HTML (body, clWhen, span, text)
 import PUI.MDC (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,11 +21,11 @@ todoMvc =
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updates (match { clicked: const <<< addTodo })
-          ( listOf { selected: _.done } (span (text # projection _.title # forValue) # clWhen _.done "todo-done")
+          ( listOf { selected: _.done } (span (text # projection _.title) # clWhen _.done "todo-done")
           ) # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
           segmentedButton visibilityChoices # required # asField @"visibility" # completed
           Semigroupoid.do
-            caption (text # projection itemsLeft # forValue) # completed
+            caption (text # projection itemsLeft) # completed
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 

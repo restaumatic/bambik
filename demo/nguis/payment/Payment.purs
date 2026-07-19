@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, asCase, forValue, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (body, text)
 import PUI.MDC (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,8 +19,8 @@ payment =
   body $
     elevation20 $
       card { caption: "Payment" } $ ( Semigroupoid.do
-          headline6 (text # projection amountLine # forValue) # tapped
-          body2 (text # projection _.status # forValue) # tapped
+          headline6 (text # projection amountLine) # tapped
+          body2 (text # projection _.status) # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge
               indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate

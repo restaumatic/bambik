@@ -18,16 +18,16 @@ shoppingCart =
   body $
     elevation20 $
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
-          ( listOf {} (text # projection productOffer # forValue)
+          ( listOf {} (text # projection productOffer)
           ) # constantly productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
-                  dataCell (text # forField @"product")
-                  dataCell (text # forField @"quantity")
-                  dataCell (text # forField @"lineTotal")
+                  dataCell (text # forValue # forField @"product")
+                  dataCell (text # forValue # forField @"quantity")
+                  dataCell (text # forValue # forField @"lineTotal")
               ) # foreach _.product
             ) # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
-          body1 (text # projection grandTotal # forValue) # tapped
+          body1 (text # projection grandTotal) # tapped
           button { label: "Empty cart" } # updates (match { clicked: const <<< clearCart })
       ) # mvu emptyCart
 

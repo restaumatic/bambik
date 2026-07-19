@@ -16,7 +16,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, forValue, mvu, projection, toCase, updates)
+import PUI (asField, completed, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, foreach, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,7 +33,7 @@ cells =
     elevation20 $
       card { caption: "Cells" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              body1 (text # projection selectedCaption # forValue)
+              body1 (text # projection selectedCaption)
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
           ) # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
