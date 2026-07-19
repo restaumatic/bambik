@@ -16,9 +16,10 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, forValue, mvu, projection, silence, toCase, updates)
-import PUI.HTML (body, clicked, div, dynamic, each, staticText, table, td, text, th, tr, (:=))
+import PUI (PUI, asField, completed, forValue, mvu, projection, toCase, updates)
+import PUI.HTML (attrWith, body, clicked, div, foreach, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
+import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Sheet =
@@ -37,25 +38,8 @@ cells =
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
           ) # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
-              ( dynamic \(m :: Sheet) ->
-                  let
-                    values = evalSheet m.cells
-                    colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
-                    colIndices = range 0 (cols - 1)
-                    thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
-                    tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
-                    labelCell text = { header: true, key: "", text, sel: false }
-                    headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
-                    rowCells r = [ labelCell (show r) ] <>
-                      (colIndices <#> \c -> let key = colName c <> show r in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
-                    allRows = [ headerCells ] <> (range 0 (rows - 1) <#> rowCells)
-                    cellW cell
-                      | cell.header = ( th >>> "style" := thStyle $ staticText cell.text ) >>> silence
-                      | otherwise = lcmap (const cell.key) $ clicked $ lcmap (const {})
-                          ( td >>> "style" := (tdStyle <> (if cell.sel then "background: #cde;" else "")) $ staticText cell.text )
-                  in
-                    table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                      each allRows \cellsOfRow -> tr $ each cellsOfRow cellW
+              ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
+                  foreach (tr $ foreach cellWidget) # lcmap gridRows
               ) # toCase @"cellClicked"
           ) # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
@@ -66,7 +50,35 @@ cols = 26
 rows :: Int
 rows = 30
 
+type GridCell = { header :: Boolean, key :: String, text :: String, sel :: Boolean }
+
+-- the whole (fixed-size) grid as data — fed through nested retaining `foreach`,
+-- so an edit or selection updates each of the ~800 cells in place rather than
+-- rebuilding the table wholesale
+gridRows :: Sheet -> Array (Array GridCell)
+gridRows m =
+  let
+    values = evalSheet m.cells
+    colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
+    colIndices = range 0 (cols - 1)
+    labelCell text = { header: true, key: "", text, sel: false }
+    headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
+    rowCells r = [ labelCell (show r) ] <>
+      (colIndices <#> \c -> let key = colName c <> show r in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
+  in
+    [ headerCells ] <> (range 0 (rows - 1) <#> rowCells)
+
+cellWidget :: PUI Web GridCell String
+cellWidget = ( clicked ( td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text }) ) ) # rmap _.key
+
+cellStyle :: GridCell -> String
+cellStyle c
+  | c.header = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
+  | otherwise = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
+      <> (if c.sel then " background: #cde;" else "")
+
 selectCell :: String -> Sheet -> Sheet
+selectCell "" m = m -- header cells carry an empty key; clicking one selects nothing
 selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
 
 commit :: Sheet -> Sheet
