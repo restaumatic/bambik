@@ -4,13 +4,12 @@ import Prelude (Unit, otherwise, show, ($), (#), (&&), (+), (/=), (<#>), (<<<), 
 
 import Data.Array (cons, span, uncons)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Effect (Effect)
-import PUI (asField, completed, displayed, mvu)
-import PUI.HTML (blockquote, body, code, each, el, em, foreachWith, li, p, staticText, strong, ul, (:=))
+import PUI (asField, completed, mvu)
+import PUI.HTML (blockquote, body, code, each, el, em, foreachWithModel, li, p, staticText, strong, ul, (:=))
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -22,22 +21,19 @@ markdownPreviewer =
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
             layoutCell { span: 6 } $
-                ( lcmap (parseMarkdown <<< _.source)
-                    ( foreachWith \block ->
-                        let
-                          inline = case _ of
-                            Plain s -> staticText s
-                            Bold s -> strong (staticText s)
-                            Italic s -> em (staticText s)
-                            Code s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
-                          inlines is = each is inline
-                        in case block of
-                          Heading level is -> el ("h" <> show level) (inlines is)
-                          Paragraph is -> p (inlines is)
-                          Bullets items -> ul (each items \is -> li (inlines is))
-                          Quote is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
-                    ) # displayed
-                )
+                foreachWithModel (parseMarkdown <<< _.source) \block ->
+                  let
+                    inline = case _ of
+                      Plain s -> staticText s
+                      Bold s -> strong (staticText s)
+                      Italic s -> em (staticText s)
+                      Code s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
+                    inlines is = each is inline
+                  in case block of
+                    Heading level is -> el ("h" <> show level) (inlines is)
+                    Paragraph is -> p (inlines is)
+                    Bullets items -> ul (each items \is -> li (inlines is))
+                    Quote is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
         ) # mvu welcomeDocument
 
 type Document = { source :: String }

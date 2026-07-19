@@ -35,6 +35,7 @@ module PUI.HTML
   , foreach
   , foreachModel
   , foreachWith
+  , foreachWithModel
   , h1
   , h2
   , h3
@@ -678,6 +679,29 @@ foreachWith build = wrap do
           mProp <- Ref.read propRef
           for_ mProp \prop -> w'.fromUser prop
           void $ w'.toUser {}
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- | The builder analogue of `foreachModel`: the **self-announcing** terminal
+-- | display for **structure-from-value** collections, whose element structure
+-- | genuinely varies (so it must be closure-built like `foreachWith`, not
+-- | channel-fed). Renders `proj s` via the builder and **echoes the carrier
+-- | `s`**, so it is an unconditional `PUI Web s s` pass-through that announces
+-- | even when `proj s` is empty. Dissolves the `… # lcmap proj (foreachWith b)
+-- | # displayed` idiom (`layoutCell $ foreachWithModel parseDoc block`).
+foreachWithModel :: forall s a o. (s -> Array a) -> (a -> PUI Web {} o) -> PUI Web s s
+foreachWithModel proj build = wrap do
+  parent <- gets _.parent
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \s -> do
+        removeAllChildren parent
+        for_ (proj s) \item -> do
+          w' <- runDomInNode parent (unwrap (build item))
+          w'.fromUser \_ -> pure Nothing -- display-only: element emissions dropped
+          void $ w'.toUser {}
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> void $ prop s -- announcing: echo the carrier
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
