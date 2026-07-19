@@ -4,9 +4,11 @@
 -- | `button`, ...), announcing statics (`staticText`, `staticHTML`, the void
 -- | `hr` leaf), the `body` entry, and — for **structure computed from data at
 -- | runtime** without a markup DSL — `dynamic` (build a whole widget from the
--- | fed value, rebuilt per feed; the single-value `foreach`) with the delegated
--- | event emitters `onKeyClicked`/`onClickedXY`. The carrier they are built
--- | over lives in `PUI.Web`.
+-- | fed value, rebuilt per feed; the single-value `foreach`). Grid cells emit
+-- | their own identity by wrapping each built cell in `clicked` over a
+-- | `lcmap (const key)` seed (`# clicked # lcmap (const key)`) — a per-cell
+-- | listener, no `data-*` attribute — with `onClickedXY` the pointer-coordinate
+-- | sibling for canvases. The carrier they are built over lives in `PUI.Web`.
 module PUI.HTML
   ( (:=)
   , (:=>)
@@ -47,7 +49,6 @@ module PUI.HTML
   , li
   , ol
   , onClickedXY
-  , onKeyClicked
   , p
   , path
   , radioButton
@@ -90,7 +91,7 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, onKeyClick, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -520,27 +521,10 @@ clicked w = wrap do
           for_ mi \i -> void $ prop i
     }
 
--- | Delegated click emitter: one listener on the container emits the
--- | `data-key` of whichever descendant was clicked. The `clicked` sibling for
--- | `dynamic`-rendered grids — the content is display-only (its own echoes are
--- | drained), events arrive by delegation, so the single listener survives the
--- | wholesale rebuild. Pair with a container ocular: `div $ onKeyClicked $
--- | dynamic renderGrid`, then adopt the bare key with `toCase`/`rmap`.
-onKeyClicked :: forall i o. PUI Web i o -> PUI Web i String
-onKeyClicked content = wrap do
-  w' <- unwrap content
-  node <- gets _.parent
-  pure
-    { toUser: w'.toUser
-    , fromUser: \prop -> do
-        w'.fromUser \_ -> pure Nothing
-        onKeyClick node \key -> void $ prop key
-    }
-
 -- | Pointer-coordinate click emitter: emits the local/viewBox `{ x, y }` of a
--- | click on the container (an `<svg>` gives viewBox coords). The coordinate
--- | analogue of `onKeyClicked`, for canvases: `svg [...] $ onClickedXY $
--- | dynamic renderScene`.
+-- | click on the container (an `<svg>` gives viewBox coords). A container-level
+-- | emitter for canvases, where the coordinate is the payload: `svg [...] $
+-- | onClickedXY $ dynamic renderScene`.
 onClickedXY :: forall i o. PUI Web i o -> PUI Web i { x :: Number, y :: Number }
 onClickedXY content = wrap do
   w' <- unwrap content

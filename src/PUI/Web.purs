@@ -29,7 +29,6 @@ module PUI.Web
   , namespaceURI
   , onInputDebounced
   , onClickXY
-  , onKeyClick
   , removeAllChildren
   , removeAttribute
   , removeClass
@@ -203,7 +202,6 @@ foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
 foreign import elementsInRange :: Node -> Node -> Effect (Array Node)
 foreign import setInnerHTML :: Node -> String -> Effect Unit
-foreign import onKeyClick :: Node -> (String -> Effect Unit) -> Effect Unit
 
 -- | Pointer-down emitter with coordinates mapped into the element's local
 -- | space (an SVG's viewBox units when present, CSS pixels otherwise) —

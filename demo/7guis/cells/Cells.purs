@@ -10,14 +10,14 @@ import Data.Int (fromString, round, toNumber) as Int
 import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString)
-import Data.Profunctor (rmap)
+import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, forValue, mvu, projection, toCase, updates)
-import PUI.HTML (body, div, dynamic, each, onKeyClicked, staticText, table, tbody, td, text, th, thead, tr, (:=))
+import PUI (asField, completed, forValue, mvu, projection, silence, toCase, updates)
+import PUI.HTML (body, clicked, div, dynamic, each, staticText, table, td, text, th, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -37,27 +37,26 @@ cells =
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula"
           ) # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
-              ( onKeyClicked
-                  ( dynamic \(m :: Sheet) ->
-                      let
-                        values = evalSheet m.cells
-                        colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
-                        colIndices = range 0 (cols - 1)
-                        thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
-                        tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
-                        labelCell text = { header: true, key: "", text, sel: false }
-                        headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
-                        rowCells r = [ labelCell (show r) ] <>
-                          (colIndices <#> \c -> let key = colName c <> show r in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
-                        cellW cell
-                          | cell.header = th >>> "style" := thStyle $ staticText cell.text
-                          | otherwise = td >>> "data-key" := cell.key >>> "style" := (tdStyle <> (if cell.sel then "background: #cde;" else "")) $ staticText cell.text
-                      in
-                        table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ RecordToRecord.do
-                          thead (tr $ each headerCells cellW)
-                          tbody (each (range 0 (rows - 1)) \r -> tr $ each (rowCells r) cellW)
-                  ) # toCase @"cellClicked"
-              )
+              ( dynamic \(m :: Sheet) ->
+                  let
+                    values = evalSheet m.cells
+                    colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
+                    colIndices = range 0 (cols - 1)
+                    thStyle = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
+                    tdStyle = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
+                    labelCell text = { header: true, key: "", text, sel: false }
+                    headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
+                    rowCells r = [ labelCell (show r) ] <>
+                      (colIndices <#> \c -> let key = colName c <> show r in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
+                    allRows = [ headerCells ] <> (range 0 (rows - 1) <#> rowCells)
+                    cellW cell
+                      | cell.header = ( th >>> "style" := thStyle $ staticText cell.text ) >>> silence
+                      | otherwise = lcmap (const cell.key) $ clicked $ lcmap (const {})
+                          ( td >>> "style" := (tdStyle <> (if cell.sel then "background: #cde;" else "")) $ staticText cell.text )
+                  in
+                    table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
+                      each allRows \cellsOfRow -> tr $ each cellsOfRow cellW
+              ) # toCase @"cellClicked"
           ) # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
 

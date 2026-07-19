@@ -5,10 +5,11 @@ import Prelude ((#), ($), (&&), (/=), (<#>), (<<<), (<>), (==), (>>>), Unit, bin
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, forValue, mvu, projection, toCase, updates)
-import PUI.HTML (body, div, dynamic, each, onKeyClicked, staticText, text, (:=))
+import PUI.HTML (body, clicked, div, dynamic, each, staticText, text, (:=))
 import PUI.MDC (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -19,19 +20,18 @@ ticTacToe =
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headline6 (text # projection standing # forValue) # completed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
-              ( onKeyClicked
-                  ( dynamic \(game :: Match) ->
-                      let winners = fromMaybe [] (winningLine game.board)
-                      in div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
-                           each (range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index game.board i), win: i `elem` winners }) \c ->
-                             div >>> "data-key" := c.key
-                               >>> "style"
-                                 := ( "height: 72px; display: flex; align-items: center; justify-content: center; "
-                                       <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
-                                       <> if c.win then "background: #a5d6a7;" else "background: #eceff1;"
-                                   ) $ staticText c.mark
-                  ) # toCase @"cellPicked"
-              )
+              ( dynamic \(game :: Match) ->
+                  let winners = fromMaybe [] (winningLine game.board)
+                  in div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
+                       each (range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index game.board i), win: i `elem` winners }) \c ->
+                         lcmap (const c.key) $ clicked $ lcmap (const {})
+                           ( div >>> "style"
+                               := ( "height: 72px; display: flex; align-items: center; justify-content: center; "
+                                     <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
+                                     <> if c.win then "background: #a5d6a7;" else "background: #eceff1;"
+                                 ) $ staticText c.mark
+                           )
+              ) # toCase @"cellPicked"
           ) # updates (match { cellPicked: claimCell })
           button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
       ) # mvu openingPosition
