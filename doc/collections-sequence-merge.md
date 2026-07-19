@@ -1,6 +1,6 @@
 # The collection as the sequence merge
 
-*Design note + proof-of-concept. Branch `collections-sequence-merge`.*
+*Design note + rollout. Branch `collections-sequence-merge`.*
 
 ## The problem — one root, two symptoms
 
@@ -114,44 +114,59 @@ because `pempty` announces.
 `foreach`/`foreachWith`/`dynamic`/`each`/`listOf` all become derived forms of the
 one direction.
 
-## Proof-of-concept (this branch)
+## Rolled out (this branch)
 
-Behind the existing surface, deferring the full class elevation:
+The approach is the adopted mechanism, not a sketch. Vocabulary in
+[HTML.purs](../src/PUI/HTML.purs):
 
-- **Retaining `foreach`** ([HTML.purs](../src/PUI/HTML.purs)) — positional
-  reconciliation: survivors re-fed in place (no DOM teardown), entrants
-  appended, shrink falls back to a wholesale rebuild (the one remaining churn
-  case, a keyed diff away). Same type and name, so `listOf` and every
-  `foreach`-based demo inherit the win.
+- **Retaining `foreach`** — positional reconciliation: survivors re-fed in place
+  (no DOM teardown), entrants appended, a shrink rebuilds. Same type and name, so
+  `listOf` and every `foreach`-based list inherit the win transparently.
 - **`foreachModel :: (s -> Array a) -> PUI Web a o -> PUI Web s s`** — the
-  structure-preserving, self-announcing collection stage: renders `proj s` as a
-  retaining collection and echoes the carrier `s` every feed, so it is an
-  unconditional pass-through that announces even when `proj s` is empty. This is
-  the nullary-unit flavor as a self-contained stage — it dissolves the
-  `# lcmap proj # displayed` idiom.
+  structure-preserving, self-announcing collection stage (channel-fed items):
+  renders `proj s` and echoes the carrier `s`, so it never starves on an empty
+  array. The nullary-unit flavor as a self-contained stage.
+- **`foreachWithModel :: (s -> Array a) -> (a -> PUI Web {} o) -> PUI Web s s`** —
+  the same self-announcing stage for **structure-from-value** collections whose
+  element structure genuinely varies (so they stay closure-built).
+- **`attrWith :: String -> (i -> String) -> PUI Web i o -> PUI Web i o`** — the
+  value-computed attribute, the channel-fed counterpart of static `attr`/`:=`.
+  This is the enabler that lets a **fixed structure** whose *values* vary be fed
+  as data through the retaining `foreach` (built once, updated in place) instead
+  of rebuilt by a `dynamic`/`foreachWith` closure. It splits the collection story
+  cleanly: `attrWith` + `foreach` when only values change over a fixed structure;
+  `foreachWith`/`dynamic`/`each`/`foreachWithModel` when structure itself varies.
 
-### What the PoC demonstrates (verified, headless Chrome / CDP)
+### Demos retrofitted (all verified, headless Chrome / CDP)
 
-- **Stopwatch** rewritten from `ul (foreach (li (text # forValue))) # lcmap
-  lapLines # displayed` to `ul (foreachModel lapLines (li (text # forValue)))` —
-  `displayed` dropped. Adding a lap keeps the existing lap `<li>` DOM nodes
-  (tagged nodes survive → **no churn**); the readout keeps advancing and reset
-  works (**loop stays alive without `displayed`**; the empty lap list still
-  echoes the carrier).
-- **Regression smoke** (`listOf`-based): todomvc grow/append + same-length toggle
-  retain their `<li>` nodes and flip `clWhen` styling; crud selection retains all
-  nodes and applies selected styling. The `foreachWith` grids (calculator,
-  tic-tac-toe, color-mixer, cells) are untouched.
+- **Channel-fed grids/canvas** — tic-tac-toe, calculator, color-mixer, cells, and
+  circle-drawer dropped their `dynamic`+`each`/`foreachWith` closure rebuild for a
+  retaining `foreach` fed the structure as data (content via `text`, style/coords
+  via `attrWith`, identity via `clicked … # rmap`). Verified: a move / keypress /
+  preset / selection / edit / resize keeps every cell or circle DOM node — cells'
+  **837 `<td>` nodes survive an edit or selection** (the headline win); no
+  `data-*` anywhere.
+- **Self-announcing terminal collections** — stopwatch laps (`foreachModel`),
+  markdown-previewer preview and photo-gallery content pane (`foreachWithModel`)
+  dropped their `# lcmap proj … # displayed`. Verified: empty input no longer
+  starves and the `mvu` loop stays alive.
+- **Lists** (`listOf`: todomvc, crud, inbox, weather, quiz, shopping-cart,
+  movie-browser) retain automatically through the new `foreach`: grow/append and
+  same-length refeed keep their `<li>` nodes and update styling in place.
 
-### Deferred (out of PoC scope)
+`# displayed` now appears only on **non-collection** passthroughs (a static chrome
+sibling in calculator/color-mixer, the `provided` pane lines in checkout/quiz).
 
-- The `Sequence` **class** + `Co`-retraction, qualified-do sugar, and the
-  `(->)`-instance verdict, following the
-  `RecordToVariant`/`VariantToRecord` template.
-- **`foreachWith`/`dynamic`/`each` keyed diff** — closure-built elements need an
-  `Eq a`/key projection to rebuild only changed elements (and to retain structure
-  under reorder/insert). This is where the grids' churn is addressed.
-- Migrating the remaining `displayed`/`muted`/`silence` collection sites.
+### Deferred
+
+- The **formal `Sequence` typeclass** + its `Co`-retraction and qualified-do sugar
+  (following the `RecordToVariant`/`VariantToRecord` template). The runtime and
+  vocabulary are fully adopted; lifting them to a named class member of the
+  row-profunctor family is the remaining formalization.
+- **Keyed reconciliation** for reorder/insert (the current reconciliation is
+  positional; a `key`/`Eq` diff would retain identity under reordering, and
+  de-churn the closure builders too — not needed by any current demo, whose
+  collections are fixed-order or human-paced).
 
 ## Why this framing
 
