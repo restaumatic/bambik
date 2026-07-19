@@ -24,6 +24,7 @@ const demos = {
   'checkout': ['Checkout', 'checkout'],
   'payment': ['Payment', 'payment'],
   'ticket-dispenser': ['TicketDispenser', 'ticketDispenser'],
+  'reorder': ['Reorder', 'reorder'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {

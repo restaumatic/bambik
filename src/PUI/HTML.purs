@@ -80,13 +80,10 @@ import Control.Monad.State (gets, modify_)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
-import Data.Map as Map
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
-import Data.Set as Set
-import Data.Traversable (for)
-import Data.Tuple (Tuple(..))
+import Data.Profunctor.Row.Sequence (sequenced)
 import Data.Symbol (class IsSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -96,7 +93,7 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, lastChild, onClickXY, onInputDebounced, removeAllChildren, removeChild, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -580,42 +577,7 @@ onClickedXY content = wrap do
 -- | (`Retaining`/`Costrong` at collection granularity). See
 -- | doc/collections-sequence-merge.md.
 foreach :: forall a o. (a -> String) -> PUI Web a o -> PUI Web (Array a) o
-foreach key w = wrap do
-  parent <- gets _.parent
-  propRef <- liftEffect $ Ref.new Nothing
-  entriesRef <- liftEffect $ Ref.new []
-  busyRef <- liftEffect $ Ref.new false
-  pure
-    { toUser: \items -> do
-        -- re-entrancy guard: an element's echo during a build can loop back
-        -- (via displayed/mvu) into toUser before entriesRef is written — that
-        -- re-feed carries the same array, so skipping it avoids a double build
-        busy <- Ref.read busyRef
-        unless busy do
-          Ref.write true busyRef
-          old <- Ref.read entriesRef
-          mProp <- Ref.read propRef
-          let oldByKey = Map.fromFoldable (map (\e -> Tuple e.key e) old)
-          entries <- for items \a -> do
-            let k = key a
-            case Map.lookup k oldByKey of
-              Just e -> do
-                void $ e.inst.toUser a -- reuse: re-fed in place, DOM kept
-                pure e
-              Nothing -> do
-                inst <- runDomInNode parent (unwrap w)
-                for_ mProp \prop -> inst.fromUser prop
-                node <- lastChild parent -- the freshly appended top-level node
-                void $ inst.toUser a
-                pure { key: k, inst, node }
-          let keep = Set.fromFoldable (map _.key entries)
-          for_ old \e -> unless (Set.member e.key keep) (removeChild e.node parent)
-          -- reorder only when the key sequence changed (a stable-key refeed is free)
-          when (map _.key old /= map _.key entries) $ for_ entries \e -> appendChild e.node parent
-          Ref.write entries entriesRef
-          Ref.write false busyRef
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
+foreach = sequenced
 
 -- | The **structure-from-value builder collection**: build a whole widget per
 -- | array element from the builder closure (tags/attributes as computed
