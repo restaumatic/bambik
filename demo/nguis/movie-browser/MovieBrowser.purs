@@ -35,10 +35,7 @@ movieBrowser =
                     iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"
                 ) # completed
             )
-            # foreach _.title
-            # toCase @"favored"
-            # lcmap visibleMovies
-            # updates (match { favored: markFavorite })
+            # foreach _.title # toCase @"favored" # lcmap visibleMovies # updates (match { favored: markFavorite })
       ) # mvu movieCatalogue
 
 data Category = All | Action | Drama | Comedy

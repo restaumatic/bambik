@@ -33,11 +33,9 @@ restaurantMenu =
                 span >>> cl "tags" $
                   ( span >>> cl "tag" $ text # forValue ) # foreach identity # forField @"tags"
             )
-            # foreach _.name
-            # forField @"dishes"
+            # foreach _.name # forField @"dishes"
       )
-      # foreach _.name
-      # forField @"courses"
+      # foreach _.name # forField @"courses"
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
