@@ -120,7 +120,8 @@ module PUI.MDC
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.Array (findIndex, (!!))
+import Data.Array (findIndex, mapWithIndex, (!!))
+import Data.Tuple (Tuple(..), fst, snd)
 import Data.Default (class Default)
 import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
@@ -1012,9 +1013,12 @@ listOf
   -> PUI Web a o
   -> PUI Web (Array a) a
 listOf provided item = wrap do
-  w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> attr "style" "overflow-y: auto;" $ foreach
-    ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
-        $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "cursor: pointer;" $ item
+  w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> attr "style" "overflow-y: auto;" $
+    ( ( lcmap snd
+          ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
+              $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "cursor: pointer;" $ item
+          ) # foreach (show <<< fst)
+      ) # lcmap (mapWithIndex Tuple)
     )
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.list."MDCList" node

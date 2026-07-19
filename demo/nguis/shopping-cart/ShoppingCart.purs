@@ -21,10 +21,11 @@ shoppingCart =
           ( listOf {} (text # projection productOffer # forValue)
           ) # constantly productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
-            ( foreach $ clicked $ dataRow RecordToRecord.do
-                dataCell (text # forField @"product")
-                dataCell (text # forField @"quantity")
-                dataCell (text # forField @"lineTotal")
+            ( ( clicked $ dataRow RecordToRecord.do
+                  dataCell (text # forField @"product")
+                  dataCell (text # forField @"quantity")
+                  dataCell (text # forField @"lineTotal")
+              ) # foreach _.product
             ) # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
           body1 (text # projection grandTotal # forValue) # tapped
           button { label: "Empty cart" } # updates (match { clicked: const <<< clearCart })

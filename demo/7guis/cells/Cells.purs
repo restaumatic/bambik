@@ -39,7 +39,8 @@ cells =
           ) # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  foreach (tr $ foreach cellWidget) # lcmap gridRows
+                  ( tr $ cellWidget # foreach _.domKey # lcmap _.cells )
+                    # foreach _.rowKey # lcmap gridRows
               ) # toCase @"cellClicked"
           ) # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
@@ -50,23 +51,30 @@ cols = 26
 rows :: Int
 rows = 30
 
-type GridCell = { header :: Boolean, key :: String, text :: String, sel :: Boolean }
+-- `domKey` is the unique per-cell reconciliation key (label cells share the
+-- empty emission `key`, so they need a distinct one); `key` is what a click
+-- emits — the spreadsheet cell key, or "" for a label (selectCell "" no-ops).
+type GridCell = { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean }
+type GridRow = { rowKey :: String, cells :: Array GridCell }
 
 -- the whole (fixed-size) grid as data — fed through nested retaining `foreach`,
 -- so an edit or selection updates each of the ~800 cells in place rather than
 -- rebuilding the table wholesale
-gridRows :: Sheet -> Array (Array GridCell)
+gridRows :: Sheet -> Array GridRow
 gridRows m =
   let
     values = evalSheet m.cells
     colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
     colIndices = range 0 (cols - 1)
-    labelCell text = { header: true, key: "", text, sel: false }
-    headerCells = [ labelCell "" ] <> (colIndices <#> \c -> labelCell (colName c))
-    rowCells r = [ labelCell (show r) ] <>
-      (colIndices <#> \c -> let key = colName c <> show r in { header: false, key, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
+    headerCells =
+      [ { domKey: "h", key: "", header: true, text: "", sel: false } ]
+        <> (colIndices <#> \c -> { domKey: "h" <> show c, key: "", header: true, text: colName c, sel: false })
+    rowCells r =
+      [ { domKey: "l" <> show r, key: "", header: true, text: show r, sel: false } ]
+        <> (colIndices <#> \c -> let key = colName c <> show r in { domKey: key, key, header: false, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
   in
-    [ headerCells ] <> (range 0 (rows - 1) <#> rowCells)
+    [ { rowKey: "header", cells: headerCells } ]
+      <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
 
 cellWidget :: PUI Web GridCell String
 cellWidget = ( clicked ( td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text }) ) ) # rmap _.key

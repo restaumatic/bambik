@@ -1,6 +1,6 @@
 module Stopwatch (stopwatch) where
 
-import Prelude ((#), ($), (+), (<), (<<<), (<>), Unit, const, not, show)
+import Prelude ((#), ($), (+), (<), (<<<), (<>), Unit, const, identity, not, show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -10,8 +10,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (asCase, completed, every, forValue, mvu, projection, updates)
-import PUI.HTML (body, foreachModel, li, provided, text, ul)
+import PUI (asCase, completed, displayed, every, forValue, mvu, projection, updates)
+import PUI.HTML (body, foreach, li, provided, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -39,7 +39,7 @@ stopwatch =
               , lap: const <<< recordLap
               , reset: const <<< clearStopwatch
               })
-          ul (foreachModel lapLines (li (text # forValue)))
+          ul ( (li (text # forValue)) # foreach identity ) # lcmap lapLines # displayed
       ) # mvu zeroedStopwatch
 
 beginTiming :: Stopwatch -> Stopwatch

@@ -303,6 +303,15 @@ export function removeAllChildren(node) {
   };
 }
 
+// removeChild :: Node -> Node -> Effect Unit  (removeChild child parent)
+export function removeChild(child) {
+  return function (parent) {
+    return function () {
+      if (child.parentNode === parent) parent.removeChild(child);
+    };
+  };
+}
+
 // onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 // pointerdown works for mouse, touch and pen alike; coordinates are mapped
 // from CSS pixels into the SVG's viewBox space when the node has one, so a

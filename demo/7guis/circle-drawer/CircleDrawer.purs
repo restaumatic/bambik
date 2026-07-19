@@ -21,7 +21,7 @@ type Circle = { x :: Number, y :: Number, r :: Number }
 -- one retained SVG <circle> per element — coords/fill updated in place via
 -- attrWith, so dragging the size slider re-styles the selected circle without
 -- rebuilding the whole canvas
-circleWidget :: PUI Web { x :: String, y :: String, r :: String, on :: Boolean } {}
+circleWidget :: PUI Web { key :: String, x :: String, y :: String, r :: String, on :: Boolean } {}
 circleWidget =
   circle
     >>> "stroke" := "#333"
@@ -50,8 +50,8 @@ circleDrawer =
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY
-                    ( foreach circleWidget
-                        # lcmap (\(m :: Canvas) -> mapWithIndex (\i c -> { x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)
+                    ( circleWidget # foreach _.key
+                        # lcmap (\(m :: Canvas) -> mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)
                     ) # toCase @"clicked"
                 )
               RecordToVariant.do

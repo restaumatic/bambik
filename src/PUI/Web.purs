@@ -30,6 +30,7 @@ module PUI.Web
   , onInputDebounced
   , onClickXY
   , removeAllChildren
+  , removeChild
   , removeAttribute
   , removeClass
   , runDomInNode
@@ -194,6 +195,7 @@ foreign import setAttributes :: Node -> Object String -> Effect Unit
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
 foreign import removeAttribute :: Node -> String -> Effect Unit
 foreign import removeAllChildren :: Node -> Effect Unit
+foreign import removeChild :: Node -> Node -> Effect Unit
 foreign import addClass :: Node -> String -> Effect Unit
 foreign import removeClass :: Node -> String -> Effect Unit
 foreign import insertAsFirstChild :: Node -> Node -> Effect Unit

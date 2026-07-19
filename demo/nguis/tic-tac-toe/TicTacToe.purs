@@ -21,14 +21,13 @@ ticTacToe =
           headline6 (text # projection standing # forValue) # completed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
               ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
-                  foreach
-                    ( ( clicked
-                          ( div
-                              >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
-                              $ text # lcmap (\c -> { value: c.mark })
-                          )
-                      ) # rmap _.key
-                    ) # lcmap cells
+                  ( ( clicked
+                        ( div
+                            >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
+                            $ text # lcmap (\c -> { value: c.mark })
+                        )
+                    ) # rmap _.key
+                  ) # foreach _.key # lcmap cells
               ) # toCase @"cellPicked"
           ) # updates (match { cellPicked: claimCell })
           button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })

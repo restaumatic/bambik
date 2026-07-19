@@ -26,7 +26,7 @@ movieBrowser =
               filterChip { label: "Oscar" } # asField @"oscar"
           ) # completed
           elevation1 (subtitle1 (text # projection favoritesLine # forValue)) # tapped
-          ul >>> cl "mdc-deprecated-list" $ foreach
+          ul >>> cl "mdc-deprecated-list" $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "display: flex; align-items: center; gap: 8px;" $ ( RecordToRecord.do
                     span (text # forField @"title")
@@ -35,6 +35,7 @@ movieBrowser =
                     iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"
                 ) # completed
             )
+            # foreach _.title
             # toCase @"favored"
             # lcmap visibleMovies
             # updates (match { favored: markFavorite })

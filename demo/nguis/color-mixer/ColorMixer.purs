@@ -45,7 +45,7 @@ colorMixer =
               attrWith "style" swatchStyle $ div $ pempty # lcmap (const {})
               -- presets: static chips, fed once through the retaining foreach
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-                foreach chipButton # lcmap (const palette)
+                chipButton # foreach _.name # lcmap (const palette)
           ) # toCase @"preset" # updates (match { preset: applyPreset })
           body2 (text # projection hex # forValue) # tapped
           body2 (text # projection rgb # forValue) # tapped

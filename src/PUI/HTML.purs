@@ -33,9 +33,7 @@ module PUI.HTML
   , el
   , em
   , foreach
-  , foreachModel
   , foreachWith
-  , foreachWithModel
   , h1
   , h2
   , h3
@@ -79,13 +77,14 @@ module PUI.HTML
 import Prelude
 
 import Control.Monad.State (gets, modify_)
-import Data.Array (drop, length, zip) as Array
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
+import Data.Set as Set
 import Data.Traversable (for)
 import Data.Tuple (Tuple(..))
 import Data.Symbol (class IsSymbol)
@@ -97,7 +96,7 @@ import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (PropagationStatus, PUI)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, lastChild, onClickXY, onInputDebounced, removeAllChildren, removeChild, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -561,112 +560,72 @@ onClickedXY content = wrap do
         onClickXY node \x y -> void $ prop { x, y }
     }
 
--- | The dynamic collection — the **runtime-sized homogeneous sequence merge**:
--- | one instance of the item widget per array element, all sharing the
--- | collection's output channel. Wrap it in a container ocular: `ul $
--- | foreach item`.
+-- | The dynamic collection — the **runtime-sized homogeneous sequence merge**,
+-- | and the single collection combinator. **Keyed and retaining**: each element
+-- | is identified by `key a`, and on every fed array the collection reconciles
+-- | *by key* — matched elements are re-fed in place (their DOM kept), new keys
+-- | are built, absent keys removed, and the DOM reordered only when the key
+-- | sequence actually changed. So a fixed-key grid never rebuilds (values update
+-- | through the channel), a growing list only appends, and a reordered list
+-- | **moves each element's DOM node with it** — so browser-local state (focus,
+-- | scroll, selection) follows the item, not the position. Keys must be unique.
 -- |
--- | **Retaining (PoC — sequence-merge branch).** The static row merges keep
--- | each operand's last contribution in a `Ref` and reuse it across feeds;
--- | this is that gate lifted to a runtime vector of element *instances*. On
--- | each fed array the collection **reconciles positionally** instead of
--- | rebuilding wholesale: survivors are re-fed through their channel (no DOM
--- | teardown — the win over the old `removeAllChildren`), entrants are built
--- | and appended, and a shrink falls back to a wholesale rebuild (the one
--- | remaining churn case, a keyed diff away). Because items are **channel-fed**
--- | (`w'.toUser item`), re-feeding a survivor updates it in place — unlike the
--- | closure-built `foreachWith`, whose content lives in the builder closure and
--- | so still rebuilds per value. See doc/collections-sequence-merge.md.
--- |
--- | Still collapses to `o`, so like a variant-output merge it cannot announce
--- | on an empty array (parametricity: no `o` to fabricate). For the
--- | structure-preserving, self-announcing stage use `foreachModel`.
-foreach :: forall a o. PUI Web a o -> PUI Web (Array a) o
-foreach w = wrap do
+-- | Written trailing, wrapped in a container ocular: `ul $ item # foreach _.key`.
+-- | It collapses every element's emission onto one shared channel `o` (the
+-- | homogeneous analogue of a variant-output merge), so as a terminal display it
+-- | cannot announce on an empty array by itself (parametricity: no `o` to
+-- | fabricate) — pass the carrier through with `# lcmap proj # displayed`, whose
+-- | unconditional echo *is* the sequence's announcing unit. This retention is the
+-- | row-merge gate lifted to a runtime, key-indexed vector of element instances
+-- | (`Retaining`/`Costrong` at collection granularity). See
+-- | doc/collections-sequence-merge.md.
+foreach :: forall a o. (a -> String) -> PUI Web a o -> PUI Web (Array a) o
+foreach key w = wrap do
   parent <- gets _.parent
   propRef <- liftEffect $ Ref.new Nothing
-  instancesRef <- liftEffect $ Ref.new []
-  let
-    build1 = do
-      w' <- runDomInNode parent (unwrap w)
-      mProp <- Ref.read propRef
-      for_ mProp \prop -> w'.fromUser prop
-      pure w'
+  entriesRef <- liftEffect $ Ref.new []
+  busyRef <- liftEffect $ Ref.new false
   pure
     { toUser: \items -> do
-        existing <- Ref.read instancesRef
-        if Array.length items < Array.length existing then do
-          -- shrink: wholesale rebuild (PoC fallback — a keyed diff would retain)
-          removeAllChildren parent
-          built <- for items \item -> do
-            w' <- build1
-            void $ w'.toUser item
-            pure w'
-          Ref.write built instancesRef
-        else do
-          -- reuse survivors (re-fed in place, no DOM teardown), append entrants
-          for_ (Array.zip existing items) \(Tuple inst item) -> inst.toUser item
-          entrants <- for (Array.drop (Array.length existing) items) \item -> do
-            w' <- build1
-            void $ w'.toUser item
-            pure w'
-          Ref.write (existing <> entrants) instancesRef
+        -- re-entrancy guard: an element's echo during a build can loop back
+        -- (via displayed/mvu) into toUser before entriesRef is written — that
+        -- re-feed carries the same array, so skipping it avoids a double build
+        busy <- Ref.read busyRef
+        unless busy do
+          Ref.write true busyRef
+          old <- Ref.read entriesRef
+          mProp <- Ref.read propRef
+          let oldByKey = Map.fromFoldable (map (\e -> Tuple e.key e) old)
+          entries <- for items \a -> do
+            let k = key a
+            case Map.lookup k oldByKey of
+              Just e -> do
+                void $ e.inst.toUser a -- reuse: re-fed in place, DOM kept
+                pure e
+              Nothing -> do
+                inst <- runDomInNode parent (unwrap w)
+                for_ mProp \prop -> inst.fromUser prop
+                node <- lastChild parent -- the freshly appended top-level node
+                void $ inst.toUser a
+                pure { key: k, inst, node }
+          let keep = Set.fromFoldable (map _.key entries)
+          for_ old \e -> unless (Set.member e.key keep) (removeChild e.node parent)
+          -- reorder only when the key sequence changed (a stable-key refeed is free)
+          when (map _.key old /= map _.key entries) $ for_ entries \e -> appendChild e.node parent
+          Ref.write entries entriesRef
+          Ref.write false busyRef
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- | The **structure-preserving, self-announcing** sequence collection — the
--- | owned-output flavor with a nullary unit, as a self-contained stage. Renders
--- | `proj s` as a retaining `foreach` (element emissions dropped — this is a
--- | display) and **echoes the carrier `s`** on every feed, so it is an
--- | unconditional `PUI Web s s` pass-through that announces even when `proj s`
--- | is empty. This is the collection's answer to the empty-array starvation:
--- | where a terminal collection used to need `… # lcmap proj # displayed`, the
--- | announcing unit is built in — `ul $ foreachModel proj item`. Dissolves the
--- | `displayed` patch (doc/collections-sequence-merge.md).
-foreachModel :: forall s a o. (s -> Array a) -> PUI Web a o -> PUI Web s s
-foreachModel proj item = wrap do
-  parent <- gets _.parent
-  propRef <- liftEffect $ Ref.new Nothing
-  instancesRef <- liftEffect $ Ref.new []
-  let
-    build1 = do
-      w' <- runDomInNode parent (unwrap item)
-      w'.fromUser \_ -> pure Nothing -- display-only: element emissions dropped
-      pure w'
-  pure
-    { toUser: \s -> do
-        let items = proj s
-        existing <- Ref.read instancesRef
-        if Array.length items < Array.length existing then do
-          removeAllChildren parent
-          built <- for items \i -> do
-            w' <- build1
-            void $ w'.toUser i
-            pure w'
-          Ref.write built instancesRef
-        else do
-          for_ (Array.zip existing items) \(Tuple inst i) -> inst.toUser i
-          entrants <- for (Array.drop (Array.length existing) items) \i -> do
-            w' <- build1
-            void $ w'.toUser i
-            pure w'
-          Ref.write (existing <> entrants) instancesRef
-        -- announcing unit: echo the carrier, so an empty collection never starves
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> void $ prop s
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
--- | **Structure computed from data at runtime**, in `PUI Web` rather than a
--- | markup DSL: the builder form of `foreach`. Each element of the fed array
--- | is turned into a whole widget *by the builder* — the value is in the
--- | builder's closure, so tags and attributes are ordinary computed strings
--- | (`el ("h" <> show level)`, `circle >>> "cx" := show c.x`) — and the enclosing
--- | element is rebuilt wholesale per value (clear once, append each). Like
--- | `foreach` it owns its container, so wrap it in a container ocular
--- | (`ul $ foreachWith item`, `svg [...] $ foreachWith circle`) and give any
--- | fixed siblings their own container. Built widgets are fed `{}` (content
--- | comes from the closure, not the channel); emissions share the output.
+-- | The **structure-from-value builder collection**: build a whole widget per
+-- | array element from the builder closure (tags/attributes as computed
+-- | strings — `el ("h" <> show level)`, `circle >>> "cx" := show c.x`). The
+-- | enclosing element is rebuilt wholesale on every value fed. Reach for it
+-- | (and its single-value case `dynamic`) only when an element's *structure*
+-- | genuinely varies with the data; when only *values* change over a fixed
+-- | structure, feed the structure through the keyed retaining `foreach` and
+-- | compute per-element attributes with `attrWith` (built once, updated in
+-- | place, no rebuild). Owns its container like `foreach`.
 foreachWith :: forall a o. (a -> PUI Web {} o) -> PUI Web (Array a) o
 foreachWith build = wrap do
   parent <- gets _.parent
@@ -682,41 +641,18 @@ foreachWith build = wrap do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- | The builder analogue of `foreachModel`: the **self-announcing** terminal
--- | display for **structure-from-value** collections, whose element structure
--- | genuinely varies (so it must be closure-built like `foreachWith`, not
--- | channel-fed). Renders `proj s` via the builder and **echoes the carrier
--- | `s`**, so it is an unconditional `PUI Web s s` pass-through that announces
--- | even when `proj s` is empty. Dissolves the `… # lcmap proj (foreachWith b)
--- | # displayed` idiom (`layoutCell $ foreachWithModel parseDoc block`).
-foreachWithModel :: forall s a o. (s -> Array a) -> (a -> PUI Web {} o) -> PUI Web s s
-foreachWithModel proj build = wrap do
-  parent <- gets _.parent
-  propRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \s -> do
-        removeAllChildren parent
-        for_ (proj s) \item -> do
-          w' <- runDomInNode parent (unwrap (build item))
-          w'.fromUser \_ -> pure Nothing -- display-only: element emissions dropped
-          void $ w'.toUser {}
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> void $ prop s -- announcing: echo the carrier
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
 -- | The single-value case of `foreachWith`: rebuild one widget from the fed
 -- | value (a `foreachWith` over the one-element array). Owns its container:
 -- | `svg [...] $ dynamic renderScene`, `div $ dynamic renderSwatch`.
 dynamic :: forall a o. (a -> PUI Web {} o) -> PUI Web a o
 dynamic build = lcmap (\a -> [ a ]) (foreachWith build)
 
--- | Build a **fixed** (closure-known) list of items into the container now —
--- | `foreachWith` fed a constant array, with the input pinned to `{}` so it
--- | drops into a `{} → {}` chrome merge without an annotation: `ul $ each rows
--- | renderRow`, `tr $ each cells cellWidget`.
+-- | Build a **fixed** (closure-known) list into the container now — a
+-- | `foreachWith` fed a constant array, input pinned to `{}` so it drops into a
+-- | `{} → {}` chrome merge without an annotation: `ul $ each rows renderRow`,
+-- | `tr $ each cells cellWidget`.
 each :: forall a o. Array a -> (a -> PUI Web {} o) -> PUI Web {} o
-each items build = lcmap (\_ -> items) (foreachWith build)
+each items build = lcmap (const items) (foreachWith build)
 
 -- Entry point
 

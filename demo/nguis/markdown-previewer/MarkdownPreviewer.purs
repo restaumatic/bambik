@@ -8,8 +8,8 @@ import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Effect (Effect)
-import PUI (asField, completed, mvu)
-import PUI.HTML (blockquote, body, code, each, el, em, foreachWithModel, li, p, staticText, strong, ul, (:=))
+import PUI (asField, completed, displayed, mvu)
+import PUI.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,8 +20,8 @@ markdownPreviewer =
       card { caption: "Markdown Previewer" } $
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
-            layoutCell { span: 6 } $
-                foreachWithModel (parseMarkdown <<< _.source) \block ->
+            layoutCell { span: 6 } $ displayed $ dynamic \doc ->
+                each (parseMarkdown doc.source) \block ->
                   let
                     inline = case _ of
                       Plain s -> staticText s

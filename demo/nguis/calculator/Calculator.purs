@@ -1,6 +1,6 @@
 module Calculator (calculator) where
 
-import Prelude ((#), ($), (&&), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, const, show)
+import Prelude ((#), ($), (&&), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, const, identity, show)
 
 import Data.Array (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -30,7 +30,7 @@ calculator =
                     ) $ text # lcmap (\tally -> { value: readout tally })
                 -- keypad: static keys, fed once through the retaining `foreach`
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  foreach keyButton # lcmap (const keyPad)
+                  keyButton # foreach identity # lcmap (const keyPad)
             ) # toCase @"keyPressed"
         )
           # updates (match { keyPressed: pressKey })
