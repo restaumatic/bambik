@@ -284,6 +284,18 @@ honor it, and changes to either side keep the two in sync:
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing** —
   `card { caption: "CRUD" } $ ... # asField @"prefix"`.
+- **Lean on MDC2's defaults; write no custom chrome.** Reach for a stock
+  component and its built-in look before any `attr "style"`/`"style" :=`.
+  MDC surfaces (`card`, `elevation*`), typography (`headline*`/`body*`/
+  `caption`), lists (`listOf`/`list`), grids (`layoutGrid`/`layoutCell`)
+  and the components' own spacing already carry the design language, so a
+  flex/border wrapper is a smell: drop the presentational `div` and let
+  the MDC components flow inline (MDC buttons/fields are `inline-flex`; a
+  `listOf` already scrolls; block typography stacks) — the minimal-MDC
+  look is the intended one. Custom styling is a last resort for genuinely
+  data-driven graphics (an SVG canvas, a colour swatch), never for layout
+  the design system already gives you. Every avoided style string is code
+  you don't write.
 
 ## Demo page conventions (index.html)
 

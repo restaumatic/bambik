@@ -1,20 +1,19 @@
 module PhotoGallery (photoGallery) where
 
-import Prelude ((#), ($), (*), (+), (<#>), (<>), (==), (>>>), Unit, mod, show)
+import Prelude ((#), ($), (*), (+), (<#>), (<>), (==), Unit, mod, show)
 
 import Data.Array (find, range)
 import Data.Char (toCharCode)
 import Data.Foldable (sum)
 import Data.Maybe (maybe)
 import Data.Profunctor (lcmap, rmap)
-import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (displayed, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.HTML (body, div, foreachWith, img, li, span, staticText, text, (:=))
+import PUI.HTML (body, foreachWith, span, staticText, text)
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -38,14 +37,10 @@ photoGallery =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" }
           )
-          ( div >>> "style" := "flex: 1; min-width: 0;" $ Semigroupoid.do
+          ( Semigroupoid.do
               headline2 (text # projection _.album # forValue) # tapped
               imageList { columns: 3 }
-                ( foreachWith \p ->
-                    li >>> "class" := "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
-                      img >>> "class" := "mdc-image-list__image" >>> "src" := p.src >>> "alt" := p.caption $ pempty
-                      div >>> "class" := "mdc-image-list__supporting" $
-                        span >>> "class" := "mdc-image-list__label" $ staticText p.caption
+                ( foreachWith \p -> imageListItem { src: p.src, label: p.caption }
                 ) # lcmap albumPhotos # displayed
           )
       ) # mvu landscapesOpen

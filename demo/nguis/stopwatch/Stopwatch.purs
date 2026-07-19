@@ -1,6 +1,6 @@
 module Stopwatch (stopwatch) where
 
-import Prelude ((#), ($), (+), (<), (<<<), (<>), (>>>), Unit, const, not, show)
+import Prelude ((#), ($), (+), (<), (<<<), (<>), Unit, const, not, show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
 import PUI (asCase, completed, displayed, every, forValue, mvu, projection, updates)
-import PUI.HTML (attr, body, div, foreach, li, provided, text, ul)
+import PUI.HTML (body, foreach, li, provided, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -28,7 +28,7 @@ stopwatch =
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
           headline3 (text # projection readout # forValue) # completed
           every tickPeriod tick
-          ( div >>> attr "style" "display: flex; gap: 8px;" $ RecordToVariant.do
+          ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided # lcmap whenHalted
               button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning
               button { label: "Lap", icon: "flag" } # asCase @"lap" # provided # lcmap whenRunning

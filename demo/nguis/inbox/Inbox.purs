@@ -1,6 +1,6 @@
 module Inbox (inbox) where
 
-import Prelude ((#), ($), (+), (<<<), (<>), (==), (/=), (||), (>>>), Unit, comparing, const, identity, map, not, show)
+import Prelude ((#), ($), (+), (<<<), (<>), (==), (/=), (||), Unit, comparing, const, identity, map, not, show)
 
 import Data.Array (filter, find, length, snoc, sortBy)
 import Data.Maybe (Maybe(..))
@@ -11,7 +11,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, completed, forCase, forValue, mvu, onCase, projection, tapped, toCase, updates)
-import PUI.HTML (attr, body, div, provided, span, text)
+import PUI.HTML (body, provided, span, text)
 import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,7 +33,7 @@ inbox =
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested"
           ) # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
-              ( dialog { title: "Delete the last message?" } $ div >>> attr "style" "display: flex; gap: 16px;" $ RecordToVariant.do
+              ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
                   button { label: "Keep" } # asCase @"kept"
               ) # provided # lcmap confirmingDelete
@@ -41,7 +41,7 @@ inbox =
                 banner # forCase @"emptied" # lcmap (match { emptied: .emptied <<< emptiedNote }) # tapped
                 (identity :: PUI Web Mailbox Mailbox) # onCase @"kept" # toCase @"kept"
           ) # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
-          div >>> attr "style" "display: flex; gap: 16px; align-items: center; margin-top: 8px;" $ ( RecordToVariant.do
+          ( RecordToVariant.do
               fab { icon: "edit", label: "Compose" } # asCase @"compose"
               menu { label: "Sort" } RecordToVariant.do
                 menuItem { label: "By sender" } # asCase @"bySender"

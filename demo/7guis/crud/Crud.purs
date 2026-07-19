@@ -16,7 +16,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import PUI (action, asCase, asField, completed, forValue, looped, onCase, projection, toCase, updates, with)
-import PUI.HTML (attr, body, div, text)
+import PUI.HTML (body, text)
 import PUI.MDC (button, card, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -45,11 +45,10 @@ crud = do
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname"
               ) # completed
-              attr "style" "border: 1px solid #ccc; min-height: 120px; max-height: 200px; overflow-y: auto;"
-                ( listOf { selected: _.selected } (text # projection _.label # forValue)
-                ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+              ( listOf { selected: _.selected } (text # projection _.label # forValue)
+              ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
-                  div >>> attr "style" "display: flex; gap: 8px; margin-top: 8px;" $ RecordToVariant.do
+                  RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
                     button { label: "Update" } # asCase @"update"
                     button { label: "Delete" } # asCase @"delete"

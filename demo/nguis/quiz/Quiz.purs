@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, completed, displayed, forField, forValue, mvu, projection, toCase, updates)
-import PUI.HTML (attr, body, provided, text)
+import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -30,9 +30,8 @@ quiz =
           ) # completed
           ( Semigroupoid.do
               headline5 (text # projection questionPrompt # forValue) # completed
-              attr "style" "border: 1px solid #ccc;"
-                ( listOf {} (text # projection _.label # forValue)
-                ) # rmap _.key # toCase @"picked" # lcmap questionChoices
+              ( listOf {} (text # projection _.label # forValue)
+              ) # rmap _.key # toCase @"picked" # lcmap questionChoices
           ) # provided # lcmap currentQuestion # updates (match { picked: answer })
           ( Semigroupoid.do
               headline6 (text # forField @"summary") # displayed

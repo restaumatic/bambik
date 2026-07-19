@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (constantly, forField, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.HTML (attr, body, clicked, foreach, text)
+import PUI.HTML (body, clicked, foreach, text)
 import PUI.MDC (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,9 +18,8 @@ shoppingCart =
   body $
     elevation20 $
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
-          attr "style" "border: 1px solid #ccc; margin-bottom: 8px;"
-            ( listOf {} (text # projection productOffer # forValue)
-            ) # constantly productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
+          ( listOf {} (text # projection productOffer # forValue)
+          ) # constantly productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( foreach $ clicked $ dataRow RecordToRecord.do
                 dataCell (text # forField @"product")

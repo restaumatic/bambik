@@ -1,6 +1,6 @@
 module Checkout (checkout) where
 
-import Prelude ((#), ($), (<>), (==), (>>>), Unit, discard)
+import Prelude ((#), ($), (<>), (==), Unit)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (announce, asCase, displayed, forValue, mvu, projection, tapped, updates)
-import PUI.HTML (attr, body, div, provided, text)
+import PUI.HTML (body, provided, text)
 import PUI.MDC (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -37,7 +37,7 @@ checkout =
               body2 (text # projection cartLine # forValue) # provided # lcmap atCart # displayed
               body2 (text # projection shippingLine # forValue) # provided # lcmap atShipping # displayed
               body2 (text # projection paymentLine # forValue) # provided # lcmap atPayment # displayed
-              div >>> attr "style" "display: flex; align-items: center; gap: 12px; margin-top: 8px;" $ RecordToVariant.do
+              RecordToVariant.do
                 announce cartStep
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtCart
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtShipping

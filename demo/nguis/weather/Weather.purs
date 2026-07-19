@@ -10,7 +10,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import PUI (action, forValue, mvu, onCase, projection, tapped, toCase, updates)
-import PUI.HTML (attr, body, text)
+import PUI.HTML (body, text)
 import PUI.MDC (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -25,9 +25,8 @@ weather =
     elevation20 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              attr "style" "border: 1px solid #ccc; max-height: 220px; overflow-y: auto;"
-                ( listOf { selected: _.shown } (text # projection _.city # forValue)
-                ) # toCase @"cityPicked" # lcmap forecastRequests
+              ( listOf { selected: _.shown } (text # projection _.city # forValue)
+              ) # toCase @"cityPicked" # lcmap forecastRequests
               indeterminateCircularProgress # action fetchReport # onCase @"cityPicked"
           ) # updates (match { reportServed: rememberReport })
           headline1 (text # projection temperatureLine # forValue) # tapped

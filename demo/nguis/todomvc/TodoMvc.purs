@@ -1,6 +1,6 @@
 module TodoMvc (todoMvc) where
 
-import Prelude ((#), ($), (<<<), (<>), (==), (>>>), class Eq, Unit, const, not, show)
+import Prelude ((#), ($), (<<<), (<>), (==), class Eq, Unit, const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe)
@@ -9,7 +9,7 @@ import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, forValue, mvu, projection, required, toCase, updates)
-import PUI.HTML (attr, body, clWhen, div, span, text)
+import PUI.HTML (body, clWhen, span, text)
 import PUI.MDC (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,14 +18,13 @@ todoMvc =
   body $
     elevation20 $
       card { caption: "TodoMVC" } $ ( Semigroupoid.do
-          div >>> attr "style" "display: flex; gap: 8px; align-items: center;" $ Semigroupoid.do
+          Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updates (match { clicked: const <<< addTodo })
-          attr "style" "border: 1px solid #ccc; min-height: 80px; max-height: 240px; overflow-y: auto; margin: 8px 0;"
-            ( listOf { selected: _.done } (span (text # projection _.title # forValue) # clWhen _.done "todo-done")
-            ) # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
+          ( listOf { selected: _.done } (span (text # projection _.title # forValue) # clWhen _.done "todo-done")
+          ) # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
           segmentedButton visibilityChoices # required # asField @"visibility" # completed
-          div >>> attr "style" "display: flex; gap: 16px; align-items: center; margin-top: 8px;" $ Semigroupoid.do
+          Semigroupoid.do
             caption (text # projection itemsLeft # forValue) # completed
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList

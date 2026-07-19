@@ -11,7 +11,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, mvu, toCase, updates)
-import PUI.HTML (body, circle, div, foreachWith, onClickedXY, provided, svg, (:=))
+import PUI.HTML (body, circle, foreachWith, onClickedXY, provided, svg, (:=))
 import PUI.MDC (button, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -40,7 +40,7 @@ circleDrawer =
                         (foreachWith \c -> circle >>> "cx" := c.x >>> "cy" := c.y >>> "r" := c.r >>> "stroke" := "#333" >>> "fill" := (if c.on then "#ddd" else "transparent") $ pempty)
                     ) # toCase @"clicked"
                 )
-              div >>> "style" := "display: flex; gap: 8px;" $ RecordToVariant.do
+              RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
           ) # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })

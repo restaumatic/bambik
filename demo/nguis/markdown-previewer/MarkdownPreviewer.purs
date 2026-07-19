@@ -10,7 +10,7 @@ import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Effect (Effect)
 import PUI (asField, completed, displayed, mvu)
-import PUI.HTML (blockquote, body, code, div, each, el, em, foreachWith, li, p, staticText, strong, ul, (:=))
+import PUI.HTML (blockquote, body, code, each, el, em, foreachWith, li, p, staticText, strong, ul, (:=))
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -22,7 +22,6 @@ markdownPreviewer =
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
             layoutCell { span: 6 } $
-              div >>> "style" := "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" $
                 ( lcmap (parseMarkdown <<< _.source)
                     ( foreachWith \block ->
                         let
