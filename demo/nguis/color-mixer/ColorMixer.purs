@@ -10,18 +10,12 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.String (length, toUpper)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asField, completed, forValue, mvu, projection, tapped, toCase, updates)
+import PUI (asField, completed, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, foreach, text, (:=))
 import PUI.MDC (body2, card, elevation20, sliderLive)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Mix = { red :: Number, green :: Number, blue :: Number }
-
-chipButton :: PUI Web { name :: String, mix :: Mix } String
-chipButton =
-  ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipStyle $ pempty # lcmap (const {}) ) )
-    # rmap _.name
 
 chipStyle :: { name :: String, mix :: Mix } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
@@ -41,11 +35,10 @@ colorMixer =
           sliderLive { label: "Blue", min: minChannel, max: maxChannel, step: channelStep }
             # asField @"blue" # completed
           ( div >>> "style" := "margin: 10px 0;" $ Semigroupoid.do
-              -- swatch: channel-fed, background updated in place from the mix
               attrWith "style" swatchStyle $ div $ pempty # lcmap (const {})
-              -- presets: static chips, fed once through the retaining foreach
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-                chipButton # foreach _.name # lcmap (const palette)
+                ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipStyle $ pempty # lcmap (const {}) ) # rmap _.name )
+                  # foreach _.name # lcmap (const palette)
           ) # toCase @"preset" # updates (match { preset: applyPreset })
           body2 (text # projection hex # forValue) # tapped
           body2 (text # projection rgb # forValue) # tapped

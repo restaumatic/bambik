@@ -37,8 +37,6 @@ type Match = { board :: Array String }
 
 type Cell = { key :: String, mark :: String, win :: Boolean }
 
--- the fixed 9-cell grid as data — fed through the retaining `foreach`, so a
--- move updates each cell in place (no wholesale rebuild)
 cells :: Match -> Array Cell
 cells game =
   let winners = fromMaybe [] (winningLine game.board)

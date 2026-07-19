@@ -9,10 +9,9 @@ import Data.Profunctor (lcmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, mvu, toCase, updates)
+import PUI (mvu, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, foreach, text, (:=))
 import PUI.MDC (card, elevation20)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculator :: Effect Unit
@@ -22,22 +21,18 @@ calculator =
       card { caption: "Calculator" } $
         ( div >>> "style" := "display: inline-block;" $
             ( div >>> "style" := "width: 296px;" $ Semigroupoid.do
-                -- readout: channel-fed, updates in place from the tally (no rebuild)
                 div >>> "style"
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;"
                     ) $ text # lcmap (\tally -> { value: readout tally })
-                -- keypad: static keys, fed once through the retaining `foreach`
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  keyButton # foreach identity # lcmap (const keyPad)
+                  clicked ( div >>> attrWith "style" keyStyle $ text # lcmap (\k -> { value: k }) )
+                    # foreach identity # lcmap (const keyPad)
             ) # toCase @"keyPressed"
         )
           # updates (match { keyPressed: pressKey })
           # mvu blankTally
-
-keyButton :: PUI Web String String
-keyButton = clicked ( div >>> attrWith "style" keyStyle $ text # lcmap (\k -> { value: k }) )
 
 keyStyle :: String -> String
 keyStyle key =

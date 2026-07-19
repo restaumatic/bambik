@@ -16,10 +16,9 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (PUI, asField, completed, forValue, mvu, projection, toCase, updates)
+import PUI (asField, completed, forValue, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, foreach, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Sheet =
@@ -39,7 +38,7 @@ cells =
           ) # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ cellWidget # foreach _.domKey # lcmap _.cells )
+                  ( tr $ ( clicked ( td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text }) ) # rmap _.key ) # foreach _.domKey # lcmap _.cells )
                     # foreach _.rowKey # lcmap gridRows
               ) # toCase @"cellClicked"
           ) # updates (match { cellClicked: selectCell })
@@ -51,15 +50,9 @@ cols = 26
 rows :: Int
 rows = 30
 
--- `domKey` is the unique per-cell reconciliation key (label cells share the
--- empty emission `key`, so they need a distinct one); `key` is what a click
--- emits — the spreadsheet cell key, or "" for a label (selectCell "" no-ops).
 type GridCell = { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean }
 type GridRow = { rowKey :: String, cells :: Array GridCell }
 
--- the whole (fixed-size) grid as data — fed through nested retaining `foreach`,
--- so an edit or selection updates each of the ~800 cells in place rather than
--- rebuilding the table wholesale
 gridRows :: Sheet -> Array GridRow
 gridRows m =
   let
@@ -75,9 +68,6 @@ gridRows m =
   in
     [ { rowKey: "header", cells: headerCells } ]
       <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
-
-cellWidget :: PUI Web GridCell String
-cellWidget = ( clicked ( td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text }) ) ) # rmap _.key
 
 cellStyle :: GridCell -> String
 cellStyle c

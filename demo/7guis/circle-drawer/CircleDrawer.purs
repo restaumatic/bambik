@@ -10,26 +10,12 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, mvu, toCase, updates)
+import PUI (asCase, asField, mvu, toCase, updates)
 import PUI.HTML (attrWith, body, circle, foreach, onClickedXY, provided, svg, (:=))
-import PUI.MDC (button, card, elevation20, sliderLive)
-import PUI.Web (Web)
+import PUI.MDC (button, card, cardActions, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Circle = { x :: Number, y :: Number, r :: Number }
-
--- one retained SVG <circle> per element — coords/fill updated in place via
--- attrWith, so dragging the size slider re-styles the selected circle without
--- rebuilding the whole canvas
-circleWidget :: PUI Web { key :: String, x :: String, y :: String, r :: String, on :: Boolean } {}
-circleWidget =
-  circle
-    >>> "stroke" := "#333"
-    >>> attrWith "cx" _.x
-    >>> attrWith "cy" _.y
-    >>> attrWith "r" _.r
-    >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent")
-    $ pempty # lcmap (const {})
 
 type Canvas =
   { circles :: Array Circle
@@ -50,11 +36,13 @@ circleDrawer =
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY
-                    ( circleWidget # foreach _.key
+                    ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
+                          >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # lcmap (const {})
+                      ) # foreach _.key
                         # lcmap (\(m :: Canvas) -> mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)
                     ) # toCase @"clicked"
                 )
-              RecordToVariant.do
+              cardActions $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo"
           ) # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
