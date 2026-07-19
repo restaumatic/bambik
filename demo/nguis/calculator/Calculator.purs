@@ -29,7 +29,7 @@ calculator =
                           ) $ staticText (readout tally)
                       div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
                         each keyPad \key ->
-                          div >>> "data-key" := key >>> "class" := "key"
+                          div >>> "data-key" := key
                             >>> "style"
                               := ( "height: 52px; display: flex; align-items: center; justify-content: center; "
                                     <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "

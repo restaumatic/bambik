@@ -22,7 +22,7 @@ markdownPreviewer =
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
             layoutCell { span: 6 } $
-              div >>> "class" := "markdown-preview" >>> "style" := "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" $
+              div >>> "style" := "border: 1px solid #ccc; border-radius: 4px; padding: 0 16px; min-height: 200px; overflow: auto;" $
                 ( lcmap (parseMarkdown <<< _.source)
                     ( foreachWith \block ->
                         let

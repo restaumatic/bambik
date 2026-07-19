@@ -31,14 +31,13 @@ colorMixer =
           ( div >>> "style" := "margin: 10px 0;" $
               ( onKeyClicked
                   ( dynamic \m -> RecordToRecord.do
-                      div >>> "id" := "swatch"
-                        >>> "style"
-                          := ( "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; "
-                                <> "border: 1px solid #ccc; background-color: " <> rgb m <> ";"
-                            ) $ pempty
+                      div >>> "style"
+                        := ( "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; "
+                              <> "border: 1px solid #ccc; background-color: " <> rgb m <> ";"
+                          ) $ pempty
                       div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                         each palette \p ->
-                          div >>> "data-key" := p.name >>> "class" := "preset" >>> "title" := p.name
+                          div >>> "data-key" := p.name >>> "title" := p.name
                             >>> "style"
                               := ( "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; "
                                     <> "border: 1px solid #999; background-color: " <> rgb p.mix <> ";"

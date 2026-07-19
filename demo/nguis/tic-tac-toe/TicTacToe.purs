@@ -24,7 +24,7 @@ ticTacToe =
                       let winners = fromMaybe [] (winningLine game.board)
                       in div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
                            each (range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index game.board i), win: i `elem` winners }) \c ->
-                             div >>> "data-key" := c.key >>> "class" := "cell"
+                             div >>> "data-key" := c.key
                                >>> "style"
                                  := ( "height: 72px; display: flex; align-items: center; justify-content: center; "
                                        <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
