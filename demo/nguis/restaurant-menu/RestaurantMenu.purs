@@ -6,12 +6,12 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (forField, forValue, with)
-import PUI.HTML (a, blockquote, body, circle, cl, el, foreach, h1, h2, h3, hr, p, span, staticText, svg, text, ul, (:=))
+import PUI.HTML (a, article, blockquote, body, circle, cl, div, el, footer, foreach, h1, h2, h3, header, hr, li, p, section, span, staticText, svg, text, ul, (:=))
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
-  body $ ( el "article" >>> cl "menu" $ RecordToRecord.do
-    el "header" >>> cl "menu-header" $ RecordToRecord.do
+  body $ ( article >>> cl "menu" $ RecordToRecord.do
+    header >>> cl "menu-header" $ RecordToRecord.do
       svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
         circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
         el "text" >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
@@ -19,12 +19,12 @@ restaurantMenu =
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
       hr
-    el "div" >>> cl "courses" $
-      ( el "section" >>> cl "course" $ RecordToRecord.do
+    div >>> cl "courses" $
+      ( section >>> cl "course" $ RecordToRecord.do
           h2 (text # forValue # forField @"name")
           ul >>> cl "dishes" $
-            ( el "li" >>> cl "dish" $ RecordToRecord.do
-                el "div" >>> cl "dish-head" $ RecordToRecord.do
+            ( li >>> cl "dish" $ RecordToRecord.do
+                div >>> cl "dish-head" $ RecordToRecord.do
                   span >>> cl "dish-name" $ text # forValue # forField @"name"
                   span >>> cl "dish-dots" $ pempty
                   span >>> cl "dish-price" $ text # forValue # forField @"price"
@@ -40,11 +40,11 @@ restaurantMenu =
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
-    el "footer" >>> cl "menu-footer" $ RecordToRecord.do
-      el "div" >>> cl "info" $ RecordToRecord.do
+    footer >>> cl "menu-footer" $ RecordToRecord.do
+      div >>> cl "info" $ RecordToRecord.do
         h3 (staticText "Hours")
         p (staticText "Tuesday – Sunday · 17:00 – 23:00")
-      el "div" >>> cl "info" $ RecordToRecord.do
+      div >>> cl "info" $ RecordToRecord.do
         h3 (staticText "Find us")
         p (staticText "12 Category Lane · Kraków")
       p >>> cl "colophon" $ RecordToRecord.do

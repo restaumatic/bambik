@@ -13,6 +13,7 @@ module PUI.HTML
   ( (:=)
   , (:=>)
   , a
+  , article
   , aside
   , attr
   , attrDyn
@@ -32,6 +33,7 @@ module PUI.HTML
   , each
   , el
   , em
+  , footer
   , foreach
   , foreachWith
   , h1
@@ -40,6 +42,7 @@ module PUI.HTML
   , h4
   , h5
   , h6
+  , header
   , hr
   , i
   , img
@@ -55,6 +58,7 @@ module PUI.HTML
   , radioButton
   , runWidgetInNode
   , runWidgetInSelectedNode
+  , section
   , span
   , staticHTML
   , staticText
@@ -335,6 +339,18 @@ span = el "span"
 
 aside :: Ocular (PUI Web)
 aside = el "aside"
+
+article :: Ocular (PUI Web)
+article = el "article"
+
+header :: Ocular (PUI Web)
+header = el "header"
+
+footer :: Ocular (PUI Web)
+footer = el "footer"
+
+section :: Ocular (PUI Web)
+section = el "section"
 
 label :: Ocular (PUI Web)
 label = el "label"
