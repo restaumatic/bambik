@@ -9,6 +9,8 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 [20 minutes-long presentation of the idea](/doc/presentation-20min.md)
 
+[API reference (generated from the module headers)](/doc/api/README.md)
+
 [Row profunctors over records and variants (design note)](/doc/row-profunctors.md)
 
 [Variant syntax sugar — the forked PureScript compiler this repo builds on](/doc/variant-sugar.md)
