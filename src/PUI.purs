@@ -20,8 +20,6 @@
 -- |     guard, so exactly one turn happens per event.
 module PUI
   ( Action
-  , PropagationError
-  , PropagationStatus
   , PUI(..)
   , action
   , action'
@@ -139,13 +137,8 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- could it be: newtype PUI m i o = PUI ((o -> Effect Unit) -> m (i -> Effect Unit))
 newtype PUI m i o = PUI (m
   { toUser :: i -> Effect Unit
-  , fromUser :: (o -> Effect PropagationStatus) -> Effect Unit
+  , fromUser :: (o -> Effect Unit) -> Effect Unit
   })
-
--- TODO: rename ValidationStatus/UserInputStatus?
-type PropagationStatus = Maybe PropagationError
-
-type PropagationError = String
 
 derive instance Newtype (PUI m i o) _
 
@@ -159,7 +152,7 @@ instance Functor m => Profunctor (PUI m) where
 
 -- Stateful instances below share one gating principle (the same one the
 -- record merges follow): state a widget hasn't received yet cannot be
--- fabricated, so emissions needing it are withheld (`pure Nothing`) until
+-- fabricated, so emissions needing it are withheld until
 -- the state channel has been fed.
 instance Functor m => Strong (PUI m) where
   first p = wrap ado
@@ -181,7 +174,7 @@ instance Functor m => Strong (PUI m) where
             case mab of
               Nothing -> do
                 guard.blocked "Strong.first: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value."
-                tr "Strong.first: emission withheld (pair state unknown)" b $> Nothing
+                tr "Strong.first: emission withheld (pair state unknown)" b
               Just prevab -> prop (Tuple b (snd prevab))
       }
   second p = wrap ado
@@ -200,7 +193,7 @@ instance Functor m => Strong (PUI m) where
             case mab of
               Nothing -> do
                 guard.blocked "Strong.second: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value."
-                tr "Strong.second: emission withheld (pair state unknown)" b $> Nothing
+                tr "Strong.second: emission withheld (pair state unknown)" b
               Just prevab -> prop (Tuple (fst prevab) b)
       }
 
@@ -295,7 +288,6 @@ instance Functor m => Cochoice (PUI m) where
         Right c -> do
           tr "Cochoice.unleft: looping back" c
           p'.toUser $ Right c
-          pure Nothing
     }
   unright p = wrap $ unwrap p <#> \p' ->
     { toUser: \a -> p'.toUser $ Right a
@@ -304,7 +296,6 @@ instance Functor m => Cochoice (PUI m) where
         Left c -> do
           tr "Cochoice.unright: looping back" c
           p'.toUser $ Left c
-          pure Nothing
     }
 
 -- | The `× → +` **co-strength** (retraction of `Resolving`): a `Right c`
@@ -342,7 +333,6 @@ instance Functor m => Coresolving (PUI m) where
               ma <- Ref.read aRef
               for_ ma \a -> p'.toUser $ Tuple a c
               Ref.write false busyRef
-            pure Nothing
       }
 
 -- | The `+ → ×` **co-strength** (retraction of `Retaining`): every emission
@@ -357,14 +347,13 @@ instance Functor m => Coretaining (PUI m) where
     in
       { toUser: \a -> p'.toUser $ Left a
       , fromUser: \prop -> p'.fromUser \(Tuple b c) -> do
-          status <- prop b
+          prop b
           busy <- Ref.read busyRef
           unless busy do
             tr "Coretaining.coretain: resuming with state" c
             Ref.write true busyRef
             p'.toUser $ Right c
             Ref.write false busyRef
-          pure status
       }
 
 instance Apply m => Semigroupoid (PUI m) where
@@ -382,7 +371,6 @@ instance Apply m => Semigroupoid (PUI m) where
           p1'.fromUser \x -> do
             tr "stage → stage" x
             p2'.toUser x
-            pure Nothing
       }
 
 -- | `identity` forwards its input straight to its output: a wire. The unit
@@ -432,7 +420,7 @@ silence = wrap $ pure
 announce :: forall m o. Applicative m => o -> PUI m {} o
 announce o = wrap $ pure
   { toUser: mempty
-  , fromUser: \prop -> void $ prop o
+  , fromUser: \prop -> prop o
   }
 
 -- | Seed any stage with an initial value: `with a w` feeds `w` the value
@@ -460,10 +448,10 @@ seeded a = wrap $ pure unit <#> \_ ->
   in
     { toUser: \ch -> do
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop ch
+        for_ mProp \prop -> prop ch
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
-        void $ prop a
+        prop a
     }
 
 -- | The **Mealy update stage** on the `×`-diagonal: a pass-through wire
@@ -492,7 +480,7 @@ updates handler events = wrap $ unwrap events <#> \evts ->
         Ref.write (Just s) sRef
         evts.toUser s
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop s
+        for_ mProp \prop -> prop s
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         evts.fromUser \e -> do
@@ -500,7 +488,7 @@ updates handler events = wrap $ unwrap events <#> \evts ->
           case ms of
             Nothing -> do
               guard.blocked "updates: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
-              tr "updates: event withheld (no retained state yet)" e $> Nothing
+              tr "updates: event withheld (no retained state yet)" e
             Just s -> do
               tr "updates: folding event" e
               let s' = handler e s
@@ -527,7 +515,7 @@ displayed = updates \_ s -> s
 muted :: forall m b i o. Functor m => PUI m {} b -> PUI m i o
 muted w = wrap $ unwrap w <#> \w' ->
   { toUser: \_ -> w'.toUser {}
-  , fromUser: \_ -> w'.fromUser \_ -> pure Nothing
+  , fromUser: \_ -> w'.fromUser \_ -> pure unit
   }
 
 -- | Pin a stage's input to a known value: the wrapped widget is fed `a`
@@ -553,7 +541,7 @@ every interval step = wrap $ pure unit <#> \_ ->
     { toUser: \a -> do
         Ref.write (Just a) lastRef
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop a
+        for_ mProp \prop -> prop a
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         let
@@ -563,7 +551,7 @@ every interval step = wrap $ pure unit <#> \_ ->
               ma <- Ref.read lastRef
               for_ (ma >>= step) \a' -> do
                 Ref.write (Just a') lastRef
-                void $ prop a'
+                prop a'
             loop
         launchAff_ loop
     }
@@ -587,7 +575,7 @@ looped p = wrap $ unwrap p <#> \p' ->
         p'.fromUser \u -> do
           busy <- Ref.read busyRef
           if busy
-            then tr "looped: echo swallowed (re-entrant)" u $> Nothing
+            then tr "looped: echo swallowed (re-entrant)" u
             else do
               tr "looped: re-feeding emission" u
               Ref.write true busyRef
@@ -611,7 +599,7 @@ instance Applicative m => RecordToRecord (PUI m) where
   -- never starve against it
   pempty = wrap $ pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop {}
+    , fromUser: \prop -> prop {}
     }
   recordToRecord = recordToRecordPUI
 
@@ -653,7 +641,7 @@ recordToRecordPUI p1 p2 = wrap ado
           case mp2 of
             Nothing -> do
               guard1.blocked $ starving fields1 fields2
-              tr ("merge ×→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact $> Nothing
+              tr ("merge ×→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
             Just p2val -> do
               guard1.fed *> guard2.fed
               prop $ Record.union exact p2val
@@ -664,7 +652,7 @@ recordToRecordPUI p1 p2 = wrap ado
           case mp1 of
             Nothing -> do
               guard2.blocked $ starving fields2 fields1
-              tr ("merge ×→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact $> Nothing
+              tr ("merge ×→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
             Just p1val -> do
               guard1.fed *> guard2.fed
               prop $ Record.union p1val exact
@@ -721,14 +709,14 @@ resolveFor millis p = wrap ado
             for_ mFiber $ killFiber (error "Superseded by a newer emission")
             newFiber <- forkAff do
               delay millis
-              liftEffect $ void $ prop $ Left b
+              liftEffect $ prop $ Left b
             liftEffect $ Ref.write (Just newFiber) mFiberRef
           -- loop immediately with the retained state
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
               guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value."
-              tr "Resolving.resolve: loop branch withheld (state unprimed)" b $> Nothing
+              tr "Resolving.resolve: loop branch withheld (state unprimed)" b
             Just c -> prop $ Right c
     }
 
@@ -755,14 +743,14 @@ instance Functor m => Retaining (PUI m) where
             case mc of
               Nothing -> do
                 guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel (`unfolding` resumes it via its case; `announce` seeds it)."
-                tr "Retaining.retain: emission withheld (state unprimed)" b $> Nothing
+                tr "Retaining.retain: emission withheld (state unprimed)" b
               Just c -> prop $ Tuple b c
       }
 
 instance Applicative m => VariantToRecord (PUI m) where
   pempty = wrap $ pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop {}
+    , fromUser: \prop -> prop {}
     }
   variantToRecord = variantToRecordPUI
 
@@ -801,7 +789,7 @@ variantToRecordPUI p1 p2 = wrap ado
           case mp2 of
             Nothing -> do
               guard1.blocked $ starving fields1 fields2
-              tr ("merge +→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact $> Nothing
+              tr ("merge +→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
             Just p2val -> do
               guard1.fed *> guard2.fed
               prop $ Record.union exact p2val
@@ -812,7 +800,7 @@ variantToRecordPUI p1 p2 = wrap ado
           case mp1 of
             Nothing -> do
               guard2.blocked $ starving fields2 fields1
-              tr ("merge +→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact $> Nothing
+              tr ("merge +→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
             Just p1val -> do
               guard1.fed *> guard2.fed
               prop $ Record.union p1val exact
@@ -876,7 +864,7 @@ action' arr w = wrap ado
       let waitAndPropagate = void $ AVar.take oVar case _ of
             Left error -> pure unit -- TODO handle error
             Right o -> do
-              void $ prop o -- TODO really?
+              prop o
               waitAndPropagate
       in waitAndPropagate
     }
@@ -923,7 +911,6 @@ affAdapter f w = wrap ado
             t <- post b
             liftEffect $ prop t
           liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
-        pure Nothing
     }
 
 -- Oculars

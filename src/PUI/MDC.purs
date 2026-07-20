@@ -127,7 +127,7 @@ import Data.Default (class Default)
 import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field, pempty)
@@ -244,7 +244,7 @@ tabBarLeaf options = wrap do
     unless busy do
       for_ (options !! idx) \o -> do
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop o.value
+        for_ mProp \prop -> prop o.value
   pure
     { toUser: \a -> do
         for_ (findIndex (\o -> o.value == a) options) \idx -> do
@@ -253,7 +253,7 @@ tabBarLeaf options = wrap do
           Ref.write false busyRef
         -- leaf echo: the selection is always known, so always announce
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop a
+        for_ mProp \prop -> prop a
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -332,7 +332,7 @@ menuItemLeaf lbl = wrap do
   liftEffect $ listenNode node "click" do
     mProp <- Ref.read mPropRef
     mA <- Ref.read mARef
-    for_ mProp \prop -> for_ mA \a' -> void $ prop a'
+    for_ mProp \prop -> for_ mA \a' -> prop a'
   pure
     { toUser: \a' -> Ref.write (Just a') mARef
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -353,9 +353,7 @@ textFieldWith leaf { floatingLabel } =
   label >>> cl "mdc-text-field" >>> cl "mdc-text-field--filled" >>> init (\node -> do
       comp <- newComponent material.textField."MDCTextField" node
       useNativeValidation comp false
-      pure comp) mempty (\node validationStatus -> do
-        setValid node (isNothing validationStatus)
-        setContent node (fromMaybe "" validationStatus)) $ wrap do
+      pure comp) mempty mempty $ wrap do
     _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
     floating <- unwrap (span >>> cl "mdc-floating-label" >>> "id" := id >>> clDyn "mdc-floating-label--float-above" isJust $ staticText floatingLabel)
     w <- unwrap (field @l $ leaf # cl "mdc-text-field__input" # "aria-labelledby" := id # "aria-controls" := helperId # "aria-describedby" := helperId)
@@ -444,13 +442,13 @@ radioLeaf options =
     let render ma = for_ members \m -> setNodeChecked m.inputNode (Just m.value == ma)
     liftEffect $ for_ members \m -> listenNode m.inputNode "change" do
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop m.value
+      for_ mProp \prop -> prop m.value
     pure
       { toUser: \ma -> do
           render ma
           -- leaf echo (output is the bare selection, so only a `Just` echoes)
           mProp <- Ref.read mPropRef
-          for_ mProp \prop -> for_ ma \a' -> void $ prop a'
+          for_ mProp \prop -> for_ ma \a' -> prop a'
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
   where
@@ -481,13 +479,13 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
   liftEffect $ listenNode node "click" do
     selected <- getSelected comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop selected
+    for_ mProp \prop -> prop selected
   pure
     { toUser: \b -> do
         setSelected comp b
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop b
+        for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -543,18 +541,18 @@ sliderLeaf live config = wrap do
   when live $ liftEffect $ listen comp "MDCSlider:input" do
     v <- getSliderValue comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop v
+    for_ mProp \prop -> prop v
   liftEffect $ listen comp "MDCSlider:change" do
     v <- getSliderValue comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop v
+    for_ mProp \prop -> prop v
   pure
     { toUser: \v -> do
         setSliderValue comp v
         -- construction may have happened before styles applied; re-measure
         layout comp
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop v
+        for_ mProp \prop -> prop v
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -599,7 +597,7 @@ selectLeaf config options = wrap do
       idx <- getSelectedIndex comp
       for_ (options !! idx) \o -> do
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop o.value
+        for_ mProp \prop -> prop o.value
   pure
     { toUser: \ma -> do
         Ref.write true busyRef
@@ -609,7 +607,7 @@ selectLeaf config options = wrap do
         Ref.write false busyRef
         -- leaf echo (output is the bare selection, so only a `Just` echoes)
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> void $ prop a'
+        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -659,13 +657,13 @@ segmentedLeaf options =
     liftEffect $ for_ segments \seg -> listenNode seg.node "click" do
       render (Just seg.value)
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop seg.value
+      for_ mProp \prop -> prop seg.value
     pure
       { toUser: \ma -> do
           render ma
           -- leaf echo (output is the bare selection, so only a `Just` echoes)
           mProp <- Ref.read mPropRef
-          for_ mProp \prop -> for_ ma \a' -> void $ prop a'
+          for_ mProp \prop -> for_ ma \a' -> prop a'
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
@@ -691,14 +689,14 @@ chipLeaf lbl = wrap do
     Ref.write b stateRef
     render b
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop b
+    for_ mProp \prop -> prop b
   pure
     { toUser: \b -> do
         Ref.write b stateRef
         render b
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop b
+        for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -731,13 +729,13 @@ iconToggleLeaf config = wrap do
   liftEffect $ listen comp "MDCIconButtonToggle:change" do
     on' <- getIconToggleOn comp
     mProp <- Ref.read mPropRef
-    for_ mProp \prop -> void $ prop on'
+    for_ mProp \prop -> prop on'
   pure
     { toUser: \b -> do
         setIconToggleOn comp b
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop b
+        for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -910,7 +908,7 @@ cardActions = div >>> cl "mdc-card__actions"
 -- | echoing display there would close the dialog the moment it opens.
 dialog :: { title :: String } -> Ocular (PUI Web)
 dialog { title } content =
-  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a _ -> close a) $ wrap do
+  aside >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
     result <- unwrap $
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "dialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ wrap do
@@ -925,7 +923,7 @@ dialog { title } content =
 -- | which closes the dialog and flows on.
 simpleDialog :: { title :: String, confirm :: String } -> Ocular (PUI Web)
 simpleDialog { title, confirm } content =
-  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open (\a _ -> close a) $ wrap do
+  div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
     result <- unwrap $
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "dialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := "my-dialog-title" >>> "aria-describedby" := "my-dialog-content" $ Semigroupoid.do
@@ -1059,7 +1057,7 @@ dataTable config content =
     for_ config.columns \c -> void $ unwrap (th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText c)
     pure
       { toUser: mempty
-      , fromUser: \prop -> void $ prop {}
+      , fromUser: \prop -> prop {}
       }
 
 dataRow :: Ocular (PUI Web)
@@ -1187,6 +1185,4 @@ foreign import material
      }
 
 foreign import mdcTextFieldHelperText :: Node -> Effect Component
-foreign import setValid :: Component -> Boolean -> Effect Unit
-foreign import setContent :: Component -> String -> Effect Unit
 foreign import useNativeValidation :: Component -> Boolean -> Effect Unit

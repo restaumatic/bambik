@@ -28,7 +28,7 @@ Verification stack: `spago test` (value-level law tests over probes — merge un
 ### Core Type
 
 ```purescript
-newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effect PropagationStatus) -> Effect Unit })
+newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effect Unit) -> Effect Unit })
 ```
 
 - `i` - input type (data model to display)

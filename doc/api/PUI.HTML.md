@@ -294,7 +294,7 @@ img :: Ocular (PUI Web)
 #### `init`
 
 ``` purescript
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> Ocular (PUI Web)
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> Ocular (PUI Web)
 ```
 
 #### `input`

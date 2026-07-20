@@ -27,23 +27,11 @@ A trace of the 7GUIs counter (`display # completed`, then
 type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 ```
 
-#### `PropagationError`
-
-``` purescript
-type PropagationError = String
-```
-
-#### `PropagationStatus`
-
-``` purescript
-type PropagationStatus = Maybe PropagationError
-```
-
 #### `PUI`
 
 ``` purescript
 newtype PUI m i o
-  = PUI (m { fromUser :: (o -> Effect PropagationStatus) -> Effect Unit, toUser :: i -> Effect Unit })
+  = PUI (m { fromUser :: (o -> Effect Unit) -> Effect Unit, toUser :: i -> Effect Unit })
 ```
 
 ##### Instances

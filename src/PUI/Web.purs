@@ -61,7 +61,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import PUI (PropagationStatus, PUI)
+import PUI (PUI)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type

@@ -93,7 +93,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (PropagationStatus, PUI)
+import PUI (PUI)
 import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -113,7 +113,7 @@ text = wrap do
     { toUser: \s -> do
         setTextNodeValue node s.value
         prop <- Ref.read propRef
-        void $ prop {}
+        prop {}
     , fromUser: \prop -> Ref.write prop propRef
     }
 
@@ -132,12 +132,12 @@ input type_ = "type" := type_ $ wrap do
       focused <- isFocused node
       unless focused $ setValue node newa
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop newa
+      for_ mProp \prop -> prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
       void $ addEventListener "input" node $ const do
         value <- getValue node
-        void $ prop value
+        prop value
     }
 
 -- | `input` with the DOM events debounced **at the leaf**: keystrokes are
@@ -156,10 +156,10 @@ inputDebounced (Milliseconds millis) type_ = "type" := type_ $ wrap do
       focused <- isFocused node
       unless focused $ setValue node newa
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop newa
+      for_ mProp \prop -> prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
-      onInputDebounced node millis \value -> void $ prop value
+      onInputDebounced node millis \value -> prop value
     }
 
 -- | See `input` — same focus-guarded protocol.
@@ -173,12 +173,12 @@ textArea = wrap do
       focused <- isFocused node
       unless focused $ setValue node newa
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> void $ prop newa
+      for_ mProp \prop -> prop newa
     , fromUser: \prop -> do
       Ref.write (Just prop) mPropRef
       void $ addEventListener "input" node $ const do
         value <- getValue node
-        void $ prop value
+        prop value
     }
 
 
@@ -197,13 +197,13 @@ checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothi
             Ref.write newa aRef
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> void $ prop ma
+        for_ mProp \prop -> prop ma
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         void $ addEventListener "input" node $ const do
           checked <- getChecked node
           a <- Ref.read aRef
-          void $ prop (if checked then (Just a) else Nothing)
+          prop (if checked then (Just a) else Nothing)
     }
 
 radioButton :: forall a. Default a => PUI Web (Maybe a) a
@@ -221,12 +221,12 @@ radioButton = "type" := "radio" $ wrap do
             Ref.write newa aRef
         -- leaf echo (output is the bare selection, so only a `Just` echoes)
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \newa -> void $ prop newa
+        for_ mProp \prop -> for_ ma \newa -> prop newa
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         void $ addEventListener "change" node $ const do
           a <- Ref.read aRef
-          void $ prop a
+          prop a
     }
 
 -- TODO disable button after click?
@@ -247,7 +247,7 @@ button w = wrap do
         mA <- Ref.read mARef
         for_ mA \a -> do
           setAttribute node "disabled" "true" -- TODO re-think
-          void $ prop a
+          prop a
     }
 
 -- | Static text as the announcing record unit with a face (`{} → {}`):
@@ -264,7 +264,7 @@ staticText text = wrap do
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop {}
+    , fromUser: \prop -> prop {}
     }
 
 -- | See `staticText` — same announcing chrome typing.
@@ -275,7 +275,7 @@ staticHTML html = wrap do
   modify_ _ { sibling = newNode}
   pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop {}
+    , fromUser: \prop -> prop {}
     }
 
 -- | The void `hr` element as announcing chrome (`{} → {}`): a self-closing
@@ -290,7 +290,7 @@ hr = wrap do
   modify_ _ { sibling = newNode }
   pure
     { toUser: mempty
-    , fromUser: \prop -> void $ prop {}
+    , fromUser: \prop -> prop {}
     }
 
 -- UIOculars
@@ -312,7 +312,7 @@ cl name w = wrap do
     , fromUser: w'.fromUser
     }
 
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> PropagationStatus -> Effect Unit) -> Ocular (PUI Web)
+init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> Ocular (PUI Web)
 init nodeInitializer pre post w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -323,9 +323,8 @@ init nodeInitializer pre post w = wrap do
         w'.toUser new
     , fromUser: \prop -> do
       w'.fromUser \change -> do
-        status <- prop change
-        post ctx status
-        pure status
+        prop change
+        post ctx
     }
 
 div :: Ocular (PUI Web)
@@ -542,10 +541,10 @@ clicked w = wrap do
         w'.toUser i
     , fromUser: \prop -> do
         -- content is display-only: give its wiring a sink so echoes flow
-        w'.fromUser \_ -> pure Nothing
+        w'.fromUser \_ -> pure unit
         void $ addEventListener "click" node $ const do
           mi <- Ref.read iRef
-          for_ mi \i -> void $ prop i
+          for_ mi \i -> prop i
     }
 
 -- | Pointer-coordinate click emitter: emits the local/viewBox `{ x, y }` of a
@@ -559,8 +558,8 @@ onClickedXY content = wrap do
   pure
     { toUser: w'.toUser
     , fromUser: \prop -> do
-        w'.fromUser \_ -> pure Nothing
-        onClickXY node \x y -> void $ prop { x, y }
+        w'.fromUser \_ -> pure unit
+        onClickXY node \x y -> prop { x, y }
     }
 
 -- | The dynamic collection — the **runtime-sized homogeneous sequence merge**,
@@ -634,7 +633,7 @@ body ui = do
   node <- documentBody
   runDomInNode node do
     { fromUser } <- unwrap ui
-    liftEffect $ fromUser \_ -> pure Nothing
+    liftEffect $ fromUser \_ -> pure unit
 
 runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runWidgetInSelectedNode selector initial callback ui = do
@@ -644,9 +643,7 @@ runWidgetInSelectedNode selector initial callback ui = do
 runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runWidgetInNode node initial callback ui = runDomInNode node do
   { toUser, fromUser } <- unwrap ui
-  liftEffect $ fromUser \b -> do
-    callback b
-    pure Nothing
+  liftEffect $ fromUser callback
   void $ liftEffect $ toUser initial
 
 

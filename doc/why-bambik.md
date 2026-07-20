@@ -54,7 +54,7 @@ an application's architecture is readable off its types.
 ```purescript
 newtype PUI m i o = PUI (m
   { toUser   :: i -> Effect Unit
-  , fromUser :: (o -> Effect PropagationStatus) -> Effect Unit
+  , fromUser :: (o -> Effect Unit) -> Effect Unit
   })
 ```
 
