@@ -1,0 +1,15 @@
+{
+  // Keep the editor's file watcher off generated/dependency trees so it doesn't
+  // compete with `spago build -w` for the per-user inotify budget (ENOSPC:
+  // "addWatch: resource exhausted"). These are all gitignored build artifacts
+  // and deps — nothing here needs live change events.
+  "files.watcherExclude": {
+    "**/.spago/**": true,
+    "**/output/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.parcel-cache/**": true,
+    "**/demo/output/**": true,
+    "**/demo/**/bundle.js": true
+  }
+}
