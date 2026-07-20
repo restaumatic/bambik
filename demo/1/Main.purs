@@ -54,37 +54,28 @@ main =
         card { caption: "Customer" }
           ( RecordToRecord.do
               filledTextField { floatingLabel: "First name" } # asField @"firstName"
-              filledTextField { floatingLabel: "Last name" } # asField @"lastName"
-          ) # field @"customer"
+              filledTextField { floatingLabel: "Last name" } # asField @"lastName") # field @"customer"
         card { caption: "Fulfillment" }
           ( ( Semigroupoid.do
                 tabBar
                   [ { value: "dineIn", label: "Dine in" }
                   , { value: "takeaway", label: "Takeaway" }
                   , { value: "delivery", label: "Delivery" }
-                  ]
-                  # asField @"selected" # completed
-                filledTextField { floatingLabel: "Table" } # asField @"table"
-                  # provided # lcmap dineInPane # updates setTable
-                filledTextField { floatingLabel: "Time" } # asField @"time"
-                  # provided # lcmap takeawayPane # updates setTime
+                  ] # asField @"selected" # completed
+                filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # updates setTable
+                filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
-                    body1 (text # projection distanceLine # forField @"address")
-                ) # provided # lcmap deliveryPane # updates setAddress
-            ) # looped # dimap fulfillmentState fulfillmentCase
-          ) # field @"fulfillment"
+                    body1 (text # projection distanceLine # forField @"address")) # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton
                 [ { value: "cash", label: "Cash" }
                 , { value: "card", label: "Card" }
-                ]
-                # asField @"selected" # dimap methodState methodCase # field @"method"
+                ] # asField @"selected" # dimap methodState methodCase # field @"method"
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              body1 (text # projection paymentLine # forField @"method")
-          ) # field @"payment"
+              body1 (text # projection paymentLine # forField @"method")) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       body1 (text # projection summarize) # debounced # tapped
       RecordToVariant.do

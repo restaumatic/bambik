@@ -43,10 +43,8 @@ crud = do
               ( RecordToRecord.do
                   filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
                   filledTextField { floatingLabel: "Name" } # asField @"name"
-                  filledTextField { floatingLabel: "Surname" } # asField @"surname"
-              ) # completed
-              ( listOf { selected: _.selected } (text # projection _.label)
-              ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+                  filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
+              listOf { selected: _.selected } (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
@@ -55,9 +53,7 @@ crud = do
                   VariantToVariant.do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
-                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete"
-              ) # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })
-          ) # looped
+                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
       ) # with unit
 
 pick :: Int -> PeopleCatalogue -> PeopleCatalogue

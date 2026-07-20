@@ -23,8 +23,7 @@ payment =
           body2 (text # projection _.status) # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge
-              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate
-          ) # updates (match { charged: recordCharged })
+              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: recordCharged })
       ) # mvu unpaidOrder
 
 startCharge :: Payment -> { amount :: Number, attempt :: Int }

@@ -44,12 +44,9 @@ flightBooker =
               select { floatingLabel: "Flight type" }
                 [ { value: OneWay, label: "one-way flight" }
                 , { value: Return, label: "return flight" }
-                ]
-                # required # asField @"flightType"
-              filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start"
-          ) # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return"
-            # provided # lcmap returnLeg # updates setReturn
+                ] # required # asField @"flightType"
+              filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
       ) # mvu plannedTrip
       body1 (text # projection validationText) # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"

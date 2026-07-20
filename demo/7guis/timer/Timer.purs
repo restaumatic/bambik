@@ -29,8 +29,7 @@ timer =
                 staticText "s / "
                 text # projection show # forField @"duration"
                 staticText "s"
-              sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration"
-          ) # completed
+              sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration") # completed
           every tickPeriod tick
           button { label: "Reset", icon: "replay" } # updates (match { clicked: const <<< reset })
       ) # mvu tenSecondFreshTimer

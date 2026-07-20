@@ -37,23 +37,19 @@ signupForm =
               [ { value: "free", label: "Free plan" }
               , { value: "pro", label: "Pro plan" }
               , { value: "team", label: "Team plan" }
-              ]
-              # required # asField @"plan"
+              ] # required # asField @"plan"
             select { floatingLabel: "Country" }
               [ { value: "Poland", label: "Poland" }
               , { value: "Germany", label: "Germany" }
               , { value: "France", label: "France" }
               , { value: "Spain", label: "Spain" }
-              ]
-              # required # asField @"country"
+              ] # required # asField @"country"
             filledTextField { floatingLabel: "Email" } # asField @"email"
             tooltip { text: "You must accept the terms of service to sign up" } $
-              checkbox (staticText "I accept the terms of service") # asField @"terms"
-        ) # mvu newApplicant
+              checkbox (staticText "I accept the terms of service") # asField @"terms") # mvu newApplicant
         body2 (text # projection availabilityHint) # tapped
         subtitle2 (text # projection validationSummary) # tapped
-        button { label: "Sign up", icon: "person_add" } # asCase @"signUp"
-          # rmap (match { signUp: register })
+        button { label: "Sign up", icon: "person_add" } # asCase @"signUp" # rmap (match { signUp: register })
         VariantToRecord.do
           snackbar # forCase @"registered"
           snackbar # forCase @"rejected"

@@ -25,10 +25,8 @@ weather =
     elevation20 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              ( listOf { selected: _.shown } (text # projection _.city)
-              ) # toCase @"cityPicked" # lcmap forecastRequests
-              indeterminateCircularProgress # action fetchReport # onCase @"cityPicked"
-          ) # updates (match { reportServed: rememberReport })
+              listOf { selected: _.shown } (text # projection _.city) # toCase @"cityPicked" # lcmap forecastRequests
+              indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
           headline1 (text # projection temperatureLine) # tapped
           headline5 (text # projection conditionLine) # tapped
           body1 (text # projection detailsLine) # tapped
@@ -36,9 +34,7 @@ weather =
           ( Semigroupoid.do
               iconButton { icon: "info", label: "About this dashboard" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
-                ( body1 (text # projection serviceStory) # tapped
-                ) # onCase @"clicked" # toCase @"dashboardResumed"
-          ) # updates (match { dashboardResumed: const identity })
+                ( body1 (text # projection serviceStory) # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: const identity })
       ) # mvu warsawBulletin
 
 type Report =

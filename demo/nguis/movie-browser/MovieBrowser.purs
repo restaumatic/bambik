@@ -23,8 +23,7 @@ movieBrowser =
           chipSet ( RecordToRecord.do
               filterChip { label: "Classic" } # asField @"classic"
               filterChip { label: "Cult" } # asField @"cult"
-              filterChip { label: "Oscar" } # asField @"oscar"
-          ) # completed
+              filterChip { label: "Oscar" } # asField @"oscar") # completed
           elevation1 (subtitle1 (text # projection favoritesLine)) # tapped
           ul >>> cl "mdc-deprecated-list" $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
@@ -32,10 +31,7 @@ movieBrowser =
                     span (text # forValue # forField @"title")
                     span (text # projection show # forField @"year")
                     span (text # projection ratingLine # forField @"rating")
-                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite"
-                ) # completed
-            )
-            # foreach _.title # toCase @"favored" # lcmap visibleMovies # updates (match { favored: markFavorite })
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach _.title # toCase @"favored" # lcmap visibleMovies # updates (match { favored: markFavorite })
       ) # mvu movieCatalogue
 
 data Category = All | Action | Drama | Comedy

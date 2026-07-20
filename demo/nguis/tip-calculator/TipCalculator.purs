@@ -19,12 +19,10 @@ tipCalculator =
     elevation20 $
       card { caption: "Tip Calculator" } $ ( Semigroupoid.do
           filledTextField { floatingLabel: "Bill amount" } # asField @"amount" # completed
-          slider { label: "Tip percentage", min: minTipPercent, max: maxTipPercent, step: tipPercentStep }
-            # asField @"tipPercent" # completed
+          slider { label: "Tip percentage", min: minTipPercent, max: maxTipPercent, step: tipPercentStep } # asField @"tipPercent" # completed
           body2 (text # projection tipPercentLine) # tapped
           body2 (text # projection peopleLine) # tapped
-          slider { label: "Split between", min: minPeople, max: maxPeople, step: peopleStep }
-            # asField @"people" # completed
+          slider { label: "Split between", min: minPeople, max: maxPeople, step: peopleStep } # asField @"people" # completed
           body2 (text # projection tipAmountLine) # tapped
           body2 (text # projection totalLine) # tapped
           body2 (text # projection perPersonLine) # tapped

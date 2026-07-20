@@ -35,14 +35,11 @@ reorder =
                 button { label: "Shuffle", icon: "shuffle" } # asCase @"shuffle"
               VariantToVariant.do
                 silence # action rotateAction # onCase @"rotate"
-                silence # action shuffleAction # onCase @"shuffle"
-          ) # updates (match { reordered: setOrder })
+                silence # action shuffleAction # onCase @"shuffle") # updates (match { reordered: setOrder })
           ul
             ( ( li >>> "style" := "display: flex; gap: 10px; align-items: center; list-style: none; margin: 6px 0;" $ RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  span (text # lcmap (\(t :: Track) -> { value: t.title }))
-              ) # foreach _.id
-            ) # lcmap _.order # displayed
+                  span (text # lcmap (\(t :: Track) -> { value: t.title }))) # foreach _.id) # lcmap _.order # displayed
       ) # mvu openingSetlist
 
 rotateAction :: Playlist -> Aff [ reordered :: Array Track ]

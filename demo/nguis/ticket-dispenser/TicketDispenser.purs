@@ -26,9 +26,7 @@ ticketDispenser =
               button { label: "Take a number" } # asCase @"take"
               ( Semigroupoid.do
                   seeded firstTicket
-                  retain identity # dimap issue nextTicket
-              ) # unfolding @"resume"
-          ) # updates const
+                  retain identity # dimap issue nextTicket) # unfolding @"resume") # updates const
       ) # mvu emptyQueue
 
 issue ::

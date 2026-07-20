@@ -32,21 +32,15 @@ circleDrawer =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter"
-            # provided # lcmap selectedDiameter # updates adjustDiameter
+          sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter" # provided # lcmap selectedDiameter # updates adjustDiameter
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY
                     ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
-                          >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # lcmap (const {})
-                      ) # foreach _.key
-                        # lcmap (\(m :: Canvas) -> mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)
-                    ) # toCase @"clicked"
-                )
+                          >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # lcmap (const {})) # foreach _.key # lcmap (\(m :: Canvas) -> mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)) # toCase @"clicked")
               cardActions $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
-                button { label: "Redo", icon: "redo" } # asCase @"redo"
-          ) # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
+                button { label: "Redo", icon: "redo" } # asCase @"redo") # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
       ) # mvu emptyCanvas
 
 selectOrAddCircle :: { x :: Number, y :: Number } -> Canvas -> Canvas

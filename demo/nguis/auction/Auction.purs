@@ -22,8 +22,7 @@ auction =
           ( Semigroupoid.do
               seeded noBids
               lcmap raiseTop identity
-              headline6 (text # projection topLine) # tapped
-          ) # feedback
+              headline6 (text # projection topLine) # tapped) # feedback
       ) # mvu openingBid
 
 raiseTop :: { bid :: Number, top :: Number } -> { bid :: Number, top :: Number }

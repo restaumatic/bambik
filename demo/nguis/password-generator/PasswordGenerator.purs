@@ -38,15 +38,13 @@ passwordGenerator =
               toggleSwitch { label: "Uppercase letters" } # asField @"uppercase"
               toggleSwitch { label: "Lowercase letters" } # asField @"lowercase"
               toggleSwitch { label: "Digits" } # asField @"digits"
-              toggleSwitch { label: "Symbols" } # asField @"symbols"
-          ) # completed
+              toggleSwitch { label: "Symbols" } # asField @"symbols") # completed
           body2 (text # projection strengthLine) # tapped
           div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
             (text # projection _.password) # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"generate"
-              indeterminateLinearProgress # action samplePassword # onCase @"generate"
-          ) # updates (match { generated: rememberPassword })
+              indeterminateLinearProgress # action samplePassword # onCase @"generate") # updates (match { generated: rememberPassword })
       ) # mvu strongMixRecipe
 
 samplePassword :: PasswordRecipe -> Aff [ generated :: String ]

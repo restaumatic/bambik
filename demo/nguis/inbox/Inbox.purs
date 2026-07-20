@@ -22,32 +22,26 @@ inbox =
     elevation20 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
           caption (text # projection unreadLine) # completed
-          listOf { selected: _.attention } (span (text # projection _.line))
-            # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
+          listOf { selected: _.attention } (span (text # projection _.line)) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headline6 (text # projection subjectLine)
                   body2 (text # projection senderLine)
-                  body1 (text # projection bodyLine)
-              ) # tapped
-              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested"
-          ) # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
+                  body1 (text # projection bodyLine)) # tapped
+              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
-                  button { label: "Keep" } # asCase @"kept"
-              ) # provided # lcmap confirmingDelete
+                  button { label: "Keep" } # asCase @"kept") # provided # lcmap confirmingDelete
               VariantToVariant.do
                 banner # forCase @"emptied" # lcmap (match { emptied: .emptied <<< emptiedNote }) # tapped
-                (identity :: PUI Web Mailbox Mailbox) # onCase @"kept" # toCase @"kept"
-          ) # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
+                (identity :: PUI Web Mailbox Mailbox) # onCase @"kept" # toCase @"kept") # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
           ( RecordToVariant.do
               fab { icon: "edit", label: "Compose" } # asCase @"compose"
               menu { label: "Sort" } RecordToVariant.do
                 menuItem { label: "By sender" } # asCase @"bySender"
                 menuItem { label: "By subject" } # asCase @"bySubject"
-                menuItem { label: "Unread first" } # asCase @"unreadFirst"
-          ) # updates (match { compose: const <<< composeMessage, bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
+                menuItem { label: "Unread first" } # asCase @"unreadFirst") # updates (match { compose: const <<< composeMessage, bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
       ) # mvu mondayMail
 
 type Message = { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }

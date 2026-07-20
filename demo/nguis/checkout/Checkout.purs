@@ -43,8 +43,7 @@ checkout =
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtPayment
-                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment
-          ) # folding @"next" # updates (match { placed: recordPlaced })
+                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" # updates (match { placed: recordPlaced })
           body2 (text # projection _.confirmation) # tapped
       ) # mvu freshOrder
 

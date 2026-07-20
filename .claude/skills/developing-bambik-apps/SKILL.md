@@ -313,6 +313,23 @@ honor it, and changes to either side keep the two in sync:
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing** —
   `card { caption: "CRUD" } $ ... # asField @"prefix"`.
+- **Closing parens and trailing `#` chains never start a line.** A
+  trailing chain is written on one line (never one `#` per line), and it
+  rides at the end of the widget's last content line — close the paren
+  inline and continue: `... # foreach identity) # forField @"tags"`.
+  When a bracketed widget nests, the enclosing levels' closers and chains
+  cascade onto that same final line
+  (`... # foreach _.name) # forField @"dishes") # foreach _.name) # forField @"courses"`).
+  The one exception is the app-level closer — the demo's last UI line
+  stays `) # mvu seed` / `) # with seed` on its own line.
+  **Precedence caveat:** `#` (`infixl 1`) binds tighter than `$`
+  (`infixr 0`), so where the chain must apply to the *whole element* —
+  `foreach` multiplying an ocular-wrapped widget — the paren must open
+  *before* the ocular (`( section >>> cl "course" $ RecordToRecord.do`),
+  never after its `$` (`section >>> … $ (RecordToRecord.do` puts the
+  chain inside the element: one section around the collection instead of
+  a section per item). `lcmap`-only adopters (`forField`, `projection`)
+  are safe either side of a shape-preserving ocular.
 - **Lean on MDC2's defaults; write no custom chrome.** Reach for a stock
   component and its built-in look before any `attr "style"`/`"style" :=`.
   MDC surfaces (`card`, `elevation*`), typography (`headline*`/`body*`/
