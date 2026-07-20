@@ -389,8 +389,8 @@ gate-withheld emissions (the otherwise-invisible ones) — as
    `npm run deploy-demo-*`, and check
    `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP).
 6. Combinator contracts (gating, priming, echo protocols, container
-   ownership) are stated in the module headers and browsable in
-   **doc/api/** — regenerate with `npm run api-docs` after changing any
-   doc comment. At runtime, a starving knowledge gate warns after 3s
-   (naming the missing fields and the fix); the full emission trace is
+   ownership) are stated in the module headers — `npm run api-docs`
+   renders them browsable into `generated-docs/md/` (gitignored). At
+   runtime, a starving knowledge gate warns after 3s (naming the missing
+   fields and the fix); the full emission trace is
    `window.__bambikTrace = true`.
