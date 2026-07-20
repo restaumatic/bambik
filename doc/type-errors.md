@@ -36,14 +36,16 @@ Record-merge output fields are **owned**: exactly one producer per field
 handler (`OwnedVariantInputs`). Giving two operands the same `asField`
 label (or two handlers the same case) is caught by the owned sides'
 `DisjointLabels` detector, which fails with a custom error naming the
-duplicated label, spanned at an offending operand line:
+duplicated label **and both operands' complete label sets**, spanned at an
+offending operand line:
 
 ```
-at demo/7guis/counter/Counter.purs:16:9 - 16:68
+at demo/7guis/crud/Crud.purs:44:19 - 44:99
 
   Custom error:
 
-    Two merge operands own the label "name".
+    Two merge operands own the label "surname".
+    One operand owns { surname }, the other { name, surname }.
     On an owned merge side each label belongs to exactly one operand: every
     record-output field has ONE producer, every variant-input case has ONE
     handler.
@@ -51,8 +53,21 @@ at demo/7guis/counter/Counter.purs:16:9 - 16:68
     block. (doc/type-errors.md #2)
 ```
 
+The same defect can also surface *within* one operand's inferred row (the
+`do` block's tail unified against a pinned total row); the within-row
+detector then renders the whole offending row:
+
+```
+  Custom error:
+
+    A merge operand's row owns the label "surname" twice.
+    The row is { surname, surname }.
+    ...
+```
+
 **Read it as:** exactly what it says — the named label has two producers
-(or two handlers); remove or rename one of them.
+(or two handlers); the rendered label sets tell you which operands to look
+at. Remove or rename one of them.
 
 ## 3. Missing (or extra) case handler
 
@@ -71,6 +86,17 @@ with type
 **Read it as:** the left row lists a case that is emitted but not handled;
 the right row is what your handler record covers. Add the missing case (or
 remove the stale emitter).
+
+## Runtime sibling: gate starvation
+
+Not every wiring mistake is a type error. A knowledge gate that is never
+primed (a `looped`/`feedback`/`folding` state channel with no seed, a merge
+operand that never emits) typecheck fine and renders as a **blank screen**.
+Every gate carries a starvation watchdog for exactly this: if it withholds
+and is never fed within 3 seconds, one `console.warn` names the gate, the
+missing fields (for record merges), and the fix (`with`/`announce`/
+`seeded`). The full emission trace is `window.__bambikTrace = true`; the
+warnings alone need no flag (opt out: `window.__bambikNoWarn = true`).
 
 ## Rules of thumb
 

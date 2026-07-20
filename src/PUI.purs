@@ -68,7 +68,8 @@ import Data.Profunctor.Row.RecordToVariant (asCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
 import Data.Profunctor.Row (widenRecordInput) as Adopters
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
-import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
+import Data.String (joinWith)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
@@ -96,11 +97,44 @@ import Record (union) as Record
 -- | emission.
 foreign import traceEnabled :: Effect Boolean
 foreign import traceImpl :: forall a. String -> a -> Effect Unit
+foreign import diagnosticsEnabled :: Effect Boolean
+foreign import warnImpl :: String -> Effect Unit
 
 tr :: forall a. String -> a -> Effect Unit
 tr tag a = do
   on <- traceEnabled
   when on $ traceImpl tag a
+
+-- | One-shot **starvation watchdog** for a knowledge gate. Every gated
+-- | combinator withholds what it cannot yet complete — correct, but
+-- | *silent*: an unprimed gate renders as a blank screen with no
+-- | diagnostic. The guard turns that into a self-explaining failure:
+-- | `blocked msg` (called on each withheld emission or input) arms a timer
+-- | on its first call; if the gate hasn't opened (`fed`) within 3 seconds,
+-- | a single console warning prints `msg`, naming the gate and what it is
+-- | waiting for. Fires at most once per gate instance; browser-only
+-- | (silent under Node), opt out with `window.__bambikNoWarn = true`.
+gateGuard :: Effect { blocked :: String -> Effect Unit, fed :: Effect Unit }
+gateGuard = do
+  fedRef <- Ref.new false
+  armedRef <- Ref.new false
+  pure
+    { blocked: \msg -> do
+        enabled <- diagnosticsEnabled
+        armed <- Ref.read armedRef
+        when (enabled && not armed) do
+          Ref.write true armedRef
+          launchAff_ do
+            delay (Milliseconds 3000.0)
+            liftEffect do
+              fed <- Ref.read fedRef
+              unless fed $ warnImpl msg
+    , fed: Ref.write true fedRef
+    }
+
+renderFieldNames :: Array String -> String
+renderFieldNames [] = "{}"
+renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 
 -- could it be: newtype PUI m i o = PUI ((o -> Effect Unit) -> m (i -> Effect Unit))
 newtype PUI m i o = PUI (m
@@ -135,30 +169,38 @@ instance Functor m => Strong (PUI m) where
       -- statement: a statement-position let is evaluated once per PUI
       -- value, so every `foreach` row would share one ref
       let lastab = unsafePerformEffect $ Ref.new Nothing
+          guard = unsafePerformEffect gateGuard
       in
       { toUser: \ab -> do
+          guard.fed
           Ref.write (Just ab) lastab
           p'.toUser $ fst ab
       , fromUser: \prop ->
           p'.fromUser \b -> do
             mab <- Ref.read lastab
             case mab of
-              Nothing -> tr "Strong.first: emission withheld (pair state unknown)" b $> Nothing
+              Nothing -> do
+                guard.blocked "Strong.first: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value."
+                tr "Strong.first: emission withheld (pair state unknown)" b $> Nothing
               Just prevab -> prop (Tuple b (snd prevab))
       }
   second p = wrap ado
     p' <- unwrap p
     in
       let lastab = unsafePerformEffect $ Ref.new Nothing
+          guard = unsafePerformEffect gateGuard
       in
       { toUser: \ab -> do
+          guard.fed
           Ref.write (Just ab) lastab
           p'.toUser $ snd ab
       , fromUser: \prop ->
           p'.fromUser \b -> do
             mab <- Ref.read lastab
             case mab of
-              Nothing -> tr "Strong.second: emission withheld (pair state unknown)" b $> Nothing
+              Nothing -> do
+                guard.blocked "Strong.second: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value."
+                tr "Strong.second: emission withheld (pair state unknown)" b $> Nothing
               Just prevab -> prop (Tuple (fst prevab) b)
       }
 
@@ -204,14 +246,18 @@ instance Functor m => Costrong (PUI m) where
     p' <- unwrap p
     in
       let cRef = unsafePerformEffect $ Ref.new Nothing
+          guard = unsafePerformEffect gateGuard
       in
       { toUser: \a -> do
           mc <- Ref.read cRef
           case mc of
-            Nothing -> tr "Costrong.unfirst: input withheld (state unprimed)" a
+            Nothing -> do
+              guard.blocked "Costrong.unfirst (feedback): inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Seed the loop from inside its chain (`with`/`announce`/`seeded`)."
+              tr "Costrong.unfirst: input withheld (state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
           p'.fromUser \(Tuple b c) -> do
+            guard.fed
             Ref.write (Just c) cRef
             prop b
       }
@@ -219,14 +265,18 @@ instance Functor m => Costrong (PUI m) where
     p' <- unwrap p
     in
       let aRef = unsafePerformEffect $ Ref.new Nothing
+          guard = unsafePerformEffect gateGuard
       in
       { toUser: \b -> do
           ma <- Ref.read aRef
           case ma of
-            Nothing -> tr "Costrong.unsecond: input withheld (state unprimed)" b
+            Nothing -> do
+              guard.blocked "Costrong.unsecond (feedback): inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Seed the loop from inside its chain (`with`/`announce`/`seeded`)."
+              tr "Costrong.unsecond: input withheld (state unprimed)" b
             Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
           p'.fromUser \(Tuple a c) -> do
+            guard.fed
             Ref.write (Just a) aRef
             prop c
       }
@@ -270,16 +320,20 @@ instance Functor m => Coresolving (PUI m) where
       let aRef = unsafePerformEffect $ Ref.new Nothing
           cRef = unsafePerformEffect $ Ref.new Nothing
           busyRef = unsafePerformEffect $ Ref.new false
+          guard = unsafePerformEffect gateGuard
       in
       { toUser: \a -> do
           Ref.write (Just a) aRef
           mc <- Ref.read cRef
           case mc of
-            Nothing -> tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
+            Nothing -> do
+              guard.blocked "Coresolving.coresolve (folding): inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Announce an initial state (`announce`/`seeded`) in front of the fold."
+              tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop -> p'.fromUser case _ of
           Left b -> prop b
           Right c -> do
+            guard.fed
             tr "Coresolving.coresolve: fold step, re-feeding" c
             Ref.write (Just c) cRef
             busy <- Ref.read busyRef
@@ -431,8 +485,10 @@ updates :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
 updates handler events = wrap $ unwrap events <#> \evts ->
   let sRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
+      guard = unsafePerformEffect gateGuard
   in
     { toUser: \s -> do
+        guard.fed
         Ref.write (Just s) sRef
         evts.toUser s
         mProp <- Ref.read mPropRef
@@ -442,7 +498,9 @@ updates handler events = wrap $ unwrap events <#> \evts ->
         evts.fromUser \e -> do
           ms <- Ref.read sRef
           case ms of
-            Nothing -> tr "updates: event withheld (no retained state yet)" e $> Nothing
+            Nothing -> do
+              guard.blocked "updates: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
+              tr "updates: event withheld (no retained state yet)" e $> Nothing
             Just s -> do
               tr "updates: folding event" e
               let s' = handler e s
@@ -555,36 +613,62 @@ instance Applicative m => RecordToRecord (PUI m) where
     { toUser: mempty
     , fromUser: \prop -> void $ prop {}
     }
-  recordToRecord p1 p2 = wrap ado
-    p1' <- unwrap (widenRecordInput p1)
-    p2' <- unwrap (widenRecordInput p2)
+  recordToRecord = recordToRecordPUI
+
+-- Hoisted so the merge's `RowList` variables are in scope: the starvation
+-- diagnostics reify each side's field names (`rowLabels`, a
+-- `MergeableRecords` superclass) to say exactly which sibling fields a
+-- withholding gate is still waiting for.
+recordToRecordPUI :: forall m i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
+  Applicative m =>
+  SharedRecordInputs i1 i2 i i12 i1x i2x =>
+  OwnedRecordOutputs o1 o2 o o1l o2l =>
+  PUI m { | i1 } { | o1 } -> PUI m { | i2 } { | o2 } -> PUI m { | i } { | o }
+recordToRecordPUI p1 p2 = wrap ado
+  p1' <- unwrap (widenRecordInput p1)
+  p2' <- unwrap (widenRecordInput p2)
+  in
+    let p1Last = unsafePerformEffect $ Ref.new Nothing
+        p2Last = unsafePerformEffect $ Ref.new Nothing
+        guard1 = unsafePerformEffect gateGuard
+        guard2 = unsafePerformEffect gateGuard
+        fields1 = renderFieldNames (rowLabels (Proxy @o1l))
+        fields2 = renderFieldNames (rowLabels (Proxy @o2l))
+        starving mine sibling = "×→× record merge: emissions dropped for 3s — the operand producing " <> mine
+          <> " keeps emitting, but its sibling operand producing " <> sibling
+          <> " never has, so the merged record cannot complete. Prime the silent operand (`with`/`announce`/`seeded`) or check that it renders at all."
     in
-      let p1Last = unsafePerformEffect $ Ref.new Nothing
-          p2Last = unsafePerformEffect $ Ref.new Nothing
-      in
-      { toUser: \new -> do
-            p1'.toUser new
-            p2'.toUser new
-      , fromUser: \prop -> do
-          p1'.fromUser \partial -> do
-            -- runtime-exactness: trim to the declared output row, so stale
-            -- runtime copies of sibling fields (echo wires, lens rebuilds
-            -- over the widening-coerced input) never shadow the other
-            -- side's genuine contribution in the left-biased union
-            let exact = exactRow partial
-            let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
-            let mp2 = unsafePerformEffect $ Ref.read p2Last
-            case mp2 of
-              Nothing -> tr "merge ×→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
-              Just p2val -> prop $ Record.union exact p2val
-          p2'.fromUser \partial -> do
-            let exact = exactRow partial
-            let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
-            let mp1 = unsafePerformEffect $ Ref.read p1Last
-            case mp1 of
-              Nothing -> tr "merge ×→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
-              Just p1val -> prop $ Record.union p1val exact
-      }
+    { toUser: \new -> do
+          p1'.toUser new
+          p2'.toUser new
+    , fromUser: \prop -> do
+        p1'.fromUser \partial -> do
+          -- runtime-exactness: trim to the declared output row, so stale
+          -- runtime copies of sibling fields (echo wires, lens rebuilds
+          -- over the widening-coerced input) never shadow the other
+          -- side's genuine contribution in the left-biased union
+          let exact = exactRow partial
+          let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
+          let mp2 = unsafePerformEffect $ Ref.read p2Last
+          case mp2 of
+            Nothing -> do
+              guard1.blocked $ starving fields1 fields2
+              tr ("merge ×→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact $> Nothing
+            Just p2val -> do
+              guard1.fed *> guard2.fed
+              prop $ Record.union exact p2val
+        p2'.fromUser \partial -> do
+          let exact = exactRow partial
+          let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
+          let mp1 = unsafePerformEffect $ Ref.read p1Last
+          case mp1 of
+            Nothing -> do
+              guard2.blocked $ starving fields2 fields1
+              tr ("merge ×→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact $> Nothing
+            Just p1val -> do
+              guard1.fed *> guard2.fed
+              prop $ Record.union p1val exact
+    }
 
 instance Applicative m => RecordToVariant (PUI m) where
   pempty = silence
@@ -622,8 +706,10 @@ resolveFor millis p = wrap ado
   in
     let cRef = unsafePerformEffect $ Ref.new Nothing
         mFiberRef = unsafePerformEffect $ Ref.new Nothing
+        guard = unsafePerformEffect gateGuard
     in
     { toUser: \(Tuple a c) -> do
+        guard.fed
         Ref.write (Just c) cRef
         p'.toUser a
     , fromUser: \prop ->
@@ -640,7 +726,9 @@ resolveFor millis p = wrap ado
           -- loop immediately with the retained state
           mc <- Ref.read cRef
           case mc of
-            Nothing -> tr "Resolving.resolve: loop branch withheld (state unprimed)" b $> Nothing
+            Nothing -> do
+              guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value."
+              tr "Resolving.resolve: loop branch withheld (state unprimed)" b $> Nothing
             Just c -> prop $ Right c
     }
 
@@ -654,15 +742,20 @@ instance Functor m => Retaining (PUI m) where
     p' <- unwrap p
     in
       let cRef = unsafePerformEffect $ Ref.new Nothing
+          guard = unsafePerformEffect gateGuard
       in
       { toUser: case _ of
           Left a -> p'.toUser a
-          Right c -> Ref.write (Just c) cRef
+          Right c -> do
+            guard.fed
+            Ref.write (Just c) cRef
       , fromUser: \prop ->
           p'.fromUser \b -> do
             mc <- Ref.read cRef
             case mc of
-              Nothing -> tr "Retaining.retain: emission withheld (state unprimed)" b $> Nothing
+              Nothing -> do
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel (`unfolding` resumes it via its case; `announce` seeds it)."
+                tr "Retaining.retain: emission withheld (state unprimed)" b $> Nothing
               Just c -> prop $ Tuple b c
       }
 
@@ -671,35 +764,59 @@ instance Applicative m => VariantToRecord (PUI m) where
     { toUser: mempty
     , fromUser: \prop -> void $ prop {}
     }
-  variantToRecord p1 p2 = wrap ado
-    p1' <- unwrap p1
-    p2' <- unwrap p2
+  variantToRecord = variantToRecordPUI
+
+-- Hoisted like `recordToRecordPUI`, for the same reason: the starvation
+-- diagnostics name the sibling fields a withholding gate is waiting for.
+variantToRecordPUI :: forall m i1 i1l i2 i2l o1 o2 i o o1l o2l.
+  Applicative m =>
+  OwnedVariantInputs i1 i2 i i1l i2l =>
+  OwnedRecordOutputs o1 o2 o o1l o2l =>
+  PUI m [ | i1 ] { | o1 } -> PUI m [ | i2 ] { | o2 } -> PUI m [ | i ] { | o }
+variantToRecordPUI p1 p2 = wrap ado
+  p1' <- unwrap p1
+  p2' <- unwrap p2
+  in
+    -- gate like `recordToRecord`: hold propagation until both sides' fields
+    -- are known (each operand emits its complete sub-record)
+    let p1Last = unsafePerformEffect $ Ref.new Nothing
+        p2Last = unsafePerformEffect $ Ref.new Nothing
+        guard1 = unsafePerformEffect gateGuard
+        guard2 = unsafePerformEffect gateGuard
+        fields1 = renderFieldNames (rowLabels (Proxy @o1l))
+        fields2 = renderFieldNames (rowLabels (Proxy @o2l))
+        starving mine sibling = "+→× status merge: emissions dropped for 3s — the operand producing " <> mine
+          <> " keeps emitting, but its sibling operand producing " <> sibling
+          <> " never has, so the merged record cannot complete. Prime the silent operand (`with`/`announce`/`seeded`) or check that it renders at all."
     in
-      -- gate like `recordToRecord`: hold propagation until both sides' fields
-      -- are known (each operand emits its complete sub-record)
-      let p1Last = unsafePerformEffect $ Ref.new Nothing
-          p2Last = unsafePerformEffect $ Ref.new Nothing
-      in
-      { toUser: \v -> do
-          for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
-          for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
-      , fromUser: \prop -> do
-          p1'.fromUser \partial -> do
-            -- runtime-exactness trim, as in `recordToRecord`
-            let exact = exactRow partial
-            let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
-            let mp2 = unsafePerformEffect $ Ref.read p2Last
-            case mp2 of
-              Nothing -> tr "merge +→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
-              Just p2val -> prop $ Record.union exact p2val
-          p2'.fromUser \partial -> do
-            let exact = exactRow partial
-            let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
-            let mp1 = unsafePerformEffect $ Ref.read p1Last
-            case mp1 of
-              Nothing -> tr "merge +→×: contribution withheld (other operand not heard from yet)" exact $> Nothing
-              Just p1val -> prop $ Record.union p1val exact
-      }
+    { toUser: \v -> do
+        for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
+        for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
+    , fromUser: \prop -> do
+        p1'.fromUser \partial -> do
+          -- runtime-exactness trim, as in `recordToRecord`
+          let exact = exactRow partial
+          let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
+          let mp2 = unsafePerformEffect $ Ref.read p2Last
+          case mp2 of
+            Nothing -> do
+              guard1.blocked $ starving fields1 fields2
+              tr ("merge +→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact $> Nothing
+            Just p2val -> do
+              guard1.fed *> guard2.fed
+              prop $ Record.union exact p2val
+        p2'.fromUser \partial -> do
+          let exact = exactRow partial
+          let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
+          let mp1 = unsafePerformEffect $ Ref.read p1Last
+          case mp1 of
+            Nothing -> do
+              guard2.blocked $ starving fields2 fields1
+              tr ("merge +→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact $> Nothing
+            Just p1val -> do
+              guard1.fed *> guard2.fed
+              prop $ Record.union p1val exact
+    }
 
 instance Applicative m => VariantToVariant (PUI m) where
   pempty = silence
