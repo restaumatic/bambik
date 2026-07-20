@@ -65,9 +65,8 @@ detector then renders the whole offending row:
     ...
 ```
 
-**Read it as:** exactly what it says — the named label has two producers
-(or two handlers); the rendered label sets tell you which operands to look
-at. Remove or rename one of them.
+Unlike #1 and #3, this error is self-explanatory — this section exists as
+its citation target and for the two-operand vs within-row distinction.
 
 ## 3. Missing (or extra) case handler
 
