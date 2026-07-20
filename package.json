@@ -4,6 +4,8 @@
   "scripts": {
     "build": "spago build -w",
     "dev": "node scripts/dev.mjs",
+    "smoke": "node scripts/smoke/run.mjs",
+    "api-docs": "spago docs --format markdown",
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "demo-1": "parcel -p 1234 demo/1/index.html & spago bundle-app --main Main --to demo/1/bundle.js -w -l --path demo/1/**/*.purs",
     "bundle-demo-1": "spago bundle-app --minify --main Main --to demo/1/bundle.js --path \"demo/1/**/*.purs\"",

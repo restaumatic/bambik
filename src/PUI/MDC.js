@@ -19,22 +19,6 @@ export function useNativeValidation(comp) {
   }
 }
 
-export function setValid(comp) {
-  return function (valid) {
-    return function () {
-      comp.valid = valid;
-    }
-  }
-}
-
-export function setContent(comp) {
-  return function (content) {
-    return function () {
-      comp.helperTextContent = content;
-    }
-  }
-}
-
 // newComponent :: ComponentClass -> Node -> Effect Component
 export function newComponent(cls) {
   return function (node) {

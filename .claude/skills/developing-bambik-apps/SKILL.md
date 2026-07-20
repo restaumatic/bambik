@@ -378,11 +378,19 @@ gate-withheld emissions (the otherwise-invisible ones) — as
    time. Tests: `spago test`.
 3. Interactive dev loop: `npm run dev <demo>` serves the demo at
    `http://127.0.0.1:1234/` with auto-rebuild and browser auto-reload.
-4. Bundle with `npm run bundle-demo-7guis` (or `bundle-demo-1|2|nguis`;
+4. Bundle with `npm run bundle-demo-7guis` (or `bundle-demo-1|nguis`;
    7guis demos are named modules entered at their own function, bundled
    via scripts/bundle-7guis.mjs — `spago bundle-app` can only call
    `Main.main`).
-5. Verify behavior with the headless-Chrome CDP harness (bundle +
-   http.server + scratchpad cdp.mjs), commit to main, deploy with
+5. Verify behavior with `npm run smoke` (scripts/smoke/ — the committed
+   headless-Chrome CDP harness; add a tests/*.mjs file for a new demo,
+   filter with `npm run smoke -- <name>`; ad-hoc checks beyond it reuse
+   its scripts/smoke/cdp.mjs session helper), commit to main, deploy with
    `npm run deploy-demo-*`, and check
    `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP).
+6. Combinator contracts (gating, priming, echo protocols, container
+   ownership) are stated in the module headers — `npm run api-docs`
+   renders them browsable into `generated-docs/md/` (gitignored). At
+   runtime, a starving knowledge gate warns after 3s (naming the missing
+   fields and the fix); the full emission trace is
+   `window.__bambikTrace = true`.

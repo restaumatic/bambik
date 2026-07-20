@@ -10,3 +10,4 @@ doc/presentation-20min.html
 doc/presentation-20min.pdf
 demo/**/bundle.js
 .claude/*.tmp.*
+/generated-docs/
