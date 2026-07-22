@@ -1,6 +1,6 @@
 module Potluck (potluck) where
 
-import Prelude ((#), ($), (<>), (>>>), Unit, show)
+import Prelude ((#), ($), (<>), Unit, show)
 
 import Data.Array (length, zipWith)
 import Data.Maybe (Maybe(..))
@@ -9,8 +9,8 @@ import Data.Profunctor.Acting (acted)
 import Data.String (joinWith)
 import Effect (Effect)
 import PUI (asField, displayed, projection, tapped, with)
-import PUI.HTML (body, div, span, text, (:=))
-import PUI.MDC (body2, card, elevation20, headline6, segmentedButton)
+import PUI.HTML (body, div, text)
+import PUI.MDC (body2, card, elevation20, headline6, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Guest = { name :: String, dish :: Maybe String }
@@ -22,8 +22,8 @@ potluck =
       card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 text # projection callToAction # tapped
           div $
-            ( div >>> "style" := "display: flex; align-items: center; gap: 16px; margin: 8px 0;" $ Semigroupoid.do
-                displayed (span >>> "style" := "min-width: 88px; font-weight: 500;" $ text # projection _.name)
+            ( div $ Semigroupoid.do
+                subtitle1 text # projection _.name # displayed
                 segmentedButton dishes # asField @"dish" # lcmap pickOf
             ) # acted _.name
           headline6 text # projection menu
