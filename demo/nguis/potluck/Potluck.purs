@@ -21,7 +21,7 @@ potluck =
       card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 ( Semigroupoid.do
               text # projection (show <<< length)
-              displayed (muted (staticText " guests invited — everyone picks one dish; the menu prints once the table is complete."))
+              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # muted # displayed
           ) # tapped
           list $
             ( listItem $ Semigroupoid.do
@@ -29,7 +29,7 @@ potluck =
                 segmentedButton (labeled dishes) # asField @"dish" # focusRecord
             ) # acted _.name
           headline6 $ Semigroupoid.do
-            displayed (muted (staticText "On the table: "))
+            staticText "On the table: " # muted # displayed
             (text # projection _.serving) # foreach _.name # lcmap menuLines
       ) # with invited
 
