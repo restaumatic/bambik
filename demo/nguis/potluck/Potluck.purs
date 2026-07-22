@@ -2,13 +2,13 @@ module Potluck (potluck) where
 
 import Prelude ((#), ($), (<>), (==), Unit, show)
 
-import Data.Array (length, mapWithIndex, zipWith)
+import Data.Array (length, mapWithIndex)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Acting (acted)
 import Effect (Effect)
-import PUI (asField, displayed, projection, tapped, with)
-import PUI.HTML (body, foreach, text)
+import PUI (asField, displayed, focusRecord, muted, projection, tapped, with)
+import PUI.HTML (body, foreach, staticText, text)
 import PUI.MDC (body2, card, elevation20, headline6, labeled, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -23,9 +23,11 @@ potluck =
           list $
             ( listItem $ Semigroupoid.do
                 subtitle1 text # projection _.name # displayed
-                segmentedButton (labeled dishes) # asField @"dish" # lcmap pickOf
+                segmentedButton (labeled dishes) # asField @"dish" # focusRecord
             ) # acted _.name
-          headline6 $ (text # lcmap servingText) # foreach _.name # lcmap menuLines
+          headline6 $ Semigroupoid.do
+            displayed (muted (staticText "On the table: "))
+            (text # lcmap servingText) # foreach _.name # lcmap menuLines
       ) # with invited
 
 dishes :: Array String
@@ -39,16 +41,11 @@ invited =
   , { name: "Barbara", dish: Nothing }
   ]
 
-pickOf :: Guest -> { dish :: Maybe String }
-pickOf guest = { dish: guest.dish }
-
 callToAction :: Array Guest -> String
 callToAction guests = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
 
-menuLines :: Array { dish :: String } -> Array { name :: String, serving :: String }
-menuLines picks = mapWithIndex sentence (zipWith (\g p -> { name: g.name, dish: p.dish }) invited picks)
-  where
-  sentence i pick = { name: pick.name, serving: (if i == 0 then "On the table: " else ", ") <> pick.name <> "’s " <> pick.dish }
+menuLines :: Array { name :: String, dish :: String } -> Array { name :: String, serving :: String }
+menuLines = mapWithIndex \i guest -> { name: guest.name, serving: (if i == 0 then "" else ", ") <> guest.name <> "’s " <> guest.dish }
 
 servingText :: { name :: String, serving :: String } -> { value :: String }
 servingText line = { value: line.serving }
