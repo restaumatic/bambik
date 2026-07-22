@@ -12,8 +12,6 @@ import PUI.HTML (body, foreach, staticText, text)
 import PUI.MDC (body2, card, elevation20, headline6, labeled, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Guest = { name :: String, dish :: Maybe String }
-
 potluck :: Effect Unit
 potluck =
   body $
@@ -36,7 +34,7 @@ potluck =
 dishes :: Array String
 dishes = [ "Salad", "Lasagna", "Pavlova" ]
 
-invited :: Array Guest
+invited :: Array { name :: String, dish :: Maybe String }
 invited =
   [ { name: "Ada", dish: Nothing }
   , { name: "Grace", dish: Nothing }
