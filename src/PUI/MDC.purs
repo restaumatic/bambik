@@ -1037,10 +1037,16 @@ listOf provided item = wrap do
   where
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
 
+-- | MD2 pins the single-line list item at 48px and ellipsis-clips its text
+-- | slot — right for text rows, wrong for embedded controls (a segmented
+-- | button would be clipped and spill into the next row). The ocular lets
+-- | content define the height (48px stays the floor) and lays the text slot
+-- | out as a centered row, so mixed content (typography beside a control)
+-- | sits side by side unclipped; single-line text rows render as before.
 listItem :: Ocular (PUI Web)
-listItem content = li >>> cl "mdc-deprecated-list-item" $ wrap do
+listItem content = li >>> cl "mdc-deprecated-list-item" >>> attr "style" "height: auto; min-height: 48px;" $ wrap do
   _ <- unwrap (span >>> cl "mdc-deprecated-list-item__ripple" $ pempty)
-  unwrap (span >>> cl "mdc-deprecated-list-item__text" $ content)
+  unwrap (span >>> cl "mdc-deprecated-list-item__text" >>> attr "style" "display: flex; align-items: center; gap: 16px; width: 100%; white-space: normal; overflow: visible;" $ content)
 
 -- | Table chrome with a static header from config; rows are `dataRow`s of
 -- | `dataCell`s.
