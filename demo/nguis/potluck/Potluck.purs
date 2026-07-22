@@ -27,7 +27,7 @@ potluck =
             ) # acted _.name
           headline6 $ Semigroupoid.do
             displayed (muted (staticText "On the table: "))
-            (text # lcmap servingText) # foreach _.name # lcmap menuLines
+            (text # projection _.serving) # foreach _.name # lcmap menuLines
       ) # with invited
 
 dishes :: Array String
@@ -46,6 +46,3 @@ callToAction guests = show (length guests) <> " guests invited — everyone pick
 
 menuLines :: Array { name :: String, dish :: String } -> Array { name :: String, serving :: String }
 menuLines = mapWithIndex \i guest -> { name: guest.name, serving: (if i == 0 then "" else ", ") <> guest.name <> "’s " <> guest.dish }
-
-servingText :: { name :: String, serving :: String } -> { value :: String }
-servingText line = { value: line.serving }
