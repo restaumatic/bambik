@@ -17,12 +17,12 @@ auction =
   body $
     elevation20 $
       card { caption: "Live Auction" } $ ( Semigroupoid.do
-          body2 (text # projection bidLine # forField @"bid") # tapped
+          body2 text # projection bidLine # forField @"bid" # tapped
           sliderLive { label: "Your bid ($)", min: minBid, max: maxBid, step: bidStep } # asField @"bid"
           ( Semigroupoid.do
               seeded noBids
               lcmap raiseTop identity
-              headline6 (text # projection topLine) # tapped) # feedback
+              headline6 text # projection topLine # tapped) # feedback
       ) # mvu openingBid
 
 raiseTop :: { bid :: Number, top :: Number } -> { bid :: Number, top :: Number }

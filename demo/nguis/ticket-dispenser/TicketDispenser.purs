@@ -20,8 +20,8 @@ ticketDispenser =
   body $
     elevation20 $
       card { caption: "Ticket Dispenser" } $ ( Semigroupoid.do
-          headline3 (text # projection nowServing) # tapped
-          body2 (text # projection hint) # tapped
+          headline3 text # projection nowServing # tapped
+          body2 text # projection hint # tapped
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"
               ( Semigroupoid.do

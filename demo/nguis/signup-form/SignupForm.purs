@@ -47,8 +47,8 @@ signupForm =
             filledTextField { floatingLabel: "Email" } # asField @"email"
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox (staticText "I accept the terms of service") # asField @"terms") # mvu newApplicant
-        body2 (text # projection availabilityHint) # tapped
-        subtitle2 (text # projection validationSummary) # tapped
+        body2 text # projection availabilityHint # tapped
+        subtitle2 text # projection validationSummary # tapped
         button { label: "Sign up", icon: "person_add" } # asCase @"signUp" # rmap (match { signUp: register })
         VariantToRecord.do
           snackbar # forCase @"registered"

@@ -22,7 +22,7 @@ restaurantMenu =
       hr
     div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
-          h2 (text # forValue # forField @"name")
+          h2 text # forValue # forField @"name"
           ul >>> cl "dishes" $
             ( li >>> cl "dish" $ RecordToRecord.do
                 div >>> cl "dish-head" $ RecordToRecord.do

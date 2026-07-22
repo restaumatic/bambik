@@ -35,8 +35,8 @@ colorMixer =
               attrWith "style" swatchStyle $ div $ pempty # lcmap (const {})
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipStyle $ pempty # lcmap (const {}) ) # rmap _.name ) # foreach _.name # lcmap (const palette)) # toCase @"preset" # updates (match { preset: applyPreset })
-          body2 (text # projection hex) # tapped
-          body2 (text # projection rgb) # tapped
+          body2 text # projection hex # tapped
+          body2 text # projection rgb # tapped
       ) # mvu duskViolet
 
 applyPreset :: String -> Mix -> Mix

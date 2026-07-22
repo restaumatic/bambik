@@ -48,7 +48,7 @@ flightBooker =
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
           filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
       ) # mvu plannedTrip
-      body1 (text # projection validationText) # debounced # completed
+      body1 text # projection validationText # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
       VariantToRecord.do

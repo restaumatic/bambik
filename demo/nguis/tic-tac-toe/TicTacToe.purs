@@ -18,7 +18,7 @@ ticTacToe =
   body $
     elevation20 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
-          headline6 (text # projection standing) # completed
+          headline6 text # projection standing # completed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
               ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
                   ( clicked

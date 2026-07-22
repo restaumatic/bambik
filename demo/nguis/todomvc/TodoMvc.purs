@@ -21,10 +21,10 @@ todoMvc =
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updates (match { clicked: const <<< addTodo })
-          listOf { selected: _.done } (span (text # projection _.title) # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
+          listOf { selected: _.done } (span text # projection _.title # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
           segmentedButton visibilityChoices # required # asField @"visibility" # completed
           Semigroupoid.do
-            caption (text # projection itemsLeft) # completed
+            caption text # projection itemsLeft # completed
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 

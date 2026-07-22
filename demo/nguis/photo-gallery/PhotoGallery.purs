@@ -23,7 +23,7 @@ photoGallery =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } (span (text # projection _.name)) # rmap _.name # toCase @"albumPicked" # lcmap albumChoices # updates (match { albumPicked: openAlbum })
+              listOf { selected: _.current } (span text # projection _.name) # rmap _.name # toCase @"albumPicked" # lcmap albumChoices # updates (match { albumPicked: openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
@@ -36,7 +36,7 @@ photoGallery =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
-              headline2 (text # projection _.album) # tapped
+              headline2 text # projection _.album # tapped
               imageList { columns: 3 } $ displayed $ dynamic \m ->
                 each (albumPhotos m) \p -> imageListItem { src: p.src, label: p.caption })
       ) # mvu landscapesOpen

@@ -14,7 +14,7 @@ counter =
   body $
     elevation20 $
       card { caption: "Counter" } $ ( Semigroupoid.do
-          headline4 (text # projection show # forField @"count") # completed
+          headline4 text # projection show # forField @"count" # completed
           button { label: "Count" } # updates (match { clicked: const <<< increment })
       ) # mvu freshCount
 

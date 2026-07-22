@@ -21,13 +21,13 @@ inbox =
   body $
     elevation20 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
-          caption (text # projection unreadLine) # completed
-          listOf { selected: _.attention } (span (text # projection _.line)) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
+          caption text # projection unreadLine # completed
+          listOf { selected: _.attention } (span text # projection _.line) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headline6 (text # projection subjectLine)
-                  body2 (text # projection senderLine)
-                  body1 (text # projection bodyLine)) # tapped
+                  headline6 text # projection subjectLine
+                  body2 text # projection senderLine
+                  body1 text # projection bodyLine) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

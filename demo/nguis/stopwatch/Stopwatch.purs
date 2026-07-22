@@ -26,14 +26,14 @@ stopwatch =
   body $
     elevation20 $
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
-          headline3 (text # projection readout) # completed
+          headline3 text # projection readout # completed
           every tickPeriod tick
           ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided # lcmap whenHalted
               button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning
               button { label: "Lap", icon: "flag" } # asCase @"lap" # provided # lcmap whenRunning
               button { label: "Reset", icon: "replay" } # asCase @"reset" # provided # lcmap whenHalted) # updates (match { start: const <<< beginTiming, stop: const <<< haltTiming, lap: const <<< recordLap, reset: const <<< clearStopwatch })
-          ul ( (li (text # forValue)) # foreach identity ) # lcmap lapLines # displayed
+          ul ( (li text # forValue) # foreach identity ) # lcmap lapLines # displayed
       ) # mvu zeroedStopwatch
 
 beginTiming :: Stopwatch -> Stopwatch

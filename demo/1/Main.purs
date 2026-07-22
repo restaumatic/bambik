@@ -47,7 +47,7 @@ main =
   body $ ( elevation20 Semigroupoid.do
       indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
-        headline6 (text # projection ("Order " <> _) # forField @"shortId")
+        headline6 text # projection ("Order " <> _) # forField @"shortId"
         card { caption: "Identifier" } $ RecordToRecord.do
           filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
@@ -66,7 +66,7 @@ main =
                 filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
-                    body1 (text # projection distanceLine # forField @"address")) # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
+                    body1 text # projection distanceLine # forField @"address") # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -75,9 +75,9 @@ main =
                 , { value: "card", label: "Card" }
                 ] # asField @"selected" # dimap methodState methodCase # field @"method"
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              body1 (text # projection paymentLine # forField @"method")) # field @"payment"
+              body1 text # projection paymentLine # forField @"method") # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      body1 (text # projection summarize) # debounced # tapped
+      body1 text # projection summarize # debounced # tapped
       RecordToVariant.do
         button { label: "Submit order", icon: "save" } # asCase @"submit"
         button { label: "Receipt", icon: "file" } # asCase @"printReceipt"

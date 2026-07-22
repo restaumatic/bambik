@@ -33,7 +33,7 @@ cells =
     elevation20 $
       card { caption: "Cells" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              body1 (text # projection selectedCaption)
+              body1 text # projection selectedCaption
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $

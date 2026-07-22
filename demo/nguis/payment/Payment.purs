@@ -19,8 +19,8 @@ payment =
   body $
     elevation20 $
       card { caption: "Payment" } $ ( Semigroupoid.do
-          headline6 (text # projection amountLine) # tapped
-          body2 (text # projection _.status) # tapped
+          headline6 text # projection amountLine # tapped
+          body2 text # projection _.status # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge
               indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: recordCharged })
