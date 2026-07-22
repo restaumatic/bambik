@@ -61,7 +61,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import PUI (PUI)
+import PUI (PUI, class Hosting)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Node :: Type
@@ -213,6 +213,23 @@ foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> 
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
+
+-- | The DOM carrier hosts collection children under the enclosing parent
+-- | (`PUI`'s container action): the freshly appended child is the instance's
+-- | node, detach removes it, restack re-appends in key order (`appendChild`
+-- | moves an existing node, so identity — focus, local state — travels with
+-- | it).
+instance Hosting Web Node where
+  hosting w = do
+    parent <- gets _.parent
+    pure
+      { instantiate: do
+          inst <- runDomInNode parent (unwrap w)
+          node <- lastChild parent
+          pure { feed: inst.toUser, subscribe: inst.fromUser, node }
+      , detach: \node -> removeChild node parent
+      , restack: \nodes -> for_ nodes \node -> appendChild node parent
+      }
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0

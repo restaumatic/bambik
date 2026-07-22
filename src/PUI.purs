@@ -32,10 +32,14 @@
 module PUI
   ( Action
   , PUI(..)
+  , Hooks
+  , class Hosting
+  , hosting
   , action
   , action'
   , affAdapter
   , announce
+  , collapsed
   , constant
   , constantly
   , debounced
@@ -65,7 +69,9 @@ import Data.Lens (Optic)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Map as Map
 import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
@@ -82,7 +88,9 @@ import Data.String (joinWith)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
+import Data.Set as Set
 import Data.Time.Duration (Milliseconds(..))
+import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, case_, contract, on)
@@ -92,7 +100,7 @@ import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
-import Effect.Class (liftEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (union) as Record
@@ -960,3 +968,147 @@ spied name w = wrap ado
   where
     spy' :: forall a. String -> a -> a
     spy' text a = spy ("Spied PUI \"" <> name <> "\" " <> text <> " new value") a
+
+-- The container action on PUI (class in Data.Profunctor.Acting — the pure
+-- algebra; instances live with the carriers, like the merge instances above).
+
+-- | What a stateful carrier contributes to the container action: how to
+-- | **instantiate** one element widget at runtime and how to **place** it —
+-- | detach a leaver, restack survivors into the current key order. The keyed
+-- | reconciler and both emission modes are carrier-generic above this, so
+-- | `Acting (PUI m)` holds for every hosting carrier: `PUI.Web` supplies DOM
+-- | placement; `Effect` (below) is placement-free — the probe carrier the
+-- | value-level law tests run on.
+class MonadEffect m <= Hosting m node | m -> node where
+  hosting :: forall a b. PUI m a b -> m (Hooks a b node)
+
+type Hooks a b node =
+  { instantiate :: Effect { feed :: a -> Effect Unit, subscribe :: (b -> Effect Unit) -> Effect Unit, node :: node }
+  , detach :: node -> Effect Unit
+  , restack :: Array node -> Effect Unit
+  }
+
+-- | Placement-free: an element instance is just its channel legs.
+instance Hosting Effect Unit where
+  hosting w = pure
+    { instantiate: do
+        inst <- unwrap w
+        pure { feed: inst.toUser, subscribe: inst.fromUser, node: unit }
+    , detach: \_ -> pure unit
+    , restack: \_ -> pure unit
+    }
+
+-- | Keyed, retaining collection on any hosting carrier (laws in
+-- | `Data.Profunctor.Acting`'s header).
+instance Hosting m node => Acting (PUI m) where
+  acted key w = wrap do
+    hooks <- hosting w
+    liftEffect $ actedWith key hooks
+
+-- | The collapsed (sum-flavored) collection on any hosting carrier — every
+-- | element emission forwarded onto one shared channel; ungated, silent on
+-- | empty. `PUI.HTML.foreach = collapsed`.
+collapsed :: forall m node a o. Hosting m node => (a -> String) -> PUI m a o -> PUI m (Array a) o
+collapsed key w = wrap do
+  hooks <- hosting w
+  liftEffect $ collapsedWith key hooks
+
+-- The shared keyed reconciler: one entry per key, holding the element
+-- instance's feed leg, its retained last output (the gather slot), and its
+-- carrier node. Both emission modes are wired through `onEmit` at build time.
+type ActingEntry a b node =
+  { key :: String
+  , feed :: a -> Effect Unit
+  , slot :: Ref.Ref (Maybe b)
+  , node :: node
+  }
+
+-- Reconcile the entry vector against a fed array: survivors re-fed in place,
+-- entrants instantiated (their emissions wired to `onEmit` over their own
+-- slot), leavers detached, nodes restacked only when the key sequence
+-- changed. The busy guard stops an element echo from double-building
+-- mid-reconcile.
+reconcileKeyed
+  :: forall a b node
+   . (a -> String)
+  -> Hooks a b node
+  -> (Ref.Ref (Maybe b) -> b -> Effect Unit)
+  -> Ref.Ref Boolean
+  -> Ref.Ref (Array (ActingEntry a b node))
+  -> Array a
+  -> Effect Unit
+reconcileKeyed key hooks onEmit busyRef entriesRef items = do
+  busy <- Ref.read busyRef
+  unless busy do
+    Ref.write true busyRef
+    old <- Ref.read entriesRef
+    let oldByKey = Map.fromFoldable (map (\e -> Tuple e.key e) old)
+    entries <- for items \a -> do
+      let k = key a
+      case Map.lookup k oldByKey of
+        Just e -> do
+          e.feed a
+          pure e
+        Nothing -> do
+          slot <- Ref.new Nothing
+          inst <- hooks.instantiate
+          inst.subscribe \b -> onEmit slot b
+          inst.feed a
+          pure { key: k, feed: inst.feed, slot, node: inst.node }
+    let keep = Set.fromFoldable (map _.key entries)
+    for_ old \e -> unless (Set.member e.key keep) (hooks.detach e.node)
+    when (map _.key old /= map _.key entries) $ hooks.restack (map _.node entries)
+    Ref.write entries entriesRef
+    Ref.write false busyRef
+
+-- Was this reconcile skipped by the re-entrancy guard? (A guarded skip must
+-- also skip the post-reconcile gather, or a mid-reconcile echo would emit a
+-- half-updated vector.)
+actingGuarded :: Ref.Ref Boolean -> Effect Unit -> Effect Unit
+actingGuarded busyRef act = do
+  busy <- Ref.read busyRef
+  unless busy act
+
+-- The gather mode: element emissions land in their slot, then the whole
+-- array re-emits from retained slots once every element has spoken —
+-- including immediately after a reconcile, so `[]` emits `[]` and survivors'
+-- retained slots re-emit without waiting.
+actedWith :: forall a b node. (a -> String) -> Hooks a b node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: (Array b -> Effect Unit) -> Effect Unit }
+actedWith key hooks = do
+  propRef <- Ref.new Nothing
+  entriesRef <- Ref.new []
+  busyRef <- Ref.new false
+  let
+    gather = do
+      entries <- Ref.read entriesRef
+      slots <- for entries \e -> Ref.read e.slot
+      for_ (sequence slots) \bs -> do
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> prop bs
+    onEmit slot b = do
+      Ref.write (Just b) slot
+      gather
+  pure
+    { toUser: \items -> actingGuarded busyRef do
+        reconcileKeyed key hooks onEmit busyRef entriesRef items
+        gather
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- The forward (collapsed) mode: element emissions exit onto the shared
+-- channel as they happen; the slot is kept written so a later gather-mode
+-- reading of the same core stays possible, but nothing gates.
+collapsedWith :: forall a o node. (a -> String) -> Hooks a o node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: ((o -> Effect Unit) -> Effect Unit) }
+collapsedWith key hooks = do
+  propRef <- Ref.new Nothing
+  entriesRef <- Ref.new []
+  busyRef <- Ref.new false
+  let
+    onEmit slot o = do
+      Ref.write (Just o) slot
+      mProp <- Ref.read propRef
+      for_ mProp \prop -> prop o
+  pure
+    { toUser: reconcileKeyed key hooks onEmit busyRef entriesRef
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }

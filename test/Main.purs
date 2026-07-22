@@ -12,7 +12,7 @@ import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
 import Data.Profunctor.Strong (first)
-import Data.Profunctor.Acting (acted, collapsed, optioned)
+import Data.Profunctor.Acting (acted, optioned)
 import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
@@ -28,7 +28,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), announce, displayed, looped, resolveFor, updates, with)
+import PUI (PUI(..), announce, collapsed, displayed, looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit

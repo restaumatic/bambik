@@ -85,7 +85,6 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Acting (collapsed)
 import Data.Symbol (class IsSymbol)
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
@@ -94,7 +93,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (PUI, updates)
+import PUI (PUI, collapsed, updates)
 import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
