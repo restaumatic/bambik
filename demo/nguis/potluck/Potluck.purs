@@ -19,8 +19,7 @@ potluck :: Effect Unit
 potluck =
   body $
     elevation20 $
-      card { caption: "Potluck" } $
-        with invited $ Semigroupoid.do
+      card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 (text # projection callToAction) # tapped
           div $
             ( div >>> "style" := "display: flex; align-items: center; gap: 16px; margin: 8px 0;" $ Semigroupoid.do
@@ -28,6 +27,7 @@ potluck =
                 segmentedButton dishes # asField @"dish" # lcmap pickOf
             ) # acted _.name
           headline6 (text # projection menu)
+      ) # with invited
 
 dishes :: Array { value :: String, label :: String }
 dishes =
