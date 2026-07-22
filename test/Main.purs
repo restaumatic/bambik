@@ -12,7 +12,7 @@ import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
 import Data.Profunctor.Strong (first)
-import Data.Profunctor.Acting (acted, collapsedE, optioned)
+import Data.Profunctor.Acting (acted, collapsed, optioned)
 import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
@@ -766,7 +766,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (collapsedE _.k (elemProbe builds roster))
+    m <- unwrap (collapsed _.k (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
     Ref.read outs >>= assertEqual "collapsed: silent on empty" []

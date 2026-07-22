@@ -36,8 +36,10 @@
 module Data.Profunctor.Acting
   ( class Acting
   , acted
+  , class Hosting
+  , hosting
+  , Hooks
   , collapsed
-  , collapsedE
   , optioned
   ) where
 
@@ -54,7 +56,7 @@ import Data.Set as Set
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Class (liftEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI)
 import PUI.Web (Node, Web, appendChild, lastChild, removeChild, runDomInNode)
@@ -187,50 +189,52 @@ collapsedWith key hooks = do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- DOM hooks: instantiate under the enclosing parent (the freshly appended
--- child is the instance's node), detach removes it, restack re-appends in
--- key order (appendChild moves an existing node, so identity — focus, local
--- state — travels with it).
-webHooks :: forall a b. Node -> PUI Web a b -> Hooks a b Node
-webHooks parent w =
-  { instantiate: do
-      inst <- runDomInNode parent (unwrap w)
-      node <- lastChild parent
-      pure { feed: inst.toUser, subscribe: inst.fromUser, node }
-  , detach: \node -> removeChild node parent
-  , restack: \nodes -> for_ nodes \node -> appendChild node parent
-  }
+-- | What a stateful carrier contributes to the container action: how to
+-- | **instantiate** one element widget at runtime and how to **place** it —
+-- | detach a leaver, restack survivors into the current key order. The keyed
+-- | reconciler and both emission modes are carrier-generic above this, so
+-- | `Acting (PUI m)` holds for every hosting carrier.
+class MonadEffect m <= Hosting m node | m -> node where
+  hosting :: forall a b. PUI m a b -> m (Hooks a b node)
 
--- | Keyed, retaining DOM collection (see the module-header laws).
-instance Acting (PUI Web) where
-  acted key w = wrap do
+-- | The DOM carrier: instantiate under the enclosing parent (the freshly
+-- | appended child is the instance's node), detach removes it, restack
+-- | re-appends in key order (`appendChild` moves an existing node, so
+-- | identity — focus, local state — travels with it).
+instance Hosting Web Node where
+  hosting w = do
     parent <- gets _.parent
-    liftEffect $ actedWith key (webHooks parent w)
+    pure
+      { instantiate: do
+          inst <- runDomInNode parent (unwrap w)
+          node <- lastChild parent
+          pure { feed: inst.toUser, subscribe: inst.fromUser, node }
+      , detach: \node -> removeChild node parent
+      , restack: \nodes -> for_ nodes \node -> appendChild node parent
+      }
 
--- Placement-free hooks: an element instance is just its channel legs. This
--- is what makes the laws value-testable on `PUI Effect` probes.
-effectHooks :: forall a b. PUI Effect a b -> Hooks a b Unit
-effectHooks w =
-  { instantiate: do
-      inst <- unwrap w
-      pure { feed: inst.toUser, subscribe: inst.fromUser, node: unit }
-  , detach: \_ -> pure unit
-  , restack: \_ -> pure unit
-  }
+-- | Placement-free: an element instance is just its channel legs — the probe
+-- | carrier the value-level law tests run on (test/Main.purs).
+instance Hosting Effect Unit where
+  hosting w = pure
+    { instantiate: do
+        inst <- unwrap w
+        pure { feed: inst.toUser, subscribe: inst.fromUser, node: unit }
+    , detach: \_ -> pure unit
+    , restack: \_ -> pure unit
+    }
 
--- | The carrier the value-level law tests run on (test/Main.purs): same
--- | reconciler and gather gate as the DOM instance, no placement.
-instance Acting (PUI Effect) where
-  acted key w = wrap (actedWith key (effectHooks w))
+-- | Keyed, retaining collection on any hosting carrier (see the
+-- | module-header laws).
+instance Hosting m node => Acting (PUI m) where
+  acted key w = wrap do
+    hooks <- hosting w
+    liftEffect $ actedWith key hooks
 
--- | The collapsed (sum-flavored) collection on the DOM carrier — every
+-- | The collapsed (sum-flavored) collection on any hosting carrier — every
 -- | element emission forwarded onto one shared channel; ungated, silent on
 -- | empty. `PUI.HTML.foreach = collapsed`.
-collapsed :: forall a o. (a -> String) -> PUI Web a o -> PUI Web (Array a) o
+collapsed :: forall m node a o. Hosting m node => (a -> String) -> PUI m a o -> PUI m (Array a) o
 collapsed key w = wrap do
-  parent <- gets _.parent
-  liftEffect $ collapsedWith key (webHooks parent w)
-
--- | `collapsed` on the probe carrier, for the value-level law tests.
-collapsedE :: forall a o. (a -> String) -> PUI Effect a o -> PUI Effect (Array a) o
-collapsedE key w = wrap (collapsedWith key (effectHooks w))
+  hooks <- hosting w
+  liftEffect $ collapsedWith key hooks
