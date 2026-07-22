@@ -1,14 +1,14 @@
 module Potluck (potluck) where
 
-import Prelude ((#), ($), (<<<), (<>), (==), Unit, show)
+import Prelude ((#), ($), (<<<), Unit, show)
 
-import Data.Array (length, mapWithIndex)
+import Data.Array (length)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Acting (acted)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, displayed, focusRecord, muted, projection, tapped, with)
-import PUI.HTML (body, foreach, staticText, text)
+import PUI (asField, displayed, focusRecord, forField, forValue, muted, projection, tapped, with)
+import PUI.HTML (body, foreach, span, staticText, text)
 import PUI.MDC (body2, card, elevation20, headline6, labeled, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -28,7 +28,12 @@ potluck =
             ) # acted _.name
           headline6 $ Semigroupoid.do
             staticText "On the table: " # muted # displayed
-            (text # projection _.serving) # foreach _.name # lcmap menuLines
+            ( span $ RecordToRecord.do
+                text # forValue # forField @"name"
+                staticText "’s "
+                text # forValue # forField @"dish"
+                staticText ", "
+            ) # foreach _.name
       ) # with invited
 
 dishes :: Array String
@@ -41,6 +46,3 @@ invited =
   , { name: "Edsger", dish: Nothing }
   , { name: "Barbara", dish: Nothing }
   ]
-
-menuLines :: Array { name :: String, dish :: String } -> Array { name :: String, serving :: String }
-menuLines = mapWithIndex \i guest -> { name: guest.name, serving: (if i == 0 then "" else ", ") <> guest.name <> "’s " <> guest.dish }

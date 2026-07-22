@@ -30,16 +30,16 @@ export const run = async ({ ev, assertEq, sleep }) => {
     'menu completes on the last voice (' + menu + ')'
   )
 
-  await ev(`(() => { window.__frags = [...document.querySelector('h6').childNodes]; return true })()`)
+  await ev(`(() => { window.__frags = [...document.querySelectorAll('h6 span')]; return true })()`)
 
   assertEq(await ev(pick(0, 'Pavlova')), true, 'Ada re-picks')
   await sleep(100)
   const menu2 = await ev(menuText)
   assertEq(menu2.includes('Ada’s Pavlova'), true, 'retain-last: a re-choice re-emits the whole menu (' + menu2 + ')')
   assertEq(
-    await ev(`[...document.querySelector('h6').childNodes].every((n, i) => n === window.__frags[i])`),
+    await ev(`(() => { const now = [...document.querySelectorAll('h6 span')]; return now.length === window.__frags.length && now.every((n, i) => n === window.__frags[i]) })()`),
     true,
-    'partial update: the menu is keyed fragments — text nodes survive a re-choice'
+    'partial update: the menu is keyed fragments — spans survive a re-choice'
   )
 
   assertEq(
