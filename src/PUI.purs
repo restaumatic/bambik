@@ -86,6 +86,7 @@ import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecor
 import Data.Profunctor.Row.RecordToVariant (asCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
 import Data.Profunctor.Row (widenRecordInput) as Adopters
+import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
@@ -986,8 +987,8 @@ spied name w = wrap ado
 --   ------------|--------------------|------------|------------------|---------------|-------------------|-------------
 --   foreach @l  | Array {l::k|r} (×) | p {l::k|r} | o            (+) | — (no slots)  | each emission,    | silent
 --               |                    |   o        |                  |               | as it happens     | (no o to make)
---   acted @l    | Array {l::k|r} (×) | p {l::k|r} | Array b      (×) | element       | whole array, once | emits []
---               |                    |   b        |                  | emissions     | every element     | (inhabited
+--   acted @l    | Array {l::k|ra}(×) | p {l::k|ra}| Array {l::k|rb} | element       | whole array, once | emits []
+--               |                    |   {|rb}    |              (×) | emissions     | every element     | (inhabited
 --               |                    |            |                  |               | spoke; retain-    | nullary)
 --               |                    |            |                  |               | last after        |
 --   edits @l    | Array {l::k|r} (×) | p {l::k|r} | Array {l::k|r}(×)| the fed input | whole array,      | emits []
@@ -1013,9 +1014,11 @@ spied name w = wrap ado
 -- ordering are array-level concerns of some ×-stage upstream.
 --
 -- The key's form encodes its ontology, two ways: a **label @l** on the
--- ×-members (identity is a materialized field of the model row — and in
--- `edits`, whose output row EXCLUDES it, the carrier re-attaches it as the
--- edit's return address, so an element cannot change it); the
+-- ×-members (identity is a materialized field of the model row — and in the
+-- product-output members `acted`/`edits` the element's output row EXCLUDES
+-- it: the key is re-attached from the *input* row, so an element cannot
+-- forge or change identity; `acted` derives this in the pure algebra by
+-- riding the key around the element on the Strong state channel); the
 -- **{ key, value } envelope** on the +-members (identity is the structural
 -- tag of the runtime variant, arriving in the input). `Ord k` is an
 -- indexing requirement (the reconciler's Map); identity semantics remain

@@ -48,10 +48,12 @@ import Prelude
 
 import Data.Array (head) as Array
 import Data.Maybe (Maybe, maybe)
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor.Strong (class Strong, second)
 import Data.Symbol (class IsSymbol)
-import Prim.Row (class Cons)
-import Record (get) as Record
+import Data.Tuple (Tuple(..))
+import Prim.Row (class Cons, class Lacks)
+import Record (get, insert) as Record
 import Type.Proxy (Proxy(..))
 
 -- | The class primitive: lift a widget over the `Array` container, keyed by
@@ -67,8 +69,21 @@ instance Acting (->) where
 -- | Lift a widget over the keyed `Array` container (see the module header
 -- | for the laws), keyed by the row's materialized identity field `@l`.
 -- | Written trailing, like the merges' operands: `row # acted @"id"`.
-acted :: forall @l p k r a b. Acting p => IsSymbol l => Cons l k r a => Ord k => p { | a } b -> p (Array { | a }) (Array b)
-acted = actedBy (Record.get (Proxy @l))
+-- |
+-- | As in `edits`, the element's output row **excludes the key** — each
+-- | gathered row's key is re-attached from its *input* row, so an element
+-- | structurally cannot forge or change identity. The guarantee is derived
+-- | in the pure algebra: the input's key rides around the element on the
+-- | `Strong` state channel (`second`), joining each emission.
+acted
+  :: forall @l p k ra a rb b
+   . Acting p => Strong p => IsSymbol l
+  => Cons l k ra a => Cons l k rb b => Lacks l rb => Ord k
+  => p { | a } { | rb } -> p (Array { | a }) (Array { | b })
+acted w = actedBy (Record.get prox)
+  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.insert prox k out) (second w))
+  where
+  prox = Proxy @l
 
 -- | The `Maybe = 1 + a` container action, derived: `Maybe` embeds in `Array`
 -- | as the at-most-one-element arrays (identity is trivial at one element, so
@@ -76,5 +91,6 @@ acted = actedBy (Record.get (Proxy @l))
 -- | `Nothing`-to-`Just` transitions per the carrier's retention; contrast
 -- | `PUI.HTML.provided`, the *detaching* visibility form with collapsed
 -- | output.
-optioned :: forall p a b. Acting p => p a b -> p (Maybe a) (Maybe b)
-optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) Array.head (acted @"key" (w # lcmap _.value))
+optioned :: forall p a b. Acting p => Strong p => p a b -> p (Maybe a) (Maybe b)
+optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) (Array.head >>> map _.value)
+  (acted @"key" (dimap _.value { value: _ } w))

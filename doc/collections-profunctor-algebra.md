@@ -258,9 +258,11 @@ pure treatments never see.
   field** `@l` of the element row — the element is a data-model row, and rows
   carry their identity (`foreach @"id"`, `acted @"name"`, `edits @"id"`; the
   class primitive `actedBy` keeps the function form as the minimal carrier
-  obligation, `(->)`'s instance ignores it). In `edits` the element's output
-  row *excludes* the key — the carrier re-attaches it as the edit's return
-  address, so an element structurally cannot change its key. The +-members
+  obligation, `(->)`'s instance ignores it). In the product-output ×-members
+  (`acted`, `edits`) the element's output row *excludes* the key — it is
+  re-attached from the input row (in `acted` derived purely: the key rides
+  the `Strong` state channel around the element), so an element structurally
+  cannot forge or change identity. The +-members
   keep the `{ key, value }` envelope: there identity is the runtime variant's
   structural tag, arriving in the input. Two key forms, two ontologies, and
   the scalar-keyed collections (calculator's keypad, stopwatch's laps,
