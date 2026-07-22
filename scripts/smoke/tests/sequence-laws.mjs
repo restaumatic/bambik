@@ -40,4 +40,20 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(after.text, 'Track 1', 'retraction law: the node still shows its track')
   assertEq(after.checked, true, 'retraction law: DOM-local state (checkbox tick) followed the track')
   assertEq(after.firstText, 'Track 2', 'reconcile: rotation applied')
+
+  // the edits fold: rename a track through the in-row field — the element's
+  // output row excludes the id, the carrier re-attaches it, and the edit
+  // lands in the model (visible after another rotation re-feeds the row).
+  await ev(`(() => {
+    const input = document.querySelector('ul li .mdc-text-field__input')
+    input.value = 'Track 2 (remastered)'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.blur()
+    return true
+  })()`)
+  await sleep(300)
+  await ev(`[...document.querySelectorAll('button')].find(b => b.textContent.includes('Rotate')).click()`)
+  await sleep(400)
+  const renamed = await ev(`[...document.querySelectorAll('ul li .mdc-text-field__input')].map(i => i.value)`)
+  assertEq(renamed.includes('Track 2 (remastered)'), true, 'edits: the rename survived the fold and the re-feed — key re-attached by the carrier (' + JSON.stringify(renamed) + ')')
 }

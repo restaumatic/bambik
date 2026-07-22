@@ -25,7 +25,7 @@ potluck =
             ( listItem $ Semigroupoid.do
                 subtitle1 text # projection _.name # displayed
                 segmentedButton (labeled dishes) # asField @"dish" # focusRecord
-            ) # acted _.name
+            ) # acted @"name"
           headline6 $ Semigroupoid.do
             staticText "On the table: " # muted # displayed
             ( span $ RecordToRecord.do
@@ -33,7 +33,7 @@ potluck =
                 staticText "’s "
                 text # forValue # forField @"dish"
                 staticText ", "
-            ) # foreach _.name
+            ) # foreach @"name"
       ) # with invited
 
 dishes :: Array String

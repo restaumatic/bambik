@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, completed, edits, field, mvu, onCase, silence, updates)
+import PUI (action, asCase, asField, edits, field, mvu, onCase, silence, updates, widenRecordInput)
 import PUI.HTML (body, el, li, ul, (:=))
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -38,7 +38,7 @@ reorder =
           ul
             ( ( li >>> "style" := "display: flex; gap: 10px; align-items: center; list-style: none; margin: 6px 0;" $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  filledTextField { floatingLabel: "Title" } # asField @"title") # completed) # edits _.id) # field @"order"
+                  filledTextField { floatingLabel: "Title" } # asField @"title") # widenRecordInput) # edits @"id") # field @"order"
       ) # mvu openingSetlist
 
 rotateAction :: Playlist -> Aff [ reordered :: Array Track ]

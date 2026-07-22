@@ -24,7 +24,7 @@ ticTacToe =
                   ( clicked
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
-                          $ text # lcmap (\c -> { value: c.mark })) # rmap _.key) # foreach _.key # lcmap cells) # toCase @"cellPicked") # updates (match { cellPicked: claimCell })
+                          $ text # lcmap (\c -> { value: c.mark })) # rmap _.key) # foreach @"key" # lcmap cells) # toCase @"cellPicked") # updates (match { cellPicked: claimCell })
           button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
       ) # mvu openingPosition
 

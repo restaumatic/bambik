@@ -238,9 +238,33 @@ pure treatments never see.
   editors lifted with `# acted _.name`, the menu summary withheld by the
   gather gate until every guest has chosen, retain-last on re-choices, row
   nodes surviving every re-feed (`scripts/smoke/tests/potluck.mjs`).
+- **The keyed-input members landed** (§6.3's deferral resolved): `dispatched`
+  (+→+) and `accumulated` (+→×) in `PUI`, fed the runtime variant
+  `{ key, value }` — the tag arrives in the input, so no key function; an
+  unknown key instantiates a new case, and the +-members never detach or
+  restack (absence of a key is no signal). `dispatched` has the canonical
+  pure reading (`\{key, value} -> {key, value: g value}`), `accumulated` is
+  the input-primed keyed Mealy — the (·,×)-gate/unit laws land on schedule.
+  Value-level laws in `test/Main.purs`; focused demos `demo/nguis/departures`
+  (dispatched: a ticker's cases become rows on first mention, re-feed in
+  place, tagged output drives the last-update line) and
+  `demo/nguis/scoreboard` (accumulated: the board grows to its key set,
+  updates in place, the whole array drives the standings).
 - The two laws of §1 are stated once in `Data.Profunctor.Row`'s header; the
   duoidal reading of §0 (displayed = comultiplication, muted = counit) in
   `PUI`'s header.
+- **Keys are labels** (a revision of §4's "or in the reconciler's private
+  state" latitude): every ×-member is keyed by a **materialized identity
+  field** `@l` of the element row — the element is a data-model row, and rows
+  carry their identity (`foreach @"id"`, `acted @"name"`, `edits @"id"`; the
+  class primitive `actedBy` keeps the function form as the minimal carrier
+  obligation, `(->)`'s instance ignores it). In `edits` the element's output
+  row *excludes* the key — the carrier re-attaches it as the edit's return
+  address, so an element structurally cannot change its key. The +-members
+  keep the `{ key, value }` envelope: there identity is the runtime variant's
+  structural tag, arriving in the input. Two key forms, two ontologies, and
+  the scalar-keyed collections (calculator's keypad, stopwatch's laps,
+  restaurant-menu's tags) materialized their identity fields accordingly.
 
 ## Pointers
 

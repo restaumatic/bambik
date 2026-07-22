@@ -2,12 +2,15 @@
 -- | `p a b -> p (F a) (F b)` — here at `F = Array`, the container
 -- | `μ x. 1 + a × x`. Containers are generated from `×`, `+` and fixpoints,
 -- | so this class is not a fifth merge direction: it is the closure of
--- | `Strong` and `Choice` under `μ` (the profunctor traversal), with the
--- | **key function as the species refinement** — shapes carry a finite key
--- | set (`a -> String`), and on stateful carriers reconciliation is the
--- | functorial action along partial injections of key sets: survivors re-fed
--- | in place, entrants built, leavers removed. Pure carriers have no identity
--- | to preserve, so they ignore the key (`(->)`: `acted _ = map`).
+-- | `Strong` and `Choice` under `μ` (the profunctor traversal), keyed as the
+-- | species refinement: on stateful carriers reconciliation is the functorial
+-- | action along partial injections of key sets — survivors re-fed in place,
+-- | entrants built, leavers removed. **The key is a materialized identity
+-- | field of the row** (`acted @l` — the element is a data-model row, and
+-- | rows carry their identity; `Ord k` is the reconciler's Map-indexing
+-- | requirement — identity semantics remain equality, keys must be unique,
+-- | never rendered). Pure carriers
+-- | have no identity to preserve and ignore it (`(->)`: `actedBy _ = map`).
 -- | See doc/collections-profunctor-algebra.md.
 -- |
 -- | Laws (the `Array b` output side is a product, so per the unit and gate
@@ -26,14 +29,17 @@
 -- |   * **identity follows key** (stateful carriers) — re-feeding a surviving
 -- |     key reuses its instance; permuting keys reorders without rebuilding.
 -- |
--- | This module is the **pure algebra** — the class, its `(->)` face, and the
--- | derived `Maybe` action. The carrier machinery lives with the carriers,
--- | exactly as the merge classes' instances do: `PUI` holds the shared keyed
--- | reconciler, the generic `Hosting m node => Acting (PUI m)` instance and
--- | the collapsed (sum-flavored, forwarding) form `foreach`; `PUI.Web`
--- | holds the DOM `Hosting` instance.
+-- | This module is the **pure algebra** — the class (whose primitive
+-- | `actedBy` takes the key as a function, the minimal carrier obligation),
+-- | the label form `acted @l`, the `(->)` face, and the derived `Maybe`
+-- | action. The carrier machinery lives with the carriers, exactly as the
+-- | merge classes' instances do: `PUI` holds the shared keyed reconciler,
+-- | the generic `Hosting m node => Acting (PUI m)` instance and the sibling
+-- | collection combinators (`foreach`, `edits`, `dispatched`,
+-- | `accumulated`); `PUI.Web` holds the DOM `Hosting` instance.
 module Data.Profunctor.Acting
   ( class Acting
+  , actedBy
   , acted
   , optioned
   ) where
@@ -42,23 +48,33 @@ import Prelude
 
 import Data.Array (head) as Array
 import Data.Maybe (Maybe, maybe)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Symbol (class IsSymbol)
+import Prim.Row (class Cons)
+import Record (get) as Record
+import Type.Proxy (Proxy(..))
 
--- | Lift a widget over the keyed `Array` container (see the module header
--- | for the laws). Written trailing, like the merges' operands:
--- | `row # acted _.id`.
+-- | The class primitive: lift a widget over the `Array` container, keyed by
+-- | a function. Carriers implement this; the vocabulary form is `acted @l`.
 class Profunctor p <= Acting p where
-  acted :: forall a b. (a -> String) -> p a b -> p (Array a) (Array b)
+  actedBy :: forall k a b. Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
 
 -- | Pure carriers have no element identity to preserve — the key is species
 -- | bookkeeping for stateful instances, so `(->)` ignores it.
 instance Acting (->) where
-  acted _ = map
+  actedBy _ = map
+
+-- | Lift a widget over the keyed `Array` container (see the module header
+-- | for the laws), keyed by the row's materialized identity field `@l`.
+-- | Written trailing, like the merges' operands: `row # acted @"id"`.
+acted :: forall @l p k r a b. Acting p => IsSymbol l => Cons l k r a => Ord k => p { | a } b -> p (Array { | a }) (Array b)
+acted = actedBy (Record.get (Proxy @l))
 
 -- | The `Maybe = 1 + a` container action, derived: `Maybe` embeds in `Array`
--- | as the at-most-one-element arrays. Keeps the element *fed and live* on
+-- | as the at-most-one-element arrays (identity is trivial at one element, so
+-- | the key is a constant). Keeps the element *fed and live* on
 -- | `Nothing`-to-`Just` transitions per the carrier's retention; contrast
 -- | `PUI.HTML.provided`, the *detaching* visibility form with collapsed
 -- | output.
 optioned :: forall p a b. Acting p => p a b -> p (Maybe a) (Maybe b)
-optioned = dimap (maybe [] pure) Array.head <<< acted (const "the")
+optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) Array.head (acted @"key" (w # lcmap _.value))

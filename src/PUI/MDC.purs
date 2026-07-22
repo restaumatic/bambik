@@ -1026,11 +1026,11 @@ listOf
   -> PUI Web (Array a) a
 listOf provided item = wrap do
   w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> attr "style" "overflow-y: auto;" $
-    ( ( lcmap snd
+    ( ( lcmap _.item
           ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
               $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "cursor: pointer;" $ item
-          ) # foreach (show <<< fst)
-      ) # lcmap (mapWithIndex Tuple)
+          ) # foreach @"ix"
+      ) # lcmap (mapWithIndex \ix it -> { ix, item: it })
     )
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.list."MDCList" node

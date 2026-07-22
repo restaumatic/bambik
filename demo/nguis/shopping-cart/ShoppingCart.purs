@@ -23,7 +23,7 @@ shoppingCart =
             ( ( clicked $ dataRow RecordToRecord.do
                   dataCell text # forValue # forField @"product"
                   dataCell text # forValue # forField @"quantity"
-                  dataCell text # forValue # forField @"lineTotal") # foreach _.product) # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
+                  dataCell text # forValue # forField @"lineTotal") # foreach @"product") # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
           body1 text # projection grandTotal # tapped
           button { label: "Empty cart" } # updates (match { clicked: const <<< clearCart })
       ) # mvu emptyCart

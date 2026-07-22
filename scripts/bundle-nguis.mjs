@@ -25,6 +25,8 @@ const demos = {
   'payment': ['Payment', 'payment'],
   'ticket-dispenser': ['TicketDispenser', 'ticketDispenser'],
   'potluck': ['Potluck', 'potluck'],
+  'departures': ['Departures', 'departures'],
+  'scoreboard': ['Scoreboard', 'scoreboard'],
   'reorder': ['Reorder', 'reorder'],
   'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
 }

@@ -28,7 +28,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), announce, displayed, foreach, looped, resolveFor, updates, with)
+import PUI (PUI(..), accumulated, announce, dispatched, displayed, edits, foreach, looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -687,7 +687,7 @@ main = do
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
 
   -- acted on (->): pure carriers have no identity — acted _ = map.
-  assertEqual "acted/(->) = map" [ 2, 6 ] (acted (const "") (_ * 2) [ 1, 3 ])
+  assertEqual "acted/(->) = map" [ 2, 6 ] (acted @"k" (\r -> r.v * 2) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
 
   -- optioned on (->): the Maybe = 1 + a container action, via the Array embedding.
   assertEqual "optioned/(->): Just" (Just 6) (optioned (_ * 2) (Just 3))
@@ -699,7 +699,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array (Array String))
-    m <- unwrap (acted _.k (elemProbe builds roster))
+    m <- unwrap (acted @"k" (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read outs >>= assertEqual "acted: registration announces nothing" []
     m.toUser []
@@ -711,7 +711,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array (Array String))
-    m <- unwrap (acted _.k (elemProbe builds roster))
+    m <- unwrap (acted @"k" (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 } ]
     handles <- Ref.read roster
@@ -726,7 +726,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array (Array String))
-    m <- unwrap (acted _.k (elemProbe builds roster))
+    m <- unwrap (acted @"k" (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     fireElem roster 0 "x"
@@ -743,7 +743,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array (Array String))
-    m <- unwrap (acted _.k (elemProbe builds roster))
+    m <- unwrap (acted @"k" (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     Ref.read builds >>= assertEqual "acted/keys: two entrants built" 2
@@ -766,10 +766,67 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (foreach _.k (elemProbe builds roster))
+    m <- unwrap (foreach @"k" (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
     Ref.read outs >>= assertEqual "foreach: silent on empty" []
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     fireElem roster 0 "z"
     Ref.read outs >>= assertEqual "foreach: forwards immediately, no gate" [ "z" ]
+
+  -- == The keyed-input members — the runtime variant `{ key, value }` feeds ==
+  -- == one case at a time; the tag arrives in the input, no key function. ==
+
+  -- dispatched (+→+): an unknown key instantiates (a new runtime case), a
+  -- known key re-feeds exactly its instance, and emissions leave tagged.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle Int String))
+    outs <- Ref.new ([] :: Array { key :: String, value :: String })
+    m <- unwrap (dispatched (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { key: "a", value: 1 }
+    Ref.read builds >>= assertEqual "dispatched: first case instantiates" 1
+    m.toUser { key: "b", value: 2 }
+    Ref.read builds >>= assertEqual "dispatched: second case instantiates" 2
+    m.toUser { key: "a", value: 3 }
+    Ref.read builds >>= assertEqual "dispatched: a known key re-feeds, no rebuild" 2
+    handles <- Ref.read roster
+    for_ (handles !! 0) \h -> Ref.read h.ins >>= assertEqual "dispatched: targeted feeds reach exactly their case" [ 1, 3 ]
+    for_ (handles !! 1) \h -> Ref.read h.ins >>= assertEqual "dispatched: the other case untouched" [ 2 ]
+    fireElem roster 1 "hello"
+    Ref.read outs >>= assertEqual "dispatched: emissions leave tagged with their case's key" [ { key: "b", value: "hello" } ]
+
+  -- accumulated (+→×): the keyed Mealy — grows per new key, updates per
+  -- known key, emits the whole array immediately (input-primed); element
+  -- emissions fold back into their slot; order is first appearance.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle Int Int))
+    outs <- Ref.new ([] :: Array (Array Int))
+    m <- unwrap (accumulated (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { key: "a", value: 1 }
+    Ref.read outs >>= assertEqual "accumulated: first case emits the singleton immediately" [ [ 1 ] ]
+    m.toUser { key: "b", value: 2 }
+    Ref.read outs >>= assertEqual "accumulated: a new key grows the array in first-appearance order" [ [ 1 ], [ 1, 2 ] ]
+    m.toUser { key: "a", value: 10 }
+    Ref.read outs >>= assertEqual "accumulated: a known key updates its slot in place" [ [ 1 ], [ 1, 2 ], [ 10, 2 ] ]
+    Ref.read builds >>= assertEqual "accumulated: two keys, two instances" 2
+    fireElem roster 1 20
+    Ref.read outs >>= \os -> assertEqual "accumulated: an element emission folds into its slot" (Just [ 10, 20 ]) (os !! (length os - 1))
+
+  -- edits @l: the key is data and the element's output row EXCLUDES it — the
+  -- carrier re-attaches each emission's key (the return address), so an
+  -- element structurally cannot change it; feeds re-emit (input-primed).
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { id :: String, title :: String } { title :: String }))
+    outs <- Ref.new ([] :: Array (Array { id :: String, title :: String }))
+    m <- unwrap (edits @"id" (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser [ { id: "a", title: "x" }, { id: "b", title: "y" } ]
+    Ref.read outs >>= assertEqual "edits: input-primed — every feed re-emits the array" [ [ { id: "a", title: "x" }, { id: "b", title: "y" } ] ]
+    fireElem roster 0 { title: "X" }
+    Ref.read outs >>= \os -> assertEqual "edits: an edit folds immediately, its key re-attached by the carrier" (Just [ { id: "a", title: "X" }, { id: "b", title: "y" } ]) (os !! (length os - 1))
+    Ref.read builds >>= assertEqual "edits: survivors were re-fed, never rebuilt" 2

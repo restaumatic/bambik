@@ -1,15 +1,15 @@
 module Calculator (calculator) where
 
-import Prelude ((#), ($), (&&), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, const, identity, show)
+import Prelude ((#), ($), (&&), (<$>), (<<<), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, const, show)
 
 import Data.Array (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString)
-import Data.Profunctor (lcmap)
+import Data.Profunctor (lcmap, rmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, toCase, updates)
+import PUI (foreach, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,7 +26,7 @@ calculator =
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ text # lcmap (\tally -> { value: readout tally })
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" keyStyle $ text # lcmap (\k -> { value: k }) ) # foreach identity # lcmap (const keyPad)) # toCase @"keyPressed"
+                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # lcmap (const keyPad) # rmap _.key) # toCase @"keyPressed"
         ) # updates (match { keyPressed: pressKey }) # mvu blankTally
 
 keyStyle :: String -> String
@@ -38,8 +38,8 @@ keyStyle key =
        else if key `elem` [ "C", "±" ] then "background: #b0bec5; color: #263238;"
        else "background: #eceff1; color: #263238;"
 
-keyPad :: Array String
-keyPad =
+keyPad :: Array { key :: String }
+keyPad = { key: _ } <$>
   [ "C", "±", "÷", "×"
   , "7", "8", "9", "−"
   , "4", "5", "6", "+"

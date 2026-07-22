@@ -1,8 +1,9 @@
 module RestaurantMenu (restaurantMenu) where
 
-import Prelude ((#), ($), (<>), (>>>), Unit, identity)
+import Prelude ((#), ($), (<>), (>>>), Unit, map)
 
 import Data.Profunctor.Row.RecordToRecord (pempty)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (foreach, forField, forValue, projection, with)
@@ -31,7 +32,7 @@ restaurantMenu =
                   span >>> cl "dish-price" $ text # projection ("€" <> _) # forField @"price"
                 p >>> cl "dish-desc" $ text # forValue # forField @"description"
                 span >>> cl "tags" $
-                  ( span >>> cl "tag" $ text # forValue ) # foreach identity # forField @"tags") # foreach _.name # forField @"dishes") # foreach _.name # forField @"courses"
+                  ( span >>> cl "tag" $ text # projection _.tag ) # foreach @"tag" # lcmap (map { tag: _ }) # forField @"tags") # foreach @"name" # forField @"dishes") # foreach @"name" # forField @"courses"
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
