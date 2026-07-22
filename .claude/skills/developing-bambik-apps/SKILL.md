@@ -80,9 +80,11 @@ calculator are channel-fed `foreach` grid apps (cells styled by
 `attrWith`, keys emitted via `clicked # rmap`, folded by `updates` — no
 `data-*`, no wholesale rebuild), stopwatch drives `every`
 with pause-by-`Nothing` and a keyed `foreach identity … # lcmap lapLines
-# displayed` laps list, reorder is the keyed-reconciliation showcase (a
-playlist keyed by track id, Rotate moves each row's DOM node with its
-track so a DOM-local checkbox tick follows it),
+# displayed` laps list, reorder is the keyed-reconciliation showcase and
+the `edits` collection-editor demo (a playlist keyed by track id, each
+row a DOM-local checkbox plus an in-row rename field; Rotate/Shuffle
+move each row's DOM node with its track so tick, title and focus follow
+it),
 shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
 `constantly`-fed catalogue, password-generator is the effectful shape
 (`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
@@ -135,6 +137,21 @@ only when an element's *structure* genuinely varies with the data
 the structure as data through `foreach` and compute per-element
 attributes with `attrWith`. Durable state still belongs in the model,
 with `listOf`'s click-replay folding it back.
+
+A **collection editor** is `edits` — `foreach`'s editor form: give it the
+key and an element *editor* that emits its own edited row with the key
+intact (the `asField @l … # completed` shape — `completed` is what
+carries the id along), and it folds every element emission back into the
+array by key, emitting the whole updated array:
+`ul $ (li $ filledTextField {…} # asField @"title" # completed) # edits _.id`
+is a first-class `Array a → Array a` stage — nest it in a form via
+`# field @l` or feed it straight to `# mvu`. Rows need stable identity
+(an id field): the key is both the reconciliation identity and the
+return address of each edit, so an array of bare strings can't be
+edited in place. Add/remove/reorder are array-level concerns — sibling
+`updates` stages over the enclosing model, not part of the element
+(reorder is the worked example: in-row rename via `edits`, Rotate/
+Shuffle as sibling action stages).
 
 The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline

@@ -4,7 +4,6 @@ import Prelude ((#), ($), (<$>), (>>>), Unit, bind, compare, map, pure)
 
 import Data.Array (snoc, sortBy, uncons)
 import Data.Maybe (maybe)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -16,9 +15,9 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, displayed, mvu, onCase, silence, updates)
-import PUI.HTML (body, el, foreach, li, span, text, ul, (:=))
-import PUI.MDC (button, card, cardActions, elevation20)
+import PUI (action, asCase, asField, completed, field, mvu, onCase, silence, updates)
+import PUI.HTML (body, edits, el, li, ul, (:=))
+import PUI.MDC (button, card, cardActions, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Track = { id :: String, title :: String }
@@ -37,9 +36,9 @@ reorder =
                 silence # action rotateAction # onCase @"rotate"
                 silence # action shuffleAction # onCase @"shuffle") # updates (match { reordered: setOrder })
           ul
-            ( ( li >>> "style" := "display: flex; gap: 10px; align-items: center; list-style: none; margin: 6px 0;" $ RecordToRecord.do
+            ( ( li >>> "style" := "display: flex; gap: 10px; align-items: center; list-style: none; margin: 6px 0;" $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  span (text # lcmap (\(t :: Track) -> { value: t.title }))) # foreach _.id) # lcmap _.order # displayed
+                  filledTextField { floatingLabel: "Title" } # asField @"title") # completed) # edits _.id) # field @"order"
       ) # mvu openingSetlist
 
 rotateAction :: Playlist -> Aff [ reordered :: Array Track ]

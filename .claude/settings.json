@@ -145,7 +145,10 @@
       "Bash(grep -nB1 -A4 \"button ::\" src/PUI/MDC.purs)",
       "Bash(node /tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad/check-watchdog.mjs)",
       "Bash(grep -n '\\\\$> Nothing\\\\|pure Nothing\\\\|void \\\\$ prop\\\\|pure status\\\\|status <- prop' src/PUI.purs)",
-      "Bash(grep -n '\\\\$> Nothing\\\\|void \\\\$ prop' src/PUI.purs)"
+      "Bash(grep -n '\\\\$> Nothing\\\\|void \\\\$ prop' src/PUI.purs)",
+      "Bash(grep -nA3 \"^foreach ::\" src/PUI/HTML.purs)",
+      "Bash(grep -nA4 \"^updates ::\" src/PUI.purs)",
+      "Bash(grep -n \"foreach$\\\\|, foreach\" src/PUI/HTML.purs)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

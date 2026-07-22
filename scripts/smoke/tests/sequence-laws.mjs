@@ -6,16 +6,18 @@
 export const demos = ['demo/nguis/reorder']
 export const url = '/demo/nguis/reorder/'
 
+// The row shows its track title in the rename field (an MDC filledTextField
+// fed through the channel), so the title reads from the field's input value.
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelectorAll('ul li').length`), 4, 'build: one element per array entry')
-  assertEq(await ev(`document.querySelector('ul li span').textContent`), 'Track 1', 'build: order preserved')
+  assertEq(await ev(`document.querySelector('ul li .mdc-text-field__input').value`), 'Track 1', 'build: order preserved')
 
   // tag the first element's DOM node and give it DOM-local state
   const before = await ev(`(() => {
     const li = document.querySelector('ul li')
     li.__smokeTag = true
-    li.querySelector('input').checked = true
-    return li.querySelector('span').textContent
+    li.querySelector('input[type=checkbox]').checked = true
+    return li.querySelector('.mdc-text-field__input').value
   })()`)
   assertEq(before, 'Track 1', 'tagged the Track 1 node')
 
@@ -28,9 +30,9 @@ export const run = async ({ ev, assertEq, sleep }) => {
     return {
       total: lis.length,
       idx,
-      text: idx >= 0 ? lis[idx].querySelector('span').textContent : null,
-      checked: idx >= 0 ? lis[idx].querySelector('input').checked : null,
-      firstText: lis[0]?.querySelector('span').textContent ?? null,
+      text: idx >= 0 ? lis[idx].querySelector('.mdc-text-field__input').value : null,
+      checked: idx >= 0 ? lis[idx].querySelector('input[type=checkbox]').checked : null,
+      firstText: lis[0]?.querySelector('.mdc-text-field__input').value ?? null,
     }
   })()`)
   assertEq(after.total, 4, 'reconcile: same number of elements')

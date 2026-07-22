@@ -1,5 +1,16 @@
 -- | The core profunctor UI type and its combinators.
 -- |
+-- | **The duoidal reading.** `PUI` composes two ways: sequentially
+-- | (`Semigroupoid.do`, `⊳` — emissions feed downstream) and in parallel
+-- | (the row merges, `⊗` — the input broadcasts to every operand). The two
+-- | interact as in a duoidal category: a pipeline can only emulate a merge
+-- | through a **comonoid** — a stage that *duplicates* its input onward, not
+-- | merely consumes it. `displayed` is exactly that comultiplication (render
+-- | *and* forward); `muted` is only the counit (render and discard), which is
+-- | why `muted` chrome ahead of a live stage starves it under `⊳` while the
+-- | same chrome inside a merge needs nothing. See
+-- | doc/collections-profunctor-algebra.md §0.
+-- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
 -- | stages are composed with `Semigroupoid.do`, every emission travels
 -- | left-to-right through the stages, and `mvu` loops the final emission

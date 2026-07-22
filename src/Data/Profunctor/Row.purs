@@ -18,6 +18,26 @@
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
 -- |
+-- | Two laws govern every direction (the four merges here and the container
+-- | action in `Data.Profunctor.Acting` alike), both decided by the
+-- | **output side**:
+-- |
+-- |   * **units are forced, not designed** — a direction's nullary merge
+-- |     announces iff its output side is a product: `1_× = {}` (and `[]` at
+-- |     runtime) is inhabited, so the unit announces its canonical value
+-- |     (`pempty = announce {}`); `1_+ = Variant ()` (zero emitters) is
+-- |     uninhabited, so the unit is silence, by parametricity. Every
+-- |     starvation symptom is a sum-output unit standing where a
+-- |     product-output unit was required.
+-- |   * **gates are the cost of laxity over streams** — pairing two output
+-- |     streams into one stream of pairs has one canonical implementation:
+-- |     retain each side's last value, withhold until every side has spoken.
+-- |     So every (·,×)-direction gates and retains (`recordToRecord`,
+-- |     `variantToRecord`, `acted`'s gather) and no (·,+)-direction does
+-- |     (injections need no pairing).
+-- |
+-- | See doc/collections-profunctor-algebra.md §1.
+-- |
 -- | Reshape vs focus (doc/row-profunctors.md, "Reshape vs focus"): a
 -- | reshape *drops* the complement — extra record fields are simply never
 -- | read (free coercion), extra variant cases are never emitted (`expand`)

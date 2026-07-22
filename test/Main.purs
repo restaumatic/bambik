@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 
+import Data.Array (length, (!!))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (over, set, view)
@@ -11,6 +12,7 @@ import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
 import Data.Profunctor.Strong (first)
+import Data.Profunctor.Acting (acted, collapsedE, optioned)
 import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
@@ -53,6 +55,28 @@ probeIO insRef propRef = PUI $ pure
   { toUser: \i -> Ref.modify_ (_ <> [ i ]) insRef
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
+
+-- An element probe for the container action: `acted` instantiates the wrapped
+-- widget once per key, so each instantiation registers its own channel legs in
+-- the roster (build order) and bumps the build counter — making instance reuse
+-- (identity-follows-key) and per-element firing observable at the value level.
+type ElemHandle i o = { ins :: Ref.Ref (Array i), prop :: Ref.Ref (Maybe (o -> Effect Unit)) }
+
+elemProbe :: forall i o. Ref.Ref Int -> Ref.Ref (Array (ElemHandle i o)) -> PUI Effect i o
+elemProbe builds roster = PUI do
+  Ref.modify_ (_ + 1) builds
+  ins <- Ref.new []
+  propR <- Ref.new Nothing
+  Ref.modify_ (_ <> [ { ins, prop: propR } ]) roster
+  pure
+    { toUser: \i -> Ref.modify_ (_ <> [ i ]) ins
+    , fromUser: \prop -> Ref.write (Just prop) propR
+    }
+
+fireElem :: forall i o. Ref.Ref (Array (ElemHandle i o)) -> Int -> o -> Effect Unit
+fireElem roster n o = do
+  handles <- Ref.read roster
+  for_ (handles !! n) \h -> fire h.prop o
 
 main :: Effect Unit
 main = do
@@ -658,3 +682,94 @@ main = do
     Ref.read outs >>= assertEqual "displayed: every value forwarded, no echo needed" [ 1 ]
     fire gProp unit
     Ref.read outs >>= assertEqual "displayed: an event re-emits the retained value" [ 1, 1 ]
+
+  -- == The container action (Data.Profunctor.Acting): the Array case of ==
+  -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
+
+  -- acted on (->): pure carriers have no identity — acted _ = map.
+  assertEqual "acted/(->) = map" [ 2, 6 ] (acted (const "") (_ * 2) [ 1, 3 ])
+
+  -- optioned on (->): the Maybe = 1 + a container action, via the Array embedding.
+  assertEqual "optioned/(->): Just" (Just 6) (optioned (_ * 2) (Just 3))
+  assertEqual "optioned/(->): Nothing" (Nothing :: Maybe Int) (optioned (_ * 2) Nothing)
+
+  -- empty: fed [], emits [] — the inhabited nullary of μx. 1 + a×x. And only
+  -- on feed: registration alone announces nothing ([] is not the only Array b).
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
+    outs <- Ref.new ([] :: Array (Array String))
+    m <- unwrap (acted _.k (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    Ref.read outs >>= assertEqual "acted: registration announces nothing" []
+    m.toUser []
+    Ref.read outs >>= assertEqual "acted: fed [] emits []" [ [] ]
+
+  -- singleton retraction: fed [a], behaves as the element fed a; an element
+  -- emission b emits [b].
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
+    outs <- Ref.new ([] :: Array (Array String))
+    m <- unwrap (acted _.k (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser [ { k: "a", v: 1 } ]
+    handles <- Ref.read roster
+    for_ (handles !! 0) \h -> Ref.read h.ins >>= assertEqual "acted/singleton: element fed its value" [ { k: "a", v: 1 } ]
+    Ref.read outs >>= assertEqual "acted/singleton: withheld before the element speaks" []
+    fireElem roster 0 "b"
+    Ref.read outs >>= assertEqual "acted/singleton: element emission emits [b]" [ [ "b" ] ]
+
+  -- gather gate: withheld until every element has spoken; thereafter any
+  -- element emission re-emits the whole array from retained last outputs.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
+    outs <- Ref.new ([] :: Array (Array String))
+    m <- unwrap (acted _.k (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
+    fireElem roster 0 "x"
+    Ref.read outs >>= assertEqual "acted/gate: withheld until every element spoke" []
+    fireElem roster 1 "y"
+    Ref.read outs >>= assertEqual "acted/gate: completes on the last voice" [ [ "x", "y" ] ]
+    fireElem roster 0 "x2"
+    Ref.read outs >>= assertEqual "acted/gate: retain-last re-emits the whole array" [ [ "x", "y" ], [ "x2", "y" ] ]
+
+  -- identity follows key: re-feeding survivors builds nothing new; permuting
+  -- keys reorders the gathered output without rebuilding; dropping a key
+  -- keeps the survivors' instances and re-gathers immediately.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
+    outs <- Ref.new ([] :: Array (Array String))
+    m <- unwrap (acted _.k (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
+    Ref.read builds >>= assertEqual "acted/keys: two entrants built" 2
+    fireElem roster 0 "x"
+    fireElem roster 1 "y"
+    m.toUser [ { k: "a", v: 10 }, { k: "b", v: 20 } ]
+    Ref.read builds >>= assertEqual "acted/keys: survivors re-fed, nothing rebuilt" 2
+    handles <- Ref.read roster
+    for_ (handles !! 0) \h -> Ref.read h.ins >>= assertEqual "acted/keys: survivor re-fed in place" [ { k: "a", v: 1 }, { k: "a", v: 10 } ]
+    m.toUser [ { k: "b", v: 21 }, { k: "a", v: 11 } ]
+    Ref.read builds >>= assertEqual "acted/keys: permutation rebuilds nothing" 2
+    Ref.read outs >>= \os -> assertEqual "acted/keys: output order follows the fed key order" (Just [ "y", "x" ]) (os !! (length os - 1))
+    m.toUser [ { k: "a", v: 12 } ]
+    Ref.read builds >>= assertEqual "acted/keys: dropping a key rebuilds nothing" 2
+    Ref.read outs >>= \os -> assertEqual "acted/keys: after drop, gathers the survivor" (Just [ "x" ]) (os !! (length os - 1))
+
+  -- collapsed (the sum-flavored sibling): silent on empty, forwards each
+  -- element emission as it happens — ungated.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (collapsedE _.k (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser []
+    Ref.read outs >>= assertEqual "collapsed: silent on empty" []
+    m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
+    fireElem roster 0 "z"
+    Ref.read outs >>= assertEqual "collapsed: forwards immediately, no gate" [ "z" ]

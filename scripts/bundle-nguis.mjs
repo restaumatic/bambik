@@ -24,6 +24,7 @@ const demos = {
   'checkout': ['Checkout', 'checkout'],
   'payment': ['Payment', 'payment'],
   'ticket-dispenser': ['TicketDispenser', 'ticketDispenser'],
+  'potluck': ['Potluck', 'potluck'],
   'reorder': ['Reorder', 'reorder'],
   'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
 }
