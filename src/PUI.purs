@@ -39,14 +39,15 @@ module PUI
   , action'
   , affAdapter
   , announce
-  , collapsed
   , constant
   , constantly
   , debounced
   , debounced'
   , displayed
+  , edits
   , effAdapter
   , every
+  , foreach
   , looped
   , muted
   , mvu
@@ -971,6 +972,30 @@ spied name w = wrap ado
 
 -- The container action on PUI (class in Data.Profunctor.Acting — the pure
 -- algebra; instances live with the carriers, like the merge instances above).
+--
+-- Three collection combinators share one keyed reconciler and divide the
+-- ground by OUTPUT:
+--
+--   combinator | element    | output    | slots primed by | emits            | empty array
+--   -----------|------------|-----------|-----------------|------------------|------------
+--   foreach    | p a o      | o         | —  (no slots)   | each emission,   | silent
+--              |            |           |                 | as it happens    | (no o to make)
+--   acted      | p a b      | Array b   | element         | whole array, once| emits []
+--              |            |           | emissions       | every element    | (inhabited
+--              |            |           |                 | spoke; retain-   | nullary)
+--              |            |           |                 | last after       |
+--   edits      | p a a      | Array a   | the fed input   | whole array,     | emits []
+--              |            |           | (a ≅ a)         | immediately on   | (pass-through)
+--              |            |           |                 | every edit       |
+--
+-- Rule of thumb — ask what the stage means downstream: an individual event
+-- ("this one fired") → foreach; the aggregate as a joint decision (exists
+-- only when everyone has spoken) → acted; the aggregate as running state
+-- (always valid, updated per edit) → edits. foreach cannot be acted (a gate
+-- over event sources is absurd; Array b erases "which one"), acted cannot be
+-- edits in general (a type-changing p a b cannot fabricate the missing b's
+-- from the input), and edits cannot be foreach (an untagged o cannot be
+-- folded back in by key).
 
 -- | What a stateful carrier contributes to the container action: how to
 -- | **instantiate** one element widget at runtime and how to **place** it —
@@ -1005,13 +1030,46 @@ instance Hosting m node => Acting (PUI m) where
     hooks <- hosting w
     liftEffect $ actedWith key hooks
 
--- | The collapsed (sum-flavored) collection on any hosting carrier — every
--- | element emission forwarded onto one shared channel; ungated, silent on
--- | empty. `PUI.HTML.foreach = collapsed`.
-collapsed :: forall m node a o. Hosting m node => (a -> String) -> PUI m a o -> PUI m (Array a) o
-collapsed key w = wrap do
+-- | The dynamic collection — the **collapsed (sum-flavored) reading of the
+-- | container action** on any hosting carrier. **Keyed and retaining**: each
+-- | element is identified by `key a`, and on every fed array the collection
+-- | reconciles *by key* — matched elements are re-fed in place (their carrier
+-- | node kept), new keys built, absent keys removed, and nodes restacked only
+-- | when the key sequence actually changed. So a fixed-key grid never
+-- | rebuilds, a growing list only appends, and a reordered list **moves each
+-- | element's node with it** — carrier-local state (focus, scroll, selection)
+-- | follows the item, not the position. Keys must be unique.
+-- |
+-- | Written trailing, wrapped in a container ocular: `ul $ item # foreach
+-- | _.key`. Every element's emission collapses onto one shared channel `o`
+-- | (the sum-flavored sibling of `acted`'s gathered `Array b`), so it is
+-- | ungated and lawfully **silent on an empty array** (no `o` to fabricate) —
+-- | as a terminal display pass the carrier through with `# lcmap proj
+-- | # displayed`, the comonoid a pipeline tail requires; when the aggregate
+-- | array itself is the output, use `acted` (gathered, knowledge-gated,
+-- | announces `[]`) or `edits` (input-primed, immediate). Both share this
+-- | keyed reconciler.
+foreach :: forall m node a o. Hosting m node => (a -> String) -> PUI m a o -> PUI m (Array a) o
+foreach key w = wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith key hooks
+
+-- | The **collection editor** — lift an element *editor* (`p a a`, emitting
+-- | its own edited row with its key intact, the shape `field @l`/`asField @l
+-- | … # completed` produces) over the array: every element emission is folded
+-- | back in **by key** and the whole updated array emits **immediately**.
+-- | It can afford immediacy because it is **input-primed** — the retained fed
+-- | array supplies every unedited slot (`a ≅ a`: the input is a valid
+-- | output) — where `acted` is **emission-primed** and must gather (a
+-- | type-changing `p a b` cannot fabricate the missing `b`s, so the `Array b`
+-- | is withheld until every element has spoken). Rule of thumb: the aggregate
+-- | as running state → `edits`; the aggregate as joint decision → `acted`;
+-- | individual emissions → `collapsed`/`foreach`. A first-class
+-- | `Array a → Array a` editor citizen, nestable like any editor (`# field
+-- | @l` into a form, or straight into `# mvu`); element addition, removal and
+-- | reordering are array-level concerns and stay outside.
+edits :: forall m node a. Hosting m node => (a -> String) -> PUI m a a -> PUI m (Array a) (Array a)
+edits key item = foreach key item # updates (\edited -> map \x -> if key x == key edited then edited else x)
 
 -- The shared keyed reconciler: one entry per key, holding the element
 -- instance's feed leg, its retained last output (the gather slot), and its

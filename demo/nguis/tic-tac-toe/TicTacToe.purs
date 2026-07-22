@@ -8,8 +8,8 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Profunctor (lcmap, rmap)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, mvu, projection, toCase, updates)
-import PUI.HTML (attrWith, body, clicked, div, foreach, text, (:=))
+import PUI (completed, foreach, mvu, projection, toCase, updates)
+import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

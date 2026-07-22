@@ -33,8 +33,6 @@ module PUI.HTML
   , el
   , em
   , footer
-  , edits
-  , foreach
   , foreachWith
   , h1
   , h2
@@ -93,7 +91,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (PUI, collapsed, updates)
+import PUI (PUI)
 import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -180,7 +178,6 @@ textArea = wrap do
         value <- getValue node
         prop value
     }
-
 
 checkboxInput :: forall a . Default a => PUI Web (Maybe a) (Maybe a)
 checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
@@ -492,7 +489,6 @@ provided w = wrap do
     , fromUser
     }
 
-
 -- | Value-dependent class for the last-built element: the class is present
 -- | exactly while the predicate holds for the value fed — styling, not
 -- | visibility, so it stays a predicate (deliberately last-element-only:
@@ -562,48 +558,6 @@ onClickedXY content = wrap do
         onClickXY node \x y -> prop { x, y }
     }
 
--- | The dynamic collection — the **collapsed reading of the container action**
--- | (`Data.Profunctor.Acting`), and the single collection combinator. **Keyed
--- | and retaining**: each element is identified by `key a`, and on every fed
--- | array the collection reconciles *by key* — matched elements are re-fed in
--- | place (their DOM kept), new keys are built, absent keys removed, and the
--- | DOM reordered only when the key sequence actually changed. So a fixed-key
--- | grid never rebuilds (values update through the channel), a growing list
--- | only appends, and a reordered list **moves each element's DOM node with
--- | it** — so browser-local state (focus, scroll, selection) follows the item,
--- | not the position. Keys must be unique.
--- |
--- | Written trailing, wrapped in a container ocular: `ul $ item # foreach _.key`.
--- | It collapses every element's emission onto one shared channel `o` (the
--- | sum-flavored sibling of `acted`'s gathered `Array b`), so as a terminal
--- | display it cannot announce on an empty array by itself (parametricity: no
--- | `o` to fabricate) — pass the carrier through with `# lcmap proj
--- | # displayed`, the lawful comonoid a pipeline tail requires. When the
--- | aggregate array itself is the output — gathered, knowledge-gated,
--- | announcing `[]` on empty — use `acted` instead. Both share one keyed
--- | reconciler. See doc/collections-profunctor-algebra.md.
-foreach :: forall a o. (a -> String) -> PUI Web a o -> PUI Web (Array a) o
-foreach = collapsed
-
--- | The **collection editor** — `foreach`'s editor form: lift an element
--- | *editor* (`p a a`, emitting its own edited value with its key intact —
--- | the merge-operand shape `field @l`/`asField @l … # completed` produces)
--- | over the array, folding every element emission back in **by key**: the
--- | emitted element replaces the one whose key matches, and the stage emits
--- | the whole updated array — a first-class `Array a → Array a` editor
--- | citizen, nestable like any editor (`# field @l` into a form, or straight
--- | into `# mvu`). The key is both the reconciliation identity and the
--- | return address of every edit, so elements must carry it as data (an id
--- | field) — which is also why `completed` on the element matters: it widens
--- | the edited output back to the full row, id included. Element removal,
--- | addition, and reordering are array-level concerns and stay outside (a
--- | sibling `updates` stage over the enclosing model).
--- |
--- | Written trailing like `foreach`:
--- | `ul $ (li $ filledTextField {…} # asField @"title" # completed) # edits _.id`.
-edits :: forall a. (a -> String) -> PUI Web a a -> PUI Web (Array a) (Array a)
-edits key item = foreach key item # updates (\edited -> map \x -> if key x == key edited then edited else x)
-
 -- | The **structure-from-value builder collection**: build a whole widget per
 -- | array element from the builder closure (tags/attributes as computed
 -- | strings — `el ("h" <> show level)`, `circle >>> "cx" := show c.x`). The
@@ -665,7 +619,6 @@ runWidgetInNode node initial callback ui = runDomInNode node do
   { toUser, fromUser } <- unwrap ui
   liftEffect $ fromUser callback
   void $ liftEffect $ toUser initial
-
 
 --- private
 

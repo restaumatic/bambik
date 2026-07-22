@@ -146,8 +146,8 @@ import Effect.Unsafe (unsafePerformEffect)
 import Prim.Row (class Cons)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOption, convertOptionsWithDefaults)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (PUI, constantly, effAdapter)
-import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, foreach, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
+import PUI (PUI, constantly, effAdapter, foreach)
+import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
 import PUI.HTML (button) as HTML
 import PUI.Web (Node, Web, setAttribute, uniqueId)
 

@@ -8,8 +8,8 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (constantly, forField, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.HTML (body, clicked, foreach, text)
+import PUI (constantly, foreach, forField, forValue, mvu, projection, tapped, toCase, updates)
+import PUI.HTML (body, clicked, text)
 import PUI.MDC (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

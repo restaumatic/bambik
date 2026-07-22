@@ -5,8 +5,8 @@ import Prelude ((#), ($), (<>), (>>>), Unit, identity)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (forField, forValue, projection, with)
-import PUI.HTML (a, article, blockquote, body, cl, div, footer, foreach, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
+import PUI (foreach, forField, forValue, projection, with)
+import PUI.HTML (a, article, blockquote, body, cl, div, footer, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
 import PUI.SVG as SVG
 
 restaurantMenu :: Effect Unit

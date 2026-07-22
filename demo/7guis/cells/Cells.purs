@@ -16,8 +16,8 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, mvu, projection, toCase, updates)
-import PUI.HTML (attrWith, body, clicked, div, foreach, table, td, text, tr, (:=))
+import PUI (asField, completed, foreach, mvu, projection, toCase, updates)
+import PUI.HTML (attrWith, body, clicked, div, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

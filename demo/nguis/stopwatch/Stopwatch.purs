@@ -10,8 +10,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (asCase, completed, displayed, every, forValue, mvu, projection, updates)
-import PUI.HTML (body, foreach, li, provided, text, ul)
+import PUI (asCase, completed, displayed, every, forValue, foreach, mvu, projection, updates)
+import PUI.HTML (body, li, provided, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

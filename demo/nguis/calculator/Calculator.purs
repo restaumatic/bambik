@@ -9,8 +9,8 @@ import Data.Profunctor (lcmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (mvu, toCase, updates)
-import PUI.HTML (attrWith, body, clicked, div, foreach, text, (:=))
+import PUI (foreach, mvu, toCase, updates)
+import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

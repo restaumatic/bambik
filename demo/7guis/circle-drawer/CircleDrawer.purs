@@ -10,8 +10,8 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, mvu, toCase, updates)
-import PUI.HTML (attrWith, body, foreach, onClickedXY, provided, (:=))
+import PUI (asCase, asField, foreach, mvu, toCase, updates)
+import PUI.HTML (attrWith, body, onClickedXY, provided, (:=))
 import PUI.MDC (button, card, cardActions, elevation20, sliderLive)
 import PUI.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid

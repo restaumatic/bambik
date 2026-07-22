@@ -28,7 +28,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), announce, collapsed, displayed, looped, resolveFor, updates, with)
+import PUI (PUI(..), announce, displayed, foreach, looped, resolveFor, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -760,16 +760,16 @@ main = do
     Ref.read builds >>= assertEqual "acted/keys: dropping a key rebuilds nothing" 2
     Ref.read outs >>= \os -> assertEqual "acted/keys: after drop, gathers the survivor" (Just [ "x" ]) (os !! (length os - 1))
 
-  -- collapsed (the sum-flavored sibling): silent on empty, forwards each
+  -- foreach (the collapsed, sum-flavored sibling): silent on empty, forwards each
   -- element emission as it happens — ungated.
   do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (collapsed _.k (elemProbe builds roster))
+    m <- unwrap (foreach _.k (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
-    Ref.read outs >>= assertEqual "collapsed: silent on empty" []
+    Ref.read outs >>= assertEqual "foreach: silent on empty" []
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     fireElem roster 0 "z"
-    Ref.read outs >>= assertEqual "collapsed: forwards immediately, no gate" [ "z" ]
+    Ref.read outs >>= assertEqual "foreach: forwards immediately, no gate" [ "z" ]

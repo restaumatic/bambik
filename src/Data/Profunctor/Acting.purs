@@ -30,7 +30,7 @@
 -- | derived `Maybe` action. The carrier machinery lives with the carriers,
 -- | exactly as the merge classes' instances do: `PUI` holds the shared keyed
 -- | reconciler, the generic `Hosting m node => Acting (PUI m)` instance and
--- | the collapsed (sum-flavored, forwarding) form `collapsed`; `PUI.Web`
+-- | the collapsed (sum-flavored, forwarding) form `foreach`; `PUI.Web`
 -- | holds the DOM `Hosting` instance.
 module Data.Profunctor.Acting
   ( class Acting
