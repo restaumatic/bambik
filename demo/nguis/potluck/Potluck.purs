@@ -1,6 +1,6 @@
 module Potluck (potluck) where
 
-import Prelude ((#), ($), (<>), (==), Unit, show)
+import Prelude ((#), ($), (<<<), (<>), (==), Unit, show)
 
 import Data.Array (length, mapWithIndex)
 import Data.Maybe (Maybe(..))
@@ -19,7 +19,10 @@ potluck =
   body $
     elevation20 $
       card { caption: "Potluck" } $ ( Semigroupoid.do
-          body2 text # projection callToAction # tapped
+          body2 ( Semigroupoid.do
+              text # projection (show <<< length)
+              displayed (muted (staticText " guests invited — everyone picks one dish; the menu prints once the table is complete."))
+          ) # tapped
           list $
             ( listItem $ Semigroupoid.do
                 subtitle1 text # projection _.name # displayed
@@ -40,9 +43,6 @@ invited =
   , { name: "Edsger", dish: Nothing }
   , { name: "Barbara", dish: Nothing }
   ]
-
-callToAction :: Array Guest -> String
-callToAction guests = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
 
 menuLines :: Array { name :: String, dish :: String } -> Array { name :: String, serving :: String }
 menuLines = mapWithIndex \i guest -> { name: guest.name, serving: (if i == 0 then "" else ", ") <> guest.name <> "’s " <> guest.dish }
