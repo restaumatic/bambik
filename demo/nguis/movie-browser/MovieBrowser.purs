@@ -9,8 +9,8 @@ import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, foreach, forField, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.HTML (attr, body, cl, clWhen, li, span, text, ul)
-import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, subtitle1, tabBar)
+import PUI.HTML (body, clWhen, span, text)
+import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 
@@ -25,9 +25,9 @@ movieBrowser =
               filterChip { label: "Cult" } # asField @"cult"
               filterChip { label: "Oscar" } # asField @"oscar") # completed
           elevation1 (subtitle1 text # projection favoritesLine) # tapped
-          ul >>> cl "mdc-deprecated-list" $
+          list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
-                $ li >>> cl "mdc-deprecated-list-item" >>> attr "style" "display: flex; align-items: center; gap: 8px;" $ ( RecordToRecord.do
+                $ listItem $ ( RecordToRecord.do
                     span text # forValue # forField @"title"
                     span text # projection show # forField @"year"
                     span text # projection ratingLine # forField @"rating"

@@ -16,8 +16,8 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 import PUI (action, asCase, asField, edits, field, mvu, onCase, silence, updates, widenRecordInput)
-import PUI.HTML (body, el, li, ul, (:=))
-import PUI.MDC (button, card, cardActions, elevation20, filledTextField)
+import PUI.HTML (body, el, (:=))
+import PUI.MDC (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Track = { id :: String, title :: String }
@@ -35,8 +35,8 @@ reorder =
               VariantToVariant.do
                 silence # action rotateAction # onCase @"rotate"
                 silence # action shuffleAction # onCase @"shuffle") # updates (match { reordered: setOrder })
-          ul
-            ( ( li >>> "style" := "display: flex; gap: 10px; align-items: center; list-style: none; margin: 6px 0;" $ ( RecordToRecord.do
+          list
+            ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
                   filledTextField { floatingLabel: "Title" } # asField @"title") # widenRecordInput) # edits @"id") # field @"order"
       ) # mvu openingSetlist
