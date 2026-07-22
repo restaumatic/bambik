@@ -9,8 +9,8 @@ import Data.Profunctor.Acting (acted)
 import Data.String (joinWith)
 import Effect (Effect)
 import PUI (asField, displayed, projection, tapped, with)
-import PUI.HTML (body, div, text)
-import PUI.MDC (body2, card, elevation20, headline6, segmentedButton, subtitle1)
+import PUI.HTML (body, text)
+import PUI.MDC (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Guest = { name :: String, dish :: Maybe String }
@@ -21,8 +21,8 @@ potluck =
     elevation20 $
       card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 text # projection callToAction # tapped
-          div $
-            ( div $ Semigroupoid.do
+          list $
+            ( listItem $ Semigroupoid.do
                 subtitle1 text # projection _.name # displayed
                 segmentedButton dishes # asField @"dish" # lcmap pickOf
             ) # acted _.name
