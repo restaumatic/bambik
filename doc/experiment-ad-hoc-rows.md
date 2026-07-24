@@ -26,15 +26,18 @@ markdown-previewer's `Block`/`Inline` (they looked recursive but aren't:
 | metric | before | after |
 |---|---|---|
 | total demo LOC | 3,053 | 2,913 (−4.6%) |
+| total chars | 118,984 | 142,860 (+20.1%) |
+| non-whitespace chars | 92,108 | 110,769 (+20.3%) |
 | diff | — | 30 files, +444/−583 |
 | longest line | 302 ch | 735 ch |
 | p99 line width | 160 ch | 282 ch |
 | p95 line width | 103 ch | 133 ch |
 | lines > 120 ch | 89 | 196 |
 
-Line count *drops* (every declaration block vanished) while line *width*
-explodes: the type text didn't disappear, it moved from one declaration into
-every signature that used the name. The distribution per file is bimodal:
+Line count *drops* (every declaration block vanished) while the code *grows a
+fifth in characters*: the type text didn't disappear, it moved from one
+declaration into every signature that used the name, multiplied by the
+use-site count. Chars, not lines, are the honest size metric here. The distribution per file is bimodal:
 
 - shrinks when the type had few consumers: movie-browser −28, weather −19,
   quiz/checkout −15, todomvc −14
