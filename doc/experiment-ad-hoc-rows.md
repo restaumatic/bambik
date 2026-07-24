@@ -158,3 +158,71 @@ single-use shapes, a named alias only for the top aggregate** (and `data`
 where there's recursion). The experiment confirms the existing convention is
 at the optimum; the all-ad-hoc extreme is viable but strictly worse for the
 larger demos.
+
+## Follow-up audit: unnecessary row members after inlining
+
+A second pass checked every inlined signature for row members the function
+body never needs. Headline: **inlining created no new slack — but it exposed
+a lot of pre-existing slack.** At the parent commit every flagged helper was
+typed `Model -> Model` / `Model -> String` behind a synonym naming the full
+model; demanding the whole model cost one cheap word, so nobody noticed.
+Ad-hoc rows re-price that habit per field per paste site: a large share of
+the signature-width explosion measured above is *over-demand*, not necessary
+type text.
+
+### Where the exact row is genuinely forced
+
+Consistent across all 30 files: `mvu`/`with` seed literals, `announce`/
+`seeded` primers, constructed record literals (loaders like demo/1's
+`loadOrder`, state-bracket constructors like `fulfillmentState`), merge
+operands and `forCase` positions, and inbox's mid-pipeline
+`identity :: PUI Web {model} {model}` type anchor. Everything else —
+projections under `lcmap`/`projection`, `updates`/`match` handlers,
+`provided` panes, `every` steps — only has to *unify* with the
+pipeline-pinned model, and open rows (`forall r. { used :: T | r } -> ...`)
+unify fine. The pipeline pins the concrete model at exactly one place (the
+merge or the seed); helpers never need to repeat it.
+
+### Magnitude of the slack
+
+Dead weight concentrates in the "pack of small helpers over one model" files:
+
+| file | share of helper-signature row text that is carried, never read |
+|---|---|
+| checkout | ~70% (9 of 11 helpers read only `step` + at most one field) |
+| inbox, weather | ~two-thirds (most helpers read 1–2 of 4–6 leaf fields) |
+| calculator | 60–80% in the read helpers (`pressKey` alone earns the full row) |
+| stopwatch | ~50% |
+| demo/1 | of 4 full-Order pastes only `loadOrder` earns it; `printReceipt` needs 2 of 7 top fields, `submitOrder` 3, `summarize` 5 |
+| crud | ~17 of 45 member occurrences carried; plus a dead `surname` in the `Entry` row that flows into `listOf` unread |
+| signup-form | ~40% — `plan`/`country` are edited and seeded but never consulted by any business function |
+| tip-calculator | 6 of 8 row-typed values over-demand (only `perPersonLine` and the seed need the whole `Bill`) |
+
+Clean (no or trivial slack): temperature-converter, shopping-cart, reorder,
+tic-tac-toe, markdown-previewer, photo-gallery, restaurant-menu, and
+near-clean auction, ticket-dispenser, payment, color-mixer, cells.
+**No unused variant cases exist anywhere** — every case of every converted
+variant is both constructed and consumed.
+
+Extreme cases: quiz's `restart` and inbox's `emptiedNote` declare the full
+model and ignore their argument entirely (`forall a. a -> ...` would do).
+Incidental finds: `demo/7guis/flight-booker/Business.purs` is imported by
+nothing (orphaned module); circle-drawer's `undo`/`redo` don't restore
+`diameter` — visible in the audit precisely because the field sits unused in
+their signatures.
+
+### What this does to the verdict
+
+The width explosion blamed on ad-hoc rows above is really two costs
+superimposed: necessary row text (the model spelled where it's pinned) and
+over-demand (full model where 1–3 fields suffice). The second dominates in
+the worst files. The synonym style *hid* the over-demand; the ad-hoc style
+*charges* for it — and, unlike the synonym style, makes the honest narrow
+signature expressible per helper. A disciplined ad-hoc variant of the demos
+(open rows for helpers, exact rows only at seeds/literals/anchors) would be
+substantially less verbose than this branch, at the cost of `forall r.`
+noise and weaker "this is the model" documentation. The optimum remains the
+existing convention, but with one refinement the audit argues for: helper
+signatures need not name the full model even when a synonym exists — the
+full-model `Model -> Model` habit is a documentation choice, not a
+requirement of the row machinery.
