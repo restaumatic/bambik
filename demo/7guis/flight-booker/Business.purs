@@ -17,18 +17,12 @@ import Effect.Aff (Aff)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
-type Booking =
-  { flightType :: String
-  , start :: String
-  , return :: String
-  }
-
-validationText :: Booking -> String
+validationText :: { flightType :: String, start :: String, return :: String } -> String
 validationText b = case validate b of
   Left err -> "⚠ " <> err
   Right summary -> summary
 
-validate :: Booking -> Either String String
+validate :: { flightType :: String, start :: String, return :: String } -> Either String String
 validate b = case parseDate b.start of
   Nothing -> Left ("start date " <> show b.start <> " is not a valid DD.MM.YYYY date")
   Just start
@@ -50,13 +44,13 @@ parseDate s = case split (Pattern ".") s of
       else Nothing
   _ -> Nothing
 
-bookFlight :: Booking -> Aff [ booked :: String, rejected :: String ]
+bookFlight :: { flightType :: String, start :: String, return :: String } -> Aff [ booked :: String, rejected :: String ]
 bookFlight b = pure case validate b of
   Left err -> .rejected ("Cannot book: " <> err)
   Right summary -> .booked ("You have booked: " <> summary)
 
-isReturn :: Booking -> Boolean
+isReturn :: { flightType :: String, start :: String, return :: String } -> Boolean
 isReturn b = b.flightType == "return"
 
-returnDate :: Booking -> { return :: String }
+returnDate :: { flightType :: String, start :: String, return :: String } -> { return :: String }
 returnDate b = { return: b.return }

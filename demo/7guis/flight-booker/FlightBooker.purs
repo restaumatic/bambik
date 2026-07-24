@@ -1,6 +1,6 @@
 module FlightBooker (flightBooker) where
 
-import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), class Eq, Unit, bind, pure, show)
+import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, pure, show, unit)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
@@ -18,22 +18,6 @@ import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-data FlightType = OneWay | Return
-
-derive instance Eq FlightType
-
-type Booking =
-  { flightType :: FlightType
-  , start :: String
-  , return :: String
-  }
-
-data Itinerary
-  = OneWayOn Date
-  | ReturnBetween { out :: Date, back :: Date }
-
-type Date = { y :: Int, m :: Int, d :: Int }
-
 flightBooker :: Effect Unit
 flightBooker =
   body $
@@ -42,8 +26,8 @@ flightBooker =
       ( Semigroupoid.do
           ( RecordToRecord.do
               select { floatingLabel: "Flight type" }
-                [ { value: OneWay, label: "one-way flight" }
-                , { value: Return, label: "return flight" }
+                [ { value: .oneWay unit, label: "one-way flight" }
+                , { value: .return unit, label: "return flight" }
                 ] # required # asField @"flightType"
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
           filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
@@ -55,38 +39,40 @@ flightBooker =
         snackbar # forCase @"booked"
         snackbar # forCase @"rejected"
 
-returnBetween :: Date -> Date -> Maybe Itinerary
+returnBetween :: { y :: Int, m :: Int, d :: Int } -> { y :: Int, m :: Int, d :: Int } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween out back =
-  if dateKey back >= dateKey out then Just (ReturnBetween { out, back })
+  if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: Booking -> Either String Itinerary
+parse :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 parse b = case parseDate b.start of
   Nothing -> Left ("start date " <> show b.start <> " is not a valid DD.MM.YYYY date")
   Just start ->
-    if b.flightType /= Return then Right (OneWayOn start)
+    if b.flightType /= .return unit then Right (.oneWayOn start)
     else case parseDate b.return of
         Nothing -> Left ("return date " <> show b.return <> " is not a valid DD.MM.YYYY date")
         Just back -> case returnBetween start back of
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-validationText :: Booking -> String
+validationText :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> String
 validationText = parse >>> either (\err -> "⚠ " <> err) summary
 
-summary :: Itinerary -> String
-summary (OneWayOn out) = "A one-way flight on " <> formatDate out
-summary (ReturnBetween r) = "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
+summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
+summary = match
+  { oneWayOn: \out -> "A one-way flight on " <> formatDate out
+  , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
+  }
 
-submit :: Booking -> Aff [ booked :: String, rejected :: String ]
+submit :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Aff [ booked :: String, rejected :: String ]
 submit b = case parse b of
   Left err -> pure (.rejected ("Cannot book: " <> err))
   Right itinerary -> expand <$> bookFlight itinerary
 
-bookFlight :: Itinerary -> Aff [ booked :: String ]
+bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ booked :: String ]
 bookFlight itinerary = pure (.booked ("You have booked: " <> summary itinerary))
 
-parseDate :: String -> Maybe Date
+parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of
   [ dd, mm, yyyy ] -> do
     d <- fromString dd
@@ -97,19 +83,19 @@ parseDate s = case split (Pattern ".") s of
       else Nothing
   _ -> Nothing
 
-formatDate :: Date -> String
+formatDate :: { y :: Int, m :: Int, d :: Int } -> String
 formatDate dt = pad dt.d <> "." <> pad dt.m <> "." <> show dt.y
   where
   pad n = (if n < 10 then "0" else "") <> show n
 
-dateKey :: Date -> Int
+dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
 dateKey dt = dt.y * 10000 + dt.m * 100 + dt.d
 
-returnLeg :: Booking -> Maybe { return :: String }
-returnLeg b = if b.flightType == Return then Just { return: b.return } else Nothing
+returnLeg :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Maybe { return :: String }
+returnLeg b = if b.flightType == .return unit then Just { return: b.return } else Nothing
 
-setReturn :: { return :: String } -> Booking -> Booking
+setReturn :: { return :: String } -> { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String }
 setReturn { return } b = b { return = return }
 
-plannedTrip :: Booking
-plannedTrip = { flightType: OneWay, start: "27.03.2026", return: "27.03.2026" }
+plannedTrip :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String }
+plannedTrip = { flightType: .oneWay unit, start: "27.03.2026", return: "27.03.2026" }

@@ -14,11 +14,6 @@ import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type QuizRun =
-  { question :: Int
-  , correct :: Int
-  }
-
 quiz :: Effect Unit
 quiz =
   body $
@@ -35,13 +30,7 @@ quiz =
               button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided # lcmap finalOutcome # updates (match { restarted: const restart })
       ) # mvu freshQuizRun
 
-type Question =
-  { prompt :: String
-  , choices :: Array String
-  , answer :: Int
-  }
-
-questionCatalogue :: Array Question
+questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }
 questionCatalogue =
   [ { prompt: "What is the capital of Australia?", choices: [ "Sydney", "Canberra", "Melbourne", "Perth" ], answer: 1 }
   , { prompt: "Which planet is known as the Red Planet?", choices: [ "Venus", "Jupiter", "Mars", "Mercury" ], answer: 2 }
@@ -50,38 +39,34 @@ questionCatalogue =
   , { prompt: "How many continents are there?", choices: [ "five", "six", "seven", "eight" ], answer: 2 }
   ]
 
-freshQuizRun :: QuizRun
+freshQuizRun :: { question :: Int, correct :: Int }
 freshQuizRun = { question: 0, correct: 0 }
 
-restart :: QuizRun -> QuizRun
+restart :: { question :: Int, correct :: Int } -> { question :: Int, correct :: Int }
 restart _ = freshQuizRun
 
-answer :: Int -> QuizRun -> QuizRun
+answer :: Int -> { question :: Int, correct :: Int } -> { question :: Int, correct :: Int }
 answer choice run = case index questionCatalogue run.question of
   Just q -> { question: run.question + 1, correct: run.correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-type Choice = { key :: Int, label :: String }
-
-type OpenQuestion = { prompt :: String, choices :: Array Choice }
-
-currentQuestion :: QuizRun -> Maybe OpenQuestion
+currentQuestion :: { question :: Int, correct :: Int } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
 currentQuestion run = index questionCatalogue run.question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
 
-questionPrompt :: OpenQuestion -> String
+questionPrompt :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> String
 questionPrompt q = q.prompt
 
-questionChoices :: OpenQuestion -> Array Choice
+questionChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
 questionChoices q = q.choices
 
-finalOutcome :: QuizRun -> Maybe { summary :: String }
+finalOutcome :: { question :: Int, correct :: Int } -> Maybe { summary :: String }
 finalOutcome run =
   if run.question < length questionCatalogue then Nothing
   else Just { summary: "Final score: " <> show run.correct <> " / " <> show (length questionCatalogue) }
 
-progressFraction :: QuizRun -> Number
+progressFraction :: { question :: Int, correct :: Int } -> Number
 progressFraction run = toNumber run.question / toNumber (length questionCatalogue)
 
-standing :: QuizRun -> String
+standing :: { question :: Int, correct :: Int } -> String
 standing run = "Question " <> show (min (run.question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show run.correct

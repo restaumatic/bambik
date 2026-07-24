@@ -10,8 +10,6 @@ import PUI.HTML (body)
 import PUI.MDC (card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Temperature = { celsius :: Number, fahrenheit :: Number }
-
 temperatureConverter :: Effect Unit
 temperatureConverter =
   body $
@@ -21,15 +19,15 @@ temperatureConverter =
           filledTextField { floatingLabel: "Fahrenheit" } # projection show # forField @"fahrenheit" # widenRecordInput # updates fromFahrenheit
       ) # mvu roomTemperature
 
-fromCelsius :: { value :: String } -> Temperature -> Temperature
+fromCelsius :: { value :: String } -> { celsius :: Number, fahrenheit :: Number } -> { celsius :: Number, fahrenheit :: Number }
 fromCelsius { value } m = case fromString value of
   Just c -> m { celsius = c, fahrenheit = c * 9.0 / 5.0 + 32.0 }
   Nothing -> m
 
-fromFahrenheit :: { value :: String } -> Temperature -> Temperature
+fromFahrenheit :: { value :: String } -> { celsius :: Number, fahrenheit :: Number } -> { celsius :: Number, fahrenheit :: Number }
 fromFahrenheit { value } m = case fromString value of
   Just f -> m { fahrenheit = f, celsius = (f - 32.0) * 5.0 / 9.0 }
   Nothing -> m
 
-roomTemperature :: Temperature
+roomTemperature :: { celsius :: Number, fahrenheit :: Number }
 roomTemperature = { celsius: 20.0, fahrenheit: 68.0 }

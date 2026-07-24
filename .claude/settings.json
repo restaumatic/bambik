@@ -148,7 +148,8 @@
       "Bash(grep -n '\\\\$> Nothing\\\\|void \\\\$ prop' src/PUI.purs)",
       "Bash(grep -nA3 \"^foreach ::\" src/PUI/HTML.purs)",
       "Bash(grep -nA4 \"^updates ::\" src/PUI.purs)",
-      "Bash(grep -n \"foreach$\\\\|, foreach\" src/PUI/HTML.purs)"
+      "Bash(grep -n \"foreach$\\\\|, foreach\" src/PUI/HTML.purs)",
+      "Bash(git diff *)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",

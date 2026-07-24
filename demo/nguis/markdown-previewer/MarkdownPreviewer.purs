@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
+import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, mvu)
 import PUI.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
@@ -23,22 +24,22 @@ markdownPreviewer =
             layoutCell { span: 6 } $ displayed $ dynamic \doc ->
                 each (parseMarkdown doc.source) \block ->
                   let
-                    inline = case _ of
-                      Plain s -> staticText s
-                      Bold s -> strong (staticText s)
-                      Italic s -> em (staticText s)
-                      Code s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
+                    inline = match
+                      { plain: staticText
+                      , bold: \s -> strong (staticText s)
+                      , italic: \s -> em (staticText s)
+                      , code: \s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
+                      }
                     inlines is = each is inline
-                  in case block of
-                    Heading level is -> el ("h" <> show level) (inlines is)
-                    Paragraph is -> p (inlines is)
-                    Bullets items -> ul (each items \is -> li (inlines is))
-                    Quote is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
+                  in block # match
+                    { heading: \h -> el ("h" <> show h.level) (inlines h.inlines)
+                    , paragraph: \is -> p (inlines is)
+                    , bullets: \items -> ul (each items \is -> li (inlines is))
+                    , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
+                    }
         ) # mvu welcomeDocument
 
-type Document = { source :: String }
-
-welcomeDocument :: Document
+welcomeDocument :: { source :: String }
 welcomeDocument =
   { source: """# Markdown Previewer
 
@@ -58,38 +59,40 @@ This paragraph shows **bold**, *italic* and `inline code` text.
 """
   }
 
-data Block
-  = Heading Int (Array Inline)
-  | Paragraph (Array Inline)
-  | Bullets (Array (Array Inline))
-  | Quote (Array Inline)
-
-data Inline
-  = Plain String
-  | Bold String
-  | Italic String
-  | Code String
-
-parseMarkdown :: String -> Array Block
+parseMarkdown
+  :: String
+  -> Array
+       [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }
+       , paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
+       , bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ])
+       , quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
+       ]
 parseMarkdown source = blocks (split (Pattern "\n") source)
 
-blocks :: Array String -> Array Block
+blocks
+  :: Array String
+  -> Array
+       [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }
+       , paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
+       , bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ])
+       , quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
+       ]
 blocks ls = case uncons ls of
   Nothing -> []
   Just { head: l, tail }
     | trim l == "" -> blocks tail
-    | Just t <- stripPrefix (Pattern "### ") l -> cons (Heading 3 (parseInlines t)) (blocks tail)
-    | Just t <- stripPrefix (Pattern "## ") l -> cons (Heading 2 (parseInlines t)) (blocks tail)
-    | Just t <- stripPrefix (Pattern "# ") l -> cons (Heading 1 (parseInlines t)) (blocks tail)
+    | Just t <- stripPrefix (Pattern "### ") l -> cons (.heading { level: 3, inlines: parseInlines t }) (blocks tail)
+    | Just t <- stripPrefix (Pattern "## ") l -> cons (.heading { level: 2, inlines: parseInlines t }) (blocks tail)
+    | Just t <- stripPrefix (Pattern "# ") l -> cons (.heading { level: 1, inlines: parseInlines t }) (blocks tail)
     | isBullet l ->
         let grouped = span isBullet (cons l tail)
-        in cons (Bullets (grouped.init <#> \item -> parseInlines (drop 2 item))) (blocks grouped.rest)
+        in cons (.bullets (grouped.init <#> \item -> parseInlines (drop 2 item))) (blocks grouped.rest)
     | isQuote l ->
         let grouped = span isQuote (cons l tail)
-        in cons (Quote (parseInlines (joinWith " " (grouped.init <#> dropQuoteMark)))) (blocks grouped.rest)
+        in cons (.quote (parseInlines (joinWith " " (grouped.init <#> dropQuoteMark)))) (blocks grouped.rest)
     | otherwise ->
         let grouped = span isPlainLine (cons l tail)
-        in cons (Paragraph (parseInlines (joinWith " " grouped.init))) (blocks grouped.rest)
+        in cons (.paragraph (parseInlines (joinWith " " grouped.init))) (blocks grouped.rest)
 
 isBullet :: String -> Boolean
 isBullet l = case stripPrefix (Pattern "- ") l of
@@ -111,24 +114,29 @@ isPlainLine l = trim l /= "" && case stripPrefix (Pattern "#") l of
     false, false -> true
     _, _ -> false
 
-parseInlines :: String -> Array Inline
+parseInlines :: String -> Array [ plain :: String, bold :: String, italic :: String, code :: String ]
 parseInlines s
   | s == "" = []
   | otherwise = case earliestSpan s of
-      Nothing -> [ Plain s ]
+      Nothing -> [ .plain s ]
       Just { at, open, close, make } ->
         let afterOpen = drop (at + length open) s
-            before = if at > 0 then [ Plain (take at s) ] else []
+            before = if at > 0 then [ .plain (take at s) ] else []
         in case indexOf (Pattern close) afterOpen of
           Just end | end > 0 ->
             before <> cons (make (take end afterOpen)) (parseInlines (drop (end + length close) afterOpen))
           _ ->
-            before <> cons (Plain open) (parseInlines afterOpen)
+            before <> cons (.plain open) (parseInlines afterOpen)
 
-type Span = { at :: Int, open :: String, close :: String, make :: String -> Inline }
-
-earliestSpan :: String -> Maybe Span
-earliestSpan s = pick (candidate "**" "**" Bold) (pick (candidate "*" "*" Italic) (candidate "`" "`" Code))
+earliestSpan
+  :: String
+  -> Maybe
+       { at :: Int
+       , open :: String
+       , close :: String
+       , make :: String -> [ plain :: String, bold :: String, italic :: String, code :: String ]
+       }
+earliestSpan s = pick (candidate "**" "**" (.bold)) (pick (candidate "*" "*" (.italic)) (candidate "`" "`" (.code)))
   where
   candidate open close make = indexOf (Pattern open) s <#> \at -> { at, open, close, make }
   pick ma mb = case ma, mb of

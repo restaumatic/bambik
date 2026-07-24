@@ -13,21 +13,6 @@ import PUI.HTML (body, provided, text)
 import PUI.MDC (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Order =
-  { item :: String
-  , address :: String
-  , card :: String
-  , confirmation :: String
-  }
-
-type Step =
-  { item :: String
-  , address :: String
-  , card :: String
-  , confirmation :: String
-  , step :: String
-  }
-
 checkout :: Effect Unit
 checkout =
   body $
@@ -53,46 +38,46 @@ cartStep ::
   ]
 cartStep = .next { step: "cart" }
 
-cartLine :: Step -> String
+cartLine :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> String
 cartLine r = "Step 1 of 3 — Cart: " <> r.item
 
-shippingLine :: Step -> String
+shippingLine :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> String
 shippingLine r = "Step 2 of 3 — Shipping to " <> r.address
 
-paymentLine :: Step -> String
+paymentLine :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> String
 paymentLine r = "Step 3 of 3 — Pay with card " <> r.card
 
-atCart :: Step -> Maybe Step
+atCart :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { item :: String, address :: String, card :: String, confirmation :: String, step :: String }
 atCart r = if r.step == "cart" then Just r else Nothing
 
-atShipping :: Step -> Maybe Step
+atShipping :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { item :: String, address :: String, card :: String, confirmation :: String, step :: String }
 atShipping r = if r.step == "shipping" then Just r else Nothing
 
-atPayment :: Step -> Maybe Step
+atPayment :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { item :: String, address :: String, card :: String, confirmation :: String, step :: String }
 atPayment r = if r.step == "payment" then Just r else Nothing
 
-nextAtCart :: Step -> Maybe { step :: String }
+nextAtCart :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { step :: String }
 nextAtCart r = if r.step == "cart" then Just { step: "shipping" } else Nothing
 
-nextAtShipping :: Step -> Maybe { step :: String }
+nextAtShipping :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { step :: String }
 nextAtShipping r = if r.step == "shipping" then Just { step: "payment" } else Nothing
 
-backAtShipping :: Step -> Maybe { step :: String }
+backAtShipping :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { step :: String }
 backAtShipping r = if r.step == "shipping" then Just { step: "cart" } else Nothing
 
-backAtPayment :: Step -> Maybe { step :: String }
+backAtPayment :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { step :: String }
 backAtPayment r = if r.step == "payment" then Just { step: "shipping" } else Nothing
 
-placeAtPayment :: Step -> Maybe { summary :: String }
+placeAtPayment :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { summary :: String }
 placeAtPayment r =
   if r.step == "payment"
     then Just { summary: "Order placed: " <> r.item <> " → " <> r.address <> " (card " <> r.card <> ")" }
     else Nothing
 
-recordPlaced :: { summary :: String } -> Order -> Order
+recordPlaced :: { summary :: String } -> { item :: String, address :: String, card :: String, confirmation :: String } -> { item :: String, address :: String, card :: String, confirmation :: String }
 recordPlaced r o = o { confirmation = r.summary }
 
-freshOrder :: Order
+freshOrder :: { item :: String, address :: String, card :: String, confirmation :: String }
 freshOrder =
   { item: "Wireless Headphones"
   , address: "221B Baker Street"

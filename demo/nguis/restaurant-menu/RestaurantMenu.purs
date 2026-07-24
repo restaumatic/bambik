@@ -49,19 +49,7 @@ restaurantMenu =
         staticText " — no Material components, just structure."
   ) # with { courses }
 
-type Dish =
-  { name :: String
-  , price :: String
-  , description :: String
-  , tags :: Array String
-  }
-
-type Course =
-  { name :: String
-  , dishes :: Array Dish
-  }
-
-courses :: Array Course
+courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
 courses =
   [ { name: "Antipasti"
     , dishes:

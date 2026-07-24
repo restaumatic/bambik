@@ -20,7 +20,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 photoGallery :: Effect Unit
 photoGallery =
   body $
-    topAppBar { title: "Photo Gallery" } $
+    topAppBar { title: "{ src :: String, caption :: String } { album :: String }" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
               listOf { selected: _.current } (span text # projection _.name) # rmap _.name # toCase @"albumPicked" # lcmap albumChoices # updates (match { albumPicked: openAlbum })
@@ -41,11 +41,7 @@ photoGallery =
                 each (albumPhotos m) \p -> imageListItem { src: p.src, label: p.caption })
       ) # mvu landscapesOpen
 
-type Photo = { src :: String, caption :: String }
-
-type Gallery = { album :: String }
-
-landscapesOpen :: Gallery
+landscapesOpen :: { album :: String }
 landscapesOpen = { album: "Landscapes" }
 
 albumCatalogue :: Array { name :: String, shots :: Array String }
@@ -71,13 +67,13 @@ albumCatalogue =
     }
   ]
 
-albumChoices :: Gallery -> Array { name :: String, current :: Boolean }
+albumChoices :: { album :: String } -> Array { name :: String, current :: Boolean }
 albumChoices g = albumCatalogue <#> \a -> { name: a.name, current: a.name == g.album }
 
-openAlbum :: String -> Gallery -> Gallery
+openAlbum :: String -> { album :: String } -> { album :: String }
 openAlbum name g = g { album = name }
 
-albumPhotos :: Gallery -> Array Photo
+albumPhotos :: { album :: String } -> Array { src :: String, caption :: String }
 albumPhotos g =
   maybe [] (\a -> a.shots <#> \caption -> { src: developedPhoto caption, caption })
     (find (\a -> a.name == g.album) albumCatalogue)

@@ -13,8 +13,6 @@ import PUI.HTML (body, text)
 import PUI.MDC (body2, button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Queue = { serving :: Int }
-
 ticketDispenser :: Effect Unit
 ticketDispenser =
   body $
@@ -30,26 +28,26 @@ ticketDispenser =
       ) # mvu emptyQueue
 
 issue ::
-  [ take :: Queue
+  [ take :: { serving :: Int }
   , resume :: { next :: Int }
   ]
-  -> Either Queue { next :: Int }
+  -> Either { serving :: Int } { next :: Int }
 issue = match { take: Left, resume: Right }
 
-nextTicket :: Tuple Queue { next :: Int } -> { serving :: Int, next :: Int }
+nextTicket :: Tuple { serving :: Int } { next :: Int } -> { serving :: Int, next :: Int }
 nextTicket (Tuple _ state) = { serving: state.next, next: state.next + 1 }
 
 firstTicket ::
-  [ take :: Queue
+  [ take :: { serving :: Int }
   , resume :: { next :: Int }
   ]
 firstTicket = .resume { next: 1 }
 
-nowServing :: Queue -> String
+nowServing :: { serving :: Int } -> String
 nowServing q = if q.serving == 0 then "—" else "#" <> show q.serving
 
-hint :: Queue -> String
+hint :: { serving :: Int } -> String
 hint q = if q.serving == 0 then "Press the button to draw the first ticket." else "Now serving ticket " <> show q.serving <> "."
 
-emptyQueue :: Queue
+emptyQueue :: { serving :: Int }
 emptyQueue = { serving: 0 }

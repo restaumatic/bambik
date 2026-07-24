@@ -12,8 +12,6 @@ import PUI.HTML (body, text)
 import PUI.MDC (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Payment = { amount :: Number, status :: String }
-
 payment :: Effect Unit
 payment =
   body $
@@ -26,7 +24,7 @@ payment =
               indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: recordCharged })
       ) # mvu unpaidOrder
 
-startCharge :: Payment -> { amount :: Number, attempt :: Int }
+startCharge :: { amount :: Number, status :: String } -> { amount :: Number, attempt :: Int }
 startCharge o = { amount: o.amount, attempt: 0 }
 
 chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
@@ -39,11 +37,11 @@ chargeFlaky r = do
     then pure $ .charge r { attempt = r.attempt + 1 }
     else pure $ .charged ("Approved — $" <> show r.amount <> " charged on attempt " <> show (r.attempt + 1))
 
-recordCharged :: String -> Payment -> Payment
+recordCharged :: String -> { amount :: Number, status :: String } -> { amount :: Number, status :: String }
 recordCharged message o = o { status = message }
 
-amountLine :: Payment -> String
+amountLine :: { amount :: Number, status :: String } -> String
 amountLine o = "Amount due: $" <> show o.amount
 
-unpaidOrder :: Payment
+unpaidOrder :: { amount :: Number, status :: String }
 unpaidOrder = { amount: 42.0, status: "Ready to charge — the gateway is flaky, so it retries automatically." }

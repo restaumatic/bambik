@@ -50,21 +50,16 @@ keyPad = { key: _ } <$>
 operatorKeys :: Array String
 operatorKeys = [ "÷", "×", "−", "+", "=" ]
 
-type Tally =
-  { total :: Number
-  , operation :: Maybe String
-  , entry :: String
-  , entering :: Boolean
-  , faulty :: Boolean
-  }
-
-blankTally :: Tally
+blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
 blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, faulty: false }
 
-readout :: Tally -> String
+readout :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean } -> String
 readout tally = if tally.faulty then "Error" else tally.entry
 
-pressKey :: String -> Tally -> Tally
+pressKey
+  :: String
+  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
+  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
 pressKey key tally
   | tally.faulty && key /= "C" = pressKey key blankTally
   | key == "C" = blankTally
@@ -83,7 +78,7 @@ pressKey key tally
   | tally.entering = tally { entry = if tally.entry == "0" then key else tally.entry <> key }
   | true = tally { entry = key, entering = true }
 
-settle :: Tally -> Maybe Number
+settle :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean } -> Maybe Number
 settle tally = case tally.operation of
   Just operation | tally.entering -> compute operation tally.total (entryValue tally)
   _ -> Just (entryValue tally)
@@ -96,7 +91,7 @@ compute "÷" _ 0.0 = Nothing
 compute "÷" a b = Just (a / b)
 compute _ _ b = Just b
 
-entryValue :: Tally -> Number
+entryValue :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean } -> Number
 entryValue tally = fromMaybe 0.0 (fromString tally.entry)
 
 negated :: String -> String

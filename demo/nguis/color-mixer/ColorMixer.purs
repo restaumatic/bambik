@@ -15,12 +15,10 @@ import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (body2, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Mix = { red :: Number, green :: Number, blue :: Number }
-
-chipStyle :: { name :: String, mix :: Mix } -> String
+chipStyle :: { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
 
-swatchStyle :: Mix -> String
+swatchStyle :: { red :: Number, green :: Number, blue :: Number } -> String
 swatchStyle m = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb m <> ";"
 
 colorMixer :: Effect Unit
@@ -39,10 +37,10 @@ colorMixer =
           body2 text # projection rgb # tapped
       ) # mvu duskViolet
 
-applyPreset :: String -> Mix -> Mix
+applyPreset :: String -> { red :: Number, green :: Number, blue :: Number } -> { red :: Number, green :: Number, blue :: Number }
 applyPreset name current = maybe current _.mix (find (\p -> p.name == name) palette)
 
-palette :: Array { name :: String, mix :: Mix }
+palette :: Array { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } }
 palette =
   [ { name: "White", mix: mix 255.0 255.0 255.0 }
   , { name: "Black", mix: mix 0.0 0.0 0.0 }
@@ -51,10 +49,10 @@ palette =
   , { name: "Sky", mix: mix 33.0 150.0 243.0 }
   ]
 
-mix :: Number -> Number -> Number -> Mix
+mix :: Number -> Number -> Number -> { red :: Number, green :: Number, blue :: Number }
 mix red green blue = { red: clampChannel red, green: clampChannel green, blue: clampChannel blue }
 
-hex :: Mix -> String
+hex :: { red :: Number, green :: Number, blue :: Number } -> String
 hex m = "#" <> channelHex m.red <> channelHex m.green <> channelHex m.blue
 
 channelHex :: Number -> String
@@ -62,7 +60,7 @@ channelHex n =
   let digits = toUpper (toStringAs hexadecimal (round (clampChannel n)))
   in if length digits == 1 then "0" <> digits else digits
 
-rgb :: Mix -> String
+rgb :: { red :: Number, green :: Number, blue :: Number } -> String
 rgb m = "rgb(" <> channel m.red <> ", " <> channel m.green <> ", " <> channel m.blue <> ")"
 
 channel :: Number -> String
@@ -71,7 +69,7 @@ channel = show <<< round <<< clampChannel
 clampChannel :: Number -> Number
 clampChannel = max minChannel <<< min maxChannel
 
-duskViolet :: Mix
+duskViolet :: { red :: Number, green :: Number, blue :: Number }
 duskViolet = mix 96.0 64.0 160.0
 
 minChannel :: Number

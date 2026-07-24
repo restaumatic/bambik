@@ -28,11 +28,7 @@ ticTacToe =
           button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
       ) # mvu openingPosition
 
-type Match = { board :: Array String }
-
-type Cell = { key :: String, mark :: String, win :: Boolean }
-
-cells :: Match -> Array Cell
+cells :: { board :: Array String } -> Array { key :: String, mark :: String, win :: Boolean }
 cells game =
   let winners = fromMaybe [] (winningLine game.board)
   in range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index game.board i), win: i `elem` winners }
@@ -42,13 +38,13 @@ cellStyle =
   "height: 72px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
 
-openingPosition :: Match
+openingPosition :: { board :: Array String }
 openingPosition = { board: [ "", "", "", "", "", "", "", "", "" ] }
 
-startOver :: Match -> Match
+startOver :: { board :: Array String } -> { board :: Array String }
 startOver _ = openingPosition
 
-claimCell :: String -> Match -> Match
+claimCell :: String -> { board :: Array String } -> { board :: Array String }
 claimCell key game = case fromString key of
   Just i | index game.board i == Just "" && isNothing (winningLine game.board) ->
     game { board = fromMaybe game.board (updateAt i (playerToMove game.board) game.board) }
@@ -80,7 +76,7 @@ winner board = do
 boardFull :: Array String -> Boolean
 boardFull board = isNothing (findMap (\m -> if m == "" then Just m else Nothing) board)
 
-standing :: Match -> String
+standing :: { board :: Array String } -> String
 standing game = case winner game.board of
   Just p -> p <> " wins"
   Nothing ->

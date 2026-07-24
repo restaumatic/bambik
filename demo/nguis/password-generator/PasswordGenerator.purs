@@ -19,15 +19,6 @@ import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, s
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type PasswordRecipe =
-  { length :: Number
-  , uppercase :: Boolean
-  , lowercase :: Boolean
-  , digits :: Boolean
-  , symbols :: Boolean
-  , password :: String
-  }
-
 passwordGenerator :: Effect Unit
 passwordGenerator =
   body $
@@ -47,7 +38,7 @@ passwordGenerator =
               indeterminateLinearProgress # action samplePassword # onCase @"generate") # updates (match { generated: rememberPassword })
       ) # mvu strongMixRecipe
 
-samplePassword :: PasswordRecipe -> Aff [ generated :: String ]
+samplePassword :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String } -> Aff [ generated :: String ]
 samplePassword recipe = liftEffect do
   let alphabet = effectiveAlphabet recipe
   chars <- sequence (replicate (round recipe.length) (randomCharacter alphabet))
@@ -58,10 +49,10 @@ randomCharacter alphabet = do
   i <- randomInt 0 (length alphabet - 1)
   pure (fromMaybe 'a' (index alphabet i))
 
-rememberPassword :: String -> PasswordRecipe -> PasswordRecipe
+rememberPassword :: String -> { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String } -> { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String }
 rememberPassword password recipe = recipe { password = password }
 
-effectiveAlphabet :: PasswordRecipe -> Array Char
+effectiveAlphabet :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String } -> Array Char
 effectiveAlphabet recipe =
   let chosen = (if recipe.uppercase then uppercaseLetters else [])
             <> (if recipe.lowercase then lowercaseLetters else [])
@@ -69,10 +60,10 @@ effectiveAlphabet recipe =
             <> (if recipe.symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
-strengthLine :: PasswordRecipe -> String
+strengthLine :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String } -> String
 strengthLine recipe = "Strength: " <> strengthGrade (entropyBits recipe)
 
-entropyBits :: PasswordRecipe -> Number
+entropyBits :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String } -> Number
 entropyBits recipe = recipe.length * log (toNumber (length (effectiveAlphabet recipe))) / log 2.0
 
 strengthGrade :: Number -> String
@@ -94,7 +85,7 @@ digitCharacters = toCharArray "0123456789"
 symbolCharacters :: Array Char
 symbolCharacters = toCharArray "!@#$%^&*()-_=+[]{};:,.<>?/"
 
-strongMixRecipe :: PasswordRecipe
+strongMixRecipe :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String }
 strongMixRecipe =
   { length: 16.0
   , uppercase: true

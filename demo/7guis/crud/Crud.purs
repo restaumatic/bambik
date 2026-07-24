@@ -20,18 +20,6 @@ import PUI.HTML (body, text)
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Person = { name :: String, surname :: String }
-
-type SharedPeopleCatalogue = Ref (Array Person)
-
-type PeopleCatalogue =
-  { prefix :: String
-  , name :: String
-  , surname :: String
-  , people :: Array Person
-  , selected :: Maybe Int
-  }
-
 crud :: Effect Unit
 crud = do
   catalogue <- sharedPeopleCatalogue
@@ -56,59 +44,57 @@ crud = do
                     indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
       ) # with unit
 
-pick :: Int -> PeopleCatalogue -> PeopleCatalogue
+pick :: Int -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 pick i m = case index m.people i of
   Just p -> m { selected = Just i, name = p.name, surname = p.surname }
   Nothing -> m
 
-createPerson :: SharedPeopleCatalogue -> PeopleCatalogue -> Aff [ created :: Array Person ]
+createPerson :: Ref (Array { name :: String, surname :: String }) -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ created :: Array { name :: String, surname :: String } ]
 createPerson catalogue m = .created <$> writePeople catalogue (snoc m.people { name: m.name, surname: m.surname })
 
-updatePerson :: SharedPeopleCatalogue -> PeopleCatalogue -> Aff [ updated :: Array Person ]
+updatePerson :: Ref (Array { name :: String, surname :: String }) -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ updated :: Array { name :: String, surname :: String } ]
 updatePerson catalogue m = case m.selected of
   Just i -> .updated <$> writePeople catalogue (fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people))
   Nothing -> pure (.updated m.people)
 
-deletePerson :: SharedPeopleCatalogue -> PeopleCatalogue -> Aff [ deleted :: Array Person ]
+deletePerson :: Ref (Array { name :: String, surname :: String }) -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ deleted :: Array { name :: String, surname :: String } ]
 deletePerson catalogue m = case m.selected of
   Just i -> .deleted <$> writePeople catalogue (fromMaybe m.people (deleteAt i m.people))
   Nothing -> pure (.deleted m.people)
 
-refreshPeople :: Array Person -> PeopleCatalogue -> PeopleCatalogue
+refreshPeople :: Array { name :: String, surname :: String } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 refreshPeople people m = m { people = people }
 
-deselect :: PeopleCatalogue -> PeopleCatalogue
+deselect :: { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 deselect m = m { selected = Nothing }
 
-peopleDeleted :: Array Person -> PeopleCatalogue -> PeopleCatalogue
+peopleDeleted :: Array { name :: String, surname :: String } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 peopleDeleted people = refreshPeople people >>> deselect
 
-loadPeopleCatalogue :: SharedPeopleCatalogue -> Unit -> Aff PeopleCatalogue
+loadPeopleCatalogue :: Ref (Array { name :: String, surname :: String }) -> Unit -> Aff { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 loadPeopleCatalogue catalogue _ = do
   people <- readPeople catalogue
   pure { prefix: "", name: "", surname: "", people, selected: Nothing }
 
-readPeople :: SharedPeopleCatalogue -> Aff (Array Person)
+readPeople :: Ref (Array { name :: String, surname :: String }) -> Aff (Array { name :: String, surname :: String })
 readPeople catalogue = do
   delay (Milliseconds 300.0)
   liftEffect (Ref.read catalogue)
 
-writePeople :: SharedPeopleCatalogue -> Array Person -> Aff (Array Person)
+writePeople :: Ref (Array { name :: String, surname :: String }) -> Array { name :: String, surname :: String } -> Aff (Array { name :: String, surname :: String })
 writePeople catalogue people = do
   delay (Milliseconds 300.0)
   liftEffect (Ref.write people catalogue)
   readPeople catalogue
 
-sharedPeopleCatalogue :: Effect SharedPeopleCatalogue
+sharedPeopleCatalogue :: Effect (Ref (Array { name :: String, surname :: String }))
 sharedPeopleCatalogue = Ref.new
   [ { name: "Hans", surname: "Emil" }
   , { name: "Max", surname: "Mustermann" }
   , { name: "Roman", surname: "Tisch" }
   ]
 
-type Entry = { key :: Int, label :: String, surname :: String, selected :: Boolean }
-
-entries :: PeopleCatalogue -> Array Entry
+entries :: { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Array { key :: Int, label :: String, surname :: String, selected :: Boolean }
 entries m = filter (\e -> hasPrefix m.prefix e.surname)
   (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname, selected: m.selected == Just i }) m.people)
   where
