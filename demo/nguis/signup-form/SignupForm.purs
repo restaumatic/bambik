@@ -46,12 +46,12 @@ signupForm =
           snackbar # forCase @"registered"
           snackbar # forCase @"rejected"
 
-register :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> [ registered :: String, rejected :: String ]
+register :: forall r. { username :: String, email :: String, terms :: Maybe Unit | r } -> [ registered :: String, rejected :: String ]
 register applicant = case validate applicant of
   Left problem -> .rejected ("Cannot sign up: " <> problem)
   Right username -> .registered ("Welcome, " <> username <> "!")
 
-validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Either String String
+validate :: forall r. { username :: String, email :: String, terms :: Maybe Unit | r } -> Either String String
 validate applicant =
   let username = trim applicant.username
   in
@@ -61,12 +61,12 @@ validate applicant =
     else if isJust applicant.terms == false then Left "accept the terms of service"
     else Right username
 
-validationSummary :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> String
+validationSummary :: forall r. { username :: String, email :: String, terms :: Maybe Unit | r } -> String
 validationSummary = validate >>> either (\problem -> "⚠ " <> problem) readyLine
   where
   readyLine username = "Ready to sign up as " <> username
 
-availabilityHint :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> String
+availabilityHint :: forall r. { username :: String | r } -> String
 availabilityHint applicant =
   let username = trim applicant.username
   in

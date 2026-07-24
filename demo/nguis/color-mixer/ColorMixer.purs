@@ -15,7 +15,7 @@ import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (body2, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-chipStyle :: { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } } -> String
+chipStyle :: forall r. { mix :: { red :: Number, green :: Number, blue :: Number } | r } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
 
 swatchStyle :: { red :: Number, green :: Number, blue :: Number } -> String

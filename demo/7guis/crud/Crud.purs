@@ -44,7 +44,7 @@ crud = do
                     indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
       ) # with unit
 
-pick :: Int -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
+pick :: forall r. Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String | r } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String | r }
 pick i m = case index m.people i of
   Just p -> m { selected = Just i, name = p.name, surname = p.surname }
   Nothing -> m
@@ -62,13 +62,13 @@ deletePerson catalogue m = case m.selected of
   Just i -> .deleted <$> writePeople catalogue (fromMaybe m.people (deleteAt i m.people))
   Nothing -> pure (.deleted m.people)
 
-refreshPeople :: Array { name :: String, surname :: String } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
+refreshPeople :: forall r. Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String } | r } -> { people :: Array { name :: String, surname :: String } | r }
 refreshPeople people m = m { people = people }
 
-deselect :: { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
+deselect :: forall r. { selected :: Maybe Int | r } -> { selected :: Maybe Int | r }
 deselect m = m { selected = Nothing }
 
-peopleDeleted :: Array { name :: String, surname :: String } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
+peopleDeleted :: forall r. Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int | r } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int | r }
 peopleDeleted people = refreshPeople people >>> deselect
 
 loadPeopleCatalogue :: Ref (Array { name :: String, surname :: String }) -> Unit -> Aff { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
@@ -94,9 +94,10 @@ sharedPeopleCatalogue = Ref.new
   , { name: "Roman", surname: "Tisch" }
   ]
 
-entries :: { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Array { key :: Int, label :: String, surname :: String, selected :: Boolean }
-entries m = filter (\e -> hasPrefix m.prefix e.surname)
-  (mapWithIndex (\i p -> { key: i, label: p.surname <> ", " <> p.name, surname: p.surname, selected: m.selected == Just i }) m.people)
+entries :: forall r. { prefix :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int | r } -> Array { key :: Int, label :: String, selected :: Boolean }
+entries m =
+  (\{ i, p } -> { key: i, label: p.surname <> ", " <> p.name, selected: m.selected == Just i })
+    <$> filter (\{ p } -> hasPrefix m.prefix p.surname) (mapWithIndex (\i p -> { i, p }) m.people)
   where
   hasPrefix p s = case stripPrefix (Pattern p) s of
     Just _ -> true

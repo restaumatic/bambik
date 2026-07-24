@@ -73,14 +73,14 @@ visibleMovies m = map card (filter (\movie -> inCategory movie && taggedAsChosen
   chosenIf on tag = if on then Just tag else Nothing
   card movie = { title: movie.title, year: movie.year, rating: movie.rating, favorite: movie.favorite }
 
-markFavorite :: { title :: String, year :: Int, rating :: Number, favorite :: Boolean } -> { category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> { category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } }
+markFavorite :: forall rc r rm. { title :: String, favorite :: Boolean | rc } -> { movies :: Array { title :: String, favorite :: Boolean | rm } | r } -> { movies :: Array { title :: String, favorite :: Boolean | rm } | r }
 markFavorite chosen m = m { movies = map (\movie -> if movie.title == chosen.title then movie { favorite = chosen.favorite } else movie) m.movies }
 
 ratingLine :: Number -> String
 ratingLine rating = "★ " <> toStringWith (fixed 1) rating
 
 
-favoritesLine :: { category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> String
+favoritesLine :: forall r rm. { movies :: Array { favorite :: Boolean | rm } | r } -> String
 favoritesLine m = case length (filter _.favorite m.movies) of
   1 -> "1 favorite"
   n -> show n <> " favorites"

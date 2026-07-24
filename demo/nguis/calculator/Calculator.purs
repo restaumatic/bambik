@@ -53,7 +53,7 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
 blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, faulty: false }
 
-readout :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean } -> String
+readout :: forall r. { faulty :: Boolean, entry :: String | r } -> String
 readout tally = if tally.faulty then "Error" else tally.entry
 
 pressKey
@@ -78,7 +78,7 @@ pressKey key tally
   | tally.entering = tally { entry = if tally.entry == "0" then key else tally.entry <> key }
   | true = tally { entry = key, entering = true }
 
-settle :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean } -> Maybe Number
+settle :: forall r. { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean | r } -> Maybe Number
 settle tally = case tally.operation of
   Just operation | tally.entering -> compute operation tally.total (entryValue tally)
   _ -> Just (entryValue tally)
@@ -91,7 +91,7 @@ compute "÷" _ 0.0 = Nothing
 compute "÷" a b = Just (a / b)
 compute _ _ b = Just b
 
-entryValue :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean } -> Number
+entryValue :: forall r. { entry :: String | r } -> Number
 entryValue tally = fromMaybe 0.0 (fromString tally.entry)
 
 negated :: String -> String

@@ -38,22 +38,22 @@ cartStep ::
   ]
 cartStep = .next { step: "cart" }
 
-cartLine :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> String
+cartLine :: forall r. { item :: String | r } -> String
 cartLine r = "Step 1 of 3 — Cart: " <> r.item
 
-shippingLine :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> String
+shippingLine :: forall r. { address :: String | r } -> String
 shippingLine r = "Step 2 of 3 — Shipping to " <> r.address
 
-paymentLine :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> String
+paymentLine :: forall r. { card :: String | r } -> String
 paymentLine r = "Step 3 of 3 — Pay with card " <> r.card
 
-atCart :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { item :: String, address :: String, card :: String, confirmation :: String, step :: String }
+atCart :: forall r. { step :: String | r } -> Maybe { step :: String | r }
 atCart r = if r.step == "cart" then Just r else Nothing
 
-atShipping :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { item :: String, address :: String, card :: String, confirmation :: String, step :: String }
+atShipping :: forall r. { step :: String | r } -> Maybe { step :: String | r }
 atShipping r = if r.step == "shipping" then Just r else Nothing
 
-atPayment :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { item :: String, address :: String, card :: String, confirmation :: String, step :: String }
+atPayment :: forall r. { step :: String | r } -> Maybe { step :: String | r }
 atPayment r = if r.step == "payment" then Just r else Nothing
 
 nextAtCart :: { item :: String, address :: String, card :: String, confirmation :: String, step :: String } -> Maybe { step :: String }
@@ -74,7 +74,7 @@ placeAtPayment r =
     then Just { summary: "Order placed: " <> r.item <> " → " <> r.address <> " (card " <> r.card <> ")" }
     else Nothing
 
-recordPlaced :: { summary :: String } -> { item :: String, address :: String, card :: String, confirmation :: String } -> { item :: String, address :: String, card :: String, confirmation :: String }
+recordPlaced :: forall r. { summary :: String } -> { confirmation :: String | r } -> { confirmation :: String | r }
 recordPlaced r o = o { confirmation = r.summary }
 
 freshOrder :: { item :: String, address :: String, card :: String, confirmation :: String }

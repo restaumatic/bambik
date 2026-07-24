@@ -149,13 +149,18 @@
       "Bash(grep -nA3 \"^foreach ::\" src/PUI/HTML.purs)",
       "Bash(grep -nA4 \"^updates ::\" src/PUI.purs)",
       "Bash(grep -n \"foreach$\\\\|, foreach\" src/PUI/HTML.purs)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(command -v gh git hub)",
+      "Read(//usr/local/bin/**)",
+      "Bash(git -C /home/eryk/mine/bambik branch --show-current)",
+      "Bash(git -C /home/eryk/mine/bambik diff --stat)"
     ],
     "additionalDirectories": [
       "/tmp/claude-1000/live-check-profile",
       "/home/eryk/mine/bambik/demo/7guis/*",
       "/home/eryk/mine/bambik/.spago/convertable-options/*/src",
-      "/tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad"
+      "/tmp/claude-1000/-home-eryk-mine-bambik/1578af78-d132-4077-8d65-85869ca1c2f8/scratchpad",
+      "/home/eryk/.claude"
     ]
   }
 }

@@ -229,3 +229,77 @@ existing convention, but with one refinement the audit argues for: helper
 signatures need not name the full model even when a synonym exists — the
 full-model `Model -> Model` habit is a documentation choice, not a
 requirement of the row machinery.
+
+## Third state: unused row members deleted (narrowed ad-hoc)
+
+The audit's narrowings were then applied: every over-demanding helper was
+retyped row-polymorphically (`forall r. { used :: T | r } -> ...`), with
+exact rows kept at seeds, primers, constructed literals, and merge operands.
+Verified: full build, `spago test`, demo/1, all bundles, smoke suite green.
+
+| metric | nominal (main) | full-row ad-hoc | narrowed ad-hoc |
+|---|---|---|---|
+| lines | 3,053 | 2,913 | 2,915 |
+| chars | 118,984 | 142,860 (+20.1%) | 136,162 (+14.4%) |
+| non-whitespace chars | 92,108 | 110,769 | 105,011 |
+| longest line | 302 | 735 | 591 |
+| p99 line width | 160 | 282 | 207 |
+| lines > 120 ch | 89 | 196 | 167 |
+
+Narrowing clawed back only ~28% of the char growth (−6,698 of +23,876).
+Two reasons: `forall r rs.` row-variable ceremony costs chars back, and —
+the substantive finding — **14 of ~64 attempted narrowings would not
+compile** and had to stay full-row.
+
+### The pinning perimeter (found empirically, consistent across all files)
+
+Open rows are accepted wherever the model flows through `dimap`-plumbing:
+`lcmap`/`projection` as pipeline stages, `tapped`, `updates`/`match`
+folders, `provided` panes, `every` steps, `action` mid-pipeline, even a
+pass-through feeding a dialog (upstream of a closed anchor, open is fine).
+
+Open rows are rejected — `No type class instance ... Prim.Row.Union t0 t2
+(...) / instance head contains unknown type variables` — wherever the
+function's row is a **row-merge's evidence input**:
+
+- an operand of a `.do` merge (`projection f` inside `RecordToRecord.do`,
+  a status line between buttons in `RecordToVariant.do`) — the merge's
+  `SharedRecordInputs` union must solve locally over the operands' rows,
+  and one open tail leaves it groundless, *even though* the enclosing
+  pipeline (`mvu`/`folding`) fully determines the row;
+- anything reaching a merge transitively through `asCase` payload replay
+  (demo/1's `submitOrder`/`printReceipt` — the button replays the record as
+  case payload, and the `+→+` dispatch behind it pins the row);
+- a feed of `completed` (its `Union n nx i`/`Nub` evidence needs the ground
+  input row).
+
+So the rule the compiler enforces: *the function typed at a merge operand's
+own input must be closed; upstream of a closed anchor, open is fine.* The
+boundary is invisible in the source — whether `| r` compiles encodes a
+combinator fact (merge operand vs pipeline stage) the reader must know.
+
+### Readability of the third state
+
+Unanimous across the sweep: narrowed beats full-row ad-hoc everywhere it
+lands — `keepMessages :: forall r. { confirming :: Boolean | r } -> ...`
+states the whole contract where the old signature was a 230-char wall, and
+the dead-field discoveries (`password` unread by `samplePassword`, `faulty`
+by `settle`, undo/redo not restoring `diameter`) are visible in the types.
+Against nominal it splits: for flat models and small footprints the open row
+is *more* informative than an alias (`{ amount :: Number | r }` says more
+than `Order -> String`); where a nested entity row recurs (inbox's message
+row) or a helper touches nearly the whole model, the alias still reads best
+— and the pinned survivors keep the full anonymous row spelled out, so each
+file ends up with two signature styles whose difference encodes the merge
+perimeter.
+
+### Amended verdict
+
+"Unused rows before vs after" has a three-part answer: nominal style hides
+over-demand (zero cost, zero visibility), full-row ad-hoc charges maximally
+for it, narrowed ad-hoc eliminates what the merge perimeter allows (~28% of
+the growth) and turns the rest into an explicit, compiler-enforced map of
+which functions sit on merge evidence. The narrowed state is the best
+ad-hoc variant but still +14% chars over nominal; the synonym's remaining,
+irreducible value is naming the model at the pinned positions the row
+machinery genuinely forces to stay ground.

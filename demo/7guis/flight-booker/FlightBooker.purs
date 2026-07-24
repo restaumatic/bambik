@@ -91,10 +91,10 @@ formatDate dt = pad dt.d <> "." <> pad dt.m <> "." <> show dt.y
 dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
 dateKey dt = dt.y * 10000 + dt.m * 100 + dt.d
 
-returnLeg :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Maybe { return :: String }
+returnLeg :: forall r. { flightType :: [ oneWay :: Unit, return :: Unit ], return :: String | r } -> Maybe { return :: String }
 returnLeg b = if b.flightType == .return unit then Just { return: b.return } else Nothing
 
-setReturn :: { return :: String } -> { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String }
+setReturn :: forall r. { return :: String } -> { return :: String | r } -> { return :: String | r }
 setReturn { return } b = b { return = return }
 
 plannedTrip :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String }

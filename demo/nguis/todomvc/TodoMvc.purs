@@ -38,23 +38,23 @@ visibilityChoices =
   , { value: .completed unit, label: "Completed" }
   ]
 
-addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] }
+addTodo :: forall r. { entry :: String, todos :: Array { title :: String, done :: Boolean } | r } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } | r }
 addTodo m =
   if trim m.entry == "" then m
   else m { todos = snoc m.todos { title: trim m.entry, done: false }, entry = "" }
 
-toggleTodo :: Int -> { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] }
+toggleTodo :: forall r. Int -> { todos :: Array { title :: String, done :: Boolean } | r } -> { todos :: Array { title :: String, done :: Boolean } | r }
 toggleTodo i m = m { todos = fromMaybe m.todos (modifyAt i (\t -> t { done = not t.done }) m.todos) }
 
-clearCompleted :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] }
+clearCompleted :: forall r. { todos :: Array { title :: String, done :: Boolean } | r } -> { todos :: Array { title :: String, done :: Boolean } | r }
 clearCompleted m = m { todos = filter (\t -> not t.done) m.todos }
 
-itemsLeft :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> String
+itemsLeft :: forall rt. { entry :: String, todos :: Array { done :: Boolean | rt }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> String
 itemsLeft m = case length (filter (\t -> not t.done) m.todos) of
   1 -> "1 item left"
   n -> show n <> " items left"
 
-visibleEntries :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> Array { key :: Int, title :: String, done :: Boolean }
+visibleEntries :: forall r rt. { todos :: Array { title :: String, done :: Boolean | rt }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] | r } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries m = filter (matches m.visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) m.todos)
   where
   matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v

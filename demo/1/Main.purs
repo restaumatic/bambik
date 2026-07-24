@@ -113,22 +113,22 @@ fulfillmentCase s =
   else if s.selected == "takeaway" then .takeaway { time: s.time }
   else .delivery { address: s.address }
 
-dineInPane :: { selected :: String, table :: String, time :: String, address :: String } -> Maybe { table :: String }
+dineInPane :: forall r. { selected :: String, table :: String | r } -> Maybe { table :: String }
 dineInPane s = if s.selected == "dineIn" then Just { table: s.table } else Nothing
 
-takeawayPane :: { selected :: String, table :: String, time :: String, address :: String } -> Maybe { time :: String }
+takeawayPane :: forall r. { selected :: String, time :: String | r } -> Maybe { time :: String }
 takeawayPane s = if s.selected == "takeaway" then Just { time: s.time } else Nothing
 
-deliveryPane :: { selected :: String, table :: String, time :: String, address :: String } -> Maybe { address :: String }
+deliveryPane :: forall r. { selected :: String, address :: String | r } -> Maybe { address :: String }
 deliveryPane s = if s.selected == "delivery" then Just { address: s.address } else Nothing
 
-setTable :: { table :: String } -> { selected :: String, table :: String, time :: String, address :: String } -> { selected :: String, table :: String, time :: String, address :: String }
+setTable :: forall r. { table :: String } -> { table :: String | r } -> { table :: String | r }
 setTable { table } s = s { table = table }
 
-setTime :: { time :: String } -> { selected :: String, table :: String, time :: String, address :: String } -> { selected :: String, table :: String, time :: String, address :: String }
+setTime :: forall r. { time :: String } -> { time :: String | r } -> { time :: String | r }
 setTime { time } s = s { time = time }
 
-setAddress :: { address :: String } -> { selected :: String, table :: String, time :: String, address :: String } -> { selected :: String, table :: String, time :: String, address :: String }
+setAddress :: forall r. { address :: String } -> { address :: String | r } -> { address :: String | r }
 setAddress { address } s = s { address = address }
 
 methodState ::
@@ -147,27 +147,28 @@ methodCase :: { selected :: String } ->
   ]
 methodCase r = if r.selected == "cash" then .cash unit else .card unit
 
-summarize ::
+summarize :: forall r rc rp.
   { shortId :: String
   , orderId :: String
   , customer ::
       { firstName :: String
       , lastName :: String
+      | rc
       }
   , fulfillment ::
       [ dineIn :: { table :: String }
       , takeaway :: { time :: String }
       , delivery :: { address :: String }
       ]
-  , total :: String
   , payment ::
       { method ::
           [ cash :: Unit
           , card :: Unit
           ]
       , paid :: String
+      | rp
       }
-  , remarks :: String
+  | r
   }
   -> String
 summarize order =

@@ -57,7 +57,7 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: { city :: String, sample :: Int, shown :: Boolean } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
+fetchReport :: forall r. { city :: String, sample :: Int | r } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
 fetchReport request = do
   delay (Milliseconds 800.0)
   pure (.reportServed (conditionsFor request.city request.sample))
@@ -65,23 +65,23 @@ fetchReport request = do
 rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 rememberReport report board = { report, servedReports: board.servedReports + 1 }
 
-forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
+forecastRequests :: forall r rr. { report :: { city :: String | rr }, servedReports :: Int | r } -> Array { city :: String, sample :: Int, shown :: Boolean }
 forecastRequests board = climateTable <#> \r ->
   { city: r.city, sample: board.servedReports, shown: r.city == board.report.city }
 
-temperatureLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> String
+temperatureLine :: forall r rr. { report :: { temperature :: Number | rr } | r } -> String
 temperatureLine board = show board.report.temperature <> " °C"
 
-conditionLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> String
+conditionLine :: forall r rr. { report :: { condition :: String, city :: String | rr } | r } -> String
 conditionLine board = board.report.condition <> " in " <> board.report.city
 
-detailsLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> String
+detailsLine :: forall r rr. { report :: { humidity :: Int, wind :: Number | rr } | r } -> String
 detailsLine board = "Humidity " <> show board.report.humidity <> "% · Wind " <> show board.report.wind <> " km/h"
 
-serviceLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> String
+serviceLine :: forall r. { servedReports :: Int | r } -> String
 serviceLine board = "Simulated service · " <> show board.servedReports <> " reports served"
 
-serviceStory :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> String
+serviceStory :: forall r. { servedReports :: Int | r } -> String
 serviceStory board = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show board.servedReports <> "."
 
 warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }

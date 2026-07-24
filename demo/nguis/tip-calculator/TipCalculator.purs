@@ -26,25 +26,25 @@ tipCalculator =
           body2 text # projection perPersonLine # tapped
       ) # mvu dinnerBill
 
-tipPercentLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
+tipPercentLine :: forall r. { tipPercent :: Number | r } -> String
 tipPercentLine bill = "Tip: " <> toStringWith (fixed 0) bill.tipPercent <> "%"
 
-peopleLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
+peopleLine :: forall r. { people :: Number | r } -> String
 peopleLine bill = "Split between: " <> toStringWith (fixed 0) bill.people <> " people"
 
-tipAmountLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
+tipAmountLine :: forall r. { amount :: String, tipPercent :: Number | r } -> String
 tipAmountLine bill = "Tip amount: " <> money (tipAmount bill)
 
-totalLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
+totalLine :: forall r. { amount :: String, tipPercent :: Number | r } -> String
 totalLine bill = "Total: " <> money (total bill)
 
 perPersonLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
 perPersonLine bill = "Per person: " <> money ((_ / bill.people) <$> total bill)
 
-tipAmount :: { amount :: String, tipPercent :: Number, people :: Number } -> Maybe Number
+tipAmount :: forall r. { amount :: String, tipPercent :: Number | r } -> Maybe Number
 tipAmount bill = (\amount -> amount * bill.tipPercent / 100.0) <$> fromString bill.amount
 
-total :: { amount :: String, tipPercent :: Number, people :: Number } -> Maybe Number
+total :: forall r. { amount :: String, tipPercent :: Number | r } -> Maybe Number
 total bill = (\amount -> amount * (1.0 + bill.tipPercent / 100.0)) <$> fromString bill.amount
 
 money :: Maybe Number -> String

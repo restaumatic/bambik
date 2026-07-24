@@ -40,7 +40,7 @@ cols = 26
 rows :: Int
 rows = 30
 
-gridRows :: { cells :: Object String, selected :: Maybe String, formula :: String } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean } }
+gridRows :: forall r. { cells :: Object String, selected :: Maybe String | r } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean } }
 gridRows m =
   let
     values = evalSheet m.cells
@@ -56,7 +56,7 @@ gridRows m =
     [ { rowKey: "header", cells: headerCells } ]
       <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
 
-cellStyle :: { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean } -> String
+cellStyle :: forall r. { header :: Boolean, sel :: Boolean | r } -> String
 cellStyle c
   | c.header = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   | otherwise = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"

@@ -31,46 +31,46 @@ stopwatch =
       ) # mvu zeroedStopwatch
 
 beginTiming
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { running :: Boolean | r }
+  -> { running :: Boolean | r }
 beginTiming sw = sw { running = true }
 
 haltTiming
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { running :: Boolean | r }
+  -> { running :: Boolean | r }
 haltTiming sw = sw { running = false }
 
 recordLap
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { elapsedTenths :: Int, laps :: Array Int | r }
+  -> { elapsedTenths :: Int, laps :: Array Int | r }
 recordLap sw = sw { laps = snoc sw.laps sw.elapsedTenths }
 
 clearStopwatch
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { elapsedTenths :: Int, laps :: Array Int | r }
+  -> { elapsedTenths :: Int, laps :: Array Int | r }
 clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
 
 tick
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { running :: Boolean, elapsedTenths :: Int | r }
+  -> Maybe { running :: Boolean, elapsedTenths :: Int | r }
 tick sw =
   if sw.running then Just (sw { elapsedTenths = sw.elapsedTenths + 1 })
   else Nothing
 
 whenHalted
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { running :: Boolean | r }
+  -> Maybe { running :: Boolean | r }
 whenHalted sw = if not sw.running then Just sw else Nothing
 
 whenRunning
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: forall r. { running :: Boolean | r }
+  -> Maybe { running :: Boolean | r }
 whenRunning sw = if sw.running then Just sw else Nothing
 
 readout :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int } -> String
 readout sw = formatTime sw.elapsedTenths
 
-lapLines :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int } -> Array { line :: String }
+lapLines :: forall r. { laps :: Array Int | r } -> Array { line :: String }
 lapLines sw = mapWithIndex (\i t -> { line: "Lap " <> show (i + 1) <> " — " <> formatTime t }) sw.laps
 
 formatTime :: Int -> String

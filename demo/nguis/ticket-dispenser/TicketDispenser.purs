@@ -34,7 +34,7 @@ issue ::
   -> Either { serving :: Int } { next :: Int }
 issue = match { take: Left, resume: Right }
 
-nextTicket :: Tuple { serving :: Int } { next :: Int } -> { serving :: Int, next :: Int }
+nextTicket :: forall a. Tuple a { next :: Int } -> { serving :: Int, next :: Int }
 nextTicket (Tuple _ state) = { serving: state.next, next: state.next + 1 }
 
 firstTicket ::

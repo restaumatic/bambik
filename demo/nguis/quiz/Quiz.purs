@@ -42,7 +42,7 @@ questionCatalogue =
 freshQuizRun :: { question :: Int, correct :: Int }
 freshQuizRun = { question: 0, correct: 0 }
 
-restart :: { question :: Int, correct :: Int } -> { question :: Int, correct :: Int }
+restart :: forall a. a -> { question :: Int, correct :: Int }
 restart _ = freshQuizRun
 
 answer :: Int -> { question :: Int, correct :: Int } -> { question :: Int, correct :: Int }
@@ -50,14 +50,14 @@ answer choice run = case index questionCatalogue run.question of
   Just q -> { question: run.question + 1, correct: run.correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-currentQuestion :: { question :: Int, correct :: Int } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
+currentQuestion :: forall r. { question :: Int | r } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
 currentQuestion run = index questionCatalogue run.question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
 
 questionPrompt :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> String
 questionPrompt q = q.prompt
 
-questionChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
+questionChoices :: forall r. { choices :: Array { key :: Int, label :: String } | r } -> Array { key :: Int, label :: String }
 questionChoices q = q.choices
 
 finalOutcome :: { question :: Int, correct :: Int } -> Maybe { summary :: String }

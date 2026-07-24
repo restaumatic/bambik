@@ -29,7 +29,7 @@ timer =
           button { label: "Reset", icon: "replay" } # updates (match { clicked: const <<< reset })
       ) # mvu tenSecondFreshTimer
 
-reset :: { duration :: Number, elapsed :: Number } -> { duration :: Number, elapsed :: Number }
+reset :: forall r. { elapsed :: Number | r } -> { elapsed :: Number | r }
 reset t = t { elapsed = 0.0 }
 
 tick :: { duration :: Number, elapsed :: Number } -> Maybe { duration :: Number, elapsed :: Number }
