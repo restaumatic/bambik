@@ -6,7 +6,7 @@ import Data.Maybe (Maybe, maybe)
 import Data.Number (fromString)
 import Data.Number.Format (fixed, toStringWith)
 import Effect (Effect)
-import PUI (asField, completed, mvu, projection, tapped)
+import PUI (asField, completed, mvu, projection, tapped, widenRecordInput)
 import PUI.HTML (body, text)
 import PUI.MDC (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,33 +18,33 @@ tipCalculator =
       card { caption: "Tip Calculator" } $ ( Semigroupoid.do
           filledTextField { floatingLabel: "Bill amount" } # asField @"amount" # completed
           slider { label: "Tip percentage", min: minTipPercent, max: maxTipPercent, step: tipPercentStep } # asField @"tipPercent" # completed
-          body2 text # projection tipPercentLine # tapped
-          body2 text # projection peopleLine # tapped
+          body2 text # projection tipPercentLine # widenRecordInput # tapped
+          body2 text # projection peopleLine # widenRecordInput # tapped
           slider { label: "Split between", min: minPeople, max: maxPeople, step: peopleStep } # asField @"people" # completed
-          body2 text # projection tipAmountLine # tapped
-          body2 text # projection totalLine # tapped
+          body2 text # projection tipAmountLine # widenRecordInput # tapped
+          body2 text # projection totalLine # widenRecordInput # tapped
           body2 text # projection perPersonLine # tapped
       ) # mvu dinnerBill
 
-tipPercentLine :: forall r. { tipPercent :: Number | r } -> String
+tipPercentLine :: { tipPercent :: Number } -> String
 tipPercentLine bill = "Tip: " <> toStringWith (fixed 0) bill.tipPercent <> "%"
 
-peopleLine :: forall r. { people :: Number | r } -> String
+peopleLine :: { people :: Number } -> String
 peopleLine bill = "Split between: " <> toStringWith (fixed 0) bill.people <> " people"
 
-tipAmountLine :: forall r. { amount :: String, tipPercent :: Number | r } -> String
+tipAmountLine :: { amount :: String, tipPercent :: Number } -> String
 tipAmountLine bill = "Tip amount: " <> money (tipAmount bill)
 
-totalLine :: forall r. { amount :: String, tipPercent :: Number | r } -> String
+totalLine :: { amount :: String, tipPercent :: Number } -> String
 totalLine bill = "Total: " <> money (total bill)
 
 perPersonLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
-perPersonLine bill = "Per person: " <> money ((_ / bill.people) <$> total bill)
+perPersonLine bill = "Per person: " <> money ((_ / bill.people) <$> total { amount: bill.amount, tipPercent: bill.tipPercent })
 
-tipAmount :: forall r. { amount :: String, tipPercent :: Number | r } -> Maybe Number
+tipAmount :: { amount :: String, tipPercent :: Number } -> Maybe Number
 tipAmount bill = (\amount -> amount * bill.tipPercent / 100.0) <$> fromString bill.amount
 
-total :: forall r. { amount :: String, tipPercent :: Number | r } -> Maybe Number
+total :: { amount :: String, tipPercent :: Number } -> Maybe Number
 total bill = (\amount -> amount * (1.0 + bill.tipPercent / 100.0)) <$> fromString bill.amount
 
 money :: Maybe Number -> String

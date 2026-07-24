@@ -15,7 +15,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, looped, onCase, projection, toCase, updates, with)
+import PUI (action, asCase, asField, completed, looped, onCase, projection, toCase, updatesOn, widenRecordInput, with)
 import PUI.HTML (body, text)
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -32,7 +32,7 @@ crud = do
                   filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
-              listOf { selected: _.selected } (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+              listOf { selected: _.selected } (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap entries # widenRecordInput # updatesOn (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
@@ -41,34 +41,34 @@ crud = do
                   VariantToVariant.do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
-                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
+                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # widenRecordInput # updatesOn (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
       ) # with unit
 
-pick :: forall r. Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String | r } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String | r }
+pick :: Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String }
 pick i m = case index m.people i of
   Just p -> m { selected = Just i, name = p.name, surname = p.surname }
   Nothing -> m
 
-createPerson :: Ref (Array { name :: String, surname :: String }) -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ created :: Array { name :: String, surname :: String } ]
+createPerson :: Ref (Array { name :: String, surname :: String }) -> { name :: String, surname :: String, people :: Array { name :: String, surname :: String } } -> Aff [ created :: Array { name :: String, surname :: String } ]
 createPerson catalogue m = .created <$> writePeople catalogue (snoc m.people { name: m.name, surname: m.surname })
 
-updatePerson :: Ref (Array { name :: String, surname :: String }) -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ updated :: Array { name :: String, surname :: String } ]
+updatePerson :: Ref (Array { name :: String, surname :: String }) -> { name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ updated :: Array { name :: String, surname :: String } ]
 updatePerson catalogue m = case m.selected of
   Just i -> .updated <$> writePeople catalogue (fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people))
   Nothing -> pure (.updated m.people)
 
-deletePerson :: Ref (Array { name :: String, surname :: String }) -> { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ deleted :: Array { name :: String, surname :: String } ]
+deletePerson :: Ref (Array { name :: String, surname :: String }) -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ deleted :: Array { name :: String, surname :: String } ]
 deletePerson catalogue m = case m.selected of
   Just i -> .deleted <$> writePeople catalogue (fromMaybe m.people (deleteAt i m.people))
   Nothing -> pure (.deleted m.people)
 
-refreshPeople :: forall r. Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String } | r } -> { people :: Array { name :: String, surname :: String } | r }
+refreshPeople :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 refreshPeople people m = m { people = people }
 
-deselect :: forall r. { selected :: Maybe Int | r } -> { selected :: Maybe Int | r }
+deselect :: { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 deselect m = m { selected = Nothing }
 
-peopleDeleted :: forall r. Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int | r } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int | r }
+peopleDeleted :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 peopleDeleted people = refreshPeople people >>> deselect
 
 loadPeopleCatalogue :: Ref (Array { name :: String, surname :: String }) -> Unit -> Aff { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
@@ -94,7 +94,7 @@ sharedPeopleCatalogue = Ref.new
   , { name: "Roman", surname: "Tisch" }
   ]
 
-entries :: forall r. { prefix :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int | r } -> Array { key :: Int, label :: String, selected :: Boolean }
+entries :: { prefix :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Array { key :: Int, label :: String, selected :: Boolean }
 entries m =
   (\{ i, p } -> { key: i, label: p.surname <> ", " <> p.name, selected: m.selected == Just i })
     <$> filter (\{ p } -> hasPrefix m.prefix p.surname) (mapWithIndex (\i p -> { i, p }) m.people)

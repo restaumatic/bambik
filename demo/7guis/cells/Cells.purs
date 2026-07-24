@@ -16,7 +16,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, foreach, mvu, projection, toCase, updates)
+import PUI (asField, completed, foreach, mvu, projection, toCase, updates, widenRecordInput)
 import PUI.HTML (attrWith, body, clicked, div, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,7 +31,7 @@ cells =
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ ( clicked ( td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text }) ) # rmap _.key ) # foreach @"domKey" # lcmap _.cells ) # foreach @"rowKey" # lcmap gridRows) # toCase @"cellClicked") # updates (match { cellClicked: selectCell })
+                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # lcmap (\c -> { value: c.text }) ) # rmap _.key ) # foreach @"domKey" # lcmap _.cells ) # foreach @"rowKey" # lcmap gridRows) # toCase @"cellClicked") # widenRecordInput # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
 cols :: Int
@@ -40,7 +40,7 @@ cols = 26
 rows :: Int
 rows = 30
 
-gridRows :: forall r. { cells :: Object String, selected :: Maybe String | r } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean } }
+gridRows :: { cells :: Object String, selected :: Maybe String } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean } }
 gridRows m =
   let
     values = evalSheet m.cells
@@ -56,7 +56,7 @@ gridRows m =
     [ { rowKey: "header", cells: headerCells } ]
       <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
 
-cellStyle :: forall r. { header :: Boolean, sel :: Boolean | r } -> String
+cellStyle :: { header :: Boolean, sel :: Boolean } -> String
 cellStyle c
   | c.header = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   | otherwise = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
@@ -223,7 +223,7 @@ evalExpr cells visiting = go
       Right n -> .numV n
       Left e -> .errV e
 
-selectedCaption :: { cells :: Object String, selected :: Maybe String, formula :: String } -> String
+selectedCaption :: { selected :: Maybe String } -> String
 selectedCaption m = "Cell " <> fromMaybe "—" m.selected
 
 orderSheet :: { cells :: Object String, selected :: Maybe String, formula :: String }

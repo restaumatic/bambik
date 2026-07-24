@@ -1,13 +1,13 @@
 module Timer (timer) where
 
-import Prelude ((#), ($), (+), (/), (<), (<<<), (<=), Unit, const, min, show)
+import Prelude ((#), ($), (+), (/), (<), (<=), Unit, const, min, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (asField, completed, every, forField, mvu, projection, updates)
+import PUI (asField, completed, every, forField, mvu, projection, updatesOn)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,10 +26,10 @@ timer =
                 staticText "s"
               sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration") # completed
           every tickPeriod tick
-          button { label: "Reset", icon: "replay" } # updates (match { clicked: const <<< reset })
+          button { label: "Reset", icon: "replay" } # updatesOn (match { clicked: const reset })
       ) # mvu tenSecondFreshTimer
 
-reset :: forall r. { elapsed :: Number | r } -> { elapsed :: Number | r }
+reset :: { elapsed :: Number } -> { elapsed :: Number }
 reset t = t { elapsed = 0.0 }
 
 tick :: { duration :: Number, elapsed :: Number } -> Maybe { duration :: Number, elapsed :: Number }

@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, completed, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, asField, completed, mvu, onCase, projection, tapped, updatesOn, widenRecordInput)
 import PUI.HTML (attr, body, div, text)
 import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -30,17 +30,17 @@ passwordGenerator =
               toggleSwitch { label: "Lowercase letters" } # asField @"lowercase"
               toggleSwitch { label: "Digits" } # asField @"digits"
               toggleSwitch { label: "Symbols" } # asField @"symbols") # completed
-          body2 text # projection strengthLine # tapped
+          body2 text # projection strengthLine # widenRecordInput # tapped
           div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
             text # projection _.password # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"generate"
-              indeterminateLinearProgress # action samplePassword # onCase @"generate") # updates (match { generated: rememberPassword })
+              indeterminateLinearProgress # action (\recipe -> samplePassword { length: recipe.length, uppercase: recipe.uppercase, lowercase: recipe.lowercase, digits: recipe.digits, symbols: recipe.symbols }) # onCase @"generate") # updatesOn (match { generated: rememberPassword })
       ) # mvu strongMixRecipe
 
-samplePassword :: forall r. { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean | r } -> Aff [ generated :: String ]
+samplePassword :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Aff [ generated :: String ]
 samplePassword recipe = liftEffect do
-  let alphabet = effectiveAlphabet recipe
+  let alphabet = effectiveAlphabet { uppercase: recipe.uppercase, lowercase: recipe.lowercase, digits: recipe.digits, symbols: recipe.symbols }
   chars <- sequence (replicate (round recipe.length) (randomCharacter alphabet))
   pure (.generated (fromCharArray chars))
 
@@ -49,10 +49,10 @@ randomCharacter alphabet = do
   i <- randomInt 0 (length alphabet - 1)
   pure (fromMaybe 'a' (index alphabet i))
 
-rememberPassword :: forall r. String -> { password :: String | r } -> { password :: String | r }
+rememberPassword :: String -> { password :: String } -> { password :: String }
 rememberPassword password recipe = recipe { password = password }
 
-effectiveAlphabet :: forall r. { uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean | r } -> Array Char
+effectiveAlphabet :: { uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Array Char
 effectiveAlphabet recipe =
   let chosen = (if recipe.uppercase then uppercaseLetters else [])
             <> (if recipe.lowercase then lowercaseLetters else [])
@@ -60,11 +60,11 @@ effectiveAlphabet recipe =
             <> (if recipe.symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
-strengthLine :: forall r. { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean | r } -> String
+strengthLine :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
 strengthLine recipe = "Strength: " <> strengthGrade (entropyBits recipe)
 
-entropyBits :: forall r. { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean | r } -> Number
-entropyBits recipe = recipe.length * log (toNumber (length (effectiveAlphabet recipe))) / log 2.0
+entropyBits :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Number
+entropyBits recipe = recipe.length * log (toNumber (length (effectiveAlphabet { uppercase: recipe.uppercase, lowercase: recipe.lowercase, digits: recipe.digits, symbols: recipe.symbols }))) / log 2.0
 
 strengthGrade :: Number -> String
 strengthGrade bits

@@ -9,7 +9,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, forField, forValue, mvu, projection, toCase, updates)
+import PUI (asCase, completed, displayed, forField, forValue, mvu, projection, toCase, updates, widenRecordInput)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,7 +24,7 @@ quiz =
               body1 text # projection standing) # completed
           ( Semigroupoid.do
               headline5 text # projection questionPrompt # completed
-              listOf {} (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap questionChoices) # provided # lcmap currentQuestion # updates (match { picked: answer })
+              listOf {} (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap questionChoices # widenRecordInput) # provided # lcmap currentQuestion # widenRecordInput # updates (match { picked: answer })
           ( Semigroupoid.do
               headline6 text # forValue # forField @"summary" # displayed
               button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided # lcmap finalOutcome # updates (match { restarted: const restart })
@@ -50,14 +50,14 @@ answer choice run = case index questionCatalogue run.question of
   Just q -> { question: run.question + 1, correct: run.correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-currentQuestion :: forall r. { question :: Int | r } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
+currentQuestion :: { question :: Int } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
 currentQuestion run = index questionCatalogue run.question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
 
-questionPrompt :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> String
+questionPrompt :: { prompt :: String } -> String
 questionPrompt q = q.prompt
 
-questionChoices :: forall r. { choices :: Array { key :: Int, label :: String } | r } -> Array { key :: Int, label :: String }
+questionChoices :: { choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
 questionChoices q = q.choices
 
 finalOutcome :: { question :: Int, correct :: Int } -> Maybe { summary :: String }
@@ -65,7 +65,7 @@ finalOutcome run =
   if run.question < length questionCatalogue then Nothing
   else Just { summary: "Final score: " <> show run.correct <> " / " <> show (length questionCatalogue) }
 
-progressFraction :: { question :: Int, correct :: Int } -> Number
+progressFraction :: { question :: Int } -> Number
 progressFraction run = toNumber run.question / toNumber (length questionCatalogue)
 
 standing :: { question :: Int, correct :: Int } -> String

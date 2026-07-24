@@ -13,7 +13,7 @@ import Data.Variant (expand)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, forCase, mvu, projection, required, updates)
+import PUI (action, asCase, asField, completed, debounced, forCase, mvu, projection, required, updatesOn, widenRecordInput)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,7 +30,7 @@ flightBooker =
                 , { value: .return unit, label: "return flight" }
                 ] # required # asField @"flightType"
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # widenRecordInput # updatesOn setReturn
       ) # mvu plannedTrip
       body1 text # projection validationText # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
@@ -91,10 +91,10 @@ formatDate dt = pad dt.d <> "." <> pad dt.m <> "." <> show dt.y
 dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
 dateKey dt = dt.y * 10000 + dt.m * 100 + dt.d
 
-returnLeg :: forall r. { flightType :: [ oneWay :: Unit, return :: Unit ], return :: String | r } -> Maybe { return :: String }
+returnLeg :: { flightType :: [ oneWay :: Unit, return :: Unit ], return :: String } -> Maybe { return :: String }
 returnLeg b = if b.flightType == .return unit then Just { return: b.return } else Nothing
 
-setReturn :: forall r. { return :: String } -> { return :: String | r } -> { return :: String | r }
+setReturn :: { return :: String } -> { return :: String } -> { return :: String }
 setReturn { return } b = b { return = return }
 
 plannedTrip :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String }

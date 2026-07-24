@@ -303,3 +303,85 @@ which functions sit on merge evidence. The narrowed state is the best
 ad-hoc variant but still +14% chars over nominal; the synonym's remaining,
 irreducible value is naming the model at the pinned positions the row
 machinery genuinely forces to stay ground.
+
+## Fourth state: closed narrow rows (library taught to subsume)
+
+The third state's `forall r.` ceremony was then attacked at the source: can the
+*library* absorb the widening so business functions can be closed narrow rows
+with no row variables at all? Mostly yes. Two combinators were added to
+`PUI.purs` (36 lines):
+
+- `updatesOn` — `updates` whose handler is `e -> {|small} -> {|small}`, the
+  result merged back over the retained model (`Union small big u, Nub u big`).
+- `everyOn` — the same for `every`'s tick step.
+
+Everything else needed no new library code: `widenRecordInput` (already
+exported) covers read-stages, and `completed` and the merges already widen.
+
+Result: **9 `forall`s left in all demos**, down from 89, and every survivor is
+principled — 5 true pass-throughs whose row variable appears in the *result*
+(`atCart`-style `{ step :: String | r } -> Maybe { step :: String | r }`,
+stopwatch's `whenHalted`/`whenRunning`, inbox's `confirmingDelete`) and 4
+genuinely parametric ignored arguments (`forall a. a -> ...`). Verified: build,
+`spago test`, demo/1, all bundles, smoke suite green.
+
+| metric | nominal | full-row ad-hoc | narrowed (open rows) | closed narrow |
+|---|---|---|---|---|
+| lines | 3,053 | 2,913 | 2,915 | 2,881 |
+| chars | 118,984 | 142,860 | 136,162 | 138,106 |
+| p99 line width | 160 | 282 | 207 | 242 |
+| lines > 120 ch | 89 | 196 | 167 | 173 |
+| `forall` in demos | 0 | 0 | 89 | 9 |
+
+Closed rows are *fewer lines* than every other state but slightly **more
+chars** than the open-row state: dropping `forall r.` binders is cheaper than
+what closing costs — nested rows must be spelled out in full (widening is
+top-row only, so weather's report row and movie-browser's movie row appear
+verbatim in every signature), plus the `# widenRecordInput` stages and the
+rule-6 call-site literals.
+
+### The position taxonomy (the real deliverable)
+
+Whether a closed narrow row compiles depends entirely on *which combinator
+consumes it* — five distinct behaviors, established by construction:
+
+| position | closed narrow row |
+|---|---|
+| `# completed` | **works directly** — and adding `widenRecordInput` *breaks* it (two coercions ⇒ ambiguous row) |
+| `.do`-merge operand | works **iff** the operands' union already equals the flowing row (typically a sibling pins it); otherwise ONE `# widenRecordInput` on the whole merge |
+| `# tapped`/`# displayed`/`lcmap` feed | needs one `# widenRecordInput` between the narrow stage and the consumer |
+| `updates`/`every` handler | needs `updatesOn`/`everyOn` — *unless* the handler is the only thing pinning its sibling's replayed payload |
+| plain application (`attrWith`, `action`, helper→helper) | **no subsumption ever** — caller passes an explicit literal |
+
+Two traps worth recording. First, `SharedRecordInputs` fixes a merge's input
+to `Nub (i1 ∪ i2 ∪ …)`, so narrowing *all* operands of a merge shrinks its
+input below the model row (crud's three Aff actions, checkout's five button
+feeds, inbox's three display lines all hit this) — the fix is one widen
+outside the merge, never per-operand. Second, the `const <<< f` idiom in a
+`match` handler is often the *only* thing pinning the sibling widgets'
+replayed payload: rewriting it to `\_ -> f` (needed when `f` is narrow)
+un-pins the merge and fails, so stopwatch's and inbox's update packs stay at
+the full model row — closed, but not narrow.
+
+### Costs that are not type text
+
+Narrowing forced two genuine code changes, not just signature changes:
+circle-drawer's `pushUndo` now returns only `{ undoStack, redoStack }` with
+callers splicing the stacks back into their record updates, and
+`updatesOn`-style handlers under one `match` must share a footprint — so
+circle-drawer's `undo`/`redo` widened back to the whole model because their
+sibling reads `diameter`. Neither is a readability win.
+
+### Amended verdict
+
+The library *can* support fully closed, `forall`-free narrow signatures — it
+took 36 lines and no changes to the row layer. The result is the shortest
+state by lines, states each function's exact dependency footprint, and needs
+no row-polymorphism knowledge from the reader. What it costs is a taxonomy:
+five consumer positions with five different widening rules, invisible in the
+source, plus explicit literals wherever plain application is involved. So the
+end state of the whole experiment is not "ad-hoc rows are worse" but a sharper
+trade: nominal aliases buy *one name per model and no positional rules*;
+closed ad-hoc rows buy *per-function honesty* at the price of knowing where
+the library widens. Both beat the middle state (full-row ad-hoc), which pays
+the width and hides the over-demand.

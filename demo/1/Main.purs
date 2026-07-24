@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updates, with)
+import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updatesOn, widenRecordInput, with)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -39,11 +39,11 @@ main =
                   , { value: "takeaway", label: "Takeaway" }
                   , { value: "delivery", label: "Delivery" }
                   ] # asField @"selected" # completed
-                filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # updates setTable
-                filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
+                filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # widenRecordInput # updatesOn setTable
+                filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # widenRecordInput # updatesOn setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
-                    body1 text # projection distanceLine # forField @"address") # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
+                    body1 text # projection distanceLine # forField @"address") # provided # lcmap deliveryPane # widenRecordInput # updatesOn setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -54,10 +54,10 @@ main =
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
               body1 text # projection paymentLine # forField @"method") # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      body1 text # projection summarize # debounced # tapped
-      RecordToVariant.do
-        button { label: "Submit order", icon: "save" } # asCase @"submit"
-        button { label: "Receipt", icon: "file" } # asCase @"printReceipt"
+      body1 text # projection summarize # widenRecordInput # debounced # tapped
+      ( RecordToVariant.do
+          button { label: "Submit order", icon: "save" } # asCase @"submit"
+          button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput
       VariantToVariant.do
         indeterminateLinearProgress # action submitOrder # onCase @"submit"
         indeterminateLinearProgress # action printReceipt # onCase @"printReceipt"
@@ -113,23 +113,23 @@ fulfillmentCase s =
   else if s.selected == "takeaway" then .takeaway { time: s.time }
   else .delivery { address: s.address }
 
-dineInPane :: forall r. { selected :: String, table :: String | r } -> Maybe { table :: String }
+dineInPane :: { selected :: String, table :: String } -> Maybe { table :: String }
 dineInPane s = if s.selected == "dineIn" then Just { table: s.table } else Nothing
 
-takeawayPane :: forall r. { selected :: String, time :: String | r } -> Maybe { time :: String }
+takeawayPane :: { selected :: String, time :: String } -> Maybe { time :: String }
 takeawayPane s = if s.selected == "takeaway" then Just { time: s.time } else Nothing
 
-deliveryPane :: forall r. { selected :: String, address :: String | r } -> Maybe { address :: String }
+deliveryPane :: { selected :: String, address :: String } -> Maybe { address :: String }
 deliveryPane s = if s.selected == "delivery" then Just { address: s.address } else Nothing
 
-setTable :: forall r. { table :: String } -> { table :: String | r } -> { table :: String | r }
-setTable { table } s = s { table = table }
+setTable :: { table :: String } -> { table :: String } -> { table :: String }
+setTable { table } _ = { table }
 
-setTime :: forall r. { time :: String } -> { time :: String | r } -> { time :: String | r }
-setTime { time } s = s { time = time }
+setTime :: { time :: String } -> { time :: String } -> { time :: String }
+setTime { time } _ = { time }
 
-setAddress :: forall r. { address :: String } -> { address :: String | r } -> { address :: String | r }
-setAddress { address } s = s { address = address }
+setAddress :: { address :: String } -> { address :: String } -> { address :: String }
+setAddress { address } _ = { address }
 
 methodState ::
   [ cash :: Unit
@@ -147,13 +147,12 @@ methodCase :: { selected :: String } ->
   ]
 methodCase r = if r.selected == "cash" then .cash unit else .card unit
 
-summarize :: forall r rc rp.
+summarize ::
   { shortId :: String
   , orderId :: String
   , customer ::
       { firstName :: String
       , lastName :: String
-      | rc
       }
   , fulfillment ::
       [ dineIn :: { table :: String }
@@ -166,9 +165,7 @@ summarize :: forall r rc rp.
           , card :: Unit
           ]
       , paid :: String
-      | rp
       }
-  | r
   }
   -> String
 summarize order =
@@ -229,24 +226,7 @@ loadOrder _ = do
 submitOrder ::
   { shortId :: String
   , orderId :: String
-  , customer ::
-      { firstName :: String
-      , lastName :: String
-      }
-  , fulfillment ::
-      [ dineIn :: { table :: String }
-      , takeaway :: { time :: String }
-      , delivery :: { address :: String }
-      ]
   , total :: String
-  , payment ::
-      { method ::
-          [ cash :: Unit
-          , card :: Unit
-          ]
-      , paid :: String
-      }
-  , remarks :: String
   }
   -> Aff
     [ orderSubmitted :: String
@@ -266,24 +246,6 @@ submitOrder order = do
 printReceipt ::
   { shortId :: String
   , orderId :: String
-  , customer ::
-      { firstName :: String
-      , lastName :: String
-      }
-  , fulfillment ::
-      [ dineIn :: { table :: String }
-      , takeaway :: { time :: String }
-      , delivery :: { address :: String }
-      ]
-  , total :: String
-  , payment ::
-      { method ::
-          [ cash :: Unit
-          , card :: Unit
-          ]
-      , paid :: String
-      }
-  , remarks :: String
   }
   -> Aff [ receiptPrinted :: String ]
 printReceipt order = do

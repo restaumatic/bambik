@@ -49,6 +49,7 @@ module PUI
   , edits
   , effAdapter
   , every
+  , everyOn
   , foreach
   , looped
   , muted
@@ -59,6 +60,7 @@ module PUI
   , silence
   , spied
   , updates
+  , updatesOn
   , with
   , module Adopters
   )
@@ -98,8 +100,9 @@ import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, case_, contract, on)
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -107,7 +110,7 @@ import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Record (get, insert, union) as Record
+import Record (get, insert, merge, union) as Record
 
 -- | Dev-mode emission trace: set `window.__bambikTrace = true` (or
 -- | `localStorage.setItem("bambik-trace", "true")`) in the browser console
@@ -578,6 +581,37 @@ every interval step = wrap $ pure unit <#> \_ ->
             loop
         launchAff_ loop
     }
+
+-- | `updates` for a handler that touches only a **sub-row** of the model:
+-- | the handler reads and rebuilds `{ | small }`, and the stage merges the
+-- | result back over the retained value (updated fields win), so the rest of
+-- | the row passes through untouched. The closed-row sibling of an open-row
+-- | `updates` handler (`forall r. { f :: T | r } -> { f :: T | r }`): the
+-- | footprint is stated once, in the handler's own signature, with no row
+-- | variable. All handlers under one `match` must share the footprint —
+-- | mixed-footprint matches still need open rows.
+updatesOn
+  :: forall m small u big e
+   . Functor m
+  => Union small big u
+  => Nub u big
+  => (e -> Record small -> Record small)
+  -> PUI m (Record big) e
+  -> PUI m (Record big) (Record big)
+updatesOn handler = updates \e big -> Record.merge (handler e (unsafeCoerce big)) big
+
+-- | `every` for a step that touches only a **sub-row** of the model — the
+-- | heartbeat sibling of `updatesOn`: the step reads and rebuilds
+-- | `{ | small }`, merged back over the last full value on each tick.
+everyOn
+  :: forall m small u big
+   . Applicative m
+  => Union small big u
+  => Nub u big
+  => Milliseconds
+  -> (Record small -> Maybe (Record small))
+  -> PUI m (Record big) (Record big)
+everyOn interval step = every interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
 
 -- | The `×`-diagonal **self-trace**: feed a diagonal widget its own
 -- | emissions, re-entrancy-guarded (leaf widgets echo on `toUser`, and the

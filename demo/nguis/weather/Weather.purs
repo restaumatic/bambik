@@ -9,7 +9,7 @@ import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, mvu, onCase, projection, tapped, toCase, updates)
+import PUI (action, mvu, onCase, projection, tapped, toCase, updates, widenRecordInput)
 import PUI.HTML (body, text)
 import PUI.MDC (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,15 +21,15 @@ weather =
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
               listOf { selected: _.shown } (text # projection _.city) # toCase @"cityPicked" # lcmap forecastRequests
-              indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
-          headline1 text # projection temperatureLine # tapped
-          headline5 text # projection conditionLine # tapped
-          body1 text # projection detailsLine # tapped
-          caption text # projection serviceLine # tapped
+              indeterminateCircularProgress # action fetchReport # widenRecordInput # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
+          headline1 text # projection temperatureLine # widenRecordInput # tapped
+          headline5 text # projection conditionLine # widenRecordInput # tapped
+          body1 text # projection detailsLine # widenRecordInput # tapped
+          caption text # projection serviceLine # widenRecordInput # tapped
           ( Semigroupoid.do
               iconButton { icon: "info", label: "About this dashboard" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
-                ( body1 text # projection serviceStory # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: const identity })
+                ( body1 text # projection serviceStory # widenRecordInput # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: const identity })
       ) # mvu warsawBulletin
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
@@ -57,7 +57,7 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: forall r. { city :: String, sample :: Int | r } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
+fetchReport :: { city :: String, sample :: Int } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
 fetchReport request = do
   delay (Milliseconds 800.0)
   pure (.reportServed (conditionsFor request.city request.sample))
@@ -65,23 +65,23 @@ fetchReport request = do
 rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 rememberReport report board = { report, servedReports: board.servedReports + 1 }
 
-forecastRequests :: forall r rr. { report :: { city :: String | rr }, servedReports :: Int | r } -> Array { city :: String, sample :: Int, shown :: Boolean }
+forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
 forecastRequests board = climateTable <#> \r ->
   { city: r.city, sample: board.servedReports, shown: r.city == board.report.city }
 
-temperatureLine :: forall r rr. { report :: { temperature :: Number | rr } | r } -> String
+temperatureLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
 temperatureLine board = show board.report.temperature <> " °C"
 
-conditionLine :: forall r rr. { report :: { condition :: String, city :: String | rr } | r } -> String
+conditionLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
 conditionLine board = board.report.condition <> " in " <> board.report.city
 
-detailsLine :: forall r rr. { report :: { humidity :: Int, wind :: Number | rr } | r } -> String
+detailsLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
 detailsLine board = "Humidity " <> show board.report.humidity <> "% · Wind " <> show board.report.wind <> " km/h"
 
-serviceLine :: forall r. { servedReports :: Int | r } -> String
+serviceLine :: { servedReports :: Int } -> String
 serviceLine board = "Simulated service · " <> show board.servedReports <> " reports served"
 
-serviceStory :: forall r. { servedReports :: Int | r } -> String
+serviceStory :: { servedReports :: Int } -> String
 serviceStory board = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show board.servedReports <> "."
 
 warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }

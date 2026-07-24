@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, asCase, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, mvu, onCase, projection, tapped, updatesOn, widenRecordInput)
 import PUI.HTML (body, text)
 import PUI.MDC (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,14 +17,14 @@ payment =
   body $
     elevation20 $
       card { caption: "Payment" } $ ( Semigroupoid.do
-          headline6 text # projection amountLine # tapped
+          headline6 text # projection amountLine # widenRecordInput # tapped
           body2 text # projection _.status # tapped
           ( Semigroupoid.do
-              button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge
-              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: recordCharged })
+              button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge # widenRecordInput
+              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updatesOn (match { charged: recordCharged })
       ) # mvu unpaidOrder
 
-startCharge :: forall r. { amount :: Number | r } -> { amount :: Number, attempt :: Int }
+startCharge :: { amount :: Number } -> { amount :: Number, attempt :: Int }
 startCharge o = { amount: o.amount, attempt: 0 }
 
 chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
@@ -37,10 +37,10 @@ chargeFlaky r = do
     then pure $ .charge r { attempt = r.attempt + 1 }
     else pure $ .charged ("Approved — $" <> show r.amount <> " charged on attempt " <> show (r.attempt + 1))
 
-recordCharged :: forall r. String -> { status :: String | r } -> { status :: String | r }
+recordCharged :: String -> { status :: String } -> { status :: String }
 recordCharged message o = o { status = message }
 
-amountLine :: forall r. { amount :: Number | r } -> String
+amountLine :: { amount :: Number } -> String
 amountLine o = "Amount due: $" <> show o.amount
 
 unpaidOrder :: { amount :: Number, status :: String }
