@@ -9,7 +9,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, projection, toCase, updates)
+import PUI (constantly, foreach, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,9 +24,9 @@ calculator =
                 div >>> "style"
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ text # lcmap (\tally -> { value: readout { faulty: tally.faulty, entry: tally.entry } })
+                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ text # projection readout
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # lcmap (const keyPad) # rmap _.key) # toCase @"keyPressed"
+                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # constantly keyPad # rmap _.key) # toCase @"keyPressed"
         ) # updates (match { keyPressed: pressKey }) # mvu blankTally
 
 keyStyle :: String -> String

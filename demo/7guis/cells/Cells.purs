@@ -16,7 +16,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, foreach, mvu, projection, toCase, updates, widenRecordInput)
+import PUI (asField, completed, foreach, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,7 +31,7 @@ cells =
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # lcmap (\c -> { value: c.text }) ) # rmap _.key ) # foreach @"domKey" # lcmap _.cells ) # foreach @"rowKey" # lcmap gridRows) # toCase @"cellClicked") # widenRecordInput # updates (match { cellClicked: selectCell })
+                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # lcmap (\c -> { value: c.text }) ) # rmap _.key ) # foreach @"domKey" # lcmap _.cells ) # foreach @"rowKey" # lcmap gridRows) # toCase @"cellClicked") # updates (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
 cols :: Int

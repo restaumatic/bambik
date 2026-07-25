@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, mvu, projection, required, toCase, updatesOn, widenRecordInput)
+import PUI (asField, completed, mvu, projection, required, toCase, updates)
 import PUI.HTML (body, clWhen, span, text)
 import PUI.MDC (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,12 +20,12 @@ todoMvc =
       card { caption: "TodoMVC" } $ ( Semigroupoid.do
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
-            button { label: "Add" } # updatesOn (match { clicked: \_ -> addTodo })
-          listOf { selected: _.done } (span text # projection _.title # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # widenRecordInput # updatesOn (match { todoClicked: toggleTodo })
+            button { label: "Add" } # updates (match { clicked: const <<< addTodo })
+          listOf { selected: _.done } (span text # projection _.title # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
           segmentedButton visibilityChoices # required # asField @"visibility" # completed
           Semigroupoid.do
             caption text # projection itemsLeft # completed
-            button { label: "Clear completed" } # updatesOn (match { clicked: \_ -> clearCompleted })
+            button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
 emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] }

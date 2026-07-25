@@ -13,7 +13,7 @@ import Data.Variant (expand)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, forCase, mvu, projection, required, updatesOn, widenRecordInput)
+import PUI (action, asCase, asField, completed, debounced, forCase, mvu, projection, required, updates)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,7 +30,7 @@ flightBooker =
                 , { value: .return unit, label: "return flight" }
                 ] # required # asField @"flightType"
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # widenRecordInput # updatesOn setReturn
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
       ) # mvu plannedTrip
       body1 text # projection validationText # debounced # completed
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"

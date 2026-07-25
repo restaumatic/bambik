@@ -15,7 +15,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, looped, onCase, projection, toCase, updatesOn, widenRecordInput, with)
+import PUI (action, asCase, asField, completed, looped, onCase, projection, toCase, updates, with)
 import PUI.HTML (body, text)
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -32,7 +32,7 @@ crud = do
                   filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
-              listOf { selected: _.selected } (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap entries # widenRecordInput # updatesOn (match { picked: pick })
+              listOf { selected: _.selected } (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
@@ -41,7 +41,7 @@ crud = do
                   VariantToVariant.do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
-                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # widenRecordInput # updatesOn (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
+                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
       ) # with unit
 
 pick :: Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String }

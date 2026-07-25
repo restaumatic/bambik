@@ -385,3 +385,118 @@ trade: nominal aliases buy *one name per model and no positional rules*;
 closed ad-hoc rows buy *per-function honesty* at the price of knowing where
 the library widens. Both beat the middle state (full-row ad-hoc), which pays
 the width and hides the over-demand.
+
+## Fifth state: subsumption baked into the stages (`widenRecordInput` withdrawn)
+
+The fourth state's taxonomy was the complaint: five consumer positions with
+five different widening rules, all invisible in the source, and 39 hand-written
+`# widenRecordInput` stages carrying them. The fifth state asks the obvious
+follow-up — can the *wrapping combinators* absorb the widening, so that
+`widenRecordInput` disappears from the vocabulary demos can reach?
+
+Almost entirely. Six combinators now carry `Union narrow extra big` and widen
+their argument internally, and the two `…On` siblings are gone (folded into the
+names they were siblings of, so there is **one name per concept** again):
+
+| combinator | what subsumes |
+|---|---|
+| `tapped`, `displayed` | the display reads a sub-row of the stage's row |
+| `updates` | *both* the handler's sub-row **and** the wrapped event widget's row (this absorbed `updatesOn`) |
+| `every` | the tick step's sub-row (absorbed `everyOn`) |
+| `edits`, `acted` | the element widget reads a sub-row of the array's element row |
+
+`updates`/`every`'s type-agnostic implementations survive as private `mealy`
+and `heartbeat` — the public stages are row-typed, because that is where the
+subsumption is stated. `widenRecordInput` is no longer re-exported from `PUI`:
+it stays exported from `Data.Profunctor.Row` as the merge instances' plumbing,
+so reaching it from a demo now takes a deliberate second import.
+
+### Where subsumption must NOT be baked in (measured, not assumed)
+
+Baking it into three further combinators was tried and reverted, each for a
+distinct structural reason:
+
+- **`foreach`** — an element widget's row is *inferred from the array*, not
+  stated (elements are built from accessors: `text # projection _.key`).
+  Subsumption decouples the two and leaves the row unknown: calculator, cells
+  and color-mixer all failed. Element rows stay exact.
+- **`provided`** — the pane is *fed* the payload, so the pane row and the
+  `Maybe`-projection's result row are the same thing by construction. Widening
+  it broke quiz's inner `completed` (two chained subsumptions ⇒ ambiguous row).
+  Reverted; instead each pane projection now returns exactly what the pane
+  reads, which **closed three `forall r.`s** in checkout.
+- **`onCase`** — a case *payload* is pinned by the action that consumes it as
+  often as by the widget that emits it. Widening it broke five sites (crud,
+  inbox, password-generator, reorder, weather).
+
+The rule that falls out: **subsumption belongs where a row is only ever
+*read* against a row the stage already carries** (the ×-diagonal stages, the
+container element). It must not go where the row is *inferred through* the
+combinator — payload boundaries (`provided`, `onCase`, case payloads) and
+containers whose element row comes from the array.
+
+### The residue
+
+`widenRecordInput` now appears **once** in all of demo/ — demo/1's `×→+`
+button merge, whose consumer is a `+→+` dispatch stage rather than `updates`,
+so no subsuming stage sits at that boundary. The alternative (spelling the
+whole order row into `submitOrder`/`printReceipt`, or into a new projection)
+costs ~17 lines of row text to save one import, so the widen stays as the
+honest marker of a structurally uncovered position.
+
+Payload exactness also charges four signatures for fields they never read:
+weather's `fetchReport` (`shown`), quiz's `questionChoices` (`prompt`), and
+signup-form's `register`/`validate`/`validationSummary` (`plan`, `country` —
+the `button` replays its whole fed row and ×→+ has no subsuming adopter).
+
+### What the sites became
+
+Every failure the bake introduced had a *better* spelling available, which is
+the strongest evidence that this is the right factoring:
+
+| before | after |
+|---|---|
+| `text # projection _.field # tapped` | `text # forValue # forField @"field" # tapped` |
+| `text # lcmap (\m -> { value: readout { faulty: m.faulty, entry: m.entry } })` | `text # projection readout` (calculator — the phase-4 literal splice dissolved) |
+| `action (\r -> samplePassword { length: r.length, … })` | `action samplePassword` (same, in password-generator) |
+| `updates (match { clicked: \_ -> addTodo })` | `updates (match { clicked: const <<< addTodo })` — pins the event widget's replayed payload to the handler's row |
+| `(identity :: PUI Web { messages :: …, opened :: …, confirming :: …, nextId :: … } { … })` | `identity` (inbox — a ~200-char annotation that is simply no longer needed) |
+
+Two demos changed shape rather than types: potluck's model became
+`{ guests :: Array … }` lifted with `# field @"guests"` (a bare-`Array` carrier
+can host no `tapped`/`displayed` stage now that those are record-typed), and
+shopping-cart's leading `constantly productCatalogue` became
+`lcmap productCatalogue` with `productCatalogue :: {} -> Array …`, because a
+*first* pipeline stage has no neighbour to pin `constantly`'s free input.
+
+| metric | nominal | full-row ad-hoc | narrowed (open rows) | closed narrow | stages subsume |
+|---|---|---|---|---|---|
+| lines | 2,990 | 2,856 | 2,858 | 2,824 | 2,834 |
+| chars | 116,935 | 140,637 | 133,939 | 135,883 | 135,597 |
+| p99 line width | 161 | 282 | 211 | 242 | 242 |
+| lines > 120 ch | 89 | 195 | 166 | 172 | 171 |
+| `forall` in demos | 0 | 0 | 89 | 9 | **2** |
+| `widenRecordInput` lines | 7 | 7 | 7 | 58 | **2** |
+
+(All states measured over the same file set, excluding the orphaned
+`flight-booker/Business.purs`, which this state deleted — it was dead code
+fully superseded by `FlightBooker.purs`. The earlier tables in this document
+included it, hence the small differences.)
+
+The two surviving `forall`s are genuinely parametric ignored arguments
+(`restart :: forall a. a -> …`, `nextTicket :: forall a. Tuple a … -> …`) —
+**no row polymorphism is left in any demo**, and no demo names a type.
+
+### Verdict
+
+The taxonomy was not inherent to ad-hoc rows; four of its five rows were a
+missing library feature. With subsumption in the stages, a business function
+states exactly the fields it reads, as a closed anonymous row, and the
+pipeline accepts it — no row variables, no coercion stages, no positional
+rules to remember for the ×-diagonal. What remains is a much smaller and more
+teachable rule: **rows are read narrow, payloads are exact.** The cost of
+ad-hoc rows over nominal aliases is now purely the width of repeated nested
+rows (+16% chars, p99 242 vs 161), not ceremony.
+
+Verified at this state: `spago build`, `spago test`, demo/1, all bundles, and
+the full `npm run smoke` suite green.

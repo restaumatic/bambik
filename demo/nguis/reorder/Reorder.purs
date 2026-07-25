@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, edits, field, mvu, onCase, silence, updates, widenRecordInput)
+import PUI (action, asCase, asField, edits, field, mvu, onCase, silence, updates)
 import PUI.HTML (body, el, (:=))
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -35,7 +35,7 @@ reorder =
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  filledTextField { floatingLabel: "Title" } # asField @"title") # widenRecordInput) # edits @"id") # field @"order"
+                  filledTextField { floatingLabel: "Title" } # asField @"title")) # edits @"id") # field @"order"
       ) # mvu openingSetlist
 
 rotateAction

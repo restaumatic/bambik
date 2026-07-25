@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, foreach, mvu, toCase, updates, widenRecordInput)
+import PUI (asCase, asField, foreach, mvu, toCase, updates)
 import PUI.HTML (attrWith, body, onClickedXY, provided, (:=))
 import PUI.MDC (button, card, cardActions, elevation20, sliderLive)
 import PUI.SVG (circle, svg)
@@ -21,7 +21,7 @@ circleDrawer =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter" # provided # lcmap selectedDiameter # widenRecordInput # updates adjustDiameter
+          sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter" # provided # lcmap selectedDiameter # updates adjustDiameter
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY

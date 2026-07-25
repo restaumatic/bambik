@@ -49,7 +49,6 @@ module PUI
   , edits
   , effAdapter
   , every
-  , everyOn
   , foreach
   , looped
   , muted
@@ -60,7 +59,6 @@ module PUI
   , silence
   , spied
   , updates
-  , updatesOn
   , with
   , module Adopters
   )
@@ -87,7 +85,11 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecord, forField, forValue, projection, required, tapped) as Adopters
 import Data.Profunctor.Row.RecordToVariant (asCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
-import Data.Profunctor.Row (widenRecordInput) as Adopters
+-- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
+-- into the stages that consume a row (`tapped`, `displayed`, `updates`,
+-- `every`, `edits`, `acted`, `completed`), so a widget's own row is always
+-- stated by a business function, never coerced at the call site. It stays
+-- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
@@ -495,8 +497,29 @@ seeded a = wrap $ pure unit <#> \_ ->
 -- |
 -- | is the model–view–update shape as two named stages. Events arriving
 -- | before a first value are withheld (the usual knowledge gate).
-updates :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
-updates handler events = wrap $ unwrap events <#> \evts ->
+-- |
+-- | **Both sides subsume** (the row layer's rule: a stated closed row may be
+-- | *read* from any wider row): the handler may touch a sub-row of the model,
+-- | and the wrapped event widget may be fed a sub-row of it — typically the
+-- | union of an event merge's operands — so neither side needs a
+-- | `widenRecordInput` at the stage boundary. With `small ≡ big` and
+-- | `narrow ≡ big` this is the plain diagonal stage.
+updates
+  :: forall m small u big narrow extra e
+   . Functor m
+  => Union small big u
+  => Nub u big
+  => Union narrow extra big
+  => (e -> Record small -> Record small)
+  -> PUI m (Record narrow) e
+  -> PUI m (Record big) (Record big)
+updates handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
+
+-- | The type-agnostic Mealy stage `updates` and `displayed` are built from —
+-- | private, because the vocabulary's stages carry rows (subsumption is
+-- | stated in their signatures) while this one is exact at any type.
+mealy :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
+mealy handler events = wrap $ unwrap events <#> \evts ->
   let sRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
       guard = unsafePerformEffect gateGuard
@@ -530,8 +553,11 @@ updates handler events = wrap $ unwrap events <#> \evts ->
 -- | both rely on the display's echo;
 -- | `displayed` does not. (The trivial `updates` fold: any event the
 -- | wrapped widget does emit re-emits the retained value.)
-displayed :: forall m s e. Functor m => PUI m s e -> PUI m s s
-displayed = updates \_ s -> s
+-- | **Subsumption is built in** (like `tapped`): the display may read a
+-- | *narrower* row than the stage carries, so a closed-row projection needs
+-- | no `widenRecordInput` at the stage boundary.
+displayed :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
+displayed w = mealy (\_ s -> s) (widenRecordInput w)
 
 -- | Embed `{}`-typed chrome at ANY position: the wrapped widget is fed
 -- | `{}` for every value flowing through and its emissions (the statics'
@@ -544,11 +570,10 @@ muted w = wrap $ unwrap w <#> \w' ->
   , fromUser: \_ -> w'.fromUser \_ -> pure unit
   }
 
--- | Pin a stage's input to a known value: the wrapped widget is fed `a`
--- | for every value flowing through, and the stage's own input type stays
--- | free — so a constant-fed stage (a fixed catalogue driving a collection
--- | component) needs no input-type annotation where `lcmap (const a)`
--- | would.
+-- | Pin a stage's input to a known value: the wrapped widget is fed `a` for
+-- | every value flowing through — a constant-fed stage (a fixed catalogue
+-- | driving a collection component) with no input-type annotation. Its own
+-- | input type stays free, so it fits any pipeline position.
 constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
 constantly a = lcmap (const a)
 
@@ -559,8 +584,24 @@ constantly a = lcmap (const a)
 -- | tick source: the 7GUIs Timer is `every (Milliseconds 100.0) tick`.
 -- | The loop runs for the widget's whole life (no cancellation — a
 -- | prototype limitation shared with `action'`).
-every :: forall m a. Applicative m => Milliseconds -> (a -> Maybe a) -> PUI m a a
-every interval step = wrap $ pure unit <#> \_ ->
+-- |
+-- | The step **subsumes** (like `updates`'s handler): it may read and rebuild
+-- | a sub-row of the model, merged back over the last full value on each
+-- | tick, so the tick's footprint is stated once in the step's own signature.
+every
+  :: forall m small u big
+   . Applicative m
+  => Union small big u
+  => Nub u big
+  => Milliseconds
+  -> (Record small -> Maybe (Record small))
+  -> PUI m (Record big) (Record big)
+every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
+
+-- | The type-agnostic heartbeat `every` is built from — private for the same
+-- | reason as `mealy`.
+heartbeat :: forall m a. Applicative m => Milliseconds -> (a -> Maybe a) -> PUI m a a
+heartbeat interval step = wrap $ pure unit <#> \_ ->
   let lastRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
   in
@@ -581,37 +622,6 @@ every interval step = wrap $ pure unit <#> \_ ->
             loop
         launchAff_ loop
     }
-
--- | `updates` for a handler that touches only a **sub-row** of the model:
--- | the handler reads and rebuilds `{ | small }`, and the stage merges the
--- | result back over the retained value (updated fields win), so the rest of
--- | the row passes through untouched. The closed-row sibling of an open-row
--- | `updates` handler (`forall r. { f :: T | r } -> { f :: T | r }`): the
--- | footprint is stated once, in the handler's own signature, with no row
--- | variable. All handlers under one `match` must share the footprint —
--- | mixed-footprint matches still need open rows.
-updatesOn
-  :: forall m small u big e
-   . Functor m
-  => Union small big u
-  => Nub u big
-  => (e -> Record small -> Record small)
-  -> PUI m (Record big) e
-  -> PUI m (Record big) (Record big)
-updatesOn handler = updates \e big -> Record.merge (handler e (unsafeCoerce big)) big
-
--- | `every` for a step that touches only a **sub-row** of the model — the
--- | heartbeat sibling of `updatesOn`: the step reads and rebuilds
--- | `{ | small }`, merged back over the last full value on each tick.
-everyOn
-  :: forall m small u big
-   . Applicative m
-  => Union small big u
-  => Nub u big
-  => Milliseconds
-  -> (Record small -> Maybe (Record small))
-  -> PUI m (Record big) (Record big)
-everyOn interval step = every interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
 
 -- | The `×`-diagonal **self-trace**: feed a diagonal widget its own
 -- | emissions, re-entrancy-guarded (leaf widgets echo on `toUser`, and the
@@ -900,6 +910,10 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- | Adopt a bare-input widget as the owner of input case `l` inside a
 -- | `VariantToVariant.do` merge — `lcmap`-only, the input-side sibling of
 -- | `asCase`: `action createPerson # onCase @"create"`.
+-- | No subsumption here, deliberately: a case *payload* is pinned by the
+-- | action that consumes it as often as by the widget that emits it, so
+-- | widening this position would leave both unknown (see doc/
+-- | experiment-ad-hoc-rows.md — the payload-boundary rule).
 onCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p (Variant s) b
 onCase = lcmap (on (Proxy @l) identity case_)
 
@@ -1142,8 +1156,8 @@ foreach w = wrap do
 -- | dissolves the old convention that the element must `# completed` its key
 -- | field through. `Ord k` is the reconciler's indexing requirement;
 -- | identity semantics remain equality — keys must be unique.
-edits :: forall @l m node k r a. Hosting m node => IsSymbol l => Cons l k r a => Lacks l r => Ord k => PUI m { | a } { | r } -> PUI m (Array { | a }) (Array { | a })
-edits item = wrap do
+edits :: forall @l m node k r a narrow extra. Hosting m node => IsSymbol l => Cons l k r a => Lacks l r => Ord k => Union narrow extra a => PUI m { | narrow } { | r } -> PUI m (Array { | a }) (Array { | a })
+edits item0 = let item = widenRecordInput item0 in wrap do
   hooks <- hosting item
   liftEffect do
     propRef <- Ref.new Nothing

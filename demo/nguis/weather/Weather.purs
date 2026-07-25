@@ -1,6 +1,6 @@
 module Weather (weather) where
 
-import Prelude ((#), ($), (*), (+), (-), (<#>), (<>), (==), Unit, const, discard, identity, mod, pure, show)
+import Prelude ((#), ($), (*), (+), (-), (<#>), (<>), (==), Unit, discard, mod, pure, show)
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
@@ -9,7 +9,7 @@ import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, mvu, onCase, projection, tapped, toCase, updates, widenRecordInput)
+import PUI (action, mvu, onCase, projection, tapped, toCase, updates)
 import PUI.HTML (body, text)
 import PUI.MDC (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,15 +21,15 @@ weather =
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
               listOf { selected: _.shown } (text # projection _.city) # toCase @"cityPicked" # lcmap forecastRequests
-              indeterminateCircularProgress # action fetchReport # widenRecordInput # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
-          headline1 text # projection temperatureLine # widenRecordInput # tapped
-          headline5 text # projection conditionLine # widenRecordInput # tapped
-          body1 text # projection detailsLine # widenRecordInput # tapped
-          caption text # projection serviceLine # widenRecordInput # tapped
+              indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
+          headline1 text # projection temperatureLine # tapped
+          headline5 text # projection conditionLine # tapped
+          body1 text # projection detailsLine # tapped
+          caption text # projection serviceLine # tapped
           ( Semigroupoid.do
               iconButton { icon: "info", label: "About this dashboard" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
-                ( body1 text # projection serviceStory # widenRecordInput # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: const identity })
+                ( body1 text # projection serviceStory # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: resumeDashboard })
       ) # mvu warsawBulletin
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
@@ -57,13 +57,16 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: { city :: String, sample :: Int } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
+fetchReport :: { city :: String, sample :: Int, shown :: Boolean } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
 fetchReport request = do
   delay (Milliseconds 800.0)
   pure (.reportServed (conditionsFor request.city request.sample))
 
 rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 rememberReport report board = { report, servedReports: board.servedReports + 1 }
+
+resumeDashboard :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
+resumeDashboard _ board = board
 
 forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
 forecastRequests board = climateTable <#> \r ->

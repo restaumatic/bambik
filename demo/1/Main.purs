@@ -14,7 +14,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updatesOn, widenRecordInput, with)
+import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updates, with)
+import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -39,11 +40,11 @@ main =
                   , { value: "takeaway", label: "Takeaway" }
                   , { value: "delivery", label: "Delivery" }
                   ] # asField @"selected" # completed
-                filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # widenRecordInput # updatesOn setTable
-                filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # widenRecordInput # updatesOn setTime
+                filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # updates setTable
+                filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
-                    body1 text # projection distanceLine # forField @"address") # provided # lcmap deliveryPane # widenRecordInput # updatesOn setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
+                    body1 text # projection distanceLine # forField @"address") # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -54,7 +55,7 @@ main =
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
               body1 text # projection paymentLine # forField @"method") # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      body1 text # projection summarize # widenRecordInput # debounced # tapped
+      body1 text # projection summarize # debounced # tapped
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"submit"
           button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput

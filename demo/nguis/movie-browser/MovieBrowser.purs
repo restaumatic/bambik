@@ -8,7 +8,7 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, foreach, forField, forValue, mvu, projection, tapped, toCase, updatesOn, widenRecordInput)
+import PUI (asField, completed, foreach, forField, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (body, clWhen, span, text)
 import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,14 +24,14 @@ movieBrowser =
               filterChip { label: "Classic" } # asField @"classic"
               filterChip { label: "Cult" } # asField @"cult"
               filterChip { label: "Oscar" } # asField @"oscar") # completed
-          elevation1 (subtitle1 text # projection favoritesLine) # widenRecordInput # tapped
+          elevation1 (subtitle1 text # projection favoritesLine) # tapped
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
                     span text # forValue # forField @"title"
                     span text # projection show # forField @"year"
                     span text # projection ratingLine # forField @"rating"
-                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" # toCase @"favored" # lcmap visibleMovies # updatesOn (match { favored: markFavorite })
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" # toCase @"favored" # lcmap visibleMovies # updates (match { favored: markFavorite })
       ) # mvu movieCatalogue
 
 movieCatalogue :: { category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } }

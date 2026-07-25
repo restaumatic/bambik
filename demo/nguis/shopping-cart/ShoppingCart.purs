@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (constantly, foreach, forField, forValue, mvu, projection, tapped, toCase, updates)
+import PUI (foreach, forField, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (body, clicked, text)
 import PUI.MDC (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,7 +18,7 @@ shoppingCart =
   body $
     elevation20 $
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
-          listOf {} (text # projection productOffer) # constantly productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
+          listOf {} (text # projection productOffer) # lcmap productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
                   dataCell text # forValue # forField @"product"
@@ -31,8 +31,8 @@ shoppingCart =
 emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
 emptyCart = { order: [] }
 
-productCatalogue :: Array { name :: String, unitPrice :: Int }
-productCatalogue =
+productCatalogue :: {} -> Array { name :: String, unitPrice :: Int }
+productCatalogue _ =
   [ { name: "Espresso", unitPrice: 350 }
   , { name: "Cappuccino", unitPrice: 450 }
   , { name: "Croissant", unitPrice: 320 }

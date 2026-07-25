@@ -10,10 +10,9 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, forCase, mvu, onCase, projection, PUI, tapped, toCase, updates, updatesOn, widenRecordInput)
+import PUI (asCase, completed, forCase, mvu, onCase, projection, tapped, toCase, updates)
 import PUI.HTML (body, provided, span, text)
 import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inbox :: Effect Unit
@@ -22,20 +21,20 @@ inbox =
     elevation20 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
           caption text # projection unreadLine # completed
-          listOf { selected: _.attention } (span text # projection _.line) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updatesOn (match { opened: openMessage })
+          listOf { selected: _.attention } (span text # projection _.line) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headline6 text # projection subjectLine
                   body2 text # projection senderLine
-                  body1 text # projection bodyLine) # widenRecordInput # tapped
+                  body1 text # projection bodyLine) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
                   button { label: "Keep" } # asCase @"kept") # provided # lcmap confirmingDelete
               VariantToVariant.do
-                banner # forCase @"emptied" # lcmap (match { emptied: .emptied <<< emptiedNote }) # tapped
-                (identity :: PUI Web { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }) # onCase @"kept" # toCase @"kept") # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
+                banner # forCase @"emptied" # lcmap emptiedNote # tapped # onCase @"emptied" # toCase @"emptied"
+                identity # onCase @"kept" # toCase @"kept") # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
           ( RecordToVariant.do
               fab { icon: "edit", label: "Compose" } # asCase @"compose"
               menu { label: "Sort" } RecordToVariant.do
@@ -87,7 +86,7 @@ lastMessage m = length m.messages == 1
 requestDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }
 requestDelete m = if lastMessage m then m { confirming = true } else deleteOpened m
 
-confirmingDelete :: forall r. { confirming :: Boolean | r } -> Maybe { confirming :: Boolean | r }
+confirmingDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> Maybe { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }
 confirmingDelete m = if m.confirming then Just m else Nothing
 
 deleteOpened :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }
@@ -96,8 +95,8 @@ deleteOpened m = m { messages = filter (\g -> Just g.id /= m.opened) m.messages,
 keepMessages :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }
 keepMessages m = m { confirming = false }
 
-emptiedNote :: forall a. a -> String
-emptiedNote _ = "Inbox zero!"
+emptiedNote :: {} -> [ emptied :: String ]
+emptiedNote _ = .emptied "Inbox zero!"
 
 composeMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }
 composeMessage m = m

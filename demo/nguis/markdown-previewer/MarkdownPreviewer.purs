@@ -9,7 +9,7 @@ import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, mvu)
+import PUI (asField, completed, displayed, forField, mvu)
 import PUI.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,8 +21,8 @@ markdownPreviewer =
       card { caption: "Markdown Previewer" } $
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
-            layoutCell { span: 6 } $ displayed $ dynamic \doc ->
-                each (parseMarkdown doc.source) \block ->
+            layoutCell { span: 6 } $ displayed $ ( dynamic \source ->
+                each (parseMarkdown source) \block ->
                   let
                     inline = match
                       { plain: staticText
@@ -37,6 +37,7 @@ markdownPreviewer =
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
                     }
+            ) # forField @"source"
         ) # mvu welcomeDocument
 
 welcomeDocument :: { source :: String }

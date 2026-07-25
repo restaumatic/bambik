@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, asCase, displayed, mvu, projection, tapped, updatesOn, widenRecordInput)
+import PUI (announce, asCase, displayed, forField, forValue, mvu, projection, tapped, updates)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,17 +19,17 @@ checkout =
     elevation20 $
       card { caption: "Checkout" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              body2 text # projection cartLine # widenRecordInput # provided # lcmap atCart # displayed
-              body2 text # projection shippingLine # widenRecordInput # provided # lcmap atShipping # displayed
-              body2 text # projection paymentLine # widenRecordInput # provided # lcmap atPayment # displayed
+              body2 text # projection cartLine # provided # lcmap atCart # displayed
+              body2 text # projection shippingLine # provided # lcmap atShipping # displayed
+              body2 text # projection paymentLine # provided # lcmap atPayment # displayed
               RecordToVariant.do
                 announce cartStep
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtCart
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtPayment
-                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" # widenRecordInput # updatesOn (match { placed: recordPlaced })
-          body2 text # projection _.confirmation # tapped
+                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" # updates (match { placed: recordPlaced })
+          body2 text # forValue # forField @"confirmation" # tapped
       ) # mvu freshOrder
 
 cartStep ::
@@ -47,14 +47,14 @@ shippingLine r = "Step 2 of 3 — Shipping to " <> r.address
 paymentLine :: { card :: String } -> String
 paymentLine r = "Step 3 of 3 — Pay with card " <> r.card
 
-atCart :: forall r. { step :: String | r } -> Maybe { step :: String | r }
-atCart r = if r.step == "cart" then Just r else Nothing
+atCart :: { item :: String, step :: String } -> Maybe { item :: String }
+atCart r = if r.step == "cart" then Just { item: r.item } else Nothing
 
-atShipping :: forall r. { step :: String | r } -> Maybe { step :: String | r }
-atShipping r = if r.step == "shipping" then Just r else Nothing
+atShipping :: { address :: String, step :: String } -> Maybe { address :: String }
+atShipping r = if r.step == "shipping" then Just { address: r.address } else Nothing
 
-atPayment :: forall r. { step :: String | r } -> Maybe { step :: String | r }
-atPayment r = if r.step == "payment" then Just r else Nothing
+atPayment :: { card :: String, step :: String } -> Maybe { card :: String }
+atPayment r = if r.step == "payment" then Just { card: r.card } else Nothing
 
 nextAtCart :: { step :: String } -> Maybe { step :: String }
 nextAtCart r = if r.step == "cart" then Just { step: "shipping" } else Nothing
