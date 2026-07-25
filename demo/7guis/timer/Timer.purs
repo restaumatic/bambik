@@ -1,6 +1,6 @@
 module Timer (timer) where
 
-import Prelude ((#), ($), (+), (/), (<), (<<<), (<=), Unit, const, min, show)
+import Prelude ((#), ($), (+), (/), (<), (<=), (<<<), Unit, const, min, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -11,11 +11,6 @@ import PUI (asField, completed, every, forField, mvu, projection, updates)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
-
-type Timer =
-  { duration :: Number
-  , elapsed :: Number
-  }
 
 timer :: Effect Unit
 timer =
@@ -34,18 +29,18 @@ timer =
           button { label: "Reset", icon: "replay" } # updates (match { clicked: const <<< reset })
       ) # mvu tenSecondFreshTimer
 
-reset :: Timer -> Timer
+reset :: { elapsed :: Number } -> { elapsed :: Number }
 reset t = t { elapsed = 0.0 }
 
-tick :: Timer -> Maybe Timer
+tick :: { duration :: Number, elapsed :: Number } -> Maybe { duration :: Number, elapsed :: Number }
 tick t =
   if t.elapsed < t.duration then Just (t { elapsed = min t.duration (t.elapsed + 1.0) })
   else Nothing
 
-fraction :: Timer -> Number
+fraction :: { duration :: Number, elapsed :: Number } -> Number
 fraction t = if t.duration <= 0.0 then 1.0 else min 1.0 (t.elapsed / t.duration)
 
-tenSecondFreshTimer :: Timer
+tenSecondFreshTimer :: { duration :: Number, elapsed :: Number }
 tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }
 
 minDuration :: Number

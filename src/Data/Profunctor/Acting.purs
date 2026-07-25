@@ -49,10 +49,11 @@ import Prelude
 import Data.Array (head) as Array
 import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor.Row (widenRecordInput)
 import Data.Profunctor.Strong (class Strong, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons, class Lacks, class Union)
 import Record (get, insert) as Record
 import Type.Proxy (Proxy(..))
 
@@ -75,13 +76,18 @@ instance Acting (->) where
 -- | structurally cannot forge or change identity. The guarantee is derived
 -- | in the pure algebra: the input's key rides around the element on the
 -- | `Strong` state channel (`second`), joining each emission.
+-- |
+-- | The element's *input* row **subsumes**: an element editor reading only
+-- | the fields it edits (its key included, so identity can ride around it)
+-- | lifts over an array of wider rows with no widening at the site.
 acted
-  :: forall @l p k ra a rb b
+  :: forall @l p k ra a narrow extra rb b
    . Acting p => Strong p => IsSymbol l
   => Cons l k ra a => Cons l k rb b => Lacks l rb => Ord k
-  => p { | a } { | rb } -> p (Array { | a }) (Array { | b })
+  => Union narrow extra a
+  => p { | narrow } { | rb } -> p (Array { | a }) (Array { | b })
 acted w = actedBy (Record.get prox)
-  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.insert prox k out) (second w))
+  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.insert prox k out) (second (widenRecordInput w)))
   where
   prox = Proxy @l
 
@@ -93,4 +99,8 @@ acted w = actedBy (Record.get prox)
 -- | output.
 optioned :: forall p a b. Acting p => Strong p => p a b -> p (Maybe a) (Maybe b)
 optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) (Array.head >>> map _.value)
-  (acted @"key" (dimap _.value { value: _ } w))
+  (acted @"key" element)
+  where
+  -- the annotation pins `acted`'s subsuming element row to the whole row
+  element :: p { key :: String, value :: a } { value :: b }
+  element = dimap _.value { value: _ } w

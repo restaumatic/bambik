@@ -1,6 +1,6 @@
 module TodoMvc (todoMvc) where
 
-import Prelude ((#), ($), (<<<), (<>), (==), class Eq, Unit, const, not, show)
+import Prelude ((#), ($), (<<<), (<>), (==), Unit, const, not, show, unit)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe)
@@ -28,47 +28,33 @@ todoMvc =
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
-type Todo = { title :: String, done :: Boolean }
+emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] }
+emptyTodoList = { entry: "", todos: [], visibility: .all unit }
 
-data Visibility = All | Active | Completed
-
-derive instance Eq Visibility
-
-type TodoList =
-  { entry :: String
-  , todos :: Array Todo
-  , visibility :: Visibility
-  }
-
-emptyTodoList :: TodoList
-emptyTodoList = { entry: "", todos: [], visibility: All }
-
-visibilityChoices :: Array { value :: Visibility, label :: String }
+visibilityChoices :: Array { value :: [ all :: Unit, active :: Unit, completed :: Unit ], label :: String }
 visibilityChoices =
-  [ { value: All, label: "All" }
-  , { value: Active, label: "Active" }
-  , { value: Completed, label: "Completed" }
+  [ { value: .all unit, label: "All" }
+  , { value: .active unit, label: "Active" }
+  , { value: .completed unit, label: "Completed" }
   ]
 
-addTodo :: TodoList -> TodoList
+addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
 addTodo m =
   if trim m.entry == "" then m
   else m { todos = snoc m.todos { title: trim m.entry, done: false }, entry = "" }
 
-toggleTodo :: Int -> TodoList -> TodoList
+toggleTodo :: Int -> { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
 toggleTodo i m = m { todos = fromMaybe m.todos (modifyAt i (\t -> t { done = not t.done }) m.todos) }
 
-clearCompleted :: TodoList -> TodoList
+clearCompleted :: { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
 clearCompleted m = m { todos = filter (\t -> not t.done) m.todos }
 
-itemsLeft :: TodoList -> String
+itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> String
 itemsLeft m = case length (filter (\t -> not t.done) m.todos) of
   1 -> "1 item left"
   n -> show n <> " items left"
 
-visibleEntries :: TodoList -> Array { key :: Int, title :: String, done :: Boolean }
+visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries m = filter (matches m.visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) m.todos)
   where
-  matches All _ = true
-  matches Active t = not t.done
-  matches Completed t = t.done
+  matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v

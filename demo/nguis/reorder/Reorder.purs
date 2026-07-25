@@ -15,13 +15,10 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, edits, field, mvu, onCase, silence, updates, widenRecordInput)
+import PUI (action, asCase, asField, edits, field, mvu, onCase, silence, updates)
 import PUI.HTML (body, el, (:=))
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
-
-type Track = { id :: String, title :: String }
-type Playlist = { order :: Array Track }
 
 reorder :: Effect Unit
 reorder =
@@ -38,22 +35,29 @@ reorder =
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  filledTextField { floatingLabel: "Title" } # asField @"title") # widenRecordInput) # edits @"id") # field @"order"
+                  filledTextField { floatingLabel: "Title" } # asField @"title")) # edits @"id") # field @"order"
       ) # mvu openingSetlist
 
-rotateAction :: Playlist -> Aff [ reordered :: Array Track ]
+rotateAction
+  :: { order :: Array { id :: String, title :: String } }
+  -> Aff [ reordered :: Array { id :: String, title :: String } ]
 rotateAction pl = pure (.reordered (rotate pl))
 
-shuffleAction :: Playlist -> Aff [ reordered :: Array Track ]
+shuffleAction
+  :: { order :: Array { id :: String, title :: String } }
+  -> Aff [ reordered :: Array { id :: String, title :: String } ]
 shuffleAction pl = liftEffect (.reordered <$> shuffleOrder pl.order)
 
-rotate :: Playlist -> Array Track
+rotate :: { order :: Array { id :: String, title :: String } } -> Array { id :: String, title :: String }
 rotate pl = maybe pl.order (\{ head, tail } -> snoc tail head) (uncons pl.order)
 
-setOrder :: Array Track -> Playlist -> Playlist
+setOrder
+  :: Array { id :: String, title :: String }
+  -> { order :: Array { id :: String, title :: String } }
+  -> { order :: Array { id :: String, title :: String } }
 setOrder order pl = pl { order = order }
 
-shuffleOrder :: Array Track -> Effect (Array Track)
+shuffleOrder :: Array { id :: String, title :: String } -> Effect (Array { id :: String, title :: String })
 shuffleOrder tracks = do
   keyed <- traverse withKey tracks
   pure (map snd (sortBy (\a b -> compare (fst a) (fst b)) keyed))
@@ -62,7 +66,7 @@ shuffleOrder tracks = do
     k <- randomInt 0 1000000
     pure (Tuple k t)
 
-openingSetlist :: Playlist
+openingSetlist :: { order :: Array { id :: String, title :: String } }
 openingSetlist =
   { order:
       [ { id: "t1", title: "Track 1" }

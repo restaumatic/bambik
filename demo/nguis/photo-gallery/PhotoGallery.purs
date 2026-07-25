@@ -12,7 +12,7 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, mvu, projection, tapped, toCase, updates)
+import PUI (displayed, forField, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (body, dynamic, each, span, staticText, text)
 import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -36,16 +36,12 @@ photoGallery =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
-              headline2 text # projection _.album # tapped
+              headline2 text # forValue # forField @"album" # tapped
               imageList { columns: 3 } $ displayed $ dynamic \m ->
                 each (albumPhotos m) \p -> imageListItem { src: p.src, label: p.caption })
       ) # mvu landscapesOpen
 
-type Photo = { src :: String, caption :: String }
-
-type Gallery = { album :: String }
-
-landscapesOpen :: Gallery
+landscapesOpen :: { album :: String }
 landscapesOpen = { album: "Landscapes" }
 
 albumCatalogue :: Array { name :: String, shots :: Array String }
@@ -71,13 +67,13 @@ albumCatalogue =
     }
   ]
 
-albumChoices :: Gallery -> Array { name :: String, current :: Boolean }
+albumChoices :: { album :: String } -> Array { name :: String, current :: Boolean }
 albumChoices g = albumCatalogue <#> \a -> { name: a.name, current: a.name == g.album }
 
-openAlbum :: String -> Gallery -> Gallery
+openAlbum :: String -> { album :: String } -> { album :: String }
 openAlbum name g = g { album = name }
 
-albumPhotos :: Gallery -> Array Photo
+albumPhotos :: { album :: String } -> Array { src :: String, caption :: String }
 albumPhotos g =
   maybe [] (\a -> a.shots <#> \caption -> { src: developedPhoto caption, caption })
     (find (\a -> a.name == g.album) albumCatalogue)

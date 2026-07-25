@@ -9,7 +9,7 @@ import Data.Profunctor (lcmap, rmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, projection, toCase, updates)
+import PUI (constantly, foreach, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,9 +24,9 @@ calculator =
                 div >>> "style"
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ text # lcmap (\tally -> { value: readout tally })
+                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ text # projection readout
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # lcmap (const keyPad) # rmap _.key) # toCase @"keyPressed"
+                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # constantly keyPad # rmap _.key) # toCase @"keyPressed"
         ) # updates (match { keyPressed: pressKey }) # mvu blankTally
 
 keyStyle :: String -> String
@@ -50,21 +50,16 @@ keyPad = { key: _ } <$>
 operatorKeys :: Array String
 operatorKeys = [ "÷", "×", "−", "+", "=" ]
 
-type Tally =
-  { total :: Number
-  , operation :: Maybe String
-  , entry :: String
-  , entering :: Boolean
-  , faulty :: Boolean
-  }
-
-blankTally :: Tally
+blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
 blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, faulty: false }
 
-readout :: Tally -> String
+readout :: { faulty :: Boolean, entry :: String } -> String
 readout tally = if tally.faulty then "Error" else tally.entry
 
-pressKey :: String -> Tally -> Tally
+pressKey
+  :: String
+  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
+  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
 pressKey key tally
   | tally.faulty && key /= "C" = pressKey key blankTally
   | key == "C" = blankTally
@@ -72,7 +67,7 @@ pressKey key tally
   | key == "." && tally.entering =
       if contains (Pattern ".") tally.entry then tally else tally { entry = tally.entry <> "." }
   | key == "." = tally { entry = "0.", entering = true }
-  | key `elem` operatorKeys = case settle tally of
+  | key `elem` operatorKeys = case settle { total: tally.total, operation: tally.operation, entry: tally.entry, entering: tally.entering } of
       Just total -> tally
         { total = total
         , operation = if key == "=" then Nothing else Just key
@@ -83,10 +78,10 @@ pressKey key tally
   | tally.entering = tally { entry = if tally.entry == "0" then key else tally.entry <> key }
   | true = tally { entry = key, entering = true }
 
-settle :: Tally -> Maybe Number
+settle :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean } -> Maybe Number
 settle tally = case tally.operation of
-  Just operation | tally.entering -> compute operation tally.total (entryValue tally)
-  _ -> Just (entryValue tally)
+  Just operation | tally.entering -> compute operation tally.total (entryValue { entry: tally.entry })
+  _ -> Just (entryValue { entry: tally.entry })
 
 compute :: String -> Number -> Number -> Maybe Number
 compute "+" a b = Just (a + b)
@@ -96,7 +91,7 @@ compute "÷" _ 0.0 = Nothing
 compute "÷" a b = Just (a / b)
 compute _ _ b = Just b
 
-entryValue :: Tally -> Number
+entryValue :: { entry :: String } -> Number
 entryValue tally = fromMaybe 0.0 (fromString tally.entry)
 
 negated :: String -> String

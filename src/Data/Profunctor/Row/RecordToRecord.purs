@@ -214,8 +214,13 @@ field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 -- | display's echo triggers the forwarding. Honest only over *displays*
 -- | (elements whose sole emission is the echo) — an editing widget inside
 -- | would replay the retained upstream value on every edit.
-tapped :: forall p s x. Strong p => p s x -> p s s
-tapped display = dimap (\s -> Tuple s s) fst (second display)
+-- |
+-- | **Subsumption is built in**: the display may read a *narrower* row than
+-- | the stage carries (`text # projection readout # tapped`, where `readout`
+-- | declares only the fields it formats), so a closed-row read function needs
+-- | no `widenRecordInput` at the tap.
+tapped :: forall p narrow extra wider x. Strong p => Union narrow extra wider => p { | narrow } x -> p { | wider } { | wider }
+tapped display = dimap (\s -> Tuple s s) fst (second (widenRecordInput display))
 
 -- | **Complete** a widget's output to its full input row: fields the
 -- | widget doesn't produce are carried from the retained input, so a merge

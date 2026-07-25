@@ -15,32 +15,10 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updates, with)
+import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-
-type Order =
-  { shortId :: String
-  , orderId :: String
-  , customer ::
-      { firstName :: String
-      , lastName :: String
-      }
-  , fulfillment ::
-      [ dineIn :: { table :: String }
-      , takeaway :: { time :: String }
-      , delivery :: { address :: String }
-      ]
-  , total :: String
-  , payment ::
-      { method ::
-          [ cash :: Unit
-          , card :: Unit
-          ]
-      , paid :: String
-      }
-  , remarks :: String
-  }
 
 main :: Effect Unit
 main =
@@ -78,9 +56,9 @@ main =
               body1 text # projection paymentLine # forField @"method") # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       body1 text # projection summarize # debounced # tapped
-      RecordToVariant.do
-        button { label: "Submit order", icon: "save" } # asCase @"submit"
-        button { label: "Receipt", icon: "file" } # asCase @"printReceipt"
+      ( RecordToVariant.do
+          button { label: "Submit order", icon: "save" } # asCase @"submit"
+          button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput
       VariantToVariant.do
         indeterminateLinearProgress # action submitOrder # onCase @"submit"
         indeterminateLinearProgress # action printReceipt # onCase @"printReceipt"
@@ -114,26 +92,19 @@ methodText = match
   , card: const "card"
   }
 
-type FulfillmentState =
-  { selected :: String
-  , table :: String
-  , time :: String
-  , address :: String
-  }
-
 fulfillmentState ::
   [ dineIn :: { table :: String }
   , takeaway :: { time :: String }
   , delivery :: { address :: String }
   ]
-  -> FulfillmentState
+  -> { selected :: String, table :: String, time :: String, address :: String }
 fulfillmentState = match
   { dineIn: \r -> { selected: "dineIn", table: r.table, time: "12:00", address: "" }
   , takeaway: \r -> { selected: "takeaway", table: "1", time: r.time, address: "" }
   , delivery: \r -> { selected: "delivery", table: "1", time: "12:00", address: r.address }
   }
 
-fulfillmentCase :: FulfillmentState ->
+fulfillmentCase :: { selected :: String, table :: String, time :: String, address :: String } ->
   [ dineIn :: { table :: String }
   , takeaway :: { time :: String }
   , delivery :: { address :: String }
@@ -143,23 +114,23 @@ fulfillmentCase s =
   else if s.selected == "takeaway" then .takeaway { time: s.time }
   else .delivery { address: s.address }
 
-dineInPane :: FulfillmentState -> Maybe { table :: String }
+dineInPane :: { selected :: String, table :: String } -> Maybe { table :: String }
 dineInPane s = if s.selected == "dineIn" then Just { table: s.table } else Nothing
 
-takeawayPane :: FulfillmentState -> Maybe { time :: String }
+takeawayPane :: { selected :: String, time :: String } -> Maybe { time :: String }
 takeawayPane s = if s.selected == "takeaway" then Just { time: s.time } else Nothing
 
-deliveryPane :: FulfillmentState -> Maybe { address :: String }
+deliveryPane :: { selected :: String, address :: String } -> Maybe { address :: String }
 deliveryPane s = if s.selected == "delivery" then Just { address: s.address } else Nothing
 
-setTable :: { table :: String } -> FulfillmentState -> FulfillmentState
-setTable { table } s = s { table = table }
+setTable :: { table :: String } -> { table :: String } -> { table :: String }
+setTable { table } _ = { table }
 
-setTime :: { time :: String } -> FulfillmentState -> FulfillmentState
-setTime { time } s = s { time = time }
+setTime :: { time :: String } -> { time :: String } -> { time :: String }
+setTime { time } _ = { time }
 
-setAddress :: { address :: String } -> FulfillmentState -> FulfillmentState
-setAddress { address } s = s { address = address }
+setAddress :: { address :: String } -> { address :: String } -> { address :: String }
+setAddress { address } _ = { address }
 
 methodState ::
   [ cash :: Unit
@@ -177,7 +148,27 @@ methodCase :: { selected :: String } ->
   ]
 methodCase r = if r.selected == "cash" then .cash unit else .card unit
 
-summarize :: Order -> String
+summarize ::
+  { shortId :: String
+  , orderId :: String
+  , customer ::
+      { firstName :: String
+      , lastName :: String
+      }
+  , fulfillment ::
+      [ dineIn :: { table :: String }
+      , takeaway :: { time :: String }
+      , delivery :: { address :: String }
+      ]
+  , payment ::
+      { method ::
+          [ cash :: Unit
+          , card :: Unit
+          ]
+      , paid :: String
+      }
+  }
+  -> String
 summarize order =
   "Summary: Order " <> order.shortId
     <> " (uniquely " <> order.orderId <> ")"
@@ -191,7 +182,28 @@ summarize order =
     , delivery: \r -> "delivery to " <> r.address <> " (" <> distanceKm r.address <> " km away)"
     }
 
-loadOrder :: Unit -> Aff Order
+loadOrder :: Unit -> Aff
+  { shortId :: String
+  , orderId :: String
+  , customer ::
+      { firstName :: String
+      , lastName :: String
+      }
+  , fulfillment ::
+      [ dineIn :: { table :: String }
+      , takeaway :: { time :: String }
+      , delivery :: { address :: String }
+      ]
+  , total :: String
+  , payment ::
+      { method ::
+          [ cash :: Unit
+          , card :: Unit
+          ]
+      , paid :: String
+      }
+  , remarks :: String
+  }
 loadOrder _ = do
   liftEffect $ log "loading order"
   delay (Milliseconds 1000.0)
@@ -212,10 +224,15 @@ loadOrder _ = do
     , remarks: "Very spicy, please!"
     }
 
-submitOrder :: Order -> Aff
-  [ orderSubmitted :: String
-  , submissionFailed :: String
-  ]
+submitOrder ::
+  { shortId :: String
+  , orderId :: String
+  , total :: String
+  }
+  -> Aff
+    [ orderSubmitted :: String
+    , submissionFailed :: String
+    ]
 submitOrder order = do
   liftEffect $ log $ "submitting order " <> order.orderId
   delay (Milliseconds 1000.0)
@@ -227,7 +244,11 @@ submitOrder order = do
       liftEffect $ log "submitted order"
       pure $ .orderSubmitted ("Order " <> order.shortId <> " submitted")
 
-printReceipt :: Order -> Aff [ receiptPrinted :: String ]
+printReceipt ::
+  { shortId :: String
+  , orderId :: String
+  }
+  -> Aff [ receiptPrinted :: String ]
 printReceipt order = do
   liftEffect $ log $ "printing receipt for order " <> order.orderId
   delay (Milliseconds 2000.0)

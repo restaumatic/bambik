@@ -17,14 +17,6 @@ import PUI.HTML (body, staticText, text)
 import PUI.MDC (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Applicant =
-  { username :: String
-  , email :: String
-  , plan :: String
-  , country :: String
-  , terms :: Maybe Unit
-  }
-
 signupForm :: Effect Unit
 signupForm =
   body $
@@ -54,12 +46,12 @@ signupForm =
           snackbar # forCase @"registered"
           snackbar # forCase @"rejected"
 
-register :: Applicant -> [ registered :: String, rejected :: String ]
+register :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> [ registered :: String, rejected :: String ]
 register applicant = case validate applicant of
   Left problem -> .rejected ("Cannot sign up: " <> problem)
   Right username -> .registered ("Welcome, " <> username <> "!")
 
-validate :: Applicant -> Either String String
+validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Either String String
 validate applicant =
   let username = trim applicant.username
   in
@@ -69,12 +61,12 @@ validate applicant =
     else if isJust applicant.terms == false then Left "accept the terms of service"
     else Right username
 
-validationSummary :: Applicant -> String
+validationSummary :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> String
 validationSummary = validate >>> either (\problem -> "⚠ " <> problem) readyLine
   where
   readyLine username = "Ready to sign up as " <> username
 
-availabilityHint :: Applicant -> String
+availabilityHint :: { username :: String } -> String
 availabilityHint applicant =
   let username = trim applicant.username
   in
@@ -91,7 +83,7 @@ takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 usernameSettleTime :: Milliseconds
 usernameSettleTime = Milliseconds 300.0
 
-newApplicant :: Applicant
+newApplicant :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit }
 newApplicant =
   { username: ""
   , email: ""

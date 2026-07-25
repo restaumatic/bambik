@@ -11,8 +11,6 @@ import PUI.HTML (body, text)
 import PUI.MDC (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Bill = { amount :: String, tipPercent :: Number, people :: Number }
-
 tipCalculator :: Effect Unit
 tipCalculator =
   body $
@@ -28,31 +26,31 @@ tipCalculator =
           body2 text # projection perPersonLine # tapped
       ) # mvu dinnerBill
 
-tipPercentLine :: Bill -> String
+tipPercentLine :: { tipPercent :: Number } -> String
 tipPercentLine bill = "Tip: " <> toStringWith (fixed 0) bill.tipPercent <> "%"
 
-peopleLine :: Bill -> String
+peopleLine :: { people :: Number } -> String
 peopleLine bill = "Split between: " <> toStringWith (fixed 0) bill.people <> " people"
 
-tipAmountLine :: Bill -> String
+tipAmountLine :: { amount :: String, tipPercent :: Number } -> String
 tipAmountLine bill = "Tip amount: " <> money (tipAmount bill)
 
-totalLine :: Bill -> String
+totalLine :: { amount :: String, tipPercent :: Number } -> String
 totalLine bill = "Total: " <> money (total bill)
 
-perPersonLine :: Bill -> String
-perPersonLine bill = "Per person: " <> money ((_ / bill.people) <$> total bill)
+perPersonLine :: { amount :: String, tipPercent :: Number, people :: Number } -> String
+perPersonLine bill = "Per person: " <> money ((_ / bill.people) <$> total { amount: bill.amount, tipPercent: bill.tipPercent })
 
-tipAmount :: Bill -> Maybe Number
+tipAmount :: { amount :: String, tipPercent :: Number } -> Maybe Number
 tipAmount bill = (\amount -> amount * bill.tipPercent / 100.0) <$> fromString bill.amount
 
-total :: Bill -> Maybe Number
+total :: { amount :: String, tipPercent :: Number } -> Maybe Number
 total bill = (\amount -> amount * (1.0 + bill.tipPercent / 100.0)) <$> fromString bill.amount
 
 money :: Maybe Number -> String
 money = maybe "—" (toStringWith (fixed 2))
 
-dinnerBill :: Bill
+dinnerBill :: { amount :: String, tipPercent :: Number, people :: Number }
 dinnerBill = { amount: "", tipPercent: 15.0, people: 2.0 }
 
 minTipPercent :: Number

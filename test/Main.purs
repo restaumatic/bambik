@@ -674,19 +674,19 @@ main = do
   -- re-emits the retained value.
   do
     gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (displayed (probe gProp :: PUI Effect Int Unit))
+    outs <- Ref.new ([] :: Array { v :: Int })
+    m <- unwrap (displayed (probe gProp :: PUI Effect { v :: Int } Unit))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser 1
-    Ref.read outs >>= assertEqual "displayed: every value forwarded, no echo needed" [ 1 ]
+    m.toUser { v: 1 }
+    Ref.read outs >>= assertEqual "displayed: every value forwarded, no echo needed" [ { v: 1 } ]
     fire gProp unit
-    Ref.read outs >>= assertEqual "displayed: an event re-emits the retained value" [ 1, 1 ]
+    Ref.read outs >>= assertEqual "displayed: an event re-emits the retained value" [ { v: 1 }, { v: 1 } ]
 
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
 
   -- acted on (->): pure carriers have no identity — acted _ = map.
-  assertEqual "acted/(->) = map, key re-attached" [ { k: "a", v: 2 }, { k: "b", v: 6 } ] (acted @"k" (\r -> { v: r.v * 2 }) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
+  assertEqual "acted/(->) = map, key re-attached" [ { k: "a", v: 2 }, { k: "b", v: 6 } ] (acted @"k" (\(r :: { k :: String, v :: Int }) -> { v: r.v * 2 }) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
 
   -- optioned on (->): the Maybe = 1 + a container action, via the Array embedding.
   assertEqual "optioned/(->): Just" (Just 6) (optioned (_ * 2) (Just 3))

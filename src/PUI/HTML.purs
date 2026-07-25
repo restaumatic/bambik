@@ -474,6 +474,11 @@ transient ui = wrap do
 -- | never the whole model, and the visibility logic lives in testable business
 -- | code. Detachment means no echoes while absent: a pipeline-stage combinator,
 -- | not a gated-merge operand.
+-- |
+-- | The payload row is the pane's row exactly — no subsumption here: the pane
+-- | is *fed* the payload, so a `Maybe`-valued business projection returning
+-- | precisely what the pane reads keeps both sides pinned (subsumption at the
+-- | *stage* boundary is `displayed`/`updates`'s job).
 provided :: forall a b. PUI Web a b -> PUI Web (Maybe a) b
 provided w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w

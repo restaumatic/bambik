@@ -15,12 +15,6 @@ import PUI.HTML (body, li, provided, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Stopwatch =
-  { running :: Boolean
-  , elapsedTenths :: Int
-  , laps :: Array Int
-  }
-
 stopwatch :: Effect Unit
 stopwatch =
   body $
@@ -36,33 +30,47 @@ stopwatch =
           ul ( (li text # projection _.line) # foreach @"line" ) # lcmap lapLines # displayed
       ) # mvu zeroedStopwatch
 
-beginTiming :: Stopwatch -> Stopwatch
+beginTiming
+  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 beginTiming sw = sw { running = true }
 
-haltTiming :: Stopwatch -> Stopwatch
+haltTiming
+  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 haltTiming sw = sw { running = false }
 
-recordLap :: Stopwatch -> Stopwatch
+recordLap
+  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 recordLap sw = sw { laps = snoc sw.laps sw.elapsedTenths }
 
-clearStopwatch :: Stopwatch -> Stopwatch
+clearStopwatch
+  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
 
-tick :: Stopwatch -> Maybe Stopwatch
+tick
+  :: { running :: Boolean, elapsedTenths :: Int }
+  -> Maybe { running :: Boolean, elapsedTenths :: Int }
 tick sw =
   if sw.running then Just (sw { elapsedTenths = sw.elapsedTenths + 1 })
   else Nothing
 
-whenHalted :: Stopwatch -> Maybe Stopwatch
+whenHalted
+  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 whenHalted sw = if not sw.running then Just sw else Nothing
 
-whenRunning :: Stopwatch -> Maybe Stopwatch
+whenRunning
+  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 whenRunning sw = if sw.running then Just sw else Nothing
 
-readout :: Stopwatch -> String
+readout :: { elapsedTenths :: Int } -> String
 readout sw = formatTime sw.elapsedTenths
 
-lapLines :: Stopwatch -> Array { line :: String }
+lapLines :: { laps :: Array Int } -> Array { line :: String }
 lapLines sw = mapWithIndex (\i t -> { line: "Lap " <> show (i + 1) <> " — " <> formatTime t }) sw.laps
 
 formatTime :: Int -> String
@@ -72,7 +80,7 @@ formatTime tenths =
 pad2 :: Int -> String
 pad2 n = if n < 10 then "0" <> show n else show n
 
-zeroedStopwatch :: Stopwatch
+zeroedStopwatch :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 zeroedStopwatch = { running: false, elapsedTenths: 0, laps: [] }
 
 tickPeriod :: Milliseconds

@@ -10,8 +10,6 @@ import PUI.HTML (body, text)
 import PUI.MDC (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-type Auction = { bid :: Number }
-
 auction :: Effect Unit
 auction =
   body $
@@ -37,7 +35,7 @@ bidLine b = "Your current bid: $" <> show b
 noBids :: { bid :: Number, top :: Number }
 noBids = { bid: 0.0, top: 0.0 }
 
-openingBid :: Auction
+openingBid :: { bid :: Number }
 openingBid = { bid: 0.0 }
 
 minBid :: Number
