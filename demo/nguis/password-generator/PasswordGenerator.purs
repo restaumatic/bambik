@@ -63,7 +63,7 @@ effectiveAlphabet { uppercase, lowercase, digits, symbols } =
   in if null chosen then lowercaseLetters else chosen
 
 strengthText :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
-strengthText recipe = strengthGrade (entropyBits recipe)
+strengthText { length, uppercase, lowercase, digits, symbols } = strengthGrade (entropyBits { length, uppercase, lowercase, digits, symbols })
 
 entropyBits :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Number
 entropyBits { length: len, uppercase, lowercase, digits, symbols } = len * log (toNumber (length (effectiveAlphabet { uppercase, lowercase, digits, symbols }))) / log 2.0

@@ -84,7 +84,7 @@ summary = match
   }
 
 submit :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Aff [ booked :: String, rejected :: String ]
-submit b = case parse b of
+submit { flightType, start, return } = case parse { flightType, start, return } of
   Left err -> pure (.rejected ("Cannot book: " <> err))
   Right itinerary -> expand <$> bookFlight itinerary
 

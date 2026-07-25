@@ -46,10 +46,10 @@ peopleText :: { people :: Number } -> String
 peopleText { people } = toStringWith (fixed 0) people
 
 tipAmountText :: { amount :: String, tipPercent :: Number } -> String
-tipAmountText bill = money (tipAmount bill)
+tipAmountText { amount, tipPercent } = money (tipAmount { amount, tipPercent })
 
 totalText :: { amount :: String, tipPercent :: Number } -> String
-totalText bill = money (total bill)
+totalText { amount, tipPercent } = money (total { amount, tipPercent })
 
 perPersonText :: { amount :: String, tipPercent :: Number, people :: Number } -> String
 perPersonText { amount, tipPercent, people } = money ((_ / people) <$> total { amount, tipPercent })

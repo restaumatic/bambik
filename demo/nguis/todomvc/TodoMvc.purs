@@ -59,10 +59,10 @@ itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Int
 itemsLeft { todos } = length (filter (\t -> not t.done) todos)
 
 soleItemLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
-soleItemLeft m = if itemsLeft m == 1 then Just { count: 1 } else Nothing
+soleItemLeft { todos } = if itemsLeft { todos } == 1 then Just { count: 1 } else Nothing
 
 severalItemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
-severalItemsLeft m = if itemsLeft m == 1 then Nothing else Just { count: itemsLeft m }
+severalItemsLeft { todos } = if itemsLeft { todos } == 1 then Nothing else Just { count: itemsLeft { todos } }
 
 visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries { todos, visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)

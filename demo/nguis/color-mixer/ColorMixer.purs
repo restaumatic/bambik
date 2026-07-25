@@ -19,7 +19,7 @@ chipStyle :: { mix :: { red :: Number, green :: Number, blue :: Number } } -> St
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
 
 swatchStyle :: { red :: Number, green :: Number, blue :: Number } -> String
-swatchStyle m = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb m <> ";"
+swatchStyle { red, green, blue } = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb { red, green, blue } <> ";"
 
 colorMixer :: Effect Unit
 colorMixer =

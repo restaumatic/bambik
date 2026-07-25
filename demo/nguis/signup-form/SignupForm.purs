@@ -60,9 +60,9 @@ signupForm =
           snackbar # forCase @"rejected"
 
 register :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> [ registered :: String, rejected :: String ]
-register applicant = case validate applicant of
+register { username, email, plan, country, terms } = case validate { username, email, plan, country, terms } of
   Left problem -> .rejected ("Cannot sign up: " <> problem)
-  Right username -> .registered ("Welcome, " <> username <> "!")
+  Right name -> .registered ("Welcome, " <> name <> "!")
 
 validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Either String String
 validate applicant@{ email, terms } =
@@ -81,23 +81,23 @@ whenReady :: { username :: String, email :: String, plan :: String, country :: S
 whenReady = validate >>> either (\_ -> Nothing) (\username -> Just { username })
 
 namedUsername :: { username :: String } -> Maybe String
-namedUsername applicant = case trim applicant.username of
+namedUsername { username } = case trim username of
   "" -> Nothing
-  username -> Just username
+  name -> Just name
 
 whenUnnamed :: { username :: String } -> Maybe {}
-whenUnnamed applicant = case namedUsername applicant of
+whenUnnamed { username } = case namedUsername { username } of
   Nothing -> Just {}
   Just _ -> Nothing
 
 whenTaken :: { username :: String } -> Maybe { username :: String }
-whenTaken applicant = case namedUsername applicant of
-  Just username | usernameTaken username -> Just { username }
+whenTaken { username } = case namedUsername { username } of
+  Just name | usernameTaken name -> Just { username: name }
   _ -> Nothing
 
 whenAvailable :: { username :: String } -> Maybe { username :: String }
-whenAvailable applicant = case namedUsername applicant of
-  Just username | not (usernameTaken username) -> Just { username }
+whenAvailable { username } = case namedUsername { username } of
+  Just name | not (usernameTaken name) -> Just { username: name }
   _ -> Nothing
 
 usernameTaken :: String -> Boolean

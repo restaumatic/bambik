@@ -90,7 +90,7 @@ favoriteCount :: { movies :: Array { title :: String, year :: Int, category :: [
 favoriteCount { movies } = length (filter _.favorite movies)
 
 soleFavorite :: { movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> Maybe { count :: Int }
-soleFavorite m = if favoriteCount m == 1 then Just { count: 1 } else Nothing
+soleFavorite { movies } = if favoriteCount { movies } == 1 then Just { count: 1 } else Nothing
 
 severalFavorites :: { movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> Maybe { count :: Int }
-severalFavorites m = if favoriteCount m == 1 then Nothing else Just { count: favoriteCount m }
+severalFavorites { movies } = if favoriteCount { movies } == 1 then Nothing else Just { count: favoriteCount { movies } }

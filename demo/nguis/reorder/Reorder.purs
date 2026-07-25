@@ -41,7 +41,7 @@ reorder =
 rotateAction
   :: { order :: Array { id :: String, title :: String } }
   -> Aff [ reordered :: Array { id :: String, title :: String } ]
-rotateAction pl = pure (.reordered (rotate pl))
+rotateAction { order } = pure (.reordered (rotate { order }))
 
 shuffleAction
   :: { order :: Array { id :: String, title :: String } }
