@@ -49,9 +49,9 @@ productCatalogue _ =
   ]
 
 addUnit :: { name :: String, unitPrice :: Int } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-addUnit p cart
-  | any (\l -> l.product.name == p.name) cart.order =
-      cart { order = map (\l -> if l.product.name == p.name then l { quantity = l.quantity + 1 } else l) cart.order }
+addUnit p@{ name } cart
+  | any (\l -> l.product.name == name) cart.order =
+      cart { order = map (\l -> if l.product.name == name then l { quantity = l.quantity + 1 } else l) cart.order }
   | otherwise = cart { order = snoc cart.order { product: p, quantity: 1 } }
 
 removeUnit :: String -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
@@ -65,12 +65,12 @@ clearCart :: { order :: Array { product :: { name :: String, unitPrice :: Int },
 clearCart _ = emptyCart
 
 cartLines :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> Array { product :: String, quantity :: String, lineTotal :: String }
-cartLines cart = map line cart.order
+cartLines { order } = map line order
   where
-  line l = { product: l.product.name, quantity: show l.quantity, lineTotal: formatMoney (l.quantity * l.product.unitPrice) }
+  line { product, quantity } = { product: product.name, quantity: show quantity, lineTotal: formatMoney (quantity * product.unitPrice) }
 
 grandTotalText :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
-grandTotalText cart = formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 cart.order)
+grandTotalText { order } = formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 order)
 
 formatMoney :: Int -> String
 formatMoney cents = show (cents / 100) <> "." <> pad (mod cents 100)

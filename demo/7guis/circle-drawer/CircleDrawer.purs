@@ -35,44 +35,44 @@ circleDrawer =
 canvasCircles
   :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int }
   -> Array { key :: String, x :: String, y :: String, r :: String, on :: Boolean }
-canvasCircles m = mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles
+canvasCircles { circles, selected } = mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: selected == Just i }) circles
 
 selectOrAddCircle :: { x :: Number, y :: Number } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
-selectOrAddCircle { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
-  Just i -> m { selected = Just i, diameter = fromMaybe m.diameter ((\c -> 2.0 * c.r) <$> index m.circles i), adjusting = false }
+selectOrAddCircle { x, y } m@{ circles, diameter, undoStack, redoStack } = case findIndex (\c -> dist c x y <= c.r) circles of
+  Just i -> m { selected = Just i, diameter = fromMaybe diameter ((\c -> 2.0 * c.r) <$> index circles i), adjusting = false }
   Nothing ->
-    let stacks = pushUndo { circles: m.circles, undoStack: m.undoStack, redoStack: m.redoStack }
-    in m { circles = snoc m.circles { x, y, r: 20.0 }, selected = Nothing, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
+    let stacks = pushUndo { circles, undoStack, redoStack }
+    in m { circles = snoc circles { x, y, r: 20.0 }, selected = Nothing, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
 
 undo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
-undo m = case unsnoc m.undoStack of
-  Just { init: rest, last: circles } ->
-    m { circles = circles, undoStack = rest, redoStack = snoc m.redoStack m.circles, selected = Nothing, adjusting = false }
+undo m@{ undoStack, redoStack, circles } = case unsnoc undoStack of
+  Just { init: rest, last: prev } ->
+    m { circles = prev, undoStack = rest, redoStack = snoc redoStack circles, selected = Nothing, adjusting = false }
   Nothing -> m
 
 redo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
-redo m = case unsnoc m.redoStack of
-  Just { init: rest, last: circles } ->
-    m { circles = circles, redoStack = rest, undoStack = snoc m.undoStack m.circles, selected = Nothing, adjusting = false }
+redo m@{ redoStack, undoStack, circles } = case unsnoc redoStack of
+  Just { init: rest, last: next } ->
+    m { circles = next, redoStack = rest, undoStack = snoc undoStack circles, selected = Nothing, adjusting = false }
   Nothing -> m
 
 selectedDiameter :: { selected :: Maybe Int, diameter :: Number } -> Maybe { diameter :: Number }
-selectedDiameter m = if isJust m.selected then Just { diameter: m.diameter } else Nothing
+selectedDiameter { selected, diameter } = if isJust selected then Just { diameter } else Nothing
 
 adjustDiameter :: { diameter :: Number } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 adjustDiameter { diameter } m = applyDiameter (m { diameter = diameter })
 
 applyDiameter :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
-applyDiameter m = case m.selected of
-  Just i | Just c <- index m.circles i, c.r /= m.diameter / 2.0 ->
-    let m' = if m.adjusting then m
-             else let stacks = pushUndo { circles: m.circles, undoStack: m.undoStack, redoStack: m.redoStack }
+applyDiameter m@{ selected, circles, diameter, adjusting, undoStack, redoStack } = case selected of
+  Just i | Just c <- index circles i, c.r /= diameter / 2.0 ->
+    let m' = if adjusting then m
+             else let stacks = pushUndo { circles, undoStack, redoStack }
                   in m { adjusting = true, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
-    in m' { circles = fromMaybe m.circles (updateAt i (c { r = m.diameter / 2.0 }) m.circles) }
+    in m' { circles = fromMaybe circles (updateAt i (c { r = diameter / 2.0 }) circles) }
   _ -> m
 
 pushUndo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
-pushUndo m = { undoStack: take 100 (snoc m.undoStack m.circles), redoStack: [] }
+pushUndo { undoStack, circles } = { undoStack: take 100 (snoc undoStack circles), redoStack: [] }
 
 dist :: { x :: Number, y :: Number, r :: Number } -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))

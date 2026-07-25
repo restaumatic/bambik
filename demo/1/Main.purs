@@ -105,7 +105,7 @@ distanceKm :: String -> String
 distanceKm address = show (length address)
 
 customerName :: { firstName :: String, lastName :: String } -> String
-customerName c = c.firstName <> " " <> c.lastName
+customerName { firstName, lastName } = firstName <> " " <> lastName
 
 dineInDetail ::
   { fulfillment ::
@@ -115,7 +115,7 @@ dineInDetail ::
       ]
   }
   -> Maybe { table :: String }
-dineInDetail order = match { dineIn: Just, takeaway: const Nothing, delivery: const Nothing } order.fulfillment
+dineInDetail { fulfillment } = match { dineIn: Just, takeaway: const Nothing, delivery: const Nothing } fulfillment
 
 takeawayDetail ::
   { fulfillment ::
@@ -125,7 +125,7 @@ takeawayDetail ::
       ]
   }
   -> Maybe { time :: String }
-takeawayDetail order = match { dineIn: const Nothing, takeaway: Just, delivery: const Nothing } order.fulfillment
+takeawayDetail { fulfillment } = match { dineIn: const Nothing, takeaway: Just, delivery: const Nothing } fulfillment
 
 deliveryDetail ::
   { fulfillment ::
@@ -135,7 +135,7 @@ deliveryDetail ::
       ]
   }
   -> Maybe { address :: String }
-deliveryDetail order = match { dineIn: const Nothing, takeaway: const Nothing, delivery: Just } order.fulfillment
+deliveryDetail { fulfillment } = match { dineIn: const Nothing, takeaway: const Nothing, delivery: Just } fulfillment
 
 methodText ::
   [ cash :: Unit
@@ -164,19 +164,19 @@ fulfillmentCase :: { selected :: String, table :: String, time :: String, addres
   , takeaway :: { time :: String }
   , delivery :: { address :: String }
   ]
-fulfillmentCase s =
-  if s.selected == "dineIn" then .dineIn { table: s.table }
-  else if s.selected == "takeaway" then .takeaway { time: s.time }
-  else .delivery { address: s.address }
+fulfillmentCase { selected, table, time, address } =
+  if selected == "dineIn" then .dineIn { table }
+  else if selected == "takeaway" then .takeaway { time }
+  else .delivery { address }
 
 dineInPane :: { selected :: String, table :: String } -> Maybe { table :: String }
-dineInPane s = if s.selected == "dineIn" then Just { table: s.table } else Nothing
+dineInPane { selected, table } = if selected == "dineIn" then Just { table } else Nothing
 
 takeawayPane :: { selected :: String, time :: String } -> Maybe { time :: String }
-takeawayPane s = if s.selected == "takeaway" then Just { time: s.time } else Nothing
+takeawayPane { selected, time } = if selected == "takeaway" then Just { time } else Nothing
 
 deliveryPane :: { selected :: String, address :: String } -> Maybe { address :: String }
-deliveryPane s = if s.selected == "delivery" then Just { address: s.address } else Nothing
+deliveryPane { selected, address } = if selected == "delivery" then Just { address } else Nothing
 
 setTable :: { table :: String } -> { table :: String } -> { table :: String }
 setTable { table } _ = { table }
@@ -201,7 +201,7 @@ methodCase :: { selected :: String } ->
   [ cash :: Unit
   , card :: Unit
   ]
-methodCase r = if r.selected == "cash" then .cash unit else .card unit
+methodCase { selected } = if selected == "cash" then .cash unit else .card unit
 
 loadOrder :: Unit -> Aff
   { shortId :: String
@@ -254,25 +254,25 @@ submitOrder ::
     [ orderSubmitted :: String
     , submissionFailed :: String
     ]
-submitOrder order = do
-  liftEffect $ log $ "submitting order " <> order.orderId
+submitOrder { shortId, orderId, total } = do
+  liftEffect $ log $ "submitting order " <> orderId
   delay (Milliseconds 1000.0)
-  if order.total == ""
+  if total == ""
     then do
       liftEffect $ log "order submission failed"
-      pure $ .submissionFailed ("Order " <> order.shortId <> " rejected: missing total")
+      pure $ .submissionFailed ("Order " <> shortId <> " rejected: missing total")
     else do
       liftEffect $ log "submitted order"
-      pure $ .orderSubmitted ("Order " <> order.shortId <> " submitted")
+      pure $ .orderSubmitted ("Order " <> shortId <> " submitted")
 
 printReceipt ::
   { shortId :: String
   , orderId :: String
   }
   -> Aff [ receiptPrinted :: String ]
-printReceipt order = do
-  liftEffect $ log $ "printing receipt for order " <> order.orderId
+printReceipt { shortId, orderId } = do
+  liftEffect $ log $ "printing receipt for order " <> orderId
   delay (Milliseconds 2000.0)
-  liftEffect $ log $ "printed receipt for order " <> order.orderId
-  pure $ .receiptPrinted ("Receipt for order " <> order.shortId <> " printed")
+  liftEffect $ log $ "printed receipt for order " <> orderId
+  pure $ .receiptPrinted ("Receipt for order " <> shortId <> " printed")
 

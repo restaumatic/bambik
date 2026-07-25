@@ -41,9 +41,9 @@ passwordGenerator =
       ) # mvu strongMixRecipe
 
 samplePassword :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Aff [ generated :: String ]
-samplePassword recipe = liftEffect do
-  let alphabet = effectiveAlphabet { uppercase: recipe.uppercase, lowercase: recipe.lowercase, digits: recipe.digits, symbols: recipe.symbols }
-  chars <- sequence (replicate (round recipe.length) (randomCharacter alphabet))
+samplePassword { length, uppercase, lowercase, digits, symbols } = liftEffect do
+  let alphabet = effectiveAlphabet { uppercase, lowercase, digits, symbols }
+  chars <- sequence (replicate (round length) (randomCharacter alphabet))
   pure (.generated (fromCharArray chars))
 
 randomCharacter :: Array Char -> Effect Char
@@ -55,18 +55,18 @@ rememberPassword :: String -> { password :: String } -> { password :: String }
 rememberPassword password recipe = recipe { password = password }
 
 effectiveAlphabet :: { uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Array Char
-effectiveAlphabet recipe =
-  let chosen = (if recipe.uppercase then uppercaseLetters else [])
-            <> (if recipe.lowercase then lowercaseLetters else [])
-            <> (if recipe.digits then digitCharacters else [])
-            <> (if recipe.symbols then symbolCharacters else [])
+effectiveAlphabet { uppercase, lowercase, digits, symbols } =
+  let chosen = (if uppercase then uppercaseLetters else [])
+            <> (if lowercase then lowercaseLetters else [])
+            <> (if digits then digitCharacters else [])
+            <> (if symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
 strengthText :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
 strengthText recipe = strengthGrade (entropyBits recipe)
 
 entropyBits :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Number
-entropyBits recipe = recipe.length * log (toNumber (length (effectiveAlphabet { uppercase: recipe.uppercase, lowercase: recipe.lowercase, digits: recipe.digits, symbols: recipe.symbols }))) / log 2.0
+entropyBits { length: len, uppercase, lowercase, digits, symbols } = len * log (toNumber (length (effectiveAlphabet { uppercase, lowercase, digits, symbols }))) / log 2.0
 
 strengthGrade :: Number -> String
 strengthGrade bits

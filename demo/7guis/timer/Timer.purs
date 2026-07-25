@@ -33,12 +33,12 @@ reset :: { elapsed :: Number } -> { elapsed :: Number }
 reset t = t { elapsed = 0.0 }
 
 tick :: { duration :: Number, elapsed :: Number } -> Maybe { duration :: Number, elapsed :: Number }
-tick t =
-  if t.elapsed < t.duration then Just (t { elapsed = min t.duration (t.elapsed + 1.0) })
+tick t@{ duration, elapsed } =
+  if elapsed < duration then Just (t { elapsed = min duration (elapsed + 1.0) })
   else Nothing
 
 fraction :: { duration :: Number, elapsed :: Number } -> Number
-fraction t = if t.duration <= 0.0 then 1.0 else min 1.0 (t.elapsed / t.duration)
+fraction { duration, elapsed } = if duration <= 0.0 then 1.0 else min 1.0 (elapsed / duration)
 
 tenSecondFreshTimer :: { duration :: Number, elapsed :: Number }
 tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }

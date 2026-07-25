@@ -59,19 +59,19 @@ gridRows m =
       <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
 
 cellStyle :: { header :: Boolean, sel :: Boolean } -> String
-cellStyle c
-  | c.header = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
+cellStyle { header, sel }
+  | header = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
   | otherwise = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
-      <> (if c.sel then " background: #cde;" else "")
+      <> (if sel then " background: #cde;" else "")
 
 selectCell :: String -> { cells :: Object String, selected :: Maybe String, formula :: String } -> { cells :: Object String, selected :: Maybe String, formula :: String }
 selectCell "" m = m -- header cells carry an empty key; clicking one selects nothing
 selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
 
 commit :: { cells :: Object String, selected :: Maybe String, formula :: String } -> { cells :: Object String, selected :: Maybe String, formula :: String }
-commit m = case m.selected of
-  Just k | lookup k m.cells /= Just m.formula ->
-    m { cells = if m.formula == "" then delete k m.cells else insert k m.formula m.cells }
+commit m@{ selected, formula } = case selected of
+  Just k | lookup k m.cells /= Just formula ->
+    m { cells = if formula == "" then delete k m.cells else insert k formula m.cells }
   _ -> m
 
 evalSheet :: Object String -> Object String
@@ -226,7 +226,7 @@ evalExpr cells visiting = go
       Left e -> .errV e
 
 selectedName :: { selected :: Maybe String } -> String
-selectedName m = fromMaybe "—" m.selected
+selectedName { selected } = fromMaybe "—" selected
 
 orderSheet :: { cells :: Object String, selected :: Maybe String, formula :: String }
 orderSheet =

@@ -48,7 +48,7 @@ haltTiming sw = sw { running = false }
 recordLap
   :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
   -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-recordLap sw = sw { laps = snoc sw.laps sw.elapsedTenths }
+recordLap sw@{ laps, elapsedTenths } = sw { laps = snoc laps elapsedTenths }
 
 clearStopwatch
   :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
@@ -58,25 +58,25 @@ clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
 tick
   :: { running :: Boolean, elapsedTenths :: Int }
   -> Maybe { running :: Boolean, elapsedTenths :: Int }
-tick sw =
-  if sw.running then Just (sw { elapsedTenths = sw.elapsedTenths + 1 })
+tick sw@{ running, elapsedTenths } =
+  if running then Just (sw { elapsedTenths = elapsedTenths + 1 })
   else Nothing
 
 whenHalted
   :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
   -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-whenHalted sw = if not sw.running then Just sw else Nothing
+whenHalted sw@{ running } = if not running then Just sw else Nothing
 
 whenRunning
   :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
   -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-whenRunning sw = if sw.running then Just sw else Nothing
+whenRunning sw@{ running } = if running then Just sw else Nothing
 
 readout :: { elapsedTenths :: Int } -> String
-readout sw = formatTime sw.elapsedTenths
+readout { elapsedTenths } = formatTime elapsedTenths
 
 lapRows :: { laps :: Array Int } -> Array { number :: String, time :: String }
-lapRows sw = mapWithIndex (\i t -> { number: show (i + 1), time: formatTime t }) sw.laps
+lapRows { laps } = mapWithIndex (\i t -> { number: show (i + 1), time: formatTime t }) laps
 
 formatTime :: Int -> String
 formatTime tenths =

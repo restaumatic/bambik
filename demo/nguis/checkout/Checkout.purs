@@ -53,35 +53,35 @@ cartStep ::
 cartStep = .next { step: "cart" }
 
 atCart :: { item :: String, step :: String } -> Maybe { item :: String }
-atCart r = if r.step == "cart" then Just { item: r.item } else Nothing
+atCart { item, step } = if step == "cart" then Just { item } else Nothing
 
 atShipping :: { address :: String, step :: String } -> Maybe { address :: String }
-atShipping r = if r.step == "shipping" then Just { address: r.address } else Nothing
+atShipping { address, step } = if step == "shipping" then Just { address } else Nothing
 
 atPayment :: { card :: String, step :: String } -> Maybe { card :: String }
-atPayment r = if r.step == "payment" then Just { card: r.card } else Nothing
+atPayment { card, step } = if step == "payment" then Just { card } else Nothing
 
 nextAtCart :: { step :: String } -> Maybe { step :: String }
-nextAtCart r = if r.step == "cart" then Just { step: "shipping" } else Nothing
+nextAtCart { step } = if step == "cart" then Just { step: "shipping" } else Nothing
 
 nextAtShipping :: { step :: String } -> Maybe { step :: String }
-nextAtShipping r = if r.step == "shipping" then Just { step: "payment" } else Nothing
+nextAtShipping { step } = if step == "shipping" then Just { step: "payment" } else Nothing
 
 backAtShipping :: { step :: String } -> Maybe { step :: String }
-backAtShipping r = if r.step == "shipping" then Just { step: "cart" } else Nothing
+backAtShipping { step } = if step == "shipping" then Just { step: "cart" } else Nothing
 
 backAtPayment :: { step :: String } -> Maybe { step :: String }
-backAtPayment r = if r.step == "payment" then Just { step: "shipping" } else Nothing
+backAtPayment { step } = if step == "payment" then Just { step: "shipping" } else Nothing
 
 placeAtPayment :: { item :: String, address :: String, card :: String, step :: String } -> Maybe { confirmed :: Boolean }
-placeAtPayment r = if r.step == "payment" then Just { confirmed: true } else Nothing
+placeAtPayment { step } = if step == "payment" then Just { confirmed: true } else Nothing
 
 recordPlaced :: { confirmed :: Boolean } -> { confirmed :: Boolean } -> { confirmed :: Boolean }
-recordPlaced r o = o { confirmed = r.confirmed }
+recordPlaced { confirmed } o = o { confirmed = confirmed }
 
 placedOrder :: { item :: String, address :: String, card :: String, confirmed :: Boolean } -> Maybe { item :: String, address :: String, card :: String }
-placedOrder r =
-  if r.confirmed then Just { item: r.item, address: r.address, card: r.card } else Nothing
+placedOrder { item, address, card, confirmed } =
+  if confirmed then Just { item, address, card } else Nothing
 
 freshOrder :: { item :: String, address :: String, card :: String, confirmed :: Boolean }
 freshOrder =

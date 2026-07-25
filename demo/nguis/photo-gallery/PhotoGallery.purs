@@ -68,15 +68,15 @@ albumCatalogue =
   ]
 
 albumChoices :: { album :: String } -> Array { name :: String, current :: Boolean }
-albumChoices g = albumCatalogue <#> \a -> { name: a.name, current: a.name == g.album }
+albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, current: a.name == album }
 
 openAlbum :: String -> { album :: String } -> { album :: String }
 openAlbum name g = g { album = name }
 
 albumPhotos :: { album :: String } -> Array { src :: String, caption :: String }
-albumPhotos g =
+albumPhotos { album } =
   maybe [] (\a -> a.shots <#> \caption -> { src: developedPhoto caption, caption })
-    (find (\a -> a.name == g.album) albumCatalogue)
+    (find (\a -> a.name == album) albumCatalogue)
 
 developedPhoto :: String -> String
 developedPhoto caption =

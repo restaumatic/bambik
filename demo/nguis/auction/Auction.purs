@@ -29,13 +29,13 @@ auction =
       ) # mvu openingBid
 
 raiseTop :: { bid :: Number, top :: Number } -> { bid :: Number, top :: Number }
-raiseTop r = { bid: r.bid, top: max r.bid r.top }
+raiseTop { bid, top } = { bid, top: max bid top }
 
 topText :: { top :: Number } -> String
-topText r = show r.top
+topText { top } = show top
 
 bidText :: { bid :: Number } -> String
-bidText r = show r.bid
+bidText { bid } = show bid
 
 noBids :: { bid :: Number, top :: Number }
 noBids = { bid: 0.0, top: 0.0 }

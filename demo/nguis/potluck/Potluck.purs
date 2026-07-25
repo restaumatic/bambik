@@ -36,7 +36,7 @@ potluck =
       ) # with invitation
 
 guestCount :: { guests :: Array { name :: String, dish :: Maybe String } } -> String
-guestCount table = show (length table.guests)
+guestCount { guests } = show (length guests)
 
 dishes :: Array String
 dishes = [ "Salad", "Lasagna", "Pavlova" ]

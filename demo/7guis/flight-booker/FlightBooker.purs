@@ -56,12 +56,12 @@ returnBetween out back =
   else Nothing
 
 parse :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-parse b = case parseDate b.start of
-  Nothing -> Left ("start date " <> show b.start <> " is not a valid DD.MM.YYYY date")
+parse { flightType, start: startInput, return: returnInput } = case parseDate startInput of
+  Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
   Just start ->
-    if b.flightType /= .return unit then Right (.oneWayOn start)
-    else case parseDate b.return of
-        Nothing -> Left ("return date " <> show b.return <> " is not a valid DD.MM.YYYY date")
+    if flightType /= .return unit then Right (.oneWayOn start)
+    else case parseDate returnInput of
+        Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
         Just back -> case returnBetween start back of
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
@@ -103,15 +103,15 @@ parseDate s = case split (Pattern ".") s of
   _ -> Nothing
 
 formatDate :: { y :: Int, m :: Int, d :: Int } -> String
-formatDate dt = pad dt.d <> "." <> pad dt.m <> "." <> show dt.y
+formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
   where
   pad n = (if n < 10 then "0" else "") <> show n
 
 dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
-dateKey dt = dt.y * 10000 + dt.m * 100 + dt.d
+dateKey { y, m, d } = y * 10000 + m * 100 + d
 
 returnLeg :: { flightType :: [ oneWay :: Unit, return :: Unit ], return :: String } -> Maybe { return :: String }
-returnLeg b = if b.flightType == .return unit then Just { return: b.return } else Nothing
+returnLeg { flightType, return } = if flightType == .return unit then Just { return } else Nothing
 
 setReturn :: { return :: String } -> { return :: String } -> { return :: String }
 setReturn { return } b = b { return = return }

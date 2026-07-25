@@ -45,12 +45,12 @@ scoreboard =
       ) # mvu { n: 0 }
 
 tick :: { n :: Int } -> Maybe { n :: Int }
-tick match = Just { n: match.n + 1 }
+tick { n } = Just { n: n + 1 }
 
 goal :: { n :: Int } -> { key :: String, value :: { team :: String, points :: Int } }
-goal match =
-  let team = pick teams match.n
-  in { key: team, value: { team, points: scored team match.n } }
+goal { n } =
+  let team = pick teams n
+  in { key: team, value: { team, points: scored team n } }
 
 scored :: String -> Int -> Int
 scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
@@ -59,10 +59,10 @@ boardSummary :: Array { team :: String, points :: Int } -> { teams :: Int, leade
 boardSummary scores = { teams: length scores, leader: maximumBy (comparing _.points) scores }
 
 leadingTeam :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe { team :: String, points :: Int }
-leadingTeam summary = summary.leader
+leadingTeam { leader } = leader
 
 noLeader :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe {}
-noLeader summary = case summary.leader of
+noLeader { leader } = case leader of
   Just _ -> Nothing
   Nothing -> Just {}
 

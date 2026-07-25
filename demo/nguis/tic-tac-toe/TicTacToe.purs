@@ -36,9 +36,9 @@ ticTacToe =
       ) # mvu openingPosition
 
 cells :: { board :: Array String } -> Array { key :: String, mark :: String, win :: Boolean }
-cells game =
-  let winners = fromMaybe [] (winningLine game.board)
-  in range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index game.board i), win: i `elem` winners }
+cells { board } =
+  let winners = fromMaybe [] (winningLine board)
+  in range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index board i), win: i `elem` winners }
 
 cellStyle :: String
 cellStyle =
@@ -52,9 +52,9 @@ startOver :: { board :: Array String } -> { board :: Array String }
 startOver _ = openingPosition
 
 claimCell :: String -> { board :: Array String } -> { board :: Array String }
-claimCell key game = case fromString key of
-  Just i | index game.board i == Just "" && isNothing (winningLine game.board) ->
-    game { board = fromMaybe game.board (updateAt i (playerToMove game.board) game.board) }
+claimCell key game@{ board } = case fromString key of
+  Just i | index board i == Just "" && isNothing (winningLine board) ->
+    game { board = fromMaybe board (updateAt i (playerToMove board) board) }
   _ -> game
 
 playerToMove :: Array String -> String
@@ -84,12 +84,12 @@ boardFull :: Array String -> Boolean
 boardFull board = isNothing (findMap (\m -> if m == "" then Just m else Nothing) board)
 
 winningMark :: { board :: Array String } -> Maybe { mark :: String }
-winningMark game = { mark: _ } <$> winner game.board
+winningMark { board } = { mark: _ } <$> winner board
 
 drawnGame :: { board :: Array String } -> Maybe {}
-drawnGame game = if isNothing (winner game.board) && boardFull game.board then Just {} else Nothing
+drawnGame { board } = if isNothing (winner board) && boardFull board then Just {} else Nothing
 
 markToMove :: { board :: Array String } -> Maybe { mark :: String }
-markToMove game =
-  if isNothing (winner game.board) && not (boardFull game.board) then Just { mark: playerToMove game.board }
+markToMove { board } =
+  if isNothing (winner board) && not (boardFull board) then Just { mark: playerToMove board }
   else Nothing

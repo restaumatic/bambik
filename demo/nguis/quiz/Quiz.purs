@@ -56,30 +56,30 @@ restart :: forall a. a -> { question :: Int, correct :: Int }
 restart _ = freshQuizRun
 
 answer :: Int -> { question :: Int, correct :: Int } -> { question :: Int, correct :: Int }
-answer choice run = case index questionCatalogue run.question of
-  Just q -> { question: run.question + 1, correct: run.correct + if choice == q.answer then 1 else 0 }
+answer choice run@{ question, correct } = case index questionCatalogue question of
+  Just q -> { question: question + 1, correct: correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
 currentQuestion :: { question :: Int } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
-currentQuestion run = index questionCatalogue run.question <#> \q ->
+currentQuestion { question } = index questionCatalogue question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
 
 questionPrompt :: { prompt :: String } -> String
-questionPrompt q = q.prompt
+questionPrompt { prompt } = prompt
 
 questionChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
-questionChoices q = q.choices
+questionChoices { choices } = choices
 
 finalOutcome :: { question :: Int, correct :: Int } -> Maybe { correct :: Int, total :: Int }
-finalOutcome run =
-  if run.question < length questionCatalogue then Nothing
-  else Just { correct: run.correct, total: length questionCatalogue }
+finalOutcome { question, correct } =
+  if question < length questionCatalogue then Nothing
+  else Just { correct, total: length questionCatalogue }
 
 progressFraction :: { question :: Int } -> Number
-progressFraction run = toNumber run.question / toNumber (length questionCatalogue)
+progressFraction { question } = toNumber question / toNumber (length questionCatalogue)
 
 questionNumberText :: { question :: Int } -> String
-questionNumberText run = show (min (run.question + 1) (length questionCatalogue))
+questionNumberText { question } = show (min (question + 1) (length questionCatalogue))
 
 questionCountText :: String
 questionCountText = show (length questionCatalogue)

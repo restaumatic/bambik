@@ -46,10 +46,10 @@ rotateAction pl = pure (.reordered (rotate pl))
 shuffleAction
   :: { order :: Array { id :: String, title :: String } }
   -> Aff [ reordered :: Array { id :: String, title :: String } ]
-shuffleAction pl = liftEffect (.reordered <$> shuffleOrder pl.order)
+shuffleAction { order } = liftEffect (.reordered <$> shuffleOrder order)
 
 rotate :: { order :: Array { id :: String, title :: String } } -> Array { id :: String, title :: String }
-rotate pl = maybe pl.order (\{ head, tail } -> snoc tail head) (uncons pl.order)
+rotate { order } = maybe order (\{ head, tail } -> snoc tail head) (uncons order)
 
 setOrder
   :: Array { id :: String, title :: String }

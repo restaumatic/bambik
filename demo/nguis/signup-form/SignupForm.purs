@@ -65,13 +65,13 @@ register applicant = case validate applicant of
   Right username -> .registered ("Welcome, " <> username <> "!")
 
 validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Either String String
-validate applicant =
+validate applicant@{ email, terms } =
   let username = trim applicant.username
   in
     if username == "" then Left "choose a username"
     else if usernameTaken username then Left ("username " <> username <> " is taken")
-    else if contains (Pattern "@") applicant.email == false then Left "enter a valid email address"
-    else if isJust applicant.terms == false then Left "accept the terms of service"
+    else if contains (Pattern "@") email == false then Left "enter a valid email address"
+    else if isJust terms == false then Left "accept the terms of service"
     else Right username
 
 whenInvalid :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Maybe { problem :: String }

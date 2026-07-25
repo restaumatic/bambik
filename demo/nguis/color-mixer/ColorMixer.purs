@@ -53,7 +53,7 @@ mix :: Number -> Number -> Number -> { red :: Number, green :: Number, blue :: N
 mix red green blue = { red: clampChannel red, green: clampChannel green, blue: clampChannel blue }
 
 hex :: { red :: Number, green :: Number, blue :: Number } -> String
-hex m = "#" <> channelHex m.red <> channelHex m.green <> channelHex m.blue
+hex { red, green, blue } = "#" <> channelHex red <> channelHex green <> channelHex blue
 
 channelHex :: Number -> String
 channelHex n =
@@ -61,7 +61,7 @@ channelHex n =
   in if length digits == 1 then "0" <> digits else digits
 
 rgb :: { red :: Number, green :: Number, blue :: Number } -> String
-rgb m = "rgb(" <> channel m.red <> ", " <> channel m.green <> ", " <> channel m.blue <> ")"
+rgb { red, green, blue } = "rgb(" <> channel red <> ", " <> channel green <> ", " <> channel blue <> ")"
 
 channel :: Number -> String
 channel = show <<< round <<< clampChannel

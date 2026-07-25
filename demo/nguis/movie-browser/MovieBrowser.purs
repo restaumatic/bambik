@@ -72,22 +72,22 @@ categoryTabs =
   ]
 
 visibleMovies :: { category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> Array { title :: String, year :: Int, rating :: Number, favorite :: Boolean }
-visibleMovies m = map card (filter (\movie -> inCategory movie && taggedAsChosen movie) m.movies)
+visibleMovies { category, classic, cult, oscar, movies } = map card (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
   where
-  inCategory movie = m.category == .all unit || movie.category == m.category
+  inCategory movie = category == .all unit || movie.category == category
   taggedAsChosen movie = null chosenTags || any (\tag -> elem tag movie.tags) chosenTags
-  chosenTags = catMaybes [ chosenIf m.classic "classic", chosenIf m.cult "cult", chosenIf m.oscar "oscar" ]
+  chosenTags = catMaybes [ chosenIf classic "classic", chosenIf cult "cult", chosenIf oscar "oscar" ]
   chosenIf on tag = if on then Just tag else Nothing
-  card movie = { title: movie.title, year: movie.year, rating: movie.rating, favorite: movie.favorite }
+  card { title, year, rating, favorite } = { title, year, rating, favorite }
 
 markFavorite :: { title :: String, year :: Int, rating :: Number, favorite :: Boolean } -> { movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> { movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } }
-markFavorite chosen m = m { movies = map (\movie -> if movie.title == chosen.title then movie { favorite = chosen.favorite } else movie) m.movies }
+markFavorite { title, favorite } m = m { movies = map (\movie -> if movie.title == title then movie { favorite = favorite } else movie) m.movies }
 
 ratingText :: { rating :: Number } -> String
-ratingText movie = toStringWith (fixed 1) movie.rating
+ratingText { rating } = toStringWith (fixed 1) rating
 
 favoriteCount :: { movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> Int
-favoriteCount m = length (filter _.favorite m.movies)
+favoriteCount { movies } = length (filter _.favorite movies)
 
 soleFavorite :: { movies :: Array { title :: String, year :: Int, category :: [ all :: Unit, action :: Unit, drama :: Unit, comedy :: Unit ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> Maybe { count :: Int }
 soleFavorite m = if favoriteCount m == 1 then Just { count: 1 } else Nothing

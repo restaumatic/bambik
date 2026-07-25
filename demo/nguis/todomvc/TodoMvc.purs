@@ -45,18 +45,18 @@ visibilityChoices =
   ]
 
 addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
-addTodo m =
-  if trim m.entry == "" then m
-  else m { todos = snoc m.todos { title: trim m.entry, done: false }, entry = "" }
+addTodo m@{ entry, todos } =
+  if trim entry == "" then m
+  else m { todos = snoc todos { title: trim entry, done: false }, entry = "" }
 
 toggleTodo :: Int -> { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
-toggleTodo i m = m { todos = fromMaybe m.todos (modifyAt i (\t -> t { done = not t.done }) m.todos) }
+toggleTodo i m@{ todos } = m { todos = fromMaybe todos (modifyAt i (\t -> t { done = not t.done }) todos) }
 
 clearCompleted :: { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
-clearCompleted m = m { todos = filter (\t -> not t.done) m.todos }
+clearCompleted m@{ todos } = m { todos = filter (\t -> not t.done) todos }
 
 itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Int
-itemsLeft m = length (filter (\t -> not t.done) m.todos)
+itemsLeft { todos } = length (filter (\t -> not t.done) todos)
 
 soleItemLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
 soleItemLeft m = if itemsLeft m == 1 then Just { count: 1 } else Nothing
@@ -65,6 +65,6 @@ severalItemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> M
 severalItemsLeft m = if itemsLeft m == 1 then Nothing else Just { count: itemsLeft m }
 
 visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> Array { key :: Int, title :: String, done :: Boolean }
-visibleEntries m = filter (matches m.visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) m.todos)
+visibleEntries { todos, visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
   where
   matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v

@@ -40,10 +40,10 @@ tipCalculator =
       ) # mvu dinnerBill
 
 tipPercentText :: { tipPercent :: Number } -> String
-tipPercentText bill = toStringWith (fixed 0) bill.tipPercent
+tipPercentText { tipPercent } = toStringWith (fixed 0) tipPercent
 
 peopleText :: { people :: Number } -> String
-peopleText bill = toStringWith (fixed 0) bill.people
+peopleText { people } = toStringWith (fixed 0) people
 
 tipAmountText :: { amount :: String, tipPercent :: Number } -> String
 tipAmountText bill = money (tipAmount bill)
@@ -52,13 +52,13 @@ totalText :: { amount :: String, tipPercent :: Number } -> String
 totalText bill = money (total bill)
 
 perPersonText :: { amount :: String, tipPercent :: Number, people :: Number } -> String
-perPersonText bill = money ((_ / bill.people) <$> total { amount: bill.amount, tipPercent: bill.tipPercent })
+perPersonText { amount, tipPercent, people } = money ((_ / people) <$> total { amount, tipPercent })
 
 tipAmount :: { amount :: String, tipPercent :: Number } -> Maybe Number
-tipAmount bill = (\amount -> amount * bill.tipPercent / 100.0) <$> fromString bill.amount
+tipAmount { amount, tipPercent } = (\a -> a * tipPercent / 100.0) <$> fromString amount
 
 total :: { amount :: String, tipPercent :: Number } -> Maybe Number
-total bill = (\amount -> amount * (1.0 + bill.tipPercent / 100.0)) <$> fromString bill.amount
+total { amount, tipPercent } = (\a -> a * (1.0 + tipPercent / 100.0)) <$> fromString amount
 
 money :: Maybe Number -> String
 money = maybe "—" (toStringWith (fixed 2))

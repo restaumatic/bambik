@@ -48,22 +48,22 @@ crud = do
       ) # with unit
 
 pick :: Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String }
-pick i m = case index m.people i of
+pick i m@{ people } = case index people i of
   Just p -> m { selected = Just i, name = p.name, surname = p.surname }
   Nothing -> m
 
 createPerson :: Ref (Array { name :: String, surname :: String }) -> { name :: String, surname :: String, people :: Array { name :: String, surname :: String } } -> Aff [ created :: Array { name :: String, surname :: String } ]
-createPerson catalogue m = .created <$> writePeople catalogue (snoc m.people { name: m.name, surname: m.surname })
+createPerson catalogue { name, surname, people } = .created <$> writePeople catalogue (snoc people { name, surname })
 
 updatePerson :: Ref (Array { name :: String, surname :: String }) -> { name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ updated :: Array { name :: String, surname :: String } ]
-updatePerson catalogue m = case m.selected of
-  Just i -> .updated <$> writePeople catalogue (fromMaybe m.people (updateAt i { name: m.name, surname: m.surname } m.people))
-  Nothing -> pure (.updated m.people)
+updatePerson catalogue { name, surname, people, selected } = case selected of
+  Just i -> .updated <$> writePeople catalogue (fromMaybe people (updateAt i { name, surname } people))
+  Nothing -> pure (.updated people)
 
 deletePerson :: Ref (Array { name :: String, surname :: String }) -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Aff [ deleted :: Array { name :: String, surname :: String } ]
-deletePerson catalogue m = case m.selected of
-  Just i -> .deleted <$> writePeople catalogue (fromMaybe m.people (deleteAt i m.people))
-  Nothing -> pure (.deleted m.people)
+deletePerson catalogue { people, selected } = case selected of
+  Just i -> .deleted <$> writePeople catalogue (fromMaybe people (deleteAt i people))
+  Nothing -> pure (.deleted people)
 
 refreshPeople :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 refreshPeople people m = m { people = people }
@@ -98,9 +98,9 @@ sharedPeopleCatalogue = Ref.new
   ]
 
 entries :: { prefix :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Array { key :: Int, name :: String, surname :: String, selected :: Boolean }
-entries m =
-  (\{ i, p } -> { key: i, name: p.name, surname: p.surname, selected: m.selected == Just i })
-    <$> filter (\{ p } -> hasPrefix m.prefix p.surname) (mapWithIndex (\i p -> { i, p }) m.people)
+entries { prefix, selected, people } =
+  (\{ i, p } -> { key: i, name: p.name, surname: p.surname, selected: selected == Just i })
+    <$> filter (\{ p } -> hasPrefix prefix p.surname) (mapWithIndex (\i p -> { i, p }) people)
   where
   hasPrefix p s = case stripPrefix (Pattern p) s of
     Just _ -> true

@@ -19,7 +19,7 @@ counter =
       ) # mvu freshCount
 
 increment :: { count :: Int } -> { count :: Int }
-increment r = { count: r.count + 1 }
+increment { count } = { count: count + 1 }
 
 freshCount :: { count :: Int }
 freshCount = { count: 0 }

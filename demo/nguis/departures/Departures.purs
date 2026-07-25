@@ -37,13 +37,13 @@ departures =
       ) # mvu { n: 0 }
 
 tick :: { n :: Int } -> Maybe { n :: Int }
-tick board = Just { n: board.n + 1 }
+tick { n } = Just { n: n + 1 }
 
 arrival :: { n :: Int } -> { key :: String, value :: { code :: String, status :: String } }
-arrival board =
+arrival { n } =
   let
-    code = pick flights board.n
-    status = pick statuses (board.n + board.n `div` length flights)
+    code = pick flights n
+    status = pick statuses (n + n `div` length flights)
   in
     { key: code, value: { code, status } }
 

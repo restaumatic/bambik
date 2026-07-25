@@ -46,7 +46,7 @@ issue ::
 issue = match { take: Left, resume: Right }
 
 nextTicket :: forall a. Tuple a { next :: Int } -> { serving :: Int, next :: Int }
-nextTicket (Tuple _ state) = { serving: state.next, next: state.next + 1 }
+nextTicket (Tuple _ { next }) = { serving: next, next: next + 1 }
 
 firstTicket ::
   [ take :: { serving :: Int }
@@ -55,10 +55,10 @@ firstTicket ::
 firstTicket = .resume { next: 1 }
 
 beforeFirstTicket :: { serving :: Int } -> Maybe {}
-beforeFirstTicket q = if q.serving == 0 then Just {} else Nothing
+beforeFirstTicket { serving } = if serving == 0 then Just {} else Nothing
 
 afterFirstTicket :: { serving :: Int } -> Maybe { serving :: Int }
-afterFirstTicket q = if q.serving == 0 then Nothing else Just q
+afterFirstTicket q@{ serving } = if serving == 0 then Nothing else Just q
 
 emptyQueue :: { serving :: Int }
 emptyQueue = { serving: 0 }

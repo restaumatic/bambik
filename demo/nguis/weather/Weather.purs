@@ -75,37 +75,37 @@ unknownTerritory :: { city :: String, temperature :: Number, condition :: String
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
 fetchReport :: { city :: String, sample :: Int, shown :: Boolean } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
-fetchReport request = do
+fetchReport { city, sample } = do
   delay (Milliseconds 800.0)
-  pure (.reportServed (conditionsFor request.city request.sample))
+  pure (.reportServed (conditionsFor city sample))
 
 rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
-rememberReport report board = { report, servedReports: board.servedReports + 1 }
+rememberReport report { servedReports } = { report, servedReports: servedReports + 1 }
 
 resumeDashboard :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 resumeDashboard _ board = board
 
 forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
-forecastRequests board = climateTable <#> \r ->
-  { city: r.city, sample: board.servedReports, shown: r.city == board.report.city }
+forecastRequests { servedReports, report } = climateTable <#> \r ->
+  { city: r.city, sample: servedReports, shown: r.city == report.city }
 
 temperatureText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-temperatureText board = show board.report.temperature
+temperatureText { report } = show report.temperature
 
 conditionText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-conditionText board = board.report.condition
+conditionText { report } = report.condition
 
 cityText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-cityText board = board.report.city
+cityText { report } = report.city
 
 humidityText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-humidityText board = show board.report.humidity
+humidityText { report } = show report.humidity
 
 windText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-windText board = show board.report.wind
+windText { report } = show report.wind
 
 servedReportsText :: { servedReports :: Int } -> String
-servedReportsText board = show board.servedReports
+servedReportsText { servedReports } = show servedReports
 
 warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }

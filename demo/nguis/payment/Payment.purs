@@ -28,17 +28,17 @@ payment =
       ) # mvu unpaidOrder
 
 startCharge :: { amount :: Number } -> { amount :: Number, attempt :: Int }
-startCharge o = { amount: o.amount, attempt: 0 }
+startCharge { amount } = { amount, attempt: 0 }
 
 chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
   [ charged :: String
   , charge :: { amount :: Number, attempt :: Int }
   ]
-chargeFlaky r = do
+chargeFlaky r@{ amount, attempt } = do
   delay (Milliseconds 700.0)
-  if r.attempt < 2
-    then pure $ .charge r { attempt = r.attempt + 1 }
-    else pure $ .charged ("Approved — $" <> show r.amount <> " charged on attempt " <> show (r.attempt + 1))
+  if attempt < 2
+    then pure $ .charge r { attempt = attempt + 1 }
+    else pure $ .charged ("Approved — $" <> show amount <> " charged on attempt " <> show (attempt + 1))
 
 recordCharged :: String -> { status :: String } -> { status :: String }
 recordCharged message o = o { status = message }

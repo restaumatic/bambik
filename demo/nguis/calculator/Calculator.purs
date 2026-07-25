@@ -56,23 +56,23 @@ blankTally :: { total :: Number, operation :: Maybe String, entry :: String, ent
 blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, faulty: false }
 
 faultyTally :: { faulty :: Boolean } -> Maybe {}
-faultyTally tally = if tally.faulty then Just {} else Nothing
+faultyTally { faulty } = if faulty then Just {} else Nothing
 
 currentEntry :: { faulty :: Boolean, entry :: String } -> Maybe { entry :: String }
-currentEntry tally = if tally.faulty then Nothing else Just { entry: tally.entry }
+currentEntry { faulty, entry } = if faulty then Nothing else Just { entry }
 
 pressKey
   :: String
   -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
   -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
-pressKey key tally
-  | tally.faulty && key /= "C" = pressKey key blankTally
+pressKey key tally@{ faulty, entry, entering, operation }
+  | faulty && key /= "C" = pressKey key blankTally
   | key == "C" = blankTally
-  | key == "±" = tally { entry = negated tally.entry }
-  | key == "." && tally.entering =
-      if contains (Pattern ".") tally.entry then tally else tally { entry = tally.entry <> "." }
+  | key == "±" = tally { entry = negated entry }
+  | key == "." && entering =
+      if contains (Pattern ".") entry then tally else tally { entry = entry <> "." }
   | key == "." = tally { entry = "0.", entering = true }
-  | key `elem` operatorKeys = case settle { total: tally.total, operation: tally.operation, entry: tally.entry, entering: tally.entering } of
+  | key `elem` operatorKeys = case settle { total: tally.total, operation, entry, entering } of
       Just total -> tally
         { total = total
         , operation = if key == "=" then Nothing else Just key
@@ -80,13 +80,13 @@ pressKey key tally
         , entering = false
         }
       Nothing -> blankTally { faulty = true }
-  | tally.entering = tally { entry = if tally.entry == "0" then key else tally.entry <> key }
+  | entering = tally { entry = if entry == "0" then key else entry <> key }
   | true = tally { entry = key, entering = true }
 
 settle :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean } -> Maybe Number
-settle tally = case tally.operation of
-  Just operation | tally.entering -> compute operation tally.total (entryValue { entry: tally.entry })
-  _ -> Just (entryValue { entry: tally.entry })
+settle tally@{ entering, total, entry } = case tally.operation of
+  Just operation | entering -> compute operation total (entryValue { entry })
+  _ -> Just (entryValue { entry })
 
 compute :: String -> Number -> Number -> Maybe Number
 compute "+" a b = Just (a + b)
@@ -97,7 +97,7 @@ compute "÷" a b = Just (a / b)
 compute _ _ b = Just b
 
 entryValue :: { entry :: String } -> Number
-entryValue tally = fromMaybe 0.0 (fromString tally.entry)
+entryValue { entry } = fromMaybe 0.0 (fromString entry)
 
 negated :: String -> String
 negated entry = case stripPrefix (Pattern "-") entry of
