@@ -6,12 +6,13 @@ import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..))
-import PUI (asCase, completed, displayed, every, forValue, foreach, mvu, projection, updates)
-import PUI.HTML (body, li, provided, text, ul)
+import PUI (asCase, completed, displayed, every, forField, forValue, foreach, mvu, projection, updates)
+import PUI.HTML (body, li, provided, staticText, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -27,7 +28,11 @@ stopwatch =
               button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning
               button { label: "Lap", icon: "flag" } # asCase @"lap" # provided # lcmap whenRunning
               button { label: "Reset", icon: "replay" } # asCase @"reset" # provided # lcmap whenHalted) # updates (match { start: const <<< beginTiming, stop: const <<< haltTiming, lap: const <<< recordLap, reset: const <<< clearStopwatch })
-          ul ( (li text # projection _.line) # foreach @"line" ) # lcmap lapLines # displayed
+          ul ( ( li $ RecordToRecord.do
+                   staticText "Lap "
+                   text # forValue # forField @"number"
+                   staticText " — "
+                   text # forValue # forField @"time" ) # foreach @"number" ) # lcmap lapRows # displayed
       ) # mvu zeroedStopwatch
 
 beginTiming
@@ -70,8 +75,8 @@ whenRunning sw = if sw.running then Just sw else Nothing
 readout :: { elapsedTenths :: Int } -> String
 readout sw = formatTime sw.elapsedTenths
 
-lapLines :: { laps :: Array Int } -> Array { line :: String }
-lapLines sw = mapWithIndex (\i t -> { line: "Lap " <> show (i + 1) <> " — " <> formatTime t }) sw.laps
+lapRows :: { laps :: Array Int } -> Array { number :: String, time :: String }
+lapRows sw = mapWithIndex (\i t -> { number: show (i + 1), time: formatTime t }) sw.laps
 
 formatTime :: Int -> String
 formatTime tenths =

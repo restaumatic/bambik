@@ -1,17 +1,17 @@
 module Scoreboard (scoreboard) where
 
-import Prelude ((#), ($), (+), (<<<), (<>), (==), Unit, mod, show)
+import Prelude ((#), ($), (+), (==), Unit, mod, show)
 
 import Data.Array (filter, index, length, range)
 import Data.Foldable (maximumBy)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (accumulated, displayed, every, forField, forValue, mvu, projection)
-import PUI.HTML (body, staticText, text)
+import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -30,7 +30,17 @@ scoreboard =
                     ) # displayed
                   ) # accumulated
               ) # lcmap goal
-              body2 text # projection standings
+              body2 ( Semigroupoid.do
+                  ( RecordToRecord.do
+                      text # projection show # forField @"teams"
+                      staticText " teams on the board — leading: " ) # displayed
+                  ( RecordToRecord.do
+                      text # forValue # forField @"team"
+                      staticText " ("
+                      text # projection show # forField @"points"
+                      staticText ")" ) # provided # lcmap leadingTeam # displayed
+                  staticText "—" # provided # lcmap noLeader # displayed
+              ) # lcmap boardSummary
           ) # displayed
       ) # mvu { n: 0 }
 
@@ -45,10 +55,16 @@ goal match =
 scored :: String -> Int -> Int
 scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 
-standings :: Array { team :: String, points :: Int } -> String
-standings scores =
-  show (length scores) <> " teams on the board — leading: "
-    <> maybe "—" (\s -> s.team <> " (" <> show s.points <> ")") (maximumBy (comparing _.points) scores)
+boardSummary :: Array { team :: String, points :: Int } -> { teams :: Int, leader :: Maybe { team :: String, points :: Int } }
+boardSummary scores = { teams: length scores, leader: maximumBy (comparing _.points) scores }
+
+leadingTeam :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe { team :: String, points :: Int }
+leadingTeam summary = summary.leader
+
+noLeader :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe {}
+noLeader summary = case summary.leader of
+  Just _ -> Nothing
+  Nothing -> Just {}
 
 pick :: Array String -> Int -> String
 pick options i = fromMaybe "" (index options (i `mod` length options))

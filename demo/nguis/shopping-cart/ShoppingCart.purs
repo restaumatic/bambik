@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, forField, forValue, mvu, projection, tapped, toCase, updates)
-import PUI.HTML (body, clicked, text)
+import PUI.HTML (body, clicked, staticText, text)
 import PUI.MDC (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,13 +18,20 @@ shoppingCart =
   body $
     elevation20 $
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
-          listOf {} (text # projection productOffer) # lcmap productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
+          listOf {} ( RecordToRecord.do
+              text # forValue # forField @"name"
+              staticText " · $"
+              text # projection formatMoney # forField @"unitPrice" ) # lcmap productCatalogue # toCase @"productPicked" # updates (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
                   dataCell text # forValue # forField @"product"
                   dataCell text # forValue # forField @"quantity"
-                  dataCell text # forValue # forField @"lineTotal") # foreach @"product") # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
-          body1 text # projection grandTotal # tapped
+                  dataCell ( RecordToRecord.do
+                      staticText "$"
+                      text # forValue # forField @"lineTotal" )) # foreach @"product") # lcmap cartLines # rmap _.product # toCase @"linePicked" # updates (match { linePicked: removeUnit })
+          body1 ( RecordToRecord.do
+              staticText "Total: $"
+              text # projection grandTotalText ) # tapped
           button { label: "Empty cart" } # updates (match { clicked: const <<< clearCart })
       ) # mvu emptyCart
 
@@ -40,9 +47,6 @@ productCatalogue _ =
   , { name: "Orange Juice", unitPrice: 400 }
   , { name: "Cheesecake", unitPrice: 550 }
   ]
-
-productOffer :: { name :: String, unitPrice :: Int } -> String
-productOffer p = p.name <> " · " <> formatMoney p.unitPrice
 
 addUnit :: { name :: String, unitPrice :: Int } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
 addUnit p cart
@@ -65,10 +69,10 @@ cartLines cart = map line cart.order
   where
   line l = { product: l.product.name, quantity: show l.quantity, lineTotal: formatMoney (l.quantity * l.product.unitPrice) }
 
-grandTotal :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
-grandTotal cart = "Total: " <> formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 cart.order)
+grandTotalText :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
+grandTotalText cart = formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 cart.order)
 
 formatMoney :: Int -> String
-formatMoney cents = "$" <> show (cents / 100) <> "." <> pad (mod cents 100)
+formatMoney cents = show (cents / 100) <> "." <> pad (mod cents 100)
   where
   pad r = if r < 10 then "0" <> show r else show r

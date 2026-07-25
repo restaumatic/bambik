@@ -14,7 +14,7 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 import PUI (action, asCase, asField, completed, forField, forValue, mvu, onCase, projection, tapped, updates)
-import PUI.HTML (attr, body, div, text)
+import PUI.HTML (attr, body, div, staticText, text)
 import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,7 +30,9 @@ passwordGenerator =
               toggleSwitch { label: "Lowercase letters" } # asField @"lowercase"
               toggleSwitch { label: "Digits" } # asField @"digits"
               toggleSwitch { label: "Symbols" } # asField @"symbols") # completed
-          body2 text # projection strengthLine # tapped
+          body2 ( RecordToRecord.do
+              staticText "Strength: "
+              text # projection strengthText ) # tapped
           div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
             text # forValue # forField @"password" # tapped
           ( Semigroupoid.do
@@ -60,8 +62,8 @@ effectiveAlphabet recipe =
             <> (if recipe.symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
-strengthLine :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
-strengthLine recipe = "Strength: " <> strengthGrade (entropyBits recipe)
+strengthText :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
+strengthText recipe = strengthGrade (entropyBits recipe)
 
 entropyBits :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Number
 entropyBits recipe = recipe.length * log (toNumber (length (effectiveAlphabet { uppercase: recipe.uppercase, lowercase: recipe.lowercase, digits: recipe.digits, symbols: recipe.symbols }))) / log 2.0

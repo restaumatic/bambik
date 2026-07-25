@@ -9,12 +9,11 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
-import Data.Variant (expand)
-import Data.Variant (match)
+import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, forCase, mvu, projection, required, updates)
-import PUI.HTML (body, provided, text)
+import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, forValue, mvu, required, updates)
+import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -32,7 +31,19 @@ flightBooker =
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
           filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
       ) # mvu plannedTrip
-      body1 text # projection validationText # debounced # completed
+      ( Semigroupoid.do
+          body1 ( RecordToRecord.do
+              staticText "⚠ "
+              text # forValue # forField @"problem" ) # provided # lcmap bookingProblem # displayed
+          body1 ( RecordToRecord.do
+              staticText "A one-way flight on "
+              text # forValue # forField @"date" ) # provided # lcmap oneWayItinerary # displayed
+          body1 ( RecordToRecord.do
+              staticText "A return flight: out "
+              text # forValue # forField @"out"
+              staticText ", back "
+              text # forValue # forField @"back" ) # provided # lcmap returnItinerary # displayed
+      ) # debounced
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
       VariantToRecord.do
@@ -55,8 +66,16 @@ parse b = case parseDate b.start of
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-validationText :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> String
-validationText = parse >>> either (\err -> "⚠ " <> err) summary
+bookingProblem :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Maybe { problem :: String }
+bookingProblem = parse >>> either (\problem -> Just { problem }) (\_ -> Nothing)
+
+oneWayItinerary :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Maybe { date :: String }
+oneWayItinerary = parse >>> either (\_ -> Nothing)
+  (match { oneWayOn: \out -> Just { date: formatDate out }, returnBetween: \_ -> Nothing })
+
+returnItinerary :: { flightType :: [ oneWay :: Unit, return :: Unit ], start :: String, return :: String } -> Maybe { out :: String, back :: String }
+returnItinerary = parse >>> either (\_ -> Nothing)
+  (match { oneWayOn: \_ -> Nothing, returnBetween: \r -> Just { out: formatDate r.out, back: formatDate r.back } })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match

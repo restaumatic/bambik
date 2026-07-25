@@ -1,15 +1,16 @@
 module TicTacToe (ticTacToe) where
 
-import Prelude ((#), ($), (&&), (/=), (<#>), (<<<), (<>), (==), (>>>), Unit, bind, const, mod, show)
+import Prelude ((#), ($), (&&), (/=), (<#>), (<$>), (<<<), (<>), (==), (>>>), Unit, bind, const, mod, not, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, foreach, mvu, projection, toCase, updates)
-import PUI.HTML (attrWith, body, clicked, div, text, (:=))
+import PUI (displayed, foreach, forField, forValue, mvu, toCase, updates)
+import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,7 +19,13 @@ ticTacToe =
   body $
     elevation20 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
-          headline6 text # projection standing # completed
+          headline6 ( RecordToRecord.do
+              text # forValue # forField @"mark"
+              staticText " wins" ) # provided # lcmap winningMark # displayed
+          headline6 (staticText "Draw") # provided # lcmap drawnGame # displayed
+          headline6 ( RecordToRecord.do
+              text # forValue # forField @"mark"
+              staticText " to move" ) # provided # lcmap markToMove # displayed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
               ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
                   ( clicked
@@ -76,9 +83,13 @@ winner board = do
 boardFull :: Array String -> Boolean
 boardFull board = isNothing (findMap (\m -> if m == "" then Just m else Nothing) board)
 
-standing :: { board :: Array String } -> String
-standing game = case winner game.board of
-  Just p -> p <> " wins"
-  Nothing ->
-    if boardFull game.board then "Draw"
-    else playerToMove game.board <> " to move"
+winningMark :: { board :: Array String } -> Maybe { mark :: String }
+winningMark game = { mark: _ } <$> winner game.board
+
+drawnGame :: { board :: Array String } -> Maybe {}
+drawnGame game = if isNothing (winner game.board) && boardFull game.board then Just {} else Nothing
+
+markToMove :: { board :: Array String } -> Maybe { mark :: String }
+markToMove game =
+  if isNothing (winner game.board) && not (boardFull game.board) then Just { mark: playerToMove game.board }
+  else Nothing

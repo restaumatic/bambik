@@ -10,8 +10,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, forCase, mvu, onCase, projection, tapped, toCase, updates)
-import PUI.HTML (body, provided, span, text)
+import PUI (asCase, completed, displayed, forCase, forField, forValue, mvu, onCase, projection, tapped, toCase, updates)
+import PUI.HTML (body, provided, span, staticText, text)
 import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,12 +20,25 @@ inbox =
   body $
     elevation20 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
-          caption text # projection unreadLine # completed
-          listOf { selected: _.attention } (span text # projection _.line) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
+          caption ( RecordToRecord.do
+              text # projection unreadCountText
+              staticText " unread of "
+              text # projection messageCountText
+              staticText " messages" ) # completed
+          listOf { selected: _.attention }
+            ( span $ Semigroupoid.do
+                staticText "● " # provided # lcmap unreadMark # displayed
+                ( RecordToRecord.do
+                    text # forValue # forField @"sender"
+                    staticText " — "
+                    text # forValue # forField @"subject" ) # displayed
+            ) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headline6 text # projection subjectLine
-                  body2 text # projection senderLine
+                  body2 RecordToRecord.do
+                    staticText "From: "
+                    text # forValue # forField @"sender"
                   body1 text # projection bodyLine) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
@@ -55,24 +68,29 @@ mondayMail =
   , nextId: 4
   }
 
-unreadLine :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> String
-unreadLine m = show (length (filter (\g -> not g.read) m.messages)) <> " unread of " <> show (length m.messages) <> " messages"
+unreadCountText :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> String
+unreadCountText m = show (length (filter (\g -> not g.read) m.messages))
 
-mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> Array { id :: Int, line :: String, attention :: Boolean }
+messageCountText :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> String
+messageCountText m = show (length m.messages)
+
+mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> Array { id :: Int, sender :: String, subject :: String, read :: Boolean, attention :: Boolean }
 mailboxRows m = m.messages # map \g ->
   { id: g.id
-  , line: (if g.read then "" else "● ") <> g.sender <> " — " <> g.subject
+  , sender: g.sender
+  , subject: g.subject
+  , read: g.read
   , attention: not g.read || m.opened == Just g.id
   }
+
+unreadMark :: { read :: Boolean } -> Maybe {}
+unreadMark g = if g.read then Nothing else Just {}
 
 openMessage :: Int -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int }
 openMessage id m = m { messages = map (\g -> if g.id == id then g { read = true } else g) m.messages, opened = Just id }
 
 openedMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> Maybe { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }
 openedMessage m = find (\g -> Just g.id == m.opened) m.messages
-
-senderLine :: { sender :: String } -> String
-senderLine g = "From: " <> g.sender
 
 subjectLine :: { subject :: String } -> String
 subjectLine g = g.subject

@@ -1,12 +1,13 @@
 module Auction (auction) where
 
-import Prelude ((#), ($), (<>), Unit, identity, max, show)
+import Prelude ((#), ($), Unit, identity, max, show)
 
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (feedback)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, forField, mvu, projection, seeded, tapped)
-import PUI.HTML (body, text)
+import PUI (asField, mvu, projection, seeded, tapped)
+import PUI.HTML (body, staticText, text)
 import PUI.MDC (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -15,22 +16,26 @@ auction =
   body $
     elevation20 $
       card { caption: "Live Auction" } $ ( Semigroupoid.do
-          body2 text # projection bidLine # forField @"bid" # tapped
+          body2 ( RecordToRecord.do
+              staticText "Your current bid: $"
+              text # projection bidText ) # tapped
           sliderLive { label: "Your bid ($)", min: minBid, max: maxBid, step: bidStep } # asField @"bid"
           ( Semigroupoid.do
               seeded noBids
               lcmap raiseTop identity
-              headline6 text # projection topLine # tapped) # feedback
+              headline6 ( RecordToRecord.do
+                  staticText "Highest bid so far: $"
+                  text # projection topText ) # tapped) # feedback
       ) # mvu openingBid
 
 raiseTop :: { bid :: Number, top :: Number } -> { bid :: Number, top :: Number }
 raiseTop r = { bid: r.bid, top: max r.bid r.top }
 
-topLine :: { bid :: Number, top :: Number } -> String
-topLine r = "Highest bid so far: $" <> show r.top
+topText :: { top :: Number } -> String
+topText r = show r.top
 
-bidLine :: Number -> String
-bidLine b = "Your current bid: $" <> show b
+bidText :: { bid :: Number } -> String
+bidText r = show r.bid
 
 noBids :: { bid :: Number, top :: Number }
 noBids = { bid: 0.0, top: 0.0 }

@@ -1,6 +1,6 @@
 module Departures (departures) where
 
-import Prelude ((#), ($), (+), (<>), Unit, div, mod, show)
+import Prelude ((#), ($), (+), Unit, div, mod)
 
 import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
-import PUI (dispatched, displayed, every, forField, forValue, mvu, projection)
+import PUI (dispatched, displayed, every, forField, forValue, mvu)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,7 +28,11 @@ departures =
                     ) # displayed
                   ) # dispatched
               ) # lcmap arrival
-              body2 text # projection lastChange
+              body2 ( RecordToRecord.do
+                  staticText "Last update: "
+                  text # forValue # forField @"code"
+                  staticText " → "
+                  text # forValue # forField @"status" ) # lcmap _.value
           ) # displayed
       ) # mvu { n: 0 }
 
@@ -42,9 +46,6 @@ arrival board =
     status = pick statuses (board.n + board.n `div` length flights)
   in
     { key: code, value: { code, status } }
-
-lastChange :: { key :: String, value :: { code :: String, status :: String } } -> String
-lastChange update = "Last update: " <> update.value.code <> " → " <> update.value.status
 
 pick :: Array String -> Int -> String
 pick options i = fromMaybe "" (index options (i `mod` length options))

@@ -1,6 +1,6 @@
 module Quiz (quiz) where
 
-import Prelude ((#), ($), (+), (/), (<), (<#>), (<>), (==), Unit, const, min, show)
+import Prelude ((#), ($), (+), (/), (<), (<#>), (==), Unit, const, min, show)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
@@ -9,8 +9,8 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, forField, forValue, mvu, projection, toCase, updates)
-import PUI.HTML (body, provided, text)
+import PUI (asCase, completed, displayed, forField, mvu, projection, toCase, updates)
+import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,12 +21,22 @@ quiz =
       card { caption: "Quiz" } $ ( Semigroupoid.do
           ( RecordToRecord.do
               linearProgress # projection progressFraction
-              body1 text # projection standing) # completed
+              body1 RecordToRecord.do
+                staticText "Question "
+                text # projection questionNumberText
+                staticText " of "
+                staticText questionCountText
+                staticText " · Score "
+                text # projection show # forField @"correct") # completed
           ( Semigroupoid.do
               headline5 text # projection questionPrompt # completed
               listOf {} (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap questionChoices) # provided # lcmap currentQuestion # updates (match { picked: answer })
           ( Semigroupoid.do
-              headline6 text # forValue # forField @"summary" # displayed
+              headline6 ( RecordToRecord.do
+                  staticText "Final score: "
+                  text # projection show # forField @"correct"
+                  staticText " / "
+                  text # projection show # forField @"total") # displayed
               button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided # lcmap finalOutcome # updates (match { restarted: const restart })
       ) # mvu freshQuizRun
 
@@ -60,13 +70,16 @@ questionPrompt q = q.prompt
 questionChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
 questionChoices q = q.choices
 
-finalOutcome :: { question :: Int, correct :: Int } -> Maybe { summary :: String }
+finalOutcome :: { question :: Int, correct :: Int } -> Maybe { correct :: Int, total :: Int }
 finalOutcome run =
   if run.question < length questionCatalogue then Nothing
-  else Just { summary: "Final score: " <> show run.correct <> " / " <> show (length questionCatalogue) }
+  else Just { correct: run.correct, total: length questionCatalogue }
 
 progressFraction :: { question :: Int } -> Number
 progressFraction run = toNumber run.question / toNumber (length questionCatalogue)
 
-standing :: { question :: Int, correct :: Int } -> String
-standing run = "Question " <> show (min (run.question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show run.correct
+questionNumberText :: { question :: Int } -> String
+questionNumberText run = show (min (run.question + 1) (length questionCatalogue))
+
+questionCountText :: String
+questionCountText = show (length questionCatalogue)

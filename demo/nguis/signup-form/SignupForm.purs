@@ -1,19 +1,19 @@
 module SignupForm (signupForm) where
 
-import Prelude ((#), ($), (<>), (==), (>>>), Unit)
+import Prelude ((#), ($), (<>), (==), (>>>), Unit, not)
 
 import Data.Either (Either(..), either)
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..), isJust)
-import Data.Profunctor (rmap)
+import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, forCase, mvu, projection, required, tapped)
-import PUI.HTML (body, staticText, text)
+import PUI (asCase, asField, displayed, forCase, forField, forValue, mvu, required)
+import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -39,8 +39,21 @@ signupForm =
             filledTextField { floatingLabel: "Email" } # asField @"email"
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox (staticText "I accept the terms of service") # asField @"terms") # mvu newApplicant
-        body2 text # projection availabilityHint # tapped
-        subtitle2 text # projection validationSummary # tapped
+        ( body2 $ staticText "Pick a username to check its availability" ) # provided # lcmap whenUnnamed # displayed
+        ( body2 $ RecordToRecord.do
+            staticText "✗ "
+            text # forValue # forField @"username"
+            staticText " is already taken" ) # provided # lcmap whenTaken # displayed
+        ( body2 $ RecordToRecord.do
+            staticText "✓ "
+            text # forValue # forField @"username"
+            staticText " is available" ) # provided # lcmap whenAvailable # displayed
+        ( subtitle2 $ RecordToRecord.do
+            staticText "⚠ "
+            text # forValue # forField @"problem" ) # provided # lcmap whenInvalid # displayed
+        ( subtitle2 $ RecordToRecord.do
+            staticText "Ready to sign up as "
+            text # forValue # forField @"username" ) # provided # lcmap whenReady # displayed
         button { label: "Sign up", icon: "person_add" } # asCase @"signUp" # rmap (match { signUp: register })
         VariantToRecord.do
           snackbar # forCase @"registered"
@@ -61,18 +74,31 @@ validate applicant =
     else if isJust applicant.terms == false then Left "accept the terms of service"
     else Right username
 
-validationSummary :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> String
-validationSummary = validate >>> either (\problem -> "⚠ " <> problem) readyLine
-  where
-  readyLine username = "Ready to sign up as " <> username
+whenInvalid :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Maybe { problem :: String }
+whenInvalid = validate >>> either (\problem -> Just { problem }) (\_ -> Nothing)
 
-availabilityHint :: { username :: String } -> String
-availabilityHint applicant =
-  let username = trim applicant.username
-  in
-    if username == "" then "Pick a username to check its availability"
-    else if usernameTaken username then "✗ " <> username <> " is already taken"
-    else "✓ " <> username <> " is available"
+whenReady :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Maybe { username :: String }
+whenReady = validate >>> either (\_ -> Nothing) (\username -> Just { username })
+
+namedUsername :: { username :: String } -> Maybe String
+namedUsername applicant = case trim applicant.username of
+  "" -> Nothing
+  username -> Just username
+
+whenUnnamed :: { username :: String } -> Maybe {}
+whenUnnamed applicant = case namedUsername applicant of
+  Nothing -> Just {}
+  Just _ -> Nothing
+
+whenTaken :: { username :: String } -> Maybe { username :: String }
+whenTaken applicant = case namedUsername applicant of
+  Just username | usernameTaken username -> Just { username }
+  _ -> Nothing
+
+whenAvailable :: { username :: String } -> Maybe { username :: String }
+whenAvailable applicant = case namedUsername applicant of
+  Just username | not (usernameTaken username) -> Just { username }
+  _ -> Nothing
 
 usernameTaken :: String -> Boolean
 usernameTaken username = username `elem` takenUsernames

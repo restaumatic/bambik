@@ -1,6 +1,6 @@
 module RestaurantMenu (restaurantMenu) where
 
-import Prelude ((#), ($), (<>), (>>>), Unit, map)
+import Prelude ((#), ($), (>>>), Unit, map)
 
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor (lcmap)
@@ -29,7 +29,9 @@ restaurantMenu =
                 div >>> cl "dish-head" $ RecordToRecord.do
                   span >>> cl "dish-name" $ text # forValue # forField @"name"
                   span >>> cl "dish-dots" $ pempty
-                  span >>> cl "dish-price" $ text # projection ("€" <> _) # forField @"price"
+                  span >>> cl "dish-price" $ RecordToRecord.do
+                    staticText "€"
+                    text # forValue # forField @"price"
                 p >>> cl "dish-desc" $ text # forValue # forField @"description"
                 span >>> cl "tags" $
                   ( span >>> cl "tag" $ text # projection _.tag ) # foreach @"tag" # lcmap (map { tag: _ }) # forField @"tags") # foreach @"name" # forField @"dishes") # foreach @"name" # forField @"courses"

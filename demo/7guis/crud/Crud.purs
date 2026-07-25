@@ -1,6 +1,6 @@
 module Crud (crud) where
 
-import Prelude ((#), ($), (<$>), (<>), (==), (>>>), Unit, bind, discard, pure, unit)
+import Prelude ((#), ($), (<$>), (==), (>>>), Unit, bind, discard, pure, unit)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -15,8 +15,8 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, looped, onCase, projection, toCase, updates, with)
-import PUI.HTML (body, text)
+import PUI (action, asCase, asField, completed, displayed, forField, forValue, looped, onCase, toCase, updates, with)
+import PUI.HTML (body, staticText, text)
 import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -32,7 +32,10 @@ crud = do
                   filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
-              listOf { selected: _.selected } (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+              listOf { selected: _.selected } ( displayed $ RecordToRecord.do
+                  text # forValue # forField @"surname"
+                  staticText ", "
+                  text # forValue # forField @"name" ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
@@ -94,9 +97,9 @@ sharedPeopleCatalogue = Ref.new
   , { name: "Roman", surname: "Tisch" }
   ]
 
-entries :: { prefix :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Array { key :: Int, label :: String, selected :: Boolean }
+entries :: { prefix :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> Array { key :: Int, name :: String, surname :: String, selected :: Boolean }
 entries m =
-  (\{ i, p } -> { key: i, label: p.surname <> ", " <> p.name, selected: m.selected == Just i })
+  (\{ i, p } -> { key: i, name: p.name, surname: p.surname, selected: m.selected == Just i })
     <$> filter (\{ p } -> hasPrefix m.prefix p.surname) (mapWithIndex (\i p -> { i, p }) m.people)
   where
   hasPrefix p s = case stripPrefix (Pattern p) s of

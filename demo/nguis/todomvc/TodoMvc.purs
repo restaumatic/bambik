@@ -1,15 +1,16 @@
 module TodoMvc (todoMvc) where
 
-import Prelude ((#), ($), (<<<), (<>), (==), Unit, const, not, show, unit)
+import Prelude ((#), ($), (<<<), (==), Unit, const, not, show, unit)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, mvu, projection, required, toCase, updates)
-import PUI.HTML (body, clWhen, span, text)
+import PUI (asField, completed, displayed, forField, mvu, projection, required, toCase, updates)
+import PUI.HTML (body, clWhen, provided, span, staticText, text)
 import PUI.MDC (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -24,7 +25,12 @@ todoMvc =
           listOf { selected: _.done } (span text # projection _.title # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
           segmentedButton visibilityChoices # required # asField @"visibility" # completed
           Semigroupoid.do
-            caption text # projection itemsLeft # completed
+            caption ( RecordToRecord.do
+                text # projection show # forField @"count"
+                staticText " item left" ) # provided # lcmap soleItemLeft # displayed
+            caption ( RecordToRecord.do
+                text # projection show # forField @"count"
+                staticText " items left" ) # provided # lcmap severalItemsLeft # displayed
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
@@ -49,10 +55,14 @@ toggleTodo i m = m { todos = fromMaybe m.todos (modifyAt i (\t -> t { done = not
 clearCompleted :: { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
 clearCompleted m = m { todos = filter (\t -> not t.done) m.todos }
 
-itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> String
-itemsLeft m = case length (filter (\t -> not t.done) m.todos) of
-  1 -> "1 item left"
-  n -> show n <> " items left"
+itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Int
+itemsLeft m = length (filter (\t -> not t.done) m.todos)
+
+soleItemLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
+soleItemLeft m = if itemsLeft m == 1 then Just { count: 1 } else Nothing
+
+severalItemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
+severalItemsLeft m = if itemsLeft m == 1 then Nothing else Just { count: itemsLeft m }
 
 visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries m = filter (matches m.visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) m.todos)

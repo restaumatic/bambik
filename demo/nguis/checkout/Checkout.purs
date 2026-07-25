@@ -1,15 +1,16 @@
 module Checkout (checkout) where
 
-import Prelude ((#), ($), (<>), (==), Unit)
+import Prelude ((#), ($), (==), Unit)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, asCase, displayed, forField, forValue, mvu, projection, tapped, updates)
-import PUI.HTML (body, provided, text)
+import PUI (announce, asCase, displayed, forField, forValue, mvu, updates)
+import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -19,9 +20,15 @@ checkout =
     elevation20 $
       card { caption: "Checkout" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              body2 text # projection cartLine # provided # lcmap atCart # displayed
-              body2 text # projection shippingLine # provided # lcmap atShipping # displayed
-              body2 text # projection paymentLine # provided # lcmap atPayment # displayed
+              body2 ( RecordToRecord.do
+                  staticText "Step 1 of 3 — Cart: "
+                  text # forValue # forField @"item" ) # provided # lcmap atCart # displayed
+              body2 ( RecordToRecord.do
+                  staticText "Step 2 of 3 — Shipping to "
+                  text # forValue # forField @"address" ) # provided # lcmap atShipping # displayed
+              body2 ( RecordToRecord.do
+                  staticText "Step 3 of 3 — Pay with card "
+                  text # forValue # forField @"card" ) # provided # lcmap atPayment # displayed
               RecordToVariant.do
                 announce cartStep
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtCart
@@ -29,23 +36,21 @@ checkout =
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtPayment
                 button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" # updates (match { placed: recordPlaced })
-          body2 text # forValue # forField @"confirmation" # tapped
+          body2 ( RecordToRecord.do
+              staticText "Order placed: "
+              text # forValue # forField @"item"
+              staticText " → "
+              text # forValue # forField @"address"
+              staticText " (card "
+              text # forValue # forField @"card"
+              staticText ")" ) # provided # lcmap placedOrder # displayed
       ) # mvu freshOrder
 
 cartStep ::
-  [ placed :: { summary :: String }
+  [ placed :: { confirmed :: Boolean }
   , next :: { step :: String }
   ]
 cartStep = .next { step: "cart" }
-
-cartLine :: { item :: String } -> String
-cartLine r = "Step 1 of 3 — Cart: " <> r.item
-
-shippingLine :: { address :: String } -> String
-shippingLine r = "Step 2 of 3 — Shipping to " <> r.address
-
-paymentLine :: { card :: String } -> String
-paymentLine r = "Step 3 of 3 — Pay with card " <> r.card
 
 atCart :: { item :: String, step :: String } -> Maybe { item :: String }
 atCart r = if r.step == "cart" then Just { item: r.item } else Nothing
@@ -68,19 +73,20 @@ backAtShipping r = if r.step == "shipping" then Just { step: "cart" } else Nothi
 backAtPayment :: { step :: String } -> Maybe { step :: String }
 backAtPayment r = if r.step == "payment" then Just { step: "shipping" } else Nothing
 
-placeAtPayment :: { item :: String, address :: String, card :: String, step :: String } -> Maybe { summary :: String }
-placeAtPayment r =
-  if r.step == "payment"
-    then Just { summary: "Order placed: " <> r.item <> " → " <> r.address <> " (card " <> r.card <> ")" }
-    else Nothing
+placeAtPayment :: { item :: String, address :: String, card :: String, step :: String } -> Maybe { confirmed :: Boolean }
+placeAtPayment r = if r.step == "payment" then Just { confirmed: true } else Nothing
 
-recordPlaced :: { summary :: String } -> { confirmation :: String } -> { confirmation :: String }
-recordPlaced r o = o { confirmation = r.summary }
+recordPlaced :: { confirmed :: Boolean } -> { confirmed :: Boolean } -> { confirmed :: Boolean }
+recordPlaced r o = o { confirmed = r.confirmed }
 
-freshOrder :: { item :: String, address :: String, card :: String, confirmation :: String }
+placedOrder :: { item :: String, address :: String, card :: String, confirmed :: Boolean } -> Maybe { item :: String, address :: String, card :: String }
+placedOrder r =
+  if r.confirmed then Just { item: r.item, address: r.address, card: r.card } else Nothing
+
+freshOrder :: { item :: String, address :: String, card :: String, confirmed :: Boolean }
 freshOrder =
   { item: "Wireless Headphones"
   , address: "221B Baker Street"
   , card: "•••• 4242"
-  , confirmation: ""
+  , confirmed: false
   }

@@ -17,7 +17,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 import PUI (asField, completed, foreach, mvu, projection, toCase, updates)
-import PUI.HTML (attrWith, body, clicked, div, table, td, text, tr, (:=))
+import PUI.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
 import PUI.MDC (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -27,7 +27,9 @@ cells =
     elevation20 $
       card { caption: "Cells" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              body1 text # projection selectedCaption
+              body1 ( RecordToRecord.do
+                  staticText "Cell "
+                  text # projection selectedName )
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # rmap commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
@@ -223,8 +225,8 @@ evalExpr cells visiting = go
       Right n -> .numV n
       Left e -> .errV e
 
-selectedCaption :: { selected :: Maybe String } -> String
-selectedCaption m = "Cell " <> fromMaybe "—" m.selected
+selectedName :: { selected :: Maybe String } -> String
+selectedName m = fromMaybe "—" m.selected
 
 orderSheet :: { cells :: Object String, selected :: Maybe String, formula :: String }
 orderSheet =

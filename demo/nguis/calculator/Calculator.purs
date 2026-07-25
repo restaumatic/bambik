@@ -1,6 +1,6 @@
 module Calculator (calculator) where
 
-import Prelude ((#), ($), (&&), (<$>), (<<<), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, const, show)
+import Prelude ((#), ($), (&&), (<$>), (<<<), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, show)
 
 import Data.Array (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -9,8 +9,8 @@ import Data.Profunctor (lcmap, rmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (constantly, foreach, mvu, projection, toCase, updates)
-import PUI.HTML (attrWith, body, clicked, div, text, (:=))
+import PUI (constantly, displayed, foreach, forField, forValue, mvu, projection, toCase, updates)
+import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -24,7 +24,9 @@ calculator =
                 div >>> "style"
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ text # projection readout
+                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
+                    staticText "Error" # provided # lcmap faultyTally # displayed
+                    text # forValue # forField @"entry" # provided # lcmap currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
                   clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # constantly keyPad # rmap _.key) # toCase @"keyPressed"
         ) # updates (match { keyPressed: pressKey }) # mvu blankTally
@@ -53,8 +55,11 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
 blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, faulty: false }
 
-readout :: { faulty :: Boolean, entry :: String } -> String
-readout tally = if tally.faulty then "Error" else tally.entry
+faultyTally :: { faulty :: Boolean } -> Maybe {}
+faultyTally tally = if tally.faulty then Just {} else Nothing
+
+currentEntry :: { faulty :: Boolean, entry :: String } -> Maybe { entry :: String }
+currentEntry tally = if tally.faulty then Nothing else Just { entry: tally.entry }
 
 pressKey
   :: String

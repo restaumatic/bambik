@@ -14,9 +14,9 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, completed, debounced, field, forCase, forField, looped, onCase, projection, silence, tapped, updates, with)
+import PUI (action, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, silence, tapped, updates, with)
 import Data.Profunctor.Row (widenRecordInput)
-import PUI.HTML (body, provided, text)
+import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -25,7 +25,9 @@ main =
   body $ ( elevation20 Semigroupoid.do
       indeterminateLinearProgress # action loadOrder
       RecordToRecord.do
-        headline6 text # projection ("Order " <> _) # forField @"shortId"
+        headline6 ( RecordToRecord.do
+            staticText "Order "
+            text # forValue # forField @"shortId" )
         card { caption: "Identifier" } $ RecordToRecord.do
           filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
@@ -44,7 +46,10 @@ main =
                 filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
-                    body1 text # projection distanceLine # forField @"address") # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
+                    body1 ( RecordToRecord.do
+                        staticText "Distance "
+                        text # projection distanceKm # forField @"address"
+                        staticText " km" )) # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -53,9 +58,36 @@ main =
                 , { value: "card", label: "Card" }
                 ] # asField @"selected" # dimap methodState methodCase # field @"method"
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
-              body1 text # projection paymentLine # forField @"method") # field @"payment"
+              body1 ( RecordToRecord.do
+                  staticText "Paying by "
+                  text # projection methodText # forField @"method" )) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
-      body1 text # projection summarize # debounced # tapped
+      body1 ( Semigroupoid.do
+          ( RecordToRecord.do
+              staticText "Summary: Order "
+              text # forValue # forField @"shortId"
+              staticText " (uniquely "
+              text # forValue # forField @"orderId"
+              staticText ") for "
+              text # projection customerName # forField @"customer"
+              staticText ", fulfilled as " ) # debounced # tapped
+          ( RecordToRecord.do
+              staticText "dine in at table "
+              text # forValue # forField @"table" ) # provided # lcmap dineInDetail # displayed
+          ( RecordToRecord.do
+              staticText "takeaway at "
+              text # forValue # forField @"time" ) # provided # lcmap takeawayDetail # displayed
+          ( RecordToRecord.do
+              staticText "delivery to "
+              text # forValue # forField @"address"
+              staticText " ("
+              text # projection distanceKm # forField @"address"
+              staticText " km away)" ) # provided # lcmap deliveryDetail # displayed
+          ( RecordToRecord.do
+              staticText ", paid "
+              text # forValue # forField @"paid"
+              staticText " by "
+              text # projection methodText # forField @"method" ) # field @"payment" # debounced # tapped )
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"submit"
           button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput
@@ -72,15 +104,38 @@ main =
 distanceKm :: String -> String
 distanceKm address = show (length address)
 
-distanceLine :: String -> String
-distanceLine address = "Distance " <> distanceKm address <> " km"
+customerName :: { firstName :: String, lastName :: String } -> String
+customerName c = c.firstName <> " " <> c.lastName
 
-paymentLine ::
-  [ cash :: Unit
-  , card :: Unit
-  ]
-  -> String
-paymentLine method = "Paying by " <> methodText method
+dineInDetail ::
+  { fulfillment ::
+      [ dineIn :: { table :: String }
+      , takeaway :: { time :: String }
+      , delivery :: { address :: String }
+      ]
+  }
+  -> Maybe { table :: String }
+dineInDetail order = match { dineIn: Just, takeaway: const Nothing, delivery: const Nothing } order.fulfillment
+
+takeawayDetail ::
+  { fulfillment ::
+      [ dineIn :: { table :: String }
+      , takeaway :: { time :: String }
+      , delivery :: { address :: String }
+      ]
+  }
+  -> Maybe { time :: String }
+takeawayDetail order = match { dineIn: const Nothing, takeaway: Just, delivery: const Nothing } order.fulfillment
+
+deliveryDetail ::
+  { fulfillment ::
+      [ dineIn :: { table :: String }
+      , takeaway :: { time :: String }
+      , delivery :: { address :: String }
+      ]
+  }
+  -> Maybe { address :: String }
+deliveryDetail order = match { dineIn: const Nothing, takeaway: const Nothing, delivery: Just } order.fulfillment
 
 methodText ::
   [ cash :: Unit
@@ -147,40 +202,6 @@ methodCase :: { selected :: String } ->
   , card :: Unit
   ]
 methodCase r = if r.selected == "cash" then .cash unit else .card unit
-
-summarize ::
-  { shortId :: String
-  , orderId :: String
-  , customer ::
-      { firstName :: String
-      , lastName :: String
-      }
-  , fulfillment ::
-      [ dineIn :: { table :: String }
-      , takeaway :: { time :: String }
-      , delivery :: { address :: String }
-      ]
-  , payment ::
-      { method ::
-          [ cash :: Unit
-          , card :: Unit
-          ]
-      , paid :: String
-      }
-  }
-  -> String
-summarize order =
-  "Summary: Order " <> order.shortId
-    <> " (uniquely " <> order.orderId <> ")"
-    <> " for " <> order.customer.firstName <> " " <> order.customer.lastName
-    <> ", fulfilled as " <> fulfillmentText order.fulfillment
-    <> ", paid " <> order.payment.paid <> " by " <> methodText order.payment.method
-  where
-  fulfillmentText = match
-    { dineIn: \r -> "dine in at table " <> r.table
-    , takeaway: \r -> "takeaway at " <> r.time
-    , delivery: \r -> "delivery to " <> r.address <> " (" <> distanceKm r.address <> " km away)"
-    }
 
 loadOrder :: Unit -> Aff
   { shortId :: String

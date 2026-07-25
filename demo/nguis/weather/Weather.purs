@@ -1,16 +1,17 @@
 module Weather (weather) where
 
-import Prelude ((#), ($), (*), (+), (-), (<#>), (<>), (==), Unit, discard, mod, pure, show)
+import Prelude ((#), ($), (*), (+), (-), (<#>), (==), Unit, discard, mod, pure, show)
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
 import Data.Maybe (fromMaybe)
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import PUI (action, mvu, onCase, projection, tapped, toCase, updates)
-import PUI.HTML (body, text)
+import PUI.HTML (body, staticText, text)
 import PUI.MDC (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -22,14 +23,30 @@ weather =
           ( Semigroupoid.do
               listOf { selected: _.shown } (text # projection _.city) # toCase @"cityPicked" # lcmap forecastRequests
               indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
-          headline1 text # projection temperatureLine # tapped
-          headline5 text # projection conditionLine # tapped
-          body1 text # projection detailsLine # tapped
-          caption text # projection serviceLine # tapped
+          headline1 ( RecordToRecord.do
+              text # projection temperatureText
+              staticText " °C" ) # tapped
+          headline5 ( RecordToRecord.do
+              text # projection conditionText
+              staticText " in "
+              text # projection cityText ) # tapped
+          body1 ( RecordToRecord.do
+              staticText "Humidity "
+              text # projection humidityText
+              staticText "% · Wind "
+              text # projection windText
+              staticText " km/h" ) # tapped
+          caption ( RecordToRecord.do
+              staticText "Simulated service · "
+              text # projection servedReportsText
+              staticText " reports served" ) # tapped
           ( Semigroupoid.do
               iconButton { icon: "info", label: "About this dashboard" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
-                ( body1 text # projection serviceStory # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: resumeDashboard })
+                ( body1 ( RecordToRecord.do
+                    staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
+                    text # projection servedReportsText
+                    staticText "." ) # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: resumeDashboard })
       ) # mvu warsawBulletin
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
@@ -72,20 +89,23 @@ forecastRequests :: { report :: { city :: String, temperature :: Number, conditi
 forecastRequests board = climateTable <#> \r ->
   { city: r.city, sample: board.servedReports, shown: r.city == board.report.city }
 
-temperatureLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-temperatureLine board = show board.report.temperature <> " °C"
+temperatureText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+temperatureText board = show board.report.temperature
 
-conditionLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-conditionLine board = board.report.condition <> " in " <> board.report.city
+conditionText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+conditionText board = board.report.condition
 
-detailsLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-detailsLine board = "Humidity " <> show board.report.humidity <> "% · Wind " <> show board.report.wind <> " km/h"
+cityText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+cityText board = board.report.city
 
-serviceLine :: { servedReports :: Int } -> String
-serviceLine board = "Simulated service · " <> show board.servedReports <> " reports served"
+humidityText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+humidityText board = show board.report.humidity
 
-serviceStory :: { servedReports :: Int } -> String
-serviceStory board = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show board.servedReports <> "."
+windText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+windText board = show board.report.wind
+
+servedReportsText :: { servedReports :: Int } -> String
+servedReportsText board = show board.servedReports
 
 warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
