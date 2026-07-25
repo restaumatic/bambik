@@ -26,11 +26,16 @@ circleDrawer =
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY
                     ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
-                          >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # lcmap (const {})) # foreach @"key" # lcmap (\(m :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }) -> mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles)) # toCase @"clicked")
+                          >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # lcmap (const {})) # foreach @"key" # lcmap canvasCircles) # toCase @"clicked")
               cardActions $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
                 button { label: "Redo", icon: "redo" } # asCase @"redo") # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
       ) # mvu emptyCanvas
+
+canvasCircles
+  :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int }
+  -> Array { key :: String, x :: String, y :: String, r :: String, on :: Boolean }
+canvasCircles m = mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, on: m.selected == Just i }) m.circles
 
 selectOrAddCircle :: { x :: Number, y :: Number } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 selectOrAddCircle { x, y } m = case findIndex (\c -> dist c x y <= c.r) m.circles of
