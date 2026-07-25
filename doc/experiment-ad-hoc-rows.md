@@ -461,6 +461,7 @@ the strongest evidence that this is the right factoring:
 | `action (\r -> samplePassword { length: r.length, … })` | `action samplePassword` (same, in password-generator) |
 | `updates (match { clicked: \_ -> addTodo })` | `updates (match { clicked: const <<< addTodo })` — pins the event widget's replayed payload to the handler's row |
 | `(identity :: PUI Web { messages :: …, opened :: …, confirming :: …, nextId :: … } { … })` | `identity` (inbox — a ~200-char annotation that is simply no longer needed) |
+| `lcmap (\(m :: { circles, selected, diameter, adjusting, undoStack, redoStack }) -> …)` | `lcmap canvasCircles` with `canvasCircles :: { circles, selected } -> Array …` (circle-drawer — ~370 chars of annotation stating six fields to read two) |
 
 Two demos changed shape rather than types: potluck's model became
 `{ guests :: Array … }` lifted with `# field @"guests"` (a bare-`Array` carrier
@@ -471,10 +472,10 @@ shopping-cart's leading `constantly productCatalogue` became
 
 | metric | nominal | full-row ad-hoc | narrowed (open rows) | closed narrow | stages subsume |
 |---|---|---|---|---|---|
-| lines | 2,990 | 2,856 | 2,858 | 2,824 | 2,834 |
-| chars | 116,935 | 140,637 | 133,939 | 135,883 | 135,597 |
-| p99 line width | 161 | 282 | 211 | 242 | 242 |
-| lines > 120 ch | 89 | 195 | 166 | 172 | 171 |
+| lines | 2,990 | 2,856 | 2,858 | 2,824 | 2,839 |
+| chars | 116,935 | 140,637 | 133,939 | 135,883 | 135,537 |
+| p99 line width | 161 | 282 | 211 | 242 | 241 |
+| lines > 120 ch | 89 | 195 | 166 | 172 | 172 |
 | `forall` in demos | 0 | 0 | 89 | 9 | **2** |
 | `widenRecordInput` lines | 7 | 7 | 7 | 58 | **2** |
 
