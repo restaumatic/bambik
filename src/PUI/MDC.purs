@@ -21,13 +21,30 @@
 --     followed by payload-typed panes, each `# provided # lcmap <paneOf>`
 --     shown by the presence of its `Maybe` payload — see the demos); `+→+`
 --     remains the dispatch direction (`VariantToVariant.do` of action stages).
---   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
---     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/
---     `dataCell`, `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`,
---     `drawer`, `tooltip`, typography, elevations): they have no model of
---     their own, so they wrap any polarity and impose none.
+--   * **oculars** — shape-preserving decorators (`dialog`, `menu`, `chipSet`,
+--     `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`, `imageList`,
+--     `layoutGrid`/`layoutCell`, `tooltip`, typography, elevations): they have
+--     no model of their own, so they wrap any polarity and impose none. The
+--     **slot-taking** decorators (`card`, `topAppBar`, `drawer`) are the same
+--     kind of thing at a narrower type — see below.
 --   * plus **announcing statics** (`{} → {}` chrome with a face, like
 --     `Web.staticText`): `divider`, `imageListItem`.
+--
+-- A component's **parts** (a caption, a label, an option list, a value) each
+-- become known at one of three times, and `Slot` is where the caller says
+-- which: `Absent` (no part, no node — construction), `Pinned a` (construction,
+-- so it renders at *registration*, before any model exists) or `Fed f` (read
+-- from the value flowing through, so it renders on the first feed). A bare
+-- constant lifts to `Pinned`, `fed _.field` names the dynamic case:
+-- `card { caption: "Quiz" }` / `card { caption: fed _.album }` / `card {}`.
+-- Only a `Fed` slot mentions the host's input, so a widget stays as
+-- polarity-agnostic as it ever was until a call site asks for a dynamic part
+-- (`card` and `topAppBar` therefore read `PUI Web i o -> PUI Web i o` rather
+-- than `Ocular`, like `drawer` before them). The point of keeping `Pinned a`
+-- distinct from `Fed (const a)` is that the static half of a widget stays a
+-- viewable artifact: `body $ w` shows every pinned part with no data at all,
+-- and `body $ with sample $ w` shows the rest. Scan of which MDC parts are
+-- static, dynamic, or want to be both: doc/experiment-static-dynamic-parts.md.
 --
 -- MD2 catalog entries with no MDC Web implementation (backdrop, bottom app
 -- bar, bottom navigation, date pickers, navigation rail, sheets) are
@@ -57,7 +74,10 @@ module PUI.MDC
   , OptLabel(..)
   , OptIcon(..)
   , OptSelected(..)
+  , OptSlot(..)
   , OptStep(..)
+  , Slot(..)
+  , fed
   , banner
   , body1
   , body2
@@ -147,7 +167,7 @@ import Prim.Row (class Cons)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOption, convertOptionsWithDefaults)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, constantly, effAdapter, foreach)
-import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, h1, h2, h3, h4, h5, h6, i, init, input, inputDebounced, label, li, p, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
+import PUI.HTML (aside, attr, checkboxInput, cl, clDyn, clWhen, clicked, div, h1, h2, h3, h4, h5, h6, header, i, init, input, inputDebounced, label, li, p, section, span, staticHTML, staticText, table, tbody, td, text, textArea, th, thead, tr, ul, (:=))
 import PUI.HTML (button) as HTML
 import PUI.Web (Node, Web, setAttribute, uniqueId)
 
@@ -200,6 +220,78 @@ instance ConvertOption OptStep "step" Number (Maybe Number) where
   convertOption _ _ = Just
 else instance ConvertOption OptStep sym a a where
   convertOption _ _ = identity
+
+-- | A **slot** — a presentational part together with *when* its value is
+-- | known. The three cases are the three times available to a widget, in
+-- | order:
+-- |
+-- |   * `Absent` — the part is not there, and neither is its DOM node. Known
+-- |     at construction.
+-- |   * `Pinned a` — the value is known at construction, so the part renders
+-- |     at **registration** and never needs the channel. This is the static
+-- |     view: it is on screen before any model exists.
+-- |   * `Fed f` — the value is read from the value flowing through, so the
+-- |     part renders on the **first feed**. This is the dynamic view.
+-- |
+-- | `Pinned a` and `Fed (const a)` show the same thing, but they are not the
+-- | same widget: only `Pinned` can be seen without data. Keeping them
+-- | distinct is what makes a widget's static half a peekable artifact.
+-- |
+-- | A slot-valued config field reads
+-- |
+-- | ```purescript
+-- | card { caption: "Quiz" }         -- Pinned: static chrome, no channel
+-- | card { caption: fed _.album }    -- Fed: chrome that follows the model
+-- | card {}                          -- Absent: no caption node
+-- | ```
+-- |
+-- | The static case is the bare constant (the `OptSlot` tag lifts it, as
+-- | `OptLabelIcon` lifts an optional `String` to `Just`); the dynamic case is
+-- | named with `fed`. The asymmetry is forced, not stylistic: an instance
+-- | chain can only commit on a *concrete* `from` type, and a projection like
+-- | `_.album` is still an unsolved `{ album :: t | r } -> t` at the moment the
+-- | field is converted — so lifting it implicitly fails with "the instance
+-- | head contains unknown type variables". Naming the dynamic case earns its
+-- | keep anyway: the config record then says out loud which parts wait for
+-- | data.
+data Slot i a
+  = Absent
+  | Pinned a
+  | Fed (i -> a)
+
+-- | Read a part from the value flowing through instead of pinning it:
+-- | `card { caption: fed _.album }`. The dynamic half of a slot.
+fed :: forall i a. (i -> a) -> Slot i a
+fed = Fed
+
+-- | The lifting tag for slot-valued config fields: a bare constant becomes
+-- | `Pinned`, anything already a `Slot` (i.e. `fed …`) passes through. Only a
+-- | `Fed` slot mentions the host's input type, so a widget stays as
+-- | polarity-agnostic as it was until a call site actually asks for a dynamic
+-- | part.
+data OptSlot = OptSlot
+
+instance ConvertOption OptSlot sym String (Slot i String) where
+  convertOption _ _ = Pinned
+else instance ConvertOption OptSlot sym a a where
+  convertOption _ _ = identity
+
+-- | The chrome that shows a slot, at the host's own input type: nothing at
+-- | all for `Absent`, a registration-time text node for `Pinned`, a
+-- | channel-fed text leaf for `Fed`. The caller wraps the result in whatever
+-- | ocular the part wears.
+slotted :: forall i. Slot i String -> Maybe (PUI Web i {})
+slotted Absent = Nothing
+slotted (Pinned a) = Just (constantly {} (staticText a))
+slotted (Fed f) = Just (lcmap (\i -> { value: f i }) text)
+
+-- Register a slot's chrome and return its feeder (chrome swallows its own
+-- echo, like the text field's floating label).
+slotFeeder :: forall i. PUI Web i {} -> Web (i -> Effect Unit)
+slotFeeder s = do
+  w <- unwrap s
+  liftEffect $ w.fromUser mempty
+  pure w.toUser
 
 -- | The `×→+` event button: reads the whole record it is shown and fires it
 -- | as event case `l` on click (`recordToCase` over the raw button). Both
@@ -883,22 +975,30 @@ elevation10 w = div w # cl "mdc-elevation--z10" # "style" := "padding: 25px"
 elevation20 :: Ocular (PUI Web)
 elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 
--- | A card with an optional caption — the caption is design-system config
--- | (like `filledTextField`'s `floatingLabel`). The card is content-agnostic
--- | (any polarity), so its caption chrome is hand-fused, not merged. The
--- | caption defaults to none: `card {}` is captionless, `card { caption:
--- | "Title" }` labels it.
+-- | A card with an optional caption — a `Slot`, so the caption is either
+-- | pinned at construction (`card { caption: "Quiz" }`, on screen with no
+-- | data) or read from the model (`card { caption: _.album }`, on screen
+-- | after the first feed), and `card {}` has no caption node at all. The card
+-- | stays content-agnostic (any polarity) for the first two; a `Fed` caption
+-- | makes the card read its input, so it is no longer an `Ocular`.
 card
-  :: forall provided
-   . ConvertOptionsWithDefaults OptLabel { caption :: Maybe String } { | provided } { caption :: Maybe String }
+  :: forall provided i o
+   . ConvertOptionsWithDefaults OptSlot { caption :: Slot i String } { | provided } { caption :: Slot i String }
   => { | provided }
-  -> Ocular (PUI Web)
+  -> PUI Web i o
+  -> PUI Web i o
 card provided content =
   div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ wrap do
-    for_ mCaption \c -> void $ unwrap (caption $ staticText c)
-    unwrap content
+    cap <- for (slotted config.caption) (slotFeeder <<< caption)
+    w <- unwrap content
+    pure
+      { toUser: \i -> do
+          for_ cap \feed -> feed i
+          w.toUser i
+      , fromUser: w.fromUser
+      }
   where
-  { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
+  config = convertOptionsWithDefaults OptSlot { caption: Absent } provided
 
 -- | The MD2 card button-row area: a flex row for a group of buttons, so they
 -- | sit inline at their natural width instead of stretching down the card's
@@ -1091,12 +1191,35 @@ layoutGrid content = div >>> cl "mdc-layout-grid" $ div >>> cl "mdc-layout-grid_
 layoutCell :: { span :: Int } -> Ocular (PUI Web)
 layoutCell config content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-layout-grid__cell--span-" <> show config.span) $ content
 
-topAppBar :: { title :: String } -> Ocular (PUI Web)
-topAppBar config content = wrap do
-  _ <- unwrap (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> config.title <> "</span></section></div></header>"))
+-- | The title is a `Slot`: `topAppBar { title: "Photo Gallery" }` pins it,
+-- | `topAppBar { title: _.album }` lets the bar name what is open. The header
+-- | is built from element oculars rather than raw markup precisely so the
+-- | title has a place to attach a channel-fed leaf.
+topAppBar
+  :: forall provided i o
+   . ConvertOptionsWithDefaults OptSlot { title :: Slot i String } { | provided } { title :: Slot i String }
+  => { | provided }
+  -> PUI Web i o
+  -> PUI Web i o
+topAppBar provided content = wrap do
+  ttl <- slotFeeder $
+    header >>> cl "mdc-top-app-bar" $
+      div >>> cl "mdc-top-app-bar__row" $
+        section >>> cl "mdc-top-app-bar__section" >>> cl "mdc-top-app-bar__section--align-start" $
+          case slotted config.title of
+            Nothing -> constantly {} pempty
+            Just s -> span >>> cl "mdc-top-app-bar__title" $ s
   headerNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.topAppBar."MDCTopAppBar" headerNode
-  unwrap (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
+  content' <- unwrap (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
+  pure
+    { toUser: \i -> do
+        ttl i
+        content'.toUser i
+    , fromUser: content'.fromUser
+    }
+  where
+  config = convertOptionsWithDefaults OptSlot { title: Absent } provided
 
 -- | Permanent navigation drawer beside the content; the drawer's own nav
 -- | is chrome (`{} → {}`, e.g. a `list` of `listItem`s).
