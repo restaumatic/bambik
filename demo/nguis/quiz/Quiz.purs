@@ -37,7 +37,7 @@ quiz =
                   text # projection show # forField @"correct"
                   staticText " / "
                   text # projection show # forField @"total") # displayed
-              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided # lcmap finalOutcome # updates (match { restarted: const restart })
+              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided # lcmap finalOutcome # updates (match { restarted: const (const freshQuizRun) })
       ) # mvu freshQuizRun
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }
@@ -51,9 +51,6 @@ questionCatalogue =
 
 freshQuizRun :: { question :: Int, correct :: Int }
 freshQuizRun = { question: 0, correct: 0 }
-
-restart :: forall a. a -> { question :: Int, correct :: Int }
-restart _ = freshQuizRun
 
 answer :: Int -> { question :: Int, correct :: Int } -> { question :: Int, correct :: Int }
 answer choice run@{ question, correct } = case index questionCatalogue question of
