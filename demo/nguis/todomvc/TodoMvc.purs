@@ -23,7 +23,11 @@ todoMvc =
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updates (match { clicked: const <<< addTodo })
           listOf { selected: _.done } (span text # projection _.title # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
-          segmentedButton visibilityChoices # required # asField @"visibility" # completed
+          segmentedButton
+            [ { value: .all {}, label: "All" }
+            , { value: .active {}, label: "Active" }
+            , { value: .completed {}, label: "Completed" }
+            ] # required # asField @"visibility" # completed
           Semigroupoid.do
             caption ( RecordToRecord.do
                 text # projection show # forField @"count"
@@ -36,13 +40,6 @@ todoMvc =
 
 emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] }
 emptyTodoList = { entry: "", todos: [], visibility: .all {} }
-
-visibilityChoices :: Array { value :: [ all :: {}, active :: {}, completed :: {} ], label :: String }
-visibilityChoices =
-  [ { value: .all {}, label: "All" }
-  , { value: .active {}, label: "Active" }
-  , { value: .completed {}, label: "Completed" }
-  ]
 
 addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
 addTodo m@{ entry, todos } =

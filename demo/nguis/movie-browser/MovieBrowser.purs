@@ -19,7 +19,12 @@ movieBrowser =
   body $
     elevation10 $
       card { caption: "Movie Browser" } $ ( Semigroupoid.do
-          tabBar categoryTabs # asField @"category" # completed
+          tabBar
+            [ { value: .all {}, label: "All" }
+            , { value: .action {}, label: "Action" }
+            , { value: .drama {}, label: "Drama" }
+            , { value: .comedy {}, label: "Comedy" }
+            ] # asField @"category" # completed
           chipSet ( RecordToRecord.do
               filterChip { label: "Classic" } # asField @"classic"
               filterChip { label: "Cult" } # asField @"cult"
@@ -62,14 +67,6 @@ movieCatalogue =
       , { title: "Groundhog Day", year: 1993, category: .comedy {}, tags: [ "classic", "cult" ], rating: 8.0, favorite: false }
       ]
   }
-
-categoryTabs :: Array { value :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], label :: String }
-categoryTabs =
-  [ { value: .all {}, label: "All" }
-  , { value: .action {}, label: "Action" }
-  , { value: .drama {}, label: "Drama" }
-  , { value: .comedy {}, label: "Comedy" }
-  ]
 
 visibleMovies :: { category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array String, rating :: Number, favorite :: Boolean } } -> Array { title :: String, year :: Int, rating :: Number, favorite :: Boolean }
 visibleMovies { category, classic, cult, oscar, movies } = map card (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
