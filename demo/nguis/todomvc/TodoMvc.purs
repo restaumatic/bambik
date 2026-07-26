@@ -1,6 +1,6 @@
 module TodoMvc (todoMvc) where
 
-import Prelude ((#), ($), (<<<), (==), Unit, const, not, show, unit)
+import Prelude ((#), ($), (<<<), (==), Unit, const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -34,14 +34,14 @@ todoMvc =
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
-emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] }
-emptyTodoList = { entry: "", todos: [], visibility: .all unit }
+emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] }
+emptyTodoList = { entry: "", todos: [], visibility: .all {} }
 
-visibilityChoices :: Array { value :: [ all :: Unit, active :: Unit, completed :: Unit ], label :: String }
+visibilityChoices :: Array { value :: [ all :: {}, active :: {}, completed :: {} ], label :: String }
 visibilityChoices =
-  [ { value: .all unit, label: "All" }
-  , { value: .active unit, label: "Active" }
-  , { value: .completed unit, label: "Completed" }
+  [ { value: .all {}, label: "All" }
+  , { value: .active {}, label: "Active" }
+  , { value: .completed {}, label: "Completed" }
   ]
 
 addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
@@ -64,7 +64,7 @@ soleItemLeft { todos } = if itemsLeft { todos } == 1 then Just { count: 1 } else
 severalItemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
 severalItemsLeft { todos } = if itemsLeft { todos } == 1 then Nothing else Just { count: itemsLeft { todos } }
 
-visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: Unit, active :: Unit, completed :: Unit ] } -> Array { key :: Int, title :: String, done :: Boolean }
+visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries { todos, visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
   where
   matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v

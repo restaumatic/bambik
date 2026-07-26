@@ -138,8 +138,8 @@ deliveryDetail ::
 deliveryDetail { fulfillment } = match { dineIn: const Nothing, takeaway: const Nothing, delivery: Just } fulfillment
 
 methodText ::
-  [ cash :: Unit
-  , card :: Unit
+  [ cash :: {}
+  , card :: {}
   ]
   -> String
 methodText = match
@@ -188,8 +188,8 @@ setAddress :: { address :: String } -> { address :: String } -> { address :: Str
 setAddress { address } _ = { address }
 
 methodState ::
-  [ cash :: Unit
-  , card :: Unit
+  [ cash :: {}
+  , card :: {}
   ]
   -> { selected :: Maybe String }
 methodState = match
@@ -198,10 +198,10 @@ methodState = match
   }
 
 methodCase :: { selected :: String } ->
-  [ cash :: Unit
-  , card :: Unit
+  [ cash :: {}
+  , card :: {}
   ]
-methodCase { selected } = if selected == "cash" then .cash unit else .card unit
+methodCase { selected } = if selected == "cash" then .cash {} else .card {}
 
 loadOrder :: Unit -> Aff
   { shortId :: String
@@ -218,8 +218,8 @@ loadOrder :: Unit -> Aff
   , total :: String
   , payment ::
       { method ::
-          [ cash :: Unit
-          , card :: Unit
+          [ cash :: {}
+          , card :: {}
           ]
       , paid :: String
       }
@@ -239,7 +239,7 @@ loadOrder _ = do
     , fulfillment: .takeaway { time: "8:30" }
     , total: "12.30"
     , payment:
-        { method: .cash unit
+        { method: .cash {}
         , paid: "0.00"
         }
     , remarks: "Very spicy, please!"
