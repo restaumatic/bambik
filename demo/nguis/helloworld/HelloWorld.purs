@@ -6,7 +6,4 @@ import Effect (Effect)
 import PUI.HTML (body, staticText)
 
 helloWorld :: Effect Unit
-helloWorld = body $ staticText greeting
-
-greeting :: String
-greeting = "Hello, World!"
+helloWorld = body $ staticText "Hello, World!"
