@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/haskell.min.js"></script>
-    <title>Bambik · Material 3 · Espresso Bar</title>
+    <title>Bambik · nGUIs · Espresso Bar</title>
     <style>
       html, body { height: 100%; }
       body {
@@ -54,7 +54,7 @@
   </head>
   <body>
     <header id="page-header">
-      <a href="../">&#171; Go back to all demos</a>
+      <a href="../">&#171; Go back to all nGUIs tasks</a>
       <span class="sep">·</span>
       <span id="page-title">Espresso Bar</span>
       <span class="sep">·</span>
@@ -74,7 +74,7 @@
         : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
         : (n / 1048576).toFixed(1).replace(/\.0$/, "") + "MB";
       Promise.all([
-        fetch("Main.purs", { cache: "no-cache" }).then(r => r.text()),
+        fetch("EspressoBar.purs", { cache: "no-cache" }).then(r => r.text()),
         fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
       ]).then(([src, bundleBytes]) => {
         const el = document.getElementById("src");
@@ -82,7 +82,7 @@
         if (window.hljs) hljs.highlightElement(el);
         const srcBytes = new TextEncoder().encode(src).length;
         document.getElementById("src-size").innerHTML =
-          '<a href="Main.purs">source</a> (' + fmt(srcBytes) + ')';
+          '<a href="EspressoBar.purs">source</a> (' + fmt(srcBytes) + ')';
         if (bundleBytes) {
           document.getElementById("bundle-sep").hidden = false;
           document.getElementById("bundle-size").innerHTML =
