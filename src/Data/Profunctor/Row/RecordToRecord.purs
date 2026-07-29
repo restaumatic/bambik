@@ -55,7 +55,9 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
+import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Strong (class Strong, first, second)
+import Control.Semigroupoid ((>>>))
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
@@ -253,26 +255,31 @@ completed w = dimap (\i -> Tuple i i) (\(Tuple o i) -> overlay (exactRow o) i) (
 -- | emitted `{ | o }` runtime-carries the looped fields — a `feedback`
 -- | stage belongs in a pipeline, not as a record-merge operand.
 -- |
--- | On a knowledge-gated carrier (`PUI`) the state channel must be
--- | **primed by the widget's first emission** — inputs are withheld until
--- | then, so the inner widget must be able to emit unfed (editors that emit
--- | on user input qualify; load-first ensembles use `looped`, the
--- | self-feeding special case, instead).
+-- | The traced chain is an **entity** — it has state over time, so it has
+-- | a known initial state — and `feedback` takes that t=0 value as its
+-- | first argument: the whole inner input `{ | iw }` (the loop re-enters
+-- | `×`-joined with the input, so the chain's starting point is the join).
+-- | The seed is fed once at registration (a `seeded` wire composed into
+-- | the chain), the chain renders and emits, and the state channel is
+-- | primed before any input arrives — a `feedback` stage never starves.
+-- | Emission-primed exotica remain expressible with raw `unfirst`/`colens`.
 feedback
   :: forall p i o fb iw ow
-   . Costrong p
+   . Seeding p
+  => Costrong p
   => ExclusiveRows i fb iw
   => ExclusiveRows o fb ow
-  => p { | iw } { | ow }
+  => { | iw }
+  -> p { | iw } { | ow }
   -> p { | i } { | o }
-feedback g =
+feedback seed g =
   unfirst
     (dimap
       (\(Tuple i fb) -> Record.union i fb)
       -- coerce-split, as in `focusRecord`: safe because `ExclusiveRows o fb ow`
       -- guarantees the two typed views are disjoint
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
-      g)
+      (seeded seed >>> g))
 
 -- | The optic `unfirst` induces: the **Colens** — the lens run backwards
 -- | (`Colens s t a b ≅ Lens b a t s`). Eliminating the residual `c`

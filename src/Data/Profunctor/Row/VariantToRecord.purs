@@ -57,9 +57,11 @@ module Data.Profunctor.Row.VariantToRecord
   )
   where
 
+import Control.Semigroupoid ((>>>))
 import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Row.VariantToVariant (splitVariant)
+import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
@@ -120,21 +122,29 @@ class Profunctor p <= Coretaining p where
 -- | split by coercion (`ExclusiveRows o fb ow` keeps the typed views
 -- | disjoint), so the emitted `{ | o }` runtime-carries the state fields —
 -- | an `unfolding` stage belongs in a pipeline, not as a merge operand.
+-- |
+-- | The unfold state is an **entity** — it exists from the unfold's very
+-- | beginning — and `unfolding` takes its t=0 value `{ | fb }` as the
+-- | first argument: at registration the seed is fed once as case `w` (a
+-- | `seeded` wire composed onto the input), so a gated `retain` inside the
+-- | chain is primed before the first fresh input arrives.
 unfolding
   :: forall @w p i fb iw wx o ow
-   . Coretaining p
+   . Seeding p
+  => Coretaining p
   => IsSymbol w
   => Cons w { | fb } i iw
   => Union i wx iw
   => ExclusiveRows o fb ow
-  => p [ | iw ] { | ow }
+  => { | fb }
+  -> p [ | iw ] { | ow }
   -> p [ | i ] { | o }
-unfolding g =
+unfolding seed g =
   coretain
     (dimap
       (either expand (inj (Proxy @w)))
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
-      g)
+      (seeded (inj (Proxy @w) seed) >>> g))
 
 -- | The optic `coretain` induces: the **Coreel** — the `Shutter` run
 -- | backwards (`Coreel s t a b ≅ Shutter b a t s`). Eliminating the residual

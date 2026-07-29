@@ -27,7 +27,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, displayed, edits, foreach, looped, optioned, resolveFor, updates, with)
+import PUI (PUI(..), accumulated, acted, announce, dispatched, displayed, edits, foreach, looped, optioned, resolveFor, seeded, updates, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -289,52 +289,57 @@ main = do
 
   -- == The co-strengths' row forms: labeled channels for each trace. ==
 
-  -- feedback (×-trace at row granularity): the state sub-record loops from
-  -- output to input, primed by the widget's first emission.
+  -- feedback (×-trace at row granularity): the traced chain's initial
+  -- state is the argument — fed once at registration, so the chain renders
+  -- and its first emission primes the loop before any input arrives.
   do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: Int })
-    m <- unwrap (feedback (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
+    m <- unwrap (feedback { a: 0, acc: 0 } (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser { a: 1 }
-    Ref.read ins >>= assertEqual "feedback: gated before state" []
+    Ref.read ins >>= assertEqual "feedback: seed feeds the chain at registration" [ { a: 0, acc: 0 } ]
     fire gProp { o: 10, acc: 100 }
     Ref.read outs >>= assertEqual "feedback: value fields pass" [ { o: 10 } ]
     m.toUser { a: 2 }
-    Ref.read ins >>= assertEqual "feedback: input joined with looped state" [ { a: 2, acc: 100 } ]
+    Ref.read ins >>= assertEqual "feedback: input joined with looped state" [ { a: 0, acc: 0 }, { a: 2, acc: 100 } ]
 
-  -- folding @w (terminating fold at row granularity): case w continues the
+  -- folding @w (terminating fold at row granularity): the fold state's
+  -- initial value is the argument — emitted once as case w at
+  -- registration, priming the fold before any input; case w continues the
   -- fold silently, done cases exit.
   do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (folding @"fold" (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
+    m <- unwrap (folding @"fold" { acc: 5 } (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { a: 1 }
-    Ref.read ins >>= assertEqual "folding: gated before state" []
-    fire gProp (.fold { acc: 5 })
+    Ref.read ins >>= assertEqual "folding: first input joined with the seed" [ { a: 1, acc: 5 } ]
+    fire gProp (.fold { acc: 6 })
     Ref.read outs >>= assertEqual "folding: fold case withheld" []
-    Ref.read ins >>= assertEqual "folding: fold step re-fed eagerly" [ { a: 1, acc: 5 } ]
+    Ref.read ins >>= assertEqual "folding: fold step re-fed eagerly" [ { a: 1, acc: 5 }, { a: 1, acc: 6 } ]
     m.toUser { a: 2 }
-    Ref.read ins >>= assertEqual "folding: input joined with folded state" [ { a: 1, acc: 5 }, { a: 2, acc: 5 } ]
+    Ref.read ins >>= assertEqual "folding: input joined with folded state" [ { a: 1, acc: 5 }, { a: 1, acc: 6 }, { a: 2, acc: 6 } ]
     fire gProp (.done "d")
     Ref.read outs >>= assertEqual "folding: done exits" [ .done "d" ]
 
-  -- unfolding @w (productive unfold at row granularity): value fields pass,
-  -- state fields resume the widget as case w.
+  -- unfolding @w (productive unfold at row granularity): the unfold
+  -- state's initial value is the argument — fed once as case w at
+  -- registration; value fields pass, state fields resume the widget as
+  -- case w.
   do
     ins <- Ref.new ([] :: Array [ start :: Int, resume :: { acc :: Int } ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: String })
-    m <- unwrap (unfolding @"resume" (probeIO ins gProp :: PUI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
+    m <- unwrap (unfolding @"resume" { acc: 0 } (probeIO ins gProp :: PUI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    Ref.read ins >>= assertEqual "unfolding: seed enters as a first resume" [ .resume { acc: 0 } ]
     m.toUser (.start 1)
-    Ref.read ins >>= assertEqual "unfolding: fresh input enters" [ .start 1 ]
+    Ref.read ins >>= assertEqual "unfolding: fresh input enters" [ .resume { acc: 0 }, .start 1 ]
     fire gProp { o: "x", acc: 7 }
     Ref.read outs >>= assertEqual "unfolding: value fields pass" [ { o: "x" } ]
-    Ref.read ins >>= assertEqual "unfolding: state resumes as its case" [ .start 1, .resume { acc: 7 } ]
+    Ref.read ins >>= assertEqual "unfolding: state resumes as its case" [ .resume { acc: 0 }, .start 1, .resume { acc: 7 } ]
 
   -- Resolving/resolveFor (the quiescence step): every emission loops
   -- immediately (Right, gated on a first state), and the last emission of a
@@ -452,16 +457,27 @@ main = do
     Ref.read outs >>= assertEqual "completed: fat emission trimmed, carried field kept"
       [ { a: 9, b: "kept" }, { a: 7, b: "kept" } ]
 
-  -- with (seeded's composition closure): the wrapped stage receives the
-  -- seed at registration, then inputs pass through
+  -- with (the discharge form, announce's composition closure): the wrapped
+  -- stage receives its initial state at registration and the result is
+  -- closed — input {}, nothing left to feed
   do
     ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
     m <- unwrap (with { n: 1 } (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
     m.fromUser \_ -> pure unit
     Ref.read ins >>= assertEqual "with: seed fed at registration" [ { n: 1 } ]
-    m.toUser { n: 2 }
-    Ref.read ins >>= assertEqual "with: inputs pass through" [ { n: 1 }, { n: 2 } ]
+    m.toUser {}
+    Ref.read ins >>= assertEqual "with: closed — the informationless {} feeds nothing further" [ { n: 1 } ]
+
+  -- seeded (the pointedness primitive): one emission of the seed at
+  -- registration, then a plain wire
+  do
+    outs <- Ref.new ([] :: Array Int)
+    m <- unwrap (seeded 1 :: PUI Effect Int Int)
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    Ref.read outs >>= assertEqual "seeded: point — the seed emits once at registration" [ 1 ]
+    m.toUser 2
+    Ref.read outs >>= assertEqual "seeded: wire — inputs forward unchanged" [ 1, 2 ]
 
   -- == The remaining merge laws: gating on ×→×, the right +→× unit, and ==
   -- == the two ungated merges (×→+ broadcast, +→+ dispatch) with their ==

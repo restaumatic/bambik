@@ -603,11 +603,15 @@ each items build = lcmap (const items) (foreachWith build)
 -- Entry point
 
 -- | The app entry: builds the widget in `<body>` and registers its
--- | wiring — and feeds **nothing**. All initial data enters as seeds
--- | (`with initial`, `announce`, `seeded`) inside the widget itself, so
--- | the standalone app reads `body $ with initial $ ...`; emissions are
--- | simply dropped.
-body :: forall i o. PUI Web i o -> Effect Unit
+-- | wiring — and feeds **nothing**, which is why it demands a **closed**
+-- | app: input `{}`, the one record whose initial value is derivable from
+-- | its type. A pipeline's residual input row is its initial-state
+-- | obligation — the entity fields not yet known at t=0 — so mounting
+-- | requires it discharged (`mvu seed`, `with initial`): a missing seed is
+-- | a type error here naming exactly the unsupplied fields, not a blank
+-- | screen. The standalone app reads `body $ with initial $ ...` or
+-- | `body $ ... $ pipeline # mvu seed`; emissions are simply dropped.
+body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   node <- documentBody
   runDomInNode node do

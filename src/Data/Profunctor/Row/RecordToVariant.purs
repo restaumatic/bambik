@@ -60,7 +60,9 @@ module Data.Profunctor.Row.RecordToVariant
 
 import Data.Either (Either(..), either)
 import Control.Category (class Category, identity)
+import Control.Semigroupoid ((>>>))
 import Data.Profunctor (class Profunctor, dimap, rmap)
+import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
@@ -132,23 +134,29 @@ class Profunctor p <= Coresolving p where
 -- | here case `w` is unwrapped to *loop*. No coercions: `on` splits the
 -- | output variant exactly.
 -- |
--- | On a knowledge-gated carrier (`PUI`) inputs are withheld until a first
--- | fold state exists — the accumulating-wizard shape primes it with its
--- | first continue emission.
+-- | The fold state is an **entity** — it exists from the fold's very
+-- | beginning — and `folding` takes its t=0 value `{ | fb }` as the first
+-- | argument: at registration the seed is emitted once as case `w` (a
+-- | `seeded` wire composed onto the output), priming the state channel
+-- | before any input arrives — a `folding` stage never starves.
+-- | Emission-primed exotica remain expressible with raw
+-- | `coresolve`/`coshutter`.
 folding
   :: forall @w p i fb iw done ow
-   . Coresolving p
+   . Seeding p
+  => Coresolving p
   => IsSymbol w
   => ExclusiveRows i fb iw
   => Cons w { | fb } done ow
-  => p { | iw } [ | ow ]
+  => { | fb }
+  -> p { | iw } [ | ow ]
   -> p { | i } [ | done ]
-folding g =
+folding seed g =
   coresolve
     (dimap
       (\(Tuple i fb) -> Record.union i fb)
       (on (Proxy @w) Right Left)
-      g)
+      (g >>> seeded (inj (Proxy @w) seed)))
 
 -- | The optic `coresolve` induces: the **Coshutter** — the `Reel` run
 -- | backwards (`Coshutter s t a b ≅ Reel b a t s`). Eliminating the residual

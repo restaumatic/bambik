@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, asCase, displayed, forField, forValue, mvu, updates)
+import PUI (asCase, displayed, forField, forValue, mvu, updates)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,12 +30,11 @@ checkout =
                   staticText "Step 3 of 3 — Pay with card "
                   text # forValue # forField @"card" ) # provided # lcmap atPayment # displayed
               RecordToVariant.do
-                announce cartStep
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtCart
                 button { label: "Next" } # asCase @"next" # provided # lcmap nextAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtShipping
                 button { label: "Back" } # asCase @"next" # provided # lcmap backAtPayment
-                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" # updates (match { placed: recordPlaced })
+                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" cartStep # updates (match { placed: recordPlaced })
           body2 ( RecordToRecord.do
               staticText "Order placed: "
               text # forValue # forField @"item"
@@ -46,11 +45,8 @@ checkout =
               staticText ")" ) # provided # lcmap placedOrder # displayed
       ) # mvu freshOrder
 
-cartStep ::
-  [ placed :: { confirmed :: Boolean }
-  , next :: { step :: String }
-  ]
-cartStep = .next { step: "cart" }
+cartStep :: { step :: String }
+cartStep = { step: "cart" }
 
 atCart :: { item :: String, step :: String } -> Maybe { item :: String }
 atCart { item, step } = if step == "cart" then Just { item } else Nothing

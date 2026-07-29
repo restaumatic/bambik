@@ -6,7 +6,7 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, mvu, projection, seeded, tapped)
+import PUI (asField, mvu, projection, tapped)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,11 +21,10 @@ auction =
               text # projection bidText ) # tapped
           sliderLive { label: "Your bid ($)", min: minBid, max: maxBid, step: bidStep } # asField @"bid"
           ( Semigroupoid.do
-              seeded noBids
               lcmap raiseTop identity
               headline6 ( RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text # projection topText ) # tapped) # feedback
+                  text # projection topText ) # tapped) # feedback noBids
       ) # mvu openingBid
 
 raiseTop :: { bid :: Number, top :: Number } -> { bid :: Number, top :: Number }

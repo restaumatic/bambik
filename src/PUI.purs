@@ -55,12 +55,12 @@ module PUI
   , mvu
   , onCase
   , resolveFor
-  , seeded
   , silence
   , spied
   , updates
   , with
   , module Adopters
+  , module Seeding
   )
   where
 
@@ -91,6 +91,8 @@ import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Acting (acted, optioned) as Adopters
+import Data.Profunctor.Seeding (class Seeding, seeded)
+import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
@@ -273,7 +275,7 @@ instance Functor m => Costrong (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Costrong.unfirst (feedback): inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Seed the loop from inside its chain (`with`/`announce`/`seeded`)."
+              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw `unfirst`/`colens` chain from inside (`seeded`)."
               tr "Costrong.unfirst: input withheld (state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
@@ -292,7 +294,7 @@ instance Functor m => Costrong (PUI m) where
           ma <- Ref.read aRef
           case ma of
             Nothing -> do
-              guard.blocked "Costrong.unsecond (feedback): inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Seed the loop from inside its chain (`with`/`announce`/`seeded`)."
+              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw chain from inside (`seeded`)."
               tr "Costrong.unsecond: input withheld (state unprimed)" b
             Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
@@ -346,7 +348,7 @@ instance Functor m => Coresolving (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Coresolving.coresolve (folding): inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Announce an initial state (`announce`/`seeded`) in front of the fold."
+              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Use `folding`, which takes the fold's initial state as an argument, or seed a raw `coshutter` chain's loop branch (`seeded`)."
               tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop -> p'.fromUser case _ of
@@ -441,46 +443,47 @@ silence = wrap $ pure
 -- | The **announcing constant**: silent except for one emission of `o` at
 -- | registration — the value-level generalization of the record units'
 -- | `{}` announcement (`Web.staticText`'s protocol, with a payload). As a
--- | merge operand it seeds fields or cases; in front of a knowledge-gated
--- | trace (`folding`, `feedback`) it primes the state channel — the fold
--- | announces its initial state the way `pempty` announces its
--- | informationless `{}`.
+-- | merge operand it seeds fields or cases; composed in front of a widget
+-- | it discharges the widget's initial-state obligation (`with`'s
+-- | implementation) — announcing an initial state the way `pempty`
+-- | announces its informationless `{}`.
 announce :: forall m o. Applicative m => o -> PUI m {} o
 announce o = wrap $ pure
   { toUser: mempty
   , fromUser: \prop -> prop o
   }
 
--- | Seed any stage with an initial value: `with a w` feeds `w` the value
--- | `a` once at registration, then behaves as `w` — `seeded`'s composition
--- | closure (`with a w = seeded a >>> w`, so `with a identity = seeded a`).
--- | Insertable at every `PUI m a b` position: in front of a form (the
--- | initial model), around a merge operand (seeding just that operand's
--- | gates), or in front of a knowledge-gated trace as its primer — and at
--- | the app entry: `body` feeds nothing, so `body $ with initial $ ...`
--- | is the standalone-app shape.
-with :: forall m a b. Applicative m => a -> PUI m a b -> PUI m a b
-with a w = seeded a >>> w
+-- | **Discharge a widget's initial-state obligation**: `with a w` supplies
+-- | `w`'s input its t=0 value — the entity `w` edits exists from the very
+-- | beginning, and `a` is its initial state — leaving nothing to feed
+-- | (`with a w = announce a >>> w`, so `with a identity = announce a`).
+-- | The residual input row of a pipeline is exactly what is *not yet known*
+-- | at t=0; `with` (and `mvu`, its looping sibling) turns that obligation
+-- | into `{}`, the one self-pointed record — the type `body` demands. The
+-- | standalone app reads `body $ with initial $ ...`. For a pass-through
+-- | seeding *stage* (feed once, then keep forwarding inputs), use the
+-- | `seeded` wire directly: `seeded a >>> w`.
+with :: forall m a b. Applicative m => a -> PUI m a b -> PUI m {} b
+with a w = announce a >>> w
 
--- | The **seeded echo wire**: `identity`'s pass-through plus one emission
--- | of the seed at registration. As the first stage of a knowledge-gated
--- | trace's inner (`feedback`, `unfolding`), the seed emission flows into
--- | the following stages, they render and emit, and the trace's state
--- | channel is primed before any input arrives — `announce`'s job, at a
--- | pass-through type.
-seeded :: forall m a. Applicative m => a -> PUI m a a
-seeded a = wrap $ pure unit <#> \_ ->
-  -- ref per unwrap, like `identity` (a shared `let` would wire all
-  -- instantiations together)
-  let mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
-    { toUser: \ch -> do
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop ch
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop a
-    }
+-- | The **seeded echo wire** (the `Seeding` instance): `identity`'s
+-- | pass-through plus one emission of the seed at registration — the
+-- | pointedness primitive the knot-tying row forms (`feedback`/`folding`/
+-- | `unfolding`) compose into their traced chains to prime the state
+-- | channel with its declared initial value.
+instance Applicative m => Seeding (PUI m) where
+  seeded a = wrap $ pure unit <#> \_ ->
+    -- ref per unwrap, like `identity` (a shared `let` would wire all
+    -- instantiations together)
+    let mPropRef = unsafePerformEffect $ Ref.new Nothing
+    in
+      { toUser: \ch -> do
+          mProp <- Ref.read mPropRef
+          for_ mProp \prop -> prop ch
+      , fromUser: \prop -> do
+          Ref.write (Just prop) mPropRef
+          prop a
+      }
 
 -- | The **Mealy update stage** on the `×`-diagonal: a pass-through wire
 -- | (every value fed flows on, so ticks and edits upstream keep driving
@@ -651,15 +654,18 @@ looped p = wrap $ unwrap p <#> \p' ->
               prop u
     }
 
--- | The model–view–update shape, named: `mvu seed w = looped (with seed w)`.
+-- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
 -- | `w` is a same-type pipeline over the model — editors (`# completed`
 -- | where they don't produce the whole model), displays, wires (`every`),
--- | and event stages folded in with `updates`. The seed primes the loop at
--- | registration; from then on every emission of any stage re-enters at
--- | the top, re-entrancy-guarded. The standalone app reads
--- | `body $ ... $ mvu seed pipeline`.
-mvu :: forall m model. Applicative m => model -> PUI m model model -> PUI m model model
-mvu seed w = looped (with seed w)
+-- | and event stages folded in with `updates`. The model is an **entity**:
+-- | it exists from the very beginning with a known initial state, and
+-- | `seed` is that state — fed once at registration; from then on every
+-- | emission of any stage re-enters at the top, re-entrancy-guarded. The
+-- | result is **closed** (input `{}`): supplying the seed discharges the
+-- | pipeline's initial-state obligation, which is what `body` demands. The
+-- | standalone app reads `body $ ... $ mvu seed pipeline`.
+mvu :: forall m model. Applicative m => model -> PUI m model model -> PUI m {} model
+mvu seed w = with seed (looped w)
 
 instance Applicative m => RecordToRecord (PUI m) where
   -- the unit announces its informationless {} once, so the merge gates below
@@ -691,7 +697,7 @@ recordToRecordPUI p1 p2 = wrap ado
         fields2 = renderFieldNames (rowLabels (Proxy @o2l))
         starving mine sibling = "×→× record merge: emissions dropped for 3s — the operand producing " <> mine
           <> " keeps emitting, but its sibling operand producing " <> sibling
-          <> " never has, so the merged record cannot complete. Prime the silent operand (`with`/`announce`/`seeded`) or check that it renders at all."
+          <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
     in
     { toUser: \new -> do
           p1'.toUser new
@@ -809,7 +815,7 @@ instance Functor m => Retaining (PUI m) where
             mc <- Ref.read cRef
             case mc of
               Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel (`unfolding` resumes it via its case; `announce` seeds it)."
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`/`announce`)."
                 tr "Retaining.retain: emission withheld (state unprimed)" b
               Just c -> prop $ Tuple b c
       }
@@ -842,7 +848,7 @@ variantToRecordPUI p1 p2 = wrap ado
         fields2 = renderFieldNames (rowLabels (Proxy @o2l))
         starving mine sibling = "+→× status merge: emissions dropped for 3s — the operand producing " <> mine
           <> " keeps emitting, but its sibling operand producing " <> sibling
-          <> " never has, so the merged record cannot complete. Prime the silent operand (`with`/`announce`/`seeded`) or check that it renders at all."
+          <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
     in
     { toUser: \v -> do
         for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
