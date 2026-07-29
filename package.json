@@ -9,14 +9,17 @@
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "demo-1": "parcel -p 1234 demo/1/index.html & spago bundle-app --main Main --to demo/1/bundle.js -w -l --path demo/1/**/*.purs",
     "bundle-demo-1": "spago bundle-app --minify --main Main --to demo/1/bundle.js --path \"demo/1/**/*.purs\"",
+    "bundle-demo-md3": "spago bundle-app --minify --main Main --to demo/md3/bundle.js --path \"demo/md3/**/*.purs\"",
     "bundle-demo-7guis": "spago build --path \"demo/7guis/*/*.purs\" && node scripts/bundle-7guis.mjs",
     "bundle-demo-nguis": "spago build --path \"demo/nguis/*/*.purs\" && node scripts/bundle-nguis.mjs",
-    "bundle-demos": "npm run bundle-demo-1 && npm run bundle-demo-7guis && npm run bundle-demo-nguis",
+    "bundle-demos": "npm run bundle-demo-1 && npm run bundle-demo-md3 && npm run bundle-demo-7guis && npm run bundle-demo-nguis",
     "deploy-demo-1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
+    "deploy-demo-md3": "scp -r demo/md3/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo-7guis": "scp -r demo/7guis/ xyz:/var/www/html/bambik/demo/",
     "deploy-demo-nguis": "scp -r demo/nguis/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
+    "@material/web": "^2.5.0",
     "material-components-web": "^14.0.0"
   },
   "devDependencies": {
