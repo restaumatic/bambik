@@ -19,9 +19,6 @@ class Default f where
 instance Default String where
   default = ""
 
-instance Default Unit where
-  default = unit
-
 instance Default (Array a) where
   default = []
 

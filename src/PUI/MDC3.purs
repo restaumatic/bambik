@@ -97,7 +97,6 @@ module PUI.MDC3
   , labelLarge
   , labelMedium
   , labelSmall
-  , labeled
   , layoutCell
   , layoutGrid
   , linearProgress
@@ -142,7 +141,6 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field, pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
-import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
@@ -304,15 +302,15 @@ outlinedTextField config = field @"value" (textFieldLeaf "md-outlined-text-field
 -- | `filledTextField` over a debounced input listener: keystrokes coalesce
 -- | at the DOM boundary (`Web.onInputDebounced`), so the field is loop-safe
 -- | to debounce — the wire itself stays synchronous.
-debouncedTextField :: { floatingLabel :: String, millis :: Milliseconds } -> PUI Web { value :: String } { value :: String }
-debouncedTextField { floatingLabel, millis } = field @"value" (textFieldLeaf "md-filled-text-field" (Just millis) floatingLabel)
+debouncedTextField :: { floatingLabel :: String, ms :: Number } -> PUI Web { value :: String } { value :: String }
+debouncedTextField { floatingLabel, ms } = field @"value" (textFieldLeaf "md-filled-text-field" (Just ms) floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
 -- Focus-guarded like `Web.input`: model updates never clobber the field
 -- being typed in (the element delegates focus, so the host is the
 -- activeElement), but still echo so merge gates keep flowing.
-textFieldLeaf :: String -> Maybe Milliseconds -> String -> PUI Web String String
+textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
 textFieldLeaf tag mDebounce floatingLabel = wrap do
   element tag (pure unit)
   attribute "label" floatingLabel
@@ -330,7 +328,7 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
           Nothing -> void $ addEventListener "input" node $ const do
             value <- getValue node
             prop value
-          Just (Milliseconds millis) -> onInputDebounced node millis prop
+          Just millis -> onInputDebounced node millis prop
     }
 
 filledTextArea :: { columns :: Int, rows :: Int } -> PUI Web { value :: String } { value :: String }
@@ -550,12 +548,6 @@ selectLeaf config options = wrap do
       <> "</md-filled-select>"
   optionMarkup idx o =
     "<md-select-option value=\"" <> show idx <> "\"><div slot=\"headline\">" <> o.label <> "</div></md-select-option>"
-
--- | Options for the self-labeled case — a string enum where each value is
--- | its own label — for any option-taking component (`select`,
--- | `segmentedButton`, `radioButton`): `segmentedButton (labeled dishes)`.
-labeled :: Array String -> Array { value :: String, label :: String }
-labeled = map \s -> { value: s, label: s }
 
 -- | The MD3 single-select segmented button, a `×→×` editor. Type-changing
 -- | like `select @l`. `@material/web` ships no segmented button, so the
