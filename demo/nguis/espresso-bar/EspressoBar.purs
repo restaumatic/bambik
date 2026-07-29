@@ -50,7 +50,7 @@ espressoBar =
           button { label: "Place order", icon: "local_cafe" } # asCase @"placeOrder" # rmap (match { placeOrder: brew })
           snackbar # forCase @"brewed"
 
-usualOrder :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe Unit }
+usualOrder :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} }
 usualOrder =
   { customer: ""
   , drink: "Cappuccino"
@@ -71,7 +71,7 @@ theUsual order = order { drink = "Cappuccino", size = "Medium", milk = "Whole", 
 espressoNoFrills :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
 espressoNoFrills order = order { drink = "Espresso", size = "Small", milk = "None", sugar = 0.0, extraShot = false, decaf = false }
 
-brew :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe Unit } -> [ brewed :: String ]
+brew :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> [ brewed :: String ]
 brew { customer, drink, size, milk, roast, sugar, extraShot, decaf, takeaway, favorite, loyalty } =
   .brewed
     ( "Coming right up" <> forCustomer { customer }
@@ -84,7 +84,7 @@ forCustomer { customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 
-summaryText :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe Unit } -> String
+summaryText :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe {} } -> String
 summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty } =
   size <> " " <> toLower drink
     <> (if milk == "None" then "" else " with " <> toLower milk <> " milk")
@@ -101,7 +101,7 @@ sugarsText n
   | n == 1.0 = ", 1 sugar"
   | otherwise = ", " <> toStringWith (fixed 0) n <> " sugars"
 
-price :: { size :: String, milk :: String, extraShot :: Boolean, loyalty :: Maybe Unit } -> Number
+price :: { size :: String, milk :: String, extraShot :: Boolean, loyalty :: Maybe {} } -> Number
 price { size, milk, extraShot, loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
   discounted p = case loyalty of
