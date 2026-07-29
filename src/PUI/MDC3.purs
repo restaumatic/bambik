@@ -1069,7 +1069,9 @@ drawerCss = """
 """
 
 -- | Attach a hover plain tooltip to the wrapped content (`@material/web`
--- | ships no tooltip; CSS-hover chrome over the tokens).
+-- | ships no tooltip; CSS-hover chrome over the tokens). An annotation, not
+-- | a container — it reads best trailing, widget first:
+-- | `checkbox (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
 tooltip :: { text :: String } -> Ocular (PUI Web)
 tooltip config content =
   span >>> cl "md3-tooltip-anchor" $ wrap do
