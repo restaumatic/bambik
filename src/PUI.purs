@@ -29,6 +29,16 @@
 -- |  4. the loop re-feeds `{ count: 1 }` to the top; the display re-renders;
 -- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
 -- |     guard, so exactly one turn happens per event.
+-- |
+-- | **No nominal types in UI** (doc/no-nominal-types-in-ui.md). A view-model
+-- | type is one-off and specific to its UI, so it earns no name: applications
+-- | write anonymous Record rows, anonymous Variant rows, and `{}` unit
+-- | payloads in place, and this vocabulary never forces a nominal type into
+-- | UI code — canonical rows adopted by label, anonymous-record configs,
+-- | `{ ms :: Number }` durations. `Array` and `Maybe` are the two generic
+-- | containers it is generic over; nominal types live below the UI (recursive
+-- | ASTs, `Aff` actions) and enter only as rows projected by business
+-- | functions.
 module PUI
   ( Action
   , PUI(..)
@@ -581,7 +591,7 @@ constantly a = lcmap (const a)
 -- | Retains the last value flowing through; every `interval`, applies
 -- | `step` to it — `Just` advances (retained and emitted), `Nothing`
 -- | pauses until fresh input arrives. Inside a `looped` chain this is a
--- | tick source: the 7GUIs Timer is `every (Milliseconds 100.0) tick`.
+-- | tick source: the 7GUIs Timer is `every { ms: 100.0 } tick`.
 -- | The loop runs for the widget's whole life (no cancellation — a
 -- | prototype limitation shared with `action'`).
 -- |
@@ -593,14 +603,14 @@ every
    . Applicative m
   => Union small big u
   => Nub u big
-  => Milliseconds
+  => { ms :: Number }
   -> (Record small -> Maybe (Record small))
   -> PUI m (Record big) (Record big)
 every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
 
 -- | The type-agnostic heartbeat `every` is built from — private for the same
 -- | reason as `mealy`.
-heartbeat :: forall m a. Applicative m => Milliseconds -> (a -> Maybe a) -> PUI m a a
+heartbeat :: forall m a. Applicative m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
 heartbeat interval step = wrap $ pure unit <#> \_ ->
   let lastRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
@@ -613,7 +623,7 @@ heartbeat interval step = wrap $ pure unit <#> \_ ->
         Ref.write (Just prop) mPropRef
         let
           loop = do
-            delay interval
+            delay (Milliseconds interval.ms)
             liftEffect do
               ma <- Ref.read lastRef
               for_ (ma >>= step) \a' -> do
@@ -750,12 +760,12 @@ instance Applicative m => RecordToVariant (PUI m) where
 -- | up to time (once primed). The window is `resolveFor`'s parameter;
 -- | the instance uses the same default as `debounced`.
 instance Functor m => Resolving (PUI m) where
-  resolve = resolveFor (Milliseconds 300.0)
+  resolve = resolveFor { ms: 300.0 }
 
 -- | `resolve` with an explicit quiescence window — see the `Resolving`
 -- | instance. `Done` needs no state and fires (after the window) even
 -- | unprimed; only the `Loop` branch is gated on a first `c`.
-resolveFor :: forall m a b c. Functor m => Milliseconds -> PUI m a b -> PUI m (Tuple a c) (Either b c)
+resolveFor :: forall m a b c. Functor m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
 resolveFor millis p = wrap ado
   p' <- unwrap p
   in
@@ -775,7 +785,7 @@ resolveFor millis p = wrap ado
             mFiber <- liftEffect $ Ref.read mFiberRef
             for_ mFiber $ killFiber (error "Superseded by a newer emission")
             newFiber <- forkAff do
-              delay millis
+              delay (Milliseconds millis.ms)
               liftEffect $ prop $ Left b
             liftEffect $ Ref.write (Just newFiber) mFiberRef
           -- loop immediately with the retained state
@@ -997,14 +1007,14 @@ affAdapter f w = wrap ado
 -- | quiescence step composed with its retraction. Implemented directly
 -- | (ungated, on the input leg) as elsewhere laws are stated and bodies
 -- | stay lean.
-debounced' :: forall m. Applicative m => Milliseconds -> Ocular (PUI m)
+debounced' :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
 debounced' millis = affAdapter $ pure
-  { pre: \i -> delay millis *> pure i
+  { pre: \i -> delay (Milliseconds millis.ms) *> pure i
   , post: pure
   }
 
 debounced :: forall m. Applicative m => Ocular (PUI m)
-debounced = debounced' (Milliseconds 300.0)
+debounced = debounced' { ms: 300.0 }
 
 spied :: forall m. Functor m => DebugWarning => String -> Ocular (PUI m)
 spied name w = wrap ado

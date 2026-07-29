@@ -6,7 +6,6 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import Effect.Aff (Milliseconds(..))
 import PUI (asField, completed, every, forField, mvu, projection, updates)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, linearProgress, sliderLive)
@@ -52,5 +51,5 @@ maxDuration = 60.0
 durationStep :: Number
 durationStep = 1.0
 
-tickPeriod :: Milliseconds
-tickPeriod = Milliseconds 1000.0
+tickPeriod :: { ms :: Number }
+tickPeriod = { ms: 1000.0 }

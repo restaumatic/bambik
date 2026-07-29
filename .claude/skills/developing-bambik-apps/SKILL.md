@@ -235,7 +235,7 @@ business definition in the business section:
 sliderLive { min: minDuration, max: maxDuration, step: durationStep }
 every tickPeriod tick
 
-tenSecondFreshTimer :: Timer
+tenSecondFreshTimer :: { duration :: Number, elapsed :: Number }
 tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }
 
 minDuration :: Number
@@ -248,19 +248,27 @@ Name the extracted values in **business language**, not lifecycle language —
 Say what the value *is*: `roomTemperature`, `peopleCatalogue`, `emptyCanvas`,
 `tenSecondFreshTimer`, `plannedTrip`.
 
-The same rule applies to **type aliases**: `type Model = ...` is
-architecture language, not business language. Name the type after what it
-models — `PeopleCatalogue`, `Canvas`, `Temperature`, `Sheet` — typically
-the seed's name capitalized (`mvu peopleCatalogue` seeds a
-`PeopleCatalogue`). And to the **entry function**: name it after the
+**No nominal types in UI** (the design rule —
+doc/no-nominal-types-in-ui.md): a view-model type is one-off and specific
+to its UI, never reused, so it earns no name. The application declares no
+`data`, no `newtype`, no `type` synonyms for anything a widget displays,
+emits, or is configured with — every view-model type is an anonymous
+structural type written in place: Record rows for all-at-once, Variant
+rows for one-at-a-time (`[ oneWay :: {}, return :: {} ]`, constructed
+`.oneWay {}`), `{}` for unit payloads (never `Unit`), and the generic
+containers `Array`/`Maybe` over them. The role a type alias used to name
+lives on the seed *value* instead (`mvu plannedTrip`,
+`mvu tenSecondFreshTimer`), and the model row is spelled once — at the
+seed and the merges; business helpers state their own exact narrow
+footprint as a closed row (the reading stages subsume), never the whole
+model. Nominal types belong only below the UI: a directly recursive type
+(cells' `Expr` formula AST — rows can't express recursion) or an
+ecosystem API (`Aff`, `Either` in a parser, `Milliseconds` in `delay`);
+they enter the UI only through business functions that project them into
+rows. The same spirit governs the **entry function**: name it after the
 application (`crud`, `counter`, `temperatureConverter`), not `main` —
-`Model`, `initial`, `default`, even `main` are all the same smell: architecture
-words where business words belong. Models stay row-shaped and structural as far as
-readable — anonymous Record rows for all-at-once, anonymous Variant rows
-for one-at-a-time; a named alias for the top aggregate, and for any
-view-model row (a collection entry, a pane payload) reused across two or
-more signatures — e.g. `type Entry`, `type Choice`, `type Photo`. A row
-used in a single projection's return type can stay anonymous.
+`Model`, `initial`, `default`, even `main` are all the same smell:
+architecture words where business words belong.
 
 ### Type-inference gotchas (both hit in practice)
 
@@ -322,6 +330,9 @@ The demo pages state this contract in their footer note; the code must
 honor it, and changes to either side keep the two in sync:
 
 - **Comments are deliberately absent** — code should read on its own.
+- **No nominal types in UI** — view-model types are anonymous records and
+  variants written in place; the application declares no `data`, `newtype`,
+  or `type` for anything a widget touches (see the rule above).
 - **Imports are 100% explicit (including `Prelude`)** — code is honest
   about its dependencies. Add/remove names the change touched.
 - **The listing is a complete standalone application**, entered at its

@@ -343,7 +343,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array (Either String Int))
-    m <- unwrap (resolveFor (Milliseconds 40.0) (probe gProp :: PUI Effect Int String))
+    m <- unwrap (resolveFor { ms: 40.0 } (probe gProp :: PUI Effect Int String))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp "burst1"
     Ref.read outs >>= assertEqual "resolveFor: loop withheld before state" []
@@ -621,7 +621,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coresolve (resolveFor (Milliseconds 40.0) (probe gProp :: PUI Effect Int String)))
+    m <- unwrap (coresolve (resolveFor { ms: 40.0 } (probe gProp :: PUI Effect Int String)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp "burst1"
     fire gProp "burst2"

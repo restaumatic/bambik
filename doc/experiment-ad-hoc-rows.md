@@ -1,5 +1,11 @@
 # Experiment: demos without nominal types — ad-hoc rows only
 
+> **Superseded.** The rejection of nominal types in UI was adopted wholesale
+> as a design rule — see [no-nominal-types-in-ui.md](no-nominal-types-in-ui.md).
+> The verdict below recommended a split convention; the follow-up audit's
+> over-demand finding (read-narrow subsumption answers the signature-width
+> cost) is what tipped the decision. The measurements stand.
+
 Every `type` synonym and (almost) every `data` declaration was removed from all
 demos (demo/1, demo/7guis, demo/nguis). Synonyms were inlined at every use
 site, transitively; sum types became anonymous variant rows via the fork's

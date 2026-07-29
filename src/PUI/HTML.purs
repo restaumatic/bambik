@@ -84,7 +84,6 @@ import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor (lcmap)
 import Data.Symbol (class IsSymbol)
-import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -144,8 +143,8 @@ input type_ = "type" := type_ $ wrap do
 -- | terminates loop cycles. (Wire-level debouncing inside a loop turns
 -- | refeeds into a standing async ping-pong — the delay must sit in front
 -- | of the wire, not on it.)
-inputDebounced :: Milliseconds -> String -> PUI Web String String
-inputDebounced (Milliseconds millis) type_ = "type" := type_ $ wrap do
+inputDebounced :: { ms :: Number } -> String -> PUI Web String String
+inputDebounced { ms: millis } type_ = "type" := type_ $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new $ Nothing
@@ -419,7 +418,7 @@ h5 = el "h5"
 h6 :: Ocular (PUI Web)
 h6 = el "h6"
 
-attrDyn :: String -> (Maybe Unit -> Maybe String) -> Ocular (PUI Web)
+attrDyn :: String -> (Maybe {} -> Maybe String) -> Ocular (PUI Web)
 attrDyn name valueFunction w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -431,20 +430,20 @@ attrDyn name valueFunction w = wrap do
     , fromUser: w'.fromUser
     }
     where
-      updateAttribute node mnewa = case valueFunction (mnewa $> unit) of
+      updateAttribute node mnewa = case valueFunction (mnewa $> {}) of
         Just value -> setAttribute node name value
         Nothing -> removeAttribute node name
 
 infixr 10 attrDyn as :=>
 
-clDyn :: String -> (Maybe Unit -> Boolean) -> Ocular (PUI Web)
+clDyn :: String -> (Maybe {} -> Boolean) -> Ocular (PUI Web)
 clDyn name pred w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   liftEffect $ (if pred Nothing then addClass else removeClass) node name
   pure
     { toUser: \mch -> do
-    (if pred (Just unit) then addClass else removeClass) node name
+    (if pred (Just {}) then addClass else removeClass) node name
     w'.toUser mch
     , fromUser: w'.fromUser
     }

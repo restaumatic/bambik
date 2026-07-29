@@ -134,7 +134,6 @@ import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field, pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
-import Data.Time.Duration (Milliseconds)
 import Data.Symbol (class IsSymbol)
 import Data.Traversable (for)
 import Data.Variant (case_, on) as Variant
@@ -346,8 +345,8 @@ filledTextField = textFieldWith @"value" (input "text")
 -- | `filledTextField` over the debounced input leaf: keystrokes coalesce
 -- | at the DOM boundary (`Web.inputDebounced`), so the field is loop-safe
 -- | to debounce — the wire itself stays synchronous.
-debouncedTextField :: { floatingLabel :: String, millis :: Milliseconds } -> PUI Web { value :: String } { value :: String }
-debouncedTextField { floatingLabel, millis } = textFieldWith @"value" (inputDebounced millis "text") { floatingLabel }
+debouncedTextField :: { floatingLabel :: String, ms :: Number } -> PUI Web { value :: String } { value :: String }
+debouncedTextField { floatingLabel, ms } = textFieldWith @"value" (inputDebounced { ms } "text") { floatingLabel }
 
 textFieldWith :: forall @l s. IsSymbol l => Cons l String () s => PUI Web String String -> { floatingLabel :: String } -> PUI Web { | s } { | s }
 textFieldWith leaf { floatingLabel } =

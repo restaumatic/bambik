@@ -6,7 +6,6 @@ import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (dispatched, displayed, every, forField, forValue, mvu)
 import PUI.HTML (body, staticText, text)
@@ -18,7 +17,7 @@ departures =
   body $
     elevation20 $
       card { caption: "Departures" } $ ( Semigroupoid.do
-          every (Milliseconds 1000.0) tick
+          every { ms: 1000.0 } tick
           ( Semigroupoid.do
               ( list $
                   ( ( listItem $ RecordToRecord.do

@@ -9,7 +9,6 @@ import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
-import Data.Time.Duration (Milliseconds(..))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, displayed, forCase, forField, forValue, mvu, required)
@@ -24,7 +23,7 @@ signupForm =
       card { caption: "Sign-Up Form" } Semigroupoid.do
         ( RecordToRecord.do
             headline4 $ staticText "Create account"
-            debouncedTextField { floatingLabel: "Username", millis: usernameSettleTime } # asField @"username"
+            debouncedTextField { floatingLabel: "Username", ms: usernameSettleTime } # asField @"username"
             radioButton
               [ { value: "free", label: "Free plan" }
               , { value: "pro", label: "Pro plan" }
@@ -59,12 +58,12 @@ signupForm =
           snackbar # forCase @"registered"
           snackbar # forCase @"rejected"
 
-register :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> [ registered :: String, rejected :: String ]
+register :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> [ registered :: String, rejected :: String ]
 register { username, email, plan, country, terms } = case validate { username, email, plan, country, terms } of
   Left problem -> .rejected ("Cannot sign up: " <> problem)
   Right name -> .registered ("Welcome, " <> name <> "!")
 
-validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Either String String
+validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> Either String String
 validate applicant@{ email, terms } =
   let username = trim applicant.username
   in
@@ -74,10 +73,10 @@ validate applicant@{ email, terms } =
     else if isJust terms == false then Left "accept the terms of service"
     else Right username
 
-whenInvalid :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Maybe { problem :: String }
+whenInvalid :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> Maybe { problem :: String }
 whenInvalid = validate >>> either (\problem -> Just { problem }) (\_ -> Nothing)
 
-whenReady :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit } -> Maybe { username :: String }
+whenReady :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> Maybe { username :: String }
 whenReady = validate >>> either (\_ -> Nothing) (\username -> Just { username })
 
 namedUsername :: { username :: String } -> Maybe String
@@ -106,10 +105,10 @@ usernameTaken username = username `elem` takenUsernames
 takenUsernames :: Array String
 takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 
-usernameSettleTime :: Milliseconds
-usernameSettleTime = Milliseconds 300.0
+usernameSettleTime :: Number
+usernameSettleTime = 300.0
 
-newApplicant :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe Unit }
+newApplicant :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} }
 newApplicant =
   { username: ""
   , email: ""

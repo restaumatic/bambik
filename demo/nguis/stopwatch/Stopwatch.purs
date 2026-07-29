@@ -10,7 +10,6 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import Effect.Aff (Milliseconds(..))
 import PUI (asCase, completed, displayed, every, forField, forValue, foreach, mvu, projection, updates)
 import PUI.HTML (body, li, provided, staticText, text, ul)
 import PUI.MDC (button, card, elevation20, headline3)
@@ -88,5 +87,5 @@ pad2 n = if n < 10 then "0" <> show n else show n
 zeroedStopwatch :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
 zeroedStopwatch = { running: false, elapsedTenths: 0, laps: [] }
 
-tickPeriod :: Milliseconds
-tickPeriod = Milliseconds 100.0
+tickPeriod :: { ms :: Number }
+tickPeriod = { ms: 100.0 }

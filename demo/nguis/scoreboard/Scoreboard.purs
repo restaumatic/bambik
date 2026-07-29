@@ -8,7 +8,6 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import PUI (accumulated, displayed, every, forField, forValue, mvu, projection)
 import PUI.HTML (body, provided, staticText, text)
@@ -20,7 +19,7 @@ scoreboard =
   body $
     elevation20 $
       card { caption: "Scoreboard" } $ ( Semigroupoid.do
-          every (Milliseconds 1000.0) tick
+          every { ms: 1000.0 } tick
           ( Semigroupoid.do
               ( list $
                   ( ( listItem $ RecordToRecord.do
