@@ -58,6 +58,17 @@ export const run = async ({ ev, assertEq, sleep }) => {
   const gauge = await ev(`document.querySelector('md-linear-progress').value`)
   assertEq(gauge > 0.9, true, 'caffeine gauge fed through projection (' + gauge + ')')
 
+  assertEq(
+    await ev(`[...document.querySelectorAll('span')].some(s => s.textContent === 'Sugar')`),
+    true,
+    'slider renders its visible label'
+  )
+  assertEq(
+    await ev(`[...document.querySelectorAll('span')].some(s => s.textContent === 'Caffeine')`),
+    true,
+    'caffeine gauge carries its label chrome'
+  )
+
   await ev(`(() => { const ib = document.querySelector('md-icon-button'); ib.selected = true; ib.dispatchEvent(new Event('change')); return true })()`)
 
   assertEq(

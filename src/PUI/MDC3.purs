@@ -472,8 +472,19 @@ sliderConfig
   -> { label :: String, min :: Number, max :: Number, step :: Maybe Number }
 sliderConfig provided = convertOptionsWithDefaults OptStep { label: "", step: Nothing } provided
 
+-- `<md-slider>` ships no text label of its own (`labeled` is the handle's
+-- value indicator), so a non-empty config label renders visibly above the
+-- slider, like a text field's floating label.
 sliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
-sliderLeaf live config = wrap do
+sliderLeaf live config
+  | config.label == "" = bareSliderLeaf live config
+  | otherwise =
+      div >>> "style" := "display: inline-flex; flex-direction: column; align-items: flex-start;" $ wrap do
+        _ <- unwrap (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText config.label)
+        unwrap (bareSliderLeaf live config)
+
+bareSliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
+bareSliderLeaf live config = wrap do
   element "md-slider" (pure unit)
   attribute "min" (show config.min)
   attribute "max" (show config.max)

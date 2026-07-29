@@ -12,7 +12,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, forCase, mvu, projection, required, tapped, updates)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labeled, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
+import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, labeled, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 espressoBar :: Effect Unit
@@ -44,7 +44,9 @@ espressoBar =
           bodyMedium ( RecordToRecord.do
               staticText "Your cup: "
               text # projection summaryText ) # tapped
-          linearProgress # projection caffeineFraction # tapped
+          ( RecordToRecord.do
+              labelMedium $ staticText "Caffeine"
+              linearProgress ) # projection caffeineFraction # tapped
           button { label: "Place order", icon: "local_cafe" } # asCase @"placeOrder" # rmap (match { placeOrder: brew })
           snackbar # forCase @"brewed"
 
