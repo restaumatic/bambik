@@ -19,7 +19,7 @@ espressoBar :: Effect Unit
 espressoBar =
   body $
     elevation5 $
-      topAppBar { title: "Espresso Bar · Material 3" } $
+      topAppBar { title: "Espresso Bar" } $
         card { caption: "Your order" } Semigroupoid.do
           ( Semigroupoid.do
               RecordToRecord.do
@@ -33,7 +33,7 @@ espressoBar =
                   filterChip { label: "Extra shot" } # asField @"extraShot"
                   filterChip { label: "Decaf" } # asField @"decaf"
                 toggleSwitch { label: "Takeaway cup" } # asField @"takeaway"
-                iconToggle { onIcon: "favorite", offIcon: "favorite", label: "Mark as favorite" } # asField @"favorite"
+                iconToggle { onIcon: "favorite", offIcon: "heart_plus", label: "Mark as favorite" } # asField @"favorite"
                 tooltip { text: "Members get 10% off" } $ checkbox (staticText "Loyalty member") # asField @"loyalty"
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
@@ -50,21 +50,7 @@ espressoBar =
           button { label: "Place order", icon: "local_cafe" } # asCase @"placeOrder" # rmap (match { placeOrder: brew })
           snackbar # forCase @"brewed"
 
-type CoffeeOrder =
-  { customer :: String
-  , drink :: String
-  , size :: String
-  , milk :: String
-  , roast :: String
-  , sugar :: Number
-  , extraShot :: Boolean
-  , decaf :: Boolean
-  , takeaway :: Boolean
-  , favorite :: Boolean
-  , loyalty :: Maybe Unit
-  }
-
-usualOrder :: CoffeeOrder
+usualOrder :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe Unit }
 usualOrder =
   { customer: ""
   , drink: "Cappuccino"
@@ -79,30 +65,35 @@ usualOrder =
   , loyalty: Nothing
   }
 
-theUsual :: CoffeeOrder -> CoffeeOrder
-theUsual order = usualOrder { customer = order.customer }
+theUsual :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
+theUsual order = order { drink = "Cappuccino", size = "Medium", milk = "Whole", roast = "Medium roast", sugar = 1.0, extraShot = false, decaf = false }
 
-espressoNoFrills :: CoffeeOrder -> CoffeeOrder
+espressoNoFrills :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
 espressoNoFrills order = order { drink = "Espresso", size = "Small", milk = "None", sugar = 0.0, extraShot = false, decaf = false }
 
-brew :: CoffeeOrder -> [ brewed :: String ]
-brew order = .brewed ("Coming right up" <> forCustomer order <> ": " <> summaryText order <> (if order.favorite then " ★" else ""))
+brew :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe Unit } -> [ brewed :: String ]
+brew { customer, drink, size, milk, roast, sugar, extraShot, decaf, takeaway, favorite, loyalty } =
+  .brewed
+    ( "Coming right up" <> forCustomer { customer }
+        <> ": " <> summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty }
+        <> (if favorite then " ★" else "")
+    )
 
-forCustomer :: CoffeeOrder -> String
-forCustomer order = case trim order.customer of
+forCustomer :: { customer :: String } -> String
+forCustomer { customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 
-summaryText :: CoffeeOrder -> String
-summaryText order =
-  order.size <> " " <> toLower order.drink
-    <> (if order.milk == "None" then "" else " with " <> toLower order.milk <> " milk")
-    <> ", " <> toLower order.roast
-    <> (if order.extraShot then ", extra shot" else "")
-    <> (if order.decaf then ", decaf" else "")
-    <> sugarsText order.sugar
-    <> (if order.takeaway then ", to go" else "")
-    <> " — " <> money (price order)
+summaryText :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe Unit } -> String
+summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty } =
+  size <> " " <> toLower drink
+    <> (if milk == "None" then "" else " with " <> toLower milk <> " milk")
+    <> ", " <> toLower roast
+    <> (if extraShot then ", extra shot" else "")
+    <> (if decaf then ", decaf" else "")
+    <> sugarsText sugar
+    <> (if takeaway then ", to go" else "")
+    <> " — " <> money (price { size, milk, extraShot, loyalty })
 
 sugarsText :: Number -> String
 sugarsText n
@@ -110,10 +101,10 @@ sugarsText n
   | n == 1.0 = ", 1 sugar"
   | otherwise = ", " <> toStringWith (fixed 0) n <> " sugars"
 
-price :: CoffeeOrder -> Number
-price order = discounted (sizePrice order.size + milkPrice order.milk + (if order.extraShot then 0.5 else 0.0))
+price :: { size :: String, milk :: String, extraShot :: Boolean, loyalty :: Maybe Unit } -> Number
+price { size, milk, extraShot, loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
-  discounted p = case order.loyalty of
+  discounted p = case loyalty of
     Just _ -> p * 0.9
     Nothing -> p
 
@@ -132,10 +123,10 @@ milkPrice milk = case milk of
 money :: Number -> String
 money n = "€" <> toStringWith (fixed 2) n
 
-caffeineFraction :: CoffeeOrder -> Number
-caffeineFraction order
-  | order.decaf = 0.05
-  | otherwise = min 1.0 (drinkShots order.drink + (if order.extraShot then 0.35 else 0.0))
+caffeineFraction :: { drink :: String, extraShot :: Boolean, decaf :: Boolean } -> Number
+caffeineFraction { drink, extraShot, decaf }
+  | decaf = 0.05
+  | otherwise = min 1.0 (drinkShots drink + (if extraShot then 0.35 else 0.0))
 
 drinkShots :: String -> Number
 drinkShots drink = case drink of

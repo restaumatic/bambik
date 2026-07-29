@@ -631,9 +631,11 @@ iconToggle config = field @"value" (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = wrap do
+  -- the selected icon renders filled (the MD3 selected-state convention),
+  -- so a same-glyph pair still reads as off/on
   _ <- unwrap $ el "md-icon-button" >>> "toggle" := "" >>> "aria-label" := config.label $ RecordToRecord.do
     el "md-icon" $ staticText config.offIcon
-    el "md-icon" >>> "slot" := "selected" $ staticText config.onIcon
+    el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticText config.onIcon
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   liftEffect $ listenNode node "change" do
