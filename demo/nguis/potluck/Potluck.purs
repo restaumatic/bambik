@@ -5,10 +5,11 @@ import Prelude ((#), ($), Unit, show)
 import Data.Array (length)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Variant (match)
 import Effect (Effect)
 import PUI (acted, asField, displayed, field, foreach, forField, forValue, projection, tapped, with)
 import PUI.HTML (body, span, staticText, text)
-import PUI.MDC (body2, card, elevation20, headline6, labeled, list, listItem, segmentedButton, subtitle1)
+import PUI.MDC (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 potluck :: Effect Unit
@@ -23,25 +24,29 @@ potluck =
           ( list $
               ( listItem $ RecordToRecord.do
                   subtitle1 text # forValue # forField @"name"
-                  segmentedButton (labeled dishes) # asField @"dish"
+                  segmentedButton
+                    [ { value: .salad {}, label: "Salad" }
+                    , { value: .lasagna {}, label: "Lasagna" }
+                    , { value: .pavlova {}, label: "Pavlova" }
+                    ] # asField @"dish"
               ) # acted @"name" ) # field @"guests"
           headline6 $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do
                 text # forValue # forField @"name"
                 staticText "’s "
-                text # forValue # forField @"dish"
+                text # projection dishText # forField @"dish"
                 staticText ", "
             ) # foreach @"name" # field @"guests"
       ) # with invitation
 
-guestCount :: { guests :: Array { name :: String, dish :: Maybe String } } -> String
+guestCount :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String
 guestCount { guests } = show (length guests)
 
-dishes :: Array String
-dishes = [ "Salad", "Lasagna", "Pavlova" ]
+dishText :: [ salad :: {}, lasagna :: {}, pavlova :: {} ] -> String
+dishText = match { salad: \_ -> "Salad", lasagna: \_ -> "Lasagna", pavlova: \_ -> "Pavlova" }
 
-invitation :: { guests :: Array { name :: String, dish :: Maybe String } }
+invitation :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } }
 invitation =
   { guests:
       [ { name: "Ada", dish: Nothing }

@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, silence, tapped, updates, with)
+import PUI (action, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, required, silence, tapped, updates, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
@@ -38,9 +38,9 @@ main =
         card { caption: "Fulfillment" }
           ( ( Semigroupoid.do
                 tabBar
-                  [ { value: "dineIn", label: "Dine in" }
-                  , { value: "takeaway", label: "Takeaway" }
-                  , { value: "delivery", label: "Delivery" }
+                  [ { value: .dineIn {}, label: "Dine in" }
+                  , { value: .takeaway {}, label: "Takeaway" }
+                  , { value: .delivery {}, label: "Delivery" }
                   ] # asField @"selected" # completed
                 filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # updates setTable
                 filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
@@ -54,9 +54,9 @@ main =
         card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton
-                [ { value: "cash", label: "Cash" }
-                , { value: "card", label: "Card" }
-                ] # asField @"selected" # dimap methodState methodCase # field @"method"
+                [ { value: .cash {}, label: "Cash" }
+                , { value: .card {}, label: "Card" }
+                ] # required # asField @"method"
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
               body1 ( RecordToRecord.do
                   staticText "Paying by "
@@ -152,31 +152,32 @@ fulfillmentState ::
   , takeaway :: { time :: String }
   , delivery :: { address :: String }
   ]
-  -> { selected :: String, table :: String, time :: String, address :: String }
+  -> { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], table :: String, time :: String, address :: String }
 fulfillmentState = match
-  { dineIn: \r -> { selected: "dineIn", table: r.table, time: "12:00", address: "" }
-  , takeaway: \r -> { selected: "takeaway", table: "1", time: r.time, address: "" }
-  , delivery: \r -> { selected: "delivery", table: "1", time: "12:00", address: r.address }
+  { dineIn: \r -> { selected: .dineIn {}, table: r.table, time: "12:00", address: "" }
+  , takeaway: \r -> { selected: .takeaway {}, table: "1", time: r.time, address: "" }
+  , delivery: \r -> { selected: .delivery {}, table: "1", time: "12:00", address: r.address }
   }
 
-fulfillmentCase :: { selected :: String, table :: String, time :: String, address :: String } ->
+fulfillmentCase :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], table :: String, time :: String, address :: String } ->
   [ dineIn :: { table :: String }
   , takeaway :: { time :: String }
   , delivery :: { address :: String }
   ]
-fulfillmentCase { selected, table, time, address } =
-  if selected == "dineIn" then .dineIn { table }
-  else if selected == "takeaway" then .takeaway { time }
-  else .delivery { address }
+fulfillmentCase { selected, table, time, address } = match
+  { dineIn: \_ -> .dineIn { table }
+  , takeaway: \_ -> .takeaway { time }
+  , delivery: \_ -> .delivery { address }
+  } selected
 
-dineInPane :: { selected :: String, table :: String } -> Maybe { table :: String }
-dineInPane { selected, table } = if selected == "dineIn" then Just { table } else Nothing
+dineInPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], table :: String } -> Maybe { table :: String }
+dineInPane { selected, table } = match { dineIn: \_ -> Just { table }, takeaway: const Nothing, delivery: const Nothing } selected
 
-takeawayPane :: { selected :: String, time :: String } -> Maybe { time :: String }
-takeawayPane { selected, time } = if selected == "takeaway" then Just { time } else Nothing
+takeawayPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], time :: String } -> Maybe { time :: String }
+takeawayPane { selected, time } = match { dineIn: const Nothing, takeaway: \_ -> Just { time }, delivery: const Nothing } selected
 
-deliveryPane :: { selected :: String, address :: String } -> Maybe { address :: String }
-deliveryPane { selected, address } = if selected == "delivery" then Just { address } else Nothing
+deliveryPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], address :: String } -> Maybe { address :: String }
+deliveryPane { selected, address } = match { dineIn: const Nothing, takeaway: const Nothing, delivery: \_ -> Just { address } } selected
 
 setTable :: { table :: String } -> { table :: String } -> { table :: String }
 setTable { table } _ = { table }
@@ -186,22 +187,6 @@ setTime { time } _ = { time }
 
 setAddress :: { address :: String } -> { address :: String } -> { address :: String }
 setAddress { address } _ = { address }
-
-methodState ::
-  [ cash :: {}
-  , card :: {}
-  ]
-  -> { selected :: Maybe String }
-methodState = match
-  { cash: const { selected: Just "cash" }
-  , card: const { selected: Just "card" }
-  }
-
-methodCase :: { selected :: String } ->
-  [ cash :: {}
-  , card :: {}
-  ]
-methodCase { selected } = if selected == "cash" then .cash {} else .card {}
 
 loadOrder :: Unit -> Aff
   { shortId :: String

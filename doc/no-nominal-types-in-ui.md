@@ -44,6 +44,14 @@ forces one into existence:
 - Components speak **canonical rows** (`{ value :: String }`,
   `[ clicked :: r ]`, `[ event :: String ]`), adopted per business label with
   `asField`/`asCase`/`forCase` — labels, not declarations.
+- Selector **options carry variant-row values**, never strings-as-enums:
+  `select`/`radioButton`/`segmentedButton`/`tabBar` options read
+  `{ value: .oat {}, label: "Oat" }`, so consumers branch by total `match`
+  instead of string comparison with a silent catch-all. The `labeled` helper
+  (self-labeled string options) was removed — it existed only to feed the
+  antipattern. Strings remain right where the values are *data* flowing from
+  a catalogue (product names, collection keys) or a token alphabet a parser
+  consumes (calculator keys, cells' formula language).
 - Configs are **anonymous records** (`{ floatingLabel }`, `{ min, max, step }`,
   `{ caption }`).
 - Durations are **`{ ms :: Number }`** — `every`, `debounced'`, `resolveFor`,

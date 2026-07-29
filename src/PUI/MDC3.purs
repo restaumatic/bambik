@@ -97,7 +97,6 @@ module PUI.MDC3
   , labelLarge
   , labelMedium
   , labelSmall
-  , labeled
   , layoutCell
   , layoutGrid
   , linearProgress
@@ -549,12 +548,6 @@ selectLeaf config options = wrap do
       <> "</md-filled-select>"
   optionMarkup idx o =
     "<md-select-option value=\"" <> show idx <> "\"><div slot=\"headline\">" <> o.label <> "</div></md-select-option>"
-
--- | Options for the self-labeled case — a string enum where each value is
--- | its own label — for any option-taking component (`select`,
--- | `segmentedButton`, `radioButton`): `segmentedButton (labeled dishes)`.
-labeled :: Array String -> Array { value :: String, label :: String }
-labeled = map \s -> { value: s, label: s }
 
 -- | The MD3 single-select segmented button, a `×→×` editor. Type-changing
 -- | like `select @l`. `@material/web` ships no segmented button, so the

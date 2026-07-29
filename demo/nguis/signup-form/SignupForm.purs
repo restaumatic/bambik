@@ -25,15 +25,15 @@ signupForm =
             headline4 $ staticText "Create account"
             debouncedTextField { floatingLabel: "Username", ms: usernameSettleTime } # asField @"username"
             radioButton
-              [ { value: "free", label: "Free plan" }
-              , { value: "pro", label: "Pro plan" }
-              , { value: "team", label: "Team plan" }
+              [ { value: .free {}, label: "Free plan" }
+              , { value: .pro {}, label: "Pro plan" }
+              , { value: .team {}, label: "Team plan" }
               ] # required # asField @"plan"
             select { floatingLabel: "Country" }
-              [ { value: "Poland", label: "Poland" }
-              , { value: "Germany", label: "Germany" }
-              , { value: "France", label: "France" }
-              , { value: "Spain", label: "Spain" }
+              [ { value: .poland {}, label: "Poland" }
+              , { value: .germany {}, label: "Germany" }
+              , { value: .france {}, label: "France" }
+              , { value: .spain {}, label: "Spain" }
               ] # required # asField @"country"
             filledTextField { floatingLabel: "Email" } # asField @"email"
             tooltip { text: "You must accept the terms of service to sign up" } $
@@ -58,12 +58,12 @@ signupForm =
           snackbar # forCase @"registered"
           snackbar # forCase @"rejected"
 
-register :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> [ registered :: String, rejected :: String ]
+register :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ registered :: String, rejected :: String ]
 register { username, email, plan, country, terms } = case validate { username, email, plan, country, terms } of
   Left problem -> .rejected ("Cannot sign up: " <> problem)
   Right name -> .registered ("Welcome, " <> name <> "!")
 
-validate :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> Either String String
+validate :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Either String String
 validate applicant@{ email, terms } =
   let username = trim applicant.username
   in
@@ -73,10 +73,10 @@ validate applicant@{ email, terms } =
     else if isJust terms == false then Left "accept the terms of service"
     else Right username
 
-whenInvalid :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> Maybe { problem :: String }
+whenInvalid :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Maybe { problem :: String }
 whenInvalid = validate >>> either (\problem -> Just { problem }) (\_ -> Nothing)
 
-whenReady :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} } -> Maybe { username :: String }
+whenReady :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Maybe { username :: String }
 whenReady = validate >>> either (\_ -> Nothing) (\username -> Just { username })
 
 namedUsername :: { username :: String } -> Maybe String
@@ -108,11 +108,11 @@ takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 usernameSettleTime :: Number
 usernameSettleTime = 300.0
 
-newApplicant :: { username :: String, email :: String, plan :: String, country :: String, terms :: Maybe {} }
+newApplicant :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} }
 newApplicant =
   { username: ""
   , email: ""
-  , plan: "free"
-  , country: "Poland"
+  , plan: .free {}
+  , country: .poland {}
   , terms: Nothing
   }

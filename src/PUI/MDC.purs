@@ -97,7 +97,6 @@ module PUI.MDC
   , layoutCell
   , layoutGrid
   , list
-  , labeled
   , listItem
   , listOf
   , menu
@@ -636,12 +635,6 @@ selectLeaf config options = wrap do
       <> "<span class=\"mdc-deprecated-list-item__ripple\"></span>"
       <> "<span class=\"mdc-deprecated-list-item__text\">" <> o.label <> "</span>"
       <> "</li>"
-
--- | Options for the self-labeled case — a string enum where each value is
--- | its own label — for any option-taking component (`select`,
--- | `segmentedButton`, `radioButton`): `segmentedButton (labeled dishes)`.
-labeled :: Array String -> Array { value :: String, label :: String }
-labeled = map \s -> { value: s, label: s }
 
 -- | The MD2 single-select segmented button, a `×→×` editor. Type-changing
 -- | like `select @l`; selection styling is CSS-class-driven, so the

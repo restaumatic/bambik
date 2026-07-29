@@ -48,33 +48,33 @@ checkout =
 
 cartStep ::
   [ placed :: { confirmed :: Boolean }
-  , next :: { step :: String }
+  , next :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
   ]
-cartStep = .next { step: "cart" }
+cartStep = .next { step: .cart {} }
 
-atCart :: { item :: String, step :: String } -> Maybe { item :: String }
-atCart { item, step } = if step == "cart" then Just { item } else Nothing
+atCart :: { item :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { item :: String }
+atCart { item, step } = if step == .cart {} then Just { item } else Nothing
 
-atShipping :: { address :: String, step :: String } -> Maybe { address :: String }
-atShipping { address, step } = if step == "shipping" then Just { address } else Nothing
+atShipping :: { address :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { address :: String }
+atShipping { address, step } = if step == .shipping {} then Just { address } else Nothing
 
-atPayment :: { card :: String, step :: String } -> Maybe { card :: String }
-atPayment { card, step } = if step == "payment" then Just { card } else Nothing
+atPayment :: { card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { card :: String }
+atPayment { card, step } = if step == .payment {} then Just { card } else Nothing
 
-nextAtCart :: { step :: String } -> Maybe { step :: String }
-nextAtCart { step } = if step == "cart" then Just { step: "shipping" } else Nothing
+nextAtCart :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+nextAtCart { step } = if step == .cart {} then Just { step: .shipping {} } else Nothing
 
-nextAtShipping :: { step :: String } -> Maybe { step :: String }
-nextAtShipping { step } = if step == "shipping" then Just { step: "payment" } else Nothing
+nextAtShipping :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+nextAtShipping { step } = if step == .shipping {} then Just { step: .payment {} } else Nothing
 
-backAtShipping :: { step :: String } -> Maybe { step :: String }
-backAtShipping { step } = if step == "shipping" then Just { step: "cart" } else Nothing
+backAtShipping :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+backAtShipping { step } = if step == .shipping {} then Just { step: .cart {} } else Nothing
 
-backAtPayment :: { step :: String } -> Maybe { step :: String }
-backAtPayment { step } = if step == "payment" then Just { step: "shipping" } else Nothing
+backAtPayment :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+backAtPayment { step } = if step == .payment {} then Just { step: .shipping {} } else Nothing
 
-placeAtPayment :: { item :: String, address :: String, card :: String, step :: String } -> Maybe { confirmed :: Boolean }
-placeAtPayment { step } = if step == "payment" then Just { confirmed: true } else Nothing
+placeAtPayment :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { confirmed :: Boolean }
+placeAtPayment { step } = if step == .payment {} then Just { confirmed: true } else Nothing
 
 recordPlaced :: { confirmed :: Boolean } -> { confirmed :: Boolean } -> { confirmed :: Boolean }
 recordPlaced { confirmed } o = o { confirmed = confirmed }

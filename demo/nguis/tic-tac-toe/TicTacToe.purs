@@ -4,7 +4,7 @@ import Prelude ((#), ($), (&&), (/=), (<#>), (<$>), (<<<), (<>), (==), (>>>), Un
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
@@ -35,30 +35,39 @@ ticTacToe =
           button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
       ) # mvu openingPosition
 
-cells :: { board :: Array String } -> Array { key :: String, mark :: String, win :: Boolean }
+cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: String, win :: Boolean }
 cells { board } =
   let winners = fromMaybe [] (winningLine board)
-  in range 0 8 <#> \i -> { key: show i, mark: fromMaybe "" (index board i), win: i `elem` winners }
+  in range 0 8 <#> \i -> { key: show i, mark: maybe "" markText (index board i), win: i `elem` winners }
+
+markText :: [ x :: {}, o :: {}, free :: {} ] -> String
+markText = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" }
 
 cellStyle :: String
 cellStyle =
   "height: 72px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
 
-openingPosition :: { board :: Array String }
-openingPosition = { board: [ "", "", "", "", "", "", "", "", "" ] }
+openingPosition :: { board :: Array [ x :: {}, o :: {}, free :: {} ] }
+openingPosition =
+  { board:
+      [ .free {}, .free {}, .free {}
+      , .free {}, .free {}, .free {}
+      , .free {}, .free {}, .free {}
+      ]
+  }
 
-startOver :: { board :: Array String } -> { board :: Array String }
+startOver :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> { board :: Array [ x :: {}, o :: {}, free :: {} ] }
 startOver _ = openingPosition
 
-claimCell :: String -> { board :: Array String } -> { board :: Array String }
+claimCell :: String -> { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> { board :: Array [ x :: {}, o :: {}, free :: {} ] }
 claimCell key game@{ board } = case fromString key of
-  Just i | index board i == Just "" && isNothing (winningLine board) ->
+  Just i | index board i == Just (.free {}) && isNothing (winningLine board) ->
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
   _ -> game
 
-playerToMove :: Array String -> String
-playerToMove board = if length (filter (_ == "") board) `mod` 2 == 1 then "X" else "O"
+playerToMove :: Array [ x :: {}, o :: {}, free :: {} ] -> [ x :: {}, o :: {}, free :: {} ]
+playerToMove board = if length (filter (_ == .free {}) board) `mod` 2 == 1 then .x {} else .o {}
 
 lines :: Array (Array Int)
 lines =
@@ -67,29 +76,29 @@ lines =
   , [ 0, 4, 8 ], [ 2, 4, 6 ]
   ]
 
-winningLine :: Array String -> Maybe (Array Int)
+winningLine :: Array [ x :: {}, o :: {}, free :: {} ] -> Maybe (Array Int)
 winningLine board = findMap taken lines
   where
   taken line = case catMaybes (line <#> index board) of
-    [ a, b, c ] | a == b && b == c && a /= "" -> Just line
+    [ a, b, c ] | a == b && b == c && a /= .free {} -> Just line
     _ -> Nothing
 
-winner :: Array String -> Maybe String
+winner :: Array [ x :: {}, o :: {}, free :: {} ] -> Maybe [ x :: {}, o :: {}, free :: {} ]
 winner board = do
   line <- winningLine board
   i <- index line 0
   index board i
 
-boardFull :: Array String -> Boolean
-boardFull board = isNothing (findMap (\m -> if m == "" then Just m else Nothing) board)
+boardFull :: Array [ x :: {}, o :: {}, free :: {} ] -> Boolean
+boardFull board = isNothing (findMap (\m -> if m == .free {} then Just m else Nothing) board)
 
-winningMark :: { board :: Array String } -> Maybe { mark :: String }
-winningMark { board } = { mark: _ } <$> winner board
+winningMark :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Maybe { mark :: String }
+winningMark { board } = (\m -> { mark: markText m }) <$> winner board
 
-drawnGame :: { board :: Array String } -> Maybe {}
+drawnGame :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Maybe {}
 drawnGame { board } = if isNothing (winner board) && boardFull board then Just {} else Nothing
 
-markToMove :: { board :: Array String } -> Maybe { mark :: String }
+markToMove :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Maybe { mark :: String }
 markToMove { board } =
-  if isNothing (winner board) && not (boardFull board) then Just { mark: playerToMove board }
+  if isNothing (winner board) && not (boardFull board) then Just { mark: markText (playerToMove board) }
   else Nothing
