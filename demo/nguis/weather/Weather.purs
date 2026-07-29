@@ -1,6 +1,6 @@
 module Weather (weather) where
 
-import Prelude ((#), ($), (*), (+), (-), (<#>), (==), Unit, discard, mod, pure, show)
+import Prelude ((#), ($), (*), (+), (-), (<#>), (<<<), (==), Unit, const, discard, mod, pure, show)
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
@@ -46,7 +46,7 @@ weather =
                 ( body1 ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text # projection servedReportsText
-                    staticText "." ) # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: resumeDashboard })
+                    staticText "." ) # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: const <<< resumeDashboard })
       ) # mvu warsawBulletin
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
@@ -82,8 +82,8 @@ fetchReport { city, sample } = do
 rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 rememberReport report { servedReports } = { report, servedReports: servedReports + 1 }
 
-resumeDashboard :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
-resumeDashboard _ board = board
+resumeDashboard :: { servedReports :: Int } -> { servedReports :: Int }
+resumeDashboard woken = woken
 
 forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
 forecastRequests { servedReports, report } = climateTable <#> \r ->

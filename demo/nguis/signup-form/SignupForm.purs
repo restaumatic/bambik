@@ -11,8 +11,9 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, displayed, forCase, forField, forValue, mvu, required)
+import PUI (PUI, asCase, asField, displayed, forCase, forField, forValue, mvu, required)
 import PUI.HTML (body, provided, staticText, text)
+import PUI.Web (Web)
 import PUI.MDC (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -55,13 +56,19 @@ signupForm =
             text # forValue # forField @"username" ) # provided # lcmap whenReady # displayed
         button { label: "Sign up", icon: "person_add" } # asCase @"signUp" # rmap (match { signUp: register })
         VariantToRecord.do
-          snackbar # forCase @"registered"
-          snackbar # forCase @"rejected"
+          welcomeToast
+          rejectionToast
 
 register :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ registered :: String, rejected :: String ]
-register { username, email, plan, country, terms } = case validate { username, email, plan, country, terms } of
-  Left problem -> .rejected ("Cannot sign up: " <> problem)
-  Right name -> .registered ("Welcome, " <> name <> "!")
+register applicant = case validate applicant of
+  Left problem -> .rejected problem
+  Right name -> .registered name
+
+welcomeToast :: PUI Web [ registered :: String ] {}
+welcomeToast = snackbar # forCase @"registered" # lcmap (match { registered: \name -> .registered ("Welcome, " <> name <> "!") })
+
+rejectionToast :: PUI Web [ rejected :: String ] {}
+rejectionToast = snackbar # forCase @"rejected" # lcmap (match { rejected: \problem -> .rejected ("Cannot sign up: " <> problem) })
 
 validate :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Either String String
 validate applicant@{ email, terms } =

@@ -14,9 +14,10 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (action, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, required, silence, tapped, updates, with)
+import PUI (PUI, action, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, required, silence, tapped, updates, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
+import PUI.Web (Web)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -95,9 +96,9 @@ main =
         indeterminateLinearProgress # action submitOrder # onCase @"submit"
         indeterminateLinearProgress # action printReceipt # onCase @"printReceipt"
       VariantToRecord.do
-        snackbar # forCase @"orderSubmitted"
-        snackbar # forCase @"submissionFailed"
-        snackbar # forCase @"receiptPrinted"
+        submittedToast
+        rejectionToast
+        receiptToast
       silence
   ) # with unit
 
@@ -236,8 +237,8 @@ submitOrder ::
   , total :: String
   }
   -> Aff
-    [ orderSubmitted :: String
-    , submissionFailed :: String
+    [ orderSubmitted :: { shortId :: String }
+    , submissionFailed :: { shortId :: String, reason :: String }
     ]
 submitOrder { shortId, orderId, total } = do
   liftEffect $ log $ "submitting order " <> orderId
@@ -245,19 +246,28 @@ submitOrder { shortId, orderId, total } = do
   if total == ""
     then do
       liftEffect $ log "order submission failed"
-      pure $ .submissionFailed ("Order " <> shortId <> " rejected: missing total")
+      pure $ .submissionFailed { shortId, reason: "missing total" }
     else do
       liftEffect $ log "submitted order"
-      pure $ .orderSubmitted ("Order " <> shortId <> " submitted")
+      pure $ .orderSubmitted { shortId }
+
+submittedToast :: PUI Web [ orderSubmitted :: { shortId :: String } ] {}
+submittedToast = snackbar # forCase @"orderSubmitted" # lcmap (match { orderSubmitted: \{ shortId } -> .orderSubmitted ("Order " <> shortId <> " submitted") })
+
+rejectionToast :: PUI Web [ submissionFailed :: { shortId :: String, reason :: String } ] {}
+rejectionToast = snackbar # forCase @"submissionFailed" # lcmap (match { submissionFailed: \{ shortId, reason } -> .submissionFailed ("Order " <> shortId <> " rejected: " <> reason) })
+
+receiptToast :: PUI Web [ receiptPrinted :: { shortId :: String } ] {}
+receiptToast = snackbar # forCase @"receiptPrinted" # lcmap (match { receiptPrinted: \{ shortId } -> .receiptPrinted ("Receipt for order " <> shortId <> " printed") })
 
 printReceipt ::
   { shortId :: String
   , orderId :: String
   }
-  -> Aff [ receiptPrinted :: String ]
+  -> Aff [ receiptPrinted :: { shortId :: String } ]
 printReceipt { shortId, orderId } = do
   liftEffect $ log $ "printing receipt for order " <> orderId
   delay (Milliseconds 2000.0)
   liftEffect $ log $ "printed receipt for order " <> orderId
-  pure $ .receiptPrinted ("Receipt for order " <> shortId <> " printed")
+  pure $ .receiptPrinted { shortId }
 

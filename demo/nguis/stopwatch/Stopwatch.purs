@@ -1,6 +1,6 @@
 module Stopwatch (stopwatch) where
 
-import Prelude ((#), ($), (+), (<), (<<<), (<>), Unit, const, identity, not, show)
+import Prelude ((#), ($), (+), (<), (<>), Unit, const, not, show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -24,9 +24,10 @@ stopwatch =
           every tickPeriod tick
           ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided # lcmap whenHalted
-              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning
+              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning) # updates (match { start: const (const beginTiming), stop: const (const haltTiming) })
+          ( RecordToVariant.do
               button { label: "Lap", icon: "flag" } # asCase @"lap" # provided # lcmap whenRunning
-              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided # lcmap whenHalted) # updates (match { start: const <<< beginTiming, stop: const <<< haltTiming, lap: const <<< recordLap, reset: const <<< clearStopwatch })
+              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided # lcmap whenHalted) # updates (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
                    text # forValue # forField @"number"
@@ -34,25 +35,19 @@ stopwatch =
                    text # forValue # forField @"time" ) # foreach @"number" ) # lcmap lapRows # displayed
       ) # mvu zeroedStopwatch
 
-beginTiming
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-beginTiming sw = sw { running = true }
+beginTiming :: { running :: Boolean }
+beginTiming = { running: true }
 
-haltTiming
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-haltTiming sw = sw { running = false }
+haltTiming :: { running :: Boolean }
+haltTiming = { running: false }
 
 recordLap
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
+  :: { elapsedTenths :: Int, laps :: Array Int }
+  -> { elapsedTenths :: Int, laps :: Array Int }
 recordLap sw@{ laps, elapsedTenths } = sw { laps = snoc laps elapsedTenths }
 
-clearStopwatch
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
+clearStopwatch :: { elapsedTenths :: Int, laps :: Array Int }
+clearStopwatch = { elapsedTenths: 0, laps: [] }
 
 tick
   :: { running :: Boolean, elapsedTenths :: Int }
@@ -61,15 +56,11 @@ tick sw@{ running, elapsedTenths } =
   if running then Just (sw { elapsedTenths = elapsedTenths + 1 })
   else Nothing
 
-whenHalted
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-whenHalted sw@{ running } = if not running then Just sw else Nothing
+whenHalted :: { running :: Boolean } -> Maybe {}
+whenHalted { running } = if not running then Just {} else Nothing
 
-whenRunning
-  :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-  -> Maybe { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-whenRunning sw@{ running } = if running then Just sw else Nothing
+whenRunning :: { running :: Boolean } -> Maybe {}
+whenRunning { running } = if running then Just {} else Nothing
 
 readout :: { elapsedTenths :: Int } -> String
 readout { elapsedTenths } = formatTime elapsedTenths

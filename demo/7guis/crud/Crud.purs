@@ -1,6 +1,6 @@
 module Crud (crud) where
 
-import Prelude ((#), ($), (<$>), (==), (>>>), Unit, bind, discard, pure, unit)
+import Prelude ((#), ($), (<$>), (<<<), (==), Unit, bind, const, discard, pure, unit)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -44,7 +44,7 @@ crud = do
                   VariantToVariant.do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
-                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted })) # looped
+                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
       ) # with unit
 
 pick :: Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String }
@@ -68,11 +68,8 @@ deletePerson catalogue { people, selected } = case selected of
 refreshPeople :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 refreshPeople people m = m { people = people }
 
-deselect :: { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
-deselect m = m { selected = Nothing }
-
-peopleDeleted :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
-peopleDeleted people = refreshPeople people >>> deselect
+peopleDeleted :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
+peopleDeleted people = { people, selected: Nothing }
 
 loadPeopleCatalogue :: Ref (Array { name :: String, surname :: String }) -> Unit -> Aff { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 loadPeopleCatalogue catalogue _ = do

@@ -1,6 +1,6 @@
 module TicTacToe (ticTacToe) where
 
-import Prelude ((#), ($), (&&), (/=), (<#>), (<$>), (<<<), (<>), (==), (>>>), Unit, bind, const, mod, not, show)
+import Prelude ((#), ($), (&&), (/=), (<#>), (<$>), (<>), (==), (>>>), Unit, bind, const, mod, not, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
@@ -32,7 +32,7 @@ ticTacToe =
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
                           $ text # lcmap (\c -> { value: c.mark })) # rmap _.key) # foreach @"key" # lcmap cells) # toCase @"cellPicked") # updates (match { cellPicked: claimCell })
-          button { label: "New game", icon: "replay" } # updates (match { clicked: const <<< startOver })
+          button { label: "New game", icon: "replay" } # lcmap newGame # updates (match { clicked: const })
       ) # mvu openingPosition
 
 cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: String, win :: Boolean }
@@ -48,6 +48,9 @@ cellStyle =
   "height: 72px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
 
+newGame :: {} -> { board :: Array [ x :: {}, o :: {}, free :: {} ] }
+newGame {} = openingPosition
+
 openingPosition :: { board :: Array [ x :: {}, o :: {}, free :: {} ] }
 openingPosition =
   { board:
@@ -56,9 +59,6 @@ openingPosition =
       , .free {}, .free {}, .free {}
       ]
   }
-
-startOver :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> { board :: Array [ x :: {}, o :: {}, free :: {} ] }
-startOver _ = openingPosition
 
 claimCell :: String -> { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> { board :: Array [ x :: {}, o :: {}, free :: {} ] }
 claimCell key game@{ board } = case fromString key of

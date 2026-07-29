@@ -1,17 +1,18 @@
 module EspressoBar (espressoBar) where
 
-import Prelude (Unit, min, otherwise, (#), ($), (*), (+), (<>), (==))
+import Prelude (Unit, const, min, otherwise, (#), ($), (*), (+), (<>), (==))
 
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
-import Data.Profunctor (rmap)
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, forCase, mvu, projection, required, tapped, updates)
+import PUI (PUI, asCase, asField, forCase, mvu, projection, required, tapped, updates)
 import PUI.HTML (body, div, staticText, text)
+import PUI.Web (Web)
 import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -54,9 +55,9 @@ espressoBar =
                 checkbox (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"loyalty"
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
-                  menuItem { label: "The usual" } # asCase @"theUsual"
+                  menuItem { label: "The usual" } # asCase @"theUsual" # lcmap theUsual
                   menuItem { label: "Espresso, no frills" } # asCase @"espressoNoFrills" )
-                # updates (match { theUsual: \m _ -> theUsual m, espressoNoFrills: \m _ -> espressoNoFrills m })
+                # updates (match { theUsual: const, espressoNoFrills: \m _ -> espressoNoFrills m })
           ) # mvu usualOrder
           bodyMedium ( RecordToRecord.do
               staticText "Your cup: "
@@ -64,8 +65,8 @@ espressoBar =
           ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
               linearProgress ) # projection caffeineFraction # tapped
-          button { label: "Place order", icon: "local_cafe" } # asCase @"placeOrder" # rmap (match { placeOrder: brew })
-          snackbar # forCase @"brewed"
+          button { label: "Place order", icon: "local_cafe" } # asCase @"brewed"
+          brewedToast
 
 usualOrder :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} }
 usualOrder =
@@ -82,19 +83,20 @@ usualOrder =
   , loyalty: Nothing
   }
 
-theUsual :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
-theUsual order = order { drink = .cappuccino {}, size = .medium {}, milk = .whole {}, roast = .medium {}, sugar = 1.0, extraShot = false, decaf = false }
+theUsual :: {} -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
+theUsual {} = { drink: .cappuccino {}, size: .medium {}, milk: .whole {}, roast: .medium {}, sugar: 1.0, extraShot: false, decaf: false }
 
 espressoNoFrills :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
 espressoNoFrills order = order { drink = .espresso {}, size = .small {}, milk = .none {}, sugar = 0.0, extraShot = false, decaf = false }
 
-brew :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> [ brewed :: String ]
-brew { customer, drink, size, milk, roast, sugar, extraShot, decaf, takeaway, favorite, loyalty } =
-  .brewed
-    ( "Coming right up" <> forCustomer { customer }
-        <> ": " <> summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty }
-        <> (if favorite then " ★" else "")
-    )
+brewedToast :: PUI Web [ brewed :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } ] {}
+brewedToast = snackbar # forCase @"brewed" # lcmap (match { brewed: \order -> .brewed (brewedLine order) })
+
+brewedLine :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> String
+brewedLine { customer, drink, size, milk, roast, sugar, extraShot, decaf, takeaway, favorite, loyalty } =
+  "Coming right up" <> forCustomer { customer }
+    <> ": " <> summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty }
+    <> (if favorite then " ★" else "")
 
 forCustomer :: { customer :: String } -> String
 forCustomer { customer } = case trim customer of

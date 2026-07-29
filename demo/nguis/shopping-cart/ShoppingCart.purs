@@ -1,6 +1,6 @@
 module ShoppingCart (shoppingCart) where
 
-import Prelude ((#), ($), (*), (+), (-), (/), (<), (<<<), (<>), (==), Unit, const, map, mod, otherwise, show)
+import Prelude ((#), ($), (*), (+), (-), (/), (<), (<>), (==), Unit, const, map, mod, otherwise, show)
 
 import Data.Array (any, foldl, mapMaybe, snoc)
 import Data.Maybe (Maybe(..))
@@ -32,8 +32,11 @@ shoppingCart =
           body1 ( RecordToRecord.do
               staticText "Total: $"
               text # projection grandTotalText ) # tapped
-          button { label: "Empty cart" } # updates (match { clicked: const <<< clearCart })
+          button { label: "Empty cart" } # lcmap clearCart # updates (match { clicked: const })
       ) # mvu emptyCart
+
+clearCart :: {} -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
+clearCart {} = emptyCart
 
 emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
 emptyCart = { order: [] }
@@ -60,9 +63,6 @@ removeUnit name cart = cart { order = mapMaybe oneFewer cart.order }
   oneFewer l
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }
     | otherwise = Just l
-
-clearCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-clearCart _ = emptyCart
 
 cartLines :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> Array { product :: String, quantity :: String, lineTotal :: String }
 cartLines { order } = map line order

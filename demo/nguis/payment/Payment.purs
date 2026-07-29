@@ -1,14 +1,15 @@
 module Payment (payment) where
 
-import Prelude ((#), ($), (+), (<), (<>), Unit, bind, discard, pure, show)
+import Prelude ((#), ($), (+), (<), (<<<), (<>), Unit, const, discard, pure, show)
 
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
+import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, asCase, forField, forValue, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, forField, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,27 +22,32 @@ payment =
           headline6 ( RecordToRecord.do
               staticText "Amount due: $"
               text # projection show # forField @"amount" ) # tapped
-          body2 text # forValue # forField @"status" # tapped
+          body2 text # projection statusLine # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge
-              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: recordCharged })
+              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder
 
 startCharge :: { amount :: Number } -> { amount :: Number, attempt :: Int }
 startCharge { amount } = { amount, attempt: 0 }
 
 chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
-  [ charged :: String
+  [ charged :: { attempt :: Int }
   , charge :: { amount :: Number, attempt :: Int }
   ]
-chargeFlaky r@{ amount, attempt } = do
+chargeFlaky r@{ attempt } = do
   delay (Milliseconds 700.0)
   if attempt < 2
     then pure $ .charge r { attempt = attempt + 1 }
-    else pure $ .charged ("Approved — $" <> show amount <> " charged on attempt " <> show (attempt + 1))
+    else pure $ .charged { attempt: attempt + 1 }
 
-recordCharged :: String -> { status :: String } -> { status :: String }
-recordCharged message o = o { status = message }
+recordCharged :: { attempt :: Int } -> { approved :: Maybe { attempt :: Int } }
+recordCharged approval = { approved: Just approval }
 
-unpaidOrder :: { amount :: Number, status :: String }
-unpaidOrder = { amount: 42.0, status: "Ready to charge — the gateway is flaky, so it retries automatically." }
+statusLine :: { amount :: Number, approved :: Maybe { attempt :: Int } } -> String
+statusLine { amount, approved } = case approved of
+  Nothing -> "Ready to charge — the gateway is flaky, so it retries automatically."
+  Just { attempt } -> "Approved — $" <> show amount <> " charged on attempt " <> show attempt
+
+unpaidOrder :: { amount :: Number, approved :: Maybe { attempt :: Int } }
+unpaidOrder = { amount: 42.0, approved: Nothing }

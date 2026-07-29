@@ -1,8 +1,9 @@
 module Timer (timer) where
 
-import Prelude ((#), ($), (+), (/), (<), (<=), (<<<), Unit, const, min, show)
+import Prelude ((#), ($), (+), (/), (<), (<=), Unit, const, min, show)
 
 import Data.Maybe (Maybe(..))
+import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
@@ -25,11 +26,11 @@ timer =
                 staticText "s"
               sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration") # completed
           every tickPeriod tick
-          button { label: "Reset", icon: "replay" } # updates (match { clicked: const <<< reset })
+          button { label: "Reset", icon: "replay" } # lcmap reset # updates (match { clicked: const })
       ) # mvu tenSecondFreshTimer
 
-reset :: { elapsed :: Number } -> { elapsed :: Number }
-reset t = t { elapsed = 0.0 }
+reset :: {} -> { elapsed :: Number }
+reset {} = { elapsed: 0.0 }
 
 tick :: { duration :: Number, elapsed :: Number } -> Maybe { duration :: Number, elapsed :: Number }
 tick t@{ duration, elapsed } =
