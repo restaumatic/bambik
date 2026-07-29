@@ -7,12 +7,12 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor (rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.String (toLower, trim)
+import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, forCase, mvu, projection, required, tapped, updates)
 import PUI.HTML (body, div, staticText, text)
-import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, labeled, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
+import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 espressoBar :: Effect Unit
@@ -23,11 +23,28 @@ espressoBar =
         card { caption: "Your order" } Semigroupoid.do
           ( Semigroupoid.do
               RecordToRecord.do
-                tabBar (labeled drinkChoices) # asField @"drink"
+                tabBar
+                  [ { value: .espresso {}, label: "Espresso" }
+                  , { value: .cappuccino {}, label: "Cappuccino" }
+                  , { value: .latte {}, label: "Latte" }
+                  ] # asField @"drink"
                 filledTextField { floatingLabel: "Your name" } # asField @"customer"
-                segmentedButton (labeled sizeChoices) # required # asField @"size"
-                select { floatingLabel: "Milk" } (labeled milkChoices) # required # asField @"milk"
-                radioButton (labeled roastChoices) # required # asField @"roast"
+                segmentedButton
+                  [ { value: .small {}, label: "Small" }
+                  , { value: .medium {}, label: "Medium" }
+                  , { value: .large {}, label: "Large" }
+                  ] # required # asField @"size"
+                select { floatingLabel: "Milk" }
+                  [ { value: .whole {}, label: "Whole" }
+                  , { value: .oat {}, label: "Oat" }
+                  , { value: .almond {}, label: "Almond" }
+                  , { value: .none {}, label: "None" }
+                  ] # required # asField @"milk"
+                radioButton
+                  [ { value: .light {}, label: "Light roast" }
+                  , { value: .medium {}, label: "Medium roast" }
+                  , { value: .dark {}, label: "Dark roast" }
+                  ] # required # asField @"roast"
                 sliderLive { label: "Sugar", min: noSugar, max: maxSugar, step: sugarStep } # asField @"sugar"
                 chipSet RecordToRecord.do
                   filterChip { label: "Extra shot" } # asField @"extraShot"
@@ -50,13 +67,13 @@ espressoBar =
           button { label: "Place order", icon: "local_cafe" } # asCase @"placeOrder" # rmap (match { placeOrder: brew })
           snackbar # forCase @"brewed"
 
-usualOrder :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} }
+usualOrder :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} }
 usualOrder =
   { customer: ""
-  , drink: "Cappuccino"
-  , size: "Medium"
-  , milk: "Whole"
-  , roast: "Medium roast"
+  , drink: .cappuccino {}
+  , size: .medium {}
+  , milk: .whole {}
+  , roast: .medium {}
   , sugar: 1.0
   , extraShot: false
   , decaf: false
@@ -65,13 +82,13 @@ usualOrder =
   , loyalty: Nothing
   }
 
-theUsual :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
-theUsual order = order { drink = "Cappuccino", size = "Medium", milk = "Whole", roast = "Medium roast", sugar = 1.0, extraShot = false, decaf = false }
+theUsual :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
+theUsual order = order { drink = .cappuccino {}, size = .medium {}, milk = .whole {}, roast = .medium {}, sugar = 1.0, extraShot = false, decaf = false }
 
-espressoNoFrills :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
-espressoNoFrills order = order { drink = "Espresso", size = "Small", milk = "None", sugar = 0.0, extraShot = false, decaf = false }
+espressoNoFrills :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
+espressoNoFrills order = order { drink = .espresso {}, size = .small {}, milk = .none {}, sugar = 0.0, extraShot = false, decaf = false }
 
-brew :: { customer :: String, drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> [ brewed :: String ]
+brew :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> [ brewed :: String ]
 brew { customer, drink, size, milk, roast, sugar, extraShot, decaf, takeaway, favorite, loyalty } =
   .brewed
     ( "Coming right up" <> forCustomer { customer }
@@ -84,16 +101,28 @@ forCustomer { customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 
-summaryText :: { drink :: String, size :: String, milk :: String, roast :: String, sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe {} } -> String
+summaryText :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe {} } -> String
 summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty } =
-  size <> " " <> toLower drink
-    <> (if milk == "None" then "" else " with " <> toLower milk <> " milk")
-    <> ", " <> toLower roast
+  sizeText size <> " " <> drinkText drink
+    <> milkText milk
+    <> ", " <> roastText roast
     <> (if extraShot then ", extra shot" else "")
     <> (if decaf then ", decaf" else "")
     <> sugarsText sugar
     <> (if takeaway then ", to go" else "")
     <> " — " <> money (price { size, milk, extraShot, loyalty })
+
+drinkText :: [ espresso :: {}, cappuccino :: {}, latte :: {} ] -> String
+drinkText = match { espresso: \_ -> "espresso", cappuccino: \_ -> "cappuccino", latte: \_ -> "latte" }
+
+sizeText :: [ small :: {}, medium :: {}, large :: {} ] -> String
+sizeText = match { small: \_ -> "Small", medium: \_ -> "Medium", large: \_ -> "Large" }
+
+milkText :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ] -> String
+milkText = match { whole: \_ -> " with whole milk", oat: \_ -> " with oat milk", almond: \_ -> " with almond milk", none: \_ -> "" }
+
+roastText :: [ light :: {}, medium :: {}, dark :: {} ] -> String
+roastText = match { light: \_ -> "light roast", medium: \_ -> "medium roast", dark: \_ -> "dark roast" }
 
 sugarsText :: Number -> String
 sugarsText n
@@ -101,50 +130,29 @@ sugarsText n
   | n == 1.0 = ", 1 sugar"
   | otherwise = ", " <> toStringWith (fixed 0) n <> " sugars"
 
-price :: { size :: String, milk :: String, extraShot :: Boolean, loyalty :: Maybe {} } -> Number
+price :: { size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], extraShot :: Boolean, loyalty :: Maybe {} } -> Number
 price { size, milk, extraShot, loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
   discounted p = case loyalty of
     Just _ -> p * 0.9
     Nothing -> p
 
-sizePrice :: String -> Number
-sizePrice size = case size of
-  "Small" -> 3.0
-  "Large" -> 4.0
-  _ -> 3.5
+sizePrice :: [ small :: {}, medium :: {}, large :: {} ] -> Number
+sizePrice = match { small: \_ -> 3.0, medium: \_ -> 3.5, large: \_ -> 4.0 }
 
-milkPrice :: String -> Number
-milkPrice milk = case milk of
-  "Oat" -> 0.4
-  "Almond" -> 0.4
-  _ -> 0.0
+milkPrice :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ] -> Number
+milkPrice = match { whole: \_ -> 0.0, oat: \_ -> 0.4, almond: \_ -> 0.4, none: \_ -> 0.0 }
 
 money :: Number -> String
 money n = "€" <> toStringWith (fixed 2) n
 
-caffeineFraction :: { drink :: String, extraShot :: Boolean, decaf :: Boolean } -> Number
+caffeineFraction :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], extraShot :: Boolean, decaf :: Boolean } -> Number
 caffeineFraction { drink, extraShot, decaf }
   | decaf = 0.05
   | otherwise = min 1.0 (drinkShots drink + (if extraShot then 0.35 else 0.0))
 
-drinkShots :: String -> Number
-drinkShots drink = case drink of
-  "Espresso" -> 0.6
-  "Cappuccino" -> 0.45
-  _ -> 0.3
-
-drinkChoices :: Array String
-drinkChoices = [ "Espresso", "Cappuccino", "Latte" ]
-
-sizeChoices :: Array String
-sizeChoices = [ "Small", "Medium", "Large" ]
-
-milkChoices :: Array String
-milkChoices = [ "Whole", "Oat", "Almond", "None" ]
-
-roastChoices :: Array String
-roastChoices = [ "Light roast", "Medium roast", "Dark roast" ]
+drinkShots :: [ espresso :: {}, cappuccino :: {}, latte :: {} ] -> Number
+drinkShots = match { espresso: \_ -> 0.6, cappuccino: \_ -> 0.45, latte: \_ -> 0.3 }
 
 noSugar :: Number
 noSugar = 0.0
