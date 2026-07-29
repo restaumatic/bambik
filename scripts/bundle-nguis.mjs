@@ -29,6 +29,7 @@ const demos = {
   'scoreboard': ['Scoreboard', 'scoreboard'],
   'reorder': ['Reorder', 'reorder'],
   'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
+  'espresso-bar': ['EspressoBar', 'espressoBar'],
 }
 
 for (const [dir, [mod, fn]] of Object.entries(demos)) {

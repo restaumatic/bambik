@@ -17,6 +17,7 @@
     "deploy-demo-nguis": "scp -r demo/nguis/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
+    "@material/web": "^2.5.0",
     "material-components-web": "^14.0.0"
   },
   "devDependencies": {
