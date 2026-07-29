@@ -860,9 +860,12 @@ card provided content = wrap do
   where
   { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
 
+-- a flex column with a gap: MD3 custom elements carry no margins of their
+-- own, so the card supplies the vertical rhythm between its children
 cardCss :: String
 cardCss = """
-.md3-card { background: var(--md-sys-color-surface-container-low, #f7f2fa); color: var(--md-sys-color-on-surface, #1d1b20); border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15); padding: 16px; margin: 15px 0; text-align: justify; }
+.md3-card { background: var(--md-sys-color-surface-container-low, #f7f2fa); color: var(--md-sys-color-on-surface, #1d1b20); border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15); padding: 16px; margin: 15px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.md3-card > p { margin: 0; }
 """
 
 -- | The MD3 card button-row area: a flex row for a group of buttons, so they

@@ -11,7 +11,7 @@ import Data.String (toLower, trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, forCase, mvu, projection, required, tapped, updates)
-import PUI.HTML (body, staticText, text)
+import PUI.HTML (body, div, staticText, text)
 import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, labeled, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -44,7 +44,7 @@ espressoBar =
           bodyMedium ( RecordToRecord.do
               staticText "Your cup: "
               text # projection summaryText ) # tapped
-          ( RecordToRecord.do
+          ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
               linearProgress ) # projection caffeineFraction # tapped
           button { label: "Place order", icon: "local_cafe" } # asCase @"placeOrder" # rmap (match { placeOrder: brew })
