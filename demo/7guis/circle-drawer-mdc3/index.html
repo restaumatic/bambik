@@ -1,0 +1,79 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/haskell.min.js"></script>
+    <title>Bambik · 7GUIs · Circle Drawer (MDC3)</title>
+    <style>
+      html, body { height: 100%; }
+      body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        align-items: flex-start;
+        align-content: flex-start;
+        margin: 0;
+        padding: 16px;
+        box-sizing: border-box;
+        overflow: auto;
+        font-family: Roboto, sans-serif;
+      }
+      body > .mdc-elevation--z20 { max-height: calc(100vh - 100px); overflow: auto; }
+      #source-panel pre { max-height: calc(100vh - 230px); overflow: auto; }
+      #page-header {
+        flex-basis: 100%;
+        order: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+      }
+      #page-title { font-size: 1.4rem; font-weight: 500; }
+      #page-header .sep { color: #bbb; }
+      body > .mdc-elevation--z20 { flex: 0 1 480px; min-width: 320px; order: 1; }
+      #source-panel { flex: 1 1 480px; min-width: 320px; order: 2; }
+      #source-panel h3 { color: #555; margin: 8px 0; }
+      #source-panel pre { background: #f6f8fa; padding: 12px; border-radius: 6px; font-size: 12.5px; margin: 0; }
+      #source-panel p { font-size: 14px; }
+      #source-panel .note { color: #888; font-style: italic; margin: 4px 0 8px 0; }
+      #demo-column { display: flex; flex-direction: column; gap: 8px; flex: 0 1 480px; min-width: 320px; order: 1; }
+      #demo-column > *:not(#demo-note) { max-height: calc(100vh - 130px); overflow: auto; }
+      #demo-note .note { color: #888; font-style: italic; margin: 0; font-size: 14px; }
+      @media (max-width: 700px) {
+        html, body { height: auto; }
+        body { overflow: auto; }
+        body > .mdc-elevation--z20 { flex-basis: 100%; min-width: 0; max-height: none; overflow: visible; }
+        #source-panel { flex-basis: 100%; min-width: 0; }
+        #source-panel pre { max-height: none; overflow-x: auto; font-size: 14px; }
+      }
+    </style>
+    <script>window.__bambikTrace = true</script>
+    <script type="module" src="bundle.js"></script>
+  </head>
+  <body data-source="CircleDrawerMDC3.purs">
+    <header id="page-header">
+      <a href="../">&#171; Go back to all 7GUIs tasks</a>
+      <span class="sep">·</span>
+      <span id="page-title">Circle Drawer (MDC3)</span>
+      <span class="sep">·</span>
+      <a href="https://eugenkiss.github.io/7guis/tasks/#circle">description</a>
+      <span class="sep">·</span>
+      <span id="src-size"></span>
+      <span class="sep" id="bundle-sep" hidden>·</span>
+      <span id="bundle-size"></span>
+    </header>
+    <section id="source-panel">
+      <pre><code id="src" class="language-haskell">loading…</code></pre>
+      <p class="note">See the <a href="../../#code-style">code style</a> note.</p>
+    </section>
+    <section id="demo-note">
+      <p class="note">See the <a href="../../#tracing">tracing</a> note.</p>
+    </section>
+    <script src="../../page.js"></script>
+  </body>
+</html>

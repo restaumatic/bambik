@@ -39,24 +39,24 @@ const groupDemoWithNote = () => {
   }
 }
 
-// MD2/MD3 switcher: MD3 siblings live beside their originals by path
-// convention (…/counter/ ↔ …/counter-md3/), so the sibling URL is derived
+// MDC2/MDC3 switcher: MDC3 siblings live beside their originals by path
+// convention (…/counter/ ↔ …/counter-mdc3/), so the sibling URL is derived
 // from the location and the switcher appears only where the sibling actually
 // exists (probed with a HEAD request) — no per-page markup.
 const offerDesignSystemSwitch = () => {
   const header = document.getElementById("page-header")
   if (!header) return
-  const md3 = location.pathname.endsWith("-md3/")
-  const sibling = md3
-    ? location.pathname.replace(/-md3\/$/, "/")
-    : location.pathname.replace(/\/$/, "-md3/")
+  const mdc3 = location.pathname.endsWith("-mdc3/")
+  const sibling = mdc3
+    ? location.pathname.replace(/-mdc3\/$/, "/")
+    : location.pathname.replace(/\/$/, "-mdc3/")
   fetch(sibling + "index.html", { method: "HEAD", cache: "no-cache" }).then(r => {
     if (!r.ok) return
     const toggle = document.createElement("span")
     const link = (href, label) => '<a href="' + href + '">' + label + '</a>'
     toggle.innerHTML = '<span class="sep">·</span> ' +
-      (md3 ? link(sibling, "MD2") + " | <strong>MD3</strong>"
-           : "<strong>MD2</strong> | " + link(sibling, "MD3"))
+      (mdc3 ? link(sibling, "MDC2") + " | <strong>MDC3</strong>"
+           : "<strong>MDC2</strong> | " + link(sibling, "MDC3"))
     header.append(toggle)
   }).catch(() => {})
 }
