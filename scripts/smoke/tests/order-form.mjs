@@ -1,8 +1,8 @@
-// demo/1, the four-direction pipeline: an Aff load action feeds the form,
+// The four-direction pipeline: an Aff load action feeds the form,
 // the variant fulfillment editor shows exactly the selected payload's pane,
 // and the debounced summary tap mirrors the model.
-export const demos = ['demo/1']
-export const url = '/demo/1/'
+export const demos = ['demo/nguis/order-form']
+export const url = '/demo/nguis/order-form/'
 
 export const run = async ({ ev, assertEq, sleep }) => {
   const fieldValue = label =>

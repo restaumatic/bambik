@@ -47,7 +47,6 @@ to generate this file without the comments in this block.
 , sources =
   [ "src/**/*.purs"
   , "test/**/*.purs"
-  , "demo/1/**/*.purs"
   , "demo/7guis/**/*.purs"
   , "demo/nguis/**/*.purs"
   ]

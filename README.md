@@ -21,14 +21,14 @@ In order to run the demo:
 $ npm install
 ```
 
-Demo of [Material Design Component-based UI](demo/1/Main.purs):
+Demo of [Material Design Component-based UI](demo/nguis/order-form/OrderForm.purs):
 
 ```bash
-$ npm run demo-1
+$ npm run dev order-form
 ```
 
 Demo of [plain HTML-based UI](demo/nguis/restaurant-menu/RestaurantMenu.purs) — a fancy static page with no Material components, part of the nGUIs set:
 
 ```bash
-$ npm run bundle-demo-nguis
+$ npm run dev restaurant-menu
 ```

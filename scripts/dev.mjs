@@ -1,7 +1,7 @@
-// Watch-mode dev server for every demo at once, served in the same folder
-// layout the deploy scp's to the remote host: the repo's demo/ tree is served
-// at /bambik/demo/, so /bambik/demo/7guis/counter/ locally is the same path as
-// on erykciepiela.xyz.
+// Watch-mode dev server for every demo at once. The repo's demo/ tree is the
+// server root, in the same folder layout the deploy scp's to the remote host —
+// /7guis/counter/ here is /bambik/demo/7guis/counter/ there, so every relative
+// link and asset path resolves identically in both places.
 //
 // An mtime-polling watcher over src/ and demo/ runs spago on change, esbuild
 // rebundles every demo whose output changed, and pages auto-reload over the
@@ -22,7 +22,6 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { all, entryFor } from './demos.mjs'
 
-const BASE = '/bambik/demo'
 const PORT = 1234
 
 const filters = process.argv.slice(2)
@@ -105,14 +104,14 @@ await Promise.all(demos.map(async d => {
     bundle: true,
     format: 'esm',
     outfile: `${d.dir}/bundle.js`,
-    banner: { js: `new EventSource('${BASE}/esbuild').addEventListener('change', () => location.reload());` },
+    banner: { js: `new EventSource('/esbuild').addEventListener('change', () => location.reload());` },
     plugins: [reloadPlugin(d.name)],
     logLevel: 'warning',
   })
   await ctx.watch()
 }))
 
-// ── static server over demo/, mounted at the deployed path ────────────────
+// ── static server rooted at demo/ ─────────────────────────────────────────
 const contentTypes = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.purs': 'text/plain',
@@ -126,7 +125,7 @@ createServer((req, res) => {
   const url = new URL(req.url, 'http://x')
   const pathname = decodeURIComponent(url.pathname)
 
-  if (pathname === `${BASE}/esbuild`) {
+  if (pathname === '/esbuild') {
     res.writeHead(200, {
       'content-type': 'text/event-stream',
       'cache-control': 'no-cache',
@@ -137,19 +136,13 @@ createServer((req, res) => {
     return
   }
 
-  if (pathname === '/' || pathname === BASE) {
-    res.writeHead(302, { location: `${BASE}/` })
-    res.end()
+  const root = path.resolve('demo')
+  let file = path.resolve(root, `.${pathname}`)
+  if (file !== root && !file.startsWith(root + path.sep)) {
+    res.writeHead(403, { 'content-type': 'text/plain' })
+    res.end('forbidden')
     return
   }
-
-  if (!pathname.startsWith(`${BASE}/`)) {
-    res.writeHead(404, { 'content-type': 'text/plain' })
-    res.end(`not found — demos are served under ${BASE}/`)
-    return
-  }
-
-  let file = path.join('demo', pathname.slice(`${BASE}/`.length))
   if (isDir(file)) file = path.join(file, 'index.html')
   if (!existsSync(file)) {
     res.writeHead(404, { 'content-type': 'text/plain' })
@@ -162,6 +155,6 @@ createServer((req, res) => {
   })
   res.end(readFileSync(file))
 }).listen(PORT, '127.0.0.1', () => {
-  console.log(`dev server: http://127.0.0.1:${PORT}${BASE}/  (${demos.length} demo(s), auto-reload on)`)
-  for (const d of demos) console.log(`  http://127.0.0.1:${PORT}${BASE}/${d.dir.slice('demo/'.length)}/`)
+  console.log(`dev server: http://127.0.0.1:${PORT}/  (${demos.length} demo(s), auto-reload on)`)
+  for (const d of demos) console.log(`  http://127.0.0.1:${PORT}/${d.dir.slice('demo/'.length)}/`)
 })

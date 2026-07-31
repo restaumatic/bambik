@@ -62,7 +62,7 @@ freely; code order = DOM order.
 Demos are standalone modules exporting a single entry function. The
 shape of the pipeline follows the app, not a blessed template — a pure
 self-feeding loop reads `# mvu seed`, a loop-free flow reads
-`# with seed` (demo/1: load action → form → events → backend dispatch →
+`# with seed` (order-form: load action → form → events → backend dispatch →
 statuses → `silence`), and the two combine freely (crud: load action
 feeding a `looped` form whose commands dispatch through write actions).
 For worked examples read the 7GUIs demos (demo/7guis/ — counter is the
@@ -96,7 +96,7 @@ parser, helloworld is the bare minimum, restaurant-menu is the plain-HTML
 showcase — no MDC at all, a fancy static page built purely from element
 oculars + `staticText` merged with `RecordToRecord.do` of `{} → {}` chrome,
 with courses/dishes from data via `each` and the look supplied by page CSS),
-demo/1 (loop-free pipeline), and the trace-quartet demos in demo/nguis —
+order-form (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
 ticket-dispenser (`unfolding`), one focused combinator each.
 
@@ -404,11 +404,13 @@ gate-withheld emissions (the otherwise-invisible ones) — as
    spago -w reads stdin and dies on EOF, so keep stdin open (never
    `</dev/null`); run only one watcher over the shared `output/` at a
    time. Tests: `spago test`.
-3. Interactive dev loop: `npm run dev <demo>` serves the demo at
-   `http://127.0.0.1:1234/` with auto-rebuild and browser auto-reload.
-4. Bundle with `npm run bundle-demo-7guis` (or `bundle-demo-1|nguis`;
-   7guis demos are named modules entered at their own function, bundled
-   via scripts/bundle-7guis.mjs — `spago bundle-app` can only call
+3. Interactive dev loop: `npm run dev` serves every demo at
+   `http://127.0.0.1:1234/` — rooted at demo/, the deployed folder layout —
+   with auto-rebuild and browser auto-reload; `npm run dev <name|set>`
+   narrows the bundling.
+4. Bundle with `npm run bundle-demos` (every demo is a named module
+   entered at its own function, bundled via scripts/bundle.mjs off the
+   scripts/demos.mjs registry — `spago bundle-app` can only call
    `Main.main`).
 5. Verify behavior with `npm run smoke` (scripts/smoke/ — the committed
    headless-Chrome CDP harness; add a tests/*.mjs file for a new demo,

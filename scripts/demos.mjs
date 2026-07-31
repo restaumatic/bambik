@@ -5,9 +5,6 @@
 // synthesized from this table instead.
 
 export const sets = {
-  '1': {
-    'order-form': ['OrderForm', 'orderForm'],
-  },
   '7guis': {
     'counter': ['Counter', 'counter'],
     'temperature-converter': ['TemperatureConverter', 'temperatureConverter'],
@@ -18,6 +15,7 @@ export const sets = {
     'cells': ['Cells', 'cells'],
   },
   'nguis': {
+    'order-form': ['OrderForm', 'orderForm'],
     'todomvc': ['TodoMvc', 'todoMvc'],
     'tip-calculator': ['TipCalculator', 'tipCalculator'],
     'quiz': ['Quiz', 'quiz'],
@@ -47,15 +45,11 @@ export const sets = {
   },
 }
 
-// demo/1 is a single page at the set's own directory; the other sets hold one
-// directory per demo.
-const dirOf = (set, name) => set === '1' ? 'demo/1' : `demo/${set}/${name}`
-
 // Every demo as { set, name, dir, mod, fn } — dir is repo-relative, and also
 // the path the page is served at under the deployed /bambik/demo/ tree.
 export const all = Object.entries(sets).flatMap(([set, demos]) =>
   Object.entries(demos).map(([name, [mod, fn]]) => ({
-    set, name, mod, fn, dir: dirOf(set, name),
+    set, name, mod, fn, dir: `demo/${set}/${name}`,
   })))
 
 export const inSet = set => all.filter(d => d.set === set)
