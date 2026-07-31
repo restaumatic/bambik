@@ -1,0 +1,72 @@
+module ScoreboardMD3 (scoreboardMD3) where
+
+import Prelude ((#), ($), (+), (==), Unit, mod, show)
+
+import Data.Array (filter, index, length, range)
+import Data.Foldable (maximumBy)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Ord (comparing)
+import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Effect (Effect)
+import PUI (accumulated, displayed, every, forField, forValue, mvu, projection)
+import PUI.HTML (body, provided, staticText, text)
+import PUI.MDC3 (bodyMedium, card, elevation5, list, listItem)
+import QualifiedDo.Semigroupoid as Semigroupoid
+
+scoreboardMD3 :: Effect Unit
+scoreboardMD3 =
+  body $
+    elevation5 $
+      card { caption: "Scoreboard" } $ ( Semigroupoid.do
+          every { ms: 1000.0 } tick
+          ( Semigroupoid.do
+              ( list $
+                  ( ( listItem $ RecordToRecord.do
+                        text # forValue # forField @"team"
+                        staticText ": "
+                        text # projection show # forField @"points"
+                    ) # displayed
+                  ) # accumulated
+              ) # lcmap goal
+              bodyMedium ( Semigroupoid.do
+                  ( RecordToRecord.do
+                      text # projection show # forField @"teams"
+                      staticText " teams on the board — leading: " ) # displayed
+                  ( RecordToRecord.do
+                      text # forValue # forField @"team"
+                      staticText " ("
+                      text # projection show # forField @"points"
+                      staticText ")" ) # provided # lcmap leadingTeam # displayed
+                  staticText "—" # provided # lcmap noLeader # displayed
+              ) # lcmap boardSummary
+          ) # displayed
+      ) # mvu { n: 0 }
+
+tick :: { n :: Int } -> Maybe { n :: Int }
+tick { n } = Just { n: n + 1 }
+
+goal :: { n :: Int } -> { key :: String, value :: { team :: String, points :: Int } }
+goal { n } =
+  let team = pick teams n
+  in { key: team, value: { team, points: scored team n } }
+
+scored :: String -> Int -> Int
+scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
+
+boardSummary :: Array { team :: String, points :: Int } -> { teams :: Int, leader :: Maybe { team :: String, points :: Int } }
+boardSummary scores = { teams: length scores, leader: maximumBy (comparing _.points) scores }
+
+leadingTeam :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe { team :: String, points :: Int }
+leadingTeam { leader } = leader
+
+noLeader :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe {}
+noLeader { leader } = case leader of
+  Just _ -> Nothing
+  Nothing -> Just {}
+
+pick :: Array String -> Int -> String
+pick options i = fromMaybe "" (index options (i `mod` length options))
+
+teams :: Array String
+teams = [ "Owls", "Foxes", "Herons" ]
