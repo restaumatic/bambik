@@ -7,7 +7,7 @@
 // laws live in test/Main.purs (`spago test`).
 //
 //   npm run smoke              # all tests (bundle the demos first:
-//                              #   npm run bundle-demo-nguis && npm run bundle-demo-7guis)
+//                              #   npm run bundle-demos)
 //   npm run smoke -- reorder   # only test files whose name matches
 //
 // Chrome is discovered from $BAMBIK_CHROME, google-chrome, chromium, or
@@ -102,7 +102,7 @@ const main = async () => {
   }
   if (missing.size) {
     console.error('missing bundles:\n' + [...missing].map(d => `  ${d}/bundle.js`).join('\n'))
-    console.error('bundle first: npm run bundle-demo-nguis && npm run bundle-demo-7guis')
+    console.error('bundle first: npm run bundle-demos')
     process.exit(1)
   }
 

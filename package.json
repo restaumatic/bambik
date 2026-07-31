@@ -7,13 +7,8 @@
     "smoke": "node scripts/smoke/run.mjs",
     "api-docs": "spago docs --format markdown",
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
-    "bundle-demo-1": "spago build && node scripts/bundle-1.mjs",
-    "bundle-demo-7guis": "spago build && node scripts/bundle-7guis.mjs",
-    "bundle-demo-nguis": "spago build && node scripts/bundle-nguis.mjs",
-    "bundle-demos": "npm run bundle-demo-1 && npm run bundle-demo-7guis && npm run bundle-demo-nguis",
-    "deploy-demo-1": "scp -r demo/1/ xyz:/var/www/html/bambik/demo/",
-    "deploy-demo-7guis": "scp -r demo/7guis/ xyz:/var/www/html/bambik/demo/",
-    "deploy-demo-nguis": "scp -r demo/nguis/ xyz:/var/www/html/bambik/demo/"
+    "bundle-demos": "spago build && node scripts/bundle.mjs",
+    "deploy-demos": "scp -r demo/index.html demo/1/ demo/7guis/ demo/nguis/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
     "@material/web": "^2.5.0",

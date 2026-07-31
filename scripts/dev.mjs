@@ -1,39 +1,43 @@
-// Watch-mode dev server for any demo: a lightweight watcher over src/ and
-// the demo sources runs spago on change (spago -w itself exhausts inotify
-// watching all of .spago), esbuild rebundles on output/ change, and the
-// page auto-reloads via esbuild's /esbuild SSE endpoint (injected through
-// the JS banner).
+// Watch-mode dev server for every demo at once, served in the same folder
+// layout the deploy scp's to the remote host: the repo's demo/ tree is served
+// at /bambik/demo/, so /bambik/demo/7guis/counter/ locally is the same path as
+// on erykciepiela.xyz.
 //
-//   node scripts/dev.mjs counter          (7guis demos, by directory name)
-//   node scripts/dev.mjs 1                 (the demo/1 order form)
+// An mtime-polling watcher over src/ and demo/ runs spago on change, esbuild
+// rebundles every demo whose output changed, and pages auto-reload over the
+// /esbuild SSE endpoint (injected through the JS banner, the same protocol
+// esbuild's own serve uses, so the demo pages need no dev-only markup).
+//
+// Polling, not inotify: fs.watch costs an inotify instance per directory and
+// Node hits its per-process ceiling well before the ~40 source dirs here, while
+// `recursive: true` silently delivers *no* events on ext4 — a watcher that
+// looks healthy and never rebuilds. A stat sweep has no budget to exhaust.
+//
+//   node scripts/dev.mjs                  (all demos)
+//   node scripts/dev.mjs counter cells    (only these, by name or set)
 import { context } from 'esbuild'
 import { spawn } from 'node:child_process'
-import { readdirSync, watch } from 'node:fs'
+import { createServer } from 'node:http'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
+import { all, entryFor } from './demos.mjs'
 
-const sevenGuis = {
-  'counter': ['Counter', 'counter'],
-  'temperature-converter': ['TemperatureConverter', 'temperatureConverter'],
-  'flight-booker': ['FlightBooker', 'flightBooker'],
-  'timer': ['Timer', 'timer'],
-  'crud': ['Crud', 'crud'],
-  'circle-drawer': ['CircleDrawer', 'circleDrawer'],
-  'cells': ['Cells', 'cells'],
-}
+const BASE = '/bambik/demo'
+const PORT = 1234
 
-const name = process.argv[2]
-if (!name) {
-  console.error(`usage: node scripts/dev.mjs <demo>\ndemos: ${[...Object.keys(sevenGuis), '1'].join(', ')}`)
+const filters = process.argv.slice(2)
+const demos = filters.length
+  ? all.filter(d => filters.some(f => f === d.name || f === d.set))
+  : all
+if (!demos.length) {
+  console.error(`no demo matches ${filters.join(' ')}\n` +
+    `demos: ${all.map(d => d.name).join(', ')}\nsets: 1, 7guis, nguis`)
   process.exit(1)
 }
 
-const isSevenGuis = name in sevenGuis
-const dir = isSevenGuis ? `demo/7guis/${name}` : `demo/${name}`
-const watchDirs = ['src', isSevenGuis ? 'demo/7guis' : dir]
-const [mod, fn] = isSevenGuis ? sevenGuis[name] : ['OrderForm', 'orderForm']
-
 const env = { ...process.env, PATH: `${path.resolve('node_modules/.bin')}:${process.env.PATH}` }
 
+// ── spago build on source change ──────────────────────────────────────────
 let building = false
 let queued = false
 function build() {
@@ -48,39 +52,116 @@ function build() {
     })
 }
 
+const POLL_MS = 400
 const isSource = f => /\.(purs|js)$/.test(f) && !f.includes('bundle')
-const subdirs = d => [d, ...readdirSync(d, { withFileTypes: true })
-  .filter(e => e.isDirectory())
-  .flatMap(e => subdirs(path.join(d, e.name)))]
 
-let timer
-const changed = () => { clearTimeout(timer); timer = setTimeout(build, 50) }
-try {
-  const dirs = watchDirs.flatMap(subdirs)
-  for (const d of dirs) watch(d, (_, file) => file && isSource(file) && changed())
-  console.log(`watching via inotify (${dirs.length} dirs)`)
-} catch (e) {
-  if (e.code === 'ENOSPC') {
-    console.error(`inotify budget exhausted (ENOSPC) — raise it and retry:
-  sudo sysctl fs.inotify.max_user_instances=1024 fs.inotify.max_user_watches=1048576`)
-    process.exit(1)
+const sources = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+  const p = path.join(dir, e.name)
+  return e.isDirectory() ? sources(p) : isSource(e.name) ? [p] : []
+})
+
+const stamp = () => {
+  const seen = new Map()
+  for (const f of ['src', 'demo'].flatMap(sources)) {
+    try { seen.set(f, statSync(f).mtimeMs) } catch { /* raced with a delete */ }
   }
-  throw e
+  return seen
 }
+
+let prev = stamp()
+console.log(`polling ${prev.size} sources in src/ and demo/ every ${POLL_MS}ms`)
+setInterval(() => {
+  const next = stamp()
+  let dirty = next.size !== prev.size
+  if (!dirty) for (const [f, m] of next) if (prev.get(f) !== m) { dirty = true; break }
+  prev = next
+  if (dirty) build()
+}, POLL_MS)
 
 build()
 
-const ctx = await context({
-  stdin: {
-    contents: `import { ${fn} } from './output/${mod}/index.js'; ${fn}();`,
-    resolveDir: process.cwd(),
+// ── one esbuild watch context per demo ────────────────────────────────────
+const clients = new Set()
+const reload = () => {
+  for (const res of clients) res.write('event: change\ndata: {}\n\n')
+}
+
+const reloadPlugin = name => ({
+  name: 'reload',
+  setup(b) {
+    let first = true
+    b.onEnd(result => {
+      if (result.errors.length) return
+      if (first) { first = false; return }
+      console.log(`[esbuild] ${name}`)
+      reload()
+    })
   },
-  bundle: true,
-  format: 'esm',
-  outfile: `${dir}/bundle.js`,
-  banner: { js: `new EventSource('/esbuild').addEventListener('change', () => location.reload());` },
-  logLevel: 'info',
 })
-await ctx.watch()
-const { port } = await ctx.serve({ servedir: dir, port: 1234, host: '127.0.0.1' })
-console.log(`dev server: http://127.0.0.1:${port}/ (${dir}, auto-reload on)`)
+
+await Promise.all(demos.map(async d => {
+  const ctx = await context({
+    stdin: { contents: entryFor(d), resolveDir: process.cwd() },
+    bundle: true,
+    format: 'esm',
+    outfile: `${d.dir}/bundle.js`,
+    banner: { js: `new EventSource('${BASE}/esbuild').addEventListener('change', () => location.reload());` },
+    plugins: [reloadPlugin(d.name)],
+    logLevel: 'warning',
+  })
+  await ctx.watch()
+}))
+
+// ── static server over demo/, mounted at the deployed path ────────────────
+const contentTypes = {
+  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.purs': 'text/plain',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2',
+}
+
+const isDir = p => { try { return statSync(p).isDirectory() } catch { return false } }
+
+createServer((req, res) => {
+  const url = new URL(req.url, 'http://x')
+  const pathname = decodeURIComponent(url.pathname)
+
+  if (pathname === `${BASE}/esbuild`) {
+    res.writeHead(200, {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      connection: 'keep-alive',
+    })
+    clients.add(res)
+    req.on('close', () => clients.delete(res))
+    return
+  }
+
+  if (pathname === '/' || pathname === BASE) {
+    res.writeHead(302, { location: `${BASE}/` })
+    res.end()
+    return
+  }
+
+  if (!pathname.startsWith(`${BASE}/`)) {
+    res.writeHead(404, { 'content-type': 'text/plain' })
+    res.end(`not found — demos are served under ${BASE}/`)
+    return
+  }
+
+  let file = path.join('demo', pathname.slice(`${BASE}/`.length))
+  if (isDir(file)) file = path.join(file, 'index.html')
+  if (!existsSync(file)) {
+    res.writeHead(404, { 'content-type': 'text/plain' })
+    res.end('not found')
+    return
+  }
+  res.writeHead(200, {
+    'content-type': contentTypes[path.extname(file)] || 'application/octet-stream',
+    'cache-control': 'no-store',
+  })
+  res.end(readFileSync(file))
+}).listen(PORT, '127.0.0.1', () => {
+  console.log(`dev server: http://127.0.0.1:${PORT}${BASE}/  (${demos.length} demo(s), auto-reload on)`)
+  for (const d of demos) console.log(`  http://127.0.0.1:${PORT}${BASE}/${d.dir.slice('demo/'.length)}/`)
+})
