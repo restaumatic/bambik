@@ -17,8 +17,11 @@
   "devDependencies": {
     "@marp-team/marp-cli": "^4.1.2",
     "esbuild": "0.25.1",
-    "parcel": "^2.9.3",
     "purescript": "file:/home/eryk/mine/purescript-variant-pkg/purescript-0.15.16-variant.6.tgz",
     "spago": "^0.21.0"
+  },
+  "overrides": {
+    "tar": "^7.5.21",
+    "brace-expansion": "^5.0.8"
   }
 }
