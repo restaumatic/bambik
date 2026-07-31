@@ -15,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 import PUI (action, asCase, asField, completed, forField, forValue, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (attr, body, div, staticText, text)
-import PUI.MDC (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
+import PUI.MDC2 (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import QualifiedDo.Semigroupoid as Semigroupoid
 

@@ -10,7 +10,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, foreach, forField, forValue, mvu, projection, toCase, updates)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
-import PUI.MDC (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
+import PUI.MDC2 (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 

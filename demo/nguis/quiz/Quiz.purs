@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, completed, displayed, forField, mvu, projection, toCase, updates)
 import PUI.HTML (body, provided, staticText, text)
-import PUI.MDC (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
+import PUI.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 quiz :: Effect Unit

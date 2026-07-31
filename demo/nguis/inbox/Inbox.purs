@@ -13,7 +13,7 @@ import Effect (Effect)
 import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, forValue, mvu, onCase, projection, tapped, toCase, updates)
 import PUI.HTML (body, provided, span, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
+import PUI.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inbox :: Effect Unit

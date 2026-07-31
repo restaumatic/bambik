@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (displayed, foreach, forField, forValue, mvu, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
-import PUI.MDC (button, card, elevation20, headline6)
+import PUI.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 ticTacToe :: Effect Unit

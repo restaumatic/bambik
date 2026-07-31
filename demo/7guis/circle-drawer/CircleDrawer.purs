@@ -12,7 +12,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, foreach, mvu, toCase, updates)
 import PUI.HTML (attrWith, body, onClickedXY, provided, (:=))
-import PUI.MDC (button, card, cardActions, elevation20, sliderLive)
+import PUI.MDC2 (button, card, cardActions, elevation20, sliderLive)
 import PUI.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

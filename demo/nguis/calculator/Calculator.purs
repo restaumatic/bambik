@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (constantly, displayed, foreach, forField, forValue, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
-import PUI.MDC (card, elevation20)
+import PUI.MDC2 (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculator :: Effect Unit

@@ -14,7 +14,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (displayed, forField, forValue, mvu, projection, tapped, toCase, updates)
 import PUI.HTML (body, dynamic, each, span, staticText, text)
-import PUI.MDC (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
+import PUI.MDC2 (divider, drawer, headline2, imageList, imageListItem, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 photoGallery :: Effect Unit

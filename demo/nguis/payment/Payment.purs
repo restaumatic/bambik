@@ -11,7 +11,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import PUI (action, asCase, forField, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
+import PUI.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 payment :: Effect Unit

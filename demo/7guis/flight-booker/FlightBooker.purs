@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, forValue, mvu, required, updates)
 import PUI.HTML (body, provided, staticText, text)
-import PUI.MDC (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit

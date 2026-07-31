@@ -18,7 +18,7 @@ import PUI (PUI, action, asCase, asField, completed, debounced, displayed, field
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
+import PUI.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderForm :: Effect Unit

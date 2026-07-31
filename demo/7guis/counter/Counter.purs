@@ -6,7 +6,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, forField, mvu, projection, updates)
 import PUI.HTML (body, text)
-import PUI.MDC (button, card, elevation20, headline4)
+import PUI.MDC2 (button, card, elevation20, headline4)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 counter :: Effect Unit

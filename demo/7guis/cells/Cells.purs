@@ -18,7 +18,7 @@ import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 import PUI (asField, completed, foreach, mvu, projection, toCase, updates)
 import PUI.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
-import PUI.MDC (body1, card, elevation20, filledTextField)
+import PUI.MDC2 (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cells :: Effect Unit

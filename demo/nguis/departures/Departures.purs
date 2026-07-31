@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (dispatched, displayed, every, forField, forValue, mvu)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (body2, card, elevation20, list, listItem)
+import PUI.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 departures :: Effect Unit

@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, forField, mvu)
 import PUI.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
-import PUI.MDC (card, elevation20, filledTextArea, layoutCell, layoutGrid)
+import PUI.MDC2 (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 markdownPreviewer :: Effect Unit

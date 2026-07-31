@@ -17,7 +17,7 @@ import Data.Profunctor.Row.RecordToVariant (shutter)
 import Data.Profunctor.Row.RecordToRecord (asField)
 import Data.Profunctor.Row.VariantToRecord (reel)
 import Effect (Effect)
-import PUI.MDC (filledTextField) as MDC
+import PUI.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, silence, with)
 import PUI.HTML (body, button, staticText, text)

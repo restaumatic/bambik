@@ -1,12 +1,12 @@
 -- Material Design 3 (https://m3.material.io) components implemented as
--- PUI Web/UIOcular (PUI Web) datatypes — the MD3 sibling of `PUI.MDC`,
+-- PUI Web/UIOcular (PUI Web) datatypes — the MD3 sibling of `PUI.MDC2`,
 -- built on Google's official MD3 web implementation, the `@material/web`
 -- custom elements (`<md-filled-button>`, `<md-checkbox>`, ...): importing
 -- the FFI module registers the tags, so a component leaf is just
 -- `element "md-..."` plus property/event wiring — no foundation classes,
 -- no hand-fused ripple/label chrome. The vocabulary is two-sorted, with
 -- the same citizenship and (where the concept survived into MD3) the same
--- names and signatures as `PUI.MDC`, so a demo switches design systems by
+-- names and signatures as `PUI.MDC2`, so a demo switches design systems by
 -- switching the import:
 --
 --   * **components** — widgets with a model interface, every one a citizen
@@ -49,7 +49,7 @@
 -- in the bundle; theming is `--md-sys-color-*`/`--md-sys-typescale-*`
 -- custom properties on the page.
 --
--- **The `dimap` round-trip contract for editors** holds as in `PUI.MDC`:
+-- **The `dimap` round-trip contract for editors** holds as in `PUI.MDC2`:
 -- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
 -- that can fail or lose information belong in the model (`rmap` a total
 -- `Model -> Model` after `completed`), not in a leaf bracket.
@@ -155,7 +155,7 @@ import Type.Proxy (Proxy(..))
 -- UIs
 
 -- Conversion tags scope which field names lift a bare value to `Just`, as
--- in `PUI.MDC`: one tag per distinct optional-field set — `OptLabelIcon`
+-- in `PUI.MDC2`: one tag per distinct optional-field set — `OptLabelIcon`
 -- (buttons), `OptLabel` (fab, caption via card), `OptStep` (sliders),
 -- `OptSelected` (listOf), `OptIcon` (tabBar options).
 data OptLabelIcon = OptLabelIcon
@@ -552,7 +552,7 @@ selectLeaf config options = wrap do
 -- | The MD3 single-select segmented button, a `×→×` editor. Type-changing
 -- | like `select @l`. `@material/web` ships no segmented button, so the
 -- | chrome is hand-rolled over the design tokens and the wiring is
--- | CSS-class-driven per segment, as in `PUI.MDC`.
+-- | CSS-class-driven per segment, as in `PUI.MDC2`.
 segmentedButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 segmentedButton options = field @"value" (segmentedLeaf options)
 
@@ -810,7 +810,7 @@ labelSmall :: Ocular (PUI Web)
 labelSmall w = span w # cl "md-typescale-label-small"
 
 -- MD3 elevation levels as surface decorators (box shadows over the tokens;
--- levels 3 and 5 pad like `PUI.MDC`'s `elevation10`/`elevation20`)
+-- levels 3 and 5 pad like `PUI.MDC2`'s `elevation10`/`elevation20`)
 
 elevation1 :: Ocular (PUI Web)
 elevation1 = elevationOf "md3-elevation-1"
@@ -1000,7 +1000,7 @@ dataRow = tr
 dataCell :: Ocular (PUI Web)
 dataCell = td
 
--- | Masonry image list (CSS columns, like `PUI.MDC`'s).
+-- | Masonry image list (CSS columns, like `PUI.MDC2`'s).
 imageList :: { columns :: Int } -> Ocular (PUI Web)
 imageList config content = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss

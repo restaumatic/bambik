@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (asField, completed, mvu, projection, tapped)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (body2, card, elevation20, filledTextField, slider)
+import PUI.MDC2 (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 tipCalculator :: Effect Unit

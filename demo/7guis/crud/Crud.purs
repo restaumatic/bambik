@@ -17,7 +17,7 @@ import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import PUI (action, asCase, asField, completed, displayed, forField, forValue, looped, onCase, toCase, updates, with)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
+import PUI.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crud :: Effect Unit

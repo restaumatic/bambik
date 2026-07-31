@@ -1,6 +1,6 @@
 -- | The carrier: the `Web` monad (`StateT DOM Effect`) the whole algebra is
 -- | instantiated at for the browser, plus the DOM building blocks and FFI
--- | the HTML vocabulary (`PUI.HTML`) and the design system (`PUI.MDC`) are
+-- | the HTML vocabulary (`PUI.HTML`) and the design system (`PUI.MDC2`) are
 -- | built from. No widgets live here — for the 1-1 HTML vocabulary see
 -- | `PUI.HTML`.
 module PUI.Web

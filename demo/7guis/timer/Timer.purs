@@ -9,7 +9,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, every, forField, mvu, projection, updates)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (body1, button, card, elevation20, linearProgress, sliderLive)
+import PUI.MDC2 (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 timer :: Effect Unit

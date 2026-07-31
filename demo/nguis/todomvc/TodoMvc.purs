@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, forField, mvu, projection, required, toCase, updates)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
-import PUI.MDC (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
+import PUI.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 todoMvc :: Effect Unit

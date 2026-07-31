@@ -14,7 +14,7 @@ import Effect (Effect)
 import PUI (PUI, asCase, asField, displayed, forCase, forField, forValue, mvu, required)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
+import PUI.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 signupForm :: Effect Unit

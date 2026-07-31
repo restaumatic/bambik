@@ -12,7 +12,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, displayed, forField, mvu, projection, updates)
 import PUI.HTML (body, provided, staticText, text)
-import PUI.MDC (body2, button, card, elevation20, headline3)
+import PUI.MDC2 (body2, button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 ticketDispenser :: Effect Unit

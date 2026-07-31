@@ -78,7 +78,7 @@ and each is its own module under `Data.Profunctor.Row`:
 | `+ → ×` | status | snackbar, banner |
 | `+ → +` | dispatch | backend call routing |
 
-Every Material Design component in `PUI/MDC.purs` is a citizen of exactly one
+Every Material Design component in `PUI/MDC2.purs` is a citizen of exactly one
 direction: `filledTextField @l` is `×→×`, `button @l` is `×→+`,
 `snackbar @l` is `+→×`. An application is a journey around the compass:
 

@@ -12,7 +12,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, completed, displayed, every, forField, forValue, foreach, mvu, projection, updates)
 import PUI.HTML (body, li, provided, staticText, text, ul)
-import PUI.MDC (button, card, elevation20, headline3)
+import PUI.MDC2 (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 stopwatch :: Effect Unit

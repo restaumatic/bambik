@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (asField, mvu, projection, tapped)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (body2, card, elevation20, headline6, sliderLive)
+import PUI.MDC2 (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 auction :: Effect Unit

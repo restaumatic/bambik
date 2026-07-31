@@ -11,7 +11,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, displayed, forField, forValue, mvu, updates)
 import PUI.HTML (body, provided, staticText, text)
-import PUI.MDC (body2, button, card, elevation20)
+import PUI.MDC2 (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkout :: Effect Unit

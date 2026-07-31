@@ -7,7 +7,7 @@ import Data.Number (fromString)
 import Effect (Effect)
 import PUI (forField, mvu, projection, updates)
 import PUI.HTML (body)
-import PUI.MDC (card, elevation20, filledTextField)
+import PUI.MDC2 (card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 temperatureConverter :: Effect Unit

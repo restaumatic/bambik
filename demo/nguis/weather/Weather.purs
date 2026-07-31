@@ -12,7 +12,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import PUI (action, mvu, onCase, projection, tapped, toCase, updates)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import PUI.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 weather :: Effect Unit

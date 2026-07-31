@@ -9,7 +9,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (acted, asField, displayed, field, foreach, forField, forValue, projection, tapped, with)
 import PUI.HTML (body, span, staticText, text)
-import PUI.MDC (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
+import PUI.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 potluck :: Effect Unit
