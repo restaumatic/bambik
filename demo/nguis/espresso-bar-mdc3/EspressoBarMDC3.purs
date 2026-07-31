@@ -1,4 +1,4 @@
-module EspressoBar (espressoBar) where
+module EspressoBarMDC3 (espressoBarMDC3) where
 
 import Prelude (Unit, const, min, otherwise, (#), ($), (*), (+), (<>), (==))
 
@@ -16,8 +16,8 @@ import PUI.Web (Web)
 import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-espressoBar :: Effect Unit
-espressoBar =
+espressoBarMDC3 :: Effect Unit
+espressoBarMDC3 =
   body $
     elevation5 $
       topAppBar { title: "Espresso Bar" } $

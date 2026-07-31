@@ -49,7 +49,8 @@ export const sets = {
     'scoreboard-mdc2': ['ScoreboardMDC2', 'scoreboardMDC2'],
     'reorder-mdc2': ['ReorderMDC2', 'reorderMDC2'],
     'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
-    'espresso-bar': ['EspressoBar', 'espressoBar'],
+    'espresso-bar-mdc2': ['EspressoBarMDC2', 'espressoBarMDC2'],
+    'espresso-bar-mdc3': ['EspressoBarMDC3', 'espressoBarMDC3'],
     // MDC3 (PUI.MDC3) siblings of the MDC2 demos — same app, import switched
     'order-form-mdc3': ['OrderFormMDC3', 'orderFormMDC3'],
     'todomvc-mdc3': ['TodoMvcMDC3', 'todoMvcMDC3'],
