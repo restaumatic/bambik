@@ -3,10 +3,13 @@
 // /7guis/counter/ here is /bambik/demo/7guis/counter/ there, so every relative
 // link and asset path resolves identically in both places.
 //
-// An mtime-polling watcher over src/ and demo/ runs spago on change, esbuild
-// rebundles every demo whose output changed, and pages auto-reload over the
-// /esbuild SSE endpoint (injected through the JS banner, the same protocol
-// esbuild's own serve uses, so the demo pages need no dev-only markup).
+// An mtime-polling watcher over src/ and demo/ drives two paths by file kind:
+// a .purs/.js edit runs spago, and esbuild's own watch over output/ rebundles
+// the affected demos and reloads once the new bundle lands; a page's .html has
+// nothing to compile and is served straight off disk, so it reloads
+// immediately. Reloads reach the browser over the /esbuild SSE endpoint
+// (injected through the JS banner, the same protocol esbuild's own serve uses,
+// so the demo pages need no dev-only markup).
 //
 // Polling, not inotify: fs.watch costs an inotify instance per directory and
 // Node hits its per-process ceiling well before the ~40 source dirs here, while
@@ -36,6 +39,12 @@ if (!demos.length) {
 
 const env = { ...process.env, PATH: `${path.resolve('node_modules/.bin')}:${process.env.PATH}` }
 
+// ── browser reload broadcast ──────────────────────────────────────────────
+const clients = new Set()
+const reload = () => {
+  for (const res of clients) res.write('event: change\ndata: {}\n\n')
+}
+
 // ── spago build on source change ──────────────────────────────────────────
 let building = false
 let queued = false
@@ -52,39 +61,46 @@ function build() {
 }
 
 const POLL_MS = 400
-const isSource = f => /\.(purs|js)$/.test(f) && !f.includes('bundle')
 
-const sources = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+// Compiled sources go through spago; a page's own .html is served straight off
+// disk, so it needs no build — only a reload.
+const isCompiled = f => /\.(purs|js)$/.test(f) && !f.includes('bundle')
+const isServed = f => f.endsWith('.html')
+const isWatched = f => isCompiled(f) || isServed(f)
+
+const watched = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
   const p = path.join(dir, e.name)
-  return e.isDirectory() ? sources(p) : isSource(e.name) ? [p] : []
+  return e.isDirectory() ? watched(p) : isWatched(e.name) ? [p] : []
 })
 
 const stamp = () => {
   const seen = new Map()
-  for (const f of ['src', 'demo'].flatMap(sources)) {
+  for (const f of ['src', 'demo'].flatMap(watched)) {
     try { seen.set(f, statSync(f).mtimeMs) } catch { /* raced with a delete */ }
   }
   return seen
 }
 
 let prev = stamp()
-console.log(`polling ${prev.size} sources in src/ and demo/ every ${POLL_MS}ms`)
+console.log(`polling ${prev.size} files in src/ and demo/ every ${POLL_MS}ms`)
 setInterval(() => {
   const next = stamp()
-  let dirty = next.size !== prev.size
-  if (!dirty) for (const [f, m] of next) if (prev.get(f) !== m) { dirty = true; break }
+  const touched = []
+  for (const [f, m] of next) if (prev.get(f) !== m) touched.push(f)
+  for (const f of prev.keys()) if (!next.has(f)) touched.push(f)
   prev = next
-  if (dirty) build()
+  if (!touched.length) return
+  // Both kinds can change in one tick, so handle them independently: a
+  // .purs/.js edit rebuilds, and esbuild's own watch reloads once the new
+  // output lands; an .html edit has nothing to compile, so reload right away.
+  const html = touched.filter(isServed)
+  if (html.length) { console.log(`[html] ${html.join(' ')}`); reload() }
+  if (touched.some(isCompiled)) build()
 }, POLL_MS)
 
 build()
 
 // ── one esbuild watch context per demo ────────────────────────────────────
-const clients = new Set()
-const reload = () => {
-  for (const res of clients) res.write('event: change\ndata: {}\n\n')
-}
-
 const reloadPlugin = name => ({
   name: 'reload',
   setup(b) {
