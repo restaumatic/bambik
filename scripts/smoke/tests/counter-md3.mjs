@@ -11,4 +11,8 @@ export const run = async ({ ev, assertEq, sleep }) => {
   await ev(`document.querySelector('md-filled-button').click()`)
   await sleep(50)
   assertEq(await ev(`document.querySelector('h2.md-typescale-headline-large').textContent`), '1', 'clicking the MD3 button increments')
+
+  await sleep(300) // the switcher appears after page.js probes the sibling
+  assertEq(await ev(`(document.querySelector('#page-header a[href$="/counter/"]') || {}).textContent`), 'MD2',
+    'the header switcher links back to the MD2 sibling')
 }
