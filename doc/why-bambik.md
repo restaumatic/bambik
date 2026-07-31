@@ -277,5 +277,6 @@ channel into a living loop; and the **`Category`** instance strings the
 whole journey into one wire from page load to snackbar.
 
 *See also: [the 1000-character version](description-1000characters.md), the
-[20-minute presentation](presentation-20min.md), and the
-[row-profunctors design note](row-profunctors.md) for the formal details.*
+[20-minute presentation](presentation-20min.md), the
+[row-profunctors design note](row-profunctors.md) for the formal details,
+and [the guardrails](guardrails.md) — this story stated as strict rules.*

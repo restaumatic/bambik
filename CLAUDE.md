@@ -4,6 +4,8 @@
 
 A prototype PureScript library implementing **Profunctor User Interfaces** - a novel approach to declarative UI development. The key insight is that profunctors unify optics (data structure navigation) and arrows (data flow), making them ideal for composable UI development.
 
+**doc/guardrails.md is normative**: the strict MUST/MUST-NOT rules for the library and for applications built on it, plus the admission test every proposed feature passes (derivation → laws → subsumption → honesty → reachability → green stack → sync). Its L15 makes the demo suites the compatibility contract: any library change, however internal, must leave every demo compiling, bundling, and behaving correctly — verified by running `spago build`, `spago test`, `npm run bundle-demos`, and `npm run smoke` in full, with demos edited only when the demo itself is the subject of the change. Consult it before adding, changing, or accepting any combinator, class, component, or demo idiom — a change that violates a guardrail is wrong even if it works.
+
 ## Building
 
 Do `export PATH=$PWD/node_modules/.bin:$PATH` and then `spago build` (tests: `spago test`). 
