@@ -41,6 +41,9 @@
       #source-panel pre { background: #f6f8fa; padding: 12px; border-radius: 6px; font-size: 12.5px; margin: 0; }
       #source-panel p { font-size: 14px; }
       #source-panel .note { color: #888; font-style: italic; margin: 4px 0 8px 0; }
+      #demo-column { display: flex; flex-direction: column; gap: 8px; flex: 0 1 480px; min-width: 320px; order: 1; }
+      #demo-column > *:not(#demo-note) { max-height: calc(100vh - 130px); overflow: auto; }
+      #demo-note .note { color: #888; font-style: italic; margin: 0; font-size: 14px; }
       @media (max-width: 700px) {
         html, body { height: auto; }
         body { overflow: auto; }
@@ -52,7 +55,7 @@
     <script>window.__bambikTrace = true</script>
     <script type="module" src="bundle.js"></script>
   </head>
-  <body>
+  <body data-source="Quiz.purs">
     <header id="page-header">
       <a href="../">&#171; Go back to all nGUIs tasks</a>
       <span class="sep">·</span>
@@ -64,29 +67,11 @@
     </header>
     <section id="source-panel">
       <pre><code id="src" class="language-haskell">loading…</code></pre>
-      <p class="note">Code style: Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. The listing is a complete standalone application, entered at its single exported function. The code is structured as one purely UI-related function followed by pure business functions. Each UI-related line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing. No nominal types in UI: view-model types are one-off and specific to this UI, so they earn no names - anonymous record and variant rows written in place, with no <code>data</code>, <code>newtype</code>, or <code>type</code> declarations in UI code. The code is compiled with a custom PureScript compiler with improved support for variants - anonymous sum types, dual to records: a variant type is written <code>[ ok :: Int, err :: String ]</code> the way a record is written <code>{ ok :: Int, err :: String }</code>, and its cases are constructed with <code>.ok 42</code>.</p>
-      <p class="note">Tracing: This page runs with enabled tracing, so data propagation is logged to the browser console with <code>[bambik]</code> prefix.</p>
+      <p class="note">See the <a href="../../#code-style">code style</a> note.</p>
     </section>
-    <script>
-      const fmt = (n) => n < 1024 ? n + "B"
-        : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
-        : (n / 1048576).toFixed(1).replace(/\.0$/, "") + "MB";
-      Promise.all([
-        fetch("Quiz.purs", { cache: "no-cache" }).then(r => r.text()),
-        fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
-      ]).then(([src, bundleBytes]) => {
-        const el = document.getElementById("src");
-        el.textContent = src;
-        if (window.hljs) hljs.highlightElement(el);
-        const srcBytes = new TextEncoder().encode(src).length;
-        document.getElementById("src-size").innerHTML =
-          '<a href="Quiz.purs">source</a> (' + fmt(srcBytes) + ')';
-        if (bundleBytes) {
-          document.getElementById("bundle-sep").hidden = false;
-          document.getElementById("bundle-size").innerHTML =
-            '<a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')';
-        }
-      });
-    </script>
+    <section id="demo-note">
+      <p class="note">See the <a href="../../#tracing">tracing</a> note.</p>
+    </section>
+    <script src="../../page.js"></script>
   </body>
 </html>

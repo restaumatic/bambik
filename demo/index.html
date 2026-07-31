@@ -5,7 +5,14 @@
     <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <title>Bambik · demos</title>
-    <style>body { font-family: Roboto, sans-serif; margin: 40px; } li { margin: 8px 0; }</style>
+    <style>
+      body { font-family: Roboto, sans-serif; margin: 40px; max-width: 52em; }
+      li { margin: 8px 0; }
+      section { margin-top: 32px; }
+      section h2 { font-size: 1.15rem; margin-bottom: 8px; }
+      section p { line-height: 1.55; }
+      :target h2 { background: #fffbdd; }
+    </style>
   </head>
   <body>
     <h1>Bambik demos</h1>
@@ -14,5 +21,15 @@
       <li><a href="7guis/">7GUIs</a> <small>— the <a href="https://eugenkiss.github.io/7guis/">7GUIs</a> benchmark tasks</small></li>
       <li><a href="nguis/">nGUIs</a> <small>— popular showcase apps, one combinator each</small></li>
     </ul>
+
+    <section id="code-style">
+      <h2>Code style</h2>
+      <p>Comments are deliberately absent - code should read on its own. Imports are 100% explicit (including <code>Prelude</code>) - code is honest about its dependencies. Each listing is a complete standalone application, entered at its single exported function. The code is structured as one purely UI-related function followed by pure business functions and data. Each UI-related line leads with the visual concern with <code>$</code> plumbing and trails with the data concern with <code>#</code> plumbing. No nominal types in UI: view-model types are one-off and specific to this UI, so they earn no names - anonymous record and variant rows written in place, with no <code>data</code>, <code>newtype</code>, or <code>type</code> declarations in UI code. The code is compiled with a custom PureScript compiler with improved support for variants - anonymous sum types, dual to records: a variant type is written <code>[ ok :: Int, err :: String ]</code> the way a record is written <code>{ ok :: Int, err :: String }</code>, and its cases are constructed with <code>.ok 42</code>.</p>
+    </section>
+
+    <section id="tracing">
+      <h2>Tracing</h2>
+      <p>Every demo page runs with enabled tracing, so data propagation is logged to the browser console with <code>[bambik]</code> prefix.</p>
+    </section>
   </body>
 </html>

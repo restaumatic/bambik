@@ -165,11 +165,15 @@ createServer((req, res) => {
     res.end('not found')
     return
   }
+  const body = readFileSync(file)
+  // content-length explicitly: the pages read it off a HEAD to show bundle size,
+  // and a HEAD sends no body for node to infer it from.
   res.writeHead(200, {
     'content-type': contentTypes[path.extname(file)] || 'application/octet-stream',
+    'content-length': body.length,
     'cache-control': 'no-store',
   })
-  res.end(readFileSync(file))
+  res.end(req.method === 'HEAD' ? undefined : body)
 }).listen(PORT, '127.0.0.1', () => {
   console.log(`dev server: http://127.0.0.1:${PORT}/  (${demos.length} demo(s), auto-reload on)`)
   for (const d of demos) console.log(`  http://127.0.0.1:${PORT}/${d.dir.slice('demo/'.length)}/`)
