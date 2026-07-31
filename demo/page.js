@@ -63,21 +63,48 @@ const offerDesignSystemSwitch = () => {
   }).catch(() => {})
 }
 
-const showSource = (file) => Promise.all([
-  fetch(file, { cache: "no-cache" }).then(r => r.text()),
-  fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
-]).then(([src, bundleBytes]) => {
-  const el = document.getElementById("src")
-  el.textContent = src
-  if (window.hljs) hljs.highlightElement(el)
-  document.getElementById("src-size").innerHTML =
-    '<a href="' + file + '">source</a> (' + fmt(new TextEncoder().encode(src).length) + ')'
-  if (bundleBytes) {
-    document.getElementById("bundle-sep").hidden = false
-    document.getElementById("bundle-size").innerHTML =
-      '<a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')'
-  }
-})
+// data-source may name several files (space-separated) when a demo is split
+// into an app module plus a packaged components module: the first fills the
+// existing listing, each further file gets its own heading + listing beneath
+// it, and the header readout sums their sizes.
+const showSource = (files) => {
+  const names = files.trim().split(/\s+/)
+  return Promise.all([
+    Promise.all(names.map(f => fetch(f, { cache: "no-cache" }).then(r => r.text()))),
+    fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
+  ]).then(([sources, bundleBytes]) => {
+    const el = document.getElementById("src")
+    el.textContent = sources[0]
+    if (window.hljs) hljs.highlightElement(el)
+    if (names.length > 1) {
+      const panel = el.closest("#source-panel") || document.getElementById("source-panel")
+      const anchor = panel.querySelector("p.note")
+      const heading = (name) => {
+        const h = document.createElement("h3")
+        h.innerHTML = '<a href="' + name + '">' + name + '</a>'
+        return h
+      }
+      el.parentElement.before(heading(names[0]))
+      names.slice(1).forEach((name, i) => {
+        const pre = document.createElement("pre")
+        const code = document.createElement("code")
+        code.className = "language-haskell"
+        code.textContent = sources[i + 1]
+        pre.append(code)
+        if (window.hljs) hljs.highlightElement(code)
+        anchor ? anchor.before(heading(name), pre) : panel.append(heading(name), pre)
+      })
+    }
+    const total = sources.reduce((n, s) => n + new TextEncoder().encode(s).length, 0)
+    document.getElementById("src-size").innerHTML =
+      '<a href="' + names[0] + '">source</a> (' + fmt(total) + ')'
+    if (bundleBytes) {
+      document.getElementById("bundle-sep").hidden = false
+      document.getElementById("bundle-size").innerHTML =
+        '<a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')'
+    }
+  })
+}
 
 groupDemoWithNote()
 offerDesignSystemSwitch()

@@ -51,6 +51,7 @@ export const sets = {
     'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
     'espresso-bar-mdc2': ['EspressoBarMDC2', 'espressoBarMDC2'],
     'espresso-bar-mdc3': ['EspressoBarMDC3', 'espressoBarMDC3'],
+    'order-dashboard-mdc3': ['OrderDashboardMDC3', 'orderDashboardMDC3'],
     // MDC3 (PUI.MDC3) siblings of the MDC2 demos — same app, import switched
     'order-form-mdc3': ['OrderFormMDC3', 'orderFormMDC3'],
     'todomvc-mdc3': ['TodoMvcMDC3', 'todoMvcMDC3'],
