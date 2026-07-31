@@ -234,7 +234,7 @@ pure treatments never see.
   rebuilds on re-feed/permutation/drop; output order follows fed key order),
   collapsed silent-on-empty. DOM-identity laws stay in
   `scripts/smoke/tests/sequence-laws.mjs` (green).
-- **`demo/nguis/potluck/`** — the focused `acted` demo: per-guest dish
+- **`demo/nguis/potluck-mdc2/`** — the focused `acted` demo: per-guest dish
   editors lifted with `# acted _.name`, the menu summary withheld by the
   gather gate until every guest has chosen, retain-last on re-choices, row
   nodes surviving every re-feed (`scripts/smoke/tests/potluck.mjs`).
@@ -245,10 +245,10 @@ pure treatments never see.
   restack (absence of a key is no signal). `dispatched` has the canonical
   pure reading (`\{key, value} -> {key, value: g value}`), `accumulated` is
   the input-primed keyed Mealy — the (·,×)-gate/unit laws land on schedule.
-  Value-level laws in `test/Main.purs`; focused demos `demo/nguis/departures`
+  Value-level laws in `test/Main.purs`; focused demos `demo/nguis/departures-mdc2`
   (dispatched: a ticker's cases become rows on first mention, re-feed in
   place, tagged output drives the last-update line) and
-  `demo/nguis/scoreboard` (accumulated: the board grows to its key set,
+  `demo/nguis/scoreboard-mdc2` (accumulated: the board grows to its key set,
   updates in place, the whole array drives the standings).
 - The two laws of §1 are stated once in `Data.Profunctor.Row`'s header; the
   duoidal reading of §0 (displayed = comultiplication, muted = counit) in

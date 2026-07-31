@@ -2,8 +2,8 @@
 // (foundation-managed label float), the checkbox behind a real
 // <label for=…>, the radio group's native exclusivity, and the
 // validation panes driving the sign-up toast.
-export const demos = ['demo/nguis/signup-form']
-export const url = '/demo/nguis/signup-form/'
+export const demos = ['demo/nguis/signup-form-mdc2']
+export const url = '/demo/nguis/signup-form-mdc2/'
 
 export const run = async ({ ev, assertEq, sleep }) => {
   await sleep(300)

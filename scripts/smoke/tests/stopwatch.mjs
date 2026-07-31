@@ -2,8 +2,8 @@
 // array: [] builds nothing, one lap builds one element) plus the `every`
 // heartbeat driving the readout — and `provided` panes swapping the
 // button row between halted and running modes.
-export const demos = ['demo/nguis/stopwatch']
-export const url = '/demo/nguis/stopwatch/'
+export const demos = ['demo/nguis/stopwatch-mdc2']
+export const url = '/demo/nguis/stopwatch-mdc2/'
 
 const click = label =>
   `(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes('${label}')); if (b) b.click(); return !!b })()`

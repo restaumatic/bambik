@@ -1,7 +1,7 @@
 // Channel-fed structure-from-data on the SVG carrier: a canvas click adds a
 // circle (built through the keyed `foreach`), undo removes it.
-export const demos = ['demo/7guis/circle-drawer']
-export const url = '/demo/7guis/circle-drawer/'
+export const demos = ['demo/7guis/circle-drawer-mdc2']
+export const url = '/demo/7guis/circle-drawer-mdc2/'
 
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelectorAll('svg').length`), 1, 'one svg canvas')

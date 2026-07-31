@@ -2,8 +2,8 @@
 // case per second grows the board to its three teams, updates known keys in
 // place, and re-emits the whole array immediately — the standings line reads
 // the aggregate.
-export const demos = ['demo/nguis/scoreboard']
-export const url = '/demo/nguis/scoreboard/'
+export const demos = ['demo/nguis/scoreboard-mdc2']
+export const url = '/demo/nguis/scoreboard-mdc2/'
 
 export const run = async ({ ev, assertEq, sleep }) => {
   await sleep(3200)

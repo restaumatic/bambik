@@ -392,7 +392,7 @@ It involves only:
   * composition of building blocks with `Endo.do`, `Sum.do`, `Semigroupoid.do` blocks
   * `>>>`, `pempty`, `$`, `(` and `)`
 
-as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/nguis/order-form/) ([code](https://github.com/restaumatic/bambik/blob/main/demo/nguis/order-form/OrderForm.purs)).
+as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/nguis/order-form-mdc2/) ([code](https://github.com/restaumatic/bambik/blob/main/demo/nguis/order-form-mdc2/OrderFormMDC2.purs)).
 
 ---
 # Profunctors are suitable for UIs

@@ -3,8 +3,8 @@
 // — so the gated `retain` inside is primed before the first press (before
 // the seed argument this needed a `seeded firstTicket` stage in front of
 // it). Each press then emits the next ticket and resumes the counter.
-export const demos = ['demo/nguis/ticket-dispenser']
-export const url = '/demo/nguis/ticket-dispenser/'
+export const demos = ['demo/nguis/ticket-dispenser-mdc2']
+export const url = '/demo/nguis/ticket-dispenser-mdc2/'
 
 const click =
   `(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Take a number')); if (b) b.click(); return !!b })()`

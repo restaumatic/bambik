@@ -39,17 +39,19 @@ const groupDemoWithNote = () => {
   }
 }
 
-// MDC2/MDC3 switcher: MDC3 siblings live beside their originals by path
-// convention (…/counter/ ↔ …/counter-mdc3/), so the sibling URL is derived
-// from the location and the switcher appears only where the sibling actually
-// exists (probed with a HEAD request) — no per-page markup.
+// MDC2/MDC3 switcher: design-system siblings live beside each other by path
+// convention (…/counter-mdc2/ ↔ …/counter-mdc3/), so the sibling URL is
+// derived from the location and the switcher appears only where the sibling
+// actually exists (probed with a HEAD request) — no per-page markup;
+// single-variant demos carry no suffix and get no switcher.
 const offerDesignSystemSwitch = () => {
   const header = document.getElementById("page-header")
   if (!header) return
   const mdc3 = location.pathname.endsWith("-mdc3/")
+  if (!mdc3 && !location.pathname.endsWith("-mdc2/")) return
   const sibling = mdc3
-    ? location.pathname.replace(/-mdc3\/$/, "/")
-    : location.pathname.replace(/\/$/, "-mdc3/")
+    ? location.pathname.replace(/-mdc3\/$/, "-mdc2/")
+    : location.pathname.replace(/-mdc2\/$/, "-mdc3/")
   fetch(sibling + "index.html", { method: "HEAD", cache: "no-cache" }).then(r => {
     if (!r.ok) return
     const toggle = document.createElement("span")

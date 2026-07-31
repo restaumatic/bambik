@@ -3,8 +3,8 @@
 // confirms only the LAST message's deletion ("Delete the last message?"),
 // so the test deletes down to one message first — exercising the immediate
 // path — then triggers the dialog and Keeps.
-export const demos = ['demo/nguis/inbox']
-export const url = '/demo/nguis/inbox/'
+export const demos = ['demo/nguis/inbox-mdc2']
+export const url = '/demo/nguis/inbox-mdc2/'
 
 const mailboxRows = `document.querySelector('.mdc-deprecated-list').querySelectorAll('.mdc-deprecated-list-item').length`
 const openFirst = `document.querySelector('.mdc-deprecated-list .mdc-deprecated-list-item').click()`

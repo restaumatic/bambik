@@ -4,8 +4,8 @@
 // `Costrong` gate (before the seed argument this needed a `seeded noBids`
 // stage inside the chain; an unprimed loop rendered a bare
 // "Highest bid so far: $" with no number and a watchdog warning).
-export const demos = ['demo/nguis/auction']
-export const url = '/demo/nguis/auction/'
+export const demos = ['demo/nguis/auction-mdc2']
+export const url = '/demo/nguis/auction-mdc2/'
 
 export const run = async ({ ev, assertEq }) => {
   const text = await ev(`document.body.textContent`)

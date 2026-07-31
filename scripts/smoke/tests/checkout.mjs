@@ -2,8 +2,8 @@
 // `folding`'s argument, emitted once as the `next` case at registration —
 // the wizard opens on its first step with no `announce` operand in the
 // event merge. Walks the three steps forward and places the order.
-export const demos = ['demo/nguis/checkout']
-export const url = '/demo/nguis/checkout/'
+export const demos = ['demo/nguis/checkout-mdc2']
+export const url = '/demo/nguis/checkout-mdc2/'
 
 const click = label =>
   `(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes('${label}')); if (b) b.click(); return !!b })()`

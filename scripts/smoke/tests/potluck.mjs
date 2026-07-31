@@ -1,8 +1,8 @@
 // The container action's gather gate (Data.Profunctor.Acting `acted`): the
 // menu is withheld until every guest row has emitted a choice, re-emits whole
 // on any re-choice (retain-last), and row instances follow their keys.
-export const demos = ['demo/nguis/potluck']
-export const url = '/demo/nguis/potluck/'
+export const demos = ['demo/nguis/potluck-mdc2']
+export const url = '/demo/nguis/potluck-mdc2/'
 
 const pick = (row, label) =>
   `(() => { const sb = document.querySelectorAll('.mdc-segmented-button')[${row}]; if (!sb) return false; const seg = [...sb.querySelectorAll('.mdc-segmented-button__segment')].find(s => s.textContent.includes('${label}')); if (!seg) return false; seg.click(); return true })()`

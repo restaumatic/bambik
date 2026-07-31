@@ -3,8 +3,8 @@
 // is the retraction law: feeding a reordered array must REUSE the element
 // instance per surviving key, so DOM-node identity (and DOM-local state,
 // here a bare checkbox tick) follows the track, not the position.
-export const demos = ['demo/nguis/reorder']
-export const url = '/demo/nguis/reorder/'
+export const demos = ['demo/nguis/reorder-mdc2']
+export const url = '/demo/nguis/reorder-mdc2/'
 
 // The row shows its track title in the rename field (an MDC filledTextField
 // fed through the channel), so the title reads from the field's input value.

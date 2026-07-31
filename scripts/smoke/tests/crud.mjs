@@ -1,8 +1,8 @@
 // The MDC text-field channel end-to-end: typing into the field emits
 // through `asField`, the looped form retains it, and Create round-trips
 // through the async action back into the list.
-export const demos = ['demo/7guis/crud']
-export const url = '/demo/7guis/crud/'
+export const demos = ['demo/7guis/crud-mdc2']
+export const url = '/demo/7guis/crud-mdc2/'
 
 export const run = async ({ ev, assertEq, sleep }) => {
   await sleep(800) // async catalogue load

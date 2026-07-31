@@ -13,6 +13,6 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelector('h2.md-typescale-headline-large').textContent`), '1', 'clicking the MDC3 button increments')
 
   await sleep(300) // the switcher appears after page.js probes the sibling
-  assertEq(await ev(`(document.querySelector('#page-header a[href$="/counter/"]') || {}).textContent`), 'MDC2',
+  assertEq(await ev(`(document.querySelector('#page-header a[href$="/counter-mdc2/"]') || {}).textContent`), 'MDC2',
     'the header switcher links back to the MDC2 sibling')
 }

@@ -2,8 +2,8 @@
 // ticker feeds one { key, value } case per second — an unknown key becomes a
 // new row (a new runtime case), a known key re-feeds exactly its row, and the
 // tagged output drives the last-update line.
-export const demos = ['demo/nguis/departures']
-export const url = '/demo/nguis/departures/'
+export const demos = ['demo/nguis/departures-mdc2']
+export const url = '/demo/nguis/departures-mdc2/'
 
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelectorAll('ul li').length >= 1`), true, 'the seed tick builds the first case')
