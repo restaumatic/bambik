@@ -15,6 +15,7 @@ to generate this file without the comments in this block.
   [ "aff"
   , "arrays"
   , "avar"
+  , "console"
   , "convertable-options"
   , "datetime"
   , "debug"
@@ -43,5 +44,11 @@ to generate this file without the comments in this block.
   , "variant"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs", "demo/7guis/**/*.purs", "demo/nguis/**/*.purs" ]
+, sources =
+  [ "src/**/*.purs"
+  , "test/**/*.purs"
+  , "demo/1/**/*.purs"
+  , "demo/7guis/**/*.purs"
+  , "demo/nguis/**/*.purs"
+  ]
 }

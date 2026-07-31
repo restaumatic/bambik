@@ -1,4 +1,4 @@
-module Main (main) where
+module OrderForm (orderForm) where
 
 import Prelude ((#), ($), (<>), (==), Unit, const, discard, pure, show, unit)
 
@@ -21,8 +21,8 @@ import PUI.Web (Web)
 import PUI.MDC (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-main :: Effect Unit
-main =
+orderForm :: Effect Unit
+orderForm =
   body $ ( elevation20 Semigroupoid.do
       indeterminateLinearProgress # action loadOrder
       RecordToRecord.do

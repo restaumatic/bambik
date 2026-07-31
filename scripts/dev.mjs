@@ -5,7 +5,7 @@
 // the JS banner).
 //
 //   node scripts/dev.mjs counter          (7guis demos, by directory name)
-//   node scripts/dev.mjs 1                 (the demo/1 Main-module demo)
+//   node scripts/dev.mjs 1                 (the demo/1 order form)
 import { context } from 'esbuild'
 import { spawn } from 'node:child_process'
 import { readdirSync, watch } from 'node:fs'
@@ -29,9 +29,8 @@ if (!name) {
 
 const isSevenGuis = name in sevenGuis
 const dir = isSevenGuis ? `demo/7guis/${name}` : `demo/${name}`
-const spagoPath = isSevenGuis ? 'demo/7guis/*/*.purs' : `${dir}/**/*.purs`
 const watchDirs = ['src', isSevenGuis ? 'demo/7guis' : dir]
-const [mod, fn] = isSevenGuis ? sevenGuis[name] : ['Main', 'main']
+const [mod, fn] = isSevenGuis ? sevenGuis[name] : ['OrderForm', 'orderForm']
 
 const env = { ...process.env, PATH: `${path.resolve('node_modules/.bin')}:${process.env.PATH}` }
 
@@ -41,7 +40,7 @@ function build() {
   if (building) { queued = true; return }
   building = true
   const t0 = Date.now()
-  spawn('spago', ['build', '--path', spagoPath], { env, stdio: ['ignore', 'inherit', 'inherit'] })
+  spawn('spago', ['build'], { env, stdio: ['ignore', 'inherit', 'inherit'] })
     .on('exit', code => {
       console.log(`[spago] ${code === 0 ? 'ok' : 'FAILED'} (${((Date.now() - t0) / 1000).toFixed(1)}s)`)
       building = false
