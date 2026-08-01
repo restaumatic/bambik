@@ -3,6 +3,7 @@ module MeetingBookerFluent (meetingBookerFluent) where
 import Prelude (Unit, min, show, ($), (#), (/), (<>))
 
 import Data.Int (round)
+import Data.Ord (clamp)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -48,13 +49,14 @@ meetingBookerFluent =
       bookedBar
 
 weeklySync :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean }
-weeklySync =
-  { title: "Weekly sync"
-  , room: .boardroom {}
-  , duration: .half {}
-  , attendees: { current: 6.0, min: 1.0, max: roomCapacity (.boardroom {}), step: Just 1.0 }
-  , online: true
-  }
+weeklySync = plannedMeeting { title: "Weekly sync", room: .boardroom {}, duration: .half {}, attendees: 6.0, online: true }
+
+plannedMeeting :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean }
+plannedMeeting { title, room, duration, attendees, online } =
+  fitRoom { title, room, duration, attendees: { current: attendees, min: justTheOrganizer, max: attendees, step: Just 1.0 }, online }
+
+justTheOrganizer :: Number
+justTheOrganizer = 1.0
 
 bookedBar :: PUI Web [ booked :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean } ] {}
 bookedBar = messageBar # forCase @"booked" # lcmap (match { booked: \plan -> .booked (bookedLine plan) })
@@ -92,4 +94,4 @@ roomCapacity :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number
 roomCapacity = match { focusPod: \_ -> 4.0, boardroom: \_ -> 12.0, auditorium: \_ -> 40.0 }
 
 fitRoom :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean } -> { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean }
-fitRoom m = m { attendees = m.attendees { max = roomCapacity m.room, current = min m.attendees.current (roomCapacity m.room) } }
+fitRoom m = m { attendees = m.attendees { max = roomCapacity m.room, current = clamp m.attendees.min (roomCapacity m.room) m.attendees.current } }
