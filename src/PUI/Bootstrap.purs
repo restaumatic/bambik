@@ -16,7 +16,9 @@
 --     of exactly one row direction:
 --       `×→×` editors — `textField @l` (`.form-control`), `sliderLive @l`
 --         (`.form-range` — the native range input emits per drag step;
---         Bootstrap has no commit-only slider), `toggleSwitch @l`
+--         Bootstrap has no commit-only slider; the label line carries a
+--         live numeric readout, the counterpart of MD's labeled handle),
+--         `toggleSwitch @l`
 --         (`.form-check.form-switch`), and the type-changing `select @l`
 --         (`.form-select`, `{ value :: Maybe a } → { value :: a }`);
 --       `×→×` displays — `progress` (`{ value :: Number } → {}`, the
@@ -65,6 +67,7 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
+import Data.Number.Format (toString)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
@@ -117,10 +120,18 @@ textField config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
 
 -- | The `×→×` `Number` editor (`.form-range` under a `.form-label`).
 -- | Emits on every drag step, like `PUI.MDC2`'s `sliderLive @l` — the
--- | native range input has no commit-only protocol.
+-- | native range input has no commit-only protocol. The label line carries
+-- | a live numeric readout (the native range has no value indicator of its
+-- | own — this is the Bootstrap counterpart of `<md-slider labeled>`),
+-- | fed from the channel, so it follows drags through the loop.
 sliderLive :: { label :: String, min :: Number, max :: Number, step :: Number } -> PUI Web { value :: Number } { value :: Number }
 sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
-  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
+  readout <- unwrap $ (label $ wrap do
+      _ <- unwrap (span $ staticText config.label)
+      unwrap ((span $ text) # cl "text-body-secondary")
+    ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
+  -- the readout is written, never listened to; text's echo needs a listener
+  liftEffect $ readout.fromUser \_ -> pure unit
   element "input" (pure unit)
   attribute "type" "range"
   attribute "class" "form-range"
@@ -132,6 +143,7 @@ sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
   pure
     { toUser: \v -> do
         setValue node (show v)
+        readout.toUser { value: toString v }
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop v

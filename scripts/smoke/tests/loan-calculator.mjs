@@ -12,9 +12,13 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(seededMonthly, 'Monthly payment €239.89', `seeded annuity renders (${seededMonthly})`)
   assertEq(await ev(itemText(1)), 'Interest rate 7.4% p.a.', 'seeded rate renders')
 
+  const seededReadouts = await ev(`[...document.querySelectorAll('#demo-column .form-label .text-body-secondary')].map(s => s.textContent).join()`)
+  assertEq(seededReadouts, '12000,5', `slider labels carry live numeric readouts (${seededReadouts})`)
+
   await ev(`(() => { const r = document.querySelectorAll('input.form-range')[0]; r.value = '24000'; r.dispatchEvent(new Event('input')) })()`)
   await sleep(100)
   assertEq(await ev(itemText(0)), 'Monthly payment €479.77', 'amount slider recomputes the annuity')
+  assertEq(await ev(`document.querySelector('#demo-column .form-label .text-body-secondary').textContent`), '24000', 'the readout follows the drag through the loop')
 
   await ev(`(() => { const s = document.querySelector('select.form-select'); s.value = '1'; s.dispatchEvent(new Event('change')) })()`)
   await ev(`(() => { const c = document.querySelector('input.form-check-input'); c.checked = true; c.dispatchEvent(new Event('change')) })()`)

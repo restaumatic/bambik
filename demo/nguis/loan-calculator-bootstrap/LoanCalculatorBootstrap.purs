@@ -22,8 +22,8 @@ loanCalculatorBootstrap =
     card { caption: "Loan calculator" } Semigroupoid.do
       ( RecordToRecord.do
           textField { label: "Applicant" } # asField @"applicant"
-          sliderLive { label: "Amount (€)", min: 1000.0, max: 50000.0, step: 500.0 } # asField @"amount"
-          sliderLive { label: "Term (years)", min: 1.0, max: 10.0, step: 1.0 } # asField @"years"
+          sliderLive { label: "Amount (€)", min: smallestLoan, max: largestLoan, step: loanIncrement } # asField @"amount"
+          sliderLive { label: "Term (years)", min: shortestTerm, max: longestTerm, step: termIncrement } # asField @"years"
           select { label: "Purpose" }
             [ { value: .car {}, label: "Car" }
             , { value: .home {}, label: "Home improvement" }
@@ -98,3 +98,21 @@ annualRate { purpose, insured } = basePurposeRate purpose + (if insured then -0.
 
 basePurposeRate :: [ car :: {}, home :: {}, holiday :: {} ] -> Number
 basePurposeRate = match { car: \_ -> 7.4, home: \_ -> 4.9, holiday: \_ -> 9.9 }
+
+smallestLoan :: Number
+smallestLoan = 1000.0
+
+largestLoan :: Number
+largestLoan = 50000.0
+
+loanIncrement :: Number
+loanIncrement = 500.0
+
+shortestTerm :: Number
+shortestTerm = 1.0
+
+longestTerm :: Number
+longestTerm = 10.0
+
+termIncrement :: Number
+termIncrement = 1.0
