@@ -64,6 +64,7 @@ module PUI
   , muted
   , mvu
   , onCase
+  , optional
   , resolveFor
   , silence
   , spied
@@ -589,6 +590,34 @@ muted w = wrap $ unwrap w <#> \w' ->
 -- | input type stays free, so it fits any pipeline position.
 constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
 constantly a = lcmap (const a)
+
+-- | Mark a type-changing selector as **possibly unselected** — the dual of
+-- | `required`. The selection state is an entity always known from the
+-- | input, *including* "nothing picked yet", so `optional` completes the
+-- | selector's `Just`-only leaf echo with the missing `Nothing` half (fed
+-- | `Nothing` it announces `Nothing`; fed `Just` the leaf's own echo
+-- | speaks — exactly one echo per feed either way) and wraps every user
+-- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
+-- | honest knowledge instead of starving the merge gate, and only a
+-- | genuine pick can ever produce the bare value —
+-- | `dropdown config options # optional # asField @l` seeds as `Nothing`
+-- | and the stages demanding the selection stay `provided`-gated until the
+-- | user picks.
+optional :: forall m a. Functor m => PUI m { value :: Maybe a } { value :: a } -> PUI m { value :: Maybe a } { value :: Maybe a }
+optional p = wrap $ unwrap p <#> \p' ->
+  let mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \i -> do
+        p'.toUser i
+        case i.value of
+          Nothing -> do
+            mProp <- Ref.read mPropRef
+            for_ mProp \prop -> prop { value: Nothing }
+          Just _ -> pure unit
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        p'.fromUser \o -> prop { value: Just o.value }
+    }
 
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
 -- | Retains the last value flowing through; every `interval`, applies

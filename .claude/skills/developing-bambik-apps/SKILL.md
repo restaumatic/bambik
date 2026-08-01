@@ -51,7 +51,10 @@ canonical row, adopted to the business label at the use site:
   with `# forCase @l`
 - type-changing selectors (`select`, `radioButton`, `segmentedButton`)
   are `{ value :: Maybe a } → { value :: a }`; always-selected ones take
-  `# required # asField @l`
+  `# required # asField @l`, possibly-unselected ones take
+  `# optional # asField @l` — the model keeps the `Maybe` seeded `Nothing`
+  (no default pick), and the stages demanding the bare selection stay
+  `provided`-gated until the user picks
 
 Oculars (`card { caption }`, `dialog`, `layoutGrid`, `topAppBar`,
 typography, elevations, ...) are shape-preserving decorators — wrap

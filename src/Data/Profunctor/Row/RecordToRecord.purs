@@ -187,6 +187,9 @@ projection f = lcmap \a -> { value: f a }
 -- | every model value shows as chosen. Dissolves the
 -- | `dimap (\v -> { value: Just v }) _.value` bracket into a named stage:
 -- | `select config options # required # asField @l`.
+-- | Its dual — a selector left possibly-unselected, the model keeping the
+-- | `Maybe` — is `PUI.optional` (carrier-level: it must complete the leaf's
+-- | `Just`-only echo, which no `dimap` can).
 required :: forall p a b. Profunctor p => p { value :: Maybe a } b -> p { value :: a } b
 required = lcmap (\r -> { value: Just r.value })
 
