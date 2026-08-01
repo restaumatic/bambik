@@ -22,7 +22,7 @@ orderDashboardMDC3 =
   body $
     elevation5 $
       topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
-          every { ms: 1000.0 } ordersArrive
+          every tickPeriod ordersArrive
           rangePicker { label: "Showing" }
             [ { value: .lastMinute {}, label: "Last minute" }
             , { value: .lastQuarter {}, label: "Last 15 min" }
@@ -67,6 +67,9 @@ menu =
   , { name: "Carbonara", price: 10.5 }
   , { name: "Falafel Wrap", price: 7.5 }
   ]
+
+tickPeriod :: { ms :: Number }
+tickPeriod = { ms: 1000.0 }
 
 openingTick :: Int
 openingTick = -900

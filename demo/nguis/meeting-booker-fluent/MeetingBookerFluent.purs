@@ -30,7 +30,7 @@ meetingBookerFluent =
             , { value: .half {}, label: "30 min" }
             , { value: .hour {}, label: "60 min" }
             ] # required # asField @"duration"
-          slider { label: "Attendees", min: 1.0, max: 40.0, step: 1.0 } # asField @"attendees"
+          slider { label: "Attendees", min: fewestAttendees, max: largestRoomCapacity, step: attendeeStep } # asField @"attendees"
           toggleSwitch { label: "Include a Teams link" } # asField @"online"
           divider
       ) # mvu weeklySync
@@ -89,3 +89,12 @@ seatsTaken { room, attendees } = min 1.0 (attendees / roomCapacity room)
 
 roomCapacity :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number
 roomCapacity = match { focusPod: \_ -> 4.0, boardroom: \_ -> 12.0, auditorium: \_ -> 40.0 }
+
+fewestAttendees :: Number
+fewestAttendees = 1.0
+
+largestRoomCapacity :: Number
+largestRoomCapacity = roomCapacity (.auditorium {})
+
+attendeeStep :: Number
+attendeeStep = 1.0

@@ -17,7 +17,7 @@ departuresMDC2 =
   body $
     elevation20 $
       card { caption: "Departures" } $ ( Semigroupoid.do
-          every { ms: 1000.0 } tick
+          every tickPeriod tick
           ( Semigroupoid.do
               ( list $
                   ( ( listItem $ RecordToRecord.do
@@ -33,7 +33,13 @@ departuresMDC2 =
                   staticText " → "
                   text # forValue # forField @"status" ) # lcmap _.value
           ) # displayed
-      ) # mvu { n: 0 }
+      ) # mvu boardOpening
+
+tickPeriod :: { ms :: Number }
+tickPeriod = { ms: 1000.0 }
+
+boardOpening :: { n :: Int }
+boardOpening = { n: 0 }
 
 tick :: { n :: Int } -> Maybe { n :: Int }
 tick { n } = Just { n: n + 1 }

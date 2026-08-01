@@ -299,6 +299,18 @@ must round-trip. A lossy normalization belongs in the model via `rmap`
 after `completed`, where the loop makes it a transaction — never hidden
 inside a component's `dimap`.
 
+### A8. Business literals never hide in UI code.
+
+Numeric bounds and steps (a slider's `min`/`max`/`step`), seed models
+(`mvu`/`with`/the trace forms' arguments), tick periods, and default
+payload values are business data, and each is a **named top-level
+business definition** — never a literal inline in a widget config or at
+a seed position. Names speak business language (`smallestLoan`,
+`tickPeriod`, `gameStart`, `roomTemperature`), never lifecycle language
+(`initial`, `default`, `seed` are the smell's second form). UI code
+keeps only presentation: labels, captions, icons, styles, structure —
+layout numerics (a textarea's `rows`, a grid's `columns`) stay UI.
+
 ---
 
 ## Part III — The admission test (how the guardrails are enforced)

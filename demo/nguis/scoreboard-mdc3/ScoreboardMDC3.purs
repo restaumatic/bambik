@@ -19,7 +19,7 @@ scoreboardMDC3 =
   body $
     elevation5 $
       card { caption: "Scoreboard" } $ ( Semigroupoid.do
-          every { ms: 1000.0 } tick
+          every tickPeriod tick
           ( Semigroupoid.do
               ( list $
                   ( ( listItem $ RecordToRecord.do
@@ -41,7 +41,13 @@ scoreboardMDC3 =
                   staticText "—" # provided # lcmap noLeader # displayed
               ) # lcmap boardSummary
           ) # displayed
-      ) # mvu { n: 0 }
+      ) # mvu gameStart
+
+tickPeriod :: { ms :: Number }
+tickPeriod = { ms: 1000.0 }
+
+gameStart :: { n :: Int }
+gameStart = { n: 0 }
 
 tick :: { n :: Int } -> Maybe { n :: Int }
 tick { n } = Just { n: n + 1 }
