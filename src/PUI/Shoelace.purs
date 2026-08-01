@@ -62,8 +62,7 @@ import Data.Int (fromString)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, projection)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
@@ -232,7 +231,7 @@ toast = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text)
+    unwrap (text # projection eventText)
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -254,6 +253,10 @@ card config content = el "sl-card" $ wrap do
 
 divider :: PUI Web {} {}
 divider = staticHTML "<sl-divider style=\"width: 100%;\"></sl-divider>"
+
+-- the canonical status payload, read into the text leaf as its projection
+eventText :: [ event :: String ] -> String
+eventText = Variant.on (Proxy @"event") identity Variant.case_
 
 -- Private
 

@@ -1,13 +1,12 @@
 module AuctionMDC2 (auctionMDC2) where
 
-import Prelude ((#), ($), Unit, identity, max, show)
+import Prelude (identity, (#), ($), Unit, identity, max, show)
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, mvu, projection, tapped)
+import PUI (asField, mvu, projection, settled, tapped)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +21,7 @@ auctionMDC2 =
               text # projection bidText ) # tapped
           sliderLive { label: "Your bid ($)" } # asField @"bid"
           ( Semigroupoid.do
-              lcmap raiseTop identity
+              identity # settled raiseTop
               headline6 ( RecordToRecord.do
                   staticText "Highest bid so far: $"
                   text # projection topText ) # tapped) # feedback noBids

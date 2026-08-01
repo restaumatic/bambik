@@ -1,10 +1,9 @@
 module InboxMDC2 (inboxMDC2) where
 
-import Prelude ((#), ($), (+), (<<<), (<>), (==), (/=), (||), Unit, comparing, const, identity, map, not, show)
+import Prelude (identity, (#), ($), (+), (<<<), (<>), (==), (/=), (||), Unit, comparing, const, identity, map, not, show)
 
 import Data.Array (filter, find, length, snoc, sortBy)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
@@ -26,14 +25,14 @@ inboxMDC2 =
               staticText " unread of "
               text # projection messageCountText
               staticText " messages" ) # completed
-          listOf { selected: _.attention }
+          listOf { selected: _.attention } mailboxRows
             ( span $ Semigroupoid.do
-                staticText "● " # provided # lcmap unreadMark # displayed
+                staticText "● " # provided unreadMark # displayed
                 ( RecordToRecord.do
                     text # forValue # forField @"sender"
                     staticText " — "
                     text # forValue # forField @"subject" ) # displayed
-            ) # lcmap mailboxRows # rmap _.id # toCase @"opened" # updates (match { opened: openMessage })
+            ) # toCase @"opened" _.id # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headline6 text # projection subjectLine
@@ -41,14 +40,14 @@ inboxMDC2 =
                     staticText "From: "
                     text # forValue # forField @"sender"
                   body1 text # projection bodyLine) # tapped
-              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided # lcmap openedMessage # updates (match { deleteRequested: const requestDelete })
+              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
-                  button { label: "Keep" } # asCase @"kept") # provided # lcmap confirmingDelete
+                  button { label: "Keep" } # asCase @"kept") # provided confirmingDelete
               VariantToVariant.do
-                inboxZeroBanner # tapped # onCase @"emptied" # toCase @"emptied"
-                identity # onCase @"kept" # toCase @"kept") # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
+                inboxZeroBanner # tapped # onCase @"emptied" # toCase @"emptied" identity
+                identity # onCase @"kept" # toCase @"kept" identity) # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
           fab { icon: "edit", label: "Compose" } # asCase @"compose" # updates (match { compose: const <<< composeMessage })
           ( menu { label: "Sort" } RecordToVariant.do
               menuItem { label: "By sender" } # asCase @"bySender"
@@ -114,7 +113,7 @@ keepMessages :: { messages :: Array { id :: Int, sender :: String, subject :: St
 keepMessages m = m { confirming = false }
 
 inboxZeroBanner :: PUI Web {} {}
-inboxZeroBanner = banner # forCase @"emptied" # constantly (.emptied "Inbox zero!")
+inboxZeroBanner = banner # forCase @"emptied" identity # constantly (.emptied "Inbox zero!")
 
 composeMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, nextId :: Int }
 composeMessage m@{ messages, nextId } = m

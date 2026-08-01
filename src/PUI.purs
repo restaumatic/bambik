@@ -50,6 +50,7 @@ module PUI
   , affAdapter
   , accumulated
   , announce
+  , bracketed
   , constant
   , constantly
   , debounced
@@ -60,12 +61,14 @@ module PUI
   , effAdapter
   , every
   , foreach
+  , fires
   , looped
   , muted
   , mvu
   , onCase
   , optional
   , resolveFor
+  , settled
   , silence
   , spied
   , updates
@@ -85,7 +88,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
@@ -590,6 +593,34 @@ muted w = wrap $ unwrap w <#> \w' ->
 -- | input type stays free, so it fits any pipeline position.
 constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
 constantly a = lcmap (const a)
+
+-- | Fire the **business outcome** of what the emitter was shown: adopt the
+-- | canonical click case by applying `f` to its payload. Where `asCase @l`
+-- | renames the event and leaves the payload alone, `fires` dissolves the
+-- | event into the outcome `f` computes — typically a variant of business
+-- | results: `button { label: "Sign up" } # fires register` emits
+-- | `register`'s cases directly.
+fires :: forall m i a o. Functor m => (a -> o) -> PUI m i [ clicked :: a ] -> PUI m i o
+fires f = rmap (on (Proxy @"clicked") f case_)
+
+-- | Settle a stage's emissions through a **total, type-preserving**
+-- | normalization — guardrail A7's mechanism made a word: a lossy
+-- | adjustment belongs in the model, after `completed`, where the loop
+-- | makes it a transaction — `formula # completed # settled commit`.
+-- | Type-preservation is the contract: `settled` normalizes, it cannot
+-- | re-shape.
+settled :: forall m i o. Functor m => (o -> o) -> PUI m i o -> PUI m i o
+settled = rmap
+
+-- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
+-- | (every case's payload retained) as an editor of one-at-a-time variant
+-- | state — `stateOf` brackets the variant in (seeding absent payloads
+-- | from the retained editor state), `caseOf` projects the selection back
+-- | out, and the self-trace in between keeps the ensemble consistent. The
+-- | demos' variant editors read
+-- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
+bracketed :: forall m i s o. Functor m => (i -> s) -> (s -> o) -> PUI m s s -> PUI m i o
+bracketed f g w = dimap f g (looped w)
 
 -- | Mark a type-changing selector as **possibly unselected** — the dual of
 -- | `required`. The selection state is an entity always known from the
@@ -1172,8 +1203,8 @@ instance Hosting m node => Acting (PUI m) where
 -- | array itself is the output, use `acted` (gathered, knowledge-gated,
 -- | announces `[]`) or `edits` (input-primed, immediate). All share this
 -- | keyed reconciler.
-foreach :: forall @l m node k r a o. Hosting m node => IsSymbol l => Cons l k r a => Ord k => PUI m { | a } o -> PUI m (Array { | a }) o
-foreach w = wrap do
+foreach :: forall @l m node k r a i o. Hosting m node => IsSymbol l => Cons l k r a => Ord k => (i -> Array { | a }) -> PUI m { | a } o -> PUI m i o
+foreach f w = lcmap f $ wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks
 
@@ -1237,8 +1268,8 @@ edits item0 = let item = widenRecordInput item0 in wrap do
 -- | shape for streams/pushes that arrive one entity at a time. No key
 -- | function: the runtime variant input carries its tag, as a variant case
 -- | carries its label.
-dispatched :: forall m node k a b. Hosting m node => Ord k => PUI m a b -> PUI m { key :: k, value :: a } { key :: k, value :: b }
-dispatched w = wrap do
+dispatched :: forall m node k i a b. Hosting m node => Ord k => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
+dispatched f w = lcmap f $ wrap do
   hooks <- hosting w
   liftEffect do
     propRef <- Ref.new Nothing
@@ -1263,8 +1294,8 @@ dispatched w = wrap do
 -- | for keyed streams: the aggregate as running state, built one entity at a
 -- | time. Emits `[]` for no keys yet only in the sense that nothing has been
 -- | fed; order is first-appearance order.
-accumulated :: forall m node k a. Hosting m node => Ord k => PUI m a a -> PUI m { key :: k, value :: a } (Array a)
-accumulated w = wrap do
+accumulated :: forall m node k i a. Hosting m node => Ord k => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
+accumulated f w = lcmap f $ wrap do
   hooks <- hosting w
   liftEffect do
     propRef <- Ref.new Nothing

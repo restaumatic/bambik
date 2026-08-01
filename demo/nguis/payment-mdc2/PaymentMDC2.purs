@@ -2,14 +2,13 @@ module PaymentMDC2 (paymentMDC2) where
 
 import Prelude ((#), ($), (+), (<), (<<<), (<>), Unit, const, discard, pure, show)
 
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, asCase, forField, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, fires, forField, mvu, onCase, projection, tapped, updates)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,12 +23,12 @@ paymentMDC2 =
               text # projection show # forField @"amount" ) # tapped
           body2 text # projection statusLine # tapped
           ( Semigroupoid.do
-              button { label: "Charge card", icon: "credit_card" } # asCase @"charge" # lcmap startCharge
+              button { label: "Charge card", icon: "credit_card" } # fires startCharge
               indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder
 
-startCharge :: { amount :: Number } -> { amount :: Number, attempt :: Int }
-startCharge { amount } = { amount, attempt: 0 }
+startCharge :: { amount :: Number } -> [ charge :: { amount :: Number, attempt :: Int } ]
+startCharge { amount } = .charge { amount, attempt: 0 }
 
 chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
   [ charged :: { attempt :: Int }

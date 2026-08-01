@@ -6,7 +6,6 @@ import Data.Int (round)
 import Data.Maybe (Maybe(..))
 import Data.Number (pow)
 import Data.Number.Format (fixed, toStringWith)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
@@ -59,7 +58,7 @@ cityCarLoan =
   }
 
 appliedToast :: PUI Web [ applied :: { applicant :: String, amount :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, years :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } ] {}
-appliedToast = toast # forCase @"applied" # lcmap (match { applied: \loan -> .applied (appliedLine loan) })
+appliedToast = toast # forCase @"applied" appliedLine
 
 appliedLine :: { applicant :: String, amount :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, years :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> String
 appliedLine loan =

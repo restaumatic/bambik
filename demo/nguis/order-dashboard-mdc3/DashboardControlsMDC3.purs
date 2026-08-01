@@ -7,18 +7,17 @@ module DashboardControlsMDC3
   , trendChart
   ) where
 
-import Prelude (class Eq, const, show, ($), (#), (*), (-), (/), (<>), (==), (>>>))
+import Prelude (identity, class Eq, const, show, ($), (#), (*), (-), (/), (<>), (==), (>>>))
 
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe)
 import Data.Number (max)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import PUI (PUI, displayed, foreach, forField, forValue, projection)
+import PUI (PUI, constantly, displayed, forField, forValue, foreach, projection)
 import PUI.HTML (attrWith, div, staticText, text, (:=))
 import PUI.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.SVG as SVG
@@ -49,7 +48,7 @@ trendChart config =
     SVG.svg >>> "viewBox" := "0 0 120 40" >>> "preserveAspectRatio" := "none" >>> "style" := "width: 100%; height: 40px;" $
       ( SVG.path >>> "fill" := "none" >>> "stroke" := "var(--md-sys-color-primary, #6750a4)" >>> "stroke-width" := "2"
           >>> "stroke-linejoin" := "round" >>> "vector-effect" := "non-scaling-stroke"
-          >>> attrWith "d" sparkline $ pempty # lcmap (const {}) )
+          >>> attrWith "d" sparkline $ pempty # constantly {} )
 
 leaderboard :: { label :: String } -> PUI Web { value :: Array { name :: String, score :: String } } { value :: Array { name :: String, score :: String } }
 leaderboard config =
@@ -59,7 +58,7 @@ leaderboard config =
                text # forValue # forField @"name"
                staticText " — "
                text # forValue # forField @"score"
-           ) # foreach @"name" ) # forField @"value" # displayed
+           ) # foreach @"name" identity ) # forField @"value" # displayed
 
 rangePicker :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 rangePicker config options =

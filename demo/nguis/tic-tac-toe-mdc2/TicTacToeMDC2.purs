@@ -5,11 +5,10 @@ import Prelude ((#), ($), (&&), (/=), (<#>), (<$>), (<>), (==), (>>>), Unit, bin
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, foreach, forField, forValue, mvu, toCase, updates)
+import PUI (displayed, forField, forValue, foreach, mvu, projection, toCase, updates, with)
 import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,18 +20,18 @@ ticTacToeMDC2 =
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               text # forValue # forField @"mark"
-              staticText " wins" ) # provided # lcmap winningMark # displayed
-          headline6 (staticText "Draw") # provided # lcmap drawnGame # displayed
+              staticText " wins" ) # provided winningMark # displayed
+          headline6 (staticText "Draw") # provided drawnGame # displayed
           headline6 ( RecordToRecord.do
               text # forValue # forField @"mark"
-              staticText " to move" ) # provided # lcmap markToMove # displayed
+              staticText " to move" ) # provided markToMove # displayed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
               ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
                   ( clicked
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
-                          $ text # lcmap (\c -> { value: c.mark })) # rmap _.key) # foreach @"key" # lcmap cells) # toCase @"cellPicked") # updates (match { cellPicked: claimCell })
-          button { label: "New game", icon: "replay" } # lcmap newGame # updates (match { clicked: const })
+                          $ text # projection _.mark)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updates (match { cellPicked: claimCell })
+          with openingPosition (button { label: "New game", icon: "replay" }) # updates (match { clicked: const })
       ) # mvu openingPosition
 
 cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: String, win :: Boolean }
@@ -47,9 +46,6 @@ cellStyle :: String
 cellStyle =
   "height: 72px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 40px; font-family: Roboto, sans-serif; cursor: pointer; border-radius: 4px; "
-
-newGame :: {} -> { board :: Array [ x :: {}, o :: {}, free :: {} ] }
-newGame {} = openingPosition
 
 openingPosition :: { board :: Array [ x :: {}, o :: {}, free :: {} ] }
 openingPosition =

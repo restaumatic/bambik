@@ -1,11 +1,10 @@
 module MovieBrowserMDC2 (movieBrowserMDC2) where
 
-import Prelude ((#), ($), (&&), (||), (==), Unit, map, show)
+import Prelude (identity, (#), ($), (&&), (||), (==), Unit, map, show)
 
 import Data.Array (any, catMaybes, elem, filter, length, null)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
-import Data.Profunctor (lcmap)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, foreach, forField, forValue, mvu, projection, toCase, updates)
@@ -31,10 +30,10 @@ movieBrowserMDC2 =
               filterChip { label: "Oscar" } # asField @"oscar") # completed
           elevation1 ( subtitle1 $ RecordToRecord.do
               text # projection show # forField @"count"
-              staticText " favorite" ) # provided # lcmap soleFavorite # displayed
+              staticText " favorite" ) # provided soleFavorite # displayed
           elevation1 ( subtitle1 $ RecordToRecord.do
               text # projection show # forField @"count"
-              staticText " favorites" ) # provided # lcmap severalFavorites # displayed
+              staticText " favorites" ) # provided severalFavorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
@@ -43,7 +42,7 @@ movieBrowserMDC2 =
                     span ( RecordToRecord.do
                         staticText "★ "
                         text # projection ratingText )
-                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" # toCase @"favored" # lcmap visibleMovies # updates (match { favored: markFavorite })
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updates (match { favored: markFavorite })
       ) # mvu movieCatalogue
 
 movieCatalogue :: { category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } }

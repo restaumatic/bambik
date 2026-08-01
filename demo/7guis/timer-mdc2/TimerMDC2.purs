@@ -3,11 +3,10 @@ module TimerMDC2 (timerMDC2) where
 import Prelude ((#), ($), (+), (/), (<), (<=), Unit, const, min, show)
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, every, forField, mvu, projection, updates)
+import PUI (asField, completed, every, forField, mvu, projection, updates, with)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,11 +25,11 @@ timerMDC2 =
                 staticText "s"
               sliderLive { label: "" } # asField @"duration") # completed
           every tickPeriod tick
-          button { label: "Reset", icon: "replay" } # lcmap reset # updates (match { clicked: const })
+          with nothingElapsed (button { label: "Reset", icon: "replay" }) # updates (match { clicked: const })
       ) # mvu tenSecondFreshTimer
 
-reset :: {} -> { elapsed :: Number }
-reset {} = { elapsed: 0.0 }
+nothingElapsed :: { elapsed :: Number }
+nothingElapsed = { elapsed: 0.0 }
 
 tick :: { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number } -> Maybe { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number }
 tick t@{ duration, elapsed } =

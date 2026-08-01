@@ -6,7 +6,6 @@ import Data.Array (find, range)
 import Data.Char (toCharCode)
 import Data.Foldable (sum)
 import Data.Maybe (maybe)
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
@@ -23,7 +22,7 @@ photoGalleryMDC2 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } (span text # projection _.name) # rmap _.name # toCase @"albumPicked" # lcmap albumChoices # updates (match { albumPicked: openAlbum })
+              listOf { selected: _.current } albumChoices (span text # projection _.name) # toCase @"albumPicked" _.name # updates (match { albumPicked: openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"

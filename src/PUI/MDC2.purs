@@ -152,8 +152,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty)
+import Data.Profunctor.Row.RecordToRecord (field, pempty, projection)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -1063,7 +1062,7 @@ simpleDialog { title, confirm } content = wrap do
 -- | The `+→×` status receiver: shows message case `l` in a snackbar,
 -- | contributing no fields (`text` echoes its `{}`, so it announces).
 snackbar :: PUI Web [ event :: String ] {}
-snackbar = snackbarContainer $ lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text
+snackbar = snackbarContainer $ text # projection eventText
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -1080,7 +1079,11 @@ snackbarContainer content =
 -- | snackbar it stays until its own Dismiss action (foundation-handled).
 -- | MD2-only: MD3 dropped the banner, so `PUI.MDC3` has no citizen for it.
 banner :: PUI Web [ event :: String ] {}
-banner = bannerContainer $ lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text
+banner = bannerContainer $ text # projection eventText
+-- the canonical status payload, read into the text leaf as its projection
+eventText :: [ event :: String ] -> String
+eventText = Variant.on (Proxy @"event") identity Variant.case_
+
 
 bannerContainer :: Ocular (PUI Web)
 bannerContainer content = wrap do
@@ -1143,18 +1146,17 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | click emitter replaying its own value, so the component's output is
 -- | the clicked item.
 listOf
-  :: forall provided a o
+  :: forall provided i a o
    . ConvertOptionsWithDefaults OptSelected { selected :: a -> Boolean } { | provided } { selected :: a -> Boolean }
   => { | provided }
+  -> (i -> Array a)
   -> PUI Web a o
-  -> PUI Web (Array a) a
-listOf provided item = wrap do
+  -> PUI Web i a
+listOf provided f item = wrap do
   w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
-    ( ( lcmap _.item
-          ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
-              $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
-          ) # foreach @"ix"
-      ) # lcmap (mapWithIndex \ix it -> { ix, item: it })
+    ( inRow ( clicked $ clWhen config.selected "mdc-deprecated-list-item--selected"
+          $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
+      ) # foreach @"ix" (mapWithIndex (\ix it -> { ix, item: it }) <<< f)
     )
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.list."MDCList" node
@@ -1255,6 +1257,12 @@ imageListItem config = staticHTML $
     <> "<img class=\"mdc-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.label <> "\">"
     <> "<div class=\"mdc-image-list__supporting\"><span class=\"mdc-image-list__label\">" <> config.label <> "</span></div>"
     <> "</li>"
+
+-- the element adapter for the index-keyed internal collection: reads the
+-- item out of the reconciler's { ix, item } row at the wiring level (the
+-- closed-singleton adopters deliberately do not read from wider rows)
+inRow :: forall a o. PUI Web a o -> PUI Web { ix :: Int, item :: a } o
+inRow w = wrap $ unwrap w <#> \w' -> { toUser: \r -> w'.toUser r.item, fromUser: w'.fromUser }
 
 -- Private
 

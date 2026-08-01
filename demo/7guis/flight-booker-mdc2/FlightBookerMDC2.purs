@@ -1,11 +1,10 @@
 module FlightBookerMDC2 (flightBookerMDC2) where
 
-import Prelude ((#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, pure, show)
+import Prelude (identity, (#), ($), (&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
@@ -29,26 +28,26 @@ flightBookerMDC2 =
                 , { value: .return {}, label: "return flight" }
                 ] # required # asField @"flightType"
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided # lcmap returnLeg # updates setReturn
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided returnLeg # updates setReturn
       ) # mvu plannedTrip
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "⚠ "
-              text # forValue # forField @"problem" ) # provided # lcmap bookingProblem # displayed
+              text # forValue # forField @"problem" ) # provided bookingProblem # displayed
           body1 ( RecordToRecord.do
               staticText "A one-way flight on "
-              text # forValue # forField @"date" ) # provided # lcmap oneWayItinerary # displayed
+              text # forValue # forField @"date" ) # provided oneWayItinerary # displayed
           body1 ( RecordToRecord.do
               staticText "A return flight: out "
               text # forValue # forField @"out"
               staticText ", back "
-              text # forValue # forField @"back" ) # provided # lcmap returnItinerary # displayed
+              text # forValue # forField @"back" ) # provided returnItinerary # displayed
       ) # debounced
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
       VariantToRecord.do
-        snackbar # forCase @"booked"
-        snackbar # forCase @"rejected"
+        snackbar # forCase @"booked" identity
+        snackbar # forCase @"rejected" identity
 
 returnBetween :: { y :: Int, m :: Int, d :: Int } -> { y :: Int, m :: Int, d :: Int } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween out back =

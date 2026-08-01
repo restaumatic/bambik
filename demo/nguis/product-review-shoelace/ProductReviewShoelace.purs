@@ -4,7 +4,6 @@ import Prelude (Unit, ($), (#), (-), (<>))
 
 import Data.Int (round)
 import Data.Monoid (power)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
@@ -49,7 +48,7 @@ freshImpression =
   }
 
 submittedToast :: PUI Web [ submitted :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } ] {}
-submittedToast = toast # forCase @"submitted" # lcmap (match { submitted: \r -> .submitted (submittedLine r) })
+submittedToast = toast # forCase @"submitted" submittedLine
 
 submittedLine :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } -> String
 submittedLine { stars, nickname } =

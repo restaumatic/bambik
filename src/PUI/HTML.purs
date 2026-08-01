@@ -82,7 +82,6 @@ import Data.Foldable (for_)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (lcmap)
 import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -466,23 +465,25 @@ transient ui = wrap do
     }
 
 -- | The view-model conditional: visibility is the **presence of data**, not a
--- | predicate. Feed `Just a` and the content is attached and fed `a`; feed
--- | `Nothing` and it is detached. Pair with a named `Maybe`-valued business
--- | projection — `pane # provided # lcmap currentQuestion` reads "shown,
--- | provided there is a current question" — so the pane consumes the payload,
--- | never the whole model, and the visibility logic lives in testable business
--- | code. Detachment means no echoes while absent: a pipeline-stage combinator,
--- | not a gated-merge operand.
+-- | predicate. The named `Maybe`-valued business projection is the
+-- | mechanism's own argument — `pane # provided currentQuestion` reads
+-- | "shown, provided there is a current question": when it yields `Just`
+-- | the content is attached and fed the payload, on `Nothing` it is
+-- | detached — so the pane consumes the payload, never the whole model,
+-- | and the visibility logic lives in testable business code (an input
+-- | that already is the `Maybe` reads `provided identity`). Detachment
+-- | means no echoes while absent: a pipeline-stage combinator, not a
+-- | gated-merge operand.
 -- |
 -- | The payload row is the pane's row exactly — no subsumption here: the pane
 -- | is *fed* the payload, so a `Maybe`-valued business projection returning
 -- | precisely what the pane reads keeps both sides pinned (subsumption at the
 -- | *stage* boundary is `displayed`/`updates`'s job).
-provided :: forall a b. PUI Web a b -> PUI Web (Maybe a) b
-provided w = wrap do
+provided :: forall i a b. (i -> Maybe a) -> PUI Web a b -> PUI Web i b
+provided f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
-    { toUser: case _ of
+    { toUser: \i -> case f i of
       Nothing -> ensureDetached
       Just y -> do
         -- attach before feeding: a widget that measures itself on toUser (the
@@ -590,14 +591,16 @@ foreachWith build = wrap do
 -- | value (a `foreachWith` over the one-element array). Owns its container:
 -- | `svg [...] $ dynamic renderScene`, `div $ dynamic renderSwatch`.
 dynamic :: forall a o. (a -> PUI Web {} o) -> PUI Web a o
-dynamic build = lcmap (\a -> [ a ]) (foreachWith build)
+dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
+  { toUser: \a -> w.toUser [ a ], fromUser: w.fromUser }
 
 -- | Build a **fixed** (closure-known) list into the container now — a
 -- | `foreachWith` fed a constant array, input pinned to `{}` so it drops into a
 -- | `{} → {}` chrome merge without an annotation: `ul $ each rows renderRow`,
 -- | `tr $ each cells cellWidget`.
 each :: forall a o. Array a -> (a -> PUI Web {} o) -> PUI Web {} o
-each items build = lcmap (const items) (foreachWith build)
+each items build = wrap $ unwrap (foreachWith build) <#> \w ->
+  { toUser: \_ -> w.toUser items, fromUser: w.fromUser }
 
 -- Entry point
 

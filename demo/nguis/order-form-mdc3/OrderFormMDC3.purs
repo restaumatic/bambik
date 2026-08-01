@@ -3,7 +3,6 @@ module OrderFormMDC3 (orderFormMDC3) where
 import Prelude ((#), ($), (<>), (==), Unit, const, discard, pure, show, unit)
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -14,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, asCase, asField, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, required, silence, tapped, updates, with)
+import PUI (PUI, action, asCase, asField, bracketed, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, required, silence, tapped, updates, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
@@ -43,14 +42,14 @@ orderFormMDC3 =
                   , { value: .takeaway {}, label: "Takeaway" }
                   , { value: .delivery {}, label: "Delivery" }
                   ] # asField @"selected" # completed
-                filledTextField { floatingLabel: "Table" } # asField @"table" # provided # lcmap dineInPane # updates setTable
-                filledTextField { floatingLabel: "Time" } # asField @"time" # provided # lcmap takeawayPane # updates setTime
+                filledTextField { floatingLabel: "Table" } # asField @"table" # provided dineInPane # updates setTable
+                filledTextField { floatingLabel: "Time" } # asField @"time" # provided takeawayPane # updates setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
                     bodyLarge ( RecordToRecord.do
                         staticText "Distance "
                         text # projection distanceKm # forField @"address"
-                        staticText " km" )) # provided # lcmap deliveryPane # updates setAddress) # looped # dimap fulfillmentState fulfillmentCase) # field @"fulfillment"
+                        staticText " km" )) # provided deliveryPane # updates setAddress) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -74,16 +73,16 @@ orderFormMDC3 =
               staticText ", fulfilled as " ) # debounced # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
-              text # forValue # forField @"table" ) # provided # lcmap dineInDetail # displayed
+              text # forValue # forField @"table" ) # provided dineInDetail # displayed
           ( RecordToRecord.do
               staticText "takeaway at "
-              text # forValue # forField @"time" ) # provided # lcmap takeawayDetail # displayed
+              text # forValue # forField @"time" ) # provided takeawayDetail # displayed
           ( RecordToRecord.do
               staticText "delivery to "
               text # forValue # forField @"address"
               staticText " ("
               text # projection distanceKm # forField @"address"
-              staticText " km away)" ) # provided # lcmap deliveryDetail # displayed
+              staticText " km away)" ) # provided deliveryDetail # displayed
           ( RecordToRecord.do
               staticText ", paid "
               text # forValue # forField @"paid"
@@ -252,13 +251,13 @@ submitOrder { shortId, orderId, total } = do
       pure $ .orderSubmitted { shortId }
 
 submittedToast :: PUI Web [ orderSubmitted :: { shortId :: String } ] {}
-submittedToast = snackbar # forCase @"orderSubmitted" # lcmap (match { orderSubmitted: \{ shortId } -> .orderSubmitted ("Order " <> shortId <> " submitted") })
+submittedToast = snackbar # forCase @"orderSubmitted" (\{ shortId } -> "Order " <> shortId <> " submitted")
 
 rejectionToast :: PUI Web [ submissionFailed :: { shortId :: String, reason :: String } ] {}
-rejectionToast = snackbar # forCase @"submissionFailed" # lcmap (match { submissionFailed: \{ shortId, reason } -> .submissionFailed ("Order " <> shortId <> " rejected: " <> reason) })
+rejectionToast = snackbar # forCase @"submissionFailed" (\{ shortId, reason } -> "Order " <> shortId <> " rejected: " <> reason)
 
 receiptToast :: PUI Web [ receiptPrinted :: { shortId :: String } ] {}
-receiptToast = snackbar # forCase @"receiptPrinted" # lcmap (match { receiptPrinted: \{ shortId } -> .receiptPrinted ("Receipt for order " <> shortId <> " printed") })
+receiptToast = snackbar # forCase @"receiptPrinted" (\{ shortId } -> "Receipt for order " <> shortId <> " printed")
 
 printReceipt ::
   { shortId :: String

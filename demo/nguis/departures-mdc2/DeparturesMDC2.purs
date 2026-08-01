@@ -4,10 +4,9 @@ import Prelude ((#), ($), (+), Unit, div, mod)
 
 import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (dispatched, displayed, every, forField, forValue, mvu)
+import PUI (dispatched, displayed, every, forField, forValue, mvu, projection)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,15 +24,21 @@ departuresMDC2 =
                         staticText " — "
                         text # forValue # forField @"status"
                     ) # displayed
-                  ) # dispatched
-              ) # lcmap arrival
+                  ) # dispatched arrival
+              )
               body2 ( RecordToRecord.do
                   staticText "Last update: "
-                  text # forValue # forField @"code"
+                  text # projection updatedFlight
                   staticText " → "
-                  text # forValue # forField @"status" ) # lcmap _.value
+                  text # projection updatedStatus )
           ) # displayed
       ) # mvu boardOpening
+
+updatedFlight :: { key :: String, value :: { code :: String, status :: String } } -> String
+updatedFlight u = u.value.code
+
+updatedStatus :: { key :: String, value :: { code :: String, status :: String } } -> String
+updatedStatus u = u.value.status
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }

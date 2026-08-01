@@ -203,8 +203,13 @@ discard first cont = bind first (\_ -> cont unit)
 -- | the citizenship-carrying interface) for business case `l`: renames the
 -- | incoming case, output untouched — `lcmap`-only, the `asCase` twin at
 -- | `+ → ×` (statuses receive; events emit).
-forCase :: forall @l p a o s. IsSymbol l => Profunctor p => Cons l a () s => p [ event :: a ] o -> p [ | s ] o
-forCase = lcmap (on (Proxy @l) (inj (Proxy @"event")) case_)
+-- | The copy formatter is the mechanism's own argument (import-tower rule
+-- | L16): the adopted case carries the bare business payload, and `f`
+-- | renders it into the canonical `event` payload at the adoption site —
+-- | `snackbar # forCase @"registered" welcomeLine`; `identity` when the
+-- | payload already is the copy.
+forCase :: forall @l p a b o s. IsSymbol l => Profunctor p => Cons l b () s => (b -> a) -> p [ event :: a ] o -> p [ | s ] o
+forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @"event") (f b)) case_)
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
 -- | for this direction (the dual of `resolveProperty`). Where `case_`

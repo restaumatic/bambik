@@ -4,7 +4,6 @@ import Prelude ((#), ($), (<$>), (<<<), (==), Unit, bind, const, discard, pure, 
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
@@ -32,10 +31,10 @@ crudMDC2 = do
                   filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
-              listOf { selected: _.selected } ( displayed $ RecordToRecord.do
+              listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
                   text # forValue # forField @"surname"
                   staticText ", "
-                  text # forValue # forField @"name" ) # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+                  text # forValue # forField @"name" ) # toCase @"picked" _.key # updates (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"

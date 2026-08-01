@@ -1,12 +1,11 @@
 module TicketDispenserMDC2 (ticketDispenserMDC2) where
 
-import Prelude ((#), ($), (+), (==), Unit, const, identity, show)
+import Prelude (identity, (#), ($), (+), (==), Unit, const, identity, show)
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (dimap, lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.VariantToRecord (retain, unfolding)
+import Data.Profunctor.Row.VariantToRecord (reelE, unfolding)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
@@ -21,19 +20,19 @@ ticketDispenserMDC2 =
     elevation20 $
       card { caption: "Ticket Dispenser" } $ ( Semigroupoid.do
           headline3 ( Semigroupoid.do
-              staticText "—" # provided # lcmap beforeFirstTicket # displayed
+              staticText "—" # provided beforeFirstTicket # displayed
               ( RecordToRecord.do
                   staticText "#"
-                  text # projection show # forField @"serving" ) # provided # lcmap afterFirstTicket # displayed )
+                  text # projection show # forField @"serving" ) # provided afterFirstTicket # displayed )
           body2 ( Semigroupoid.do
-              staticText "Press the button to draw the first ticket." # provided # lcmap beforeFirstTicket # displayed
+              staticText "Press the button to draw the first ticket." # provided beforeFirstTicket # displayed
               ( RecordToRecord.do
                   staticText "Now serving ticket "
                   text # projection show # forField @"serving"
-                  staticText "." ) # provided # lcmap afterFirstTicket # displayed )
+                  staticText "." ) # provided afterFirstTicket # displayed )
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"
-              (retain identity # dimap issue nextTicket) # unfolding @"resume" firstTicket) # updates const
+              (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updates const
       ) # mvu emptyQueue
 
 issue ::

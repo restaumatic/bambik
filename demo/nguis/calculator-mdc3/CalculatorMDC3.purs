@@ -1,11 +1,10 @@
 module CalculatorMDC3 (calculatorMDC3) where
 
-import Prelude ((#), ($), (&&), (<$>), (<<<), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, show)
+import Prelude (identity, (#), ($), (&&), (<$>), (<<<), (<>), (==), (/=), (+), (-), (*), (/), (>>>), Unit, show)
 
 import Data.Array (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString)
-import Data.Profunctor (lcmap, rmap)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
@@ -25,10 +24,10 @@ calculatorMDC3 =
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-                    staticText "Error" # provided # lcmap faultyTally # displayed
-                    text # forValue # forField @"entry" # provided # lcmap currentEntry
+                    staticText "Error" # provided faultyTally # displayed
+                    text # forValue # forField @"entry" # provided currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" # constantly keyPad # rmap _.key) # toCase @"keyPressed"
+                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # projection _.key ) # foreach @"key" identity # constantly keyPad ) # toCase @"keyPressed" _.key
         ) # updates (match { keyPressed: pressKey }) # mvu blankTally
 
 keyStyle :: String -> String

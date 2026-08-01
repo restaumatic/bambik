@@ -68,8 +68,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, projection)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
@@ -264,7 +263,7 @@ toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text) # cl "toast-body")
+      (div $ text # projection eventText) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure
@@ -296,6 +295,10 @@ listGroupItem w = (el "li" $ w) # cl "list-group-item"
 -- | is Bootstrap's contextual name ("primary", "success", ...).
 badge :: { variant :: String } -> Ocular (PUI Web)
 badge config w = span w # cl "badge" # cl ("text-bg-" <> config.variant)
+
+-- the canonical status payload, read into the text leaf as its projection
+eventText :: [ event :: String ] -> String
+eventText = Variant.on (Proxy @"event") identity Variant.case_
 
 -- Private
 

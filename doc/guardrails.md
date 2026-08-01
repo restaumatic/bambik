@@ -233,6 +233,36 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   test or smoke asserting its behaviour, so "the demos pass" is a
   guarantee that tightens over time rather than decays.
 
+### L16. The import tower: only the algebra layer touches the ecosystem's algebra.
+
+The codebase is three floors, each greppable:
+
+- **Algebra layer** (`PUI`, `Data.Profunctor.Row.*`, `Data.Profunctor.Acting`,
+  the optics and `Seeding`) — the **only** importer of the ecosystem's
+  `Data.Profunctor` (and `.Strong`/`.Choice`/`.Cochoice`/...). This is
+  where instances live, so it is forced. (Bambik's own `Data.Profunctor.Row.*`
+  and `.Acting` namespaces are vocabulary, not the ecosystem — the greps
+  target `import Data.Profunctor (`/`.Strong`/... exactly.)
+- **Vocabulary layer** (the design-system modules, `PUI.HTML`/`PUI.SVG`,
+  packaged control modules) — builds from the **carrier** (its license:
+  `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
+  applications use (`field`, `recordToCase`, `projection`, `constantly`).
+  It never imports the ecosystem algebra: a design-system module proves
+  the vocabulary complete by being its own first customer.
+- **Application layer** — vocabulary only: no `Data.Profunctor`, no
+  carrier internals (see A9).
+
+The consequence is the **mechanism-argument doctrine**: a projection is
+an argument of the mechanism that consumes it, never a loose `lcmap`/
+`rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
+copyOf`, `projection f`, `fires outcomeOf`, `settled normalize`,
+`bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
+these fit is a missing-vocabulary signal addressed to the library —
+the next `required` waiting to be coined — never a reason to import the
+module one floor down. Business optics (`Shutter`/`Reel` in business
+code below the UI) are algebra-layer material and exempt by location.
+
 ---
 
 ## Part II — The approach (applications built on bambik)
@@ -318,6 +348,18 @@ lifecycle language (`initial`, `default`, `seed` are the smell's second
 form). UI code keeps only presentation: labels, captions, icons, styles,
 structure — layout numerics (a textarea's `rows`, a grid's `columns`)
 stay UI.
+
+### A9. Application code never imports `Data.Profunctor`.
+
+The precise, checkable form of L16's top floor:
+`grep "import Data.Profunctor (" demo/` is empty, always. Applications
+speak the vocabulary — the adopters, the mechanisms with their
+projection arguments, the merges' qualified-do — and every raw
+`lcmap`/`rmap`/`dimap` an application would have written has a named
+home (the L16 mechanism list). The constant-patch emitter is `with
+patch (button …) # updates (match { clicked: const })` — the patch is
+announced, the button replays it. What has no home yet goes to the
+library as a missing-vocabulary signal, never inline.
 
 ---
 

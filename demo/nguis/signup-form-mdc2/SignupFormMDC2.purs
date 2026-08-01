@@ -5,13 +5,12 @@ import Prelude ((#), ($), (<>), (==), (>>>), Unit, not)
 import Data.Either (Either(..), either)
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..), isJust)
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, displayed, forCase, forField, forValue, mvu, required)
+import PUI (PUI, asCase, asField, displayed, fires, forCase, forField, forValue, mvu, required)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
@@ -39,22 +38,22 @@ signupFormMDC2 =
             filledTextField { floatingLabel: "Email" } # asField @"email"
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox (staticText "I accept the terms of service") # asField @"terms") # mvu newApplicant
-        ( body2 $ staticText "Pick a username to check its availability" ) # provided # lcmap whenUnnamed # displayed
+        ( body2 $ staticText "Pick a username to check its availability" ) # provided whenUnnamed # displayed
         ( body2 $ RecordToRecord.do
             staticText "✗ "
             text # forValue # forField @"username"
-            staticText " is already taken" ) # provided # lcmap whenTaken # displayed
+            staticText " is already taken" ) # provided whenTaken # displayed
         ( body2 $ RecordToRecord.do
             staticText "✓ "
             text # forValue # forField @"username"
-            staticText " is available" ) # provided # lcmap whenAvailable # displayed
+            staticText " is available" ) # provided whenAvailable # displayed
         ( subtitle2 $ RecordToRecord.do
             staticText "⚠ "
-            text # forValue # forField @"problem" ) # provided # lcmap whenInvalid # displayed
+            text # forValue # forField @"problem" ) # provided whenInvalid # displayed
         ( subtitle2 $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text # forValue # forField @"username" ) # provided # lcmap whenReady # displayed
-        button { label: "Sign up", icon: "person_add" } # asCase @"signUp" # rmap (match { signUp: register })
+            text # forValue # forField @"username" ) # provided whenReady # displayed
+        button { label: "Sign up", icon: "person_add" } # fires register
         VariantToRecord.do
           welcomeToast
           rejectionToast
@@ -65,10 +64,10 @@ register applicant = case validate applicant of
   Right name -> .registered name
 
 welcomeToast :: PUI Web [ registered :: String ] {}
-welcomeToast = snackbar # forCase @"registered" # lcmap (match { registered: \name -> .registered ("Welcome, " <> name <> "!") })
+welcomeToast = snackbar # forCase @"registered" (\name -> "Welcome, " <> name <> "!")
 
 rejectionToast :: PUI Web [ rejected :: String ] {}
-rejectionToast = snackbar # forCase @"rejected" # lcmap (match { rejected: \problem -> .rejected ("Cannot sign up: " <> problem) })
+rejectionToast = snackbar # forCase @"rejected" (\problem -> "Cannot sign up: " <> problem)
 
 validate :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Either String String
 validate applicant@{ email, terms } =

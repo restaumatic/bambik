@@ -39,12 +39,11 @@ canonical row, adopted to the business label at the use site:
   or record display stage → `# completed`; display over a non-record
   value (a `projection`-formatted readout) → `# tapped`. A terminal
   **collection display** (a projection rendered as a list/grid, passing
-  the model through) writes `item # foreach _.key # lcmap proj #
-  displayed` — the keyed `foreach` renders the projection, and
+  the model through) writes `item # foreach @l proj # displayed` — the keyed `foreach` renders the projection, and
   `displayed`'s unconditional carrier echo is the collection's announcing
   unit (so an empty array never starves). A constant-fed stage (a
   fixed catalogue driving `listOf`/`foreach`) reads `constantly
-  catalogue` instead of an input-annotated `lcmap (const catalogue)`
+  catalogue` instead of an input-annotated feed
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
   `[ clicked :: _ ]`; adopt with `# asCase @l`
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt
@@ -74,22 +73,20 @@ write-action dispatch, cells and circle-drawer show **channel-fed
 structure-from-data** in `PUI Web` — a fixed grid/canvas fed as data
 through the retaining `foreach`, each cell built once and updated in
 place via `attrWith` (value-computed attribute) + `text`, emitting its
-key via `clicked # rmap`; `onClickedXY` for canvas coordinates), the
+key via `clicked` + `toCase @l _.key`; `onClickedXY` for canvas coordinates), the
 nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
 click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
 form with `tapped` readouts, quiz shows `provided` panes over
 multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and
 calculator are channel-fed `foreach` grid apps (cells styled by
-`attrWith`, keys emitted via `clicked # rmap`, folded by `updates` — no
+`attrWith`, keys emitted via `clicked` + `toCase @l _.key`, folded by `updates` — no
 `data-*`, no wholesale rebuild), stopwatch drives `every`
-with pause-by-`Nothing` and a keyed `foreach identity … # lcmap lapLines
-# displayed` laps list, reorder is the keyed-reconciliation showcase and
+with pause-by-`Nothing` and a keyed `foreach with its rows projection … # displayed` laps list, reorder is the keyed-reconciliation showcase and
 the `edits` collection-editor demo (a playlist keyed by track id, each
 row a DOM-local checkbox plus an in-row rename field; Rotate/Shuffle
 move each row's DOM node with its track so tick, title and focus follow
 it),
-shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a
-`constantly`-fed catalogue, password-generator is the effectful shape
+shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a catalogue fed by `listOf`'s projection argument, password-generator is the effectful shape
 (`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
 `sliderLive` with an `attrWith` swatch + static `foreach _.name` chips,
 markdown-previewer renders a recursive `PUI Web` tree via
@@ -108,16 +105,16 @@ Conditional visibility is view-model data, never an in-UI predicate:
 content on `Just`, detaches on `Nothing`. Pair it with a named
 `Maybe`-valued projection so the pane consumes the payload, not the whole
 model, and the visibility logic is a testable business function:
-`pane # provided # lcmap currentQuestion`. A pane whose content only
+`pane # provided currentQuestion`. A pane whose content only
 exists sometimes is exactly this; the mode-of-a-live-editor case (a
 variant editor's per-selection panes) is the same shape inside a `looped`
 pipeline — selection component `# completed`, then each pane
-`# provided # lcmap <paneOf> # updates <setPane>`. `clWhen pred name`
+`# provided <paneOf> # updates <setPane>`. `clWhen pred name`
 stays predicate-driven — it toggles a class (styling), not visibility,
 and is deliberately last-element-only.
 
 Modals: `dialog`/`simpleDialog` open on feed and close on emission —
-feed them selectively (`# provided # lcmap toMaybe` off a model flag, or
+feed them selectively (`# provided toMaybe` off a model flag, or
 behind an event case via `onCase`), put the deciding emitters inside
 (their emission closes the dialog and flows on), and keep echoing
 displays off the content's final stage (an echo would close the dialog
@@ -211,8 +208,8 @@ pages' code-style note; keep the two in sync.)
   its key:
 
   ```purescript
-  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # lcmap (\c -> { value: c.text })) # rmap _.key
-  table $ foreach (tr $ foreach cellWidget) # lcmap gridRows # toCase @"cellClicked"
+  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # projection _.text)
+  table $ (tr $ cellWidget # foreach @"domKey" _.cells) # foreach @"rowKey" gridRows # toCase @"cellClicked" _.key
   ```
 
 ### What to extract (name the business)
@@ -281,17 +278,17 @@ architecture words where business words belong.
   shows up in tracing:
 
   ```purescript
-  listOf { selected: _.selected } (text # projection _.label)
-    # rmap _.key # toCase @"picked" # lcmap entries # updates (match { picked: pick })
+  listOf { selected: _.selected } entries (text # projection _.label)
+    # toCase @"picked" _.key # updates (match { picked: pick })
   ```
 
-  A channel-fed cell (`clicked … # rmap _.key`) and the container coordinate
+  A channel-fed cell (`clicked …` cells emitting via `# toCase @l _.key`) and the container coordinate
   emitter `onClickedXY` both produce a **bare** payload — a `String` key, an
   `{ x, y }` — so introduce the case with `toCase @l` (which closes the row
   itself, no annotation needed) rather than an inline `inj`/`.label` lambda:
 
   ```purescript
-  svg [...] $ onClickedXY (foreach circleWidget # lcmap renderData) # toCase @"clicked"
+  svg [...] $ onClickedXY (circleWidget # foreach @"key" renderData) # toCase @"clicked" identity
   ```
 
 - **Ignored button payloads still pin rows.** A `button # asCase @l`
