@@ -11,7 +11,9 @@
     "deploy-demos": "scp -r demo/index.html demo/page.js demo/7guis/ demo/nguis/ xyz:/var/www/html/bambik/demo/"
   },
   "dependencies": {
+    "@fluentui/web-components": "^3.0.2",
     "@material/web": "^2.5.0",
+    "@shoelace-style/shoelace": "^2.20.1",
     "material-components-web": "^14.0.0"
   },
   "devDependencies": {

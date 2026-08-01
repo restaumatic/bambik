@@ -52,6 +52,11 @@ export const sets = {
     'espresso-bar-mdc2': ['EspressoBarMDC2', 'espressoBarMDC2'],
     'espresso-bar-mdc3': ['EspressoBarMDC3', 'espressoBarMDC3'],
     'order-dashboard-mdc3': ['OrderDashboardMDC3', 'orderDashboardMDC3'],
+    // non-Material design systems — one showcase each (PUI.Shoelace,
+    // PUI.Fluent, PUI.Bootstrap), proving the vocabularies interchangeable
+    'product-review-shoelace': ['ProductReviewShoelace', 'productReviewShoelace'],
+    'meeting-booker-fluent': ['MeetingBookerFluent', 'meetingBookerFluent'],
+    'loan-calculator-bootstrap': ['LoanCalculatorBootstrap', 'loanCalculatorBootstrap'],
     // MDC3 (PUI.MDC3) siblings of the MDC2 demos — same app, import switched
     'order-form-mdc3': ['OrderFormMDC3', 'orderFormMDC3'],
     'todomvc-mdc3': ['TodoMvcMDC3', 'todoMvcMDC3'],

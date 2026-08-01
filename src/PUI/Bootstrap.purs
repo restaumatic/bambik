@@ -1,0 +1,277 @@
+-- Bootstrap (https://getbootstrap.com) components implemented as
+-- PUI Web/Ocular (PUI Web) datatypes — a design-system vocabulary beside
+-- `PUI.MDC2`/`PUI.MDC3`/`PUI.Shoelace`/`PUI.Fluent`, proving the
+-- vocabularies interchangeable, and the **CSS-only** member of the family:
+-- Bootstrap is a stylesheet, not a component runtime, so every leaf is a
+-- native element (`<input>`, `<select>`, `<button>`) dressed in the
+-- documented classes (`form-control`, `form-select`, `btn btn-primary`) —
+-- no custom elements, no foundation instances, and no FFI beyond the
+-- toast's dismissal timer (the one behavior Bootstrap's own JS plugin
+-- would supply). The leaf-echo protocols are the same as the MDC modules'
+-- (focus-guarded text field, per-feed display echo, `Just`-only echo on
+-- the type-changing selector). Two-sorted, same citizenship, and — where
+-- the concept exists in both catalogs — the same names and signatures:
+--
+--   * **components** — widgets with a model interface, every one a citizen
+--     of exactly one row direction:
+--       `×→×` editors — `textField @l` (`.form-control`), `sliderLive @l`
+--         (`.form-range` — the native range input emits per drag step;
+--         Bootstrap has no commit-only slider), `toggleSwitch @l`
+--         (`.form-check.form-switch`), and the type-changing `select @l`
+--         (`.form-select`, `{ value :: Maybe a } → { value :: a }`);
+--       `×→×` displays — `progress` (`{ value :: Number } → {}`, the
+--         filled fraction 0–1 — `.progress` over `.progress-bar`);
+--       `×→+` events — `button @l` (`.btn.btn-primary`);
+--       `+→×` statuses — `toast @l` (`.toast` fixed at the bottom, shown
+--         on feed and dismissed by the hand-wired timer) — canonical
+--         `[ event :: String ]` in, adopted via `# forCase @l`.
+--   * **oculars** — shape-preserving decorators: `card { caption }`
+--     (`.card` with a `.card-title`), `listGroup`/`listGroupItem`
+--     (`.list-group`), `badge { variant }` (`.badge.text-bg-*`).
+--     Typography is deliberately absent: Bootstrap styles plain HTML, so
+--     the `PUI.HTML` element oculars are the typography.
+--
+-- Page requirements: the Bootstrap stylesheet (same major release as this
+-- vocabulary targets, 5.x); no scripts, no fonts — the design system rides
+-- the system font stack.
+--
+-- **The `dimap` round-trip contract for editors** holds as in `PUI.MDC2`:
+-- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
+-- that can fail or lose information belong in the model (`rmap` a total
+-- `Model -> Model` after `completed`), not in a leaf bracket.
+module PUI.Bootstrap
+  ( badge
+  , button
+  , card
+  , listGroup
+  , listGroupItem
+  , progress
+  , select
+  , sliderLive
+  , textField
+  , toast
+  , toggleSwitch
+  ) where
+
+import Prelude hiding (div)
+
+import Control.Monad.State (gets)
+import Data.Array ((!!), findIndex)
+import Data.FoldableWithIndex (forWithIndex_)
+import Data.Foldable (for_)
+import Data.Int (fromString) as Int
+import Data.Int (round)
+import Data.Lens.Extra.Types (Ocular)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap, wrap)
+import Data.Number (fromString) as Number
+import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToVariant (recordToCase)
+import Data.Variant (case_, on) as Variant
+import Effect (Effect)
+import Effect.Class (liftEffect)
+import Effect.Ref as Ref
+import PUI (PUI, constantly)
+import PUI.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
+import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
+import Type.Proxy (Proxy(..))
+
+-- UIs
+
+-- | The `×→+` event button (`.btn.btn-primary`): reads the whole record it
+-- | is shown and fires it as event case `l` on click.
+button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
+button config = recordToCase @"clicked" $ eventLeaf $
+  (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
+
+-- the click-emitter protocol over any `{} → {}` element chrome: replay the
+-- last value fed on click (a click before any value arrived is withheld)
+eventLeaf :: forall a. PUI Web {} {} -> PUI Web a a
+eventLeaf chrome = clicked (chrome # constantly {})
+
+-- | The Bootstrap text input (`.form-control` under a `.form-label`), a
+-- | `{ value :: String }` editor. Focus-guarded like `Web.input`: model
+-- | updates never clobber the field being typed in, but still echo so
+-- | merge gates keep flowing.
+textField :: { label :: String } -> PUI Web { value :: String } { value :: String }
+textField config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
+  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
+  element "input" (pure unit)
+  attribute "type" "text"
+  attribute "class" "form-control"
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \newa -> do
+        focused <- isFocused node
+        unless focused $ setValue node newa
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop newa
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "input" node $ const do
+          value <- getValue node
+          prop value
+    }
+
+-- | The `×→×` `Number` editor (`.form-range` under a `.form-label`).
+-- | Emits on every drag step, like `PUI.MDC2`'s `sliderLive @l` — the
+-- | native range input has no commit-only protocol.
+sliderLive :: { label :: String, min :: Number, max :: Number, step :: Number } -> PUI Web { value :: Number } { value :: Number }
+sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
+  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
+  element "input" (pure unit)
+  attribute "type" "range"
+  attribute "class" "form-range"
+  attribute "min" (show config.min)
+  attribute "max" (show config.max)
+  attribute "step" (show config.step)
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \v -> do
+        setValue node (show v)
+        -- leaf echo: announce what was received, so record-merge gates open
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop v
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "input" node $ const do
+          value <- getValue node
+          for_ (Number.fromString value) prop
+    }
+
+-- | The Bootstrap select (`.form-select`), a `×→×` editor. Type-changing
+-- | like `PUI.MDC2`'s: the input field holds the selection state
+-- | (`Maybe a`), the output field the bare selection (`a`). Options are
+-- | design-system config.
+select :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
+select config options = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
+  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
+  element "select" (void $ unwrap (optionLeaves))
+  node <- gets _.sibling
+  liftEffect $ setAttribute node "class" "form-select"
+  mPropRef <- liftEffect $ Ref.new Nothing
+  liftEffect $ void $ addEventListener "change" node $ const do
+    picked <- getValue node
+    for_ (Int.fromString picked >>= (options !! _)) \o -> do
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> prop o.value
+  pure
+    { toUser: \ma -> do
+        case ma of
+          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
+          Nothing -> setValue node ""
+        -- leaf echo (output is the bare selection, so only a `Just` echoes)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> for_ ma \a' -> prop a'
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    }
+  where
+  optionLeaves :: PUI Web {} {}
+  optionLeaves = wrap do
+    forWithIndex_ options \idx o -> do
+      element "option" (void $ unwrap (staticText o.label))
+      optionNode <- gets _.sibling
+      liftEffect $ setAttribute optionNode "value" (show idx)
+    pure { toUser: mempty, fromUser: \prop -> prop {} }
+
+-- | The Bootstrap switch (`.form-check.form-switch`), a `×→×` `Boolean`
+-- | editor; the label associates through `for`, so clicking it toggles.
+toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
+toggleSwitch config = field @"value" $ (div $ wrap do
+  inputId <- liftEffect uniqueId
+  element "input" (pure unit)
+  node <- gets _.sibling
+  liftEffect do
+    setAttribute node "class" "form-check-input"
+    setAttribute node "type" "checkbox"
+    setAttribute node "role" "switch"
+    setAttribute node "id" inputId
+  _ <- unwrap ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
+  mPropRef <- liftEffect $ Ref.new Nothing
+  liftEffect $ void $ addEventListener "change" node $ const do
+    b <- getChecked node
+    mProp <- Ref.read mPropRef
+    for_ mProp \prop -> prop b
+  pure
+    { toUser: \b -> do
+        setChecked node b
+        -- leaf echo: announce what was received, so record-merge gates open
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop b
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    }) # cl "form-check" # cl "form-switch"
+
+-- | The **determinate** progress display (`.progress` over `.progress-bar`),
+-- | a `{ value :: Number } → {}` display citizen: `value` is the filled
+-- | fraction (0.0–1.0). The gauge shape: `progress # projection fraction`.
+progress :: PUI Web { value :: Number } {}
+progress = wrap do
+  barNode <- element "div" do
+    element "div" (pure unit)
+    bar <- gets _.sibling
+    liftEffect $ setAttribute bar "class" "progress-bar"
+    pure bar
+  node <- gets _.sibling
+  liftEffect do
+    setAttribute node "class" "progress"
+    setAttribute node "role" "progressbar"
+    setAttribute node "style" "width: 100%; min-width: 200px;"
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \r -> do
+        setAttribute barNode "style" ("width: " <> show (round (r.value * 100.0)) <> "%;")
+        -- display echo (like `text`)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop {}
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        prop {}
+    }
+
+-- | The `+→×` status receiver: shows message case `l` in a Bootstrap toast
+-- | fixed at the bottom, shown on every feed and dismissed by the
+-- | hand-wired timer after 5s (re-feeding resets it). Contributes no
+-- | fields (`text` echoes its `{}`, so it announces).
+toast :: PUI Web [ event :: String ] {}
+toast = wrap do
+  w <- unwrap $ (el "div" >>> "role" := "status"
+    >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
+      (div $ lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text) # cl "toast-body")
+    # cl "toast" # cl "text-bg-primary" # cl "border-0"
+  node <- gets _.sibling
+  pure
+    { toUser: \i -> do
+        w.toUser i
+        autoDismiss node "show" 5000
+    , fromUser: w.fromUser
+    }
+
+-- UIOculars
+
+-- | A card with a caption (`.card` with a `.card-title`); the body is a
+-- | flex column supplying the vertical rhythm between its children.
+card :: { caption :: String } -> Ocular (PUI Web)
+card config content =
+  (div $ (div $ wrap do
+      _ <- unwrap ((h5 $ staticText config.caption) # cl "card-title")
+      unwrap content
+    ) # cl "card-body" # cl "d-flex" # cl "flex-column" # cl "align-items-start" # cl "gap-3"
+  ) # cl "card"
+
+listGroup :: Ocular (PUI Web)
+listGroup w = (el "ul" $ w) # cl "list-group" # cl "w-100"
+
+listGroupItem :: Ocular (PUI Web)
+listGroupItem w = (el "li" $ w) # cl "list-group-item"
+
+-- | Inline emphasis chrome for a value (`.badge.text-bg-*`); the variant
+-- | is Bootstrap's contextual name ("primary", "success", ...).
+badge :: { variant :: String } -> Ocular (PUI Web)
+badge config w = span w # cl "badge" # cl ("text-bg-" <> config.variant)
+
+-- Private
+
+foreign import autoDismiss :: Node -> String -> Int -> Effect Unit

@@ -1,0 +1,100 @@
+module LoanCalculatorBootstrap (loanCalculatorBootstrap) where
+
+import Prelude (Unit, negate, show, ($), (#), (*), (+), (-), (/), (<>))
+
+import Data.Int (round)
+import Data.Number (pow)
+import Data.Number.Format (fixed, toStringWith)
+import Data.Profunctor (lcmap)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.String (trim)
+import Data.Variant (match)
+import Effect (Effect)
+import PUI (PUI, asCase, asField, forCase, mvu, projection, required, tapped)
+import PUI.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
+import PUI.HTML (body, div, staticText, text)
+import PUI.Web (Web)
+import QualifiedDo.Semigroupoid as Semigroupoid
+
+loanCalculatorBootstrap :: Effect Unit
+loanCalculatorBootstrap =
+  body $
+    card { caption: "Loan calculator" } Semigroupoid.do
+      ( RecordToRecord.do
+          textField { label: "Applicant" } # asField @"applicant"
+          sliderLive { label: "Amount (€)", min: 1000.0, max: 50000.0, step: 500.0 } # asField @"amount"
+          sliderLive { label: "Term (years)", min: 1.0, max: 10.0, step: 1.0 } # asField @"years"
+          select { label: "Purpose" }
+            [ { value: .car {}, label: "Car" }
+            , { value: .home {}, label: "Home improvement" }
+            , { value: .holiday {}, label: "Holiday" }
+            ] # required # asField @"purpose"
+          toggleSwitch { label: "Payment protection insurance" } # asField @"insured"
+      ) # mvu cityCarLoan
+      listGroup ( RecordToRecord.do
+          listGroupItem ( RecordToRecord.do
+              staticText "Monthly payment "
+              badge { variant: "primary" } (text # projection monthlyText) )
+          listGroupItem ( RecordToRecord.do
+              staticText "Interest rate "
+              text # projection rateText )
+          listGroupItem ( RecordToRecord.do
+              staticText "Total interest "
+              text # projection totalInterestText )
+      ) # tapped
+      ( div $ RecordToRecord.do
+          staticText "Interest share of total repayment"
+          progress ) # projection interestShare # tapped
+      button { label: "Apply for this loan" } # asCase @"applied"
+      appliedToast
+
+cityCarLoan :: { applicant :: String, amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean }
+cityCarLoan =
+  { applicant: ""
+  , amount: 12000.0
+  , years: 5.0
+  , purpose: .car {}
+  , insured: false
+  }
+
+appliedToast :: PUI Web [ applied :: { applicant :: String, amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } ] {}
+appliedToast = toast # forCase @"applied" # lcmap (match { applied: \loan -> .applied (appliedLine loan) })
+
+appliedLine :: { applicant :: String, amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> String
+appliedLine loan =
+  "Application received" <> forApplicant { applicant: loan.applicant }
+    <> ": €" <> toStringWith (fixed 0) loan.amount
+    <> " over " <> show (round loan.years) <> " years, "
+    <> monthlyText { amount: loan.amount, years: loan.years, purpose: loan.purpose, insured: loan.insured } <> " monthly"
+
+forApplicant :: { applicant :: String } -> String
+forApplicant { applicant } = case trim applicant of
+  "" -> ""
+  name -> ", " <> name
+
+monthlyText :: { amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> String
+monthlyText loan = "€" <> toStringWith (fixed 2) (monthlyPayment loan)
+
+rateText :: { purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> String
+rateText { purpose, insured } = toStringWith (fixed 1) (annualRate { purpose, insured }) <> "% p.a."
+
+totalInterestText :: { amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> String
+totalInterestText loan = "€" <> toStringWith (fixed 2) (totalInterest loan)
+
+monthlyPayment :: { amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> Number
+monthlyPayment { amount, years, purpose, insured } =
+  let monthlyRate = annualRate { purpose, insured } / 100.0 / 12.0
+      months = years * 12.0
+  in amount * monthlyRate / (1.0 - pow (1.0 + monthlyRate) (-months))
+
+totalInterest :: { amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> Number
+totalInterest loan = monthlyPayment loan * loan.years * 12.0 - loan.amount
+
+interestShare :: { amount :: Number, years :: Number, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> Number
+interestShare loan = totalInterest loan / (monthlyPayment loan * loan.years * 12.0)
+
+annualRate :: { purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } -> Number
+annualRate { purpose, insured } = basePurposeRate purpose + (if insured then -0.3 else 0.0)
+
+basePurposeRate :: [ car :: {}, home :: {}, holiday :: {} ] -> Number
+basePurposeRate = match { car: \_ -> 7.4, home: \_ -> 4.9, holiday: \_ -> 9.9 }
