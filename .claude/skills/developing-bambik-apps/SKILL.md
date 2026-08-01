@@ -26,7 +26,10 @@ canonical row, adopted to the business label at the use site:
 - displays adopt with `# projection f` (feed `f` of the whole value —
   `forValue` is `projection identity`, the verbatim case; a one-field read
   of a context-pinned wider row is `# ofField @"label"`, the label-indexed
-  form) or
+  form; at merge-operand/`completed` positions, which must state their row,
+  the closed form is `# forValue # forField @l`. A named projection whose
+  body merely reads one field — `questionPrompt { prompt } = prompt` — is a
+  smell: use the label-indexed form and delete the function) or
   `# forValue # forField @l` / `# projection f # forField @l` (read one
   field, verbatim or formatted; `forField` takes the bare-value display
   `projection` produces); a live readout as a pipeline stage is the same

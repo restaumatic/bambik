@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, forField, mvu, ofField, projection, toCase, updates)
+import PUI (asCase, completed, displayed, forField, forValue, mvu, ofField, projection, toCase, updates)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,7 +28,7 @@ quizMDC3 =
                 staticText " · Score "
                 text # projection show # forField @"correct") # completed
           ( Semigroupoid.do
-              headlineMedium text # projection questionPrompt # completed
+              headlineMedium text # forValue # forField @"prompt" # completed
               listOf {} questionChoices (text # ofField @"label") # toCase @"picked" _.key) # provided currentQuestion # updates (match { picked: answer })
           ( Semigroupoid.do
               headlineSmall ( RecordToRecord.do
@@ -59,9 +59,6 @@ answer choice run@{ question, correct } = case index questionCatalogue question 
 currentQuestion :: { question :: Int } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
 currentQuestion { question } = index questionCatalogue question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
-
-questionPrompt :: { prompt :: String } -> String
-questionPrompt { prompt } = prompt
 
 questionChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
 questionChoices { choices } = choices

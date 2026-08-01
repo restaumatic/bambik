@@ -35,11 +35,11 @@ inboxMDC3 =
             ) # toCase @"opened" _.id # updates (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headlineSmall text # projection subjectLine
+                  headlineSmall text # forValue # forField @"subject"
                   bodyMedium RecordToRecord.do
                     staticText "From: "
                     text # forValue # forField @"sender"
-                  bodyLarge text # projection bodyLine) # tapped
+                  bodyLarge text # forValue # forField @"body") # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updates (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
@@ -90,12 +90,6 @@ openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g {
 
 openedMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int } -> Maybe { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }
 openedMessage { messages, opened } = find (\g -> Just g.id == opened) messages
-
-subjectLine :: { subject :: String } -> String
-subjectLine { subject } = subject
-
-bodyLine :: { body :: String } -> String
-bodyLine { body } = body
 
 lastMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> Boolean
 lastMessage { messages } = length messages == 1
