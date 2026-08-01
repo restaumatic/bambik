@@ -71,6 +71,7 @@ import Data.Int (fromString)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
+import Data.Number.Format (toString)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
@@ -151,8 +152,16 @@ toggleSwitch config = field @"value" $ fieldWith "after" config.label do
 -- | The `×→×` `Number` editor (`<fluent-slider>`). Emits on every value
 -- | change — Fluent's catalog has no commit/live split, so each drag step
 -- | is an emission (wrap a consuming stage in `debounced` if it minds).
+-- | The label line carries a live numeric readout (the element has no
+-- | value indicator of its own — the counterpart of MD's labeled handle),
+-- | fed from the channel, so it follows drags through the loop.
 slider :: { label :: String, min :: Number, max :: Number, step :: Number } -> PUI Web { value :: Number } { value :: Number }
-slider config = field @"value" $ fieldWith "above" config.label do
+slider config = field @"value" $ el "fluent-field" >>> "label-position" := "above" $ wrap do
+  readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
+      _ <- unwrap (staticText config.label)
+      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text))
+  -- the readout is written, never listened to; text's echo needs a listener
+  liftEffect $ readout.fromUser \_ -> pure unit
   element "fluent-slider" (pure unit)
   attribute "slot" "input"
   attribute "min" (show config.min)
@@ -173,6 +182,7 @@ slider config = field @"value" $ fieldWith "above" config.label do
         Ref.write true busyRef
         setNumberProp "valueAsNumber" node v
         Ref.write false busyRef
+        readout.toUser { value: toString v }
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop v
