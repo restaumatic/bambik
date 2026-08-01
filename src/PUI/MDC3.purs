@@ -136,8 +136,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty)
+import Data.Profunctor.Row.RecordToRecord (field, pempty, projection)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -890,7 +889,7 @@ snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text
+    text # projection eventText
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -935,22 +934,25 @@ listItem = el "md-list-item"
 -- | click emitter replaying its own value, so the component's output is
 -- | the clicked item.
 listOf
-  :: forall provided a o
+  :: forall provided i a o
    . ConvertOptionsWithDefaults OptSelected { selected :: a -> Boolean } { | provided } { selected :: a -> Boolean }
   => { | provided }
+  -> (i -> Array a)
   -> PUI Web a o
-  -> PUI Web (Array a) a
-listOf provided item = wrap do
+  -> PUI Web i a
+listOf provided f item = wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( ( lcmap _.item
-          ( clicked $ clWhen config.selected "md3-list-item--selected"
-              $ el "md-list-item" >>> "type" := "button" $ item
-          ) # foreach @"ix"
-      ) # lcmap (mapWithIndex \ix it -> { ix, item: it })
+    ( inRow ( clicked $ clWhen config.selected "md3-list-item--selected"
+          $ el "md-list-item" >>> "type" := "button" $ item
+      ) # foreach @"ix" (mapWithIndex (\ix it -> { ix, item: it }) <<< f)
     )
   where
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
+-- the canonical status payload, read into the text leaf as its projection
+eventText :: [ event :: String ] -> String
+eventText = Variant.on (Proxy @"event") identity Variant.case_
+
 
 listCss :: String
 listCss = """
@@ -1085,6 +1087,12 @@ imageListItem config = wrap do
       <> "<img class=\"md3-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.label <> "\">"
       <> "<span class=\"md3-image-list__label\">" <> config.label <> "</span>"
       <> "</li>"
+
+-- the element adapter for the index-keyed internal collection: reads the
+-- item out of the reconciler's { ix, item } row at the wiring level (the
+-- closed-singleton adopters deliberately do not read from wider rows)
+inRow :: forall a o. PUI Web a o -> PUI Web { ix :: Int, item :: a } o
+inRow w = wrap $ unwrap w <#> \w' -> { toUser: \r -> w'.toUser r.item, fromUser: w'.fromUser }
 
 -- Private
 

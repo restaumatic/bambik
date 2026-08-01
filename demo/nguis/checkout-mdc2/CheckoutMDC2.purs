@@ -3,7 +3,6 @@ module CheckoutMDC2 (checkoutMDC2) where
 import Prelude ((#), ($), (==), Unit)
 
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -22,19 +21,19 @@ checkoutMDC2 =
           ( Semigroupoid.do
               body2 ( RecordToRecord.do
                   staticText "Step 1 of 3 — Cart: "
-                  text # forValue # forField @"item" ) # provided # lcmap atCart # displayed
+                  text # forValue # forField @"item" ) # provided atCart # displayed
               body2 ( RecordToRecord.do
                   staticText "Step 2 of 3 — Shipping to "
-                  text # forValue # forField @"address" ) # provided # lcmap atShipping # displayed
+                  text # forValue # forField @"address" ) # provided atShipping # displayed
               body2 ( RecordToRecord.do
                   staticText "Step 3 of 3 — Pay with card "
-                  text # forValue # forField @"card" ) # provided # lcmap atPayment # displayed
+                  text # forValue # forField @"card" ) # provided atPayment # displayed
               RecordToVariant.do
-                button { label: "Next" } # asCase @"next" # provided # lcmap nextAtCart
-                button { label: "Next" } # asCase @"next" # provided # lcmap nextAtShipping
-                button { label: "Back" } # asCase @"next" # provided # lcmap backAtShipping
-                button { label: "Back" } # asCase @"next" # provided # lcmap backAtPayment
-                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided # lcmap placeAtPayment) # folding @"next" cartStep # updates (match { placed: recordPlaced })
+                button { label: "Next" } # asCase @"next" # provided nextAtCart
+                button { label: "Next" } # asCase @"next" # provided nextAtShipping
+                button { label: "Back" } # asCase @"next" # provided backAtShipping
+                button { label: "Back" } # asCase @"next" # provided backAtPayment
+                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided placeAtPayment) # folding @"next" cartStep # updates (match { placed: recordPlaced })
           body2 ( RecordToRecord.do
               staticText "Order placed: "
               text # forValue # forField @"item"
@@ -42,7 +41,7 @@ checkoutMDC2 =
               text # forValue # forField @"address"
               staticText " (card "
               text # forValue # forField @"card"
-              staticText ")" ) # provided # lcmap placedOrder # displayed
+              staticText ")" ) # provided placedOrder # displayed
       ) # mvu freshOrder
 
 cartStep :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }

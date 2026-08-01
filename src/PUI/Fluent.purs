@@ -72,8 +72,7 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
-import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, projection)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, on) as Variant
@@ -326,7 +325,7 @@ messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    lcmap (\v -> { value: Variant.on (Proxy @"event") identity Variant.case_ v }) text) # cl "fluent-toast"
+    text # projection eventText) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -373,6 +372,10 @@ cardCss = """
 
 divider :: PUI Web {} {}
 divider = staticHTML "<fluent-divider style=\"width: 100%;\"></fluent-divider>"
+
+-- the canonical status payload, read into the text leaf as its projection
+eventText :: [ event :: String ] -> String
+eventText = Variant.on (Proxy @"event") identity Variant.case_
 
 -- Private
 

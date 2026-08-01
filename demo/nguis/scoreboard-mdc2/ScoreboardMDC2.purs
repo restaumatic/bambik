@@ -6,10 +6,9 @@ import Data.Array (filter, index, length, range)
 import Data.Foldable (maximumBy)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, displayed, every, forField, forValue, mvu, projection)
+import PUI (accumulated, displayed, every, forField, forValue, foreach, mvu, projection)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,19 +26,19 @@ scoreboardMDC2 =
                         staticText ": "
                         text # projection show # forField @"points"
                     ) # displayed
-                  ) # accumulated
-              ) # lcmap goal
-              body2 ( Semigroupoid.do
+                  ) # accumulated goal
+              )
+              ( body2 $ Semigroupoid.do
                   ( RecordToRecord.do
-                      text # projection show # forField @"teams"
+                      text # forValue # forField @"teams"
                       staticText " teams on the board — leading: " ) # displayed
                   ( RecordToRecord.do
                       text # forValue # forField @"team"
                       staticText " ("
                       text # projection show # forField @"points"
-                      staticText ")" ) # provided # lcmap leadingTeam # displayed
-                  staticText "—" # provided # lcmap noLeader # displayed
-              ) # lcmap boardSummary
+                      staticText ")" ) # provided leadingTeam # displayed
+                  staticText "—" # provided noLeader # displayed
+              ) # foreach @"key" boardSummary
           ) # displayed
       ) # mvu gameStart
 
@@ -60,8 +59,8 @@ goal { n } =
 scored :: String -> Int -> Int
 scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 
-boardSummary :: Array { team :: String, points :: Int } -> { teams :: Int, leader :: Maybe { team :: String, points :: Int } }
-boardSummary scores = { teams: length scores, leader: maximumBy (comparing _.points) scores }
+boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: String, leader :: Maybe { team :: String, points :: Int } }
+boardSummary scores = [ { key: "summary", teams: show (length scores), leader: maximumBy (comparing _.points) scores } ]
 
 leadingTeam :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe { team :: String, points :: Int }
 leadingTeam { leader } = leader

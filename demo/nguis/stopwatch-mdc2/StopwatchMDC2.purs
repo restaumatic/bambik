@@ -5,7 +5,6 @@ import Prelude ((#), ($), (+), (<), (<>), Unit, const, not, show)
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
@@ -23,16 +22,16 @@ stopwatchMDC2 =
           headline3 text # projection readout # completed
           every tickPeriod tick
           ( RecordToVariant.do
-              button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided # lcmap whenHalted
-              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided # lcmap whenRunning) # updates (match { start: const (const beginTiming), stop: const (const haltTiming) })
+              button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided whenHalted
+              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided whenRunning) # updates (match { start: const (const beginTiming), stop: const (const haltTiming) })
           ( RecordToVariant.do
-              button { label: "Lap", icon: "flag" } # asCase @"lap" # provided # lcmap whenRunning
-              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided # lcmap whenHalted) # updates (match { lap: const recordLap, reset: const (const clearStopwatch) })
+              button { label: "Lap", icon: "flag" } # asCase @"lap" # provided whenRunning
+              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided whenHalted) # updates (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
                    text # forValue # forField @"number"
                    staticText " — "
-                   text # forValue # forField @"time" ) # foreach @"number" ) # lcmap lapRows # displayed
+                   text # forValue # forField @"time" ) # foreach @"number" lapRows ) # displayed
       ) # mvu zeroedStopwatch
 
 beginTiming :: { running :: Boolean }

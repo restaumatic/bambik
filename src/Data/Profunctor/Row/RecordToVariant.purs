@@ -285,14 +285,18 @@ recordToCase
   -> p { | r } [ | s ]
 recordToCase = rmap (inj (Proxy @l))
 
--- | Introduce a widget's **bare** output as case `l` — `recordToCase` freed
--- | from the record-input constraint, at the **closed singleton row** (the
--- | `field`/`echoCase` lesson: pinned empty background, so it infers with no
--- | annotations). The output-side dual of `onCase` and the general sibling of
--- | `asCase` (which renames the canonical `clicked` case):
--- | `listOf {} item # rmap _.key # toCase @"picked"`.
-toCase :: forall @l p i a s. IsSymbol l => Cons l a () s => Profunctor p => p i a -> p i [ | s ]
-toCase = rmap (inj (Proxy @l))
+-- | Introduce a widget's **bare** output as case `l`, projected by the
+-- | payload projection — `recordToCase` freed from the record-input
+-- | constraint, at the **closed singleton row** (the `field`/`echoCase`
+-- | lesson: pinned empty background, so it infers with no annotations).
+-- | The payload projection is the mechanism's own argument (import-tower
+-- | rule L16: projections ride mechanisms, applications never map raw
+-- | channels): `listOf {} entries item # toCase @"picked" _.key`;
+-- | `identity` says verbatim, the `forValue` of case introduction. The
+-- | output-side dual of `onCase` and the general sibling of `asCase`
+-- | (which renames the canonical `clicked` case).
+toCase :: forall @l p i a b s. IsSymbol l => Cons l b () s => Profunctor p => (a -> b) -> p i a -> p i [ | s ]
+toCase f = rmap (\a -> inj (Proxy @l) (f a))
 
 -- | `recordToCase` over the echo wire, at the **closed singleton row** —
 -- | the `field` lesson applied to `× → +`: the pinned empty background

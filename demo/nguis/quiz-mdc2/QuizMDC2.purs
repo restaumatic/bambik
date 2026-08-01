@@ -5,7 +5,6 @@ import Prelude ((#), ($), (+), (/), (<), (<#>), (==), Unit, const, min, show)
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
@@ -30,14 +29,14 @@ quizMDC2 =
                 text # projection show # forField @"correct") # completed
           ( Semigroupoid.do
               headline5 text # projection questionPrompt # completed
-              listOf {} (text # projection _.label) # rmap _.key # toCase @"picked" # lcmap questionChoices) # provided # lcmap currentQuestion # updates (match { picked: answer })
+              listOf {} questionChoices (text # projection _.label) # toCase @"picked" _.key) # provided currentQuestion # updates (match { picked: answer })
           ( Semigroupoid.do
               headline6 ( RecordToRecord.do
                   staticText "Final score: "
                   text # projection show # forField @"correct"
                   staticText " / "
                   text # projection show # forField @"total") # displayed
-              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided # lcmap finalOutcome # updates (match { restarted: const (const freshQuizRun) })
+              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided finalOutcome # updates (match { restarted: const (const freshQuizRun) })
       ) # mvu freshQuizRun
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }

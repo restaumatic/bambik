@@ -107,7 +107,7 @@ main = do
   -- recordToCase without the record-input constraint.
   assertEqual "toCase"
     (.picked 7 :: [ picked :: Int ])
-    (toCase @"picked" _.key { key: 7, label: "x" })
+    (toCase @"picked" _.key identity { key: 7, label: "x" })
 
   -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
   -- == nullary operator `pempty`. At record outputs the unit *announces* its ==
@@ -781,7 +781,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (foreach @"k" (elemProbe builds roster))
+    m <- unwrap (foreach @"k" identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
     Ref.read outs >>= assertEqual "foreach: silent on empty" []
@@ -798,7 +798,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle Int String))
     outs <- Ref.new ([] :: Array { key :: String, value :: String })
-    m <- unwrap (dispatched (elemProbe builds roster))
+    m <- unwrap (dispatched identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { key: "a", value: 1 }
     Ref.read builds >>= assertEqual "dispatched: first case instantiates" 1
@@ -819,7 +819,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle Int Int))
     outs <- Ref.new ([] :: Array (Array Int))
-    m <- unwrap (accumulated (elemProbe builds roster))
+    m <- unwrap (accumulated identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { key: "a", value: 1 }
     Ref.read outs >>= assertEqual "accumulated: first case emits the singleton immediately" [ [ 1 ] ]

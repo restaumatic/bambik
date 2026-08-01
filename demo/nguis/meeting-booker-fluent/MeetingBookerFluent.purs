@@ -5,7 +5,6 @@ import Prelude (Unit, show, ($), (#), (/), (<$>), (<*>), (<>))
 import Data.Int (round)
 import Data.Maybe (Maybe(..))
 import Data.Ord (clamp)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
@@ -35,20 +34,20 @@ meetingBookerFluent =
                 ] # optional # asField @"duration"
               toggleSwitch { label: "Include a Teams link" } # asField @"online"
               divider ) # completed
-          (slider { label: "Attendees" } # asField @"attendees") # provided # lcmap seatsFor # updates chooseSeats
+          (slider { label: "Attendees" } # asField @"attendees") # provided seatsFor # updates chooseSeats
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
-          ratingDisplay ) # provided # lcmap ratedRoom # displayed
+          ratingDisplay ) # provided ratedRoom # displayed
       ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
-          progressBar ) # provided # lcmap seatsTaken # displayed
+          progressBar ) # provided seatsTaken # displayed
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
               text # projection planLine ) # tapped
           button { label: "Book the room" } # asCase @"booked"
-      ) # provided # lcmap completePlan
+      ) # provided completePlan
       bookedBar
 
 blankBooking :: { title :: String, room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean }
@@ -68,7 +67,7 @@ completePlan { title, room, duration, attendees, online } =
   (\r d -> { title, room: r, duration: d, attendees: seatedIn r attendees, online }) <$> room <*> duration
 
 bookedBar :: PUI Web [ booked :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } ] {}
-bookedBar = messageBar # forCase @"booked" # lcmap (match { booked: \plan -> .booked (bookedLine plan) })
+bookedBar = messageBar # forCase @"booked" bookedLine
 
 bookedLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> String
 bookedLine { title, room, duration } =

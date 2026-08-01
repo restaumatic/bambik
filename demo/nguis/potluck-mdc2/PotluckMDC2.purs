@@ -1,6 +1,6 @@
 module PotluckMDC2 (potluckMDC2) where
 
-import Prelude ((#), ($), Unit, show)
+import Prelude (identity, (#), ($), Unit, show)
 
 import Data.Array (length)
 import Data.Maybe (Maybe(..))
@@ -37,7 +37,7 @@ potluckMDC2 =
                 staticText "’s "
                 text # projection dishText # forField @"dish"
                 staticText ", "
-            ) # foreach @"name" # field @"guests"
+            ) # foreach @"name" identity # field @"guests"
       ) # with invitation
 
 guestCount :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String

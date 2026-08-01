@@ -1,11 +1,10 @@
 module WeatherMDC3 (weatherMDC3) where
 
-import Prelude ((#), ($), (*), (+), (-), (<#>), (<<<), (==), Unit, const, discard, mod, pure, show)
+import Prelude (identity, (#), ($), (*), (+), (-), (<#>), (<<<), (==), Unit, const, discard, mod, pure, show)
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
 import Data.Maybe (fromMaybe)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
@@ -21,7 +20,7 @@ weatherMDC3 =
     elevation5 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              listOf { selected: _.shown } (text # projection _.city) # toCase @"cityPicked" # lcmap forecastRequests
+              listOf { selected: _.shown } forecastRequests (text # projection _.city) # toCase @"cityPicked" identity
               indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
           displayLarge ( RecordToRecord.do
               text # projection temperatureText
@@ -46,7 +45,7 @@ weatherMDC3 =
                 ( bodyLarge ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text # projection servedReportsText
-                    staticText "." ) # tapped) # onCase @"clicked" # toCase @"dashboardResumed") # updates (match { dashboardResumed: const <<< resumeDashboard })
+                    staticText "." ) # tapped) # onCase @"clicked" # toCase @"dashboardResumed" identity) # updates (match { dashboardResumed: const <<< resumeDashboard })
       ) # mvu warsawBulletin
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }

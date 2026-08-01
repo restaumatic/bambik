@@ -4,7 +4,6 @@ import Prelude ((#), ($), (<<<), (==), Unit, const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
@@ -22,7 +21,7 @@ todoMvcMDC2 =
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updates (match { clicked: const <<< addTodo })
-          listOf { selected: _.done } (span text # projection _.title # clWhen _.done "todo-done") # rmap _.key # toCase @"todoClicked" # lcmap visibleEntries # updates (match { todoClicked: toggleTodo })
+          listOf { selected: _.done } visibleEntries (span text # projection _.title # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updates (match { todoClicked: toggleTodo })
           segmentedButton
             [ { value: .all {}, label: "All" }
             , { value: .active {}, label: "Active" }
@@ -31,10 +30,10 @@ todoMvcMDC2 =
           Semigroupoid.do
             caption ( RecordToRecord.do
                 text # projection show # forField @"count"
-                staticText " item left" ) # provided # lcmap soleItemLeft # displayed
+                staticText " item left" ) # provided soleItemLeft # displayed
             caption ( RecordToRecord.do
                 text # projection show # forField @"count"
-                staticText " items left" ) # provided # lcmap severalItemsLeft # displayed
+                staticText " items left" ) # provided severalItemsLeft # displayed
             button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
