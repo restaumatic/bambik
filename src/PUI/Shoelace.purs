@@ -71,7 +71,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly)
 import PUI.HTML (clicked, div, el, span, staticHTML, staticText, text, (:=))
-import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setChecked, setValue)
+import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 
 -- UIs
@@ -131,29 +131,39 @@ textArea config = field @"value" $ wrap do
           prop value
     }
 
--- | The Shoelace star rating, a `×→×` `Number` editor — the catalog entry
--- | Material has no counterpart for. `<sl-rating>` carries only an
--- | accessible label of its own, so a non-empty config label renders
--- | visibly above it, like a text field's label.
-rating :: { label :: String, max :: Int } -> PUI Web { value :: Number } { value :: Number }
+-- | The Shoelace star rating, the `×→×` editor of a **bounded quantity**
+-- | `{ current, max }` — the catalog entry Material has no counterpart
+-- | for. The scale is the business half of the datum: it rides the
+-- | canonical row, never a UI literal (guardrail A8's channel-fed
+-- | resolution), so it arrives from the seed — pointedness makes a missing
+-- | scale a compile error at `body` — and may change at runtime. Emits the
+-- | whole quantity with `current` replaced (an editor cannot invent its
+-- | own scale). `<sl-rating>` carries only an accessible label of its own,
+-- | so a non-empty config label renders visibly above it, like a text
+-- | field's label.
+rating :: { label :: String } -> PUI Web { value :: { current :: Number, max :: Int } } { value :: { current :: Number, max :: Int } }
 rating config = field @"value" $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
     _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
     attribute "label" config.label
-    attribute "max" (show config.max)
     node <- gets _.sibling
     mPropRef <- liftEffect $ Ref.new Nothing
+    qRef <- liftEffect $ Ref.new Nothing
     liftEffect $ listenNode node "sl-change" do
       v <- getNumberProp "value" node
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop v
+      mq <- Ref.read qRef
+      for_ mq \q -> do
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop (q { current = v })
     pure
-      { toUser: \v -> do
-          setNumberProp "value" node v
+      { toUser: \q -> do
+          Ref.write (Just q) qRef
+          setAttribute node "max" (show q.max)
+          setNumberProp "value" node q.current
           -- leaf echo: announce what was received, so record-merge gates open
           mProp <- Ref.read mPropRef
-          for_ mProp \prop -> prop v
+          for_ mProp \prop -> prop q
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 

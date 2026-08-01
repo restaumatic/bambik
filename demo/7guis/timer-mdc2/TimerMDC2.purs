@@ -22,9 +22,9 @@ timerMDC2 =
               body1 RecordToRecord.do
                 text # projection show # forField @"elapsed"
                 staticText "s / "
-                text # projection show # forField @"duration"
+                text # projection wholeSeconds # forField @"duration"
                 staticText "s"
-              sliderLive { min: minDuration, max: maxDuration, step: durationStep } # asField @"duration") # completed
+              sliderLive { label: "" } # asField @"duration") # completed
           every tickPeriod tick
           button { label: "Reset", icon: "replay" } # lcmap reset # updates (match { clicked: const })
       ) # mvu tenSecondFreshTimer
@@ -32,25 +32,22 @@ timerMDC2 =
 reset :: {} -> { elapsed :: Number }
 reset {} = { elapsed: 0.0 }
 
-tick :: { duration :: Number, elapsed :: Number } -> Maybe { duration :: Number, elapsed :: Number }
+tick :: { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number } -> Maybe { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number }
 tick t@{ duration, elapsed } =
-  if elapsed < duration then Just (t { elapsed = min duration (elapsed + 1.0) })
+  if elapsed < duration.current then Just (t { elapsed = min duration.current (elapsed + 1.0) })
   else Nothing
 
-fraction :: { duration :: Number, elapsed :: Number } -> Number
-fraction { duration, elapsed } = if duration <= 0.0 then 1.0 else min 1.0 (elapsed / duration)
+fraction :: { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number } -> Number
+fraction { duration, elapsed } = if duration.current <= 0.0 then 1.0 else min 1.0 (elapsed / duration.current)
 
-tenSecondFreshTimer :: { duration :: Number, elapsed :: Number }
-tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }
+tenSecondFreshTimer :: { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number }
+tenSecondFreshTimer = { duration: { current: 10.0, min: 0.0, max: 60.0, step: Just 1.0 }, elapsed: 0.0 }
 
-minDuration :: Number
-minDuration = 0.0
+wholeSeconds :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } -> String
+wholeSeconds q = show q.current
 
-maxDuration :: Number
-maxDuration = 60.0
 
-durationStep :: Number
-durationStep = 1.0
+
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }

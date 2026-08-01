@@ -78,7 +78,6 @@ module PUI.MDC2
   , OptLabel(..)
   , OptIcon(..)
   , OptSelected(..)
-  , OptStep(..)
   , banner
   , body1
   , body2
@@ -178,7 +177,7 @@ import Type.Proxy (Proxy(..))
 -- — so the *tag*, not a global per-symbol instance, decides which fields
 -- are optional for a given widget. One tag per distinct optional-field
 -- set: `OptLabelIcon` (buttons), `OptLabel` (fab, caption via card),
--- `OptStep` (sliders), `OptSelected` (listOf), `OptIcon` (tabBar options).
+-- `OptSelected` (listOf), `OptIcon` (tabBar options).
 data OptLabelIcon = OptLabelIcon
 
 instance ConvertOption OptLabelIcon "label" String (Maybe String) where
@@ -207,13 +206,6 @@ data OptIcon = OptIcon
 instance ConvertOption OptIcon "icon" String (Maybe String) where
   convertOption _ _ = Just
 else instance ConvertOption OptIcon sym a a where
-  convertOption _ _ = identity
-
-data OptStep = OptStep
-
-instance ConvertOption OptStep "step" Number (Maybe Number) where
-  convertOption _ _ = Just
-else instance ConvertOption OptStep sym a a where
   convertOption _ _ = identity
 
 -- | The `×→+` event button (the MD2 contained/raised button — the
@@ -544,73 +536,78 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
       </div>
     </button>"""
 
--- | The `×→×` `Number` editor. An optional `step` makes it the discrete slider.
--- | Emits on **commit** only (thumb release): one emission per adjustment,
--- | so an `updates` fold sees each drag as a single transaction. For
--- | continuous mid-drag emissions (live readouts), use `sliderLive`.
-slider
-  :: forall provided
-   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-  => { | provided }
-  -> PUI Web { value :: Number } { value :: Number }
-slider provided = field @"value" (sliderLeaf false (sliderConfig provided))
+-- | The `×→×` editor of a **bounded quantity** — the whole business datum
+-- | `{ current, min, max, step }` rides the canonical row: the constraints
+-- | are model data, never UI literals (guardrail A8's channel-fed
+-- | resolution), so they arrive from the seed — pointedness makes a
+-- | missing bound a compile error at `body` — and may change at runtime
+-- | (the leaf re-scopes in place; a bounds change re-initializes the MDC
+-- | foundation, a value change just moves the thumb). `step` is `Just` for
+-- | the discrete slider, `Nothing` for the continuous one. Emits on
+-- | **commit** only (thumb release), the whole quantity with `current`
+-- | replaced — an editor cannot invent its own bounds — so an `updates`
+-- | fold sees each drag as a single transaction. For continuous mid-drag
+-- | emissions (live readouts), use `sliderLive`.
+slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+slider config = field @"value" (sliderLeaf false config.label)
 
 -- | `slider` emitting continuously mid-drag (like mid-typing text); a
 -- | consumer that doesn't want the burst wraps its stage in `debounced`.
-sliderLive
-  :: forall provided
-   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-  => { | provided }
-  -> PUI Web { value :: Number } { value :: Number }
-sliderLive provided = field @"value" (sliderLeaf true (sliderConfig provided))
-
-sliderConfig
-  :: forall provided
-   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-  => { | provided }
-  -> { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-sliderConfig provided = convertOptionsWithDefaults OptStep { label: "", step: Nothing } provided
+sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+sliderLive config = field @"value" (sliderLeaf true config.label)
 
 -- `MDCSlider`'s value API is method-based (`getValue`/`setValue`), the one
--- foundation here off the property-wiring convention
-sliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
-sliderLeaf live config = wrap do
+-- foundation here off the property-wiring convention; its bounds are
+-- read from the DOM at construction only, so a bounds change rewrites the
+-- input attributes and constructs a fresh foundation over the same markup
+sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: Maybe Number } { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+sliderLeaf live label = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
-  comp <- liftEffect $ newComponent material.slider."MDCSlider" node
   mPropRef <- liftEffect $ Ref.new Nothing
-  when live $ liftEffect $ listen comp "MDCSlider:input" do
-    v <- getSliderValue comp
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop v
-  liftEffect $ listen comp "MDCSlider:change" do
-    v <- getSliderValue comp
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop v
+  stateRef <- liftEffect $ Ref.new Nothing
+  let
+    emit comp = do
+      v <- getSliderValue comp
+      st <- Ref.read stateRef
+      for_ st \s -> do
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop (s.quantity { current = v })
+    scoped q = do
+      st <- Ref.read stateRef
+      case st of
+        Just s | s.quantity.min == q.min, s.quantity.max == q.max, s.quantity.step == q.step -> do
+          Ref.write (Just s { quantity = q }) stateRef
+          pure s.comp
+        _ -> do
+          for_ st \s -> destroyComponent s.comp
+          configureMdcSlider node q.min q.max (fromMaybe 0.0 q.step) (isJust q.step) q.current
+          comp <- newComponent material.slider."MDCSlider" node
+          when live $ listen comp "MDCSlider:input" (emit comp)
+          listen comp "MDCSlider:change" (emit comp)
+          Ref.write (Just { comp, quantity: q }) stateRef
+          pure comp
   pure
-    { toUser: \v -> do
-        setSliderValue comp v
+    { toUser: \q -> do
+        comp <- scoped q
+        setSliderValue comp q.current
         -- construction may have happened before styles applied; re-measure
         layoutComponent comp
+        -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop v
+        for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
-  discrete = isJust config.step
   markup =
-    "<div class=\"mdc-slider" <> (if discrete then " mdc-slider--discrete" else "") <> "\" style=\"min-width: 200px;\">"
-      <> "<input class=\"mdc-slider__input\" type=\"range\" min=\"" <> show config.min <> "\" max=\"" <> show config.max <> "\" value=\"" <> show config.min <> "\""
-      <> (case config.step of
-            Just s -> " step=\"" <> show s <> "\""
-            Nothing -> "")
-      <> " aria-label=\"" <> config.label <> "\">"
+    "<div class=\"mdc-slider\" style=\"min-width: 200px;\">"
+      <> "<input class=\"mdc-slider__input\" type=\"range\" min=\"0\" max=\"100\" value=\"0\""
+      <> " aria-label=\"" <> label <> "\">"
       <> "<div class=\"mdc-slider__track\">"
       <> "<div class=\"mdc-slider__track--inactive\"></div>"
       <> "<div class=\"mdc-slider__track--active\"><div class=\"mdc-slider__track--active_fill\"></div></div>"
       <> "</div>"
       <> "<div class=\"mdc-slider__thumb\">"
-      <> (if discrete then "<div class=\"mdc-slider__value-indicator-container\" aria-hidden=\"true\"><div class=\"mdc-slider__value-indicator\"><span class=\"mdc-slider__value-indicator-text\"></span></div></div>" else "")
       <> "<div class=\"mdc-slider__thumb-knob\"></div>"
       <> "</div>"
       <> "</div>"
@@ -1288,6 +1285,8 @@ foreign import getBoolProp :: String -> Component -> Effect Boolean
 
 -- component/node events and DOM odds and ends
 foreign import listen :: Component -> String -> Effect Unit -> Effect Unit
+foreign import destroyComponent :: Component -> Effect Unit
+foreign import configureMdcSlider :: Node -> Number -> Number -> Number -> Boolean -> Number -> Effect Unit
 foreign import listenNode :: Node -> String -> Effect Unit -> Effect Unit
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
 foreign import querySelectorIn :: Node -> String -> Effect Node

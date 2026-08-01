@@ -118,13 +118,21 @@ textField config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
           prop value
     }
 
--- | The `×→×` `Number` editor (`.form-range` under a `.form-label`).
--- | Emits on every drag step, like `PUI.MDC2`'s `sliderLive @l` — the
--- | native range input has no commit-only protocol. The label line carries
--- | a live numeric readout (the native range has no value indicator of its
--- | own — this is the Bootstrap counterpart of `<md-slider labeled>`),
--- | fed from the channel, so it follows drags through the loop.
-sliderLive :: { label :: String, min :: Number, max :: Number, step :: Number } -> PUI Web { value :: Number } { value :: Number }
+-- | The `×→×` editor of a **bounded quantity** (`.form-range` under a
+-- | `.form-label`) — the whole business datum `{ current, min, max, step }`
+-- | rides the canonical row: the constraints are model data, never UI
+-- | literals (guardrail A8's channel-fed resolution), so they arrive from
+-- | the seed — pointedness makes a missing bound a compile error at `body`
+-- | — and may change at runtime (the leaf re-scopes in place). `step` is
+-- | `Just` for the discrete slider, `Nothing` for the continuous one
+-- | (`step="any"`). Emits on every drag step, like `PUI.MDC2`'s
+-- | `sliderLive @l` — the native range input has no commit-only protocol —
+-- | the whole quantity with `current` replaced (an editor cannot invent
+-- | its own bounds). The label line carries a live numeric readout (the
+-- | native range has no value indicator of its own — the Bootstrap
+-- | counterpart of `<md-slider labeled>`), fed from the channel, so it
+-- | follows drags through the loop.
+sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
@@ -135,23 +143,28 @@ sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
   element "input" (pure unit)
   attribute "type" "range"
   attribute "class" "form-range"
-  attribute "min" (show config.min)
-  attribute "max" (show config.max)
-  attribute "step" (show config.step)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
+  qRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \v -> do
-        setValue node (show v)
-        readout.toUser { value: toString v }
+    { toUser: \q -> do
+        Ref.write (Just q) qRef
+        setAttribute node "min" (show q.min)
+        setAttribute node "max" (show q.max)
+        setAttribute node "step" (case q.step of
+          Just s -> show s
+          Nothing -> "any")
+        setValue node (show q.current)
+        readout.toUser { value: toString q.current }
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop v
+        for_ mProp \prop -> prop q
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
         void $ addEventListener "input" node $ const do
           value <- getValue node
-          for_ (Number.fromString value) prop
+          mq <- Ref.read qRef
+          for_ mq \q -> for_ (Number.fromString value) \v -> prop (q { current = v })
     }
 
 -- | The Bootstrap select (`.form-select`), a `×→×` editor. Type-changing

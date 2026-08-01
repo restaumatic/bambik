@@ -82,7 +82,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly)
 import PUI.HTML (cl, clicked, div, el, staticHTML, staticText, text, (:=))
-import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, setAttribute, setChecked, setValue)
+import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 
 -- UIs
@@ -149,13 +149,19 @@ toggleSwitch config = field @"value" $ fieldWith "after" config.label do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The `×→×` `Number` editor (`<fluent-slider>`). Emits on every value
--- | change — Fluent's catalog has no commit/live split, so each drag step
--- | is an emission (wrap a consuming stage in `debounced` if it minds).
--- | The label line carries a live numeric readout (the element has no
--- | value indicator of its own — the counterpart of MD's labeled handle),
--- | fed from the channel, so it follows drags through the loop.
-slider :: { label :: String, min :: Number, max :: Number, step :: Number } -> PUI Web { value :: Number } { value :: Number }
+-- | The `×→×` editor of a **bounded quantity** (`<fluent-slider>`) — the
+-- | whole business datum `{ current, min, max, step }` rides the canonical
+-- | row: the constraints are model data, never UI literals (guardrail A8's
+-- | channel-fed resolution), so they arrive from the seed — pointedness
+-- | makes a missing bound a compile error at `body` — and may change at
+-- | runtime (the leaf re-scopes in place). `step` is `Just` for the
+-- | discrete slider, `Nothing` for the continuous one. Emits on every
+-- | value change — Fluent's catalog has no commit/live split — the whole
+-- | quantity with `current` replaced (an editor cannot invent its own
+-- | bounds). The label line carries a live numeric readout (the element
+-- | has no value indicator of its own — the counterpart of MD's labeled
+-- | handle), fed from the channel, so it follows drags through the loop.
+slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 slider config = field @"value" $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
       _ <- unwrap (staticText config.label)
@@ -164,28 +170,34 @@ slider config = field @"value" $ el "fluent-field" >>> "label-position" := "abov
   liftEffect $ readout.fromUser \_ -> pure unit
   element "fluent-slider" (pure unit)
   attribute "slot" "input"
-  attribute "min" (show config.min)
-  attribute "max" (show config.max)
-  attribute "step" (show config.step)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
+  qRef <- liftEffect $ Ref.new Nothing
   -- the value setter fires change too; guard the loop
   busyRef <- liftEffect $ Ref.new false
   liftEffect $ listenNode node "change" do
     busy <- Ref.read busyRef
     unless busy do
       v <- getNumberProp "valueAsNumber" node
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop v
+      mq <- Ref.read qRef
+      for_ mq \q -> do
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop (q { current = v })
   pure
-    { toUser: \v -> do
+    { toUser: \q -> do
+        Ref.write (Just q) qRef
         Ref.write true busyRef
-        setNumberProp "valueAsNumber" node v
+        setAttribute node "min" (show q.min)
+        setAttribute node "max" (show q.max)
+        case q.step of
+          Just s -> setAttribute node "step" (show s)
+          Nothing -> removeAttribute node "step"
+        setNumberProp "valueAsNumber" node q.current
         Ref.write false busyRef
-        readout.toUser { value: toString v }
+        readout.toUser { value: toString q.current }
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop v
+        for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 

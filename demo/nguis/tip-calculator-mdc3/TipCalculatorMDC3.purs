@@ -2,7 +2,7 @@ module TipCalculatorMDC3 (tipCalculatorMDC3) where
 
 import Prelude ((#), ($), (*), (+), (/), (<$>), Unit)
 
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Number (fromString)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -18,7 +18,7 @@ tipCalculatorMDC3 =
     elevation5 $
       card { caption: "Tip Calculator" } $ ( Semigroupoid.do
           filledTextField { floatingLabel: "Bill amount" } # asField @"amount" # completed
-          slider { label: "Tip percentage", min: minTipPercent, max: maxTipPercent, step: tipPercentStep } # asField @"tipPercent" # completed
+          slider { label: "Tip percentage" } # asField @"tipPercent" # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip: "
               text # projection tipPercentText
@@ -27,7 +27,7 @@ tipCalculatorMDC3 =
               staticText "Split between: "
               text # projection peopleText
               staticText " people" ) # tapped
-          slider { label: "Split between", min: minPeople, max: maxPeople, step: peopleStep } # asField @"people" # completed
+          slider { label: "Split between" } # asField @"people" # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip amount: "
               text # projection tipAmountText ) # tapped
@@ -39,47 +39,29 @@ tipCalculatorMDC3 =
               text # projection perPersonText ) # tapped
       ) # mvu dinnerBill
 
-tipPercentText :: { tipPercent :: Number } -> String
-tipPercentText { tipPercent } = toStringWith (fixed 0) tipPercent
+tipPercentText :: { tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+tipPercentText { tipPercent } = toStringWith (fixed 0) tipPercent.current
 
-peopleText :: { people :: Number } -> String
-peopleText { people } = toStringWith (fixed 0) people
+peopleText :: { people :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+peopleText { people } = toStringWith (fixed 0) people.current
 
-tipAmountText :: { amount :: String, tipPercent :: Number } -> String
+tipAmountText :: { amount :: String, tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
 tipAmountText { amount, tipPercent } = money (tipAmount { amount, tipPercent })
 
-totalText :: { amount :: String, tipPercent :: Number } -> String
+totalText :: { amount :: String, tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
 totalText { amount, tipPercent } = money (total { amount, tipPercent })
 
-perPersonText :: { amount :: String, tipPercent :: Number, people :: Number } -> String
-perPersonText { amount, tipPercent, people } = money ((_ / people) <$> total { amount, tipPercent })
+perPersonText :: { amount :: String, tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, people :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+perPersonText { amount, tipPercent, people } = money ((_ / people.current) <$> total { amount, tipPercent })
 
-tipAmount :: { amount :: String, tipPercent :: Number } -> Maybe Number
-tipAmount { amount, tipPercent } = (\a -> a * tipPercent / 100.0) <$> fromString amount
+tipAmount :: { amount :: String, tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> Maybe Number
+tipAmount { amount, tipPercent } = (\a -> a * tipPercent.current / 100.0) <$> fromString amount
 
-total :: { amount :: String, tipPercent :: Number } -> Maybe Number
-total { amount, tipPercent } = (\a -> a * (1.0 + tipPercent / 100.0)) <$> fromString amount
+total :: { amount :: String, tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> Maybe Number
+total { amount, tipPercent } = (\a -> a * (1.0 + tipPercent.current / 100.0)) <$> fromString amount
 
 money :: Maybe Number -> String
 money = maybe "—" (toStringWith (fixed 2))
 
-dinnerBill :: { amount :: String, tipPercent :: Number, people :: Number }
-dinnerBill = { amount: "", tipPercent: 15.0, people: 2.0 }
-
-minTipPercent :: Number
-minTipPercent = 0.0
-
-maxTipPercent :: Number
-maxTipPercent = 30.0
-
-tipPercentStep :: Number
-tipPercentStep = 1.0
-
-minPeople :: Number
-minPeople = 1.0
-
-maxPeople :: Number
-maxPeople = 10.0
-
-peopleStep :: Number
-peopleStep = 1.0
+dinnerBill :: { amount :: String, tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, people :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+dinnerBill = { amount: "", tipPercent: { current: 15.0, min: 0.0, max: 30.0, step: Just 1.0 }, people: { current: 2.0, min: 1.0, max: 10.0, step: Just 1.0 } }

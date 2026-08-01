@@ -20,7 +20,7 @@ productReviewShoelace =
   body $
     card { caption: "Review: Astra Moka Espresso Machine" } Semigroupoid.do
       ( RecordToRecord.do
-          rating { label: "Overall rating", max: maxStars } # asField @"stars"
+          rating { label: "Overall rating" } # asField @"stars"
           textField { label: "Headline" } # asField @"headline"
           textArea { label: "Your review", rows: 4 } # asField @"review"
           select { label: "How long have you owned it?" }
@@ -38,9 +38,9 @@ productReviewShoelace =
       button { label: "Submit review" } # asCase @"submitted"
       submittedToast
 
-freshImpression :: { stars :: Number, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String }
+freshImpression :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String }
 freshImpression =
-  { stars: 0.0
+  { stars: { current: 0.0, max: maxStars }
   , headline: ""
   , review: ""
   , owned: .underMonth {}
@@ -48,10 +48,10 @@ freshImpression =
   , nickname: ""
   }
 
-submittedToast :: PUI Web [ submitted :: { stars :: Number, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } ] {}
+submittedToast :: PUI Web [ submitted :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } ] {}
 submittedToast = toast # forCase @"submitted" # lcmap (match { submitted: \r -> .submitted (submittedLine r) })
 
-submittedLine :: { stars :: Number, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } -> String
+submittedLine :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } -> String
 submittedLine { stars, nickname } =
   "Thanks" <> forReviewer { nickname } <> "! Your " <> starGlyphs stars <> " review is in."
 
@@ -60,7 +60,7 @@ forReviewer { nickname } = case trim nickname of
   "" -> ""
   name -> ", " <> name
 
-previewLine :: { stars :: Number, headline :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean } -> String
+previewLine :: { stars :: { current :: Number, max :: Int }, headline :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean } -> String
 previewLine { stars, headline, owned, recommend } =
   starGlyphs stars
     <> headlineQuote { headline }
@@ -72,8 +72,8 @@ headlineQuote { headline } = case trim headline of
   "" -> ""
   quote -> " “" <> quote <> "”"
 
-starGlyphs :: Number -> String
-starGlyphs stars = power "★" (round stars) <> power "☆" (maxStars - round stars)
+starGlyphs :: { current :: Number, max :: Int } -> String
+starGlyphs { current, max } = power "★" (round current) <> power "☆" (max - round current)
 
 ownedText :: [ underMonth :: {}, underYear :: {}, overYear :: {} ] -> String
 ownedText = match { underMonth: \_ -> "less than a month", underYear: \_ -> "1–12 months", overYear: \_ -> "more than a year" }

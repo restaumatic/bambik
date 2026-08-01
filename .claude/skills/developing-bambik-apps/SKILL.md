@@ -225,21 +225,21 @@ selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m
 Existing `Model -> Model` functions (`commit`, `applyDiameter`, …) already
 belong to the business class — leave them standalone.
 
-**Business literals hiding in UI code are a smell.** Numeric bounds and
-steps (slider `min`/`max`/`step`), seed/initial models (`mvu`/`with`/`seeded`
-arguments), tick periods, default payload values — extract each as a named
-business definition in the business section:
+**Business literals hiding in UI code are a smell.** A parameter the
+business owns is model data: sliders (and Shoelace's rating) edit a
+**bounded quantity** `{ current, min, max, step }` riding the canonical
+row, so bounds flow from the seed (a missing bound is a compile error at
+`body`) and may change at runtime. What legitimately stays config or seed
+content — tick periods, default payloads — is a named business definition
+in the business section:
 
 ```purescript
 ) # mvu tenSecondFreshTimer
-sliderLive { min: minDuration, max: maxDuration, step: durationStep }
+sliderLive { label: "" } # asField @"duration"
 every tickPeriod tick
 
-tenSecondFreshTimer :: { duration :: Number, elapsed :: Number }
-tenSecondFreshTimer = { duration: 10.0, elapsed: 0.0 }
-
-minDuration :: Number
-minDuration = 0.0
+tenSecondFreshTimer :: { duration :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number }
+tenSecondFreshTimer = { duration: { current: 10.0, min: 0.0, max: 60.0, step: Just 1.0 }, elapsed: 0.0 }
 ```
 
 UI code keeps only presentation: labels, captions, icons, styles, structure.
