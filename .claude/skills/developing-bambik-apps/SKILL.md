@@ -24,7 +24,9 @@ canonical row, adopted to the business label at the use site:
   complete `×→×` stage on its own, no `RecordToRecord.do` needed for one
   field (slider's `step` is optional)
 - displays adopt with `# projection f` (feed `f` of the whole value —
-  `forValue` is `projection identity`, the verbatim case) or
+  `forValue` is `projection identity`, the verbatim case; a one-field read
+  of a context-pinned wider row is `# ofField @"label"`, the label-indexed
+  form) or
   `# forValue # forField @l` / `# projection f # forField @l` (read one
   field, verbatim or formatted; `forField` takes the bare-value display
   `projection` produces); a live readout as a pipeline stage is the same
@@ -208,7 +210,7 @@ pages' code-style note; keep the two in sync.)
   its key:
 
   ```purescript
-  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # projection _.text)
+  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # ofField @"text")
   table $ (tr $ cellWidget # foreach @"domKey" _.cells) # foreach @"rowKey" gridRows # toCase @"cellClicked" _.key
   ```
 
@@ -278,7 +280,7 @@ architecture words where business words belong.
   shows up in tracing:
 
   ```purescript
-  listOf { selected: _.selected } entries (text # projection _.label)
+  listOf { selected: _.selected } entries (text # ofField @"label")
     # toCase @"picked" _.key # updates (match { picked: pick })
   ```
 

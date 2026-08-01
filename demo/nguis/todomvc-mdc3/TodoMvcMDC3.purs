@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, forField, mvu, projection, required, toCase, updates)
+import PUI (asField, completed, displayed, forField, mvu, ofField, projection, required, toCase, updates)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
 import PUI.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,7 +21,7 @@ todoMvcMDC3 =
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updates (match { clicked: const <<< addTodo })
-          listOf { selected: _.done } visibleEntries (span text # projection _.title # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updates (match { todoClicked: toggleTodo })
+          listOf { selected: _.done } visibleEntries (span text # ofField @"title" # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updates (match { todoClicked: toggleTodo })
           segmentedButton
             [ { value: .all {}, label: "All" }
             , { value: .active {}, label: "Active" }

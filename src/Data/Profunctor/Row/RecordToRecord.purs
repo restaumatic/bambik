@@ -38,6 +38,7 @@ module Data.Profunctor.Row.RecordToRecord
   , feedback
   , asField
   , forField
+  , ofField
   , forValue
   , projection
   , required
@@ -199,6 +200,18 @@ required = lcmap (\r -> { value: Just r.value })
 -- | shows it verbatim. `lcmap`-only, the input-side member of the adopter
 -- | family (`asField` renames both sides of an editor). Closed singleton row:
 -- | annotation-free as a merge operand, and a display owns no output fields.
+-- | Read field `l` of a **wider** row into the canonical `{ value }`
+-- | display — `projection`'s label-indexed one-field form, and `forField`'s
+-- | open-row sibling (the display-side `property`): the background is
+-- | carried, so it fits positions whose row the context already pins —
+-- | collection items, pane payloads — where `forField`'s closed singleton
+-- | is for merge operands, which must state their exact row themselves:
+-- | `listOf {} questionChoices (text # ofField @"label")`,
+-- | `linearProgress # ofField @"fraction"`. Formatted reads stay
+-- | `projection f`; `lcmap`-only like the whole adopter family.
+ofField :: forall @l p a b r o. IsSymbol l => Profunctor p => Cons l a b r => p { value :: a } o -> p { | r } o
+ofField = lcmap (\r -> { value: Record.get (Proxy @l) r })
+
 forField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
 forField = lcmap (Record.get (Proxy @l))
 

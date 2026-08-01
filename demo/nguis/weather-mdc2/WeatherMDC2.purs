@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, mvu, onCase, projection, tapped, toCase, updates)
+import PUI (action, mvu, ofField, onCase, projection, tapped, toCase, updates)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,7 +20,7 @@ weatherMDC2 =
     elevation20 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              listOf { selected: _.shown } forecastRequests (text # projection _.city) # toCase @"cityPicked" identity
+              listOf { selected: _.shown } forecastRequests (text # ofField @"city") # toCase @"cityPicked" identity
               indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updates (match { reportServed: rememberReport })
           headline1 ( RecordToRecord.do
               text # projection temperatureText

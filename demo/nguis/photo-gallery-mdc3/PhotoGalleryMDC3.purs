@@ -11,7 +11,7 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forField, forValue, mvu, projection, tapped, toCase, updates)
+import PUI (displayed, forField, forValue, mvu, ofField, tapped, toCase, updates)
 import PUI.HTML (body, dynamic, each, span, staticText, text)
 import PUI.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, list, listItem, listOf, labelSmall, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +22,7 @@ photoGalleryMDC3 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } albumChoices (span text # projection _.name) # toCase @"albumPicked" _.name # updates (match { albumPicked: openAlbum })
+              listOf { selected: _.current } albumChoices (span text # ofField @"name") # toCase @"albumPicked" _.name # updates (match { albumPicked: openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
