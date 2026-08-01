@@ -44,4 +44,10 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelector('fluent-message-bar').classList.contains('fluent-toast--open')`), true, 'booking opens the message bar')
   const booked = await ev(`document.querySelector('fluent-message-bar').textContent.trim()`)
   assertEq(booked, 'Booked: All hands — auditorium for 60 min', `message bar carries the booking (${booked})`)
+
+  await ev(`(() => { const d = document.querySelector('fluent-dropdown'); d.value = '0'; d.dispatchEvent(new Event('change')) })()`)
+  await sleep(150)
+  const capped = await ev(planText)
+  assertEq(capped.includes('4 attendees'), true, `bounded quantity: picking the focus pod clamps 30 attendees to its capacity (${capped})`)
+  assertEq(await ev(`document.querySelector('fluent-slider').getAttribute('max')`), '4.0', 'the slider max re-scoped in place from the model')
 }

@@ -197,3 +197,44 @@ export function fixListTabIndexes(node) {
     items.forEach(function (li, i) { li.setAttribute('tabindex', i === 0 ? '0' : '-1'); });
   };
 }
+
+// destroyComponent :: Component -> Effect Unit
+export function destroyComponent(component) {
+  return function () {
+    component.destroy();
+  };
+}
+
+// configureMdcSlider :: Node -> min -> max -> step -> discrete -> current -> Effect Unit
+// MDCSlider reads its bounds from the DOM at construction only, so a bounds
+// change rewrites the input attributes (and the discrete chrome) before a
+// fresh foundation is constructed over the same markup.
+export function configureMdcSlider(node) {
+  return function (min) {
+    return function (max) {
+      return function (step) {
+        return function (discrete) {
+          return function (current) {
+            return function () {
+              const input = node.querySelector('.mdc-slider__input');
+              input.min = String(min);
+              input.max = String(max);
+              if (discrete) input.step = String(step);
+              else input.removeAttribute('step');
+              input.value = String(current);
+              node.classList.toggle('mdc-slider--discrete', discrete);
+              const thumb = node.querySelector('.mdc-slider__thumb');
+              const indicator = thumb.querySelector('.mdc-slider__value-indicator-container');
+              if (discrete && !indicator) {
+                thumb.insertAdjacentHTML('afterbegin',
+                  '<div class="mdc-slider__value-indicator-container" aria-hidden="true"><div class="mdc-slider__value-indicator"><span class="mdc-slider__value-indicator-text"></span></div></div>');
+              } else if (!discrete && indicator) {
+                indicator.remove();
+              }
+            };
+          };
+        };
+      };
+    };
+  };
+}

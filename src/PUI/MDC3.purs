@@ -58,7 +58,6 @@ module PUI.MDC3
   , OptLabel(..)
   , OptIcon(..)
   , OptSelected(..)
-  , OptStep(..)
   , bodyLarge
   , bodyMedium
   , bodySmall
@@ -148,7 +147,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly, foreach)
 import PUI.HTML (aside, cl, clWhen, clicked, div, el, h1, h2, h3, init, label, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, (:=))
-import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, setValue, uniqueId)
+import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
@@ -156,8 +155,8 @@ import Type.Proxy (Proxy(..))
 
 -- Conversion tags scope which field names lift a bare value to `Just`, as
 -- in `PUI.MDC2`: one tag per distinct optional-field set — `OptLabelIcon`
--- (buttons), `OptLabel` (fab, caption via card), `OptStep` (sliders),
--- `OptSelected` (listOf), `OptIcon` (tabBar options).
+-- (buttons), `OptLabel` (fab, caption via card), `OptSelected` (listOf),
+-- `OptIcon` (tabBar options).
 data OptLabelIcon = OptLabelIcon
 
 instance ConvertOption OptLabelIcon "label" String (Maybe String) where
@@ -188,12 +187,6 @@ instance ConvertOption OptIcon "icon" String (Maybe String) where
 else instance ConvertOption OptIcon sym a a where
   convertOption _ _ = identity
 
-data OptStep = OptStep
-
-instance ConvertOption OptStep "step" Number (Maybe Number) where
-  convertOption _ _ = Just
-else instance ConvertOption OptStep sym a a where
-  convertOption _ _ = identity
 
 -- | The `×→+` event button (the MD3 filled button — the high-emphasis
 -- | default): reads the whole record it is shown and fires it as event
@@ -443,68 +436,65 @@ switchLeaf lbl =
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The `×→×` `Number` editor. An optional `step` makes it the discrete
--- | slider. Emits on **commit** only (thumb release): one emission per
--- | adjustment, so an `updates` fold sees each drag as one transaction.
--- | For continuous mid-drag emissions (live readouts), use `sliderLive`.
-slider
-  :: forall provided
-   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-  => { | provided }
-  -> PUI Web { value :: Number } { value :: Number }
-slider provided = field @"value" (sliderLeaf false (sliderConfig provided))
+-- | The `×→×` editor of a **bounded quantity** — the whole business datum
+-- | `{ current, min, max, step }` rides the canonical row: the constraints
+-- | are model data, never UI literals (guardrail A8's channel-fed
+-- | resolution), so they arrive from the seed — pointedness makes a
+-- | missing bound a compile error at `body` — and may change at runtime
+-- | (`<md-slider>`'s properties are reactive, so the leaf re-scopes in
+-- | place). `step` is `Just` for the discrete slider, `Nothing` for the
+-- | continuous one. Emits on **commit** only (thumb release), the whole
+-- | quantity with `current` replaced — an editor cannot invent its own
+-- | bounds — so an `updates` fold sees each drag as one transaction. For
+-- | continuous mid-drag emissions (live readouts), use `sliderLive`.
+slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+slider config = field @"value" (sliderLeaf false config.label)
 
 -- | `slider` emitting continuously mid-drag (like mid-typing text); a
 -- | consumer that doesn't want the burst wraps its stage in `debounced`.
-sliderLive
-  :: forall provided
-   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-  => { | provided }
-  -> PUI Web { value :: Number } { value :: Number }
-sliderLive provided = field @"value" (sliderLeaf true (sliderConfig provided))
-
-sliderConfig
-  :: forall provided
-   . ConvertOptionsWithDefaults OptStep { label :: String, step :: Maybe Number } { | provided } { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-  => { | provided }
-  -> { label :: String, min :: Number, max :: Number, step :: Maybe Number }
-sliderConfig provided = convertOptionsWithDefaults OptStep { label: "", step: Nothing } provided
+sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+sliderLive config = field @"value" (sliderLeaf true config.label)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
 -- value indicator), so a non-empty config label renders visibly above the
 -- slider, like a text field's floating label.
-sliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
-sliderLeaf live config
-  | config.label == "" = bareSliderLeaf live config
+sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: Maybe Number } { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+sliderLeaf live label
+  | label == "" = bareSliderLeaf live label
   | otherwise =
       div >>> "style" := "display: inline-flex; flex-direction: column; align-items: flex-start;" $ wrap do
-        _ <- unwrap (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText config.label)
-        unwrap (bareSliderLeaf live config)
+        _ <- unwrap (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText label)
+        unwrap (bareSliderLeaf live label)
 
-bareSliderLeaf :: Boolean -> { label :: String, min :: Number, max :: Number, step :: Maybe Number } -> PUI Web Number Number
-bareSliderLeaf live config = wrap do
+bareSliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: Maybe Number } { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+bareSliderLeaf live label = wrap do
   element "md-slider" (pure unit)
-  attribute "min" (show config.min)
-  attribute "max" (show config.max)
   attribute "labeled" ""
-  attribute "aria-label" config.label
+  attribute "aria-label" label
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
-  liftEffect $ for_ config.step \s -> setAttribute node "step" (show s)
   mPropRef <- liftEffect $ Ref.new Nothing
-  when live $ liftEffect $ listenNode node "input" do
-    v <- getNumberProp "value" node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop v
-  liftEffect $ listenNode node "change" do
-    v <- getNumberProp "value" node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop v
+  qRef <- liftEffect $ Ref.new Nothing
+  let emit = do
+        v <- getNumberProp "value" node
+        mq <- Ref.read qRef
+        for_ mq \q -> do
+          mProp <- Ref.read mPropRef
+          for_ mProp \prop -> prop (q { current = v })
+  when live $ liftEffect $ listenNode node "input" emit
+  liftEffect $ listenNode node "change" emit
   pure
-    { toUser: \v -> do
-        setNumberProp "value" node v
+    { toUser: \q -> do
+        Ref.write (Just q) qRef
+        setNumberProp "min" node q.min
+        setNumberProp "max" node q.max
+        case q.step of
+          Just s -> setNumberProp "step" node s
+          Nothing -> removeAttribute node "step"
+        setNumberProp "value" node q.current
+        -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop v
+        for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 

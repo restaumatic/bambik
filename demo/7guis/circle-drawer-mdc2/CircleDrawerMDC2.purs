@@ -21,7 +21,7 @@ circleDrawerMDC2 =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { min: minDiameter, max: maxDiameter } # asField @"diameter" # provided # lcmap selectedDiameter # updates adjustDiameter
+          sliderLive { label: "" } # asField @"diameter" # provided # lcmap selectedDiameter # updates adjustDiameter
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY
@@ -56,11 +56,11 @@ redo m@{ redoStack, undoStack, circles } = case unsnoc redoStack of
     m { circles = next, redoStack = rest, undoStack = snoc undoStack circles, selected = Nothing, adjusting = false }
   Nothing -> m
 
-selectedDiameter :: { selected :: Maybe Int, diameter :: Number } -> Maybe { diameter :: Number }
-selectedDiameter { selected, diameter } = if isJust selected then Just { diameter } else Nothing
+selectedDiameter :: { selected :: Maybe Int, diameter :: Number } -> Maybe { diameter :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+selectedDiameter { selected, diameter } = if isJust selected then Just { diameter: { current: diameter, min: minDiameter, max: maxDiameter, step: Nothing } } else Nothing
 
-adjustDiameter :: { diameter :: Number } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
-adjustDiameter { diameter } m = applyDiameter (m { diameter = diameter })
+adjustDiameter :: { diameter :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
+adjustDiameter { diameter } m = applyDiameter (m { diameter = diameter.current })
 
 applyDiameter :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, diameter :: Number, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 applyDiameter m@{ selected, circles, diameter, adjusting, undoStack, redoStack } = case selected of

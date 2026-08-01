@@ -3,7 +3,8 @@ module MeetingBookerFluent (meetingBookerFluent) where
 import Prelude (Unit, min, show, ($), (#), (/), (<>))
 
 import Data.Int (round)
-import Data.Profunctor (lcmap)
+import Data.Maybe (Maybe(..))
+import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
@@ -30,10 +31,10 @@ meetingBookerFluent =
             , { value: .half {}, label: "30 min" }
             , { value: .hour {}, label: "60 min" }
             ] # required # asField @"duration"
-          slider { label: "Attendees", min: fewestAttendees, max: largestRoomCapacity, step: attendeeStep } # asField @"attendees"
+          slider { label: "Attendees" } # asField @"attendees"
           toggleSwitch { label: "Include a Teams link" } # asField @"online"
           divider
-      ) # mvu weeklySync
+      ) # rmap fitRoom # mvu weeklySync
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
           ratingDisplay ) # projection roomRating # tapped
@@ -46,28 +47,28 @@ meetingBookerFluent =
       button { label: "Book the room" } # asCase @"booked"
       bookedBar
 
-weeklySync :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean }
+weeklySync :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean }
 weeklySync =
   { title: "Weekly sync"
   , room: .boardroom {}
   , duration: .half {}
-  , attendees: 6.0
+  , attendees: { current: 6.0, min: 1.0, max: roomCapacity (.boardroom {}), step: Just 1.0 }
   , online: true
   }
 
-bookedBar :: PUI Web [ booked :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } ] {}
+bookedBar :: PUI Web [ booked :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean } ] {}
 bookedBar = messageBar # forCase @"booked" # lcmap (match { booked: \plan -> .booked (bookedLine plan) })
 
-bookedLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> String
+bookedLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean } -> String
 bookedLine { title, room, duration } =
   "Booked: " <> titleText { title } <> " — " <> roomText room <> " for " <> durationText duration
 
-planLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> String
+planLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean } -> String
 planLine { title, room, duration, attendees, online } =
   titleText { title }
     <> " in the " <> roomText room
     <> ", " <> durationText duration
-    <> ", " <> show (round attendees) <> " attendees"
+    <> ", " <> show (round attendees.current) <> " attendees"
     <> (if online then ", with a Teams link" else "")
 
 titleText :: { title :: String } -> String
@@ -84,17 +85,11 @@ durationText = match { quarter: \_ -> "15 min", half: \_ -> "30 min", hour: \_ -
 roomRating :: { room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] } -> Number
 roomRating { room } = match { focusPod: \_ -> 4.5, boardroom: \_ -> 3.5, auditorium: \_ -> 4.0 } room
 
-seatsTaken :: { room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Number
-seatsTaken { room, attendees } = min 1.0 (attendees / roomCapacity room)
+seatsTaken :: { room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> Number
+seatsTaken { room, attendees } = min 1.0 (attendees.current / roomCapacity room)
 
 roomCapacity :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number
 roomCapacity = match { focusPod: \_ -> 4.0, boardroom: \_ -> 12.0, auditorium: \_ -> 40.0 }
 
-fewestAttendees :: Number
-fewestAttendees = 1.0
-
-largestRoomCapacity :: Number
-largestRoomCapacity = roomCapacity (.auditorium {})
-
-attendeeStep :: Number
-attendeeStep = 1.0
+fitRoom :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean } -> { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, online :: Boolean }
+fitRoom m = m { attendees = m.attendees { max = roomCapacity m.room, current = min m.attendees.current (roomCapacity m.room) } }

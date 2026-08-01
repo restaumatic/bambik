@@ -4,7 +4,7 @@ import Prelude ((#), ($), (<>), (<<<), (==), (>>>), Unit, const, max, min, show)
 
 import Data.Array (find)
 import Data.Int (hexadecimal, round, toStringAs)
-import Data.Maybe (maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor (lcmap, rmap)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.String (length, toUpper)
@@ -18,27 +18,27 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 chipStyle :: { mix :: { red :: Number, green :: Number, blue :: Number } } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
 
-swatchStyle :: { red :: Number, green :: Number, blue :: Number } -> String
-swatchStyle { red, green, blue } = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb { red, green, blue } <> ";"
+swatchStyle :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+swatchStyle channels = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb (mixOf channels) <> ";"
 
 colorMixerMDC3 :: Effect Unit
 colorMixerMDC3 =
   body $
     elevation5 $
       card { caption: "Color Mixer" } $ ( Semigroupoid.do
-          sliderLive { label: "Red", min: minChannel, max: maxChannel, step: channelStep } # asField @"red" # completed
-          sliderLive { label: "Green", min: minChannel, max: maxChannel, step: channelStep } # asField @"green" # completed
-          sliderLive { label: "Blue", min: minChannel, max: maxChannel, step: channelStep } # asField @"blue" # completed
+          sliderLive { label: "Red" } # asField @"red" # completed
+          sliderLive { label: "Green" } # asField @"green" # completed
+          sliderLive { label: "Blue" } # asField @"blue" # completed
           ( div >>> "style" := "margin: 10px 0;" $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ pempty # lcmap (const {})
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" (\p -> chipStyle { mix: p.mix }) $ pempty # lcmap (const {}) ) # rmap _.name ) # foreach @"name" # lcmap (const palette)) # toCase @"preset" # updates (match { preset: applyPreset })
-          bodyMedium text # projection hex # tapped
-          bodyMedium text # projection rgb # tapped
+          bodyMedium text # projection hexText # tapped
+          bodyMedium text # projection rgbText # tapped
       ) # mvu duskViolet
 
-applyPreset :: String -> { red :: Number, green :: Number, blue :: Number } -> { red :: Number, green :: Number, blue :: Number }
-applyPreset name current = maybe current _.mix (find (\p -> p.name == name) palette)
+applyPreset :: String -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+applyPreset name channels = maybe channels (\p -> remix p.mix channels) (find (\p -> p.name == name) palette)
 
 palette :: Array { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } }
 palette =
@@ -51,6 +51,18 @@ palette =
 
 mix :: Number -> Number -> Number -> { red :: Number, green :: Number, blue :: Number }
 mix red green blue = { red: clampChannel red, green: clampChannel green, blue: clampChannel blue }
+
+mixOf :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: Number, green :: Number, blue :: Number }
+mixOf { red, green, blue } = { red: red.current, green: green.current, blue: blue.current }
+
+remix :: { red :: Number, green :: Number, blue :: Number } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+remix m channels = channels { red = channels.red { current = m.red }, green = channels.green { current = m.green }, blue = channels.blue { current = m.blue } }
+
+hexText :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+hexText = hex <<< mixOf
+
+rgbText :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+rgbText = rgb <<< mixOf
 
 hex :: { red :: Number, green :: Number, blue :: Number } -> String
 hex { red, green, blue } = "#" <> channelHex red <> channelHex green <> channelHex blue
@@ -69,14 +81,14 @@ channel = show <<< round <<< clampChannel
 clampChannel :: Number -> Number
 clampChannel = max minChannel <<< min maxChannel
 
-duskViolet :: { red :: Number, green :: Number, blue :: Number }
-duskViolet = mix 96.0 64.0 160.0
+duskViolet :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+duskViolet = let m = mix 96.0 64.0 160.0 in { red: channelRange m.red, green: channelRange m.green, blue: channelRange m.blue }
+
+channelRange :: Number -> { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+channelRange n = { current: n, min: minChannel, max: maxChannel, step: Just 1.0 }
 
 minChannel :: Number
 minChannel = 0.0
 
 maxChannel :: Number
 maxChannel = 255.0
-
-channelStep :: Number
-channelStep = 1.0

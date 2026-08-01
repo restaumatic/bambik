@@ -301,15 +301,23 @@ inside a component's `dimap`.
 
 ### A8. Business literals never hide in UI code.
 
-Numeric bounds and steps (a slider's `min`/`max`/`step`), seed models
-(`mvu`/`with`/the trace forms' arguments), tick periods, and default
-payload values are business data, and each is a **named top-level
-business definition** — never a literal inline in a widget config or at
-a seed position. Names speak business language (`smallestLoan`,
-`tickPeriod`, `gameStart`, `roomTemperature`), never lifecycle language
-(`initial`, `default`, `seed` are the smell's second form). UI code
-keeps only presentation: labels, captions, icons, styles, structure —
-layout numerics (a textarea's `rows`, a grid's `columns`) stay UI.
+A component parameter is presentation config iff the design system owns
+it; if the business owns it, it is **model data riding the canonical
+row**, where the machinery enforces the flow — pointedness makes a
+missing value a compile error at `body`, the gates withhold until it is
+known, and it may change while the app runs. The sliders' and rating's
+**bounded quantity** `{ current, min, max, step }` is the standing
+resolution: bounds arrive from the seed, and the emission is the whole
+quantity with `current` replaced (an editor cannot invent its own
+bounds). Term provenance is invisible to types, so for what legitimately
+stays config or seed content the discipline is: business values are
+**named top-level business definitions** — seed models (`mvu`/`with`/the
+trace forms' arguments), tick periods, default payloads — named in
+business language (`smallestLoan`, `tickPeriod`, `gameStart`), never
+lifecycle language (`initial`, `default`, `seed` are the smell's second
+form). UI code keeps only presentation: labels, captions, icons, styles,
+structure — layout numerics (a textarea's `rows`, a grid's `columns`)
+stay UI.
 
 ---
 

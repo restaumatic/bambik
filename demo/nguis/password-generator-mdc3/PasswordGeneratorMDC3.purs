@@ -4,7 +4,7 @@ import Prelude ((#), ($), (*), (-), (/), (<), (<>), (>>>), Unit, bind, otherwise
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (log)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Traversable (sequence)
@@ -25,7 +25,7 @@ passwordGeneratorMDC3 =
     elevation5 $
       card { caption: "Password Generator" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              slider { label: "Length", min: minLength, max: maxLength, step: lengthStep } # asField @"length"
+              slider { label: "Length" } # asField @"length"
               toggleSwitch { label: "Uppercase letters" } # asField @"uppercase"
               toggleSwitch { label: "Lowercase letters" } # asField @"lowercase"
               toggleSwitch { label: "Digits" } # asField @"digits"
@@ -40,10 +40,10 @@ passwordGeneratorMDC3 =
               indeterminateLinearProgress # action samplePassword # onCase @"generate") # updates (match { generated: rememberPassword })
       ) # mvu strongMixRecipe
 
-samplePassword :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Aff [ generated :: String ]
+samplePassword :: { length :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Aff [ generated :: String ]
 samplePassword { length, uppercase, lowercase, digits, symbols } = liftEffect do
   let alphabet = effectiveAlphabet { uppercase, lowercase, digits, symbols }
-  chars <- sequence (replicate (round length) (randomCharacter alphabet))
+  chars <- sequence (replicate (round length.current) (randomCharacter alphabet))
   pure (.generated (fromCharArray chars))
 
 randomCharacter :: Array Char -> Effect Char
@@ -62,11 +62,11 @@ effectiveAlphabet { uppercase, lowercase, digits, symbols } =
             <> (if symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
-strengthText :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
+strengthText :: { length :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> String
 strengthText { length, uppercase, lowercase, digits, symbols } = strengthGrade (entropyBits { length, uppercase, lowercase, digits, symbols })
 
-entropyBits :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Number
-entropyBits { length: len, uppercase, lowercase, digits, symbols } = len * log (toNumber (length (effectiveAlphabet { uppercase, lowercase, digits, symbols }))) / log 2.0
+entropyBits :: { length :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Number
+entropyBits { length: len, uppercase, lowercase, digits, symbols } = len.current * log (toNumber (length (effectiveAlphabet { uppercase, lowercase, digits, symbols }))) / log 2.0
 
 strengthGrade :: Number -> String
 strengthGrade bits
@@ -87,9 +87,9 @@ digitCharacters = toCharArray "0123456789"
 symbolCharacters :: Array Char
 symbolCharacters = toCharArray "!@#$%^&*()-_=+[]{};:,.<>?/"
 
-strongMixRecipe :: { length :: Number, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String }
+strongMixRecipe :: { length :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean, password :: String }
 strongMixRecipe =
-  { length: 16.0
+  { length: passwordLengths 16.0
   , uppercase: true
   , lowercase: true
   , digits: true
@@ -97,11 +97,5 @@ strongMixRecipe =
   , password: ""
   }
 
-minLength :: Number
-minLength = 8.0
-
-maxLength :: Number
-maxLength = 64.0
-
-lengthStep :: Number
-lengthStep = 1.0
+passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+passwordLengths n = { current: n, min: 8.0, max: 64.0, step: Just 1.0 }

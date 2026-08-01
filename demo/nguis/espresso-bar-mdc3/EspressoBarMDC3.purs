@@ -46,7 +46,7 @@ espressoBarMDC3 =
                   , { value: .medium {}, label: "Medium roast" }
                   , { value: .dark {}, label: "Dark roast" }
                   ] # required # asField @"roast"
-                sliderLive { label: "Sugar", min: noSugar, max: maxSugar, step: sugarStep } # asField @"sugar"
+                sliderLive { label: "Sugar" } # asField @"sugar"
                 chipSet RecordToRecord.do
                   filterChip { label: "Extra shot" } # asField @"extraShot"
                   filterChip { label: "Decaf" } # asField @"decaf"
@@ -68,14 +68,14 @@ espressoBarMDC3 =
           button { label: "Place order", icon: "local_cafe" } # asCase @"brewed"
           brewedToast
 
-usualOrder :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} }
+usualOrder :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} }
 usualOrder =
   { customer: ""
   , drink: .cappuccino {}
   , size: .medium {}
   , milk: .whole {}
   , roast: .medium {}
-  , sugar: 1.0
+  , sugar: sugars 1.0
   , extraShot: false
   , decaf: false
   , takeaway: false
@@ -83,16 +83,16 @@ usualOrder =
   , loyalty: Nothing
   }
 
-theUsual :: {} -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
-theUsual {} = { drink: .cappuccino {}, size: .medium {}, milk: .whole {}, roast: .medium {}, sugar: 1.0, extraShot: false, decaf: false }
+theUsual :: {} -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean }
+theUsual {} = { drink: .cappuccino {}, size: .medium {}, milk: .whole {}, roast: .medium {}, sugar: sugars 1.0, extraShot: false, decaf: false }
 
-espressoNoFrills :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean }
-espressoNoFrills order = order { drink = .espresso {}, size = .small {}, milk = .none {}, sugar = 0.0, extraShot = false, decaf = false }
+espressoNoFrills :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean }
+espressoNoFrills order = order { drink = .espresso {}, size = .small {}, milk = .none {}, sugar = sugars 0.0, extraShot = false, decaf = false }
 
-brewedToast :: PUI Web [ brewed :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } ] {}
+brewedToast :: PUI Web [ brewed :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } ] {}
 brewedToast = snackbar # forCase @"brewed" # lcmap (match { brewed: \order -> .brewed (brewedLine order) })
 
-brewedLine :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> String
+brewedLine :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } -> String
 brewedLine { customer, drink, size, milk, roast, sugar, extraShot, decaf, takeaway, favorite, loyalty } =
   "Coming right up" <> forCustomer { customer }
     <> ": " <> summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty }
@@ -103,14 +103,14 @@ forCustomer { customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 
-summaryText :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: Number, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe {} } -> String
+summaryText :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, loyalty :: Maybe {} } -> String
 summaryText { drink, size, milk, roast, sugar, extraShot, decaf, takeaway, loyalty } =
   sizeText size <> " " <> drinkText drink
     <> milkText milk
     <> ", " <> roastText roast
     <> (if extraShot then ", extra shot" else "")
     <> (if decaf then ", decaf" else "")
-    <> sugarsText sugar
+    <> sugarsText sugar.current
     <> (if takeaway then ", to go" else "")
     <> " — " <> money (price { size, milk, extraShot, loyalty })
 
@@ -156,11 +156,11 @@ caffeineFraction { drink, extraShot, decaf }
 drinkShots :: [ espresso :: {}, cappuccino :: {}, latte :: {} ] -> Number
 drinkShots = match { espresso: \_ -> 0.6, cappuccino: \_ -> 0.45, latte: \_ -> 0.3 }
 
+sugars :: Number -> { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+sugars n = { current: n, min: noSugar, max: maxSugar, step: Just 1.0 }
+
 noSugar :: Number
 noSugar = 0.0
 
 maxSugar :: Number
 maxSugar = 4.0
-
-sugarStep :: Number
-sugarStep = 1.0

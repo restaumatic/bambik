@@ -2,6 +2,7 @@ module AuctionMDC2 (auctionMDC2) where
 
 import Prelude ((#), ($), Unit, identity, max, show)
 
+import Data.Maybe (Maybe(..))
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -19,7 +20,7 @@ auctionMDC2 =
           body2 ( RecordToRecord.do
               staticText "Your current bid: $"
               text # projection bidText ) # tapped
-          sliderLive { label: "Your bid ($)", min: minBid, max: maxBid, step: bidStep } # asField @"bid"
+          sliderLive { label: "Your bid ($)" } # asField @"bid"
           ( Semigroupoid.do
               lcmap raiseTop identity
               headline6 ( RecordToRecord.do
@@ -27,26 +28,20 @@ auctionMDC2 =
                   text # projection topText ) # tapped) # feedback noBids
       ) # mvu openingBid
 
-raiseTop :: { bid :: Number, top :: Number } -> { bid :: Number, top :: Number }
-raiseTop { bid, top } = { bid, top: max bid top }
+raiseTop :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number } -> { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
+raiseTop { bid, top } = { bid, top: max bid.current top }
 
 topText :: { top :: Number } -> String
 topText { top } = show top
 
-bidText :: { bid :: Number } -> String
-bidText { bid } = show bid
+bidText :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+bidText { bid } = show bid.current
 
-noBids :: { bid :: Number, top :: Number }
-noBids = { bid: 0.0, top: 0.0 }
+noBids :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
+noBids = { bid: biddingRange, top: 0.0 }
 
-openingBid :: { bid :: Number }
-openingBid = { bid: 0.0 }
+openingBid :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+openingBid = { bid: biddingRange }
 
-minBid :: Number
-minBid = 0.0
-
-maxBid :: Number
-maxBid = 1000.0
-
-bidStep :: Number
-bidStep = 10.0
+biddingRange :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+biddingRange = { current: 0.0, min: 0.0, max: 1000.0, step: Just 10.0 }
