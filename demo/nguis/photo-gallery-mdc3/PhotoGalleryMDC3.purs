@@ -1,6 +1,6 @@
 module PhotoGalleryMDC3 (photoGalleryMDC3) where
 
-import Prelude ((#), ($), (*), (+), (<#>), (<>), (==), Unit, mod, show)
+import Prelude (identity, (#), ($), (*), (+), (<#>), (<>), (==), Unit, mod, show)
 
 import Data.Array (find, range)
 import Data.Char (toCharCode)
@@ -11,7 +11,7 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forField, forValue, mvu, forProperty, tapped, toCase, updated)
+import PUI (displayed, forField, mvu, forProperty, tapped, toCase, updated)
 import PUI.HTML (body, dynamic, each, span, staticText, text)
 import PUI.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, list, listItem, listOf, labelSmall, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +22,7 @@ photoGalleryMDC3 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } albumChoices (span text # forProperty @"name") # toCase @"albumPicked" _.name # updated (match { albumPicked: openAlbum })
+              listOf { selected: _.current } albumChoices (span text # forProperty @"name" identity) # toCase @"albumPicked" _.name # updated (match { albumPicked: openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
@@ -35,7 +35,7 @@ photoGalleryMDC3 =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
-              displayMedium text # forValue # forField @"album" # tapped
+              displayMedium text # forField @"album" identity # tapped
               imageList { columns: 3 } $ displayed $ dynamic \m ->
                 each (albumPhotos m) \p -> imageListItem { src: p.src, label: p.bodySmall })
       ) # mvu landscapesOpen

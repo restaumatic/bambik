@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (forField, forValue, foreach, mvu, projected, tapped, toCase, updated, with)
+import PUI (forField, foreach, mvu, projected, tapped, toCase, updated, with)
 import PUI.HTML (body, clicked, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, dataCell, dataRow, dataTable, elevation5, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,16 +18,16 @@ shoppingCartMDC3 =
     elevation5 $
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
           listOf {} productCatalogue ( RecordToRecord.do
-              text # forValue # forField @"name"
+              text # forField @"name" identity
               staticText " · $"
-              text # projected formatMoney # forField @"unitPrice" ) # toCase @"productPicked" identity # updated (match { productPicked: addUnit })
+              text # forField @"unitPrice" formatMoney ) # toCase @"productPicked" identity # updated (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
-                  dataCell text # forValue # forField @"product"
-                  dataCell text # forValue # forField @"quantity"
+                  dataCell text # forField @"product" identity
+                  dataCell text # forField @"quantity" identity
                   dataCell ( RecordToRecord.do
                       staticText "$"
-                      text # forValue # forField @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
+                      text # forField @"lineTotal" identity )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           bodyLarge ( RecordToRecord.do
               staticText "Total: $"
               text # projected grandTotalText ) # tapped

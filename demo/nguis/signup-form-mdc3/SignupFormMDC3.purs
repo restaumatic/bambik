@@ -1,6 +1,6 @@
 module SignupFormMDC3 (signupFormMDC3) where
 
-import Prelude ((#), ($), (<>), (==), (>>>), Unit, not)
+import Prelude (identity, (#), ($), (<>), (==), (>>>), Unit, not)
 
 import Data.Either (Either(..), either)
 import Data.Foldable (elem)
@@ -10,7 +10,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, forValue, mvu, required)
+import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, mvu, required)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
@@ -41,18 +41,18 @@ signupFormMDC3 =
         ( bodyMedium $ staticText "Pick a username to check its availability" ) # provided whenUnnamed # displayed
         ( bodyMedium $ RecordToRecord.do
             staticText "✗ "
-            text # forValue # forField @"username"
+            text # forField @"username" identity
             staticText " is already taken" ) # provided whenTaken # displayed
         ( bodyMedium $ RecordToRecord.do
             staticText "✓ "
-            text # forValue # forField @"username"
+            text # forField @"username" identity
             staticText " is available" ) # provided whenAvailable # displayed
         ( titleSmall $ RecordToRecord.do
             staticText "⚠ "
-            text # forValue # forField @"problem" ) # provided whenInvalid # displayed
+            text # forField @"problem" identity ) # provided whenInvalid # displayed
         ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text # forValue # forField @"username" ) # provided whenReady # displayed
+            text # forField @"username" identity ) # provided whenReady # displayed
         button { label: "Sign up", icon: "person_add" } # toCases register
         VariantToRecord.do
           welcomeToast

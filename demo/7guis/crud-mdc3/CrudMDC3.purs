@@ -1,6 +1,6 @@
 module CrudMDC3 (crudMDC3) where
 
-import Prelude ((#), ($), (<$>), (<<<), (==), Unit, bind, const, discard, pure, unit)
+import Prelude (identity, (#), ($), (<$>), (<<<), (==), Unit, bind, const, discard, pure, unit)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -14,7 +14,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, displayed, forField, forValue, looped, onCase, toCase, updated, with)
+import PUI (action, asCase, asField, completed, displayed, forField, looped, onCase, toCase, updated, with)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC3 (button, card, cardActions, elevation5, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -32,9 +32,9 @@ crudMDC3 = do
                   filledTextField { floatingLabel: "Name" } # asField @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
-                  text # forValue # forField @"surname"
+                  text # forField @"surname" identity
                   staticText ", "
-                  text # forValue # forField @"name" ) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text # forField @"name" identity ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"

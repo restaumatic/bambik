@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (acted, asField, displayed, field, foreach, forField, forValue, projected, tapped, with)
+import PUI (acted, asField, displayed, field, foreach, forField, projected, tapped, with)
 import PUI.HTML (body, span, staticText, text)
 import PUI.MDC3 (bodyMedium, card, elevation5, headlineSmall, list, listItem, segmentedButton, titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,7 +23,7 @@ potluckMDC3 =
           ) # tapped
           ( list $
               ( listItem $ RecordToRecord.do
-                  titleMedium text # forValue # forField @"name"
+                  titleMedium text # forField @"name" identity
                   segmentedButton
                     [ { value: .salad {}, label: "Salad" }
                     , { value: .lasagna {}, label: "Lasagna" }
@@ -33,9 +33,9 @@ potluckMDC3 =
           headlineSmall $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do
-                text # forValue # forField @"name"
+                text # forField @"name" identity
                 staticText "’s "
-                text # projected dishText # forField @"dish"
+                text # forField @"dish" dishText
                 staticText ", "
             ) # foreach @"name" identity # field @"guests"
       ) # with invitation

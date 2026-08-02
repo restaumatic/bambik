@@ -1,6 +1,6 @@
 module CheckoutMDC3 (checkoutMDC3) where
 
-import Prelude ((#), ($), (==), Unit)
+import Prelude (identity, (#), ($), (==), Unit)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, displayed, forField, forValue, mvu, updated)
+import PUI (asCase, displayed, forField, mvu, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyMedium, button, card, elevation5)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,13 +21,13 @@ checkoutMDC3 =
           ( Semigroupoid.do
               bodyMedium ( RecordToRecord.do
                   staticText "Step 1 of 3 — Cart: "
-                  text # forValue # forField @"item" ) # provided atCart # displayed
+                  text # forField @"item" identity ) # provided atCart # displayed
               bodyMedium ( RecordToRecord.do
                   staticText "Step 2 of 3 — Shipping to "
-                  text # forValue # forField @"address" ) # provided atShipping # displayed
+                  text # forField @"address" identity ) # provided atShipping # displayed
               bodyMedium ( RecordToRecord.do
                   staticText "Step 3 of 3 — Pay with card "
-                  text # forValue # forField @"card" ) # provided atPayment # displayed
+                  text # forField @"card" identity ) # provided atPayment # displayed
               RecordToVariant.do
                 button { label: "Next" } # asCase @"next" # provided nextAtCart
                 button { label: "Next" } # asCase @"next" # provided nextAtShipping
@@ -36,11 +36,11 @@ checkoutMDC3 =
                 button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided placeAtPayment) # folding @"next" cartStep # updated (match { placed: recordPlaced })
           bodyMedium ( RecordToRecord.do
               staticText "Order placed: "
-              text # forValue # forField @"item"
+              text # forField @"item" identity
               staticText " → "
-              text # forValue # forField @"address"
+              text # forField @"address" identity
               staticText " (card "
-              text # forValue # forField @"card"
+              text # forField @"card" identity
               staticText ")" ) # provided placedOrder # displayed
       ) # mvu freshOrder
 

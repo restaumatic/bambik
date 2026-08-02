@@ -1,6 +1,6 @@
 module ScoreboardMDC2 (scoreboardMDC2) where
 
-import Prelude ((#), ($), (+), (==), Unit, mod, show)
+import Prelude (identity, (#), ($), (+), (==), Unit, mod, show)
 
 import Data.Array (filter, index, length, range)
 import Data.Foldable (maximumBy)
@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, displayed, every, forField, forValue, foreach, mvu, projected)
+import PUI (accumulated, displayed, every, forField, foreach, mvu, projected)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,20 +22,20 @@ scoreboardMDC2 =
           ( Semigroupoid.do
               ( list $
                   ( ( listItem $ RecordToRecord.do
-                        text # forValue # forField @"team"
+                        text # forField @"team" identity
                         staticText ": "
-                        text # projected show # forField @"points"
+                        text # forField @"points" show
                     ) # displayed
                   ) # accumulated goal
               )
               ( body2 $ Semigroupoid.do
                   ( RecordToRecord.do
-                      text # forValue # forField @"teams"
+                      text # forField @"teams" identity
                       staticText " teams on the board — leading: " ) # displayed
                   ( RecordToRecord.do
-                      text # forValue # forField @"team"
+                      text # forField @"team" identity
                       staticText " ("
-                      text # projected show # forField @"points"
+                      text # forField @"points" show
                       staticText ")" ) # provided leadingTeam # displayed
                   staticText "—" # provided noLeader # displayed
               ) # foreach @"key" boardSummary

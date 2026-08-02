@@ -11,7 +11,7 @@ import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, forValue, mvu, required, updated)
+import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, mvu, required, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,15 +33,15 @@ flightBookerMDC2 =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "⚠ "
-              text # forValue # forField @"problem" ) # provided bookingProblem # displayed
+              text # forField @"problem" identity ) # provided bookingProblem # displayed
           body1 ( RecordToRecord.do
               staticText "A one-way flight on "
-              text # forValue # forField @"date" ) # provided oneWayItinerary # displayed
+              text # forField @"date" identity ) # provided oneWayItinerary # displayed
           body1 ( RecordToRecord.do
               staticText "A return flight: out "
-              text # forValue # forField @"out"
+              text # forField @"out" identity
               staticText ", back "
-              text # forValue # forField @"back" ) # provided returnItinerary # displayed
+              text # forField @"back" identity ) # provided returnItinerary # displayed
       ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })

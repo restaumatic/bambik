@@ -1,6 +1,6 @@
 module PasswordGeneratorMDC2 (passwordGeneratorMDC2) where
 
-import Prelude ((#), ($), (*), (-), (/), (<), (<>), (>>>), Unit, bind, otherwise, pure)
+import Prelude (identity, (#), ($), (*), (-), (/), (<), (<>), (>>>), Unit, bind, otherwise, pure)
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, completed, forField, forValue, mvu, onCase, projected, tapped, updated)
+import PUI (action, asCase, asField, completed, forField, mvu, onCase, projected, tapped, updated)
 import PUI.HTML (attr, body, div, staticText, text)
 import PUI.MDC2 (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -34,7 +34,7 @@ passwordGeneratorMDC2 =
               staticText "Strength: "
               text # projected strengthText ) # tapped
           div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
-            text # forValue # forField @"password" # tapped
+            text # forField @"password" identity # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"generate"
               indeterminateLinearProgress # action samplePassword # onCase @"generate") # updated (match { generated: rememberPassword })

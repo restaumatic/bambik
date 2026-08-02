@@ -1,6 +1,6 @@
 module QuizMDC2 (quizMDC2) where
 
-import Prelude ((#), ($), (+), (/), (<), (<#>), (==), Unit, const, min, show)
+import Prelude (identity, (#), ($), (+), (/), (<), (<#>), (==), Unit, const, min, show)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, forField, forValue, mvu, forProperty, projected, toCase, updated)
+import PUI (asCase, completed, displayed, forField, mvu, forProperty, projected, toCase, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,16 +26,16 @@ quizMDC2 =
                 staticText " of "
                 staticText questionCountText
                 staticText " · Score "
-                text # projected show # forField @"correct") # completed
+                text # forField @"correct" show) # completed
           ( Semigroupoid.do
-              headline5 text # forValue # forField @"prompt" # completed
-              listOf {} questionChoices (text # forProperty @"label") # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
+              headline5 text # forField @"prompt" identity # completed
+              listOf {} questionChoices (text # forProperty @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
           ( Semigroupoid.do
               headline6 ( RecordToRecord.do
                   staticText "Final score: "
-                  text # projected show # forField @"correct"
+                  text # forField @"correct" show
                   staticText " / "
-                  text # projected show # forField @"total") # displayed
+                  text # forField @"total" show) # displayed
               button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided finalOutcome # updated (match { restarted: const (const freshQuizRun) })
       ) # mvu freshQuizRun
 

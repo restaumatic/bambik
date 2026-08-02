@@ -20,7 +20,7 @@ weatherMDC2 =
     elevation20 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              listOf { selected: _.shown } forecastRequests (text # forProperty @"city") # toCase @"cityPicked" identity
+              listOf { selected: _.shown } forecastRequests (text # forProperty @"city" identity) # toCase @"cityPicked" identity
               indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updated (match { reportServed: rememberReport })
           headline1 ( RecordToRecord.do
               text # projected temperatureText

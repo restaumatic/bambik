@@ -1,6 +1,6 @@
 module TicTacToeMDC3 (ticTacToeMDC3) where
 
-import Prelude ((#), ($), (&&), (/=), (<#>), (<$>), (<>), (==), (>>>), Unit, bind, const, mod, not, show)
+import Prelude (identity, (#), ($), (&&), (/=), (<#>), (<$>), (<>), (==), (>>>), Unit, bind, const, mod, not, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forField, forValue, foreach, mvu, forProperty, toCase, updated, with)
+import PUI (displayed, forField, foreach, mvu, forProperty, toCase, updated, with)
 import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC3 (button, card, elevation5, headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,18 +19,18 @@ ticTacToeMDC3 =
     elevation5 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headlineSmall ( RecordToRecord.do
-              text # forValue # forField @"mark"
+              text # forField @"mark" identity
               staticText " wins" ) # provided winningMark # displayed
           headlineSmall (staticText "Draw") # provided drawnGame # displayed
           headlineSmall ( RecordToRecord.do
-              text # forValue # forField @"mark"
+              text # forField @"mark" identity
               staticText " to move" ) # provided markToMove # displayed
           ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
               ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
                   ( clicked
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
-                          $ text # forProperty @"mark")) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
+                          $ text # forProperty @"mark" identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
           with openingPosition (button { label: "New game", icon: "replay" }) # updated (match { clicked: const })
       ) # mvu openingPosition
 

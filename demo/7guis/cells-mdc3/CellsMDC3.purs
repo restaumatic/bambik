@@ -1,6 +1,6 @@
 module CellsMDC3 (cellsMDC3) where
 
-import Prelude ((#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, const, map, max, min, mod, otherwise, pure, show, (||))
+import Prelude (identity, (#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, const, map, max, min, mod, otherwise, pure, show, (||))
 
 import Data.Array (catMaybes, range)
 import Data.Char (fromCharCode, toCharCode)
@@ -32,7 +32,7 @@ cellsMDC3 =
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # forProperty @"text" ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
+                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # forProperty @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
 cols :: Int

@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, forValue, mvu, onCase, projected, tapped, toCase, updated)
+import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, mvu, onCase, projected, tapped, toCase, updated)
 import PUI.HTML (body, provided, span, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
@@ -29,17 +29,17 @@ inboxMDC3 =
             ( span $ Semigroupoid.do
                 staticText "● " # provided unreadMark # displayed
                 ( RecordToRecord.do
-                    text # forValue # forField @"sender"
+                    text # forField @"sender" identity
                     staticText " — "
-                    text # forValue # forField @"subject" ) # displayed
+                    text # forField @"subject" identity ) # displayed
             ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headlineSmall text # forValue # forField @"subject"
+                  headlineSmall text # forField @"subject" identity
                   bodyMedium RecordToRecord.do
                     staticText "From: "
-                    text # forValue # forField @"sender"
-                  bodyLarge text # forValue # forField @"body") # tapped
+                    text # forField @"sender" identity
+                  bodyLarge text # forField @"body" identity) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updated (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

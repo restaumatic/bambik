@@ -8,7 +8,7 @@ import Data.Number (fromString)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (constantly, displayed, forField, forValue, foreach, mvu, forProperty, toCase, updated)
+import PUI (constantly, displayed, forField, foreach, mvu, forProperty, toCase, updated)
 import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC2 (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,9 +25,9 @@ calculatorMDC2 =
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
                     staticText "Error" # provided faultyTally # displayed
-                    text # forValue # forField @"entry" # provided currentEntry
+                    text # forField @"entry" identity # provided currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # forProperty @"key" ) # foreach @"key" identity # constantly keyPad ) # toCase @"keyPressed" _.key
+                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # forProperty @"key" identity ) # foreach @"key" identity # constantly keyPad ) # toCase @"keyPressed" _.key
         ) # updated (match { keyPressed: pressKey }) # mvu blankTally
 
 keyStyle :: String -> String

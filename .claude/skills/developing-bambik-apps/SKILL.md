@@ -24,13 +24,13 @@ canonical row, adopted to the business label at the use site:
   complete `×→×` stage on its own, no `RecordToRecord.do` needed for one
   field (slider's `step` is optional)
 - displays adopt with `# projected f` (feed `f` of the whole value —
-  `forValue` is `projected identity`, the verbatim case; a one-field read
+  a one-field read
   of a context-pinned wider row is `# forProperty @"label"`, the label-indexed
   form; at merge-operand/`completed` positions, which must state their row,
-  the closed form is `# forValue # forField @l`. A named projection whose
+  the closed form is `# forField @l identity`. A named projection whose
   body merely reads one field — `questionPrompt { prompt } = prompt` — is a
   smell: use the label-indexed form and delete the function) or
-  `# forValue # forField @l` / `# projected f # forField @l` (read one
+  `# forField @l identity` / `# projected f # forField @l` (read one
   field, verbatim or formatted; `forField` takes the bare-value display
   `projected` produces); a live readout as a pipeline stage is the same
   display made pass-through with `# tapped`: `body2 (text # projected f) # tapped`.

@@ -1,6 +1,6 @@
 module SignupFormMDC2 (signupFormMDC2) where
 
-import Prelude ((#), ($), (<>), (==), (>>>), Unit, not)
+import Prelude (identity, (#), ($), (<>), (==), (>>>), Unit, not)
 
 import Data.Either (Either(..), either)
 import Data.Foldable (elem)
@@ -10,7 +10,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, forValue, mvu, required)
+import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, mvu, required)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
@@ -41,18 +41,18 @@ signupFormMDC2 =
         ( body2 $ staticText "Pick a username to check its availability" ) # provided whenUnnamed # displayed
         ( body2 $ RecordToRecord.do
             staticText "✗ "
-            text # forValue # forField @"username"
+            text # forField @"username" identity
             staticText " is already taken" ) # provided whenTaken # displayed
         ( body2 $ RecordToRecord.do
             staticText "✓ "
-            text # forValue # forField @"username"
+            text # forField @"username" identity
             staticText " is available" ) # provided whenAvailable # displayed
         ( subtitle2 $ RecordToRecord.do
             staticText "⚠ "
-            text # forValue # forField @"problem" ) # provided whenInvalid # displayed
+            text # forField @"problem" identity ) # provided whenInvalid # displayed
         ( subtitle2 $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text # forValue # forField @"username" ) # provided whenReady # displayed
+            text # forField @"username" identity ) # provided whenReady # displayed
         button { label: "Sign up", icon: "person_add" } # toCases register
         VariantToRecord.do
           welcomeToast

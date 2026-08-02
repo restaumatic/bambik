@@ -1,6 +1,6 @@
 module TodoMvcMDC3 (todoMvcMDC3) where
 
-import Prelude ((#), ($), (<<<), (==), Unit, const, not, show)
+import Prelude (identity, (#), ($), (<<<), (==), Unit, const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -21,7 +21,7 @@ todoMvcMDC3 =
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
             button { label: "Add" } # updated (match { clicked: const <<< addTodo })
-          listOf { selected: _.done } visibleEntries (span text # forProperty @"title" # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
+          listOf { selected: _.done } visibleEntries (span text # forProperty @"title" identity # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
           segmentedButton
             [ { value: .all {}, label: "All" }
             , { value: .active {}, label: "Active" }
@@ -29,10 +29,10 @@ todoMvcMDC3 =
             ] # required # asField @"visibility" # completed
           Semigroupoid.do
             bodySmall ( RecordToRecord.do
-                text # projected show # forField @"count"
+                text # forField @"count" show
                 staticText " item left" ) # provided soleItemLeft # displayed
             bodySmall ( RecordToRecord.do
-                text # projected show # forField @"count"
+                text # forField @"count" show
                 staticText " items left" ) # provided severalItemsLeft # displayed
             button { label: "Clear completed" } # updated (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList

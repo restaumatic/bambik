@@ -1,6 +1,6 @@
 module OrderFormMDC3 (orderFormMDC3) where
 
-import Prelude ((#), ($), (<>), (==), Unit, const, discard, pure, show, unit)
+import Prelude (identity, (#), ($), (<>), (==), Unit, const, discard, pure, show, unit)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, asCase, asField, bracketed, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projected, required, silence, tapped, updated, with)
+import PUI (PUI, action, asCase, asField, bracketed, completed, debounced, displayed, field, forCase, forField, looped, onCase, projected, required, silence, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
@@ -27,7 +27,7 @@ orderFormMDC3 =
       RecordToRecord.do
         headlineSmall ( RecordToRecord.do
             staticText "Order "
-            text # forValue # forField @"shortId" )
+            text # forField @"shortId" identity )
         card { caption: "Identifier" } $ RecordToRecord.do
           filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
           filledTextField { floatingLabel: "Unique ID" } # asField @"orderId"
@@ -48,7 +48,7 @@ orderFormMDC3 =
                     filledTextField { floatingLabel: "Address" } # asField @"address"
                     bodyLarge ( RecordToRecord.do
                         staticText "Distance "
-                        text # projected distanceKm # forField @"address"
+                        text # forField @"address" distanceKm
                         staticText " km" )) # provided deliveryPane # updated setAddress) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
@@ -60,34 +60,34 @@ orderFormMDC3 =
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
               bodyLarge ( RecordToRecord.do
                   staticText "Paying by "
-                  text # projected methodText # forField @"method" )) # field @"payment"
+                  text # forField @"method" methodText )) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       bodyLarge ( Semigroupoid.do
           ( RecordToRecord.do
               staticText "Summary: Order "
-              text # forValue # forField @"shortId"
+              text # forField @"shortId" identity
               staticText " (uniquely "
-              text # forValue # forField @"orderId"
+              text # forField @"orderId" identity
               staticText ") for "
-              text # projected customerName # forField @"customer"
+              text # forField @"customer" customerName
               staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
-              text # forValue # forField @"table" ) # provided dineInDetail # displayed
+              text # forField @"table" identity ) # provided dineInDetail # displayed
           ( RecordToRecord.do
               staticText "takeaway at "
-              text # forValue # forField @"time" ) # provided takeawayDetail # displayed
+              text # forField @"time" identity ) # provided takeawayDetail # displayed
           ( RecordToRecord.do
               staticText "delivery to "
-              text # forValue # forField @"address"
+              text # forField @"address" identity
               staticText " ("
-              text # projected distanceKm # forField @"address"
+              text # forField @"address" distanceKm
               staticText " km away)" ) # provided deliveryDetail # displayed
           ( RecordToRecord.do
               staticText ", paid "
-              text # forValue # forField @"paid"
+              text # forField @"paid" identity
               staticText " by "
-              text # projected methodText # forField @"method" ) # field @"payment" # debounced summarySettleTime # tapped )
+              text # forField @"method" methodText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"submit"
           button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput

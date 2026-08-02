@@ -20,7 +20,7 @@ paymentMDC2 =
       card { caption: "Payment" } $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               staticText "Amount due: $"
-              text # projected show # forField @"amount" ) # tapped
+              text # forField @"amount" show ) # tapped
           body2 text # projected statusLine # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # toCases startCharge

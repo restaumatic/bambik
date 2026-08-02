@@ -9,7 +9,7 @@ import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, forField, mvu)
+import PUI (asField, atField, completed, displayed, mvu)
 import PUI.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.MDC3 (card, elevation5, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -37,7 +37,7 @@ markdownPreviewerMDC3 =
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
                     }
-            ) # forField @"source"
+            ) # atField @"source"
         ) # mvu welcomeDocument
 
 welcomeDocument :: { source :: String }

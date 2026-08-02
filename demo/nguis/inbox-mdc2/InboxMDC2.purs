@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, forValue, mvu, onCase, projected, tapped, toCase, updated)
+import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, mvu, onCase, projected, tapped, toCase, updated)
 import PUI.HTML (body, provided, span, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
@@ -29,17 +29,17 @@ inboxMDC2 =
             ( span $ Semigroupoid.do
                 staticText "● " # provided unreadMark # displayed
                 ( RecordToRecord.do
-                    text # forValue # forField @"sender"
+                    text # forField @"sender" identity
                     staticText " — "
-                    text # forValue # forField @"subject" ) # displayed
+                    text # forField @"subject" identity ) # displayed
             ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headline6 text # forValue # forField @"subject"
+                  headline6 text # forField @"subject" identity
                   body2 RecordToRecord.do
                     staticText "From: "
-                    text # forValue # forField @"sender"
-                  body1 text # forValue # forField @"body") # tapped
+                    text # forField @"sender" identity
+                  body1 text # forField @"body" identity) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updated (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

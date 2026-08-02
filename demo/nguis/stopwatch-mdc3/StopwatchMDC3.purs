@@ -1,6 +1,6 @@
 module StopwatchMDC3 (stopwatchMDC3) where
 
-import Prelude ((#), ($), (+), (<), (<>), Unit, const, not, show)
+import Prelude (identity, (#), ($), (+), (<), (<>), Unit, const, not, show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, every, forField, forValue, foreach, mvu, projected, updated)
+import PUI (asCase, completed, displayed, every, forField, foreach, mvu, projected, updated)
 import PUI.HTML (body, li, provided, staticText, text, ul)
 import PUI.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -29,9 +29,9 @@ stopwatchMDC3 =
               button { label: "Reset", icon: "replay" } # asCase @"reset" # provided whenHalted) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
-                   text # forValue # forField @"number"
+                   text # forField @"number" identity
                    staticText " — "
-                   text # forValue # forField @"time" ) # foreach @"number" lapRows ) # displayed
+                   text # forField @"time" identity ) # foreach @"number" lapRows ) # displayed
       ) # mvu zeroedStopwatch
 
 beginTiming :: { running :: Boolean }

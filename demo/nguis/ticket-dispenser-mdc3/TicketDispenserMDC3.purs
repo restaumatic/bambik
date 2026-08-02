@@ -23,12 +23,12 @@ ticketDispenserMDC3 =
               staticText "—" # provided beforeFirstTicket # displayed
               ( RecordToRecord.do
                   staticText "#"
-                  text # projected show # forField @"serving" ) # provided afterFirstTicket # displayed )
+                  text # forField @"serving" show ) # provided afterFirstTicket # displayed )
           bodyMedium ( Semigroupoid.do
               staticText "Press the button to draw the first ticket." # provided beforeFirstTicket # displayed
               ( RecordToRecord.do
                   staticText "Now serving ticket "
-                  text # projected show # forField @"serving"
+                  text # forField @"serving" show
                   staticText "." ) # provided afterFirstTicket # displayed )
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"

@@ -1,12 +1,12 @@
 module DeparturesMDC2 (departuresMDC2) where
 
-import Prelude ((#), ($), (+), Unit, div, mod)
+import Prelude (identity, (#), ($), (+), Unit, div, mod)
 
 import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (dispatched, displayed, every, forField, forValue, mvu, projected)
+import PUI (dispatched, displayed, every, forField, mvu, projected)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,9 +20,9 @@ departuresMDC2 =
           ( Semigroupoid.do
               ( list $
                   ( ( listItem $ RecordToRecord.do
-                        text # forValue # forField @"code"
+                        text # forField @"code" identity
                         staticText " — "
-                        text # forValue # forField @"status"
+                        text # forField @"status" identity
                     ) # displayed
                   ) # dispatched arrival
               )

@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), (>>>), Unit, map)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (forField, forValue, foreach, forProperty, with)
+import PUI (atField, forField, forProperty, foreach, with)
 import PUI.HTML (a, article, blockquote, body, cl, div, footer, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
 import PUI.SVG as SVG
 
@@ -22,18 +22,18 @@ restaurantMenu =
       hr
     div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
-          h2 text # forValue # forField @"name"
+          h2 text # forField @"name" identity
           ul >>> cl "dishes" $
             ( li >>> cl "dish" $ RecordToRecord.do
                 div >>> cl "dish-head" $ RecordToRecord.do
-                  span >>> cl "dish-name" $ text # forValue # forField @"name"
+                  span >>> cl "dish-name" $ text # forField @"name" identity
                   span >>> cl "dish-dots" $ pempty
                   span >>> cl "dish-price" $ RecordToRecord.do
                     staticText "€"
-                    text # forValue # forField @"price"
-                p >>> cl "dish-desc" $ text # forValue # forField @"description"
+                    text # forField @"price" identity
+                p >>> cl "dish-desc" $ text # forField @"description" identity
                 span >>> cl "tags" $
-                  ( span >>> cl "tag" $ text # forProperty @"tag" ) # foreach @"tag" (map { tag: _ }) # forField @"tags") # foreach @"name" identity # forField @"dishes") # foreach @"name" identity # forField @"courses"
+                  ( span >>> cl "tag" $ text # forProperty @"tag" identity ) # foreach @"tag" (map { tag: _ }) # atField @"tags") # foreach @"name" identity # atField @"dishes") # foreach @"name" identity # atField @"courses"
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"

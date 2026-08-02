@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, foreach, forField, forValue, mvu, projected, toCase, updated)
+import PUI (asField, completed, displayed, foreach, forField, mvu, projected, toCase, updated)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
 import PUI.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -29,16 +29,16 @@ movieBrowserMDC3 =
               filterChip { label: "Cult" } # asField @"cult"
               filterChip { label: "Oscar" } # asField @"oscar") # completed
           elevation1 ( titleMedium $ RecordToRecord.do
-              text # projected show # forField @"count"
+              text # forField @"count" show
               staticText " favorite" ) # provided soleFavorite # displayed
           elevation1 ( titleMedium $ RecordToRecord.do
-              text # projected show # forField @"count"
+              text # forField @"count" show
               staticText " favorites" ) # provided severalFavorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
-                    span text # forValue # forField @"title"
-                    span text # projected show # forField @"year"
+                    span text # forField @"title" identity
+                    span text # forField @"year" show
                     span ( RecordToRecord.do
                         staticText "★ "
                         text # projected ratingText )
