@@ -300,7 +300,11 @@ destined for a specific widget.
 
 Conditional visibility is always a **`Maybe`-valued projection** plus
 `provided` — never an in-UI predicate. A projection that *derives*
-visibility is named, so the rule lives in testable business code. When
+visibility is named, so the rule lives in testable business code — and
+**mutually exclusive derived states classify once** into a
+variant-returning business function, each pane adopting its case
+(`# atCase @"taken" usernameStatus`): exclusivity holds by construction
+where sibling `Maybe` projections could accidentally overlap. When
 the model field itself is the `Maybe` **and the context pins the row**
 (a mechanism's feed argument), presence is the whole rule and the bare
 accessor says so, and a payload-carrying variant field gates its panes

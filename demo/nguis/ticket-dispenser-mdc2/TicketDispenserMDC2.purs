@@ -20,16 +20,16 @@ ticketDispenserMDC2 =
     elevation20 $
       card { caption: "Ticket Dispenser" } $ ( Semigroupoid.do
           headline3 ( Semigroupoid.do
-              (staticText "—" # atCase @"waiting" # atField @"display") # displayed
+              (staticText "—" # atCase @"waiting" identity # atField @"display") # displayed
               ( ( RecordToRecord.do
                   staticText "#"
-                  text # forField @"number" show ) # atCase @"serving" # atField @"display" ) # displayed )
+                  text # forField @"number" show ) # atCase @"serving" identity # atField @"display" ) # displayed )
           body2 ( Semigroupoid.do
-              (staticText "Press the button to draw the first ticket." # atCase @"waiting" # atField @"display") # displayed
+              (staticText "Press the button to draw the first ticket." # atCase @"waiting" identity # atField @"display") # displayed
               ( ( RecordToRecord.do
                   staticText "Now serving ticket "
                   text # forField @"number" show
-                  staticText "." ) # atCase @"serving" # atField @"display" ) # displayed )
+                  staticText "." ) # atCase @"serving" identity # atField @"display" ) # displayed )
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"
               (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const

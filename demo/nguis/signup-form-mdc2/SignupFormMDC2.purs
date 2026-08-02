@@ -11,7 +11,7 @@ import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, mvu, required)
-import PUI.HTML (body, provided, staticText, text)
+import PUI.HTML (atCase, body, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -38,21 +38,21 @@ signupFormMDC2 =
             filledTextField { floatingLabel: "Email" } # asField @"email"
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox (staticText "I accept the terms of service") # asField @"terms") # mvu newApplicant
-        ( body2 $ staticText "Pick a username to check its availability" ) # provided whenUnnamed # displayed
+        ( body2 $ staticText "Pick a username to check its availability" ) # atCase @"unnamed" usernameStatus # displayed
         ( body2 $ RecordToRecord.do
             staticText "✗ "
             text # forField @"username" identity
-            staticText " is already taken" ) # provided whenTaken # displayed
+            staticText " is already taken" ) # atCase @"taken" usernameStatus # displayed
         ( body2 $ RecordToRecord.do
             staticText "✓ "
             text # forField @"username" identity
-            staticText " is available" ) # provided whenAvailable # displayed
+            staticText " is available" ) # atCase @"available" usernameStatus # displayed
         ( subtitle2 $ RecordToRecord.do
             staticText "⚠ "
-            text # forField @"problem" identity ) # provided whenInvalid # displayed
+            text # forField @"problem" identity ) # atCase @"invalid" validation # displayed
         ( subtitle2 $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text # forField @"username" identity ) # provided whenReady # displayed
+            text # forField @"username" identity ) # atCase @"ready" validation # displayed
         button { label: "Sign up", icon: "person_add" } # toCases register
         VariantToRecord.do
           welcomeToast
@@ -79,31 +79,19 @@ validate applicant@{ email, terms } =
     else if isJust terms == false then Left "accept the terms of service"
     else Right username
 
-whenInvalid :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Maybe { problem :: String }
-whenInvalid = validate >>> either (\problem -> Just { problem }) (\_ -> Nothing)
-
-whenReady :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Maybe { username :: String }
-whenReady = validate >>> either (\_ -> Nothing) (\username -> Just { username })
+validation :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { username :: String } ]
+validation = validate >>> either (\problem -> .invalid { problem }) (\username -> .ready { username })
 
 namedUsername :: { username :: String } -> Maybe String
 namedUsername { username } = case trim username of
   "" -> Nothing
   name -> Just name
 
-whenUnnamed :: { username :: String } -> Maybe {}
-whenUnnamed { username } = case namedUsername { username } of
-  Nothing -> Just {}
-  Just _ -> Nothing
-
-whenTaken :: { username :: String } -> Maybe { username :: String }
-whenTaken { username } = case namedUsername { username } of
-  Just name | usernameTaken name -> Just { username: name }
-  _ -> Nothing
-
-whenAvailable :: { username :: String } -> Maybe { username :: String }
-whenAvailable { username } = case namedUsername { username } of
-  Just name | not (usernameTaken name) -> Just { username: name }
-  _ -> Nothing
+usernameStatus :: { username :: String } -> [ unnamed :: {}, taken :: { username :: String }, available :: { username :: String } ]
+usernameStatus { username } = case namedUsername { username } of
+  Nothing -> .unnamed {}
+  Just name | usernameTaken name -> .taken { username: name }
+  Just name -> .available { username: name }
 
 usernameTaken :: String -> Boolean
 usernameTaken username = username `elem` takenUsernames

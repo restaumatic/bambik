@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, completed, displayed, every, forField, foreach, mvu, projected, updated)
-import PUI.HTML (body, li, provided, staticText, text, ul)
+import PUI.HTML (atCase, body, li, staticText, text, ul)
 import PUI.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -22,11 +22,11 @@ stopwatchMDC3 =
           displaySmall text # projected readout # completed
           every tickPeriod tick
           ( RecordToVariant.do
-              button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided whenHalted
-              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided whenRunning) # updated (match { start: const (const beginTiming), stop: const (const haltTiming) })
+              button { label: "Start", icon: "play_arrow" } # asCase @"start" # atCase @"halted" stopwatchPhase
+              button { label: "Stop", icon: "stop" } # asCase @"stop" # atCase @"timing" stopwatchPhase) # updated (match { start: const (const beginTiming), stop: const (const haltTiming) })
           ( RecordToVariant.do
-              button { label: "Lap", icon: "flag" } # asCase @"lap" # provided whenRunning
-              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided whenHalted) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
+              button { label: "Lap", icon: "flag" } # asCase @"lap" # atCase @"timing" stopwatchPhase
+              button { label: "Reset", icon: "replay" } # asCase @"reset" # atCase @"halted" stopwatchPhase) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
                    text # forField @"number" identity
@@ -55,11 +55,8 @@ tick sw@{ running, elapsedTenths } =
   if running then Just (sw { elapsedTenths = elapsedTenths + 1 })
   else Nothing
 
-whenHalted :: { running :: Boolean } -> Maybe {}
-whenHalted { running } = if not running then Just {} else Nothing
-
-whenRunning :: { running :: Boolean } -> Maybe {}
-whenRunning { running } = if running then Just {} else Nothing
+stopwatchPhase :: { running :: Boolean } -> [ halted :: {}, timing :: {} ]
+stopwatchPhase { running } = if running then .timing {} else .halted {}
 
 readout :: { elapsedTenths :: Int } -> String
 readout { elapsedTenths } = formatTime elapsedTenths
