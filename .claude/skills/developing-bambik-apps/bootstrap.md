@@ -206,6 +206,35 @@ Then bump the URL in bambik's `package.json` and in this skill's
 records the new integrity hash. Never replace an asset in place — the
 pinned hash would reject it, correctly.
 
+## Maintainer note (cutting a bambik release)
+
+A bambik release is a tag on `restaumatic/bambik` plus a release page, and
+cutting one is four steps:
+
+1. Tag the verified commit (`git tag -a v0.2.0`) and push tag and branch.
+2. Bump `bambik.version` in this skill's `templates/packages.dhall` — and
+   its `dependencies` list if the library gained any — **before** tagging,
+   so the tagged tree scaffolds against its own tag.
+3. Create the release page from the tag, restating the two toolchain pins
+   (a consumer has no way to guess them) and the prototype status.
+4. Attach this skill as an asset, built from the tagged tree so it can
+   never drift from the library it documents:
+
+   ```sh
+   mkdir -p /tmp/skillpack && cd /tmp/skillpack
+   git -C <repo> archive v0.2.0 .claude/skills/developing-bambik-apps \
+     | tar x --strip-components=2
+   tar czf developing-bambik-apps-v0.2.0.tar.gz developing-bambik-apps
+   gh release upload v0.2.0 developing-bambik-apps-v0.2.0.tar.gz \
+     --repo restaumatic/bambik
+   ```
+
+   The asset is a snapshot, so it needs re-attaching per tag — that is its
+   one cost, bought for a portable one-command install (`tar xz -C
+   .claude/skills`, no GNU-only flags) and a visible place to find it.
+
+## Maintainer note (the variant fork)
+
 The variant library is the same story one repo over: the patch lives on
 branch `prim-variant` of `erykciepiela/purescript-variant`, tagged
 `v8.0.0-prim-variant.1`, and `master` is left at upstream so the fork stays

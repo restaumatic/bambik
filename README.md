@@ -13,6 +13,28 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 [Variant syntax sugar — the forked PureScript compiler this repo builds on](/doc/variant-sugar.md)
 
+# Using it in your own application
+
+bambik is consumed as a spago git package pinned to a release tag — no clone,
+nothing vendored. The [v0.1.0 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.0)
+gives the `packages.dhall` entry and the two toolchain pins it requires (the
+variant-sugar compiler and the matching `purescript-variant` fork; stock `purs`
+cannot build bambik).
+
+That release also ships **`developing-bambik-apps`**, the authoring skill: how to
+bootstrap a project, the vocabulary and its four row directions, separation of
+concerns, the code-style contract, and the build/verify workflow — with a
+scaffold that produces a working application.
+
+```bash
+mkdir -p .claude/skills
+curl -sL https://github.com/restaumatic/bambik/releases/download/v0.1.0/developing-bambik-apps-v0.1.0.tar.gz | tar xz -C .claude/skills
+```
+
+Its source of truth is [.claude/skills/developing-bambik-apps/](/.claude/skills/developing-bambik-apps/);
+[bootstrap.md](/.claude/skills/developing-bambik-apps/bootstrap.md) is readable on
+its own if you would rather follow the procedure by hand.
+
 # Demo
 
 In order to run the demo:
