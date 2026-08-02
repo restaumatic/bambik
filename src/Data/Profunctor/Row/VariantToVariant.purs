@@ -17,9 +17,9 @@
 -- | `+ → +` transpose — the closed-singleton case wrap
 -- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
 -- | subsumption step: it is already vocabulary-expressible as
--- | `w # onCase @l # toCase @l' f`, two adopters apps have (weather's
--- | about-dialog and cashbox's confirmation dialogs are that composition
--- | in the flesh). `focusRecord`'s transpose, `focusVariant`, once sat in
+-- | `w # onCase @l # toCase @l' f`, two adopters apps have (cashbox's
+-- | confirmation dialogs are that composition in the flesh, twice, in
+-- | merge position). `focusRecord`'s transpose, `focusVariant`, once sat in
 -- | this note as failing reachability; cashbox reached for it (money
 -- | events detouring through confirmation dialogs while the audit event
 -- | passes) and it is admitted below.

@@ -113,8 +113,8 @@ what happened; `match { value: … }` would not.
   closed-singleton wrap in merge position (below).
 * **Deliberately unnamed** (recorded in `VariantToVariant`'s header):
   `field`'s `+ → +` transpose is `onCase @l >>> toCase @l' f` (fails
-  subsumption) — demo-covered by weather's about-dialog and cashbox's two
-  confirmation dialogs, which are exactly that composition.
+  subsumption) — demo-covered by cashbox's two confirmation dialogs,
+  which are exactly that composition, in merge position.
 
 ## Demo coverage of the twins
 

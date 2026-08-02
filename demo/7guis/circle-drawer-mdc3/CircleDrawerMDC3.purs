@@ -21,14 +21,13 @@ circleDrawerMDC3 =
     elevation5 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
           sliderLive { label: "" } # asField @"diameter" # provided selectedDiameter # updated adjustDiameter
-          ( RecordToVariant.do
-              svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
-                ( onClickedXY
-                    ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
-                          >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # constantly {}) # foreach @"key" canvasCircles) # toCase @"clicked" identity)
-              cardActions $ RecordToVariant.do
-                button { label: "Undo", icon: "undo" } # asCase @"undo"
-                button { label: "Redo", icon: "redo" } # asCase @"redo") # updated (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
+          ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
+              ( onClickedXY
+                  ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
+                        >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # constantly {}) # foreach @"key" canvasCircles) # toCase @"clicked" identity)) # updated (match { clicked: selectOrAddCircle })
+          ( cardActions $ RecordToVariant.do
+              button { label: "Undo", icon: "undo" } # asCase @"undo"
+              button { label: "Redo", icon: "redo" } # asCase @"redo") # updated (match { undo: const <<< undo, redo: const <<< redo })
       ) # mvu emptyCanvas
 
 canvasCircles
@@ -43,13 +42,13 @@ selectOrAddCircle { x, y } m@{ circles, diameter, undoStack, redoStack } = case 
     let stacks = pushUndo { circles, undoStack, redoStack }
     in m { circles = snoc circles { x, y, r: 20.0 }, selected = Nothing, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
 
-undo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
+undo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 undo m@{ undoStack, redoStack, circles } = case unsnoc undoStack of
   Just { init: rest, last: prev } ->
     m { circles = prev, undoStack = rest, redoStack = snoc redoStack circles, selected = Nothing, adjusting = false }
   Nothing -> m
 
-redo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, diameter :: Number, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
+redo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: Maybe Int, adjusting :: Boolean, undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 redo m@{ redoStack, undoStack, circles } = case unsnoc redoStack of
   Just { init: rest, last: next } ->
     m { circles = next, redoStack = rest, undoStack = snoc undoStack circles, selected = Nothing, adjusting = false }

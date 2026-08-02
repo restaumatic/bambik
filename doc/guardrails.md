@@ -441,6 +441,37 @@ and the currying is the mechanism's signature, not the function's
 choice. Scalar parameters (a key, an operator symbol) stay positional;
 the rule is about records, whose whole point is named fields.
 
+### A13. A handler carries no field it does not touch.
+
+Per function, A2 sharpened: a handler's row is **exactly** its
+reads∪writes — a field that only rides through
+(`recordAudit :: { balance, audits } -> …` touching only `audits`) is a
+smell. Per match: one `match` is one row, the union of its branches'
+footprints, and every field of that row must be read or written by
+*some* branch. When a branch would carry fields only its siblings
+touch, pick by separability:
+
+  * **separable emitters** → group into stages by patch row
+    (stopwatch's button stages; circle-drawer's undo/redo buttons split
+    from the canvas click, so `undo`/`redo` shed the `diameter` only
+    `selectOrAddCircle` reads);
+  * **inseparable branches** (two outcomes of one dialog — inbox's
+    `kept`/`emptied`; one backend stream — crud's
+    `created`/`updated`/`deleted`) → the shared row stands: the carried
+    field is a sibling's write, not a pass-through;
+  * **disjoint footprints** → the events or the model want redesign
+    until the branches genuinely share (cashbox's audit became a
+    deposit, making every branch exactly
+    `{ amount } -> { balance } -> { balance }`).
+
+An **identity handler** is the smell in its purest form — the event was
+never model data: weather's about-dialog folded its confirm through
+`resumeDashboard woken = woken` (silently re-writing a stale snapshot);
+the honest wiring is `# displayed` — a display interaction, not an
+`updated` fold. Sub-fields of one business datum are exempt: a bounded
+quantity `{ current, min, max, step }` rides whole (A8) even where a
+handler replaces only `current`.
+
 Any proposed change — combinator, class, component, demo idiom — passes
 these gates in order:
 

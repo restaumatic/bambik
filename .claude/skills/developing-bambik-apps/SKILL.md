@@ -393,6 +393,17 @@ honor it, and changes to either side keep the two in sync:
   mechanism-dictated handler shape `payload -> model -> model`
   (`updated`/`folding` dispatch) is the exemption — those two records
   cannot merge.
+- **A handler carries no field it does not touch** (guardrail A13). A
+  handler's row is exactly its reads∪writes, and every field of a
+  `match`'s shared row is touched by some branch. Escapes, by
+  separability: separable emitters group into stages by patch row
+  (circle-drawer's undo/redo buttons split from the canvas click);
+  inseparable branches (one dialog's outcomes, one backend stream) keep
+  the shared row — the carried field is a sibling's write; disjoint
+  footprints mean the events or model want redesign (cashbox's deposit).
+  An identity handler means the event was never model data — a
+  display interaction ends `# displayed`, not in an `updated` fold
+  (weather's about-dialog). Bounded quantities ride whole (A8).
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line), and it
   rides at the end of the widget's last content line — close the paren

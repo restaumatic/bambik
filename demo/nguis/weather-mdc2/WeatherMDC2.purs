@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, mvu, forProperty, onCase, projected, tapped, toCase, updated)
+import PUI (action, displayed, mvu, forProperty, onCase, projected, tapped, toCase, updated)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -45,7 +45,7 @@ weatherMDC2 =
                 ( body1 ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text # projected servedReportsText
-                    staticText "." ) # tapped) # onCase @"clicked" # toCase @"dashboardResumed" identity) # updated (match { dashboardResumed: const <<< resumeDashboard })
+                    staticText "." )) # onCase @"clicked") # displayed
       ) # mvu warsawBulletin
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
@@ -80,9 +80,6 @@ fetchReport { city, sample } = do
 
 rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 rememberReport report { servedReports } = { report, servedReports: servedReports + 1 }
-
-resumeDashboard :: { servedReports :: Int } -> { servedReports :: Int }
-resumeDashboard woken = woken
 
 forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
 forecastRequests { servedReports, report } = climateTable <#> \r ->
