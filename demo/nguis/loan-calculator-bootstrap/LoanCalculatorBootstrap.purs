@@ -19,7 +19,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $
-    card { caption: "Loan calculator" } Semigroupoid.do
+    card { caption: "Loan calculator" } $ Semigroupoid.do
       ( RecordToRecord.do
           textField { label: "Applicant" } # asField @"applicant"
           sliderLive { label: "Amount (€)" } # asField @"amount"
@@ -40,8 +40,7 @@ loanCalculatorBootstrap =
               text # projected rateText )
           listGroupItem ( RecordToRecord.do
               staticText "Total interest "
-              text # projected totalInterestText )
-      ) # tapped
+              text # projected totalInterestText ) ) # tapped
       ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
           progress ) # projected interestShare # tapped

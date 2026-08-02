@@ -78,6 +78,7 @@ module PUI.Web.MDC3
   , iconToggle
   , imageList
   , imageListItem
+  , imagePane
   , indeterminateCircularProgress
   , indeterminateLinearProgress
   , labelLarge
@@ -123,7 +124,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty, projected)
+import Data.Profunctor.Row.RecordToRecord (field, forField, pempty, projected)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -132,7 +133,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly, foreach)
-import PUI.Web.HTML (aside, cl, clWhen, clicked, div, el, h1, h2, h3, init, label, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, (:=))
+import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
@@ -1249,6 +1250,23 @@ imageListItem config = wrap do
       <> "<img class=\"md3-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.label <> "\">"
       <> "<span class=\"md3-image-list__label\">" <> config.label <> "</span>"
       <> "</li>"
+
+-- | One picture in an `imageList`, **fed through the channel**: the
+-- | canonical `{ src, label }` row arrives as data, so a gallery is the
+-- | retaining `foreach` over the pictures rather than a wholesale rebuild —
+-- | `imagePane # foreach @"src" albumPhotos`, each item built once and its
+-- | source and caption updated in place. `imageListItem`'s sibling, for the
+-- | collection case; `imageListItem` stays the closure-known static.
+imagePane :: PUI Web { src :: String, label :: String } {}
+imagePane = wrap do
+  liftEffect $ ensureStyle "md3-image-list" imageListCss
+  unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
+    imageFace
+    span >>> cl "md3-image-list__label" $ text # forField @"label" identity
+
+imageFace :: PUI Web { src :: String, label :: String } {}
+imageFace =
+  img >>> cl "md3-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.label $ constantly {} pempty
 
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the

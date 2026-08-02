@@ -18,8 +18,7 @@ calculatorMDC3 =
   body $
     elevation5 $
       card { caption: "Calculator" } $
-        ( div >>> "style" := "display: inline-block;" $
-            ( div >>> "style" := "width: 296px;" $ Semigroupoid.do
+        ( ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
                 div >>> "style"
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "

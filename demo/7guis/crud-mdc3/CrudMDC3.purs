@@ -1,6 +1,6 @@
 module CrudMDC3 (crudMDC3) where
 
-import Prelude (identity, (#), ($), (<$>), (<<<), (==), Unit, bind, const, discard, pure, unit)
+import Prelude (identity, (#), ($), (<$>), (<<<), (==), Unit, bind, const, discard, pure)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -44,7 +44,7 @@ crudMDC3 = do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
                     indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
-      ) # with unit
+      ) # with {}
 
 pick :: Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String }
 pick i m@{ people } = case index people i of
@@ -70,7 +70,7 @@ refreshPeople people m = m { people = people }
 peopleDeleted :: Array { name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 peopleDeleted people = { people, selected: Nothing }
 
-loadPeopleCatalogue :: Ref (Array { name :: String, surname :: String }) -> Unit -> Aff { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
+loadPeopleCatalogue :: Ref (Array { name :: String, surname :: String }) -> {} -> Aff { prefix :: String, name :: String, surname :: String, people :: Array { name :: String, surname :: String }, selected :: Maybe Int }
 loadPeopleCatalogue catalogue _ = do
   people <- readPeople catalogue
   pure { prefix: "", name: "", surname: "", people, selected: Nothing }

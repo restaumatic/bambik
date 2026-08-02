@@ -11,7 +11,7 @@ import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import PUI (PUI, action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, required, updated)
-import PUI.Web.HTML (body, provided, staticText, text)
+import PUI.Web.HTML (atCase, body, provided, staticText, text)
 import PUI.Web (Web)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,7 +20,7 @@ flightBookerMDC3 :: Effect Unit
 flightBookerMDC3 =
   body $
     elevation5 $
-      card { caption: "Book Flight" } Semigroupoid.do
+      card { caption: "Book Flight" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
               select { floatingLabel: "Flight type" }
@@ -33,16 +33,15 @@ flightBookerMDC3 =
       ( Semigroupoid.do
           bodyLarge ( RecordToRecord.do
               staticText "⚠ "
-              text # forField @"problem" identity ) # provided bookingProblem # displayed
+              text # forField @"problem" identity ) # atCase @"problem" bookingState # displayed
           bodyLarge ( RecordToRecord.do
               staticText "A one-way flight on "
-              text # forField @"date" identity ) # provided oneWayItinerary # displayed
+              text # forField @"date" identity ) # atCase @"oneWay" bookingState # displayed
           bodyLarge ( RecordToRecord.do
               staticText "A return flight: out "
               text # forField @"out" identity
               staticText ", back "
-              text # forField @"back" identity ) # provided returnItinerary # displayed
-      ) # debounced itinerarySettleTime
+              text # forField @"back" identity ) # atCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
       bookingToast
@@ -72,16 +71,12 @@ parse { flightType, start: startInput, return: returnInput } = case parseDate st
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-bookingProblem :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Maybe { problem :: String }
-bookingProblem = parse >>> either (\problem -> Just { problem }) (\_ -> Nothing)
-
-oneWayItinerary :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Maybe { date :: String }
-oneWayItinerary = parse >>> either (\_ -> Nothing)
-  (match { oneWayOn: \out -> Just { date: formatDate out }, returnBetween: \_ -> Nothing })
-
-returnItinerary :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Maybe { out :: String, back :: String }
-returnItinerary = parse >>> either (\_ -> Nothing)
-  (match { oneWayOn: \_ -> Nothing, returnBetween: \r -> Just { out: formatDate r.out, back: formatDate r.back } })
+bookingState :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> [ problem :: { problem :: String }, oneWay :: { date :: String }, return :: { out :: String, back :: String } ]
+bookingState = parse >>> either (\problem -> .problem { problem })
+  (match
+    { oneWayOn: \out -> .oneWay { date: formatDate out }
+    , returnBetween: \r -> .return { out: formatDate r.out, back: formatDate r.back }
+    })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match

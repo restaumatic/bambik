@@ -47,6 +47,5 @@ nextTicket (Tuple _ { next }) = { display: .serving { number: next }, next: next
 firstTicket :: { next :: Int }
 firstTicket = { next: 1 }
 
-
 emptyQueue :: { display :: [ waiting :: {}, serving :: { number :: Int } ] }
 emptyQueue = { display: .waiting {} }

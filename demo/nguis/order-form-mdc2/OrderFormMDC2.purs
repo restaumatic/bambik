@@ -1,6 +1,6 @@
 module OrderFormMDC2 (orderFormMDC2) where
 
-import Prelude (identity, (#), ($), (<>), (==), Unit, const, discard, pure, show, unit)
+import Prelude (identity, (#), ($), (<>), (==), Unit, const, discard, pure, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -102,7 +102,7 @@ orderFormMDC2 =
         rejectionToast
         receiptToast
       silence
-  ) # with unit
+  ) # with {}
 
 distanceKm :: String -> String
 distanceKm address = show (length address)
@@ -188,7 +188,7 @@ setTime { time } = { time }
 setAddress :: { address :: String } -> { address :: String }
 setAddress { address } = { address }
 
-loadOrder :: Unit -> Aff
+loadOrder :: {} -> Aff
   { shortId :: String
   , orderId :: String
   , customer ::

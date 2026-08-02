@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped)
+import PUI (PUI, asCase, asField, forCase, forField, mvu, projected, required, tapped)
 import PUI.Web.HTML (body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import PUI.Web (Web)
@@ -17,7 +17,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 productReviewShoelace :: Effect Unit
 productReviewShoelace =
   body $
-    card { caption: "Review: Astra Moka Espresso Machine" } Semigroupoid.do
+    card { caption: "Review: Astra Moka Espresso Machine" } $ Semigroupoid.do
       ( RecordToRecord.do
           rating { label: "Overall rating" } # asField @"stars"
           textField { label: "Headline" } # asField @"headline"
@@ -33,7 +33,11 @@ productReviewShoelace =
       ) # mvu freshImpression
       p ( RecordToRecord.do
           staticText "Preview: "
-          text # projected previewLine ) # tapped
+          text # forField @"stars" starGlyphs
+          text # forField @"headline" headlineQuote
+          staticText " · owned "
+          text # forField @"owned" ownedText
+          text # projected recommendNote ) # tapped
       button { label: "Submit review" } # asCase @"submitted"
       submittedToast
 
@@ -59,15 +63,11 @@ forReviewer { nickname } = case trim nickname of
   "" -> ""
   name -> ", " <> name
 
-previewLine :: { stars :: { current :: Number, max :: Int }, headline :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean } -> String
-previewLine { stars, headline, owned, recommend } =
-  starGlyphs stars
-    <> headlineQuote { headline }
-    <> " · owned " <> ownedText owned
-    <> (if recommend then " · would recommend" else "")
+recommendNote :: { recommend :: Boolean } -> String
+recommendNote { recommend } = if recommend then " · would recommend" else ""
 
-headlineQuote :: { headline :: String } -> String
-headlineQuote { headline } = case trim headline of
+headlineQuote :: String -> String
+headlineQuote headline = case trim headline of
   "" -> ""
   quote -> " “" <> quote <> "”"
 

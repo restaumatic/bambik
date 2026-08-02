@@ -5,11 +5,10 @@ import Prelude ((#), ($), (<>), (<<<), (==), (>>>), Unit, const, max, min, show)
 import Data.Array (find)
 import Data.Int (hexadecimal, round, toStringAs)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.String (length, toUpper)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, constantly, foreach, mvu, projected, tapped, toCase, updated)
+import PUI (asField, completed, constantly, foreach, mvu, pempty, projected, tapped, toCase, updated)
 import PUI.Web.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,7 +27,7 @@ colorMixerMDC3 =
           sliderLive { label: "Red" } # asField @"red" # completed
           sliderLive { label: "Green" } # asField @"green" # completed
           sliderLive { label: "Blue" } # asField @"blue" # completed
-          ( div >>> "style" := "margin: 10px 0;" $ Semigroupoid.do
+          ( div $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ pempty # constantly {}
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" (\p -> chipStyle { mix: p.mix }) $ pempty # constantly {} ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
@@ -55,7 +54,6 @@ mix red green blue = { red: clampChannel red, green: clampChannel green, blue: c
 
 mixOf :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: Number, green :: Number, blue :: Number }
 mixOf { red, green, blue } = { red: red.current, green: green.current, blue: blue.current }
-
 
 hexText :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
 hexText = hex <<< mixOf

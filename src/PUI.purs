@@ -90,7 +90,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, atField, completed, field, focusRecord, forField, forProperty, projected, required, tapped) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, completed, field, focusRecord, forField, forProperty, pempty, projected, required, tapped) as Adopters
 import Data.Profunctor.Row.RecordToVariant (asCase, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked

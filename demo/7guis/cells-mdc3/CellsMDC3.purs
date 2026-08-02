@@ -30,7 +30,7 @@ cellsMDC3 =
                   staticText "Cell "
                   text # projected selectedName )
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # settled commit
-          ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
+          ( div >>> "style" := "overflow: auto; max-height: 420px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
                   ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # forProperty @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
       ) # mvu orderSheet
@@ -64,7 +64,7 @@ cellStyle { header, sel }
       <> (if sel then " background: #cde;" else "")
 
 selectCell :: String -> { cells :: Object String, selected :: Maybe String, formula :: String } -> { cells :: Object String, selected :: Maybe String, formula :: String }
-selectCell "" m = m -- header cells carry an empty key; clicking one selects nothing
+selectCell "" m = m
 selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
 
 commit :: { cells :: Object String, selected :: Maybe String, formula :: String } -> { cells :: Object String, selected :: Maybe String, formula :: String }

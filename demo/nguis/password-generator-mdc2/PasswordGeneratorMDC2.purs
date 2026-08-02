@@ -33,7 +33,7 @@ passwordGeneratorMDC2 =
           body2 ( RecordToRecord.do
               staticText "Strength: "
               text # projected strengthText ) # tapped
-          div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
+          div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
             text # forField @"password" identity # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"generate"

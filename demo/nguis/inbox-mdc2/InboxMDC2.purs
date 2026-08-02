@@ -31,8 +31,7 @@ inboxMDC2 =
                 ( RecordToRecord.do
                     text # forField @"sender" identity
                     staticText " — "
-                    text # forField @"subject" identity ) # displayed
-            ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text # forField @"subject" identity ) # displayed ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headline6 text # forField @"subject" identity
@@ -49,7 +48,7 @@ inboxMDC2 =
                 inboxZeroBanner # tapped # onCase @"emptied" # toCase @"emptied" identity
                 identity # onCase @"kept" # toCase @"kept" identity) # updated (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
           fab { icon: "edit", label: "Compose" } # asCase @"compose" # updated (match { compose: const <<< composeMessage })
-          ( menu { label: "Sort" } RecordToVariant.do
+          ( menu { label: "Sort" } $ RecordToVariant.do
               menuItem { label: "By sender" } # asCase @"bySender"
               menuItem { label: "By subject" } # asCase @"bySubject"
               menuItem { label: "Unread first" } # asCase @"unreadFirst") # updated (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
@@ -73,7 +72,7 @@ unreadCountText { messages } = show (length (filter (\g -> not g.read) messages)
 messageCountText :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> String
 messageCountText { messages } = show (length messages)
 
-mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int } -> Array { id :: Int, sender :: String, subject :: String, read :: Boolean, attention :: Boolean }
+mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> Array { id :: Int, sender :: String, subject :: String, read :: Boolean, attention :: Boolean }
 mailboxRows { messages, opened } = messages # map \g ->
   { id: g.id
   , sender: g.sender
@@ -88,17 +87,17 @@ unreadMark { read } = if read then Nothing else Just {}
 openMessage :: Int -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int }
 openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g { read = true } else g) messages, opened = Just id }
 
-openedMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int } -> Maybe { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }
+openedMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> Maybe { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }
 openedMessage { messages, opened } = find (\g -> Just g.id == opened) messages
 
 lastMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> Boolean
 lastMessage { messages } = length messages == 1
 
-requestDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
-requestDelete m@{ messages } = if lastMessage { messages } then m { deletion = .confirming {} } else deleteOpened m
-
 confirmingDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> Maybe { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
 confirmingDelete m = match { confirming: \_ -> Just m, silent: \_ -> Nothing } m.deletion
+
+requestDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
+requestDelete m@{ messages } = if lastMessage { messages } then m { deletion = .confirming {} } else deleteOpened m
 
 deleteOpened :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
 deleteOpened m@{ messages, opened } = m { messages = filter (\g -> Just g.id /= opened) messages, opened = Nothing, deletion = .silent {} }

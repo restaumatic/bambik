@@ -14,10 +14,9 @@ import Data.Int (round, toNumber)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe)
 import Data.Number (max)
-import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import PUI (PUI, atField, constantly, displayed, forField, foreach, projected)
+import PUI (PUI, atField, constantly, displayed, foreach, forField, pempty, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -55,10 +54,9 @@ leaderboard config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     list ( ( listItem $ RecordToRecord.do
-               text # forField @"name" identity
-               staticText " — "
-               text # forField @"score" identity
-           ) # foreach @"name" identity ) # atField @"value" # displayed
+        text # forField @"name" identity
+        staticText " — "
+        text # forField @"score" identity ) # foreach @"name" identity ) # atField @"value" # displayed
 
 rangePicker :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 rangePicker config options =

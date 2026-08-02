@@ -8,7 +8,7 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, foreach, forField, informed, mvu, projected, toCase, updated)
-import PUI.Web.HTML (body, clWhen, provided, span, staticText, text)
+import PUI.Web.HTML (atCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -30,10 +30,10 @@ movieBrowserMDC3 =
               filterChip { label: "Oscar" } # asField @"oscar") # completed
           elevation1 ( titleMedium $ RecordToRecord.do
               text # forField @"count" show
-              staticText " favorite" ) # provided soleFavorite # displayed
+              staticText " favorite" ) # atCase @"sole" favorites # displayed
           elevation1 ( titleMedium $ RecordToRecord.do
               text # forField @"count" show
-              staticText " favorites" ) # provided severalFavorites # displayed
+              staticText " favorites" ) # atCase @"several" favorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
@@ -85,8 +85,7 @@ ratingText { rating } = toStringWith (fixed 1) rating
 favoriteCount :: { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } } -> Int
 favoriteCount { movies } = length (filter _.favorite movies)
 
-soleFavorite :: { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } } -> Maybe { count :: Int }
-soleFavorite { movies } = if favoriteCount { movies } == 1 then Just { count: 1 } else Nothing
-
-severalFavorites :: { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } } -> Maybe { count :: Int }
-severalFavorites { movies } = if favoriteCount { movies } == 1 then Nothing else Just { count: favoriteCount { movies } }
+favorites :: { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } } -> [ sole :: { count :: Int }, several :: { count :: Int } ]
+favorites { movies } =
+  let count = favoriteCount { movies }
+  in if count == 1 then .sole { count } else .several { count }

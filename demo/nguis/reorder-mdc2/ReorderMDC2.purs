@@ -4,7 +4,6 @@ import Prelude ((#), ($), (<$>), (>>>), Unit, bind, compare, map, pure)
 
 import Data.Array (snoc, sortBy, uncons)
 import Data.Maybe (maybe)
-import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
@@ -15,7 +14,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, edited, field, mvu, onCase, silence, updated)
+import PUI (action, asCase, asField, edited, field, mvu, onCase, pempty, silence, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid

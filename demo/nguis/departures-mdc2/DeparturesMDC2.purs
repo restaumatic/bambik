@@ -18,20 +18,15 @@ departuresMDC2 =
       card { caption: "Departures" } $ ( Semigroupoid.do
           every tickPeriod tick
           ( Semigroupoid.do
-              ( list $
-                  ( ( listItem $ RecordToRecord.do
-                        text # forField @"code" identity
-                        staticText " — "
-                        text # forField @"status" identity
-                    ) # displayed
-                  ) # dispatched arrival
-              )
+              list ( ( listItem $ RecordToRecord.do
+                  text # forField @"code" identity
+                  staticText " — "
+                  text # forField @"status" identity ) # displayed ) # dispatched arrival
               body2 ( RecordToRecord.do
                   staticText "Last update: "
                   text # projected updatedFlight
                   staticText " → "
-                  text # projected updatedStatus )
-          ) # displayed
+                  text # projected updatedStatus ) ) # displayed
       ) # mvu boardOpening
 
 updatedFlight :: { key :: String, value :: { code :: String, status :: String } } -> String

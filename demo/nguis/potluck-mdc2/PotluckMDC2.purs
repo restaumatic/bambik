@@ -19,8 +19,7 @@ potluckMDC2 =
       card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 ( Semigroupoid.do
               text # projected guestCount
-              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # displayed
-          ) # tapped
+              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # displayed ) # tapped
           ( list $
               ( listItem $ RecordToRecord.do
                   subtitle1 text # forField @"name" identity
@@ -28,16 +27,14 @@ potluckMDC2 =
                     [ { value: .salad {}, label: "Salad" }
                     , { value: .lasagna {}, label: "Lasagna" }
                     , { value: .pavlova {}, label: "Pavlova" }
-                    ] # asField @"dish"
-              ) # acted @"name" ) # field @"guests"
+                    ] # asField @"dish" ) # acted @"name" ) # field @"guests"
           headline6 $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do
                 text # forField @"name" identity
                 staticText "’s "
                 text # forField @"dish" dishText
-                staticText ", "
-            ) # foreach @"name" identity # field @"guests"
+                staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation
 
 guestCount :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String

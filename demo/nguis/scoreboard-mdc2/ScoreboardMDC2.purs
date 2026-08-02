@@ -20,14 +20,10 @@ scoreboardMDC2 =
       card { caption: "Scoreboard" } $ ( Semigroupoid.do
           every tickPeriod tick
           ( Semigroupoid.do
-              ( list $
-                  ( ( listItem $ RecordToRecord.do
-                        text # forField @"team" identity
-                        staticText ": "
-                        text # forField @"points" show
-                    ) # displayed
-                  ) # accumulated goal
-              )
+              list ( ( listItem $ RecordToRecord.do
+                  text # forField @"team" identity
+                  staticText ": "
+                  text # forField @"points" show ) # displayed ) # accumulated goal
               ( body2 $ Semigroupoid.do
                   ( RecordToRecord.do
                       text # forField @"teams" identity
@@ -37,9 +33,7 @@ scoreboardMDC2 =
                       staticText " ("
                       text # forField @"points" show
                       staticText ")" ) # provided leadingTeam # displayed
-                  staticText "—" # provided noLeader # displayed
-              ) # foreach @"key" boardSummary
-          ) # displayed
+                  staticText "—" # provided noLeader # displayed ) # foreach @"key" boardSummary ) # displayed
       ) # mvu gameStart
 
 tickPeriod :: { ms :: Number }
@@ -61,7 +55,6 @@ scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 
 boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: String, leader :: Maybe { team :: String, points :: Int } }
 boardSummary scores = [ { key: "summary", teams: show (length scores), leader: maximumBy (comparing _.points) scores } ]
-
 
 leadingTeam :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe { team :: String, points :: Int }
 leadingTeam { leader } = leader

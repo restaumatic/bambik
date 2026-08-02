@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, every, forField, foreach, mvu, projected, updated)
+import PUI (asCase, completed, displayed, every, forField, foreach, mvu, updated)
 import PUI.Web.HTML (atCase, body, li, staticText, text, ul)
 import PUI.Web.MDC2 (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,7 +19,7 @@ stopwatchMDC2 =
   body $
     elevation20 $
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
-          headline3 text # projected readout # completed
+          headline3 text # forField @"elapsedTenths" formatTime # completed
           every tickPeriod tick
           ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"start" # atCase @"halted" stopwatchPhase
@@ -56,9 +56,6 @@ tick sw@{ phase, elapsedTenths } =
 
 stopwatchPhase :: { phase :: [ halted :: {}, timing :: {} ] } -> [ halted :: {}, timing :: {} ]
 stopwatchPhase { phase } = phase
-
-readout :: { elapsedTenths :: Int } -> String
-readout { elapsedTenths } = formatTime elapsedTenths
 
 lapRows :: { laps :: Array Int } -> Array { number :: String, time :: String }
 lapRows { laps } = mapWithIndex (\i t -> { number: show (i + 1), time: formatTime t }) laps

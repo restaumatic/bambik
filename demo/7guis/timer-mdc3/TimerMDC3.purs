@@ -45,8 +45,5 @@ tenSecondFreshTimer = { duration: { current: 10.0, min: 0.0, max: 60.0, step: Ju
 wholeSeconds :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } -> String
 wholeSeconds q = show q.current
 
-
-
-
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }

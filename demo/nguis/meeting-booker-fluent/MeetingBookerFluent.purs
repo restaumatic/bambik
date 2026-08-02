@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, completed, displayed, forCase, informed, mvu, optional, projected, tapped, updated)
+import PUI (PUI, asCase, asField, completed, displayed, forCase, forField, informed, mvu, optional, projected, tapped, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (body, div, provided, staticText, text)
 import PUI.Web (Web)
@@ -18,7 +18,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 meetingBookerFluent :: Effect Unit
 meetingBookerFluent =
   body $
-    card { caption: "Book a meeting room" } Semigroupoid.do
+    card { caption: "Book a meeting room" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
               textField { label: "Meeting title" } # asField @"title"
@@ -45,9 +45,16 @@ meetingBookerFluent =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
-              text # projected planLine ) # tapped
-          button { label: "Book the room" } # asCase @"booked"
-      ) # provided completePlan
+              text # forField @"title" titleText
+              staticText " in the "
+              text # forField @"room" roomText
+              staticText ", "
+              text # forField @"duration" durationText
+              staticText ", "
+              text # forField @"attendees" headcount
+              staticText " attendees"
+              text # projected onlineNote ) # tapped
+          button { label: "Book the room" } # asCase @"booked" ) # provided completePlan
       bookedBar
 
 blankBooking :: { title :: String, room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean }
@@ -71,18 +78,16 @@ bookedBar = messageBar # forCase @"booked" bookedLine
 
 bookedLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> String
 bookedLine { title, room, duration } =
-  "Booked: " <> titleText { title } <> " — " <> roomText room <> " for " <> durationText duration
+  "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> durationText duration
 
-planLine :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> String
-planLine { title, room, duration, attendees, online } =
-  titleText { title }
-    <> " in the " <> roomText room
-    <> ", " <> durationText duration
-    <> ", " <> show (round attendees) <> " attendees"
-    <> (if online then ", with a Teams link" else "")
+headcount :: Number -> String
+headcount attendees = show (round attendees)
 
-titleText :: { title :: String } -> String
-titleText { title } = case trim title of
+onlineNote :: { online :: Boolean } -> String
+onlineNote { online } = if online then ", with a Teams link" else ""
+
+titleText :: String -> String
+titleText title = case trim title of
   "" -> "Untitled meeting"
   name -> name
 

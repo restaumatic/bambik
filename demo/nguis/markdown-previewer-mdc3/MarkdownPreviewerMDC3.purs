@@ -36,8 +36,7 @@ markdownPreviewerMDC3 =
                     , paragraph: \is -> p (inlines is)
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
-                    }
-            ) # atField @"source"
+                    } ) # atField @"source"
         ) # mvu welcomeDocument
 
 welcomeDocument :: { source :: String }

@@ -3,6 +3,7 @@ module SignupFormMDC2 (signupFormMDC2) where
 import Prelude (Unit, identity, (#), ($), (<>), (==), (>>>))
 
 import Data.Either (Either(..), either)
+import Data.Variant (match)
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -19,7 +20,7 @@ signupFormMDC2 :: Effect Unit
 signupFormMDC2 =
   body $
     elevation20 $
-      card { caption: "Sign-Up Form" } Semigroupoid.do
+      card { caption: "Sign-Up Form" } $ Semigroupoid.do
         ( RecordToRecord.do
             headline4 $ staticText "Create account"
             debouncedTextField { floatingLabel: "Username", ms: usernameSettleTime } # asField @"username"
@@ -57,29 +58,37 @@ signupFormMDC2 =
           welcomeToast
           rejectionToast
 
-register :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ registered :: String, rejected :: String ]
-register applicant = case validate applicant of
+register :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
+register { username, email, terms } = case validate { username, email, terms } of
   Left problem -> .rejected problem
   Right name -> .registered name
 
 welcomeToast :: PUI Web [ registered :: String ] {}
 welcomeToast = snackbar # forCase @"registered" (\name -> "Welcome, " <> name <> "!")
 
-rejectionToast :: PUI Web [ rejected :: String ] {}
-rejectionToast = snackbar # forCase @"rejected" (\problem -> "Cannot sign up: " <> problem)
+rejectionToast :: PUI Web [ rejected :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] ] {}
+rejectionToast = snackbar # forCase @"rejected" (\reason -> "Cannot sign up: " <> refusalText reason)
 
-validate :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> Either String String
+refusalText :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
+refusalText = match
+  { unnamed: \_ -> "choose a username"
+  , taken: \{ username } -> "username " <> username <> " is taken"
+  , badEmail: \_ -> "enter a valid email address"
+  , termsUnaccepted: \_ -> "accept the terms of service"
+  }
+
+validate :: { username :: String, email :: String, terms :: Maybe {} } -> Either [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
 validate applicant@{ email, terms } =
   let username = trim applicant.username
   in
-    if username == "" then Left "choose a username"
-    else if usernameTaken username then Left ("username " <> username <> " is taken")
-    else if contains (Pattern "@") email == false then Left "enter a valid email address"
-    else if isJust terms == false then Left "accept the terms of service"
+    if username == "" then Left (.unnamed {})
+    else if usernameTaken username then Left (.taken { username })
+    else if contains (Pattern "@") email == false then Left (.badEmail {})
+    else if isJust terms == false then Left (.termsUnaccepted {})
     else Right username
 
 validation :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { username :: String } ]
-validation = validate >>> either (\problem -> .invalid { problem }) (\username -> .ready { username })
+validation { username, email, terms } = either (\reason -> .invalid { problem: refusalText reason }) (\name -> .ready { username: name }) (validate { username, email, terms })
 
 namedUsername :: { username :: String } -> Maybe String
 namedUsername { username } = case trim username of

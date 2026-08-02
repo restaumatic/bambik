@@ -60,7 +60,6 @@ currentQuestion :: { question :: Int } -> Maybe { prompt :: String, choices :: A
 currentQuestion { question } = index questionCatalogue question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
 
-
 finalOutcome :: { question :: Int, correct :: Int } -> Maybe { correct :: Int, total :: Int }
 finalOutcome { question, correct } =
   if question < length questionCatalogue then Nothing

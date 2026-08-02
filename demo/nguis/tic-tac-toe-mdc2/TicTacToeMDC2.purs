@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (displayed, forField, foreach, mvu, forProperty, toCase, updated, with)
-import PUI.Web.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
+import PUI.Web.HTML (atCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,13 +20,12 @@ ticTacToeMDC2 =
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               text # forField @"mark" identity
-              staticText " wins" ) # provided winningMark # displayed
-          headline6 (staticText "Draw") # provided drawnGame # displayed
+              staticText " wins" ) # atCase @"won" gameOutcome # displayed
+          headline6 (staticText "Draw") # atCase @"drawn" gameOutcome # displayed
           headline6 ( RecordToRecord.do
               text # forField @"mark" identity
-              staticText " to move" ) # provided markToMove # displayed
-          ( div >>> "style" := "display: inline-block; margin-bottom: 10px;" $
-              ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px;" $
+              staticText " to move" ) # atCase @"toMove" gameOutcome # displayed
+          ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
@@ -88,13 +87,7 @@ winner board = do
 boardFull :: Array [ x :: {}, o :: {}, free :: {} ] -> Boolean
 boardFull board = isNothing (findMap (\m -> if m == .free {} then Just m else Nothing) board)
 
-winningMark :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Maybe { mark :: String }
-winningMark { board } = (\m -> { mark: markText m }) <$> winner board
-
-drawnGame :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Maybe {}
-drawnGame { board } = if isNothing (winner board) && boardFull board then Just {} else Nothing
-
-markToMove :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Maybe { mark :: String }
-markToMove { board } =
-  if isNothing (winner board) && not (boardFull board) then Just { mark: markText (playerToMove board) }
-  else Nothing
+gameOutcome :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> [ won :: { mark :: String }, drawn :: {}, toMove :: { mark :: String } ]
+gameOutcome { board } = case winner board of
+  Just m -> .won { mark: markText m }
+  Nothing -> if boardFull board then .drawn {} else .toMove { mark: markText (playerToMove board) }

@@ -1,6 +1,6 @@
 module EspressoBarMDC2 (espressoBarMDC2) where
 
-import Prelude (Unit, const, min, otherwise, (#), ($), (*), (+), (<>), (==))
+import Prelude (Unit, const, min, otherwise, (#), ($), (<<<), (*), (+), (<>), (==))
 
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
@@ -20,7 +20,7 @@ espressoBarMDC2 =
   body $
     elevation20 $
       topAppBar { title: "Espresso Bar" } $
-        card { caption: "Your order" } Semigroupoid.do
+        card { caption: "Your order" } $ Semigroupoid.do
           ( Semigroupoid.do
               RecordToRecord.do
                 tabBar
@@ -55,8 +55,7 @@ espressoBarMDC2 =
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem { label: "The usual" } # asCase @"theUsual" # with theUsual
-                  menuItem { label: "Espresso, no frills" } # asCase @"espressoNoFrills" )
-                # updated (match { theUsual: const, espressoNoFrills: \m _ -> espressoNoFrills m })
+                  menuItem { label: "Espresso, no frills" } # asCase @"espressoNoFrills" ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
           ) # mvu usualOrder
           body2 ( RecordToRecord.do
               staticText "Your cup: "

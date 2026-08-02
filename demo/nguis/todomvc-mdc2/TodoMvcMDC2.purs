@@ -9,7 +9,7 @@ import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, forField, forProperty, mvu, required, toCase, updated)
-import PUI.Web.HTML (body, clWhen, provided, span, staticText, text)
+import PUI.Web.HTML (atCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -30,10 +30,10 @@ todoMvcMDC2 =
           Semigroupoid.do
             caption ( RecordToRecord.do
                 text # forField @"count" show
-                staticText " item left" ) # provided soleItemLeft # displayed
+                staticText " item left" ) # atCase @"sole" remainingItems # displayed
             caption ( RecordToRecord.do
                 text # forField @"count" show
-                staticText " items left" ) # provided severalItemsLeft # displayed
+                staticText " items left" ) # atCase @"several" remainingItems # displayed
             button { label: "Clear completed" } # updated (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
@@ -54,11 +54,10 @@ clearCompleted m@{ todos } = m { todos = filter (\t -> not t.done) todos }
 itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Int
 itemsLeft { todos } = length (filter (\t -> not t.done) todos)
 
-soleItemLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
-soleItemLeft { todos } = if itemsLeft { todos } == 1 then Just { count: 1 } else Nothing
-
-severalItemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Maybe { count :: Int }
-severalItemsLeft { todos } = if itemsLeft { todos } == 1 then Nothing else Just { count: itemsLeft { todos } }
+remainingItems :: { todos :: Array { title :: String, done :: Boolean } } -> [ sole :: { count :: Int }, several :: { count :: Int } ]
+remainingItems { todos } =
+  let count = itemsLeft { todos }
+  in if count == 1 then .sole { count } else .several { count }
 
 visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries { todos, visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
