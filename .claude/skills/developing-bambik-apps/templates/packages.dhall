@@ -10,3 +10,15 @@ in  upstream
     , repo = "https://github.com/natefaubion/purescript-convertable-options.git"
     , version = "v1.0.0"
     }
+  with bambik =
+    { dependencies =
+      [ "aff", "arrays", "avar", "console", "convertable-options", "datetime"
+      , "effect", "either", "exceptions", "foldable-traversable"
+      , "foreign-object", "integers", "lists", "maybe", "newtype", "numbers"
+      , "ordered-collections", "prelude", "profunctor", "profunctor-lenses"
+      , "qualified-do", "random", "record", "refs", "strings", "transformers"
+      , "tuples", "unsafe-coerce", "variant"
+      ]
+    , repo = "https://github.com/restaumatic/bambik.git"
+    , version = "v0.1.0"
+    }

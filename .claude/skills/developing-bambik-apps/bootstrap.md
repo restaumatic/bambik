@@ -1,18 +1,17 @@
 # Bootstrapping a bambik application outside the repo
 
-This procedure creates, from nothing but git + node + network, a workspace
-holding a bambik clone (the library, plus the demos for reference) and a
-buildable, bundlable, locally runnable application. Every dependency comes
-from GitHub — the library from its repo, the compiler from a release, the
-patched variant library from a forked repo — so nothing depends on the
-maintainer's machine.
+This procedure creates, from nothing but node + git + network, a single
+application directory that builds, bundles and runs locally. bambik is an
+ordinary dependency — there is **no repo to clone** and nothing to vendor:
+the library is a spago git package pinned to a tag, the compiler is an npm
+package from a GitHub release, and the patched variant library is another
+git package. All three resolve on the first `npm install` / `spago build`.
 
-**Installing this skill elsewhere**: the whole
-`developing-bambik-apps/` directory (SKILL.md, this file, templates/) is
-self-contained — copy it into any project's `.claude/skills/` and it works
-there. It also ships inside the bambik clone, so after step 1 a
-bootstrapped workspace can install it for later sessions with
-`cp -r bambik/.claude/skills/developing-bambik-apps <app>/.claude/skills/`.
+**Installing this skill elsewhere**: the whole `developing-bambik-apps/`
+directory (SKILL.md, this file, templates/) is self-contained — copy it
+into any project's `.claude/skills/` and it works there. It also travels
+inside the bambik package, so once an app has built, later sessions can
+install it from `.spago/bambik/v0.1.0/.claude/skills/`.
 
 ## Prerequisites
 
@@ -33,38 +32,34 @@ bootstrapped workspace can install it for later sessions with
 - node ≥ 18 with npm, git, network access.
 - Stock purs **cannot** build bambik code — it fails with
   `Module Prim.Variant was not found`. The forked compiler adds variant
-  sugar (`[ ok :: Int ]` types, `.ok 42` injectors/patterns; see the clone's
-  `doc/variant-sugar.md`), and the matching fork of `purescript-variant`
+  sugar (`[ ok :: Int ]` types, `.ok 42` injectors/patterns; see
+  `doc/variant-sugar.md` in the fetched package), and the matching fork of
+  `purescript-variant`
   (`erykciepiela/purescript-variant`, tag `v8.0.0-prim-variant.1`, which
   the scaffold's packages.dhall names) re-exports the compiler's built-in
   `Prim.Variant.Variant` so the sugar and `Data.Variant`'s
   `inj`/`on`/`match` meet on one type. Spago fetches it like any git
   package — nothing to vendor or check out.
 
-## Workspace layout
+## Where the dependencies come from
 
-```
-<workspace>/
-  bambik/       # git clone — the library's src/ and the demos
-  <app>/        # the application (scaffolded from this skill's templates/)
-```
+The app directory stands alone; nothing lives beside it. Its three
+non-registry dependencies are named by URL and pinned by tag:
 
-Only the app's `spago.dhall` reaches into the clone — by the relative path
-`../bambik`, for the library's sources and its dependency list — so the two
-directories must stay siblings. Nothing else needs it: `package.json` names
-the compiler release, and `packages.dhall` (byte-identical to bambik's own)
-names the variant fork.
+| Dependency        | Named in        | Pinned by                                    |
+|-------------------|-----------------|----------------------------------------------|
+| bambik library    | `packages.dhall`| tag `v0.1.0` of `restaumatic/bambik`          |
+| variant fork      | `packages.dhall`| tag `v8.0.0-prim-variant.1`                   |
+| forked compiler   | `package.json`  | release URL + integrity hash in the lock      |
+
+Spago clones each git package whole, so after the first build the library's
+**demos, docs and CLAUDE.md** sit in `.spago/bambik/v0.1.0/` as worked
+examples — `demo/7guis/`, `demo/nguis/`, `doc/type-errors.md`, the module
+headers under `src/`.
 
 ## Steps
 
-1. **Clone bambik** (the library, and the demos as worked examples):
-
-   ```sh
-   mkdir <workspace> && cd <workspace>
-   git clone --depth 1 https://github.com/restaumatic/bambik.git
-   ```
-
-2. **Scaffold the app** from this skill's `templates/` directory. Copy it
+1. **Scaffold the app** from this skill's `templates/` directory. Copy it
    verbatim first — the starter is a complete working counter named
    `myapp`/`MyApp`/`myApp` — then rename the three tokens to the
    application's name (kebab-case dir/package, PascalCase module,
@@ -72,8 +67,8 @@ names the variant fork.
    application, never `main`):
 
    ```sh
-   cp -r <this-skill-dir>/templates <workspace>/<app>
-   cd <workspace>/<app>
+   cp -r <this-skill-dir>/templates <app>
+   cd <app>
    # rename: myapp -> <app>, MyApp -> <Module>, myApp -> <entryFn>
    sed -i 's/MyApp/<Module>/g; s/myApp/<entryFn>/g; s/myapp/<app>/g' \
      package.json spago.dhall entry.mjs public/index.html src/MyApp.purs
@@ -84,23 +79,17 @@ names the variant fork.
    - `package.json` — `purescript` from the compiler release URL, `spago`
      0.21 (legacy, dhall-based), `esbuild`, and the design-system npm
      package (see the table below).
-   - `packages.dhall` — the upstream package set bambik pins, plus two
-     overrides it also uses: `variant` repointed at the
-     `Prim.Variant`-patched fork (`with variant.repo`/`.version`) and
-     `convertable-options`.
-   - `spago.dhall` — the library is **not** a package: bambik's `src/` is
-     compiled by the app's own `sources` glob
-     (`[ "src/**/*.purs", "../bambik/src/**/*.purs" ]`), and the app's
-     `dependencies` are inherited with
-     `(../bambik/spago.dhall).dependencies` so the list never drifts from
-     the library's — app-only additions append (`# [ "argonaut" ]`). Why
-     not a Location package: legacy spago resolves a Location package's
-     `sources` glob *inside* that package's directory, stripping leading
-     `../` segments, so no config file placed beside the library can point
-     out at `src/` — the glob has to belong to the app. (A consequence:
-     `spago build` warns that a few inherited deps — `console`, `lists`,
-     `random` — are unused until the app imports them. Expected; trimming
-     the list means abandoning the inheritance.)
+   - `packages.dhall` — the upstream package set, plus three entries:
+     `bambik` (repo + tag + its dependency list), `variant` repointed at
+     the `Prim.Variant`-patched fork, and `convertable-options`. The
+     `bambik` entry spells out the library's dependencies because spago
+     does not read a git package's own `spago.dhall`; if the library gains
+     one, this list needs the same addition or the build fails with a
+     missing module.
+   - `spago.dhall` — an ordinary config: `dependencies = [ "bambik",
+     "effect", "prelude", "qualified-do", "variant" ]` and
+     `sources = [ "src/**/*.purs" ]`. Add dependencies as the app's
+     imports grow — imports are 100% explicit, so the list follows them.
    - `entry.mjs` — the esbuild entry: imports the app's entry function
      from spago's `output/` and calls it (`spago bundle-app` can only call
      `Main.main`, and no bambik module is `Main`).
@@ -111,7 +100,7 @@ names the variant fork.
      with the application the developer specified, written to SKILL.md's
      rules (this file is the deliverable; everything else is scaffolding).
 
-3. **Install and check the compiler**:
+2. **Install and check the compiler**:
 
    ```sh
    npm install
@@ -119,15 +108,15 @@ names the variant fork.
    export PATH=$PWD/node_modules/.bin:$PATH
    ```
 
-4. **Build** — the first run fetches the package set and compiles it plus
-   the bambik library (a few minutes); after that an app-module edit
-   rebuilds in well under a second:
+3. **Build** — the first run fetches the package set, clones bambik and the
+   variant fork, and compiles the lot (a few minutes); after that an
+   app-module edit rebuilds in well under a second:
 
    ```sh
    spago build
    ```
 
-5. **Bundle and run**:
+4. **Bundle and run**:
 
    ```sh
    npm run bundle          # spago build + minified public/bundle.js (~500 kB for the starter)
@@ -160,38 +149,43 @@ app module, the npm dependency, and the page's CSS:
 | `PUI.Web.Bootstrap`  | — (CSS-only)                 | Bootstrap 5 CSS from CDN                   |
 
 Match the versions bambik pins in its own `package.json`; copy the exact
-CDN links from a demo page of that vocabulary in the clone — under
-`demo/nguis/`: `espresso-bar-mdc3/` for MDC3, `product-review-shoelace/`,
-`meeting-booker-fluent/`, `loan-calculator-bootstrap/`.
+CDN links from a demo page of that vocabulary, under
+`.spago/bambik/v0.1.0/demo/nguis/`: `espresso-bar-mdc3/` for MDC3,
+`product-review-shoelace/`, `meeting-booker-fluent/`,
+`loan-calculator-bootstrap/`.
 
 ## Updating and pinning
 
-`git -C ../bambik pull && spago build` picks up a newer library. To pin the
-library, keep the clone at a commit (`git -C ../bambik checkout <sha>`).
-The other two pin independently and are already pinned by tag: the compiler
-by the release URL in `package.json` (npm records the tarball's integrity
-hash in `package-lock.json`, so a re-published asset of the same name is
-rejected rather than silently swapped) and the variant fork by
-`variant.version` in `packages.dhall`. The three move together in practice
-— the fork's patch only compiles under that compiler — so change them as a
-set.
+To move to a newer library, bump `bambik.version` in `packages.dhall` to a
+newer tag and re-run `spago build`; spago fetches that tag into its own
+`.spago/bambik/<tag>/`, so nothing is upgraded behind your back. The other
+two are pinned the same way: the compiler by the release URL in
+`package.json` (npm records the tarball's integrity hash in
+`package-lock.json`, so a re-published asset of the same name is rejected
+rather than silently swapped) and the variant fork by `variant.version`.
+The three move together in practice — the fork's patch only compiles under
+that compiler, and the library needs both — so change them as a set, and
+check the library's `dependencies` list in the `bambik` entry when you do.
 
 ## Troubleshooting
 
 - `Module Prim.Variant was not found` — stock purs got installed; check
   `package.json`'s `purescript` entry is the release URL, re-run
   `npm install`, confirm with `purs --version`.
-- `Module PUI was not found` while the build otherwise succeeds — the
-  sources glob lost `../bambik/src/**/*.purs`, or the clone is not the
-  app's sibling (`ls ../bambik/src/PUI.purs`).
-- `when importing local packages you should point to their spago.dhall
-  file` — a Location entry names something other than `spago.dhall`.
+- `Module PUI was not found` — `bambik` is missing from `spago.dhall`'s
+  `dependencies`, or its `packages.dhall` entry failed to fetch (check
+  `.spago/bambik/<tag>/src/PUI.purs` exists).
+- A missing module from some *other* library while compiling bambik itself
+  — the `bambik` entry's `dependencies` list is behind the library's;
+  compare it with `spago.dhall` in `.spago/bambik/<tag>/`.
+- `Module Prim.Variant was not found` *while compiling `Data.Variant`* —
+  the `variant` override is absent, so the stock library is being built;
+  check both `with variant.repo` and `with variant.version` are present.
 - dhall errors mentioning an absolute `/home/...` path, or a `variant`
-  Location pointing into `../bambik/vendor/` — the clone or the scaffold
-  predates the move to GitHub-hosted dependencies; `git -C ../bambik pull`
-  and re-copy `templates/packages.dhall`.
-- Custom type errors from the row layer — read the clone's
-  `doc/type-errors.md` before fighting a merge error.
+  Location pointing into a `vendor/` directory — the scaffold predates the
+  move to GitHub-hosted dependencies; re-copy `templates/packages.dhall`.
+- Custom type errors from the row layer — read
+  `.spago/bambik/<tag>/doc/type-errors.md` before fighting a merge error.
 - Port busy — change `--serve=127.0.0.1:8000` in `package.json`.
 
 ## Maintainer note (cutting a new compiler release)

@@ -8,13 +8,14 @@ description: How to write web/MDC applications with bambik in the style of the r
 This skill works in two contexts. **Inside the bambik repo** (a checkout of
 https://github.com/restaumatic/bambik — CLAUDE.md at the root, demos under
 demo/), `$BAMBIK` below means the repo root and the build workflow is the
-repo's own. **Anywhere else**, first bootstrap a workspace by following
+repo's own. **Anywhere else**, first bootstrap an application by following
 [bootstrap.md](bootstrap.md) (in this skill's directory, beside the
-scaffold in templates/): it clones bambik from GitHub — library, forked
-compiler, patched variant library, demos — and scaffolds a sibling app
-that builds, bundles, and runs locally; `$BAMBIK` then means that clone,
-and the app the developer specified is written into the scaffold's single
-source module by the rules below.
+scaffold in templates/): it scaffolds a standalone app that depends on
+bambik as a tagged package — no repo to clone — and builds, bundles and
+runs locally. `$BAMBIK` then means the fetched package,
+`.spago/bambik/<tag>/`, which carries the library sources, the demos and
+the docs; the app the developer specified is written into the scaffold's
+single source module by the rules below.
 
 A bambik application is one profunctor pipeline. Every widget is a
 `PUI m i o` — it displays `i` and emits `o` — and the app composes
