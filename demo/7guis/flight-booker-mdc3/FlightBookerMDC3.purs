@@ -56,8 +56,8 @@ bookingLine = match
   , rejected: \problem -> "Cannot book: " <> problem
   }
 
-returnBetween :: { y :: Int, m :: Int, d :: Int } -> { y :: Int, m :: Int, d :: Int } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-returnBetween out back =
+returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
@@ -68,7 +68,7 @@ parse { flightType, start: startInput, return: returnInput } = case parseDate st
     if flightType /= .return {} then Right (.oneWayOn start)
     else case parseDate returnInput of
         Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
-        Just back -> case returnBetween start back of
+        Just back -> case returnBetween { out: start, back } of
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 

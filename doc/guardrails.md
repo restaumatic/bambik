@@ -421,6 +421,26 @@ String-typed channel (status/toast lines via `forCase copyOf` /
 genuinely computed lines whose shape varies (case analysis, conditional
 fragments — payment's `statusLine`, espresso-bar's summary).
 
+### A12. One record of data per function.
+
+A business function takes at most **one** record parameter — its exact
+footprint (A2). Several record parameters that travel together are one
+row wearing a disguise: merge them, and let the field labels name the
+roles that positional currying loses —
+
+```
+returnBetween :: { out :: Date, back :: Date } -> Maybe Itinerary
+returnBetween { out, back } = …            -- never  returnBetween out back
+```
+
+(flight-booker; `Date`/`Itinerary` stand for their anonymous rows). The
+exemption is the mechanism-dictated shape: an `updated`/`folding`
+handler is `payload -> model -> model` because the payload arrives in
+the event and the model in the fold — those two records *cannot* merge,
+and the currying is the mechanism's signature, not the function's
+choice. Scalar parameters (a key, an operator symbol) stay positional;
+the rule is about records, whose whole point is named fields.
+
 Any proposed change — combinator, class, component, demo idiom — passes
 these gates in order:
 

@@ -386,6 +386,13 @@ honor it, and changes to either side keep the two in sync:
   format *values* (`euros`, `formatTime`), never *lines*; toast/status
   copy (a String channel) and shape-varying lines (case analysis,
   conditional fragments) are the exemptions.
+- **One record of data per business function** (guardrail A12). Several
+  record parameters that travel together are one row in disguise —
+  merge them and let field labels name the roles:
+  `returnBetween { out, back }`, never `returnBetween out back`. The
+  mechanism-dictated handler shape `payload -> model -> model`
+  (`updated`/`folding` dispatch) is the exemption — those two records
+  cannot merge.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line), and it
   rides at the end of the widget's last content line — close the paren
