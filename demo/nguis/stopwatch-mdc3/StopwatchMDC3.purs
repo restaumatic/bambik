@@ -34,11 +34,11 @@ stopwatchMDC3 =
                    text # forField @"time" identity ) # foreach @"number" lapRows ) # displayed
       ) # mvu zeroedStopwatch
 
-beginTiming :: { running :: Boolean }
-beginTiming = { running: true }
+beginTiming :: { phase :: [ halted :: {}, timing :: {} ] }
+beginTiming = { phase: .timing {} }
 
-haltTiming :: { running :: Boolean }
-haltTiming = { running: false }
+haltTiming :: { phase :: [ halted :: {}, timing :: {} ] }
+haltTiming = { phase: .halted {} }
 
 recordLap
   :: { elapsedTenths :: Int, laps :: Array Int }
@@ -49,14 +49,13 @@ clearStopwatch :: { elapsedTenths :: Int, laps :: Array Int }
 clearStopwatch = { elapsedTenths: 0, laps: [] }
 
 tick
-  :: { running :: Boolean, elapsedTenths :: Int }
-  -> Maybe { running :: Boolean, elapsedTenths :: Int }
-tick sw@{ running, elapsedTenths } =
-  if running then Just (sw { elapsedTenths = elapsedTenths + 1 })
-  else Nothing
+  :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int }
+  -> Maybe { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int }
+tick sw@{ phase, elapsedTenths } =
+  match { timing: \_ -> Just (sw { elapsedTenths = elapsedTenths + 1 }), halted: \_ -> Nothing } phase
 
-stopwatchPhase :: { running :: Boolean } -> [ halted :: {}, timing :: {} ]
-stopwatchPhase { running } = if running then .timing {} else .halted {}
+stopwatchPhase :: { phase :: [ halted :: {}, timing :: {} ] } -> [ halted :: {}, timing :: {} ]
+stopwatchPhase { phase } = phase
 
 readout :: { elapsedTenths :: Int } -> String
 readout { elapsedTenths } = formatTime elapsedTenths
@@ -71,8 +70,8 @@ formatTime tenths =
 pad2 :: Int -> String
 pad2 n = if n < 10 then "0" <> show n else show n
 
-zeroedStopwatch :: { running :: Boolean, elapsedTenths :: Int, laps :: Array Int }
-zeroedStopwatch = { running: false, elapsedTenths: 0, laps: [] }
+zeroedStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int }
+zeroedStopwatch = { phase: .halted {}, elapsedTenths: 0, laps: [] }
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
