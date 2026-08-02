@@ -48,10 +48,13 @@ flightBookerMDC2 =
       bookingToast
 
 bookingToast :: PUI Web [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] {}
-bookingToast = snackbar # forCases (match
+bookingToast = snackbar # forCases bookingLine
+
+bookingLine :: [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] -> String
+bookingLine = match
   { booked: \itinerary -> "You have booked: " <> summary itinerary
   , rejected: \problem -> "Cannot book: " <> problem
-  })
+  }
 
 returnBetween :: { y :: Int, m :: Int, d :: Int } -> { y :: Int, m :: Int, d :: Int } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween out back =

@@ -371,9 +371,26 @@ patch (button …) # updated (match { clicked: const })` — the patch is
 announced, the button replays it. What has no home yet goes to the
 library as a missing-vocabulary signal, never inline.
 
----
+### A10. Every UI line reads `widget # data plumbing`.
 
-## Part III — The admission test (how the guardrails are enforced)
+Each UI-related line leads with the **visual** concern, plumbed with `$`,
+and trails with the **data** concern, plumbed with `#`:
+`card { caption: "CRUD" } $ … # asField @"prefix"`. Content is handed to
+an ocular with `$`, never with application parens — and since `#`
+(`infixl 1`) binds tighter than `$` (`infixr 0`), a trailing chain that
+must apply to the *whole element* opens its paren **before** the ocular:
+`( simpleDialog { … } $ body1 text # projected refundLine # tapped )
+# onCase @l # toCase @l' identity` (cashbox), `( section >>> cl "course"
+$ RecordToRecord.do` (restaurant-menu). Closing parens and trailing `#`
+chains never start a line: a chain is written whole on the widget's last
+content line, and enclosing levels' closers cascade onto that same line
+(`… ) # focusVariant) # updated (match { … })`). The one exception is
+the app-level closer — the demo's last UI line stays `) # mvu seed` /
+`) # with seed` on its own line. The blessed leading-data exception is
+the announced constant patch, `with patch (button …) # asCase @l` (A9),
+whose `with` is the seed discharging the button's input, not plumbing.
+This is the same contract the demo pages state in their code-style note
+and the skill's code-style section — the three stay in sync.
 
 Any proposed change — combinator, class, component, demo idiom — passes
 these gates in order:

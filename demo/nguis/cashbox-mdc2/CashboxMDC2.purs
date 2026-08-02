@@ -26,9 +26,8 @@ cashboxMDC2 =
                 with courierFee (button { label: "Pay the courier", icon: "local_shipping" }) # asCase @"payout"
                 with tillAudit (button { label: "Count the register", icon: "fact_check" }) # asCase @"counted"
               ( VariantToVariant.do
-                  simpleDialog { title: "Refund the customer?", confirm: "Refund" } (body1 text # projected refundLine # tapped) # onCase @"refund" # toCase @"refunded" identity
-                  simpleDialog { title: "Pay the courier?", confirm: "Pay" } (body1 text # projected payoutLine # tapped) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant
-          ) # updated (match { refunded: applyRefund, paidOut: applyPayout, counted: recordAudit })
+                  ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ body1 text # projected refundLine # tapped ) # onCase @"refund" # toCase @"refunded" identity
+                  ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 text # projected payoutLine # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: applyRefund, paidOut: applyPayout, counted: recordAudit })
       ) # mvu openedTill
 
 applyRefund :: { amount :: Number } -> { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
