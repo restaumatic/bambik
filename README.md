@@ -16,19 +16,19 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 # Using it in your own application
 
 bambik is consumed as a spago git package pinned to a release tag — no clone,
-nothing vendored. The [v0.1.0 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.0)
+nothing vendored. The [v0.1.1 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.1)
 gives the `packages.dhall` entry and the two toolchain pins it requires (the
 variant-sugar compiler and the matching `purescript-variant` fork; stock `purs`
 cannot build bambik).
 
 That release also ships **`developing-bambik-apps`**, the authoring skill: how to
 bootstrap a project, the vocabulary and its four row directions, separation of
-concerns, the code-style contract, and the build/verify workflow — with a
-scaffold that produces a working application.
+concerns, the definitive code-style contract, and the build/verify workflow —
+with a scaffold that produces a working application.
 
 ```bash
 mkdir -p .claude/skills
-curl -sL https://github.com/restaumatic/bambik/releases/download/v0.1.0/developing-bambik-apps-v0.1.0.tar.gz | tar xz -C .claude/skills
+curl -sL https://github.com/restaumatic/bambik/releases/download/v0.1.1/developing-bambik-apps-v0.1.1.tar.gz | tar xz -C .claude/skills
 ```
 
 Its source of truth is [.claude/skills/developing-bambik-apps/](/.claude/skills/developing-bambik-apps/);
