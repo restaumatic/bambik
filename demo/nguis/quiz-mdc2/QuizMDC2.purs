@@ -29,7 +29,7 @@ quizMDC2 =
                 text # forField @"correct" show) # completed
           ( Semigroupoid.do
               headline5 text # forField @"prompt" identity # completed
-              listOf {} questionChoices (text # forProperty @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
+              listOf {} _.choices (text # forProperty @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
           ( Semigroupoid.do
               headline6 ( RecordToRecord.do
                   staticText "Final score: "
@@ -60,8 +60,6 @@ currentQuestion :: { question :: Int } -> Maybe { prompt :: String, choices :: A
 currentQuestion { question } = index questionCatalogue question <#> \q ->
   { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
 
-questionChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
-questionChoices { choices } = choices
 
 finalOutcome :: { question :: Int, correct :: Int } -> Maybe { correct :: Int, total :: Int }
 finalOutcome { question, correct } =

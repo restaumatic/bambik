@@ -29,7 +29,11 @@ canonical row, adopted to the business label at the use site:
   form; at merge-operand/`completed` positions, which must state their row,
   the closed form is `# forField @l identity`. A named projection whose
   body merely reads one field — `questionPrompt { prompt } = prompt` — is a
-  smell: use the label-indexed form and delete the function) or
+  smell: use the label-indexed form and delete the function — and the
+  same applies to mechanism arguments: a feed projection that
+  merely reads a field is the accessor, `listOf {} _.choices item` —
+  except at row-stating positions, where the named function's closed
+  signature is the footprint declaration and stays) or
   `# forField @l identity` / `# projected f # forField @l` (read one
   field, verbatim or formatted; `forField` takes the bare-value display
   `projected` produces); a live readout as a pipeline stage is the same
