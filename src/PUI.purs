@@ -642,7 +642,7 @@ informed
 informed g pay small = g (unsafeCoerce (Record.union pay small))
 
 -- | Settle a stage's emissions through a **total, type-preserving**
--- | normalization — guardrail A7's mechanism made a word: a lossy
+-- | normalization — the round-trip rule's mechanism made a word: a lossy
 -- | adjustment belongs in the model, after `completed`, where the loop
 -- | makes it a transaction — `formula # completed # settled commit`.
 -- | Type-preservation is the contract: `settled` normalizes, it cannot

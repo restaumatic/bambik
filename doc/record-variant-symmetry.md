@@ -89,7 +89,7 @@ what happened; `match { value: … }` would not.
   carried two sibling snackbars of which only one could ever show.
   flight-booker now reads `snackbar # forCases (match { booked: …,
   rejected: … })`, and its business emissions carry bare payloads (the
-  itinerary, the problem) with the copy in the toast widget, per A8.
+  itinerary, the problem) with the copy in the toast widget.
   `toCases` moved beside `toCase`/`asCase` in `RecordToVariant` (generic
   over `Profunctor`) so the plural adopters live in their direction
   modules, mirrored.

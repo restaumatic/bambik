@@ -254,7 +254,8 @@ The codebase is three floors, each greppable:
   carrier a vocabulary specializes and the carrier-independent algebra
   stays visibly apart from it.
 - **Application layer** — vocabulary only: no `Data.Profunctor`, no
-  carrier internals (see A9).
+  carrier internals (Part II, and the rule as applications read it in
+  writing.md's *Wiring*).
 
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
@@ -271,224 +272,32 @@ code below the UI) are algebra-layer material and exempt by location.
 
 ## Part II — The approach (applications built on bambik)
 
-### A1. No nominal types in UI.
+The rules for application code are stated once, in the authoring skill's
+[writing.md](../.claude/skills/developing-bambik-apps/writing.md) — its
+**Code style** section is the strict contract (layout, types and values,
+business functions, wiring), and the sections before it are the
+vocabulary and shapes that contract is written in. That document is
+written from the application developer's perspective and ships to
+external users with the skill; this one governs the library. They are
+not two statements of the same rules: **writing.md is normative for
+application code**, and nothing here restates it.
 
-The design rule, wholesale ([no-nominal-types-in-ui.md](no-nominal-types-in-ui.md)):
-UI code declares no `data`, no `newtype`, no `type` synonyms. Anonymous
-record rows for all-at-once, anonymous variant rows for one-at-a-time,
-`{}` for unit payloads, primitives at the leaves, `Array`/`Maybe` as the
-only generic containers. Role names live on **values** (`mvu
-plannedTrip`, `with emptyCanvas`) and business function names, never on
-types. Nominal types belong below the UI — recursion (an AST) or an
-ecosystem API (`Aff`, `Either`, `Milliseconds` inside business actions)
-— and enter only as rows projected by business functions.
+The library's obligations to it are one-way and concrete:
 
-### A2. Exact footprints; rows are read narrow, payloads are exact.
+- The demos in `demo/7guis/` and `demo/nguis/` are the executable form
+  of that contract — L15 makes them the compatibility contract, and gate
+  5 below makes reachability a merge condition. A demo that breaks a
+  rule in writing.md is a broken demo.
+- L16 above fixes the import tower whose top floor writing.md states as
+  "application code never imports `Data.Profunctor`". The checkable
+  form: `grep "import Data.Profunctor (" demo/` is empty, always.
+- A shape no mechanism fits is a **missing-vocabulary signal** addressed
+  to the library — the next `required` waiting to be coined — and is
+  answered here, by admitting vocabulary through the gates below, never
+  by relaxing a rule in writing.md.
+- When a library change alters what application code should look like,
+  writing.md is the file that changes, and the demos change with it.
 
-Every business function states its exact footprint as a closed narrow
-row — what it reads ∪ writes, never the whole model. The subsuming
-stages (`updated`/`tapped`/`displayed`/`edited`/`acted`/`completed`)
-absorb the widening; applications MUST NOT coerce rows at call sites
-(`widenRecordInput` is library plumbing, deliberately not re-exported).
-A handler that reads nothing is not a transformer but a constant patch.
-
-### A3. Business emissions carry bare data, never UI copy.
-
-Toast and banner text lives in `PUI Web`-returning widget functions
-(`welcomeToast = snackbar # forCase @"registered" # lcmap (match …)`);
-the business event carries the order, the outcome, the reason — the
-data, not the sentence. Validation results are payloads, not strings
-destined for a specific widget.
-
-### A4. Visibility is business logic.
-
-Conditional visibility is always a **`Maybe`-valued projection** plus
-`provided` — never an in-UI predicate. A projection that *derives*
-visibility is named, so the rule lives in testable business code — and
-**mutually exclusive derived states classify once** into a
-variant-returning business function, each pane adopting its case
-(`# atCase @"taken" usernameStatus`): exclusivity holds by construction
-where sibling `Maybe` projections could accidentally overlap. When
-the model field itself is the `Maybe` **and the context pins the row**
-(a mechanism's feed argument), presence is the whole rule and the bare
-accessor says so, and a payload-carrying variant field gates its panes
-by case adoption (`atCase @l`); at row-stating positions (a pipeline stage the
-subsuming machinery reads), the named projection stays — its closed
-signature is the footprint declaration (A2), not boilerplate. `clWhen` stays predicate-driven
-because it toggles styling, not existence.
-
-### A5. State lives in the model or in the algebra's loops. Nowhere else.
-
-No FFI stashes, no module-level `Ref`s, no reading the DOM back as
-state, no window globals. The model under `mvu` holds the entity; a
-widget's private state is a residual threaded by
-`Retaining`/`Resolving`/the seeded knots — hidden by the algebra, not
-by a side channel.
-
-### A6. The architecture is readable off the types.
-
-An application is a compass walk written as one pipeline — `load → form
-(×→×) → live summary → events (×→+) → dispatch (+→+) → statuses (+→×)`
-— closed by `mvu seed` to `PUI Web {} model`. If the top-level types do
-not tell that story, the structure is wrong, not the types. The
-residual input row is the to-do list of unsupplied initial state; a
-demo reads `body $ pipeline # mvu seed`, and anything that obscures
-that reading (indirection layers, widget registries, config objects
-that assemble UIs reflectively) is out.
-
-### A7. Lossy conversions live in the model, not in leaf brackets.
-
-Editors obey the `dimap` round-trip contract: the bracket around a leaf
-must round-trip. A lossy normalization belongs in the model via `rmap`
-after `completed`, where the loop makes it a transaction — never hidden
-inside a component's `dimap`.
-
-### A8. Business literals never hide in UI code.
-
-A component parameter is presentation config iff the design system owns
-it; if the business owns it, it is **model data riding the canonical
-row**, where the machinery enforces the flow — pointedness makes a
-missing value a compile error at `body`, the gates withhold until it is
-known, and it may change while the app runs. The sliders' and rating's
-**bounded quantity** `{ current, min, max, step }` is the standing
-resolution: bounds arrive from the seed, and the emission is the whole
-quantity with `current` replaced (an editor cannot invent its own
-bounds). Term provenance is invisible to types, so for what legitimately
-stays config or seed content the discipline is: business values are
-**named top-level business definitions** — seed models (`mvu`/`with`/the
-trace forms' arguments), tick periods, default payloads — named in
-business language (`smallestLoan`, `tickPeriod`, `gameStart`), never
-lifecycle language (`initial`, `default`, `seed` are the smell's second
-form). UI code keeps only presentation: labels, captions, icons, styles,
-structure — layout numerics (a textarea's `rows`, a grid's `columns`)
-stay UI.
-
-### A9. Application code never imports `Data.Profunctor`.
-
-The precise, checkable form of L16's top floor:
-`grep "import Data.Profunctor (" demo/` is empty, always. Applications
-speak the vocabulary — the adopters, the mechanisms with their
-projection arguments, the merges' qualified-do — and every raw
-`lcmap`/`rmap`/`dimap` an application would have written has a named
-home (the L16 mechanism list). The constant-patch emitter is
-`button { … } # with patch # updated (match { clicked: const })` — the
-patch is announced, the button replays it (widget first, per A10). What
-has no home yet goes to the library as a missing-vocabulary signal,
-never inline.
-
-### A10. Every UI line reads `widget # data plumbing`.
-
-Each UI-related line leads with the **visual** concern, plumbed with `$`
-or application parens directly on the ocular, and trails with the
-**data** concern, plumbed with `#`:
-`card { caption: "CRUD" } $ … # asField @"prefix"`,
-`headline6 ( RecordToRecord.do … ) # tapped`. No data word ever leads a
-line — `with x (button …)` is wrong; the announced payload trails like
-every other data concern, `button { … } # with patch # asCase @l`
-(`with {}` inline when the payload is the informationless unit — naming
-`{}` is ceremony, not business language). Since `#` (`infixl 1`) binds
-tighter than `$` (`infixr 0`), a trailing chain that must apply to the
-*whole element* opens its paren **before** the ocular:
-`( simpleDialog { … } $ … # tapped ) # onCase @l # toCase @l' identity`
-(cashbox), `( section >>> cl "course" $ RecordToRecord.do`
-(restaurant-menu). Closing parens and trailing `#` chains never start a
-line: a chain is written whole on the widget's last content line, and
-enclosing levels' closers cascade onto that same line
-(`… ) # focusVariant) # updated (match { … })`). The one exception is
-the app-level closer — the demo's last UI line stays `) # mvu seed` /
-`) # with seed` on its own line. This is the same contract the demo
-pages state in their code-style note and the skill's code-style
-section — the three stay in sync.
-
-### A11. Simple text concatenation is UI structure.
-
-A line of displayed text assembled from model fields and literal
-separators, prefixes, or suffixes is **structure**, not a business
-value — it belongs in UI as a merge of `staticText` pieces and
-per-field displays, each field updating its own text node in place:
-
-```
-headline6 ( RecordToRecord.do
-    staticText "Till balance: €"
-    text # forField @"balance" euros ) # tapped
-```
-
-never `text # projected balanceLine` over
-`balanceLine { balance } = "Till balance: €" <> euros balance` — that
-formatter is UI copy hiding in business code, the display-side mirror
-of A3. Business functions format **values** (`euros`, `formatTime`,
-`formatMoney`, a percentage with its unit), never assemble **lines**:
-if deleting the literals would leave only field reads, the function is
-UI structure in disguise. Exempt: copy that must flow through a
-String-typed channel (status/toast lines via `forCase copyOf` /
-`forCases lineOf` — A3 puts that copy in the widget function), and
-genuinely computed lines whose shape varies (case analysis, conditional
-fragments — payment's `statusLine`, espresso-bar's summary).
-
-### A12. One record of data per function.
-
-A business function takes at most **one** record parameter — its exact
-footprint (A2). Several record parameters that travel together are one
-row wearing a disguise: merge them, and let the field labels name the
-roles that positional currying loses —
-
-```
-returnBetween :: { out :: Date, back :: Date } -> Maybe Itinerary
-returnBetween { out, back } = …            -- never  returnBetween out back
-```
-
-(flight-booker; `Date`/`Itinerary` stand for their anonymous rows).
-Fold handlers are no exemption: the event's payload and the retained
-model *do* travel together into every fold, so the dispatch adapter
-`informed` merges them — the payload's fields laid over the model's,
-fresh knowledge wins — and the handler is a single-record business
-function:
-
-```
-# updated (match { refunded: informed applyRefund })
-applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
-```
-
-Reads become per-branch exact: the function's input row states precisely
-which payload and model fields it consumes (unused payload fields cost
-nothing), and its output is the match row. Only scalar and `Array`
-payloads (a key, an operator symbol, a fetched list) stay positional —
-they are not rows. Where a payload label would shadow a model label of
-another type, name the payload for its **role** instead: meeting-booker's
-pane row is `{ seats }` over the model's `attendees`, weather's event
-carries `{ report }`.
-
-### A13. A handler carries no field it does not touch.
-
-Per function, A2 sharpened: a handler's row is **exactly** its
-reads∪writes — a field that only rides through
-(`recordAudit :: { balance, audits } -> …` touching only `audits`) is a
-smell. Per match: one `match` is one row — with `informed`, the **write**
-row only, since each branch's reads are its own input row — the union of
-its branches' writes, and every field of that row must be written by
-*some* branch. When a branch would carry fields only its siblings
-touch, pick by separability:
-
-  * **separable emitters** → group into stages by patch row
-    (stopwatch's button stages; circle-drawer's undo/redo buttons split
-    from the canvas click, so `undo`/`redo` shed the `diameter` only
-    `selectOrAddCircle` reads);
-  * **inseparable branches** (two outcomes of one dialog — inbox's
-    `kept`/`emptied`; one backend stream — crud's
-    `created`/`updated`/`deleted`) → the shared row stands: the carried
-    field is a sibling's write, not a pass-through;
-  * **disjoint footprints** → the events or the model want redesign
-    until the branches genuinely share (cashbox's audit became a
-    deposit, making every branch exactly
-    `{ amount, balance } -> { balance }`).
-
-An **identity handler** is the smell in its purest form — the event was
-never model data: weather's about-dialog folded its confirm through
-`resumeDashboard woken = woken` (silently re-writing a stale snapshot);
-the honest wiring is `# displayed` — a display interaction, not an
-`updated` fold. Sub-fields of one business datum are exempt: a bounded
-quantity `{ current, min, max, step }` rides whole (A8) even where a
-handler replaces only `current`.
 
 Any proposed change — combinator, class, component, demo idiom — passes
 these gates in order:
@@ -517,9 +326,14 @@ these gates in order:
    `npm run smoke` — with no demo edited except where the demo is the
    subject. Demos must work correctly no matter what changes in bambik;
    a red smoke is a veto, not a nuisance.
-7. **Sync.** The statements of the rules stay in sync: module headers →
-   this document → CLAUDE.md → the demo pages' code-style note.
-   Changing one changes all.
+7. **Sync.** Library rules are stated in the module headers and this
+   document; application rules are stated **only** in
+   [writing.md](../.claude/skills/developing-bambik-apps/writing.md).
+   A change that alters how applications are written edits writing.md
+   and the demos — not a second copy of the rule here or in CLAUDE.md,
+   which carry pointers. The demo pages' code-style note is the one
+   deliberate restatement (deployed HTML cannot read the skill file);
+   re-read it against writing.md when the contract changes.
 
 The historical record is the proof this process works: every rejected
 design ([pointedness-entities-vs-events.md](pointedness-entities-vs-events.md)

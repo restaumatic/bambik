@@ -111,6 +111,8 @@ follow-up audit showed the answers were already in the design:
   survives in ~3,000 demo lines (cells' recursive `Expr`, business).
 - The library refuses the easy outs: no `Default Unit`, no `Milliseconds` in
   any widget signature.
-- The demo pages' code-style footer states the rule to readers; the
-  `developing-bambik-apps` skill states it to writers; CLAUDE.md states it to
-  agents. Changes to any keep all in sync.
+- The rule is *stated* once, as part of the application code-style contract in
+  [writing.md](../.claude/skills/developing-bambik-apps/writing.md) (*Code
+  style → Types and values*); this note is the argument behind it, not a second
+  statement of it. The demo pages' code-style footer restates it for readers who
+  never open the skill — the one deliberate copy.
