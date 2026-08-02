@@ -12,7 +12,7 @@ Do `export PATH=$PWD/node_modules/.bin:$PATH` and then `spago build` (tests: `sp
 
 ### PureScript forked compiler
 
-Note the repo builds with the forked PureScript compiler pinned in `package.json` (variant row sugar `[ l :: T | r ]`, `.label` constructors — see doc/variant-sugar.md), so `npm install` first.
+Note the repo builds with the forked PureScript compiler pinned in `package.json` (variant row sugar `[ l :: T | r ]`, `.label` constructors — see doc/variant-sugar.md), so `npm install` first. Nothing in the toolchain depends on a local checkout, so a plain clone builds on any Linux x86_64 machine: the compiler installs from its **GitHub release** (`erykciepiela/purescript` tag `v0.15.16-variant.6`, built from branch `variant-type-sugar` — the release also carries the bare `purs` binary as an asset, and package-lock.json pins the tarball's integrity hash), and the `Prim.Variant`-patched variant library is an ordinary git package in packages.dhall (`with variant.repo`/`.version` → `erykciepiela/purescript-variant` tag `v8.0.0-prim-variant.1`, branch `prim-variant`: `Data.Variant` re-exports the compiler's built-in `Prim.Variant.Variant` instead of declaring its own, so the sugar and `inj`/`on`/`match` share one type). External applications compile the library through their own spago `sources` glob (`../bambik/src/**/*.purs`) with `dependencies = (../bambik/spago.dhall).dependencies` — not as a Location package, because legacy spago resolves a Location package's own glob inside that package's directory, stripping leading `../`. The standalone bootstrap flow lives in `.claude/skills/developing-bambik-apps/` (bootstrap.md + templates/), self-contained and copyable out of the repo.
 
 ### Development loop - watch mode
 
