@@ -12,20 +12,17 @@
 -- | are uninhabited, so the unit can neither receive nor emit — and any
 -- | silent element implements it (`PUI`: `pempty = silence`).
 -- |
--- | Two transposes of `RecordToRecord` names are **deliberately absent**
--- | here (doc/record-variant-symmetry.md records the survey):
--- |
--- |   * `field`'s `+ → +` transpose — the closed-singleton case wrap
--- |     `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
--- |     subsumption step: it is already vocabulary-expressible as
--- |     `w # onCase @l # toCase @l' f`, two adopters apps have.
--- |   * `focusRecord`'s transpose — sub-variant focus, `focusVariant` —
--- |     fails reachability: no demo dispatches into a multi-case
--- |     sub-variant (`+ → +` app usage is flat dispatch merges). It is
--- |     `Choice`-derivable via `splitVariant`
--- |     (`dimap splitVariant (either expand expand) (left w)`) and *not*
--- |     app-derivable (`left` is ecosystem algebra, import-tower L16), so
--- |     when a demo reaches for it, it enters here under that name.
+-- | One transpose of a `RecordToRecord` name is **deliberately absent**
+-- | here (doc/record-variant-symmetry.md records the survey): `field`'s
+-- | `+ → +` transpose — the closed-singleton case wrap
+-- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
+-- | subsumption step: it is already vocabulary-expressible as
+-- | `w # onCase @l # toCase @l' f`, two adopters apps have (weather's
+-- | about-dialog and cashbox's confirmation dialogs are that composition
+-- | in the flesh). `focusRecord`'s transpose, `focusVariant`, once sat in
+-- | this note as failing reachability; cashbox reached for it (money
+-- | events detouring through confirmation dialogs while the audit event
+-- | passes) and it is admitted below.
 module Data.Profunctor.Row.VariantToVariant
   ( Coprism
   , bind
@@ -35,6 +32,7 @@ module Data.Profunctor.Row.VariantToVariant
   , case_
   , class VariantToVariant
   , discard
+  , focusVariant
   , iterate
   , pempty
   , prismE
@@ -80,6 +78,33 @@ discard :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   SharedVariantOutputs o1 o2 o o12 o1x o2x =>
   p [ | i1 ] [ | o1 ] -> (Unit -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
+
+-- | Focus a **sub-variant**: the wrapped profunctor handles the focus cases
+-- | `f → f'`, the **background** cases `b` pass through untouched — the shot
+-- | `s` is refocused to `s'`. `focusRecord`'s transpose, completing the wrap
+-- | family's `+ → +` corner:
+-- |
+-- | ```
+-- | focusVariant :: p [ | f ] [ | f' ] -> p [ | s ] [ | s' ]
+-- |               -- where s = f ∪ b,  s' = f' ∪ b   (ExclusiveRows)
+-- | ```
+-- |
+-- | The labeled analogue of `Choice`'s `left`: instead of a positional
+-- | complement `c`, the background *row* `b`, split off by `splitVariant`.
+-- | Where `focusRecord` says "this sub-form edits these fields, the rest of
+-- | the model rides along", `focusVariant` says "these cases are
+-- | intercepted, the rest pass" — cashbox's money events detour through
+-- | confirmation dialogs while its audit event flows straight to the fold.
+focusVariant
+  :: forall p f f' b s s'
+   . Choice p
+  => ExclusiveRows f b s
+  => ExclusiveRows f' b s'
+  => Contractable s f
+  => Contractable s b
+  => p [ | f ] [ | f' ]
+  -> p [ | s ] [ | s' ]
+focusVariant g = dimap splitVariant (either expand expand) (left g)
 
 -- Dispatch a shot into the focused sub-variant or the background.
 splitVariant

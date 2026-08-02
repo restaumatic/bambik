@@ -23,7 +23,7 @@ events; swapping the modes swaps `RecordToRecord ↔ VariantToVariant` and
 | label thread (mixed) | `resolveProperty` | `retainCase` |
 | single-label focus (mixed) | `propertyToCase` | `caseToProperty` |
 | introduce | `recordToCase @l` | `caseToRecord @l` |
-| sub-structure wrap | `focusRecord`, `shutterWrap` | `reelWrap` (see gap C) |
+| sub-structure wrap | `focusRecord` (parcel), `shutterWrap` | `focusVariant` (cashbox), `reelWrap` |
 | rename adopter | `asField @l` | `asCase @l` (out) / `forCase @l f` (in) |
 | whole-value adopter | `projected f` | `toCases f` (out) / `forCases f` (in) |
 | bare structural feed | `atField @l` | `onCase @l` (dispatch) / `atCase @l f` (gated pane) |
@@ -103,8 +103,30 @@ what happened; `match { value: … }` would not.
   `snackbar # forCase @"charge" retryLine # observed` inside the
   `iterate` chain narrates each declined attempt without interrupting the
   loop.
+* **`focusVariant`** (in `VariantToVariant`, re-exported from `PUI`) —
+  `focusRecord`'s transpose, completing the wrap family's `+ → +` corner:
+  the wrapped profunctor handles the focus cases, background cases pass
+  untouched. It first sat in the survey as failing reachability; cashbox
+  reached for it — the money events (refund, payout) detour through
+  confirmation dialogs while the audit event flows straight to the fold —
+  and the demand admitted it. Each dialog inside cashbox's focus is the
+  closed-singleton wrap in merge position (below).
 * **Deliberately unnamed** (recorded in `VariantToVariant`'s header):
   `field`'s `+ → +` transpose is `onCase @l >>> toCase @l' f` (fails
-  subsumption), and `focusVariant` awaits a demo that needs multi-case
-  sub-variant focus (fails reachability; `Choice`-derivable via
-  `splitVariant`, not app-derivable).
+  subsumption) — demo-covered by weather's about-dialog and cashbox's two
+  confirmation dialogs, which are exactly that composition.
+
+## Demo coverage of the twins
+
+Every *vocabulary-level* pair in the map is now exercised by a demo on
+both sides. The sub-structure focus pair gets a focused demo each, the
+way the trace quartet did: **parcel** (`focusRecord` — a flat
+`{ recipient, street, city }` model, the reusable address sub-form a
+citizen over its own closed `{ street, city }` row, the background field
+threaded), and **cashbox** (`focusVariant` — selective interception as
+UX: confirmation dialogs for the money sub-family, instant passage for
+the rest). The mixed-direction wraps (`shutterWrap`, `reelWrap`) and the
+single-label threads (`property`/`case_`, `resolveProperty`/`retainCase`,
+`propertyToCase`/`caseToProperty`) are algebra beneath the row forms and
+optics — their coverage lives in `spago test` and the business-optics
+test modules, which is where the survey leaves them.

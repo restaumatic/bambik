@@ -97,6 +97,7 @@ import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `every`, `edited`, `acted`, `completed`), so a widget's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
+import Data.Profunctor.Row.VariantToVariant (focusVariant) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding

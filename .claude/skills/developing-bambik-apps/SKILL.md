@@ -114,7 +114,14 @@ oculars + `staticText` merged with `RecordToRecord.do` of `{} → {}` chrome,
 with courses/dishes from data via `each` and the look supplied by page CSS),
 order-form (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
-ticket-dispenser (`unfolding`), one focused combinator each.
+ticket-dispenser (`unfolding`), one focused combinator each. The
+sub-structure focus pair gets the same treatment: parcel (`focusRecord` —
+a reusable sub-form over its own closed row lifted as a pipeline stage,
+the model kept flat, background fields threaded) and cashbox
+(`focusVariant` — a sub-family of events intercepted by confirmation
+dialogs, each `simpleDialog … # tapped) # onCase @l # toCase @l' identity`,
+background cases passing straight through; payload-carrying bare buttons
+read `with patch (button …) # asCase @l`).
 
 Conditional visibility is view-model data, never an in-UI predicate.
 When the model field is a payload-carrying variant, case adoption *is*
