@@ -42,7 +42,7 @@ flightBookerMDC3 =
               text # forValue # forField @"out"
               staticText ", back "
               text # forValue # forField @"back" ) # provided returnItinerary # displayed
-      ) # debounced
+      ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
       VariantToRecord.do
@@ -117,3 +117,6 @@ setReturn { return } b = b { return = return }
 
 plannedTrip :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String }
 plannedTrip = { flightType: .oneWay {}, start: "27.03.2026", return: "27.03.2026" }
+
+itinerarySettleTime :: { ms :: Number }
+itinerarySettleTime = { ms: 300.0 }

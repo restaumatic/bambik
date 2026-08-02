@@ -125,8 +125,7 @@ behind an event case via `onCase`), put the deciding emitters inside
 displays off the content's final stage (an echo would close the dialog
 on open). `drawer`'s nav slot is live: nav and content are sibling
 stages over the same types (a selectable nav merges its selector with
-static chrome in one `RecordToRecord.do`); pure chrome nav embeds via
-`# muted`.
+static chrome in one `RecordToRecord.do`).
 
 Collection items may hold stateful stages (`completed`, `updates`) —
 refs are per-instance. `foreach _.key` (and `listOf`, which index-keys

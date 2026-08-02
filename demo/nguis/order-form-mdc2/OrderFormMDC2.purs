@@ -70,7 +70,7 @@ orderFormMDC2 =
               text # forValue # forField @"orderId"
               staticText ") for "
               text # projection customerName # forField @"customer"
-              staticText ", fulfilled as " ) # debounced # tapped
+              staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
               text # forValue # forField @"table" ) # provided dineInDetail # displayed
@@ -87,7 +87,7 @@ orderFormMDC2 =
               staticText ", paid "
               text # forValue # forField @"paid"
               staticText " by "
-              text # projection methodText # forField @"method" ) # field @"payment" # debounced # tapped )
+              text # projection methodText # forField @"method" ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"submit"
           button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput
@@ -270,3 +270,5 @@ printReceipt { shortId, orderId } = do
   liftEffect $ log $ "printed receipt for order " <> orderId
   pure $ .receiptPrinted { shortId }
 
+summarySettleTime :: { ms :: Number }
+summarySettleTime = { ms: 300.0 }

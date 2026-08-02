@@ -1217,7 +1217,7 @@ topAppBar config content = wrap do
 -- | content are sibling stages over the same types — both see every value
 -- | fed, and either side's emissions exit the drawer, so a selectable nav
 -- | (a `listOf` of sections folded via `updates`) drives the content
--- | beside it. Static chrome nav embeds via `muted`.
+-- | beside it.
 drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   nav' <- unwrap (aside >>> cl "mdc-drawer" $ wrap do

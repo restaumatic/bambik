@@ -1029,7 +1029,7 @@ topAppBarCss = """
 -- | content are sibling stages over the same types — both see every value
 -- | fed, and either side's emissions exit the drawer, so a selectable nav
 -- | (a `listOf` of sections folded via `updates`) drives the content
--- | beside it. Static chrome nav embeds via `muted`. Hand-rolled chrome
+-- | beside it. Hand-rolled chrome
 -- | over the tokens (`@material/web` ships no drawer).
 drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do

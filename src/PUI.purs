@@ -46,31 +46,24 @@ module PUI
   , class Hosting
   , hosting
   , action
-  , action'
-  , affAdapter
   , accumulated
   , announce
   , bracketed
-  , constant
   , constantly
   , debounced
-  , debounced'
   , dispatched
   , displayed
   , edits
-  , effAdapter
   , every
   , foreach
   , fires
   , looped
-  , muted
   , mvu
   , onCase
   , optional
   , resolveFor
   , settled
   , silence
-  , spied
   , updates
   , with
   , module Adopters
@@ -576,17 +569,6 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
 displayed :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
 displayed w = mealy (\_ s -> s) (widenRecordInput w)
 
--- | Embed `{}`-typed chrome at ANY position: the wrapped widget is fed
--- | `{}` for every value flowing through and its emissions (the statics'
--- | registration announcement) are dropped, so static chrome fits a live
--- | slot — `drawer config (muted staticNav) content` — without touching
--- | the slot's types.
-muted :: forall m b i o. Functor m => PUI m {} b -> PUI m i o
-muted w = wrap $ unwrap w <#> \w' ->
-  { toUser: \_ -> w'.toUser {}
-  , fromUser: \_ -> w'.fromUser \_ -> pure unit
-  }
-
 -- | Pin a stage's input to a known value: the wrapped widget is fed `a` for
 -- | every value flowing through — a constant-fed stage (a fixed catalogue
 -- | driving a collection component) with no input-type annotation. Its own
@@ -824,7 +806,7 @@ instance Applicative m => RecordToVariant (PUI m) where
 -- | Done = quiescence** — which is the definition of debouncing, so the
 -- | retraction law refines to `coresolve (resolve g) = debounced g ≅ g`
 -- | up to time (once primed). The window is `resolveFor`'s parameter;
--- | the instance uses the same default as `debounced`.
+-- | the instance uses a 300ms default.
 instance Functor m => Resolving (PUI m) where
   resolve = resolveFor { ms: 300.0 }
 
@@ -966,18 +948,6 @@ instance Applicative m => VariantToVariant (PUI m) where
 -- Optics
 
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
-constant :: forall a s t m. Functor m => a -> Optic (PUI m) s t a Void
-constant a w = wrap $ ado
-  w' <- unwrap w
-  let initializedRef = unsafePerformEffect $ Ref.new false
-  in
-    { toUser: \_ -> do
-      initialized <- Ref.read initializedRef
-      when (not initialized) do
-        Ref.write true initializedRef
-        w'.toUser a
-    , fromUser: mempty
-    }
 
 type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 
@@ -1014,23 +984,6 @@ action' arr w = wrap ado
               prop o
               waitAndPropagate
       in waitAndPropagate
-    }
-
--- notice: this is not really optics, operates for given m
--- TODO add release parameter?
--- TODO is this needed?
-effAdapter :: forall m a b s t. Apply m => m { pre :: s -> Effect a, post ::  b -> Effect t} -> Optic (PUI m) s t a b
-effAdapter f w = wrap ado
-  { toUser, fromUser } <- unwrap w
-  { pre, post } <- f
-  in
-    { toUser: \s -> do
-        a <- pre s
-        toUser a
-    , fromUser: \prop -> do
-      fromUser \b -> do
-        t <- post b
-        prop t
     }
 
 -- TODO is this needed?
@@ -1073,29 +1026,11 @@ affAdapter f w = wrap ado
 -- | quiescence step composed with its retraction. Implemented directly
 -- | (ungated, on the input leg) as elsewhere laws are stated and bodies
 -- | stay lean.
-debounced' :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
-debounced' millis = affAdapter $ pure
+debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
+debounced millis = affAdapter $ pure
   { pre: \i -> delay (Milliseconds millis.ms) *> pure i
   , post: pure
   }
-
-debounced :: forall m. Applicative m => Ocular (PUI m)
-debounced = debounced' { ms: 300.0 }
-
-spied :: forall m. Functor m => DebugWarning => String -> Ocular (PUI m)
-spied name w = wrap ado
-  { toUser, fromUser } <- unwrap w
-  in
-    { toUser: \change -> do
-      let _ = spy' "showing to user" change
-      toUser change
-    , fromUser: \prop -> fromUser \change -> do
-      let _ = spy' "getting from user" change
-      prop change
-    }
-  where
-    spy' :: forall a. String -> a -> a
-    spy' text a = spy ("Spied PUI \"" <> name <> "\" " <> text <> " new value") a
 
 -- The container action on PUI (class in Data.Profunctor.Acting — the pure
 -- algebra; instances live with the carriers, like the merge instances above).
