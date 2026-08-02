@@ -1,6 +1,6 @@
 module CashboxMDC2 (cashboxMDC2) where
 
-import Prelude (identity, (#), ($), (+), (-), (<>), Unit, show)
+import Prelude (identity, (#), ($), (+), (-), (<>), Unit, const, show)
 
 import Data.Maybe (fromMaybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -38,7 +38,7 @@ cashboxMDC2 =
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"
                       text # forField @"amount" euros
-                      staticText " to the courier." ) # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: applyRefund, paidOut: applyPayout, counted: recordAudit })
+                      staticText " to the courier." ) # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: applyRefund, paidOut: applyPayout, counted: const recordAudit })
       ) # mvu openedTill
 
 applyRefund :: { amount :: Number } -> { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
@@ -47,8 +47,8 @@ applyRefund { amount } till = till { balance = till.balance - amount }
 applyPayout :: { amount :: Number } -> { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
 applyPayout { amount } till = till { balance = till.balance - amount }
 
-recordAudit :: {} -> { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
-recordAudit _ till = till { audits = till.audits + 1 }
+recordAudit :: { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
+recordAudit till = till { audits = till.audits + 1 }
 
 euros :: Number -> String
 euros n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
