@@ -56,9 +56,9 @@ module PUI
   , edited
   , every
   , foreach
-  , toCases
   , looped
   , mvu
+  , observed
   , onCase
   , optional
   , resolveFor
@@ -90,13 +90,14 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
 import Data.Profunctor.Row.RecordToRecord (asField, atField, completed, field, focusRecord, forField, forProperty, projected, required, tapped) as Adopters
-import Data.Profunctor.Row.RecordToVariant (asCase, toCase) as Adopters
-import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
+import Data.Profunctor.Row.RecordToVariant (asCase, toCase, toCases) as Adopters
+import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (`tapped`, `displayed`, `updated`,
 -- `every`, `edited`, `acted`, `completed`), so a widget's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
+import Data.Profunctor.Row.VariantToVariant (focusVariant) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
@@ -110,7 +111,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (Variant, case_, contract, on)
+import Data.Variant (class Contractable, Variant, case_, contract, on)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -569,21 +570,46 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
 displayed :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
 displayed w = mealy (\_ s -> s) (widenRecordInput w)
 
+-- | Make a status an **event pass-through stage** — `displayed`'s sibling on
+-- | the `+`-diagonal, and the variant answer to `tapped`: every event flowing
+-- | through is forwarded exactly once, at feed time, and the events the
+-- | status consumes are also shown — `snackbar # forCase @"charge" retryLine
+-- | # observed` narrates a retry loop without interrupting it. Subsumption
+-- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
+-- | `Union` widening): the status may consume a *narrower* row than the
+-- | stage carries — its cases are contracted out and shown, background cases
+-- | pass untouched. The status's own emissions are dropped, deliberately:
+-- | entities are idempotent so a display echo may re-forward them
+-- | (`tapped`), but events are one-shot — re-emitting the last event on an
+-- | echo would duplicate it.
+observed
+  :: forall m narrow wider e
+   . Functor m
+  => Contractable wider narrow
+  => PUI m (Variant narrow) e
+  -> PUI m (Variant wider) (Variant wider)
+observed status = wrap $ unwrap status <#> \st ->
+  let mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \v -> do
+        case contract v of
+          Just n -> do
+            tr "observed → status" n
+            st.toUser n
+          Nothing -> pure unit
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop v
+    , fromUser: \prop -> do
+        st.fromUser \_ -> pure unit
+        Ref.write (Just prop) mPropRef
+    }
+
 -- | Pin a stage's input to a known value: the wrapped widget is fed `a` for
 -- | every value flowing through — a constant-fed stage (a fixed catalogue
 -- | driving a collection component) with no input-type annotation. Its own
 -- | input type stays free, so it fits any pipeline position.
 constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
 constantly a = lcmap (const a)
-
--- | Fire the **business outcome** of what the emitter was shown: adopt the
--- | canonical click case by applying `f` to its payload. Where `asCase @l`
--- | renames the event and leaves the payload alone, `toCases` dissolves the
--- | event into the outcome `f` computes — typically a variant of business
--- | results: `button { label: "Sign up" } # toCases register` emits
--- | `register`'s cases directly.
-toCases :: forall m i a o. Functor m => (a -> o) -> PUI m i [ clicked :: a ] -> PUI m i o
-toCases f = rmap (on (Proxy @"clicked") f case_)
 
 -- | Settle a stage's emissions through a **total, type-preserving**
 -- | normalization — guardrail A7's mechanism made a word: a lossy

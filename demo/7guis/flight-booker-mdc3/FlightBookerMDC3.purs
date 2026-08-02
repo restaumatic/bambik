@@ -6,13 +6,13 @@ import Data.Either (Either(..), either)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, mvu, required, updated)
+import PUI (PUI, action, asCase, asField, completed, debounced, displayed, forCases, forField, mvu, required, updated)
 import PUI.HTML (body, provided, staticText, text)
+import PUI.Web (Web)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -45,9 +45,13 @@ flightBookerMDC3 =
       ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
-      VariantToRecord.do
-        snackbar # forCase @"booked" identity
-        snackbar # forCase @"rejected" identity
+      bookingToast
+
+bookingToast :: PUI Web [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] {}
+bookingToast = snackbar # forCases (match
+  { booked: \itinerary -> "You have booked: " <> summary itinerary
+  , rejected: \problem -> "Cannot book: " <> problem
+  })
 
 returnBetween :: { y :: Int, m :: Int, d :: Int } -> { y :: Int, m :: Int, d :: Int } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween out back =
@@ -82,13 +86,13 @@ summary = match
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Aff [ booked :: String, rejected :: String ]
+submit :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
 submit { flightType, start, return } = case parse { flightType, start, return } of
-  Left err -> pure (.rejected ("Cannot book: " <> err))
+  Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
 
-bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ booked :: String ]
-bookFlight itinerary = pure (.booked ("You have booked: " <> summary itinerary))
+bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] ]
+bookFlight itinerary = pure (.booked itinerary)
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of

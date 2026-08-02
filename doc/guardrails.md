@@ -256,7 +256,7 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
 rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
-copyOf`, `projected f`/`forProperty @l`, `toCases outcomeOf`, `settled normalize`,
+copyOf`, `projected f`/`forProperty @l`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next `required` waiting to be coined — never a reason to import the
