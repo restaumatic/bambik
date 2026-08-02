@@ -70,6 +70,7 @@ module PUI.HTML
   , tr
   , transient
   , ul
+  , atCase
   , provided
   )
   where
@@ -83,6 +84,7 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Symbol (class IsSymbol)
+import Data.Variant (prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -479,6 +481,18 @@ transient ui = wrap do
 -- | is *fed* the payload, so a `Maybe`-valued business projection returning
 -- | precisely what the pane reads keeps both sides pinned (subsumption at the
 -- | *stage* boundary is `displayed`/`updated`'s job).
+-- | Show the wrapped pane **at case `l`** of a variant — `atField`'s
+-- | variant-side twin and `provided`'s label-indexed form. A variant is
+-- | one-at-a-time, so adopting case `l` at an entity position *is*
+-- | conditional existence: attached and fed the case's payload while the
+-- | variant sits at `l`, detached otherwise. A variant-valued model field
+-- | reads doubly label-indexed —
+-- | `pane # atCase @"serving" # atField @"display"`. Panes whose payload
+-- | combines the case with sibling fields (the record-shaped editor
+-- | state) keep their named `Maybe` projections and `provided`.
+atCase :: forall @l a b s o. IsSymbol l => Cons l a b s => PUI Web a o -> PUI Web [ | s ] o
+atCase = provided (prj (Proxy @l))
+
 provided :: forall i a b. (i -> Maybe a) -> PUI Web a b -> PUI Web i b
 provided f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w

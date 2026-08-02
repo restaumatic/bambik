@@ -109,7 +109,11 @@ order-form (loop-free pipeline), and the trace-quartet demos in demo/nguis —
 auction (`feedback`), checkout (`folding`), payment (`iterate`),
 ticket-dispenser (`unfolding`), one focused combinator each.
 
-Conditional visibility is view-model data, never an in-UI predicate:
+Conditional visibility is view-model data, never an in-UI predicate.
+When the model field is a payload-carrying variant, case adoption *is*
+conditional existence — `pane # atCase @"serving" # atField @"display"`
+shows the pane while the variant sits at the case, fed its payload
+(ticket-dispenser). Otherwise:
 `provided :: PUI Web a b -> PUI Web (Maybe a) b` attaches and feeds its
 content on `Just`, detaches on `Nothing`. Pair it with a named
 `Maybe`-valued projection so the pane consumes the payload, not the whole

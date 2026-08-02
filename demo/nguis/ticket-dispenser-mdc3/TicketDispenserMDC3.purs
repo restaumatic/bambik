@@ -9,8 +9,8 @@ import Data.Profunctor.Row.VariantToRecord (reelE, unfolding)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, displayed, forField, mvu, projected, updated)
-import PUI.HTML (body, provided, staticText, text)
+import PUI (asCase, atField, displayed, forField, mvu, projected, updated)
+import PUI.HTML (atCase, body, staticText, text)
 import PUI.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,39 +20,34 @@ ticketDispenserMDC3 =
     elevation5 $
       card { caption: "Ticket Dispenser" } $ ( Semigroupoid.do
           displaySmall ( Semigroupoid.do
-              staticText "—" # provided beforeFirstTicket # displayed
-              ( RecordToRecord.do
+              (staticText "—" # atCase @"waiting" # atField @"display") # displayed
+              ( ( RecordToRecord.do
                   staticText "#"
-                  text # forField @"serving" show ) # provided afterFirstTicket # displayed )
+                  text # forField @"number" show ) # atCase @"serving" # atField @"display" ) # displayed )
           bodyMedium ( Semigroupoid.do
-              staticText "Press the button to draw the first ticket." # provided beforeFirstTicket # displayed
-              ( RecordToRecord.do
+              (staticText "Press the button to draw the first ticket." # atCase @"waiting" # atField @"display") # displayed
+              ( ( RecordToRecord.do
                   staticText "Now serving ticket "
-                  text # forField @"serving" show
-                  staticText "." ) # provided afterFirstTicket # displayed )
+                  text # forField @"number" show
+                  staticText "." ) # atCase @"serving" # atField @"display" ) # displayed )
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"
               (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const
       ) # mvu emptyQueue
 
 issue ::
-  [ take :: { serving :: Int }
+  [ take :: { display :: [ waiting :: {}, serving :: { number :: Int } ] }
   , resume :: { next :: Int }
   ]
-  -> Either { serving :: Int } { next :: Int }
+  -> Either { display :: [ waiting :: {}, serving :: { number :: Int } ] } { next :: Int }
 issue = match { take: Left, resume: Right }
 
-nextTicket :: forall a. Tuple a { next :: Int } -> { serving :: Int, next :: Int }
-nextTicket (Tuple _ { next }) = { serving: next, next: next + 1 }
+nextTicket :: forall a. Tuple a { next :: Int } -> { display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int }
+nextTicket (Tuple _ { next }) = { display: .serving { number: next }, next: next + 1 }
 
 firstTicket :: { next :: Int }
 firstTicket = { next: 1 }
 
-beforeFirstTicket :: { serving :: Int } -> Maybe {}
-beforeFirstTicket { serving } = if serving == 0 then Just {} else Nothing
 
-afterFirstTicket :: { serving :: Int } -> Maybe { serving :: Int }
-afterFirstTicket q@{ serving } = if serving == 0 then Nothing else Just q
-
-emptyQueue :: { serving :: Int }
-emptyQueue = { serving: 0 }
+emptyQueue :: { display :: [ waiting :: {}, serving :: { number :: Int } ] }
+emptyQueue = { display: .waiting {} }

@@ -303,7 +303,8 @@ Conditional visibility is always a **`Maybe`-valued projection** plus
 visibility is named, so the rule lives in testable business code. When
 the model field itself is the `Maybe` **and the context pins the row**
 (a mechanism's feed argument), presence is the whole rule and the bare
-accessor says so; at row-stating positions (a pipeline stage the
+accessor says so, and a payload-carrying variant field gates its panes
+by case adoption (`atCase @l`); at row-stating positions (a pipeline stage the
 subsuming machinery reads), the named projection stays — its closed
 signature is the footprint declaration (A2), not boilerplate. `clWhen` stays predicate-driven
 because it toggles styling, not existence.
