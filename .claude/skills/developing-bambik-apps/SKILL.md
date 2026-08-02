@@ -6,10 +6,12 @@ description: How to devlop Profunctor User Interfaces Web applications featuring
 # Developing bambik applications
 
 A bambik application is one profunctor pipeline: every widget is a
-`PUI m i o` — it displays `i` and emits `o` — and the app composes them
-with `Semigroupoid.do` and the four row merges. It is a standalone
-module exporting a single entry function named after the application,
-never `main`, mounted with `body $ …`.
+profunctor over its carrier, displaying an input and emitting an
+output, and the app composes them with qualified-do pipelines and the
+four row merges. It is a standalone module exporting a single entry
+function named after the application, never `main`, mounted at the
+document body. The smallest complete example is the helloworld demo;
+the counter demo is the smallest one with a model.
 
 Work through the three procedures in order. Each is a file in this
 skill's directory:

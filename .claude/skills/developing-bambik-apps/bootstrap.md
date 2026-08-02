@@ -217,70 +217,39 @@ import { <entryFn> } from './output/<Module>/index.js'
 
 ### public/index.html
 
-Minimal page — the app mounts into `<body>` at runtime via `body $ …`,
-so there is no markup to write. The `<link>`s are the chosen design
-system's, copied from its demo page (last column of the table below);
-the MDC2 pair shown here is the starter's. Plain HTML links whatever CSS
-the app supplies instead.
+Minimal page — the app mounts into the document body at runtime, so
+there is no markup to write. An empty `<html>` with:
 
-```html
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <title><app></title>
-    <style>
-      body { margin: 16px; font-family: Roboto, sans-serif; }
-    </style>
-    <!-- emission tracing: <script>window.__bambikTrace = true</script> -->
-  </head>
-  <body>
-    <script type="module" src="bundle.js"></script>
-  </body>
-</html>
-```
+- the usual `charset` and `viewport` meta tags, and a `<title>`;
+- the chosen design system's stylesheet `<link>`s, copied from its demo
+  page (last column of the table below) — plain HTML links whatever CSS
+  the app supplies instead;
+- a `<style>` giving the body a margin and the design system's font
+  family;
+- `<script type="module" src="bundle.js">`, the bundle esbuild writes;
+- optionally `<script>window.__bambikTrace = true</script>` to turn on
+  the emission trace, as every demo page does.
+
+Do **not** copy a demo's page wholesale: those carry the suite's own
+chrome — source panel, `page.js`, highlight.js, the back-link header —
+none of which belongs in an application. Take only the `<link>`s.
 
 ### src/&lt;Module&gt;.purs
 
 The application itself, written to the rules in
 [writing.md](writing.md). If the developer's app is not yet specified,
-this counter is a complete working starter — it exercises the MVU shape,
-a display, an event button and a business function, so a green build of
-it proves the whole toolchain:
+copy `.spago/bambik/<tag>/demo/7guis/counter-mdc2/CounterMDC2.purs` as
+the starter and rename its module and entry function to `<Module>` and
+`<entryFn>`. It is a complete working app in twenty-odd lines — the MVU
+shape, a display, an event button and a business function — so a green
+build of it proves the whole toolchain. Its page,
+`demo/7guis/counter-mdc2/index.html`, is the source of the CSS links
+above.
 
-```purescript
-module <Module> (<entryFn>) where
-
-import Prelude ((#), ($), (+), (<<<), Unit, const, show)
-
-import Data.Variant (match)
-import Effect (Effect)
-import PUI (completed, forField, mvu, updated)
-import PUI.Web.HTML (body, text)
-import PUI.Web.MDC2 (button, card, elevation20, headline4)
-import QualifiedDo.Semigroupoid as Semigroupoid
-
-<entryFn> :: Effect Unit
-<entryFn> =
-  body $
-    elevation20 $
-      card { caption: "<app>" } $ ( Semigroupoid.do
-          headline4 text # forField @"count" show # completed
-          button { label: "Count" } # updated (match { clicked: const <<< increment })
-      ) # mvu freshCount
-
-increment :: { count :: Int } -> { count :: Int }
-increment { count } = { count: count + 1 }
-
-freshCount :: { count :: Int }
-freshCount = { count: 0 }
-```
-
-For a vocabulary other than MDC2, switch the `PUI.Web.MDC2` import —
-`card`, `elevation20` and `headline4` exist under their catalog's own
-names, or drop the oculars entirely for plain HTML.
+For a vocabulary other than MDC2, copy the counter's sibling
+`counter-mdc3/` instead, or the demo named in the last column of the
+table below: the oculars the counter wraps its content in exist under
+each catalog's own names, and drop them entirely for plain HTML.
 
 ## Design systems
 
