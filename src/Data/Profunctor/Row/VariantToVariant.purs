@@ -11,6 +11,21 @@
 -- | Here silence is not merely lawful but forced — both empty-variant ends
 -- | are uninhabited, so the unit can neither receive nor emit — and any
 -- | silent element implements it (`PUI`: `pempty = silence`).
+-- |
+-- | Two transposes of `RecordToRecord` names are **deliberately absent**
+-- | here (doc/record-variant-symmetry.md records the survey):
+-- |
+-- |   * `field`'s `+ → +` transpose — the closed-singleton case wrap
+-- |     `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
+-- |     subsumption step: it is already vocabulary-expressible as
+-- |     `w # onCase @l # toCase @l' f`, two adopters apps have.
+-- |   * `focusRecord`'s transpose — sub-variant focus, `focusVariant` —
+-- |     fails reachability: no demo dispatches into a multi-case
+-- |     sub-variant (`+ → +` app usage is flat dispatch merges). It is
+-- |     `Choice`-derivable via `splitVariant`
+-- |     (`dimap splitVariant (either expand expand) (left w)`) and *not*
+-- |     app-derivable (`left` is ecosystem algebra, import-tower L16), so
+-- |     when a demo reaches for it, it enters here under that name.
 module Data.Profunctor.Row.VariantToVariant
   ( Coprism
   , bind

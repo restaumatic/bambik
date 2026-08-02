@@ -8,9 +8,10 @@ import Data.Variant (match)
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, asCase, toCases, forField, mvu, onCase, projected, tapped, updated)
+import PUI (PUI, action, forCase, forField, mvu, observed, onCase, projected, tapped, toCases, updated)
 import PUI.HTML (body, staticText, text)
-import PUI.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
+import PUI.Web (Web)
+import PUI.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 paymentMDC2 :: Effect Unit
@@ -24,8 +25,13 @@ paymentMDC2 =
           body2 text # projected statusLine # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # toCases startCharge
-              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updated (match { charged: const <<< recordCharged })
+              ( Semigroupoid.do
+                  indeterminateCircularProgress # action chargeFlaky # onCase @"charge"
+                  retryToast ) # iterate) # updated (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder
+
+retryToast :: PUI Web [ charged :: { attempt :: Int }, charge :: { amount :: Number, attempt :: Int } ] [ charged :: { attempt :: Int }, charge :: { amount :: Number, attempt :: Int } ]
+retryToast = snackbar # forCase @"charge" (\{ attempt } -> "Charge declined — retrying (attempt " <> show attempt <> ")") # observed
 
 startCharge :: { amount :: Number } -> [ charge :: { amount :: Number, attempt :: Int } ]
 startCharge { amount } = .charge { amount, attempt: 0 }

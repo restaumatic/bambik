@@ -46,6 +46,7 @@ module Data.Profunctor.Row.VariantToRecord
   , pempty
   , caseToProperty
   , forCase
+  , forCases
   , caseToRecord
   , class Retaining
   , retain
@@ -210,6 +211,18 @@ discard first cont = bind first (\_ -> cont unit)
 -- | payload already is the copy.
 forCase :: forall @l p a b o s. IsSymbol l => Profunctor p => Cons l b () s => (b -> a) -> p [ event :: a ] o -> p [ | s ] o
 forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @"event") (f b)) case_)
+
+-- | Adopt a status component for a **whole classified variant** — the input
+-- | dual of `RecordToVariant`'s `toCases` and `forCase`'s plural: where
+-- | `forCase @l` renders one business case into the canonical `event`
+-- | payload, `forCases` renders every case through one copy classifier, so
+-- | a single status instance serves mutually exclusive outcomes —
+-- | `snackbar # forCases (match { booked: …, rejected: … })`. One-at-a-time
+-- | input means one classifier is total over the row; per-case copy stays
+-- | a `match` branch, never a sibling widget, when the outcomes share one
+-- | status area.
+forCases :: forall p a o s. Profunctor p => (Variant s -> a) -> p [ event :: a ] o -> p [ | s ] o
+forCases f = lcmap (\v -> inj (Proxy @"event") (f v))
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
 -- | for this direction (the dual of `resolveProperty`). Where `case_`

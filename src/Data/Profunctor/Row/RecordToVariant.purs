@@ -50,6 +50,7 @@ module Data.Profunctor.Row.RecordToVariant
   , asCase
   , recordToCase
   , toCase
+  , toCases
   , resolve
   , resolveProperty
   , shutter
@@ -297,6 +298,16 @@ recordToCase = rmap (inj (Proxy @l))
 -- | (which renames the canonical `clicked` case).
 toCase :: forall @l p i a b s. IsSymbol l => Cons l b () s => Profunctor p => (a -> b) -> p i a -> p i [ | s ]
 toCase f = rmap (\a -> inj (Proxy @l) (f a))
+
+-- | Fire the **business outcome** of what the emitter was shown: adopt the
+-- | canonical click case by applying `f` to its payload. Where `asCase @l`
+-- | renames the event and leaves the payload alone, `toCases` dissolves the
+-- | event into the outcome `f` computes — typically a variant of business
+-- | results: `button { label: "Sign up" } # toCases register` emits
+-- | `register`'s cases directly. The output dual of `VariantToRecord`'s
+-- | `forCases` (emitters classify outward, statuses render inward).
+toCases :: forall p i a o. Profunctor p => (a -> o) -> p i [ clicked :: a ] -> p i o
+toCases f = rmap (on (Proxy @"clicked") f case_)
 
 -- | `recordToCase` over the echo wire, at the **closed singleton row** —
 -- | the `field` lesson applied to `× → +`: the pinned empty background

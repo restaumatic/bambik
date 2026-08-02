@@ -54,9 +54,16 @@ canonical row, adopted to the business label at the use site:
   fixed catalogue driving `listOf`/`foreach`) reads `constantly
   catalogue` instead of an input-annotated feed
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
-  `[ clicked :: _ ]`; adopt with `# asCase @l`
+  `[ clicked :: _ ]`; adopt with `# asCase @l` (rename), or `# toCases f`
+  to fire the business outcome `f` computes from the payload
 - statuses (`snackbar`, `banner`) consume `[ event :: String ]`; adopt
-  with `# forCase @l`
+  with `# forCase @l copyOf` (one case), or `# forCases (match { … })`
+  when one status instance serves several mutually exclusive outcomes
+  (flight-booker's `bookingToast`). A status mid-pipeline — showing
+  events that must also flow on — wraps with `# observed` (payment's
+  `retryToast` narrates the retry loop); the status may consume a
+  narrower variant than the stage carries, background cases pass
+  untouched
 - type-changing selectors (`select`, `radioButton`, `segmentedButton`)
   are `{ value :: Maybe a } → { value :: a }`; always-selected ones take
   `# required # asField @l`, possibly-unselected ones take
