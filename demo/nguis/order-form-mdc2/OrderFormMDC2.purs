@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, onCase, required, silence, tapped, updated, with)
+import PUI (PUI, action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, onCase, required, silence, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
@@ -42,14 +42,14 @@ orderFormMDC2 =
                   , { value: .takeaway {}, label: "Takeaway" }
                   , { value: .delivery {}, label: "Delivery" }
                   ] # asField @"selected" # completed
-                filledTextField { floatingLabel: "Table" } # asField @"table" # provided dineInPane # updated setTable
-                filledTextField { floatingLabel: "Time" } # asField @"time" # provided takeawayPane # updated setTime
+                filledTextField { floatingLabel: "Table" } # asField @"table" # provided dineInPane # updated (informed setTable)
+                filledTextField { floatingLabel: "Time" } # asField @"time" # provided takeawayPane # updated (informed setTime)
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
                     body1 ( RecordToRecord.do
                         staticText "Distance "
                         text # forField @"address" distanceKm
-                        staticText " km" )) # provided deliveryPane # updated setAddress) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
+                        staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -179,14 +179,14 @@ takeawayPane { selected, time } = match { dineIn: const Nothing, takeaway: \_ ->
 deliveryPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], address :: String } -> Maybe { address :: String }
 deliveryPane { selected, address } = match { dineIn: const Nothing, takeaway: const Nothing, delivery: \_ -> Just { address } } selected
 
-setTable :: { table :: String } -> { table :: String } -> { table :: String }
-setTable { table } _ = { table }
+setTable :: { table :: String } -> { table :: String }
+setTable { table } = { table }
 
-setTime :: { time :: String } -> { time :: String } -> { time :: String }
-setTime { time } _ = { time }
+setTime :: { time :: String } -> { time :: String }
+setTime { time } = { time }
 
-setAddress :: { address :: String } -> { address :: String } -> { address :: String }
-setAddress { address } _ = { address }
+setAddress :: { address :: String } -> { address :: String }
+setAddress { address } = { address }
 
 loadOrder :: Unit -> Aff
   { shortId :: String

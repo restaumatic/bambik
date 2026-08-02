@@ -56,6 +56,7 @@ module PUI
   , edited
   , every
   , foreach
+  , informed
   , looped
   , mvu
   , observed
@@ -610,6 +611,36 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | input type stays free, so it fits any pipeline position.
 constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
 constantly a = lcmap (const a)
+
+-- | The **dispatch adapter**: make a single-record business function an
+-- | `updated` handler (or a `match` branch of one). The handler's two
+-- | records — the event's payload and the retained model row — travel
+-- | together into every fold, so `informed` merges them and the business
+-- | function sees **one row of facts**, the payload's fields laid over the
+-- | model's (fresh knowledge wins — the union is left-biased, like the
+-- | merges), returning the match row:
+-- |
+-- | ```
+-- | # updated (match { refunded: informed applyRefund })
+-- | applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
+-- | ```
+-- |
+-- | Reads are **per-branch exact**: `fed` is the function's own closed row,
+-- | read from the merged facts by subsumption, so a branch states precisely
+-- | which payload and model fields it consumes — unused payload fields cost
+-- | nothing, and a payload label shadowing a model label reads as the
+-- | payload's (first-label convention). What A12 once exempted as
+-- | "mechanism-dictated currying" dissolves here; only scalar and `Array`
+-- | payloads (a key, a fetched list) stay positional — they are not rows.
+informed
+  :: forall pay small u fed extra
+   . Union pay small u
+  => Union fed extra u
+  => ({ | fed } -> { | small })
+  -> { | pay }
+  -> { | small }
+  -> { | small }
+informed g pay small = g (unsafeCoerce (Record.union pay small))
 
 -- | Settle a stage's emissions through a **total, type-preserving**
 -- | normalization — guardrail A7's mechanism made a word: a lossy

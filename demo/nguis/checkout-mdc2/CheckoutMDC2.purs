@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, displayed, forField, mvu, updated)
+import PUI (asCase, displayed, forField, informed, mvu, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC2 (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,7 +33,7 @@ checkoutMDC2 =
                 button { label: "Next" } # asCase @"next" # provided nextAtShipping
                 button { label: "Back" } # asCase @"next" # provided backAtShipping
                 button { label: "Back" } # asCase @"next" # provided backAtPayment
-                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided placeAtPayment) # folding @"next" cartStep # updated (match { placed: recordPlaced })
+                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided placeAtPayment) # folding @"next" cartStep # updated (match { placed: informed recordPlaced })
           body2 ( RecordToRecord.do
               staticText "Order placed: "
               text # forField @"item" identity
@@ -71,8 +71,8 @@ backAtPayment { step } = if step == .payment {} then Just { step: .shipping {} }
 placeAtPayment :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { status :: [ pending :: {}, placed :: {} ] }
 placeAtPayment { step } = if step == .payment {} then Just { status: .placed {} } else Nothing
 
-recordPlaced :: { status :: [ pending :: {}, placed :: {} ] } -> { status :: [ pending :: {}, placed :: {} ] } -> { status :: [ pending :: {}, placed :: {} ] }
-recordPlaced { status } o = o { status = status }
+recordPlaced :: { status :: [ pending :: {}, placed :: {} ] } -> { status :: [ pending :: {}, placed :: {} ] }
+recordPlaced { status } = { status }
 
 placedOrder :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] } -> Maybe { item :: String, address :: String, card :: String }
 placedOrder { item, address, card, status } =

@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, completed, displayed, forCase, mvu, optional, projected, tapped, updated)
+import PUI (PUI, asCase, asField, completed, displayed, forCase, informed, mvu, optional, projected, tapped, updated)
 import PUI.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.HTML (body, div, provided, staticText, text)
 import PUI.Web (Web)
@@ -34,7 +34,7 @@ meetingBookerFluent =
                 ] # optional # asField @"duration"
               toggleSwitch { label: "Include a Teams link" } # asField @"online"
               divider ) # completed
-          (slider { label: "Attendees" } # asField @"attendees") # provided seatsFor # updated chooseSeats
+          (slider { label: "Attendees" } # asField @"seats") # provided seatsFor # updated (informed chooseSeats)
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
@@ -53,11 +53,11 @@ meetingBookerFluent =
 blankBooking :: { title :: String, room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean }
 blankBooking = { title: "", room: Nothing, duration: Nothing, attendees: justTheOrganizer, online: false }
 
-seatsFor :: { room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Maybe { attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-seatsFor { room, attendees } = (\r -> { attendees: { current: seatedIn r attendees, min: justTheOrganizer, max: roomCapacity r, step: Just 1.0 } }) <$> room
+seatsFor :: { room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Maybe { seats :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+seatsFor { room, attendees } = (\r -> { seats: { current: seatedIn r attendees, min: justTheOrganizer, max: roomCapacity r, step: Just 1.0 } }) <$> room
 
-chooseSeats :: { attendees :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { attendees :: Number } -> { attendees :: Number }
-chooseSeats { attendees } m = m { attendees = attendees.current }
+chooseSeats :: { seats :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { attendees :: Number }
+chooseSeats { seats } = { attendees: seats.current }
 
 seatedIn :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n

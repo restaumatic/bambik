@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (Pattern(..), stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, focusVariant, forField, mvu, onCase, tapped, toCase, updated, with)
+import PUI (asCase, focusVariant, forField, informed, mvu, onCase, tapped, toCase, updated, with)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, headlineSmall, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -35,17 +35,17 @@ cashboxMDC3 =
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge ( RecordToRecord.do
                       staticText "Hand €"
                       text # forField @"amount" euros
-                      staticText " to the courier." ) # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: applyRefund, paidOut: applyPayout, deposited: applyDeposit })
+                      staticText " to the courier." ) # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, deposited: informed applyDeposit })
       ) # mvu openedTill
 
-applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyRefund { amount } till = till { balance = till.balance - amount }
+applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
+applyRefund { amount, balance } = { balance: balance - amount }
 
-applyPayout :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyPayout { amount } till = till { balance = till.balance - amount }
+applyPayout :: { amount :: Number, balance :: Number } -> { balance :: Number }
+applyPayout { amount, balance } = { balance: balance - amount }
 
-applyDeposit :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyDeposit { amount } till = till { balance = till.balance + amount }
+applyDeposit :: { amount :: Number, balance :: Number } -> { balance :: Number }
+applyDeposit { amount, balance } = { balance: balance + amount }
 
 euros :: Number -> String
 euros n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))

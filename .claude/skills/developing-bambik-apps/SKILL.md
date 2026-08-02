@@ -389,10 +389,15 @@ honor it, and changes to either side keep the two in sync:
 - **One record of data per business function** (guardrail A12). Several
   record parameters that travel together are one row in disguise —
   merge them and let field labels name the roles:
-  `returnBetween { out, back }`, never `returnBetween out back`. The
-  mechanism-dictated handler shape `payload -> model -> model`
-  (`updated`/`folding` dispatch) is the exemption — those two records
-  cannot merge.
+  `returnBetween { out, back }`, never `returnBetween out back`. Fold
+  handlers included: dispatch with `informed` —
+  `# updated (match { refunded: informed applyRefund })` over
+  `applyRefund :: { amount, balance } -> { balance }` — the payload's
+  fields are laid over the retained model's (fresh knowledge wins) and
+  the business function sees one row of facts, reading exactly what it
+  consumes and returning the match row. Scalar and `Array` payloads
+  stay positional; a payload label that would shadow a model label of
+  another type is named for its role (`{ seats }`, `{ report }`).
 - **A handler carries no field it does not touch** (guardrail A13). A
   handler's row is exactly its reads∪writes, and every field of a
   `match`'s shared row is touched by some branch. Escapes, by

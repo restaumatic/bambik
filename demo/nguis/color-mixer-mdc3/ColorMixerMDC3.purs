@@ -37,7 +37,9 @@ colorMixerMDC3 =
       ) # mvu duskViolet
 
 applyPreset :: String -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-applyPreset name channels = maybe channels (\p -> remix p.mix channels) (find (\p -> p.name == name) palette)
+applyPreset name channels = maybe channels
+  (\p -> { red: channels.red { current = p.mix.red }, green: channels.green { current = p.mix.green }, blue: channels.blue { current = p.mix.blue } })
+  (find (\p -> p.name == name) palette)
 
 palette :: Array { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } }
 palette =
@@ -54,8 +56,6 @@ mix red green blue = { red: clampChannel red, green: clampChannel green, blue: c
 mixOf :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: Number, green :: Number, blue :: Number }
 mixOf { red, green, blue } = { red: red.current, green: green.current, blue: blue.current }
 
-remix :: { red :: Number, green :: Number, blue :: Number } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-remix m channels = channels { red = channels.red { current = m.red }, green = channels.green { current = m.green }, blue = channels.blue { current = m.blue } }
 
 hexText :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
 hexText = hex <<< mixOf

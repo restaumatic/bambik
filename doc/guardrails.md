@@ -433,21 +433,35 @@ returnBetween :: { out :: Date, back :: Date } -> Maybe Itinerary
 returnBetween { out, back } = …            -- never  returnBetween out back
 ```
 
-(flight-booker; `Date`/`Itinerary` stand for their anonymous rows). The
-exemption is the mechanism-dictated shape: an `updated`/`folding`
-handler is `payload -> model -> model` because the payload arrives in
-the event and the model in the fold — those two records *cannot* merge,
-and the currying is the mechanism's signature, not the function's
-choice. Scalar parameters (a key, an operator symbol) stay positional;
-the rule is about records, whose whole point is named fields.
+(flight-booker; `Date`/`Itinerary` stand for their anonymous rows).
+Fold handlers are no exemption: the event's payload and the retained
+model *do* travel together into every fold, so the dispatch adapter
+`informed` merges them — the payload's fields laid over the model's,
+fresh knowledge wins — and the handler is a single-record business
+function:
+
+```
+# updated (match { refunded: informed applyRefund })
+applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
+```
+
+Reads become per-branch exact: the function's input row states precisely
+which payload and model fields it consumes (unused payload fields cost
+nothing), and its output is the match row. Only scalar and `Array`
+payloads (a key, an operator symbol, a fetched list) stay positional —
+they are not rows. Where a payload label would shadow a model label of
+another type, name the payload for its **role** instead: meeting-booker's
+pane row is `{ seats }` over the model's `attendees`, weather's event
+carries `{ report }`.
 
 ### A13. A handler carries no field it does not touch.
 
 Per function, A2 sharpened: a handler's row is **exactly** its
 reads∪writes — a field that only rides through
 (`recordAudit :: { balance, audits } -> …` touching only `audits`) is a
-smell. Per match: one `match` is one row, the union of its branches'
-footprints, and every field of that row must be read or written by
+smell. Per match: one `match` is one row — with `informed`, the **write**
+row only, since each branch's reads are its own input row — the union of
+its branches' writes, and every field of that row must be written by
 *some* branch. When a branch would carry fields only its siblings
 touch, pick by separability:
 
@@ -462,7 +476,7 @@ touch, pick by separability:
   * **disjoint footprints** → the events or the model want redesign
     until the branches genuinely share (cashbox's audit became a
     deposit, making every branch exactly
-    `{ amount } -> { balance } -> { balance }`).
+    `{ amount, balance } -> { balance }`).
 
 An **identity handler** is the smell in its purest form — the event was
 never model data: weather's about-dialog folded its confirm through

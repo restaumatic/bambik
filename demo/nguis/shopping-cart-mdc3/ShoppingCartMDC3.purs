@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (forField, foreach, mvu, projected, tapped, toCase, updated, with)
+import PUI (forField, foreach, informed, mvu, projected, tapped, toCase, updated, with)
 import PUI.HTML (body, clicked, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, dataCell, dataRow, dataTable, elevation5, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,7 +20,7 @@ shoppingCartMDC3 =
           listOf {} productCatalogue ( RecordToRecord.do
               text # forField @"name" identity
               staticText " · $"
-              text # forField @"unitPrice" formatMoney ) # toCase @"productPicked" identity # updated (match { productPicked: addUnit })
+              text # forField @"unitPrice" formatMoney ) # toCase @"productPicked" { product: _ } # updated (match { productPicked: informed addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
                   dataCell text # forField @"product" identity
@@ -47,11 +47,11 @@ productCatalogue _ =
   , { name: "Cheesecake", unitPrice: 550 }
   ]
 
-addUnit :: { name :: String, unitPrice :: Int } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-addUnit p@{ name } cart
-  | any (\l -> l.product.name == name) cart.order =
-      cart { order = map (\l -> if l.product.name == name then l { quantity = l.quantity + 1 } else l) cart.order }
-  | otherwise = cart { order = snoc cart.order { product: p, quantity: 1 } }
+addUnit :: { product :: { name :: String, unitPrice :: Int }, order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
+addUnit { product, order }
+  | any (\l -> l.product.name == product.name) order =
+      { order: map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
+  | otherwise = { order: snoc order { product, quantity: 1 } }
 
 removeUnit :: String -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
 removeUnit name cart = cart { order = mapMaybe oneFewer cart.order }

@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, foreach, forField, mvu, projected, toCase, updated)
+import PUI (asField, completed, displayed, foreach, forField, informed, mvu, projected, toCase, updated)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
 import PUI.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -42,7 +42,7 @@ movieBrowserMDC3 =
                     span ( RecordToRecord.do
                         staticText "★ "
                         text # projected ratingText )
-                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: markFavorite })
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
       ) # mvu movieCatalogue
 
 movieCatalogue :: { category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } }
@@ -76,8 +76,8 @@ visibleMovies { category, classic, cult, oscar, movies } = map card (filter (\mo
   chosenIf on tag = if on then Just tag else Nothing
   card { title, year, rating, favorite } = { title, year, rating, favorite }
 
-markFavorite :: { title :: String, year :: Int, rating :: Number, favorite :: Boolean } -> { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } } -> { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } }
-markFavorite { title, favorite } m = m { movies = map (\movie -> if movie.title == title then movie { favorite = favorite } else movie) m.movies }
+markFavorite :: { title :: String, favorite :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } } -> { movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } }
+markFavorite { title, favorite, movies } = { movies: map (\movie -> if movie.title == title then movie { favorite = favorite } else movie) movies }
 
 ratingText :: { rating :: Number } -> String
 ratingText { rating } = toStringWith (fixed 1) rating

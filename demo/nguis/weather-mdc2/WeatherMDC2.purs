@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, displayed, mvu, forProperty, onCase, projected, tapped, toCase, updated)
+import PUI (action, displayed, informed, mvu, forProperty, onCase, projected, tapped, toCase, updated)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,7 +21,7 @@ weatherMDC2 =
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
               listOf { selected: _.shown } forecastRequests (text # forProperty @"city" identity) # toCase @"cityPicked" identity
-              indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updated (match { reportServed: rememberReport })
+              indeterminateCircularProgress # action fetchReport # onCase @"cityPicked") # updated (match { reportServed: informed rememberReport })
           headline1 ( RecordToRecord.do
               text # projected temperatureText
               staticText " °C" ) # tapped
@@ -73,13 +73,13 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: { city :: String, sample :: Int, shown :: Boolean } -> Aff [ reportServed :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } ]
+fetchReport :: { city :: String, sample :: Int, shown :: Boolean } -> Aff [ reportServed :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } ]
 fetchReport { city, sample } = do
   delay (Milliseconds 800.0)
-  pure (.reportServed (conditionsFor city sample))
+  pure (.reportServed { report: conditionsFor city sample })
 
-rememberReport :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
-rememberReport report { servedReports } = { report, servedReports: servedReports + 1 }
+rememberReport :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
+rememberReport { report, servedReports } = { report, servedReports: servedReports + 1 }
 
 forecastRequests :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> Array { city :: String, sample :: Int, shown :: Boolean }
 forecastRequests { servedReports, report } = climateTable <#> \r ->

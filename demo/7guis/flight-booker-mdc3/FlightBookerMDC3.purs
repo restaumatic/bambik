@@ -10,7 +10,7 @@ import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (PUI, action, asCase, asField, completed, debounced, displayed, forCases, forField, mvu, required, updated)
+import PUI (PUI, action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, required, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
@@ -28,7 +28,7 @@ flightBookerMDC3 =
                 , { value: .return {}, label: "return flight" }
                 ] # required # asField @"flightType"
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided returnLeg # updated setReturn
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
       ( Semigroupoid.do
           bodyLarge ( RecordToRecord.do
@@ -119,8 +119,8 @@ dateKey { y, m, d } = y * 10000 + m * 100 + d
 returnLeg :: { flightType :: [ oneWay :: {}, return :: {} ], return :: String } -> Maybe { return :: String }
 returnLeg { flightType, return } = if flightType == .return {} then Just { return } else Nothing
 
-setReturn :: { return :: String } -> { return :: String } -> { return :: String }
-setReturn { return } b = b { return = return }
+setReturn :: { return :: String } -> { return :: String }
+setReturn { return } = { return }
 
 plannedTrip :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String }
 plannedTrip = { flightType: .oneWay {}, start: "27.03.2026", return: "27.03.2026" }
