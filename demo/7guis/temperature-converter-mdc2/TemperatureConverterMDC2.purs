@@ -5,7 +5,7 @@ import Prelude ((#), ($), (*), (+), (-), (/), Unit, show)
 import Data.Maybe (Maybe(..))
 import Data.Number (fromString)
 import Effect (Effect)
-import PUI (forField, mvu, projection, updates)
+import PUI (forField, mvu, projected, updated)
 import PUI.HTML (body)
 import PUI.MDC2 (card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,8 +15,8 @@ temperatureConverterMDC2 =
   body $
     elevation20 $
       card { caption: "Temperature Converter" } $ ( Semigroupoid.do
-          filledTextField { floatingLabel: "Celsius" } # projection show # forField @"celsius" # updates fromCelsius
-          filledTextField { floatingLabel: "Fahrenheit" } # projection show # forField @"fahrenheit" # updates fromFahrenheit
+          filledTextField { floatingLabel: "Celsius" } # projected show # forField @"celsius" # updated fromCelsius
+          filledTextField { floatingLabel: "Fahrenheit" } # projected show # forField @"fahrenheit" # updated fromFahrenheit
       ) # mvu roomTemperature
 
 fromCelsius :: { value :: String } -> { celsius :: Number, fahrenheit :: Number } -> { celsius :: Number, fahrenheit :: Number }

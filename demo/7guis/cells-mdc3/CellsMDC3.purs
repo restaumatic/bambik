@@ -15,7 +15,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
-import PUI (asField, completed, foreach, mvu, ofField, projection, settled, toCase, updates)
+import PUI (asField, completed, foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
 import PUI.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,11 +28,11 @@ cellsMDC3 =
           ( RecordToRecord.do
               bodyLarge ( RecordToRecord.do
                   staticText "Cell "
-                  text # projection selectedName )
+                  text # projected selectedName )
               filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"formula") # completed # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px; border: 1px solid #ccc; margin-top: 10px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # ofField @"text" ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updates (match { cellClicked: selectCell })
+                  ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # forProperty @"text" ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
 cols :: Int

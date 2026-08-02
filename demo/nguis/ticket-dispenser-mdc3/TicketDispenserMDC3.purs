@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToRecord (reelE, unfolding)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, displayed, forField, mvu, projection, updates)
+import PUI (asCase, displayed, forField, mvu, projected, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,16 +23,16 @@ ticketDispenserMDC3 =
               staticText "—" # provided beforeFirstTicket # displayed
               ( RecordToRecord.do
                   staticText "#"
-                  text # projection show # forField @"serving" ) # provided afterFirstTicket # displayed )
+                  text # projected show # forField @"serving" ) # provided afterFirstTicket # displayed )
           bodyMedium ( Semigroupoid.do
               staticText "Press the button to draw the first ticket." # provided beforeFirstTicket # displayed
               ( RecordToRecord.do
                   staticText "Now serving ticket "
-                  text # projection show # forField @"serving"
+                  text # projected show # forField @"serving"
                   staticText "." ) # provided afterFirstTicket # displayed )
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"take"
-              (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updates const
+              (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const
       ) # mvu emptyQueue
 
 issue ::

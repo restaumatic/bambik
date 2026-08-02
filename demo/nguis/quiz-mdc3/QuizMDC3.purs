@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, forField, forValue, mvu, ofField, projection, toCase, updates)
+import PUI (asCase, completed, displayed, forField, forValue, mvu, forProperty, projected, toCase, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,24 +19,24 @@ quizMDC3 =
     elevation5 $
       card { caption: "Quiz" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projection progressFraction
+              linearProgress # projected progressFraction
               bodyLarge RecordToRecord.do
                 staticText "Question "
-                text # projection questionNumberText
+                text # projected questionNumberText
                 staticText " of "
                 staticText questionCountText
                 staticText " · Score "
-                text # projection show # forField @"correct") # completed
+                text # projected show # forField @"correct") # completed
           ( Semigroupoid.do
               headlineMedium text # forValue # forField @"prompt" # completed
-              listOf {} questionChoices (text # ofField @"label") # toCase @"picked" _.key) # provided currentQuestion # updates (match { picked: answer })
+              listOf {} questionChoices (text # forProperty @"label") # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
           ( Semigroupoid.do
               headlineSmall ( RecordToRecord.do
                   staticText "Final score: "
-                  text # projection show # forField @"correct"
+                  text # projected show # forField @"correct"
                   staticText " / "
-                  text # projection show # forField @"total") # displayed
-              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided finalOutcome # updates (match { restarted: const (const freshQuizRun) })
+                  text # projected show # forField @"total") # displayed
+              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided finalOutcome # updated (match { restarted: const (const freshQuizRun) })
       ) # mvu freshQuizRun
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }

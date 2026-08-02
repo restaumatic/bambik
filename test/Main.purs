@@ -27,7 +27,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, displayed, edits, foreach, looped, optioned, resolveFor, seeded, updates, with)
+import PUI (PUI(..), accumulated, acted, announce, dispatched, displayed, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -431,14 +431,14 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (updates (\e s -> { n: s.n + e }) (probe gProp :: PUI Effect { n :: Int } Int))
+    m <- unwrap (updated (\e s -> { n: s.n + e }) (probe gProp :: PUI Effect { n :: Int } Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp 3
-    Ref.read outs >>= assertEqual "updates: gated before a model" []
+    Ref.read outs >>= assertEqual "updated: gated before a model" []
     m.toUser { n: 10 }
-    Ref.read outs >>= assertEqual "updates: value passes through" [ { n: 10 } ]
+    Ref.read outs >>= assertEqual "updated: value passes through" [ { n: 10 } ]
     fire gProp 3
-    Ref.read outs >>= assertEqual "updates: event folded into retained model" [ { n: 10 }, { n: 13 } ]
+    Ref.read outs >>= assertEqual "updated: event folded into retained model" [ { n: 10 }, { n: 13 } ]
 
   -- completed (output completion): fields the widget doesn't produce are
   -- carried from the retained input; emissions are trimmed first, so a fat
@@ -826,22 +826,22 @@ main = do
     m.toUser { key: "b", value: 2 }
     Ref.read outs >>= assertEqual "accumulated: a new key grows the array in first-appearance order" [ [ 1 ], [ 1, 2 ] ]
     m.toUser { key: "a", value: 10 }
-    Ref.read outs >>= assertEqual "accumulated: a known key updates its slot in place" [ [ 1 ], [ 1, 2 ], [ 10, 2 ] ]
+    Ref.read outs >>= assertEqual "accumulated: a known key updated its slot in place" [ [ 1 ], [ 1, 2 ], [ 10, 2 ] ]
     Ref.read builds >>= assertEqual "accumulated: two keys, two instances" 2
     fireElem roster 1 20
     Ref.read outs >>= \os -> assertEqual "accumulated: an element emission folds into its slot" (Just [ 10, 20 ]) (os !! (length os - 1))
 
-  -- edits @l: the key is data and the element's output row EXCLUDES it — the
+  -- edited @l: the key is data and the element's output row EXCLUDES it — the
   -- carrier re-attaches each emission's key (the return address), so an
   -- element structurally cannot change it; feeds re-emit (input-primed).
   do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { id :: String, title :: String } { title :: String }))
     outs <- Ref.new ([] :: Array (Array { id :: String, title :: String }))
-    m <- unwrap (edits @"id" (elemProbe builds roster))
+    m <- unwrap (edited @"id" (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { id: "a", title: "x" }, { id: "b", title: "y" } ]
-    Ref.read outs >>= assertEqual "edits: input-primed — every feed re-emits the array" [ [ { id: "a", title: "x" }, { id: "b", title: "y" } ] ]
+    Ref.read outs >>= assertEqual "edited: input-primed — every feed re-emits the array" [ [ { id: "a", title: "x" }, { id: "b", title: "y" } ] ]
     fireElem roster 0 { title: "X" }
-    Ref.read outs >>= \os -> assertEqual "edits: an edit folds immediately, its key re-attached by the carrier" (Just [ { id: "a", title: "X" }, { id: "b", title: "y" } ]) (os !! (length os - 1))
-    Ref.read builds >>= assertEqual "edits: survivors were re-fed, never rebuilt" 2
+    Ref.read outs >>= \os -> assertEqual "edited: an edit folds immediately, its key re-attached by the carrier" (Just [ { id: "a", title: "X" }, { id: "b", title: "y" } ]) (os !! (length os - 1))
+    Ref.read builds >>= assertEqual "edited: survivors were re-fed, never rebuilt" 2

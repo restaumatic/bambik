@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
-import PUI (action, asCase, asField, completed, forField, forValue, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, asField, completed, forField, forValue, mvu, onCase, projected, tapped, updated)
 import PUI.HTML (attr, body, div, staticText, text)
 import PUI.MDC3 (bodyMedium, button, card, elevation5, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -32,12 +32,12 @@ passwordGeneratorMDC3 =
               toggleSwitch { label: "Symbols" } # asField @"symbols") # completed
           bodyMedium ( RecordToRecord.do
               staticText "Strength: "
-              text # projection strengthText ) # tapped
+              text # projected strengthText ) # tapped
           div >>> attr "style" "font-family: monospace; font-size: 1.2rem; word-break: break-all; min-height: 1.6rem; margin: 8px 0;" >>> attr "id" "password" $
             text # forValue # forField @"password" # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"generate"
-              indeterminateLinearProgress # action samplePassword # onCase @"generate") # updates (match { generated: rememberPassword })
+              indeterminateLinearProgress # action samplePassword # onCase @"generate") # updated (match { generated: rememberPassword })
       ) # mvu strongMixRecipe
 
 samplePassword :: { length :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, uppercase :: Boolean, lowercase :: Boolean, digits :: Boolean, symbols :: Boolean } -> Aff [ generated :: String ]

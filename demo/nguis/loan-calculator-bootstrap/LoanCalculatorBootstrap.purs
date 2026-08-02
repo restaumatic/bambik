@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, forCase, mvu, projection, required, tapped)
+import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped)
 import PUI.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.HTML (body, div, staticText, text)
 import PUI.Web (Web)
@@ -34,17 +34,17 @@ loanCalculatorBootstrap =
       listGroup ( RecordToRecord.do
           listGroupItem ( RecordToRecord.do
               staticText "Monthly payment "
-              badge { variant: "primary" } (text # projection monthlyText) )
+              badge { variant: "primary" } (text # projected monthlyText) )
           listGroupItem ( RecordToRecord.do
               staticText "Interest rate "
-              text # projection rateText )
+              text # projected rateText )
           listGroupItem ( RecordToRecord.do
               staticText "Total interest "
-              text # projection totalInterestText )
+              text # projected totalInterestText )
       ) # tapped
       ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
-          progress ) # projection interestShare # tapped
+          progress ) # projected interestShare # tapped
       button { label: "Apply for this loan" } # asCase @"applied"
       appliedToast
 

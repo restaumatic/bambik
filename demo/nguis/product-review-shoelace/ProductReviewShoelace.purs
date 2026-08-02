@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, forCase, mvu, projection, required, tapped)
+import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped)
 import PUI.HTML (body, p, staticText, text)
 import PUI.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import PUI.Web (Web)
@@ -33,7 +33,7 @@ productReviewShoelace =
       ) # mvu freshImpression
       p ( RecordToRecord.do
           staticText "Preview: "
-          text # projection previewLine ) # tapped
+          text # projected previewLine ) # tapped
       button { label: "Submit review" } # asCase @"submitted"
       submittedToast
 

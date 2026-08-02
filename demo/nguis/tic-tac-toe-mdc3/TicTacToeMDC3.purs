@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forField, forValue, foreach, mvu, ofField, toCase, updates, with)
+import PUI (displayed, forField, forValue, foreach, mvu, forProperty, toCase, updated, with)
 import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC3 (button, card, elevation5, headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,8 +30,8 @@ ticTacToeMDC3 =
                   ( clicked
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
-                          $ text # ofField @"mark")) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updates (match { cellPicked: claimCell })
-          with openingPosition (button { label: "New game", icon: "replay" }) # updates (match { clicked: const })
+                          $ text # forProperty @"mark")) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
+          with openingPosition (button { label: "New game", icon: "replay" }) # updated (match { clicked: const })
       ) # mvu openingPosition
 
 cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: String, win :: Boolean }

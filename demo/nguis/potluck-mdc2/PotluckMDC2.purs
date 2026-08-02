@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (acted, asField, displayed, field, foreach, forField, forValue, projection, tapped, with)
+import PUI (acted, asField, displayed, field, foreach, forField, forValue, projected, tapped, with)
 import PUI.HTML (body, span, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,7 +18,7 @@ potluckMDC2 =
     elevation20 $
       card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 ( Semigroupoid.do
-              text # projection guestCount
+              text # projected guestCount
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # displayed
           ) # tapped
           ( list $
@@ -35,7 +35,7 @@ potluckMDC2 =
             ( span $ RecordToRecord.do
                 text # forValue # forField @"name"
                 staticText "’s "
-                text # projection dishText # forField @"dish"
+                text # projected dishText # forField @"dish"
                 staticText ", "
             ) # foreach @"name" identity # field @"guests"
       ) # with invitation

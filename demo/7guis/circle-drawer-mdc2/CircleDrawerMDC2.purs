@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, constantly, foreach, mvu, toCase, updates)
+import PUI (asCase, asField, constantly, foreach, mvu, toCase, updated)
 import PUI.HTML (attrWith, body, onClickedXY, provided, (:=))
 import PUI.MDC2 (button, card, cardActions, elevation20, sliderLive)
 import PUI.SVG (circle, svg)
@@ -20,7 +20,7 @@ circleDrawerMDC2 =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { label: "" } # asField @"diameter" # provided selectedDiameter # updates adjustDiameter
+          sliderLive { label: "" } # asField @"diameter" # provided selectedDiameter # updated adjustDiameter
           ( RecordToVariant.do
               svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
                 ( onClickedXY
@@ -28,7 +28,7 @@ circleDrawerMDC2 =
                           >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ pempty # constantly {}) # foreach @"key" canvasCircles) # toCase @"clicked" identity)
               cardActions $ RecordToVariant.do
                 button { label: "Undo", icon: "undo" } # asCase @"undo"
-                button { label: "Redo", icon: "redo" } # asCase @"redo") # updates (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
+                button { label: "Redo", icon: "redo" } # asCase @"redo") # updated (match { clicked: selectOrAddCircle, undo: const <<< undo, redo: const <<< redo })
       ) # mvu emptyCanvas
 
 canvasCircles

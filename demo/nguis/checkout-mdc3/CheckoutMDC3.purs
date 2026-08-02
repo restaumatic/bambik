@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, displayed, forField, forValue, mvu, updates)
+import PUI (asCase, displayed, forField, forValue, mvu, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyMedium, button, card, elevation5)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,7 +33,7 @@ checkoutMDC3 =
                 button { label: "Next" } # asCase @"next" # provided nextAtShipping
                 button { label: "Back" } # asCase @"next" # provided backAtShipping
                 button { label: "Back" } # asCase @"next" # provided backAtPayment
-                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided placeAtPayment) # folding @"next" cartStep # updates (match { placed: recordPlaced })
+                button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"placed" # provided placeAtPayment) # folding @"next" cartStep # updated (match { placed: recordPlaced })
           bodyMedium ( RecordToRecord.do
               staticText "Order placed: "
               text # forValue # forField @"item"

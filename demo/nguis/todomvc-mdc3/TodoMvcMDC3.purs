@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, forField, mvu, ofField, projection, required, toCase, updates)
+import PUI (asField, completed, displayed, forField, mvu, forProperty, projected, required, toCase, updated)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
 import PUI.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,8 +20,8 @@ todoMvcMDC3 =
       card { caption: "TodoMVC" } $ ( Semigroupoid.do
           Semigroupoid.do
             filledTextField { floatingLabel: "What needs to be done?" } # asField @"entry" # completed
-            button { label: "Add" } # updates (match { clicked: const <<< addTodo })
-          listOf { selected: _.done } visibleEntries (span text # ofField @"title" # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updates (match { todoClicked: toggleTodo })
+            button { label: "Add" } # updated (match { clicked: const <<< addTodo })
+          listOf { selected: _.done } visibleEntries (span text # forProperty @"title" # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
           segmentedButton
             [ { value: .all {}, label: "All" }
             , { value: .active {}, label: "Active" }
@@ -29,12 +29,12 @@ todoMvcMDC3 =
             ] # required # asField @"visibility" # completed
           Semigroupoid.do
             bodySmall ( RecordToRecord.do
-                text # projection show # forField @"count"
+                text # projected show # forField @"count"
                 staticText " item left" ) # provided soleItemLeft # displayed
             bodySmall ( RecordToRecord.do
-                text # projection show # forField @"count"
+                text # projected show # forField @"count"
                 staticText " items left" ) # provided severalItemsLeft # displayed
-            button { label: "Clear completed" } # updates (match { clicked: const <<< clearCompleted })
+            button { label: "Clear completed" } # updated (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
 
 emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] }

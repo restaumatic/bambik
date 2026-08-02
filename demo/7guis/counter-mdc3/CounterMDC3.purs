@@ -4,7 +4,7 @@ import Prelude ((#), ($), (+), (<<<), Unit, const, show)
 
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, forField, mvu, projection, updates)
+import PUI (completed, forField, mvu, projected, updated)
 import PUI.HTML (body, text)
 import PUI.MDC3 (button, card, elevation5, headlineLarge)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,8 +14,8 @@ counterMDC3 =
   body $
     elevation5 $
       card { caption: "Counter" } $ ( Semigroupoid.do
-          headlineLarge text # projection show # forField @"count" # completed
-          button { label: "Count" } # updates (match { clicked: const <<< increment })
+          headlineLarge text # projected show # forField @"count" # completed
+          button { label: "Count" } # updated (match { clicked: const <<< increment })
       ) # mvu freshCount
 
 increment :: { count :: Int } -> { count :: Int }

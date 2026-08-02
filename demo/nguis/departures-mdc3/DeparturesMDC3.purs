@@ -6,7 +6,7 @@ import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (dispatched, displayed, every, forField, forValue, mvu, projection)
+import PUI (dispatched, displayed, every, forField, forValue, mvu, projected)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC3 (bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,9 +28,9 @@ departuresMDC3 =
               )
               bodyMedium ( RecordToRecord.do
                   staticText "Last update: "
-                  text # projection updatedFlight
+                  text # projected updatedFlight
                   staticText " → "
-                  text # projection updatedStatus )
+                  text # projected updatedStatus )
           ) # displayed
       ) # mvu boardOpening
 

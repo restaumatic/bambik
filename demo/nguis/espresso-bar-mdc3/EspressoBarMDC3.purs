@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, forCase, mvu, projection, required, tapped, updates, with)
+import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped, updated, with)
 import PUI.HTML (body, div, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -56,14 +56,14 @@ espressoBarMDC3 =
               menu { label: "Presets" } ( RecordToVariant.do
                   with theUsual (menuItem { label: "The usual" } # asCase @"theUsual")
                   menuItem { label: "Espresso, no frills" } # asCase @"espressoNoFrills" )
-                # updates (match { theUsual: const, espressoNoFrills: \m _ -> espressoNoFrills m })
+                # updated (match { theUsual: const, espressoNoFrills: \m _ -> espressoNoFrills m })
           ) # mvu usualOrder
           bodyMedium ( RecordToRecord.do
               staticText "Your cup: "
-              text # projection summaryText ) # tapped
+              text # projected summaryText ) # tapped
           ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
-              linearProgress ) # projection caffeineFraction # tapped
+              linearProgress ) # projected caffeineFraction # tapped
           button { label: "Place order", icon: "local_cafe" } # asCase @"brewed"
           brewedToast
 

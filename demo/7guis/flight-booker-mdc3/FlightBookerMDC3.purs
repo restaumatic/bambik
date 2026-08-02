@@ -11,7 +11,7 @@ import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, forValue, mvu, required, updates)
+import PUI (action, asCase, asField, completed, debounced, displayed, forCase, forField, forValue, mvu, required, updated)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,7 +28,7 @@ flightBookerMDC3 =
                 , { value: .return {}, label: "return flight" }
                 ] # required # asField @"flightType"
               filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"start") # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided returnLeg # updates setReturn
+          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"return" # provided returnLeg # updated setReturn
       ) # mvu plannedTrip
       ( Semigroupoid.do
           bodyLarge ( RecordToRecord.do

@@ -72,7 +72,7 @@ import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field, projection)
+import Data.Profunctor.Row.RecordToRecord (field, projected)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, on) as Variant
@@ -280,7 +280,7 @@ radioGroup config options = field @"value" $ fieldWith "above" config.label do
 
 -- | The **determinate** progress display, a `{ value :: Number } → {}`
 -- | display citizen: `value` is the filled fraction (0.0–1.0). The gauge
--- | shape: `progressBar # projection fraction`.
+-- | shape: `progressBar # projected fraction`.
 progressBar :: PUI Web { value :: Number } {}
 progressBar = wrap do
   element "fluent-progress-bar" (pure unit)
@@ -325,7 +325,7 @@ messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    text # projection eventText) # cl "fluent-toast"
+    text # projected eventText) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

@@ -10,7 +10,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, displayed, fires, forCase, forField, forValue, mvu, required)
+import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, forValue, mvu, required)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
@@ -53,7 +53,7 @@ signupFormMDC2 =
         ( subtitle2 $ RecordToRecord.do
             staticText "Ready to sign up as "
             text # forValue # forField @"username" ) # provided whenReady # displayed
-        button { label: "Sign up", icon: "person_add" } # fires register
+        button { label: "Sign up", icon: "person_add" } # toCases register
         VariantToRecord.do
           welcomeToast
           rejectionToast

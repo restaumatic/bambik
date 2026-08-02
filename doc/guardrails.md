@@ -138,7 +138,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `+`-members) — never a DOM annotation (`data-*`), never a render
   index, never carrier-private guesswork.
 - Identity MUST be unforgeable where the carrier owns it: in
-  `acted`/`edits` the element's output row excludes the key and the
+  `acted`/`edited` the element's output row excludes the key and the
   carrier re-attaches it. Stateful carriers MUST make identity follow
   the key (nodes move with their keys; matched elements re-feed in
   place). Keys are labels, never rendered content.
@@ -246,7 +246,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.HTML`/`PUI.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`field`, `recordToCase`, `projection`, `constantly`).
+  applications use (`field`, `recordToCase`, `projected`, `constantly`).
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer.
 - **Application layer** — vocabulary only: no `Data.Profunctor`, no
@@ -256,7 +256,7 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
 rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
-copyOf`, `projection f`/`ofField @l`, `fires outcomeOf`, `settled normalize`,
+copyOf`, `projected f`/`forProperty @l`, `toCases outcomeOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next `required` waiting to be coined — never a reason to import the
@@ -283,7 +283,7 @@ ecosystem API (`Aff`, `Either`, `Milliseconds` inside business actions)
 
 Every business function states its exact footprint as a closed narrow
 row — what it reads ∪ writes, never the whole model. The subsuming
-stages (`updates`/`tapped`/`displayed`/`edits`/`acted`/`completed`)
+stages (`updated`/`tapped`/`displayed`/`edited`/`acted`/`completed`)
 absorb the widening; applications MUST NOT coerce rows at call sites
 (`widenRecordInput` is library plumbing, deliberately not re-exported).
 A handler that reads nothing is not a transformer but a constant patch.
@@ -357,7 +357,7 @@ speak the vocabulary — the adopters, the mechanisms with their
 projection arguments, the merges' qualified-do — and every raw
 `lcmap`/`rmap`/`dimap` an application would have written has a named
 home (the L16 mechanism list). The constant-patch emitter is `with
-patch (button …) # updates (match { clicked: const })` — the patch is
+patch (button …) # updated (match { clicked: const })` — the patch is
 announced, the button replays it. What has no home yet goes to the
 library as a missing-vocabulary signal, never inline.
 

@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, asCase, asField, bracketed, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projection, required, silence, tapped, updates, with)
+import PUI (PUI, action, asCase, asField, bracketed, completed, debounced, displayed, field, forCase, forField, forValue, looped, onCase, projected, required, silence, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
@@ -42,14 +42,14 @@ orderFormMDC2 =
                   , { value: .takeaway {}, label: "Takeaway" }
                   , { value: .delivery {}, label: "Delivery" }
                   ] # asField @"selected" # completed
-                filledTextField { floatingLabel: "Table" } # asField @"table" # provided dineInPane # updates setTable
-                filledTextField { floatingLabel: "Time" } # asField @"time" # provided takeawayPane # updates setTime
+                filledTextField { floatingLabel: "Table" } # asField @"table" # provided dineInPane # updated setTable
+                filledTextField { floatingLabel: "Time" } # asField @"time" # provided takeawayPane # updated setTime
                 ( RecordToRecord.do
                     filledTextField { floatingLabel: "Address" } # asField @"address"
                     body1 ( RecordToRecord.do
                         staticText "Distance "
-                        text # projection distanceKm # forField @"address"
-                        staticText " km" )) # provided deliveryPane # updates setAddress) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
+                        text # projected distanceKm # forField @"address"
+                        staticText " km" )) # provided deliveryPane # updated setAddress) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"total"
         card { caption: "Payment" }
           ( RecordToRecord.do
@@ -60,7 +60,7 @@ orderFormMDC2 =
               filledTextField { floatingLabel: "Paid" } # asField @"paid"
               body1 ( RecordToRecord.do
                   staticText "Paying by "
-                  text # projection methodText # forField @"method" )) # field @"payment"
+                  text # projected methodText # forField @"method" )) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"remarks"
       body1 ( Semigroupoid.do
           ( RecordToRecord.do
@@ -69,7 +69,7 @@ orderFormMDC2 =
               staticText " (uniquely "
               text # forValue # forField @"orderId"
               staticText ") for "
-              text # projection customerName # forField @"customer"
+              text # projected customerName # forField @"customer"
               staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
@@ -81,13 +81,13 @@ orderFormMDC2 =
               staticText "delivery to "
               text # forValue # forField @"address"
               staticText " ("
-              text # projection distanceKm # forField @"address"
+              text # projected distanceKm # forField @"address"
               staticText " km away)" ) # provided deliveryDetail # displayed
           ( RecordToRecord.do
               staticText ", paid "
               text # forValue # forField @"paid"
               staticText " by "
-              text # projection methodText # forField @"method" ) # field @"payment" # debounced summarySettleTime # tapped )
+              text # projected methodText # forField @"method" ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"submit"
           button { label: "Receipt", icon: "file" } # asCase @"printReceipt") # widenRecordInput

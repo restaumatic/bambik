@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (forField, forValue, foreach, mvu, projection, tapped, toCase, updates, with)
+import PUI (forField, forValue, foreach, mvu, projected, tapped, toCase, updated, with)
 import PUI.HTML (body, clicked, staticText, text)
 import PUI.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,18 +20,18 @@ shoppingCartMDC2 =
           listOf {} productCatalogue ( RecordToRecord.do
               text # forValue # forField @"name"
               staticText " · $"
-              text # projection formatMoney # forField @"unitPrice" ) # toCase @"productPicked" identity # updates (match { productPicked: addUnit })
+              text # projected formatMoney # forField @"unitPrice" ) # toCase @"productPicked" identity # updated (match { productPicked: addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
                   dataCell text # forValue # forField @"product"
                   dataCell text # forValue # forField @"quantity"
                   dataCell ( RecordToRecord.do
                       staticText "$"
-                      text # forValue # forField @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updates (match { linePicked: removeUnit })
+                      text # forValue # forField @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           body1 ( RecordToRecord.do
               staticText "Total: $"
-              text # projection grandTotalText ) # tapped
-          with emptyCart (button { label: "Empty cart" }) # updates (match { clicked: const })
+              text # projected grandTotalText ) # tapped
+          with emptyCart (button { label: "Empty cart" }) # updated (match { clicked: const })
       ) # mvu emptyCart
 
 emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }

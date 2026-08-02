@@ -68,7 +68,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field, projection)
+import Data.Profunctor.Row.RecordToRecord (field, projected)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
@@ -230,7 +230,7 @@ toggleSwitch config = field @"value" $ (div $ wrap do
 
 -- | The **determinate** progress display (`.progress` over `.progress-bar`),
 -- | a `{ value :: Number } → {}` display citizen: `value` is the filled
--- | fraction (0.0–1.0). The gauge shape: `progress # projection fraction`.
+-- | fraction (0.0–1.0). The gauge shape: `progress # projected fraction`.
 progress :: PUI Web { value :: Number } {}
 progress = wrap do
   barNode <- element "div" do
@@ -263,7 +263,7 @@ toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ text # projection eventText) # cl "toast-body")
+      (div $ text # projected eventText) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

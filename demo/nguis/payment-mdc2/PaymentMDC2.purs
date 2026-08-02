@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (action, asCase, fires, forField, mvu, onCase, projection, tapped, updates)
+import PUI (action, asCase, toCases, forField, mvu, onCase, projected, tapped, updated)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,11 +20,11 @@ paymentMDC2 =
       card { caption: "Payment" } $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               staticText "Amount due: $"
-              text # projection show # forField @"amount" ) # tapped
-          body2 text # projection statusLine # tapped
+              text # projected show # forField @"amount" ) # tapped
+          body2 text # projected statusLine # tapped
           ( Semigroupoid.do
-              button { label: "Charge card", icon: "credit_card" } # fires startCharge
-              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updates (match { charged: const <<< recordCharged })
+              button { label: "Charge card", icon: "credit_card" } # toCases startCharge
+              indeterminateCircularProgress # action chargeFlaky # onCase @"charge" # iterate) # updated (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder
 
 startCharge :: { amount :: Number } -> [ charge :: { amount :: Number, attempt :: Int } ]

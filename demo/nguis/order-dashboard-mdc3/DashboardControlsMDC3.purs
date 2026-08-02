@@ -17,7 +17,7 @@ import Data.Number (max)
 import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import PUI (PUI, constantly, displayed, forField, forValue, foreach, projection)
+import PUI (PUI, constantly, displayed, forField, forValue, foreach, projected)
 import PUI.HTML (attrWith, div, staticText, text, (:=))
 import PUI.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.SVG as SVG
@@ -39,7 +39,7 @@ gauge config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     linearProgress
-    labelLarge $ text # projection percentText
+    labelLarge $ text # projected percentText
 
 trendChart :: { label :: String } -> PUI Web { value :: Array Number } {}
 trendChart config =

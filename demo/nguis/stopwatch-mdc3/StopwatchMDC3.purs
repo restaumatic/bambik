@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, every, forField, forValue, foreach, mvu, projection, updates)
+import PUI (asCase, completed, displayed, every, forField, forValue, foreach, mvu, projected, updated)
 import PUI.HTML (body, li, provided, staticText, text, ul)
 import PUI.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,14 +19,14 @@ stopwatchMDC3 =
   body $
     elevation5 $
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
-          displaySmall text # projection readout # completed
+          displaySmall text # projected readout # completed
           every tickPeriod tick
           ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"start" # provided whenHalted
-              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided whenRunning) # updates (match { start: const (const beginTiming), stop: const (const haltTiming) })
+              button { label: "Stop", icon: "stop" } # asCase @"stop" # provided whenRunning) # updated (match { start: const (const beginTiming), stop: const (const haltTiming) })
           ( RecordToVariant.do
               button { label: "Lap", icon: "flag" } # asCase @"lap" # provided whenRunning
-              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided whenHalted) # updates (match { lap: const recordLap, reset: const (const clearStopwatch) })
+              button { label: "Reset", icon: "replay" } # asCase @"reset" # provided whenHalted) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
                    text # forValue # forField @"number"

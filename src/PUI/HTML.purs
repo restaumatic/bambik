@@ -478,7 +478,7 @@ transient ui = wrap do
 -- | The payload row is the pane's row exactly — no subsumption here: the pane
 -- | is *fed* the payload, so a `Maybe`-valued business projection returning
 -- | precisely what the pane reads keeps both sides pinned (subsumption at the
--- | *stage* boundary is `displayed`/`updates`'s job).
+-- | *stage* boundary is `displayed`/`updated`'s job).
 provided :: forall i a b. (i -> Maybe a) -> PUI Web a b -> PUI Web i b
 provided f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w

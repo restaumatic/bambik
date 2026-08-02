@@ -23,17 +23,17 @@ canonical row, adopted to the business label at the use site:
   adopted editor (`filledTextField {...} # asField @l # completed`) is a
   complete `×→×` stage on its own, no `RecordToRecord.do` needed for one
   field (slider's `step` is optional)
-- displays adopt with `# projection f` (feed `f` of the whole value —
-  `forValue` is `projection identity`, the verbatim case; a one-field read
-  of a context-pinned wider row is `# ofField @"label"`, the label-indexed
+- displays adopt with `# projected f` (feed `f` of the whole value —
+  `forValue` is `projected identity`, the verbatim case; a one-field read
+  of a context-pinned wider row is `# forProperty @"label"`, the label-indexed
   form; at merge-operand/`completed` positions, which must state their row,
   the closed form is `# forValue # forField @l`. A named projection whose
   body merely reads one field — `questionPrompt { prompt } = prompt` — is a
   smell: use the label-indexed form and delete the function) or
-  `# forValue # forField @l` / `# projection f # forField @l` (read one
+  `# forValue # forField @l` / `# projected f # forField @l` (read one
   field, verbatim or formatted; `forField` takes the bare-value display
-  `projection` produces); a live readout as a pipeline stage is the same
-  display made pass-through with `# tapped`: `body2 (text # projection f) # tapped`.
+  `projected` produces); a live readout as a pipeline stage is the same
+  display made pass-through with `# tapped`: `body2 (text # projected f) # tapped`.
   Two wrappers make a stage pass-through, and they are not
   interchangeable: `# completed` widens a *row-shaped* stage's output to
   its full input row from the retained input — safe over editors and
@@ -42,7 +42,7 @@ canonical row, adopted to the business label at the use site:
   displays (the display's echo triggers the forwarding — an editor
   inside would replay stale upstream values on every edit). So: editor
   or record display stage → `# completed`; display over a non-record
-  value (a `projection`-formatted readout) → `# tapped`. A terminal
+  value (a `projected`-formatted readout) → `# tapped`. A terminal
   **collection display** (a projection rendered as a list/grid, passing
   the model through) writes `item # foreach @l proj # displayed` — the keyed `foreach` renders the projection, and
   `displayed`'s unconditional carrier echo is the collection's announcing
@@ -84,15 +84,15 @@ click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
 form with `tapped` readouts, quiz shows `provided` panes over
 multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and
 calculator are channel-fed `foreach` grid apps (cells styled by
-`attrWith`, keys emitted via `clicked` + `toCase @l _.key`, folded by `updates` — no
+`attrWith`, keys emitted via `clicked` + `toCase @l _.key`, folded by `updated` — no
 `data-*`, no wholesale rebuild), stopwatch drives `every`
 with pause-by-`Nothing` and a keyed `foreach with its rows projection … # displayed` laps list, reorder is the keyed-reconciliation showcase and
-the `edits` collection-editor demo (a playlist keyed by track id, each
+the `edited` collection-editor demo (a playlist keyed by track id, each
 row a DOM-local checkbox plus an in-row rename field; Rotate/Shuffle
 move each row's DOM node with its track so tick, title and focus follow
 it),
 shopping-cart is `dataTable`/`dataRow`/`dataCell` over `foreach` with a catalogue fed by `listOf`'s projection argument, password-generator is the effectful shape
-(`button # asCase` → `action`/`onCase` → `updates`), color-mixer pairs
+(`button # asCase` → `action`/`onCase` → `updated`), color-mixer pairs
 `sliderLive` with an `attrWith` swatch + static `foreach _.name` chips,
 markdown-previewer renders a recursive `PUI Web` tree via
 `displayed (dynamic \doc -> each …)` (`el ("h" <> show level)`) — structure
@@ -114,7 +114,7 @@ model, and the visibility logic is a testable business function:
 exists sometimes is exactly this; the mode-of-a-live-editor case (a
 variant editor's per-selection panes) is the same shape inside a `looped`
 pipeline — selection component `# completed`, then each pane
-`# provided <paneOf> # updates <setPane>`. `clWhen pred name`
+`# provided <paneOf> # updated <setPane>`. `clWhen pred name`
 stays predicate-driven — it toggles a class (styling), not visibility,
 and is deliberately last-element-only.
 
@@ -127,7 +127,7 @@ on open). `drawer`'s nav slot is live: nav and content are sibling
 stages over the same types (a selectable nav merges its selector with
 static chrome in one `RecordToRecord.do`).
 
-Collection items may hold stateful stages (`completed`, `updates`) —
+Collection items may hold stateful stages (`completed`, `updated`) —
 refs are per-instance. `foreach _.key` (and `listOf`, which index-keys
 internally) **retains** items: it reconciles *by key* — matched keys
 re-fed in place, new built, absent removed, DOM reordered only when the
@@ -142,24 +142,24 @@ the structure as data through `foreach` and compute per-element
 attributes with `attrWith`. Durable state still belongs in the model,
 with `listOf`'s click-replay folding it back.
 
-A **collection editor** is `edits` — `foreach`'s editor form: give it the
+A **collection editor** is `edited` — `foreach`'s editor form: give it the
 key and an element *editor* that emits its own edited row with the key
 intact (the `asField @l … # completed` shape — `completed` is what
 carries the id along), and it folds every element emission back into the
 array by key, emitting the whole updated array:
-`ul $ (li $ filledTextField {…} # asField @"title" # completed) # edits _.id`
+`ul $ (li $ filledTextField {…} # asField @"title" # completed) # edited _.id`
 is a first-class `Array a → Array a` stage — nest it in a form via
 `# field @l` or feed it straight to `# mvu`. Rows need stable identity
 (an id field): the key is both the reconciliation identity and the
 return address of each edit, so an array of bare strings can't be
 edited in place. Add/remove/reorder are array-level concerns — sibling
-`updates` stages over the enclosing model, not part of the element
-(reorder is the worked example: in-row rename via `edits`, Rotate/
+`updated` stages over the enclosing model, not part of the element
+(reorder is the worked example: in-row rename via `edited`, Rotate/
 Shuffle as sibling action stages).
 
 The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
-semantics, combinators: `mvu`/`with`/`looped`/`updates`/`completed`/
+semantics, combinators: `mvu`/`with`/`looped`/`updated`/`completed`/
 `action`/`onCase`/`tapped`/the adopter family re-exports),
 src/PUI/HTML.purs (HTML vocabulary, `body`, element/SVG oculars, the
 keyed retaining collection `foreach` (= `Sequence.sequenced`) + `attrWith`
@@ -197,11 +197,11 @@ pages' code-style note; keep the two in sync.)
   merely `match`es cases becomes an inline dispatch at the update stage:
 
   ```purescript
-  # updates (match { cellClicked: selectCell, undo: undo, ... })
+  # updated (match { cellClicked: selectCell, undo: undo, ... })
   ```
 
   Each case's body is extracted first (see below). `match { ... }` applied
-  point-free curries correctly: `updates` wants `e -> Model -> Model` and
+  point-free curries correctly: `updated` wants `e -> Model -> Model` and
   `match { c: f }` gives exactly that when each handler `f` is
   `payload -> Model -> Model`.
 
@@ -212,7 +212,7 @@ pages' code-style note; keep the two in sync.)
   its key:
 
   ```purescript
-  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # ofField @"text")
+  cellWidget = clicked (td >>> attrWith "style" cellStyle $ text # forProperty @"text")
   table $ (tr $ cellWidget # foreach @"domKey" _.cells) # foreach @"rowKey" gridRows # toCase @"cellClicked" _.key
   ```
 
@@ -282,8 +282,8 @@ architecture words where business words belong.
   shows up in tracing:
 
   ```purescript
-  listOf { selected: _.selected } entries (text # ofField @"label")
-    # toCase @"picked" _.key # updates (match { picked: pick })
+  listOf { selected: _.selected } entries (text # forProperty @"label")
+    # toCase @"picked" _.key # updated (match { picked: pick })
   ```
 
   A channel-fed cell (`clicked …` cells emitting via `# toCase @l _.key`) and the container coordinate
@@ -304,7 +304,7 @@ architecture words where business words belong.
   pins the row while staying point-free:
 
   ```purescript
-  # updates (match { create: const <<< createPerson, ... })
+  # updated (match { create: const <<< createPerson, ... })
   ```
 
 ### Boundary cases
@@ -322,7 +322,7 @@ architecture words where business words belong.
   payload snapshot (which also pins the button's row):
 
   ```purescript
-  button { label: "Count" } # updates (match { clicked: \m _ -> increment m })
+  button { label: "Count" } # updated (match { clicked: \m _ -> increment m })
 
   increment :: { count :: Int } -> { count :: Int }
   increment r = { count: r.count + 1 }
@@ -360,7 +360,7 @@ honor it, and changes to either side keep the two in sync:
   *before* the ocular (`( section >>> cl "course" $ RecordToRecord.do`),
   never after its `$` (`section >>> … $ (RecordToRecord.do` puts the
   chain inside the element: one section around the collection instead of
-  a section per item). `lcmap`-only adopters (`forField`, `projection`)
+  a section per item). `lcmap`-only adopters (`forField`, `projected`)
   are safe either side of a shape-preserving ocular.
 - **Lean on MDC2's defaults; write no custom chrome.** Reach for a stock
   component and its built-in look before any `attr "style"`/`"style" :=`.

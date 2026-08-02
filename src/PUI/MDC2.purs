@@ -152,7 +152,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty, projection)
+import Data.Profunctor.Row.RecordToRecord (field, pempty, projected)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -544,7 +544,7 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | foundation, a value change just moves the thumb). `step` is `Just` for
 -- | the discrete slider, `Nothing` for the continuous one. Emits on
 -- | **commit** only (thumb release), the whole quantity with `current`
--- | replaced — an editor cannot invent its own bounds — so an `updates`
+-- | replaced — an editor cannot invent its own bounds — so an `updated`
 -- | fold sees each drag as a single transaction. For continuous mid-drag
 -- | emissions (live readouts), use `sliderLive`.
 slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
@@ -864,7 +864,7 @@ indeterminateLinearProgress = wrap do
 
 -- | The **determinate** linear progress display, a `{ value :: Number } → {}`
 -- | display citizen: `value` is the filled fraction (0.0–1.0). The gauge
--- | shape: `linearProgress # projection fraction`.
+-- | shape: `linearProgress # projected fraction`.
 linearProgress :: PUI Web { value :: Number } {}
 linearProgress = wrap do
   _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
@@ -1062,7 +1062,7 @@ simpleDialog { title, confirm } content = wrap do
 -- | The `+→×` status receiver: shows message case `l` in a snackbar,
 -- | contributing no fields (`text` echoes its `{}`, so it announces).
 snackbar :: PUI Web [ event :: String ] {}
-snackbar = snackbarContainer $ text # projection eventText
+snackbar = snackbarContainer $ text # projected eventText
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -1079,7 +1079,7 @@ snackbarContainer content =
 -- | snackbar it stays until its own Dismiss action (foundation-handled).
 -- | MD2-only: MD3 dropped the banner, so `PUI.MDC3` has no citizen for it.
 banner :: PUI Web [ event :: String ] {}
-banner = bannerContainer $ text # projection eventText
+banner = bannerContainer $ text # projected eventText
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String
 eventText = Variant.on (Proxy @"event") identity Variant.case_
@@ -1216,7 +1216,7 @@ topAppBar config content = wrap do
 -- | The permanent navigation drawer with a **live nav slot**: nav and
 -- | content are sibling stages over the same types — both see every value
 -- | fed, and either side's emissions exit the drawer, so a selectable nav
--- | (a `listOf` of sections folded via `updates`) drives the content
+-- | (a `listOf` of sections folded via `updated`) drives the content
 -- | beside it.
 drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do

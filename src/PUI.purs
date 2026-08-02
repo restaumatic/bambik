@@ -18,13 +18,13 @@
 -- | semantically; all stages see every model value on the next loop turn.
 -- |
 -- | A trace of the 7GUIs counter (`display # completed`, then
--- | `button # updates increment`, under `mvu { count: 0 }`):
+-- | `button # updated increment`, under `mvu { count: 0 }`):
 -- |
 -- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
 -- |  2. the display shows `0` and echoes; `completed` widens the echo to
 -- |     the full model, which flows on and arms the button's replay value
--- |     and `updates`' retained state;
--- |  3. the user clicks: the button emits, `updates` folds `increment`
+-- |     and `updated`' retained state;
+-- |  3. the user clicks: the button emits, `updated` folds `increment`
 -- |     into the retained model and emits `{ count: 1 }`;
 -- |  4. the loop re-feeds `{ count: 1 }` to the top; the display re-renders;
 -- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
@@ -53,10 +53,10 @@ module PUI
   , debounced
   , dispatched
   , displayed
-  , edits
+  , edited
   , every
   , foreach
-  , fires
+  , toCases
   , looped
   , mvu
   , onCase
@@ -64,7 +64,7 @@ module PUI
   , resolveFor
   , settled
   , silence
-  , updates
+  , updated
   , with
   , module Adopters
   , module Seeding
@@ -89,12 +89,12 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecord, forField, forValue, ofField, projection, required, tapped) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, completed, field, focusRecord, forField, forValue, forProperty, projected, required, tapped) as Adopters
 import Data.Profunctor.Row.RecordToVariant (asCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
--- into the stages that consume a row (`tapped`, `displayed`, `updates`,
--- `every`, `edits`, `acted`, `completed`), so a widget's own row is always
+-- into the stages that consume a row (`tapped`, `displayed`, `updated`,
+-- `every`, `edited`, `acted`, `completed`), so a widget's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Acting (acted, optioned) as Adopters
@@ -514,7 +514,7 @@ instance Applicative m => Seeding (PUI m) where
 -- | union of an event merge's operands — so neither side needs a
 -- | `widenRecordInput` at the stage boundary. With `small ≡ big` and
 -- | `narrow ≡ big` this is the plain diagonal stage.
-updates
+updated
   :: forall m small u big narrow extra e
    . Functor m
   => Union small big u
@@ -523,9 +523,9 @@ updates
   => (e -> Record small -> Record small)
   -> PUI m (Record narrow) e
   -> PUI m (Record big) (Record big)
-updates handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
+updated handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
 
--- | The type-agnostic Mealy stage `updates` and `displayed` are built from —
+-- | The type-agnostic Mealy stage `updated` and `displayed` are built from —
 -- | private, because the vocabulary's stages carry rows (subsumption is
 -- | stated in their signatures) while this one is exact at any type.
 mealy :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
@@ -546,10 +546,10 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
           ms <- Ref.read sRef
           case ms of
             Nothing -> do
-              guard.blocked "updates: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
-              tr "updates: event withheld (no retained state yet)" e
+              guard.blocked "updated: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
+              tr "updated: event withheld (no retained state yet)" e
             Just s -> do
-              tr "updates: folding event" e
+              tr "updated: folding event" e
               let s' = handler e s
               Ref.write (Just s') sRef
               prop s'
@@ -561,7 +561,7 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
 -- | an empty array, so inside a gated merge they starve the gate, and as a
 -- | `mvu` pipeline's last stage they kill the loop). `tapped` and `completed`
 -- | both rely on the display's echo;
--- | `displayed` does not. (The trivial `updates` fold: any event the
+-- | `displayed` does not. (The trivial `updated` fold: any event the
 -- | wrapped widget does emit re-emits the retained value.)
 -- | **Subsumption is built in** (like `tapped`): the display may read a
 -- | *narrower* row than the stage carries, so a closed-row projection needs
@@ -578,12 +578,12 @@ constantly a = lcmap (const a)
 
 -- | Fire the **business outcome** of what the emitter was shown: adopt the
 -- | canonical click case by applying `f` to its payload. Where `asCase @l`
--- | renames the event and leaves the payload alone, `fires` dissolves the
+-- | renames the event and leaves the payload alone, `toCases` dissolves the
 -- | event into the outcome `f` computes — typically a variant of business
--- | results: `button { label: "Sign up" } # fires register` emits
+-- | results: `button { label: "Sign up" } # toCases register` emits
 -- | `register`'s cases directly.
-fires :: forall m i a o. Functor m => (a -> o) -> PUI m i [ clicked :: a ] -> PUI m i o
-fires f = rmap (on (Proxy @"clicked") f case_)
+toCases :: forall m i a o. Functor m => (a -> o) -> PUI m i [ clicked :: a ] -> PUI m i o
+toCases f = rmap (on (Proxy @"clicked") f case_)
 
 -- | Settle a stage's emissions through a **total, type-preserving**
 -- | normalization — guardrail A7's mechanism made a word: a lossy
@@ -640,7 +640,7 @@ optional p = wrap $ unwrap p <#> \p' ->
 -- | The loop runs for the widget's whole life (no cancellation — a
 -- | prototype limitation shared with `action'`).
 -- |
--- | The step **subsumes** (like `updates`'s handler): it may read and rebuild
+-- | The step **subsumes** (like `updated`'s handler): it may read and rebuild
 -- | a sub-row of the model, merged back over the last full value on each
 -- | tick, so the tick's footprint is stated once in the step's own signature.
 every
@@ -709,7 +709,7 @@ looped p = wrap $ unwrap p <#> \p' ->
 -- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
 -- | `w` is a same-type pipeline over the model — editors (`# completed`
 -- | where they don't produce the whole model), displays, wires (`every`),
--- | and event stages folded in with `updates`. The model is an **entity**:
+-- | and event stages folded in with `updated`. The model is an **entity**:
 -- | it exists from the very beginning with a known initial state, and
 -- | `seed` is that state — fed once at registration; from then on every
 -- | emission of any stage re-enters at the top, re-entrancy-guarded. The
@@ -1050,7 +1050,7 @@ debounced millis = affAdapter $ pure
 --               |                    |   {|rb}    |              (×) | emissions     | every element     | (inhabited
 --               |                    |            |                  |               | spoke; retain-    | nullary)
 --               |                    |            |                  |               | last after        |
---   edits @l    | Array {l::k|r} (×) | p {l::k|r} | Array {l::k|r}(×)| the fed input | whole array,      | emits []
+--   edited @l    | Array {l::k|r} (×) | p {l::k|r} | Array {l::k|r}(×)| the fed input | whole array,      | emits []
 --               |                    |   {|r}     |                  |               | immediately per   | (pass-through)
 --               |                    |            |                  |               | edit              |
 --   dispatched  | {key,value:a} (+)  | p a b      | {key,value:b}(+) | — (no slots)  | the fed case's    | unknown key =
@@ -1074,7 +1074,7 @@ debounced millis = affAdapter $ pure
 --
 -- The key's form encodes its ontology, two ways: a **label @l** on the
 -- ×-members (identity is a materialized field of the model row — and in the
--- product-output members `acted`/`edits` the element's output row EXCLUDES
+-- product-output members `acted`/`edited` the element's output row EXCLUDES
 -- it: the key is re-attached from the *input* row, so an element cannot
 -- forge or change identity; `acted` derives this in the pure algebra by
 -- riding the key around the element on the Strong state channel); the
@@ -1136,7 +1136,7 @@ instance Hosting m node => Acting (PUI m) where
 -- | terminal display pass the carrier through with `# lcmap proj
 -- | # displayed`, the comonoid a pipeline tail requires; when the aggregate
 -- | array itself is the output, use `acted` (gathered, knowledge-gated,
--- | announces `[]`) or `edits` (input-primed, immediate). All share this
+-- | announces `[]`) or `edited` (input-primed, immediate). All share this
 -- | keyed reconciler.
 foreach :: forall @l m node k r a i o. Hosting m node => IsSymbol l => Cons l k r a => Ord k => (i -> Array { | a }) -> PUI m { | a } o -> PUI m i o
 foreach f w = lcmap f $ wrap do
@@ -1152,13 +1152,13 @@ foreach f w = lcmap f $ wrap do
 -- | output) — where `acted` is **emission-primed** and must gather (a
 -- | type-changing `p a b` cannot fabricate the missing `b`s, so the `Array b`
 -- | is withheld until every element has spoken). Rule of thumb: the aggregate
--- | as running state → `edits`; the aggregate as joint decision → `acted`;
+-- | as running state → `edited`; the aggregate as joint decision → `acted`;
 -- | individual emissions → `foreach`. A first-class `Array a → Array a`
 -- | editor citizen, nestable like any editor (`# field @l` into a form, or
 -- | straight into `# mvu`); element addition, removal and reordering are
 -- | array-level concerns and stay outside.
 -- |
--- | Like every ×-member, `edits` is keyed by a **label** — but here the
+-- | Like every ×-member, `edited` is keyed by a **label** — but here the
 -- | element's output row is the key's **complement** `{ | r }`: the key is
 -- | not just identity but the edit's *return address*, so the element
 -- | structurally *cannot* emit it, let alone change it. The carrier
@@ -1167,8 +1167,8 @@ foreach f w = lcmap f $ wrap do
 -- | dissolves the old convention that the element must `# completed` its key
 -- | field through. `Ord k` is the reconciler's indexing requirement;
 -- | identity semantics remain equality — keys must be unique.
-edits :: forall @l m node k r a narrow extra. Hosting m node => IsSymbol l => Cons l k r a => Lacks l r => Ord k => Union narrow extra a => PUI m { | narrow } { | r } -> PUI m (Array { | a }) (Array { | a })
-edits item0 = let item = widenRecordInput item0 in wrap do
+edited :: forall @l m node k r a narrow extra. Hosting m node => IsSymbol l => Cons l k r a => Lacks l r => Ord k => Union narrow extra a => PUI m { | narrow } { | r } -> PUI m (Array { | a }) (Array { | a })
+edited item0 = let item = widenRecordInput item0 in wrap do
   hooks <- hosting item
   liftEffect do
     propRef <- Ref.new Nothing
@@ -1183,8 +1183,8 @@ edits item0 = let item = widenRecordInput item0 in wrap do
         for_ mProp \prop -> prop arr
       -- complete the key-less emission with ITS OWN row's key — the return
       -- address is supplied by the carrier, never by the element
-      onEmit k _ edited = do
-        Ref.modify_ (map \x -> if keyOf x == k then Record.insert (Proxy @l) (Record.get (Proxy @l) x) edited else x) arrRef
+      onEmit k _ freshRow = do
+        Ref.modify_ (map \x -> if keyOf x == k then Record.insert (Proxy @l) (Record.get (Proxy @l) x) freshRow else x) arrRef
         busy <- Ref.read busyRef
         unless busy emitAll
     pure
@@ -1224,7 +1224,7 @@ dispatched f w = lcmap f $ wrap do
 -- | The **keyed Mealy** — the +→× member: retain the array, feed one case,
 -- | emit the whole. Each fed `{ key, value }` updates (or, on a new key,
 -- | appends) its slot and re-emits the whole array immediately — input-primed
--- | like `edits`, so there is never a hole to withhold over; element
+-- | like `edited`, so there is never a hole to withhold over; element
 -- | emissions fold back into their slot the same way. The board/ledger shape
 -- | for keyed streams: the aggregate as running state, built one entity at a
 -- | time. Emits `[]` for no keys yet only in the sense that nothing has been

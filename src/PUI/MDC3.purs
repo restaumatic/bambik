@@ -136,7 +136,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty, projection)
+import Data.Profunctor.Row.RecordToRecord (field, pempty, projected)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -444,7 +444,7 @@ switchLeaf lbl =
 -- | place). `step` is `Just` for the discrete slider, `Nothing` for the
 -- | continuous one. Emits on **commit** only (thumb release), the whole
 -- | quantity with `current` replaced — an editor cannot invent its own
--- | bounds — so an `updates` fold sees each drag as one transaction. For
+-- | bounds — so an `updated` fold sees each drag as one transaction. For
 -- | continuous mid-drag emissions (live readouts), use `sliderLive`.
 slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 slider config = field @"value" (sliderLeaf false config.label)
@@ -705,7 +705,7 @@ indeterminateLinearProgress = wrap do
 
 -- | The **determinate** linear progress display, a `{ value :: Number } → {}`
 -- | display citizen: `value` is the filled fraction (0.0–1.0). The gauge
--- | shape: `linearProgress # projection fraction`.
+-- | shape: `linearProgress # projected fraction`.
 linearProgress :: PUI Web { value :: Number } {}
 linearProgress = wrap do
   element "md-linear-progress" (pure unit)
@@ -889,7 +889,7 @@ snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    text # projection eventText
+    text # projected eventText
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -1028,7 +1028,7 @@ topAppBarCss = """
 -- | The permanent navigation drawer with a **live nav slot**: nav and
 -- | content are sibling stages over the same types — both see every value
 -- | fed, and either side's emissions exit the drawer, so a selectable nav
--- | (a `listOf` of sections folded via `updates`) drives the content
+-- | (a `listOf` of sections folded via `updated`) drives the content
 -- | beside it. Hand-rolled chrome
 -- | over the tokens (`@material/web` ships no drawer).
 drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o

@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, completed, displayed, forCase, mvu, optional, projection, tapped, updates)
+import PUI (PUI, asCase, asField, completed, displayed, forCase, mvu, optional, projected, tapped, updated)
 import PUI.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.HTML (body, div, provided, staticText, text)
 import PUI.Web (Web)
@@ -34,7 +34,7 @@ meetingBookerFluent =
                 ] # optional # asField @"duration"
               toggleSwitch { label: "Include a Teams link" } # asField @"online"
               divider ) # completed
-          (slider { label: "Attendees" } # asField @"attendees") # provided seatsFor # updates chooseSeats
+          (slider { label: "Attendees" } # asField @"attendees") # provided seatsFor # updated chooseSeats
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
@@ -45,7 +45,7 @@ meetingBookerFluent =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
-              text # projection planLine ) # tapped
+              text # projected planLine ) # tapped
           button { label: "Book the room" } # asCase @"booked"
       ) # provided completePlan
       bookedBar

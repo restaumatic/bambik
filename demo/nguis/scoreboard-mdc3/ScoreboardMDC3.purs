@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, displayed, every, forField, forValue, foreach, mvu, projection)
+import PUI (accumulated, displayed, every, forField, forValue, foreach, mvu, projected)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.MDC3 (bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,7 +24,7 @@ scoreboardMDC3 =
                   ( ( listItem $ RecordToRecord.do
                         text # forValue # forField @"team"
                         staticText ": "
-                        text # projection show # forField @"points"
+                        text # projected show # forField @"points"
                     ) # displayed
                   ) # accumulated goal
               )
@@ -35,7 +35,7 @@ scoreboardMDC3 =
                   ( RecordToRecord.do
                       text # forValue # forField @"team"
                       staticText " ("
-                      text # projection show # forField @"points"
+                      text # projected show # forField @"points"
                       staticText ")" ) # provided leadingTeam # displayed
                   staticText "—" # provided noLeader # displayed
               ) # foreach @"key" boardSummary

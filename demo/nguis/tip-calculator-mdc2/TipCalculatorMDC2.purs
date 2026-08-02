@@ -7,7 +7,7 @@ import Data.Number (fromString)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, completed, mvu, projection, tapped)
+import PUI (asField, completed, mvu, projected, tapped)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,22 +21,22 @@ tipCalculatorMDC2 =
           slider { label: "Tip percentage" } # asField @"tipPercent" # completed
           body2 ( RecordToRecord.do
               staticText "Tip: "
-              text # projection tipPercentText
+              text # projected tipPercentText
               staticText "%" ) # tapped
           body2 ( RecordToRecord.do
               staticText "Split between: "
-              text # projection peopleText
+              text # projected peopleText
               staticText " people" ) # tapped
           slider { label: "Split between" } # asField @"people" # completed
           body2 ( RecordToRecord.do
               staticText "Tip amount: "
-              text # projection tipAmountText ) # tapped
+              text # projected tipAmountText ) # tapped
           body2 ( RecordToRecord.do
               staticText "Total: "
-              text # projection totalText ) # tapped
+              text # projected totalText ) # tapped
           body2 ( RecordToRecord.do
               staticText "Per person: "
-              text # projection perPersonText ) # tapped
+              text # projected perPersonText ) # tapped
       ) # mvu dinnerBill
 
 tipPercentText :: { tipPercent :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String

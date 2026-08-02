@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, every, forField, mvu, projection, updates, with)
+import PUI (asField, completed, every, forField, mvu, projected, updated, with)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC3 (bodyLarge, button, card, elevation5, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,15 +17,15 @@ timerMDC3 =
     elevation5 $
       card { caption: "Timer" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projection fraction
+              linearProgress # projected fraction
               bodyLarge RecordToRecord.do
-                text # projection show # forField @"elapsed"
+                text # projected show # forField @"elapsed"
                 staticText "s / "
-                text # projection wholeSeconds # forField @"duration"
+                text # projected wholeSeconds # forField @"duration"
                 staticText "s"
               sliderLive { label: "" } # asField @"duration") # completed
           every tickPeriod tick
-          with nothingElapsed (button { label: "Reset", icon: "replay" }) # updates (match { clicked: const })
+          with nothingElapsed (button { label: "Reset", icon: "replay" }) # updated (match { clicked: const })
       ) # mvu tenSecondFreshTimer
 
 nothingElapsed :: { elapsed :: Number }

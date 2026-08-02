@@ -38,9 +38,9 @@ module Data.Profunctor.Row.RecordToRecord
   , feedback
   , asField
   , forField
-  , ofField
+  , forProperty
   , forValue
-  , projection
+  , projected
   , required
   , field
   , pempty
@@ -166,21 +166,21 @@ property = prop (Proxy @l)
 -- | annotation-free inference.)
 -- | Adopt a canonically-labeled component for the **whole input**: what
 -- | flows in becomes its `value` — the verbatim display (`text # forValue`),
--- | and `projection identity`. `projection f` is the formatting generalization
--- | (`text # projection readout`); `forField @l` reads one field into such a
+-- | and `projected identity`. `projected f` is the formatting generalization
+-- | (`text # projected readout`); `forField @l` reads one field into such a
 -- | bare-value display.
 forValue :: forall p a b. Profunctor p => p { value :: a } b -> p a b
 forValue = lcmap { value: _ }
 
 -- | Feed a canonically-labeled component a **function of the whole input**:
--- | `projection f` turns a `{ value :: b }` component into one fed a bare `a`,
+-- | `projected f` turns a `{ value :: b }` component into one fed a bare `a`,
 -- | with `f a` flowing in as its `value` — so `forValue` is exactly
--- | `projection identity`, and formatted displays read `text # projection
+-- | `projected identity`, and formatted displays read `text # projected
 -- | readout` with no trailing `# forValue`. Composes straight into `forField`
--- | (which now reads a field into a *bare*-value display): `text # projection
+-- | (which now reads a field into a *bare*-value display): `text # projected
 -- | show # forField @l` formats field `l`. `lcmap`-only.
-projection :: forall p a b o. Profunctor p => (a -> b) -> p { value :: b } o -> p a o
-projection f = lcmap \a -> { value: f a }
+projected :: forall p a b o. Profunctor p => (a -> b) -> p { value :: b } o -> p a o
+projected f = lcmap \a -> { value: f a }
 
 -- | Mark a type-changing selector (`{ value :: Maybe a } → { value :: a }`)
 -- | as **always selected**: the `Maybe` input exists for the unselected
@@ -195,22 +195,22 @@ required :: forall p a b. Profunctor p => p { value :: Maybe a } b -> p { value 
 required = lcmap (\r -> { value: Just r.value })
 
 -- | Read field `l` into a **bare-value** display — the display expecting a
--- | plain `a`, as produced by `forValue`/`projection`: `text # projection show
+-- | plain `a`, as produced by `forValue`/`projected`: `text # projected show
 -- | # forField @l` formats field `l`, and `text # forValue # forField @l`
 -- | shows it verbatim. `lcmap`-only, the input-side member of the adopter
 -- | family (`asField` renames both sides of an editor). Closed singleton row:
 -- | annotation-free as a merge operand, and a display owns no output fields.
 -- | Read field `l` of a **wider** row into the canonical `{ value }`
--- | display — `projection`'s label-indexed one-field form, and `forField`'s
+-- | display — `projected`'s label-indexed one-field form, and `forField`'s
 -- | open-row sibling (the display-side `property`): the background is
 -- | carried, so it fits positions whose row the context already pins —
 -- | collection items, pane payloads — where `forField`'s closed singleton
 -- | is for merge operands, which must state their exact row themselves:
--- | `listOf {} questionChoices (text # ofField @"label")`,
--- | `linearProgress # ofField @"fraction"`. Formatted reads stay
--- | `projection f`; `lcmap`-only like the whole adopter family.
-ofField :: forall @l p a b r o. IsSymbol l => Profunctor p => Cons l a b r => p { value :: a } o -> p { | r } o
-ofField = lcmap (\r -> { value: Record.get (Proxy @l) r })
+-- | `listOf {} questionChoices (text # forProperty @"label")`,
+-- | `linearProgress # forProperty @"fraction"`. Formatted reads stay
+-- | `projected f`; `lcmap`-only like the whole adopter family.
+forProperty :: forall @l p a b r o. IsSymbol l => Profunctor p => Cons l a b r => p { value :: a } o -> p { | r } o
+forProperty = lcmap (\r -> { value: Record.get (Proxy @l) r })
 
 forField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
 forField = lcmap (Record.get (Proxy @l))
@@ -234,7 +234,7 @@ field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 -- | would replay the retained upstream value on every edit.
 -- |
 -- | **Subsumption is built in**: the display may read a *narrower* row than
--- | the stage carries (`text # projection readout # tapped`, where `readout`
+-- | the stage carries (`text # projected readout # tapped`, where `readout`
 -- | declares only the fields it formats), so a closed-row read function needs
 -- | no `widenRecordInput` at the tap.
 tapped :: forall p narrow extra wider x. Strong p => Union narrow extra wider => p { | narrow } x -> p { | wider } { | wider }

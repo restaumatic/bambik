@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, mvu, projection, settled, tapped)
+import PUI (asField, mvu, projected, settled, tapped)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC3 (bodyMedium, card, elevation5, headlineSmall, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,13 +18,13 @@ auctionMDC3 =
       card { caption: "Live Auction" } $ ( Semigroupoid.do
           bodyMedium ( RecordToRecord.do
               staticText "Your current bid: $"
-              text # projection bidText ) # tapped
+              text # projected bidText ) # tapped
           sliderLive { label: "Your bid ($)" } # asField @"bid"
           ( Semigroupoid.do
               identity # settled raiseTop
               headlineSmall ( RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text # projection topText ) # tapped) # feedback noBids
+                  text # projected topText ) # tapped) # feedback noBids
       ) # mvu openingBid
 
 raiseTop :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number } -> { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }

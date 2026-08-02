@@ -14,7 +14,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import PUI (action, asCase, asField, completed, displayed, forField, forValue, looped, onCase, toCase, updates, with)
+import PUI (action, asCase, asField, completed, displayed, forField, forValue, looped, onCase, toCase, updated, with)
 import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -34,7 +34,7 @@ crudMDC2 = do
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
                   text # forValue # forField @"surname"
                   staticText ", "
-                  text # forValue # forField @"name" ) # toCase @"picked" _.key # updates (match { picked: pick })
+                  text # forValue # forField @"name" ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"create"
@@ -43,7 +43,7 @@ crudMDC2 = do
                   VariantToVariant.do
                     indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
                     indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
-                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updates (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
       ) # with unit
 
 pick :: Int -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String } -> { people :: Array { name :: String, surname :: String }, selected :: Maybe Int, name :: String, surname :: String }

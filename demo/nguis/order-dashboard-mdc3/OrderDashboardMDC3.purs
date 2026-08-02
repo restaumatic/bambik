@@ -12,7 +12,7 @@ import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
-import PUI (asField, completed, displayed, every, mvu, projection, required)
+import PUI (asField, completed, displayed, every, mvu, projected, required)
 import PUI.HTML (body)
 import PUI.MDC3 (elevation5, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -29,11 +29,11 @@ orderDashboardMDC3 =
             , { value: .sinceOpen {}, label: "Since open" }
             ] # required # asField @"window" # completed
           board $ Semigroupoid.do
-            statTile { label: "Orders", unit: "placed" } # projection ordersCount # displayed
-            statTile { label: "Revenue", unit: "EUR" } # projection revenue # displayed
-            gauge { label: "Kitchen load" } # projection kitchenLoad # displayed
-            trendChart { label: "Order flow" } # projection orderFlow # displayed
-            leaderboard { label: "Top dishes" } # projection topDishes # displayed
+            statTile { label: "Orders", unit: "placed" } # projected ordersCount # displayed
+            statTile { label: "Revenue", unit: "EUR" } # projected revenue # displayed
+            gauge { label: "Kitchen load" } # projected kitchenLoad # displayed
+            trendChart { label: "Order flow" } # projected orderFlow # displayed
+            leaderboard { label: "Top dishes" } # projected topDishes # displayed
       ) # mvu openingDay
 
 openingDay :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, window :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ] }

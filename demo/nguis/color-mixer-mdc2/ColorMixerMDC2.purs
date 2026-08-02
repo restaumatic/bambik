@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.String (length, toUpper)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, constantly, foreach, mvu, projection, tapped, toCase, updates)
+import PUI (asField, completed, constantly, foreach, mvu, projected, tapped, toCase, updated)
 import PUI.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.MDC2 (body2, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,9 +31,9 @@ colorMixerMDC2 =
           ( div >>> "style" := "margin: 10px 0;" $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ pempty # constantly {}
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-                ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" (\p -> chipStyle { mix: p.mix }) $ pempty # constantly {} ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updates (match { preset: applyPreset })
-          body2 text # projection hexText # tapped
-          body2 text # projection rgbText # tapped
+                ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" (\p -> chipStyle { mix: p.mix }) $ pempty # constantly {} ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
+          body2 text # projected hexText # tapped
+          body2 text # projected rgbText # tapped
       ) # mvu duskViolet
 
 applyPreset :: String -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }

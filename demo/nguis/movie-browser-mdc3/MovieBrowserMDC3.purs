@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, foreach, forField, forValue, mvu, projection, toCase, updates)
+import PUI (asField, completed, displayed, foreach, forField, forValue, mvu, projected, toCase, updated)
 import PUI.HTML (body, clWhen, provided, span, staticText, text)
 import PUI.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -29,20 +29,20 @@ movieBrowserMDC3 =
               filterChip { label: "Cult" } # asField @"cult"
               filterChip { label: "Oscar" } # asField @"oscar") # completed
           elevation1 ( titleMedium $ RecordToRecord.do
-              text # projection show # forField @"count"
+              text # projected show # forField @"count"
               staticText " favorite" ) # provided soleFavorite # displayed
           elevation1 ( titleMedium $ RecordToRecord.do
-              text # projection show # forField @"count"
+              text # projected show # forField @"count"
               staticText " favorites" ) # provided severalFavorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
                     span text # forValue # forField @"title"
-                    span text # projection show # forField @"year"
+                    span text # projected show # forField @"year"
                     span ( RecordToRecord.do
                         staticText "★ "
-                        text # projection ratingText )
-                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updates (match { favored: markFavorite })
+                        text # projected ratingText )
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: markFavorite })
       ) # mvu movieCatalogue
 
 movieCatalogue :: { category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], classic :: Boolean, cult :: Boolean, oscar :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ all :: {}, action :: {}, drama :: {}, comedy :: {} ], tags :: Array [ classic :: {}, cult :: {}, oscar :: {} ], rating :: Number, favorite :: Boolean } }

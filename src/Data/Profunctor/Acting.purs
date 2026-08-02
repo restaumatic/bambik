@@ -35,7 +35,7 @@
 -- | action. The carrier machinery lives with the carriers, exactly as the
 -- | merge classes' instances do: `PUI` holds the shared keyed reconciler,
 -- | the generic `Hosting m node => Acting (PUI m)` instance and the sibling
--- | collection combinators (`foreach`, `edits`, `dispatched`,
+-- | collection combinators (`foreach`, `edited`, `dispatched`,
 -- | `accumulated`); `PUI.Web` holds the DOM `Hosting` instance.
 module Data.Profunctor.Acting
   ( class Acting
@@ -71,7 +71,7 @@ instance Acting (->) where
 -- | for the laws), keyed by the row's materialized identity field `@l`.
 -- | Written trailing, like the merges' operands: `row # acted @"id"`.
 -- |
--- | As in `edits`, the element's output row **excludes the key** — each
+-- | As in `edited`, the element's output row **excludes the key** — each
 -- | gathered row's key is re-attached from its *input* row, so an element
 -- | structurally cannot forge or change identity. The guarantee is derived
 -- | in the pure algebra: the input's key rides around the element on the

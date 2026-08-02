@@ -9,7 +9,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, forValue, mvu, onCase, projection, tapped, toCase, updates)
+import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, forValue, mvu, onCase, projected, tapped, toCase, updated)
 import PUI.HTML (body, provided, span, staticText, text)
 import PUI.Web (Web)
 import PUI.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
@@ -21,9 +21,9 @@ inboxMDC3 =
     elevation5 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
           bodySmall ( RecordToRecord.do
-              text # projection unreadCountText
+              text # projected unreadCountText
               staticText " unread of "
-              text # projection messageCountText
+              text # projected messageCountText
               staticText " messages" ) # completed
           listOf { selected: _.attention } mailboxRows
             ( span $ Semigroupoid.do
@@ -32,7 +32,7 @@ inboxMDC3 =
                     text # forValue # forField @"sender"
                     staticText " — "
                     text # forValue # forField @"subject" ) # displayed
-            ) # toCase @"opened" _.id # updates (match { opened: openMessage })
+            ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headlineSmall text # forValue # forField @"subject"
@@ -40,19 +40,19 @@ inboxMDC3 =
                     staticText "From: "
                     text # forValue # forField @"sender"
                   bodyLarge text # forValue # forField @"body") # tapped
-              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updates (match { deleteRequested: const requestDelete })
+              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updated (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button { label: "Delete" } # asCase @"emptied"
                   button { label: "Keep" } # asCase @"kept") # provided confirmingDelete
               VariantToVariant.do
                 inboxZeroBanner # tapped # onCase @"emptied" # toCase @"emptied" identity
-                identity # onCase @"kept" # toCase @"kept" identity) # updates (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
-          fab { icon: "edit", label: "Compose" } # asCase @"compose" # updates (match { compose: const <<< composeMessage })
+                identity # onCase @"kept" # toCase @"kept" identity) # updated (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
+          fab { icon: "edit", label: "Compose" } # asCase @"compose" # updated (match { compose: const <<< composeMessage })
           ( menu { label: "Sort" } RecordToVariant.do
               menuItem { label: "By sender" } # asCase @"bySender"
               menuItem { label: "By subject" } # asCase @"bySubject"
-              menuItem { label: "Unread first" } # asCase @"unreadFirst") # updates (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
+              menuItem { label: "Unread first" } # asCase @"unreadFirst") # updated (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
       ) # mvu mondayMail
 
 mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, confirming :: Boolean, nextId :: Int }
