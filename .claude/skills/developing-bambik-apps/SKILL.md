@@ -1,9 +1,20 @@
 ---
 name: developing-bambik-apps
-description: How to write web/MDC applications with bambik in the style of the repo's demos — app shape, vocabulary choice, separation of concerns, code style, demo-page conventions, tracing, build/verify workflow. Use when creating or reworking a bambik application or demo.
+description: How to write web/MDC applications with bambik in the style of the repo's demos — app shape, vocabulary choice, separation of concerns, code style, demo-page conventions, tracing, build/verify workflow. Use when creating or reworking a bambik application or demo, or when bootstrapping a new bambik application outside the bambik repo (this skill is standalone — copy its directory anywhere and it carries the bootstrap procedure and scaffold templates with it).
 ---
 
 # Developing bambik applications
+
+This skill works in two contexts. **Inside the bambik repo** (a checkout of
+https://github.com/restaumatic/bambik — CLAUDE.md at the root, demos under
+demo/), `$BAMBIK` below means the repo root and the build workflow is the
+repo's own. **Anywhere else**, first bootstrap a workspace by following
+[bootstrap.md](bootstrap.md) (in this skill's directory, beside the
+scaffold in templates/): it clones bambik from GitHub — library, forked
+compiler, patched variant library, demos — and scaffolds a sibling app
+that builds, bundles, and runs locally; `$BAMBIK` then means that clone,
+and the app the developer specified is written into the scaffold's single
+source module by the rules below.
 
 A bambik application is one profunctor pipeline. Every widget is a
 `PUI m i o` — it displays `i` and emits `o` — and the app composes
@@ -48,9 +59,16 @@ canonical row, adopted to the business label at the use site:
   or record display stage → `# completed`; display over a non-record
   value (a `projected`-formatted readout) → `# tapped`. A terminal
   **collection display** (a projection rendered as a list/grid, passing
-  the model through) writes `item # foreach @l proj # displayed` — the keyed `foreach` renders the projection, and
-  `displayed`'s unconditional carrier echo is the collection's announcing
-  unit (so an empty array never starves). A constant-fed stage (a
+  the model through) writes
+  `container ( item # foreach @l <rowsOf> ) # displayed` — the keyed
+  `foreach` renders the projection, and `displayed`'s unconditional
+  carrier echo is the collection's announcing unit (so an empty array
+  never starves). Here `<rowsOf>` must be a **named projection with a
+  closed row** (`signatureLines :: { signatures :: Array … } -> Array …`),
+  not the accessor `_.signatures`: `displayed` widens a *closed* narrow
+  row, so an open one leaves no `Union` instance and the error lands on
+  `displayed` — this is the row-stating exception to the
+  delete-the-one-field-projection rule. A constant-fed stage (a
   fixed catalogue driving `listOf`/`foreach`) reads `constantly
   catalogue` instead of an input-annotated feed
 - event emitters (`button`, `fab`, `iconButton`, `menuItem`) emit
@@ -75,22 +93,37 @@ Oculars (`card { caption }`, `dialog`, `layoutGrid`, `topAppBar`,
 typography, elevations, ...) are shape-preserving decorators — wrap
 freely; code order = DOM order.
 
+Component configs are anonymous records whose field names belong to the
+vocabulary, not to a convention — `filledTextField { floatingLabel }` and
+`button { label }` differ — so read the component's signature in the
+vocabulary module (or copy a demo's call) instead of guessing; a guessed
+label surfaces as a `TypesDoNotUnify` on the config record.
+
+Imports: the merges come from the row modules, not from `QualifiedDo`
+(only `Semigroupoid` lives there):
+
+```purescript
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import QualifiedDo.Semigroupoid as Semigroupoid
+```
+
 ## App shape
 
-Demos are standalone modules exporting a single entry function. The
+Demos — and a bootstrapped application — are standalone modules exporting
+a single entry function named after the application, never `main`. The
 shape of the pipeline follows the app, not a blessed template — a pure
 self-feeding loop reads `# mvu seed`, a loop-free flow reads
 `# with seed` (order-form: load action → form → events → backend dispatch →
 statuses → `silence`), and the two combine freely (crud: load action
 feeding a `looped` form whose commands dispatch through write actions).
-For worked examples read the 7GUIs demos (demo/7guis/ — counter is the
+For worked examples read the 7GUIs demos ($BAMBIK/demo/7guis/ — counter is the
 smallest MVU shape, crud combines a load action with a looped form and
 write-action dispatch, cells and circle-drawer show **channel-fed
 structure-from-data** in `PUI Web` — a fixed grid/canvas fed as data
 through the retaining `foreach`, each cell built once and updated in
 place via `attrWith` (value-computed attribute) + `text`, emitting its
 key via `clicked` + `toCase @l _.key`; `onClickedXY` for canvas coordinates), the
-nGUIs demos (demo/nguis/ — todomvc shows `listOf` with
+nGUIs demos ($BAMBIK/demo/nguis/ — todomvc shows `listOf` with
 click-to-toggle plus `clWhen` styling, tip-calculator is an all-`×→×`
 form with `tapped` readouts, quiz shows `provided` panes over
 multi-stage pipelines keyed on `Maybe`-projected state, tic-tac-toe and
@@ -155,8 +188,9 @@ stages over the same types (a selectable nav merges its selector with
 static chrome in one `RecordToRecord.do`).
 
 Collection items may hold stateful stages (`completed`, `updated`) —
-refs are per-instance. `foreach _.key` (and `listOf`, which index-keys
-internally) **retains** items: it reconciles *by key* — matched keys
+refs are per-instance. `foreach @l` (keyed by the row's materialized
+identity field; `listOf` index-keys internally) **retains** items: it
+reconciles *by key* — matched keys
 re-fed in place, new built, absent removed, DOM reordered only when the
 key sequence changed — so a channel-fed item keeps its DOM/state across
 feeds (fixed-key grids never rebuild; growing lists append; a reordered
@@ -169,36 +203,41 @@ the structure as data through `foreach` and compute per-element
 attributes with `attrWith`. Durable state still belongs in the model,
 with `listOf`'s click-replay folding it back.
 
-A **collection editor** is `edited` — `foreach`'s editor form: give it the
-key and an element *editor* that emits its own edited row with the key
-intact (the `asField @l … # completed` shape — `completed` is what
-carries the id along), and it folds every element emission back into the
-array by key, emitting the whole updated array:
-`ul $ (li $ filledTextField {…} # asField @"title" # completed) # edited _.id`
-is a first-class `Array a → Array a` stage — nest it in a form via
-`# field @l` or feed it straight to `# mvu`. Rows need stable identity
-(an id field): the key is both the reconciliation identity and the
-return address of each edit, so an array of bare strings can't be
+A **collection editor** is `edited @l` — `foreach`'s editor form: the key
+is a **label**, not a function, and the element editor's output row
+**excludes** it (the carrier re-attaches each emission's key as the
+edit's return address, so an element structurally cannot change its
+key); it folds every element emission back into the array by key,
+emitting the whole updated array immediately, input-primed. An element
+whose merge covers less than the full row widens its input instead of
+`completed`-ing the id through: `merge # widenRecordInput # edited @"id"`
+(reorder) — a first-class `Array a → Array a` stage; nest it in a form
+via `# field @l` or feed it straight to `# mvu`. Rows need stable
+identity (an id field): the key is both the reconciliation identity and
+the return address of each edit, so an array of bare strings can't be
 edited in place. Add/remove/reorder are array-level concerns — sibling
 `updated` stages over the enclosing model, not part of the element
 (reorder is the worked example: in-row rename via `edited`, Rotate/
 Shuffle as sibling action stages).
 
 The API and its semantics are documented in the source module headers —
-read them, not a summary: src/PUI.purs (the core type, pipeline
+read them, not a summary: $BAMBIK/src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updated`/`completed`/
-`action`/`onCase`/`tapped`/the adopter family re-exports),
-src/PUI/Web/HTML.purs (HTML vocabulary, `body`, element/SVG oculars, the
-keyed retaining collection `foreach` (= `Sequence.sequenced`) + `attrWith`
-for channel-fed structure-from-data, the builders
-`foreachWith`/`dynamic`/`each` for structure-from-value,
-`clicked`/`onClickedXY` events), src/PUI/MDC.purs (the MDC component and
-ocular catalog, the editors' `dimap` round-trip contract), and
-src/Data/Profunctor/Row/ (the four merges, adopters, trace forms,
-business optics — laws in the module headers).
+`action`/`onCase`/`tapped`/the adopter family re-exports, and the
+collection combinators `foreach @l`/`edited @l`/`acted @l`/
+`dispatched`/`accumulated`), $BAMBIK/src/PUI/Web/HTML.purs (HTML
+vocabulary, `body`, element oculars, `attrWith` for channel-fed
+structure-from-data, the builders `foreachWith`/`dynamic`/`each` for
+structure-from-value, `clicked`/`onClickedXY` events; SVG oculars in
+src/PUI/Web/SVG.purs), $BAMBIK/src/PUI/Web/MDC2.purs (the MDC2 component
+and ocular catalog, the editors' `dimap` round-trip contract; the sibling
+design systems are MDC3.purs, Shoelace.purs, Fluent.purs, Bootstrap.purs
+beside it — same two-sorted vocabulary, switch by switching the import),
+and $BAMBIK/src/Data/Profunctor/Row/ (the four merges, adopters, trace
+forms, business optics — laws in the module headers).
 
 Type errors from the row layer are catalogued with reproduced output in
-doc/type-errors.md — read it before fighting a merge error.
+$BAMBIK/doc/type-errors.md — read it before fighting a merge error.
 
 ## Separation of concerns
 
@@ -441,7 +480,11 @@ honor it, and changes to either side keep the two in sync:
 
 ## Demo page conventions (index.html)
 
-Follow any 7guis demo's index.html (e.g. demo/7guis/counter/) as the
+These conventions govern demo pages **in the bambik repo**; a
+bootstrapped standalone app keeps the minimal index.html its scaffold
+ships (design-system CSS + `bundle.js` — see bootstrap.md).
+
+Follow any 7guis demo's index.html (e.g. demo/7guis/counter-mdc2/) as the
 template: CDN `<link>`s for MDC CSS, Material Icons, and highlight.js
 (CSS is never bundled into JS), a header with back link / task
 description / source and bundle sizes, a source panel fetching and
@@ -459,6 +502,13 @@ gate-withheld emissions (the otherwise-invisible ones) — as
 
 ## Build, verify, deploy
 
+In a **bootstrapped standalone app**, the workflow is the scaffold's npm
+scripts — `npm install` (check `node_modules/.bin/purs --version` reports
+`0.15.16 [development build ...]`), `spago build` / `npm run watch`,
+`npm run bundle`, `npm run dev` at `http://127.0.0.1:8000/` — see
+bootstrap.md. Point 6 below (contracts, watchdog, tracing) applies
+everywhere. In the **bambik repo**:
+
 1. `npm install` first (forked compiler pinned in package.json:
    `node_modules/.bin/purs --version` must report
    `0.15.16 [development build ...]`; stock purs fails with "Module
@@ -467,8 +517,7 @@ gate-withheld emissions (the otherwise-invisible ones) — as
 2. **Agent loop: use watch mode.** Keep `spago build -w` running in the
    background and read its output after each edit (~0.7s incremental)
    instead of one-shot builds — it covers library, tests, and all 7GUIs
-   and nGUIs demos (project sources; the `Main`-module demo — 1 —
-   needs its own `--path`). Caveats:
+   and nGUIs demos. Caveats:
    spago -w reads stdin and dies on EOF, so keep stdin open (never
    `</dev/null`); run only one watcher over the shared `output/` at a
    time. Tests: `spago test`.
@@ -484,7 +533,7 @@ gate-withheld emissions (the otherwise-invisible ones) — as
    headless-Chrome CDP harness; add a tests/*.mjs file for a new demo,
    filter with `npm run smoke -- <name>`; ad-hoc checks beyond it reuse
    its scripts/smoke/cdp.mjs session helper), commit to main, deploy with
-   `npm run deploy-demo-*`, and check
+   `npm run deploy-demos`, and check
    `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP).
 6. Combinator contracts (gating, priming, echo protocols, container
    ownership) are stated in the module headers — `npm run api-docs`
