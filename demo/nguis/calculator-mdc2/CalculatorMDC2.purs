@@ -9,7 +9,7 @@ import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (constantly, displayed, forField, foreach, mvu, forProperty, toCase, updated)
-import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
+import PUI.HTML (atCase, attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.MDC2 (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -24,7 +24,7 @@ calculatorMDC2 =
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-                    staticText "Error" # provided faultyTally # displayed
+                    staticText "Error" # atCase @"faulty" conditionOf # displayed
                     text # forField @"entry" identity # provided currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
                   clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # forProperty @"key" identity ) # foreach @"key" identity # constantly keyPad ) # toCase @"keyPressed" _.key
@@ -51,21 +51,21 @@ keyPad = { key: _ } <$>
 operatorKeys :: Array String
 operatorKeys = [ "÷", "×", "−", "+", "=" ]
 
-blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
-blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, faulty: false }
+blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, condition :: [ sound :: {}, faulty :: {} ] }
+blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, condition: .sound {} }
 
-faultyTally :: { faulty :: Boolean } -> Maybe {}
-faultyTally { faulty } = if faulty then Just {} else Nothing
+conditionOf :: { condition :: [ sound :: {}, faulty :: {} ] } -> [ sound :: {}, faulty :: {} ]
+conditionOf { condition } = condition
 
-currentEntry :: { faulty :: Boolean, entry :: String } -> Maybe { entry :: String }
-currentEntry { faulty, entry } = if faulty then Nothing else Just { entry }
+currentEntry :: { condition :: [ sound :: {}, faulty :: {} ], entry :: String } -> Maybe { entry :: String }
+currentEntry { condition, entry } = match { sound: \_ -> Just { entry }, faulty: \_ -> Nothing } condition
 
 pressKey
   :: String
-  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
-  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, faulty :: Boolean }
-pressKey key tally@{ faulty, entry, entering, operation }
-  | faulty && key /= "C" = pressKey key blankTally
+  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, condition :: [ sound :: {}, faulty :: {} ] }
+  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, condition :: [ sound :: {}, faulty :: {} ] }
+pressKey key tally@{ entry, entering, operation }
+  | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey key blankTally
   | key == "C" = blankTally
   | key == "±" = tally { entry = negated entry }
   | key == "." && entering =
@@ -78,7 +78,7 @@ pressKey key tally@{ faulty, entry, entering, operation }
         , entry = format total
         , entering = false
         }
-      Nothing -> blankTally { faulty = true }
+      Nothing -> blankTally { condition = .faulty {} }
   | entering = tally { entry = if entry == "0" then key else entry <> key }
   | true = tally { entry = key, entering = true }
 

@@ -68,20 +68,20 @@ backAtShipping { step } = if step == .shipping {} then Just { step: .cart {} } e
 backAtPayment :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
 backAtPayment { step } = if step == .payment {} then Just { step: .shipping {} } else Nothing
 
-placeAtPayment :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { confirmed :: Boolean }
-placeAtPayment { step } = if step == .payment {} then Just { confirmed: true } else Nothing
+placeAtPayment :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { status :: [ pending :: {}, placed :: {} ] }
+placeAtPayment { step } = if step == .payment {} then Just { status: .placed {} } else Nothing
 
-recordPlaced :: { confirmed :: Boolean } -> { confirmed :: Boolean } -> { confirmed :: Boolean }
-recordPlaced { confirmed } o = o { confirmed = confirmed }
+recordPlaced :: { status :: [ pending :: {}, placed :: {} ] } -> { status :: [ pending :: {}, placed :: {} ] } -> { status :: [ pending :: {}, placed :: {} ] }
+recordPlaced { status } o = o { status = status }
 
-placedOrder :: { item :: String, address :: String, card :: String, confirmed :: Boolean } -> Maybe { item :: String, address :: String, card :: String }
-placedOrder { item, address, card, confirmed } =
-  if confirmed then Just { item, address, card } else Nothing
+placedOrder :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] } -> Maybe { item :: String, address :: String, card :: String }
+placedOrder { item, address, card, status } =
+  match { placed: \_ -> Just { item, address, card }, pending: \_ -> Nothing } status
 
-freshOrder :: { item :: String, address :: String, card :: String, confirmed :: Boolean }
+freshOrder :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] }
 freshOrder =
   { item: "Wireless Headphones"
   , address: "221B Baker Street"
   , card: "•••• 4242"
-  , confirmed: false
+  , status: .pending {}
   }
