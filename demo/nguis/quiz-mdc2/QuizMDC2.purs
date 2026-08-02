@@ -9,8 +9,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, completed, displayed, forField, mvu, forProperty, projected, toCase, updated)
-import PUI.HTML (body, provided, staticText, text)
-import PUI.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
+import PUI.Web.HTML (body, provided, staticText, text)
+import PUI.Web.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 quizMDC2 :: Effect Unit

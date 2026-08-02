@@ -188,7 +188,7 @@ The API and its semantics are documented in the source module headers —
 read them, not a summary: src/PUI.purs (the core type, pipeline
 semantics, combinators: `mvu`/`with`/`looped`/`updated`/`completed`/
 `action`/`onCase`/`tapped`/the adopter family re-exports),
-src/PUI/HTML.purs (HTML vocabulary, `body`, element/SVG oculars, the
+src/PUI/Web/HTML.purs (HTML vocabulary, `body`, element/SVG oculars, the
 keyed retaining collection `foreach` (= `Sequence.sequenced`) + `attrWith`
 for channel-fed structure-from-data, the builders
 `foreachWith`/`dynamic`/`each` for structure-from-value,

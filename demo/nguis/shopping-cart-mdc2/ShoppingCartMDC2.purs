@@ -8,8 +8,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (forField, foreach, informed, mvu, projected, tapped, toCase, updated, with)
-import PUI.HTML (body, clicked, staticText, text)
-import PUI.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
+import PUI.Web.HTML (body, clicked, staticText, text)
+import PUI.Web.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 shoppingCartMDC2 :: Effect Unit

@@ -227,7 +227,7 @@ pure treatments never see.
   (knowledge-gated, announces `[]` on an empty feed), `collapsed` forwards
   (ungated, silent on empty); `optioned` derives the `Maybe` action.
   `Data.Profunctor.Row.Sequence`/`Sequencing` is deleted;
-  `PUI.HTML.foreach = collapsed` — surface and demo behavior unchanged.
+  `PUI.Web.HTML.foreach = collapsed` — surface and demo behavior unchanged.
 - **Value-level laws** in `test/Main.purs` on `PUI Effect` probes: empty
   announces `[]` (and nothing at registration), singleton retraction, gather
   gate (withhold → complete → retain-last), identity-follows-key (zero

@@ -5,7 +5,6 @@ module Data.Default
   , default
   ) where
 
-import Prelude
 
 import Prim.RowList as RowList
 import Record as Record

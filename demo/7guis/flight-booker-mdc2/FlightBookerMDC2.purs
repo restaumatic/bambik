@@ -11,9 +11,9 @@ import Data.Variant (expand, match)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import PUI (PUI, action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, required, updated)
-import PUI.HTML (body, provided, staticText, text)
+import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC2 :: Effect Unit

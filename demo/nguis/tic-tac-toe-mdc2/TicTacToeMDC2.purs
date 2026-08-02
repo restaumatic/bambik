@@ -9,8 +9,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (displayed, forField, foreach, mvu, forProperty, toCase, updated, with)
-import PUI.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
-import PUI.MDC2 (button, card, elevation20, headline6)
+import PUI.Web.HTML (attrWith, body, clicked, div, provided, staticText, text, (:=))
+import PUI.Web.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 ticTacToeMDC2 :: Effect Unit

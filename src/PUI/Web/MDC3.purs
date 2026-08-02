@@ -1,59 +1,46 @@
--- Material Design 3 (https://m3.material.io) components implemented as
--- PUI Web/UIOcular (PUI Web) datatypes — the MD3 sibling of `PUI.MDC2`,
--- built on Google's official MD3 web implementation, the `@material/web`
--- custom elements (`<md-filled-button>`, `<md-checkbox>`, ...): importing
--- the FFI module registers the tags, so a component leaf is just
--- `element "md-..."` plus property/event wiring — no foundation classes,
--- no hand-fused ripple/label chrome. The vocabulary is two-sorted, with
--- the same citizenship and (where the concept survived into MD3) the same
--- names and signatures as `PUI.MDC2`, so a demo switches design systems by
--- switching the import:
---
---   * **components** — widgets with a model interface, every one a citizen
---     of exactly one row direction:
---       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
---         MD3 variant pair), `filledTextArea @l`, `checkbox @l`,
---         `radioButton @l`, `toggleSwitch @l` (the MD3 Switch),
---         `slider @l`, `select @l` (the MD3 filled select),
---         `segmentedButton @l`, `tabBar @l` (the same-type selector — the
---         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
---       `×→×` displays — `indeterminateLinearProgress`,
---         `indeterminateCircularProgress` (both `{ busy } → {}`) and the
---         determinate `linearProgress` (`{ value } → {}`);
---       `×→+` events — `button @l` (the filled button; `elevatedButton`,
---         `tonalButton`, `outlinedButton`, `textButton` are the other four
---         MD3 emphasis levels), `fab @l`, `iconButton @l`, `menuItem @l`;
---       `+→×` statuses — `snackbar @l`. MD3 dropped the banner from the
---         catalog, so `banner` has no citizen here.
---   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
---     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`,
---     `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`,
---     `tooltip`, the MD3 typescale — `displayLarge` ... `labelSmall` —
---     and elevations): no model of their own, any polarity.
---   * plus **announcing statics** (`{} → {}` chrome with a face):
---     `divider` (the `<md-divider>`), `imageListItem`.
---
--- M3 catalog entries `@material/web` does not implement (segmented button,
--- snackbar, card, top app bar, navigation drawer, data table, image list,
--- tooltip) are hand-rolled here as minimal chrome over the `--md-sys-*`
--- design tokens, each injecting its stylesheet once via `ensureStyle`; a
--- page that themes the tokens themes them too. Entries with neither an
--- `@material/web` element nor a cheap hand-roll (date/time pickers,
--- bottom/side sheets, badges, navigation bar/rail, search, carousel) are
--- absent.
---
--- Page requirements: the Roboto font and — for `<md-icon>` faces — the
--- Material Symbols Outlined font
--- (https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined).
--- Everything else (component styles, the `.md-typescale-*` classes) ships
--- in the bundle; theming is `--md-sys-color-*`/`--md-sys-typescale-*`
--- custom properties on the page.
---
--- **The `dimap` round-trip contract for editors** holds as in `PUI.MDC2`:
--- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (`rmap` a total
--- `Model -> Model` after `completed`), not in a leaf bracket.
-module PUI.MDC3
+-- | The **Material Design 3** vocabulary (https://m3.material.io), built on
+-- | Google's own `@material/web` components — the twin of `PUI.Web.MDC2`:
+-- | where a concept survived from Material 2 it keeps the same name and
+-- | signature, so a screen changes design system by changing this one
+-- | import. Where Material 3 renamed things this follows the catalogue (the
+-- | type scale is `displayLarge` … `labelSmall`, the elevations are
+-- | `elevation1`/`elevation3`/`elevation5`), and where Material 3 dropped
+-- | something it is simply missing — there is no `banner`.
+-- |
+-- | **The page must load** the Roboto and Material Symbols Outlined fonts.
+-- | Component styles ship in the bundle, so there is no design-system
+-- | stylesheet to link; theming is the `--md-sys-color-*` and
+-- | `--md-sys-typescale-*` custom properties on the page.
+-- |
+-- | The catalogue, by what the user does with it:
+-- |
+-- |   * **enter a value** — `filledTextField`/`outlinedTextField` (and
+-- |     `debouncedTextField`), `filledTextArea`, `slider`/`sliderLive`,
+-- |     `checkbox`, `toggleSwitch`, `filterChip`, `iconToggle`
+-- |   * **choose among options** — `radioButton` and `segmentedButton` (a
+-- |     handful, all visible), `select` (a longer list), `tabBar` (the
+-- |     sections of a screen), `listOf` (a list built from data, picked by
+-- |     clicking a row)
+-- |   * **act** — `button`, with `elevatedButton`, `tonalButton`,
+-- |     `outlinedButton` and `textButton` at the lower emphasis levels;
+-- |     `fab`; `iconButton`; `menu`/`menuItem`
+-- |   * **be told something** — `snackbar` (passing),
+-- |     `dialog`/`simpleDialog` (must be answered), `linearProgress`,
+-- |     `indeterminateLinearProgress`, `indeterminateCircularProgress`,
+-- |     `tooltip`
+-- |   * **structure and surface** — `card`/`cardActions`, `list`/`listItem`,
+-- |     `dataTable`/`dataRow`/`dataCell`, `imageList`/`imageListItem`,
+-- |     `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`, `chipSet`,
+-- |     `divider`, the type scale (`displayLarge` … `labelSmall`) and the
+-- |     elevations
+-- |
+-- | Material 3 entries `@material/web` does not implement (segmented button,
+-- | snackbar, card, top app bar, navigation drawer, data table, image list,
+-- | tooltip) are hand-rolled here over the same design tokens, so they theme
+-- | with everything else. Entries with neither an implementation nor a cheap
+-- | hand-roll (date and time pickers, sheets, badges, navigation bar and
+-- | rail, search, carousel) are absent.
+module PUI.Web.MDC3
   ( OptLabelIcon(..)
   , OptLabel(..)
   , OptIcon(..)
@@ -145,17 +132,70 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly, foreach)
-import PUI.HTML (aside, cl, clWhen, clicked, div, el, h1, h2, h3, init, label, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, (:=))
+import PUI.Web.HTML (aside, cl, clWhen, clicked, div, el, h1, h2, h3, init, label, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
+-- Implementation notes — the reference above is the contract.
+--
+-- Material Design 3 (https://m3.material.io) components implemented as
+-- PUI Web/UIOcular (PUI Web) datatypes — the MD3 sibling of `PUI.Web.MDC2`,
+-- built on Google's official MD3 web implementation, the `@material/web`
+-- custom elements (`<md-filled-button>`, `<md-checkbox>`, ...): importing
+-- the FFI module registers the tags, so a component leaf is just
+-- `element "md-..."` plus property/event wiring — no foundation classes,
+-- no hand-fused ripple/label chrome. The vocabulary is two-sorted, with
+-- the same citizenship and (where the concept survived into MD3) the same
+-- names and signatures as `PUI.Web.MDC2`, so a demo switches design systems by
+-- switching the import:
+--
+--   * **components** — widgets with a model interface, every one a citizen
+--     of exactly one row direction:
+--       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
+--         MD3 variant pair), `filledTextArea @l`, `checkbox @l`,
+--         `radioButton @l`, `toggleSwitch @l` (the MD3 Switch),
+--         `slider @l`, `select @l` (the MD3 filled select),
+--         `segmentedButton @l`, `tabBar @l` (the same-type selector — the
+--         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
+--       `×→×` displays — `indeterminateLinearProgress`,
+--         `indeterminateCircularProgress` (both `{ busy } → {}`) and the
+--         determinate `linearProgress` (`{ value } → {}`);
+--       `×→+` events — `button @l` (the filled button; `elevatedButton`,
+--         `tonalButton`, `outlinedButton`, `textButton` are the other four
+--         MD3 emphasis levels), `fab @l`, `iconButton @l`, `menuItem @l`;
+--       `+→×` statuses — `snackbar @l`. MD3 dropped the banner from the
+--         catalog, so `banner` has no citizen here.
+--   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
+--     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`,
+--     `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`,
+--     `tooltip`, the MD3 typescale — `displayLarge` ... `labelSmall` —
+--     and elevations): no model of their own, any polarity.
+--   * plus **announcing statics** (`{} → {}` chrome with a face):
+--     `divider` (the `<md-divider>`), `imageListItem`.
+--
+-- M3 catalog entries `@material/web` does not implement (segmented button,
+-- snackbar, card, top app bar, navigation drawer, data table, image list,
+-- tooltip) are hand-rolled here as minimal chrome over the `--md-sys-*`
+-- design tokens, each injecting its stylesheet once via `ensureStyle`; a
+-- page that themes the tokens themes them too. Entries with neither an
+-- `@material/web` element nor a cheap hand-roll (date/time pickers,
+-- bottom/side sheets, badges, navigation bar/rail, search, carousel) are
+-- absent.
+--
+-- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
+-- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
+-- that can fail or lose information belong in the model (`rmap` a total
+-- `Model -> Model` after `completed`), not in a leaf bracket.
+
 -- UIs
 
 -- Conversion tags scope which field names lift a bare value to `Just`, as
--- in `PUI.MDC2`: one tag per distinct optional-field set — `OptLabelIcon`
+-- in `PUI.Web.MDC2`: one tag per distinct optional-field set — `OptLabelIcon`
 -- (buttons), `OptLabel` (fab, caption via card), `OptSelected` (listOf),
 -- `OptIcon` (tabBar options).
+-- | Marks `label` and `icon` as optional on the buttons — write either,
+-- | both or neither, as a plain string.
 data OptLabelIcon = OptLabelIcon
 
 instance ConvertOption OptLabelIcon "label" String (Maybe String) where
@@ -165,6 +205,7 @@ else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
 else instance ConvertOption OptLabelIcon sym a a where
   convertOption _ _ = identity
 
+-- | Marks the `label` of a FAB and the `caption` of a card as optional.
 data OptLabel = OptLabel
 
 instance ConvertOption OptLabel "label" String (Maybe String) where
@@ -174,11 +215,15 @@ else instance ConvertOption OptLabel "caption" String (Maybe String) where
 else instance ConvertOption OptLabel sym a a where
   convertOption _ _ = identity
 
+-- | Marks a list's `selected` test as optional — `listOf {}` selects
+-- | nothing.
 data OptSelected = OptSelected
 
 instance ConvertOption OptSelected sym a a where
   convertOption _ _ = identity
 
+-- | Marks the `icon` of a tab as optional — tabs may be labelled, iconed or
+-- | both.
 data OptIcon = OptIcon
 
 instance ConvertOption OptIcon "icon" String (Maybe String) where
@@ -187,11 +232,16 @@ else instance ConvertOption OptIcon sym a a where
   convertOption _ _ = identity
 
 
--- | The `×→+` event button (the MD3 filled button — the high-emphasis
--- | default): reads the whole record it is shown and fires it as event
--- | case `l` on click. Both fields are optional and default to `Nothing`:
--- | `button {}` is bare, `button { label: "Count" }` labels it,
--- | `icon: "add"` adds a Material Symbols icon.
+-- | The **filled button** — Material 3's high-emphasis action and the
+-- | default choice; `elevatedButton`, `tonalButton`, `outlinedButton` and
+-- | `textButton` are the same button at the four lower emphasis levels, for
+-- | the actions beside it.
+-- |
+-- | It reports on click, carrying the data it was showing, under the name
+-- | the app gives the action: `button { label: "Book" } # asCase @"booked"`.
+-- | Both parts of the face are optional — `button {}` is bare,
+-- | `button { label: "Count" }` labels it, `icon: "add"` puts a Material
+-- | Symbols glyph before the label.
 button
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
@@ -199,7 +249,9 @@ button
   -> PUI Web { | r } [ clicked :: { | r } ]
 button = buttonOf "md-filled-button"
 
--- | `button` at the MD3 elevated emphasis.
+-- | `button` **elevated**: a shadow lifts it off the surface — for an
+-- | important action over a busy or patterned background, where a flat fill
+-- | would not separate.
 elevatedButton
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
@@ -207,7 +259,8 @@ elevatedButton
   -> PUI Web { | r } [ clicked :: { | r } ]
 elevatedButton = buttonOf "md-elevated-button"
 
--- | `button` at the MD3 filled-tonal emphasis.
+-- | `button` **tonal**: a softer fill, one step below filled — the second
+-- | action next to a filled one (Save beside Publish).
 tonalButton
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
@@ -215,7 +268,8 @@ tonalButton
   -> PUI Web { | r } [ clicked :: { | r } ]
 tonalButton = buttonOf "md-filled-tonal-button"
 
--- | `button` at the MD3 outlined emphasis.
+-- | `button` **outlined**: a border and no fill — an important action that
+-- | is not *the* action of the screen.
 outlinedButton
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
@@ -223,7 +277,9 @@ outlinedButton
   -> PUI Web { | r } [ clicked :: { | r } ]
 outlinedButton = buttonOf "md-outlined-button"
 
--- | `button` at the MD3 text (lowest) emphasis.
+-- | `button` at the lowest emphasis — label only: the dismissive or
+-- | tertiary action (Cancel, Learn more), and what belongs in dialogs and
+-- | cards.
 textButton
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
@@ -253,9 +309,11 @@ buttonOf tag provided = recordToCase @"clicked" $ eventLeaf $ el tag $ RecordToR
 eventLeaf :: forall a. PUI Web {} {} -> PUI Web a a
 eventLeaf chrome = clicked (chrome # constantly {})
 
--- | The `×→+` event FAB: like `button @l`, reads the whole record it is
--- | shown and fires it as event case `l` on click. `icon` is required; a
--- | `label` (bare string) makes it the extended FAB.
+-- | The **floating action button**: the one action a screen is *for*, kept
+-- | in view above the content. Reports on click carrying what it was
+-- | showing, like `button`. The `icon` is required — a FAB is recognised by
+-- | its glyph; adding a `label` makes it the extended FAB, with the words
+-- | beside the glyph.
 fab
   :: forall provided r
    . ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
@@ -270,30 +328,40 @@ fab provided = recordToCase @"clicked" $ eventLeaf $
     Just label' -> "label" := label'
     Nothing -> identity
 
--- | The `×→+` event icon button (for the toggling variant see the `×→×`
--- | editor `iconToggle @l`).
+-- | A compact **icon-only action**, for toolbars, list rows and card
+-- | corners where a labelled button would not fit. `label` is not drawn —
+-- | it is what assistive technology announces, so it is required. For an
+-- | icon that stays pressed (favourite, mute), use `iconToggle` instead.
 iconButton :: forall r. { icon :: String, label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 iconButton config = recordToCase @"clicked" $ eventLeaf $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText config.icon
 
--- | The `×→+` event list item for the `menu` ocular: fires the record it
--- | is shown as event case `l` on click (the menu closes itself).
+-- | One choice in a `menu`: reports the data it was showing when picked,
+-- | and the menu closes itself.
 menuItem :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 menuItem config = recordToCase @"clicked" $ eventLeaf $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
 
+-- | The **filled text field** — Material's default single-line input.
+-- | `floatingLabel` names the field and rises above the text once there is
+-- | any, so the label is never lost while the field is filled in.
+-- |
+-- | Shows the string it is given and reports each edit; typing is never
+-- | interrupted by values arriving from elsewhere. Attach it to a field of
+-- | the model with `# asField @l`.
 filledTextField :: { floatingLabel :: String } -> PUI Web { value :: String } { value :: String }
 filledTextField config = field @"value" (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
 
--- | `filledTextField` in the MD3 outlined variant.
+-- | `filledTextField` in Material's outlined variant — a border instead of
+-- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: { floatingLabel :: String } -> PUI Web { value :: String } { value :: String }
 outlinedTextField config = field @"value" (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
 
--- | `filledTextField` over a debounced input listener: keystrokes coalesce
--- | at the DOM boundary (`Web.onInputDebounced`), so the field is loop-safe
--- | to debounce — the wire itself stays synchronous.
+-- | `filledTextField` that waits `ms` after the last keystroke before
+-- | reporting — for a field that drives expensive work (a search, a
+-- | recomputed preview) and should not fire once per character.
 debouncedTextField :: { floatingLabel :: String, ms :: Number } -> PUI Web { value :: String } { value :: String }
 debouncedTextField { floatingLabel, ms } = field @"value" (textFieldLeaf "md-filled-text-field" (Just ms) floatingLabel)
 
@@ -301,7 +369,9 @@ debouncedTextField { floatingLabel, ms } = field @"value" (textFieldLeaf "md-fil
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
 -- Focus-guarded like `Web.input`: model updates never clobber the field
 -- being typed in (the element delegates focus, so the host is the
--- activeElement), but still echo so merge gates keep flowing.
+-- activeElement), but still echo so merge gates keep flowing. Debouncing
+-- sits at the DOM boundary (`Web.onInputDebounced`), in front of the wire
+-- rather than on it, so the field stays loop-safe.
 textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
 textFieldLeaf tag mDebounce floatingLabel = wrap do
   element tag (pure unit)
@@ -323,6 +393,9 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
           Just millis -> onInputDebounced node millis prop
     }
 
+-- | The **multi-line text field**, sized in `rows` and `columns` of text —
+-- | a note, a description, a message. Otherwise `filledTextField`: shows a
+-- | string, reports each edit, never interrupts typing.
 filledTextArea :: { columns :: Int, rows :: Int } -> PUI Web { value :: String } { value :: String }
 filledTextArea { columns, rows } = field @"value" $ wrap do
   element "md-filled-text-field" (pure unit)
@@ -344,8 +417,16 @@ filledTextArea { columns, rows } = field @"value" $ wrap do
           prop value
     }
 
--- | Label content is chrome (`{} → {}`, announcing); a real `<label>`
--- | wrapper associates it, so clicking the text toggles the box.
+-- | The Material **checkbox**, with its label beside it: the label is
+-- | ordinary content (usually a `staticText`), properly associated, so
+-- | clicking the words toggles the box and the whole line is a comfortable
+-- | target.
+-- |
+-- | Ticked exactly while the field holds something — ticking reports the
+-- | value, clearing reports nothing-chosen — so an optional part of the
+-- | model *is* the box's state, with no second flag to keep in step. Use a
+-- | checkbox for a fact the user states as part of a form; use
+-- | `toggleSwitch` for a setting that takes effect at once.
 checkbox :: forall a. Default a => PUI Web {} {} -> PUI Web { value :: Maybe a } { value :: Maybe a }
 checkbox labelContent = field @"value" $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
@@ -373,11 +454,16 @@ checkbox labelContent = field @"value" $
             prop (if checked then Just a else Nothing)
       }
 
--- | The MD3 radio group, a `×→×` editor. Type-changing like `select @l`:
--- | the input field holds the selection state (`Maybe a`), the output
--- | field the bare selection (`a`). One `<md-radio>` per option; the
--- | shared native `name` gives exclusivity, so each option's emission is
--- | its statically known value.
+-- | The Material **radio group**: one choice among a handful, every option
+-- | visible and comparable at a glance. Beyond about five options, or where
+-- | the options don't deserve the space, use `select`.
+-- |
+-- | Until the user picks there is no choice to show, so the field arrives as
+-- | "maybe a choice" and leaves as the choice itself — say which with
+-- | `# optional` (nothing preselected, and whatever needs the choice stays
+-- | hidden until it exists) or `# required` (the model always has one).
+-- | The options — the value and the words shown for it — belong to the
+-- | control, not to the model.
 radioButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 radioButton options = field @"value" (radioLeaf options)
 
@@ -410,8 +496,9 @@ radioLeaf options =
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The MD3 Switch, a `×→×` `Boolean` editor (the name `switch` was
--- | already taken by the `+→+` case selector).
+-- | The Material **switch**: a setting that takes effect the moment it is
+-- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
+-- | to be submitted with the rest of a form; a switch acts immediately.)
 toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
 toggleSwitch config = field @"value" (switchLeaf config.label)
 
@@ -435,22 +522,26 @@ switchLeaf lbl =
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The `×→×` editor of a **bounded quantity** — the whole business datum
--- | `{ current, min, max, step }` rides the canonical row: the constraints
--- | are model data, never UI literals (guardrail A8's channel-fed
--- | resolution), so they arrive from the seed — pointedness makes a
--- | missing bound a compile error at `body` — and may change at runtime
--- | (`<md-slider>`'s properties are reactive, so the leaf re-scopes in
--- | place). `step` is `Just` for the discrete slider, `Nothing` for the
--- | continuous one. Emits on **commit** only (thumb release), the whole
--- | quantity with `current` replaced — an editor cannot invent its own
--- | bounds — so an `updated` fold sees each drag as one transaction. For
--- | continuous mid-drag emissions (live readouts), use `sliderLive`.
+-- | The **slider**: a quantity chosen by feel, where the range matters more
+-- | than the exact number — a volume, a tip, a budget.
+-- |
+-- | The range is part of the quantity, not part of the screen:
+-- | `{ current, min, max, step }` travels together as one business datum, so
+-- | limits come from the data and can change while the app runs (a room's
+-- | capacity, a plan's ceiling) — a slider is never silently out of range,
+-- | and a range nobody supplied is a compile error rather than a wrong
+-- | screen. A `step` makes it discrete, no step continuous.
+-- |
+-- | It reports on **release**, once per adjustment, so one drag is one
+-- | entry in the history — one undo step, one audit line. For a readout
+-- | that follows the thumb, use `sliderLive`.
 slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 slider config = field @"value" (sliderLeaf false config.label)
 
--- | `slider` emitting continuously mid-drag (like mid-typing text); a
--- | consumer that doesn't want the burst wraps its stage in `debounced`.
+-- | `slider` reporting continuously while the thumb moves — for a live
+-- | readout or preview that has to follow the drag. Whatever it drives
+-- | should be cheap to redo; a drag that should land in the history as one
+-- | change needs the plain `slider`, or a `debounced` stage downstream.
 sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 sliderLive config = field @"value" (sliderLeaf true config.label)
 
@@ -497,10 +588,15 @@ bareSliderLeaf live label = wrap do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The MD3 filled select (exposed dropdown), a `×→×` editor. Type-changing
--- | like `radioButton @l`: the input field holds the selection state
--- | (`Maybe a`), the output field the bare selection (`a`). Options are
--- | design-system config.
+-- | The Material **filled select** (exposed dropdown): one choice out of a
+-- | list too long to lay out in the open. `floatingLabel` names the field
+-- | and stays visible above the choice once one is made. For a handful of
+-- | options worth comparing side by side, prefer `radioButton` or
+-- | `segmentedButton`.
+-- |
+-- | Same contract as `radioButton`: nothing to show until the user picks,
+-- | so say `# optional` or `# required`; the options are part of the
+-- | control, not of the model.
 select :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select config options = field @"value" (selectLeaf config options)
 
@@ -538,10 +634,10 @@ selectLeaf config options = wrap do
   optionMarkup idx o =
     "<md-select-option value=\"" <> show idx <> "\"><div slot=\"headline\">" <> o.label <> "</div></md-select-option>"
 
--- | The MD3 single-select segmented button, a `×→×` editor. Type-changing
--- | like `select @l`. `@material/web` ships no segmented button, so the
--- | chrome is hand-rolled over the design tokens and the wiring is
--- | CSS-class-driven per segment, as in `PUI.MDC2`.
+-- | The Material **segmented button**: two to five options joined in one
+-- | control, all visible, one selected — a filter row, a view switch, a
+-- | size. Compact where a radio group would be airy and a dropdown would
+-- | hide the alternatives. Same picked/unpicked contract as `select`.
 segmentedButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 segmentedButton options = field @"value" (segmentedLeaf options)
 
@@ -579,8 +675,10 @@ segmentedButtonCss = """
 .md3-segmented-button__segment--selected .md3-segmented-button__check::before { content: "✓"; }
 """
 
--- | The MD3 filter chip, a `×→×` `Boolean` editor. Group chips in the
--- | `chipSet` ocular.
+-- | The Material **filter chip**: a small tag the user switches on or off,
+-- | showing a checkmark while on. Chips come in sets where any number may
+-- | be active at once — dietary tags, categories, facets. Put them in a
+-- | `chipSet`.
 filterChip :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
 filterChip config = field @"value" (chipLeaf config.label)
 
@@ -605,8 +703,11 @@ chipLeaf lbl = wrap do
           prop b
     }
 
--- | The MD3 icon button (toggle variant), a `×→×` `Boolean` editor —
--- | `onIcon` shows while `true`, `offIcon` while `false`.
+-- | An **icon that stays pressed** — favourite, bookmark, mute, pin:
+-- | `onIcon` is shown while it is on, `offIcon` while it is off, and
+-- | `label` is what assistive technology announces. The on glyph renders
+-- | filled, so the same glyph in both slots still reads as off and on. The
+-- | compact form of a `toggleSwitch`, for list rows and toolbars.
 iconToggle :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
 iconToggle config = field @"value" (iconToggleLeaf config)
 
@@ -632,11 +733,15 @@ iconToggleLeaf config = wrap do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The MD3 tab bar, a `×→×` editor like `segmentedButton @l` but
--- | **same-type** (`Cons l a () s`): the selection is always known from the
--- | input, so it echoes unconditionally and sits happily inside `looped`
--- | ensembles (selection field + `provided` payload panes). One
--- | `<md-primary-tab>` per option; `<md-tabs>` drives activation.
+-- | The Material **tab bar**: the top-level sections of one screen, one
+-- | open at a time. Keyboard navigation and the sliding indicator come with
+-- | it.
+-- |
+-- | Unlike `segmentedButton` a tab bar is never in a "nothing picked"
+-- | state — some section is always open — which is what makes it the
+-- | selector to build a sectioned editor around: the tab bar beside one
+-- | `provided` pane per section, each pane editing its own part of the
+-- | model.
 tabBar
   :: forall provided a
    . Eq a
@@ -677,9 +782,10 @@ tabBarLeaf options = wrap do
       <> o.label
       <> "</md-primary-tab>"
 
--- | The `×→×` display citizen for async progress: `{ busy } → {}`, the
--- | shape `PUI.action`'s progress slot expects. Hidden while idle (the
--- | MD3 element has no open/close protocol, so visibility does it).
+-- | The **indeterminate progress bar**: work is under way and there is no
+-- | telling how long — a request in flight, a file being processed. Shown
+-- | while `busy`, gone when it isn't, so it is driven by the app's own
+-- | notion of being busy rather than by a separate visibility flag.
 indeterminateLinearProgress :: PUI Web { busy :: Boolean } {}
 indeterminateLinearProgress = wrap do
   element "md-linear-progress" (pure unit)
@@ -703,9 +809,11 @@ indeterminateLinearProgress = wrap do
   visibleStyle = "min-width: 200px;"
   hiddenStyle = "min-width: 200px; visibility: hidden;"
 
--- | The **determinate** linear progress display, a `{ value :: Number } → {}`
--- | display citizen: `value` is the filled fraction (0.0–1.0). The gauge
--- | shape: `linearProgress # projected fraction`.
+-- | The **determinate progress bar**: how far along something is, `value`
+-- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
+-- | position, a budget's use, a quota — written as
+-- | `linearProgress # projected fraction`, with the business function
+-- | deciding what the fraction means.
 linearProgress :: PUI Web { value :: Number } {}
 linearProgress = wrap do
   element "md-linear-progress" (pure unit)
@@ -724,8 +832,9 @@ linearProgress = wrap do
         prop {}
     }
 
--- | `indeterminateLinearProgress`'s circular sibling — the same
--- | `{ busy } → {}` display citizen.
+-- | The **spinner** — `indeterminateLinearProgress` in circular form, for
+-- | inline and compact places (a button, a card corner) where a bar across
+-- | the width would be too much.
 indeterminateCircularProgress :: PUI Web { busy :: Boolean } {}
 indeterminateCircularProgress = wrap do
   element "md-circular-progress" (pure unit)
@@ -753,60 +862,86 @@ indeterminateCircularProgress = wrap do
 -- the MD3 typescale, via the `.md-typescale-*` classes the FFI module
 -- adopts at load (from `@material/web/typography/md-typescale-styles.js`)
 
+-- | **Display** type at its largest — a hero number or a splash figure, at
+-- | most once on a screen. Also the page's top-level heading.
 displayLarge :: Ocular (PUI Web)
 displayLarge w = h1 w # cl "md-typescale-display-large"
 
+-- | **Display** type, one step down from `displayLarge`.
 displayMedium :: Ocular (PUI Web)
 displayMedium w = h1 w # cl "md-typescale-display-medium"
 
+-- | The smallest **display** step — expressive type that still leads a
+-- | page.
 displaySmall :: Ocular (PUI Web)
 displaySmall w = h1 w # cl "md-typescale-display-small"
 
+-- | **Headline**: the screen's title — large enough to lead without the
+-- | drama of display type.
 headlineLarge :: Ocular (PUI Web)
 headlineLarge w = h2 w # cl "md-typescale-headline-large"
 
+-- | **Headline**, one step down — a major section of a screen.
 headlineMedium :: Ocular (PUI Web)
 headlineMedium w = h2 w # cl "md-typescale-headline-medium"
 
+-- | The smallest **headline** step.
 headlineSmall :: Ocular (PUI Web)
 headlineSmall w = h2 w # cl "md-typescale-headline-small"
 
+-- | **Title**: a heading inside the content — a card's title, a group's
+-- | name, a dialog's subject.
 titleLarge :: Ocular (PUI Web)
 titleLarge w = h3 w # cl "md-typescale-title-large"
 
+-- | **Title**, one step down — a subheading within a section.
 titleMedium :: Ocular (PUI Web)
 titleMedium w = h3 w # cl "md-typescale-title-medium"
 
+-- | The smallest **title** step, for dense groupings.
 titleSmall :: Ocular (PUI Web)
 titleSmall w = h3 w # cl "md-typescale-title-small"
 
+-- | **Body** text at its most readable — long passages meant to be read.
 bodyLarge :: Ocular (PUI Web)
 bodyLarge w = p w # cl "md-typescale-body-large"
 
+-- | **Body** text at the default size — the workaday paragraph.
 bodyMedium :: Ocular (PUI Web)
 bodyMedium w = p w # cl "md-typescale-body-medium"
 
+-- | The smallest **body** step — fine print, timestamps, footnotes.
 bodySmall :: Ocular (PUI Web)
 bodySmall w = p w # cl "md-typescale-body-small"
 
+-- | **Label** type: the words on and around controls — a button's text, a
+-- | field's caption. Not for running text.
 labelLarge :: Ocular (PUI Web)
 labelLarge w = span w # cl "md-typescale-label-large"
 
+-- | **Label** type, one step down — a compact caption beside a control.
 labelMedium :: Ocular (PUI Web)
 labelMedium w = span w # cl "md-typescale-label-medium"
 
+-- | The smallest **label** step — an overline or a tiny annotation.
 labelSmall :: Ocular (PUI Web)
 labelSmall w = span w # cl "md-typescale-label-small"
 
 -- MD3 elevation levels as surface decorators (box shadows over the tokens;
--- levels 3 and 5 pad like `PUI.MDC2`'s `elevation10`/`elevation20`)
+-- levels 3 and 5 pad like `PUI.Web.MDC2`'s `elevation10`/`elevation20`)
 
+-- | Lift the content onto a **barely raised surface** — the resting height
+-- | of a card: enough shadow to separate it from the background.
 elevation1 :: Ocular (PUI Web)
 elevation1 = elevationOf "md3-elevation-1"
 
+-- | Lift the content onto a **clearly raised, padded panel** — a surface
+-- | that reads as floating above the page, like a menu or a picked-up card.
 elevation3 :: Ocular (PUI Web)
 elevation3 = elevationOf "md3-elevation-3"
 
+-- | Lift the content **highest**, onto a padded panel with a deep shadow —
+-- | the topmost surface on the screen, for a modal-weight panel.
 elevation5 :: Ocular (PUI Web)
 elevation5 = elevationOf "md3-elevation-5"
 
@@ -822,12 +957,10 @@ elevationCss = """
 .md3-elevation-5 { border-radius: 12px; background: var(--md-sys-color-surface, #fef7ff); box-shadow: 0 4px 4px rgba(0,0,0,.3), 0 8px 12px 6px rgba(0,0,0,.15); padding: 25px; }
 """
 
--- | A card with an optional caption — the caption is design-system config
--- | (like `filledTextField`'s `floatingLabel`). The card is content-agnostic
--- | (any polarity), so its caption chrome is hand-fused, not merged. The
--- | caption defaults to none: `card {}` is captionless, `card { caption:
--- | "Title" }` labels it. `@material/web` ships no card, so the chrome is
--- | hand-rolled over the tokens (the MD3 elevated card).
+-- | A **card**: a raised surface holding one subject's content and actions
+-- | — an order, a product, a summary — with an optional caption at the top.
+-- | `card {}` is captionless, `card { caption: "Your order" }` titles it.
+-- | Takes any content; put a row of buttons in `cardActions`.
 card
   :: forall provided
    . ConvertOptionsWithDefaults OptLabel { caption :: Maybe String } { | provided } { caption :: Maybe String }
@@ -849,29 +982,30 @@ cardCss = """
 .md3-card > p { margin: 0; }
 """
 
--- | The MD3 card button-row area: a flex row for a group of buttons, so they
--- | sit inline at their natural width instead of stretching down the card's
--- | flex column. Wrap a button group: `cardActions $ RecordToVariant.do …`.
+-- | The card's **action row**: the buttons belonging to the card, side by
+-- | side at their natural width instead of stretched down its column.
 cardActions :: Ocular (PUI Web)
 cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 
--- | Modal ocular with the open-on-feed/close-on-emission protocol: the
--- | dialog opens (`<md-dialog>.show()` — animation, scrim, Esc) whenever
--- | a value is fed, and closes when its content emits, so feed it
--- | selectively (behind an event case), put the deciding emitters inside,
--- | and the emission both closes the dialog and flows on. The content's
--- | final stage must emit only on decision (buttons, `clicked`) — an
--- | echoing display there would close the dialog the moment it opens.
+-- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
+-- | the decision that must be made before anything else continues.
+-- |
+-- | It opens the moment it is given something to show and closes when its
+-- | content reports a decision. That *is* the interaction: show the dialog
+-- | only for the case that calls for it, put the deciding buttons inside,
+-- | and the decision both dismisses the dialog and travels on. So put only
+-- | deciding controls at the end of its content — something that reports
+-- | without the user deciding would dismiss the dialog as it opens.
 dialog :: { title :: String } -> Ocular (PUI Web)
 dialog { title } content =
   el "md-dialog" >>> init pure showDialog closeDialog $ wrap do
     _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
     unwrap (div >>> "slot" := "content" $ content)
 
--- | `dialog` with a built-in confirm action: same open-on-feed protocol,
--- | and the confirm button is a `clicked` pass-through — clicking it
--- | emits the content's last output (so give displays a `# tapped`),
--- | which closes the dialog and flows on.
+-- | `dialog` with a **confirm button** built in — the confirmation step:
+-- | show what is about to happen, and the button reports it. The content
+-- | needs no button of its own; a content that only displays needs a
+-- | `# tapped` so there is something to confirm.
 simpleDialog :: { title :: String, confirm :: String } -> Ocular (PUI Web)
 simpleDialog { title, confirm } content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
@@ -880,11 +1014,15 @@ simpleDialog { title, confirm } content =
       unwrap (div >>> "slot" := "content" $ content)
     div >>> "slot" := "actions" $ clicked ((el "md-text-button" $ staticText confirm) # constantly {})
 
--- | The `+→×` status receiver: shows message case `l` in a snackbar,
--- | contributing no fields (`text` echoes its `{}`, so it announces).
--- | `@material/web` ships no snackbar, so the chrome is hand-rolled over
--- | the tokens: fixed at the bottom, auto-dismissing after 5s (re-feeding
--- | resets the timer).
+-- | The **snackbar**: a brief message at the bottom of the screen that
+-- | dismisses itself after a few seconds, for something that has just
+-- | happened and needs no reply ("Order placed"). It never interrupts — for
+-- | something the user must acknowledge, use a `dialog`.
+-- |
+-- | The wording belongs to the UI, not to the event: write the copy where
+-- | the snackbar is built — `snackbar # forCase @"brewed" brewedLine` — and
+-- | let the event carry the bare facts. One snackbar can serve several
+-- | mutually exclusive outcomes with `forCases`.
 snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
@@ -904,8 +1042,9 @@ snackbarCss = """
 .md3-snackbar--open { visibility: visible; opacity: 1; }
 """
 
--- | Anchor button plus `<md-menu>` around a merge of `menuItem @l`s; the
--- | menu closes itself on item selection.
+-- | A **menu**: a labelled button that opens a short list of `menuItem`
+-- | actions and closes again when one is picked. For actions; for choosing
+-- | a value the model keeps, use `select`.
 menu :: { label :: String } -> Ocular (PUI Web)
 menu config content =
   span >>> "style" := "position: relative; display: inline-block;" $ wrap do
@@ -916,23 +1055,30 @@ menu config content =
     liftEffect $ listenNode anchorNode "click" (openMenuAnchoredTo menuNode anchorNode)
     pure w
 
--- | Chrome for a group of `filterChip @l`s.
+-- | The wrapping row a group of `filterChip`s sits in — chips are a set,
+-- | never a lone control.
 chipSet :: Ocular (PUI Web)
 chipSet = el "md-chip-set"
 
+-- | A **list**: rows of `listItem`s, with Material's row rhythm and
+-- | keyboard navigation. For a list built from data, and clickable, use
+-- | `listOf`.
 list :: Ocular (PUI Web)
 list = el "md-list"
 
--- | The MD3 list item; the default slot takes any content, so mixed rows
--- | (typography beside a control) sit side by side.
+-- | One **list row**, taking any content — so a label beside a control sits
+-- | side by side on one line.
 listItem :: Ocular (PUI Web)
 listItem = el "md-list-item"
 
--- | The MD3 list as a **dynamic collection component**: one item widget per
--- | array element; items satisfying `selected` get the MD3 selected
--- | styling (optional — `listOf {}` selects nothing); every item is a
--- | click emitter replaying its own value, so the component's output is
--- | the clicked item.
+-- | A **list built from data**: one row per element of the collection the
+-- | projection names, each row drawn by the given widget. Rows matching
+-- | `selected` take Material's selected styling — `listOf {}` selects
+-- | nothing — and clicking a row reports *that row*, so the list is both
+-- | how a collection is shown and how the user picks from it.
+-- |
+-- | Rows are updated in place as the collection changes rather than
+-- | rebuilt, so the list can refresh under the user without flicker.
 listOf
   :: forall provided i a o
    . ConvertOptionsWithDefaults OptSelected { selected :: a -> Boolean } { | provided } { selected :: a -> Boolean }
@@ -959,9 +1105,11 @@ listCss = """
 md-list-item.md3-list-item--selected { --md-list-item-container-color: var(--md-sys-color-secondary-container, #e8def8); }
 """
 
--- | Table chrome with a static header from config; rows are `dataRow`s of
--- | `dataCell`s. `@material/web` ships no data table, so the chrome is
--- | hand-rolled over the tokens.
+-- | A **data table**: values in rows and columns, where the column a value
+-- | sits in is what says what it means. `columns` are the fixed headings
+-- | and `label` is what assistive technology announces the table as; the
+-- | body is `dataRow`s of `dataCell`s, usually one row per element of a
+-- | collection.
 dataTable :: { label :: String, columns :: Array String } -> Ocular (PUI Web)
 dataTable config content = wrap do
   liftEffect $ ensureStyle "md3-data-table" dataTableCss
@@ -986,13 +1134,18 @@ dataTableCss = """
 .md3-data-table td { height: 52px; padding: 0 16px; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }
 """
 
+-- | One row of a `dataTable` — a single record's line across the columns.
 dataRow :: Ocular (PUI Web)
 dataRow = tr
 
+-- | One cell of a `dataRow`: the value under one column heading. Cells are
+-- | written in the same order as the table's `columns`.
 dataCell :: Ocular (PUI Web)
 dataCell = td
 
--- | Masonry image list (CSS columns, like `PUI.MDC2`'s).
+-- | An **image list**: pictures laid out in `columns` masonry columns, each
+-- | one an `imageListItem` — a gallery, where the pictures are the content
+-- | rather than an illustration of it.
 imageList :: { columns :: Int } -> Ocular (PUI Web)
 imageList config content = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
@@ -1006,13 +1159,17 @@ imageListCss = """
 .md3-image-list__label { font: 500 14px/20px Roboto, sans-serif; color: var(--md-sys-color-on-surface, #1d1b20); }
 """
 
+-- | The twelve-column **layout grid** a screen's regions are placed on,
+-- | holding `layoutCell`s.
 layoutGrid :: Ocular (PUI Web)
 layoutGrid = div >>> "style" := "display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 16px;"
 
+-- | One region of a `layoutGrid`, `span` columns wide out of twelve.
 layoutCell :: { span :: Int } -> Ocular (PUI Web)
 layoutCell config = div >>> "style" := ("grid-column: span " <> show config.span <> ";")
 
--- | Top app bar chrome over the tokens (`@material/web` ships none).
+-- | The **top app bar**: the band carrying the screen's title, with the
+-- | content laid out beneath it.
 topAppBar :: { title :: String } -> Ocular (PUI Web)
 topAppBar config content = wrap do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
@@ -1025,12 +1182,10 @@ topAppBarCss = """
 .md3-top-app-bar-content { padding: 16px; }
 """
 
--- | The permanent navigation drawer with a **live nav slot**: nav and
--- | content are sibling stages over the same types — both see every value
--- | fed, and either side's emissions exit the drawer, so a selectable nav
--- | (a `listOf` of sections folded via `updated`) drives the content
--- | beside it. Hand-rolled chrome
--- | over the tokens (`@material/web` ships no drawer).
+-- | The permanent **navigation drawer**: a titled nav panel pinned beside
+-- | the content. The nav is live, not a static menu — both sides see the
+-- | same data and either can report, so a selectable nav (a `listOf` of
+-- | sections) drives what is shown next to it.
 drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
@@ -1055,9 +1210,11 @@ drawerCss = """
 .md3-drawer__subtitle { font: 400 14px/20px Roboto, sans-serif; margin: 0; color: var(--md-sys-color-on-surface-variant, #49454f); }
 """
 
--- | Attach a hover plain tooltip to the wrapped content (`@material/web`
--- | ships no tooltip; CSS-hover chrome over the tokens). An annotation, not
--- | a container — it reads best trailing, widget first:
+-- | Attach a **tooltip** to a control: the short explanation that appears
+-- | on hover or keyboard focus. For clarification only — never for
+-- | information the user needs to complete the task, which belongs on the
+-- | screen. Wrap a single control, and write it trailing so the control
+-- | still reads first:
 -- | `checkbox (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
 tooltip :: { text :: String } -> Ocular (PUI Web)
 tooltip config content =
@@ -1076,9 +1233,14 @@ tooltipCss = """
 
 -- announcing statics (`{} → {}` chrome with a face)
 
+-- | A **divider**: the hairline rule between list rows or card sections,
+-- | for separating groups that belong to the same surface. Fixed
+-- | decoration, carrying no data.
 divider :: PUI Web {} {}
 divider = staticHTML "<md-divider style=\"width: 100%;\"></md-divider>"
 
+-- | One picture in an `imageList`, with `label` shown as its caption and
+-- | used as its alternative text.
 imageListItem :: { src :: String, label :: String } -> PUI Web {} {}
 imageListItem config = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss

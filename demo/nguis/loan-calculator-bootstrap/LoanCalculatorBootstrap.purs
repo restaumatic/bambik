@@ -11,8 +11,8 @@ import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped)
-import PUI.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
-import PUI.HTML (body, div, staticText, text)
+import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
+import PUI.Web.HTML (body, div, staticText, text)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

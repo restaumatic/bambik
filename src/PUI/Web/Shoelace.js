@@ -1,4 +1,4 @@
-// Shoelace (Web Awesome) custom-element definitions used by PUI.Shoelace —
+// Shoelace (Web Awesome) custom-element definitions used by PUI.Web.Shoelace —
 // importing a component module registers its <sl-*> tag, so `element "sl-..."`
 // upgrades. The base path points default-library icon fetches (sl-rating's
 // stars, alert icons) at the matching CDN release; the theme stylesheet

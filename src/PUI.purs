@@ -100,7 +100,7 @@ import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (focusVariant) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
-import Data.Profunctor.Seeding (class Seeding, seeded)
+import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
@@ -116,7 +116,6 @@ import Data.Variant (class Contractable, Variant, case_, contract, on)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Debug (class DebugWarning, spy)
 import Effect (Effect)
 import Effect.AVar as AVar
 import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
@@ -1036,7 +1035,7 @@ action' arr w = wrap ado
     { toUser: \i -> launchAff_ $ arr i (\a -> void $ w'.toUser a) (\o -> void $ AVar.put o oVar mempty)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
-            Left error -> pure unit -- TODO handle error
+            Left _error -> pure unit -- TODO handle error
             Right o -> do
               prop o
               waitAndPropagate

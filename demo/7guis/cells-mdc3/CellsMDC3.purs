@@ -1,6 +1,6 @@
 module CellsMDC3 (cellsMDC3) where
 
-import Prelude (identity, (#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), (>>>), Unit, bind, const, map, max, min, mod, otherwise, pure, show, (||))
+import Prelude (Unit, bind, identity, map, max, min, mod, otherwise, pure, show, (#), ($), (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (<>), (==), (>=), (>>>), (||))
 
 import Data.Array (catMaybes, range)
 import Data.Char (fromCharCode, toCharCode)
@@ -16,8 +16,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 import PUI (asField, completed, foreach, mvu, forProperty, projected, settled, toCase, updated)
-import PUI.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
-import PUI.MDC3 (bodyLarge, card, elevation5, filledTextField)
+import PUI.Web.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
+import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsMDC3 :: Effect Unit

@@ -8,9 +8,9 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, displayed, every, forField, foreach, mvu, projected)
-import PUI.HTML (body, provided, staticText, text)
-import PUI.MDC2 (body2, card, elevation20, list, listItem)
+import PUI (accumulated, displayed, every, forField, foreach, mvu)
+import PUI.Web.HTML (body, provided, staticText, text)
+import PUI.Web.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 scoreboardMDC2 :: Effect Unit

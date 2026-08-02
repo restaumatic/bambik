@@ -1,14 +1,14 @@
 module AuctionMDC3 (auctionMDC3) where
 
-import Prelude (identity, (#), ($), Unit, identity, max, show)
+import Prelude (identity, (#), ($), Unit, max, show)
 
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (asField, mvu, projected, settled, tapped)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC3 (bodyMedium, card, elevation5, headlineSmall, sliderLive)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC3 (bodyMedium, card, elevation5, headlineSmall, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 auctionMDC3 :: Effect Unit

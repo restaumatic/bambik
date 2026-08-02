@@ -7,8 +7,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, every, forField, mvu, projected, updated, with)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC2 (body1, button, card, elevation20, linearProgress, sliderLive)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC2 (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 timerMDC2 :: Effect Unit

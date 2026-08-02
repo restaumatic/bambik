@@ -1,4 +1,4 @@
-// PUI.Bootstrap design-system vocabulary on a live page: native inputs
+// PUI.Web.Bootstrap design-system vocabulary on a live page: native inputs
 // dressed in Bootstrap classes drive the tapped repayment readouts through
 // the same citizenship/protocols as the MDC modules, and the apply event
 // lands in the hand-wired toast.

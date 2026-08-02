@@ -15,9 +15,9 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import PUI (PUI, action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, onCase, required, silence, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
-import PUI.HTML (body, provided, staticText, text)
+import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
+import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC3 :: Effect Unit

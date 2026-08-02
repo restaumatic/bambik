@@ -1,6 +1,6 @@
 module MarkdownPreviewerMDC2 (markdownPreviewerMDC2) where
 
-import Prelude (Unit, otherwise, show, ($), (#), (&&), (+), (/=), (<#>), (<<<), (<>), (==), (>), (>>>))
+import Prelude (Unit, otherwise, show, (#), ($), (&&), (+), (/=), (<#>), (<>), (==), (>), (>>>))
 
 import Data.Array (cons, span, uncons)
 import Data.Maybe (Maybe(..))
@@ -10,8 +10,8 @@ import Data.String.Common (joinWith)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, atField, completed, displayed, mvu)
-import PUI.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
-import PUI.MDC2 (card, elevation20, filledTextArea, layoutCell, layoutGrid)
+import PUI.Web.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
+import PUI.Web.MDC2 (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 markdownPreviewerMDC2 :: Effect Unit

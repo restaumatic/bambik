@@ -1,17 +1,16 @@
 module TicketDispenserMDC3 (ticketDispenserMDC3) where
 
-import Prelude (identity, (#), ($), (+), (==), Unit, const, identity, show)
+import Prelude (Unit, const, identity, show, (#), ($), (+))
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (reelE, unfolding)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, atField, displayed, forField, mvu, projected, updated)
-import PUI.HTML (atCase, body, staticText, text)
-import PUI.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
+import PUI (asCase, atField, displayed, forField, mvu, updated)
+import PUI.Web.HTML (atCase, body, staticText, text)
+import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 ticketDispenserMDC3 :: Effect Unit

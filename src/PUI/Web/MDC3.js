@@ -1,4 +1,4 @@
-// @material/web custom-element definitions used by PUI.MDC3 — importing a
+// @material/web custom-element definitions used by PUI.Web.MDC3 — importing a
 // component module registers its <md-*> tag, so `element "md-..."` upgrades.
 import '@material/web/button/elevated-button.js';
 import '@material/web/button/filled-button.js';

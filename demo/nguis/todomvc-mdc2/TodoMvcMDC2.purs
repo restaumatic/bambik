@@ -8,9 +8,9 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, displayed, forField, mvu, forProperty, projected, required, toCase, updated)
-import PUI.HTML (body, clWhen, provided, span, staticText, text)
-import PUI.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
+import PUI (asField, completed, displayed, forField, forProperty, mvu, required, toCase, updated)
+import PUI.Web.HTML (body, clWhen, provided, span, staticText, text)
+import PUI.Web.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 todoMvcMDC2 :: Effect Unit

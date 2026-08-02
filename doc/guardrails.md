@@ -243,12 +243,16 @@ The codebase is three floors, each greppable:
   where instances live, so it is forced. (Bambik's own `Data.Profunctor.Row.*`
   and `.Acting` namespaces are vocabulary, not the ecosystem — the greps
   target `import Data.Profunctor (`/`.Strong`/... exactly.)
-- **Vocabulary layer** (the design-system modules, `PUI.HTML`/`PUI.SVG`,
+- **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
   applications use (`field`, `recordToCase`, `projected`, `constantly`).
   It never imports the ecosystem algebra: a design-system module proves
-  the vocabulary complete by being its own first customer.
+  the vocabulary complete by being its own first customer. **The floor is
+  the namespace**: every web vocabulary is a submodule of its carrier
+  (`PUI.Web.*`, under `src/PUI/Web/`), so a module path states which
+  carrier a vocabulary specializes and the carrier-independent algebra
+  stays visibly apart from it.
 - **Application layer** — vocabulary only: no `Data.Profunctor`, no
   carrier internals (see A9).
 

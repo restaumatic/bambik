@@ -1,8 +1,13 @@
--- | The carrier: the `Web` monad (`StateT DOM Effect`) the whole algebra is
--- | instantiated at for the browser, plus the DOM building blocks and FFI
--- | the HTML vocabulary (`PUI.HTML`) and the design system (`PUI.MDC2`) are
--- | built from. No widgets live here — for the 1-1 HTML vocabulary see
--- | `PUI.HTML`.
+-- | The browser carrier, and the root of everything web-specific: the `Web`
+-- | monad (`StateT DOM Effect`) the algebra is instantiated at for the
+-- | browser, plus the DOM building blocks and FFI every vocabulary beneath
+-- | this module is built from.
+-- |
+-- | No widgets live here — those are the submodules: the element
+-- | vocabularies `PUI.Web.HTML` and `PUI.Web.SVG`, and one module per
+-- | design system — `PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`,
+-- | `PUI.Web.Fluent`, `PUI.Web.Bootstrap`. A screen is written in one of
+-- | those; this module is what a *new* vocabulary would be written from.
 module PUI.Web
   ( DOM
   , Event
@@ -48,21 +53,16 @@ module PUI.Web
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
-import Data.Default (class Default, default)
 import Data.Foldable (for_)
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.String (Pattern(..), Replacement(..), replaceAll)
-import Data.Newtype (unwrap, wrap)
-import Data.Time.Duration (Milliseconds(..))
+import Data.Newtype (unwrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import PUI (PUI, class Hosting)
-import Unsafe.Coerce (unsafeCoerce)
+import PUI (class Hosting)
 
 foreign import data Node :: Type
 

@@ -1,6 +1,6 @@
 module WeatherMDC3 (weatherMDC3) where
 
-import Prelude (identity, (#), ($), (*), (+), (-), (<#>), (<<<), (==), Unit, const, discard, mod, pure, show)
+import Prelude (Unit, discard, identity, mod, pure, show, (#), ($), (*), (+), (-), (<#>), (==))
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
@@ -10,8 +10,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import PUI (action, displayed, informed, mvu, forProperty, onCase, projected, tapped, toCase, updated)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC3 (bodyLarge, bodySmall, card, elevation5, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC3 (bodyLarge, bodySmall, card, elevation5, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 weatherMDC3 :: Effect Unit

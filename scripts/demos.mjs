@@ -13,7 +13,7 @@ export const sets = {
     'crud-mdc2': ['CrudMDC2', 'crudMDC2'],
     'circle-drawer-mdc2': ['CircleDrawerMDC2', 'circleDrawerMDC2'],
     'cells-mdc2': ['CellsMDC2', 'cellsMDC2'],
-    // MDC3 (PUI.MDC3) siblings of the MDC2 demos — same app, import switched
+    // MDC3 (PUI.Web.MDC3) siblings of the MDC2 demos — same app, import switched
     'counter-mdc3': ['CounterMDC3', 'counterMDC3'],
     'temperature-converter-mdc3': ['TemperatureConverterMDC3', 'temperatureConverterMDC3'],
     'flight-booker-mdc3': ['FlightBookerMDC3', 'flightBookerMDC3'],
@@ -54,12 +54,12 @@ export const sets = {
     'espresso-bar-mdc2': ['EspressoBarMDC2', 'espressoBarMDC2'],
     'espresso-bar-mdc3': ['EspressoBarMDC3', 'espressoBarMDC3'],
     'order-dashboard-mdc3': ['OrderDashboardMDC3', 'orderDashboardMDC3'],
-    // non-Material design systems — one showcase each (PUI.Shoelace,
-    // PUI.Fluent, PUI.Bootstrap), proving the vocabularies interchangeable
+    // non-Material design systems — one showcase each (PUI.Web.Shoelace,
+    // PUI.Web.Fluent, PUI.Web.Bootstrap), proving the vocabularies interchangeable
     'product-review-shoelace': ['ProductReviewShoelace', 'productReviewShoelace'],
     'meeting-booker-fluent': ['MeetingBookerFluent', 'meetingBookerFluent'],
     'loan-calculator-bootstrap': ['LoanCalculatorBootstrap', 'loanCalculatorBootstrap'],
-    // MDC3 (PUI.MDC3) siblings of the MDC2 demos — same app, import switched
+    // MDC3 (PUI.Web.MDC3) siblings of the MDC2 demos — same app, import switched
     'order-form-mdc3': ['OrderFormMDC3', 'orderFormMDC3'],
     'todomvc-mdc3': ['TodoMvcMDC3', 'todoMvcMDC3'],
     'tip-calculator-mdc3': ['TipCalculatorMDC3', 'tipCalculatorMDC3'],

@@ -9,8 +9,8 @@ import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped)
-import PUI.HTML (body, p, staticText, text)
-import PUI.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
+import PUI.Web.HTML (body, p, staticText, text)
+import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

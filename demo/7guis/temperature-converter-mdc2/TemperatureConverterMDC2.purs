@@ -5,9 +5,9 @@ import Prelude ((#), ($), (*), (+), (-), (/), Unit, show)
 import Data.Maybe (Maybe(..))
 import Data.Number (fromString)
 import Effect (Effect)
-import PUI (forField, informed, mvu, projected, updated)
-import PUI.HTML (body)
-import PUI.MDC2 (card, elevation20, filledTextField)
+import PUI (forField, informed, mvu, updated)
+import PUI.Web.HTML (body)
+import PUI.Web.MDC2 (card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 temperatureConverterMDC2 :: Effect Unit

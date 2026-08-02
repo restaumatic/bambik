@@ -1,4 +1,4 @@
-// Fluent UI (Fluent 2) custom-element definitions used by PUI.Fluent —
+// Fluent UI (Fluent 2) custom-element definitions used by PUI.Web.Fluent —
 // importing a component's define module registers its <fluent-*> tag, so
 // `element "fluent-..."` upgrades. The design tokens (--colorNeutral*,
 // --fontFamilyBase, ...) are set globally from the official web light theme,

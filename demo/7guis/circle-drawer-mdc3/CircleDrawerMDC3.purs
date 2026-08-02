@@ -10,9 +10,9 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, asField, constantly, foreach, informed, mvu, toCase, updated)
-import PUI.HTML (attrWith, body, onClickedXY, provided, (:=))
-import PUI.MDC3 (button, card, cardActions, elevation5, sliderLive)
-import PUI.SVG (circle, svg)
+import PUI.Web.HTML (attrWith, body, onClickedXY, provided, (:=))
+import PUI.Web.MDC3 (button, card, cardActions, elevation5, sliderLive)
+import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerMDC3 :: Effect Unit

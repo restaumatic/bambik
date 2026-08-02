@@ -12,8 +12,8 @@ import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (displayed, forField, mvu, forProperty, tapped, toCase, updated)
-import PUI.HTML (body, dynamic, each, span, staticText, text)
-import PUI.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, list, listItem, listOf, labelSmall, topAppBar)
+import PUI.Web.HTML (body, dynamic, each, span, staticText, text)
+import PUI.Web.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, list, listItem, listOf, labelSmall, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 photoGalleryMDC3 :: Effect Unit

@@ -9,9 +9,9 @@ import Effect (Effect)
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import PUI (PUI, action, forCase, forField, mvu, observed, onCase, projected, tapped, toCases, updated)
-import PUI.HTML (body, staticText, text)
+import PUI.Web.HTML (body, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC3 (bodyMedium, button, card, elevation5, headlineSmall, indeterminateCircularProgress, snackbar)
+import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 paymentMDC3 :: Effect Unit

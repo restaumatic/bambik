@@ -16,8 +16,8 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 import PUI (action, asCase, asField, edited, field, mvu, onCase, silence, updated)
-import PUI.HTML (body, el, (:=))
-import PUI.MDC2 (button, card, cardActions, elevation20, filledTextField, list, listItem)
+import PUI.Web.HTML (body, el, (:=))
+import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 reorderMDC2 :: Effect Unit

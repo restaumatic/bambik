@@ -1,4 +1,4 @@
-// MDC Web foundation classes used by PUI.MDC2 — the aggregated
+// MDC Web foundation classes used by PUI.Web.MDC2 — the aggregated
 // material-components-web bundle exposes one namespace per component
 // (`material.textField.MDCTextField`, ...); a component leaf constructs a
 // foundation over its documented markup and drives it through its

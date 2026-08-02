@@ -7,7 +7,7 @@
 `foreach`/`foreachWith`/`dynamic`/`each`/`listOf` are the dynamic-collection
 vocabulary. Their old implementation rebuilds wholesale on every fed value —
 `removeAllChildren parent`, then rebuild every element from scratch
-([the pre-PoC `foreach`](../src/PUI/HTML.purs)). That single design choice
+([the pre-PoC `foreach`](../src/PUI/Web/HTML.purs)). That single design choice
 produces two apparently-separate complaints:
 
 1. **Rebuild churn.** Every element's DOM, event listeners, and MDC component
@@ -119,7 +119,7 @@ carrier-echoing announcing unit) — see "Rolled out," below.
 
 The approach is the adopted mechanism, collapsed to a single collection
 combinator. Vocabulary in [Sequence.purs](../src/Data/Profunctor/Row/Sequence.purs)
-and [HTML.purs](../src/PUI/HTML.purs):
+and [HTML.purs](../src/PUI/Web/HTML.purs):
 
 - **The `Sequencing` class** — `class Profunctor p <= Sequencing p where
   sequenced :: (a -> String) -> p a o -> p (Array a) o`, the sequence direction as

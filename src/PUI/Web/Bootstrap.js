@@ -1,4 +1,4 @@
-// PUI.Bootstrap is CSS-only — the design system is the Bootstrap stylesheet
+// PUI.Web.Bootstrap is CSS-only — the design system is the Bootstrap stylesheet
 // (a page requirement) over native elements, so there is no component
 // JavaScript to import. The one piece of behavior Bootstrap normally gets
 // from its JS plugin is the toast's timed dismissal, hand-wired here.

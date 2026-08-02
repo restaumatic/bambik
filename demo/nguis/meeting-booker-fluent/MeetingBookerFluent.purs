@@ -10,8 +10,8 @@ import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, asField, completed, displayed, forCase, informed, mvu, optional, projected, tapped, updated)
-import PUI.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
-import PUI.HTML (body, div, provided, staticText, text)
+import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
+import PUI.Web.HTML (body, div, provided, staticText, text)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

@@ -13,8 +13,8 @@ import Data.Variant (match)
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
 import PUI (asField, completed, displayed, every, mvu, projected, required)
-import PUI.HTML (body)
-import PUI.MDC3 (elevation5, topAppBar)
+import PUI.Web.HTML (body)
+import PUI.Web.MDC3 (elevation5, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderDashboardMDC3 :: Effect Unit

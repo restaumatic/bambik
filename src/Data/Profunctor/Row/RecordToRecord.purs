@@ -53,8 +53,7 @@ module Data.Profunctor.Row.RecordToRecord
 
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor (dimap, lcmap)
-import Data.Profunctor (class Profunctor)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Strong (class Strong, first, second)

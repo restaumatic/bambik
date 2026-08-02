@@ -10,8 +10,8 @@ import Data.String (length, toUpper)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, constantly, foreach, mvu, projected, tapped, toCase, updated)
-import PUI.HTML (attrWith, body, clicked, div, text, (:=))
-import PUI.MDC2 (body2, card, elevation20, sliderLive)
+import PUI.Web.HTML (attrWith, body, clicked, div, text, (:=))
+import PUI.Web.MDC2 (body2, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 chipStyle :: { mix :: { red :: Number, green :: Number, blue :: Number } } -> String

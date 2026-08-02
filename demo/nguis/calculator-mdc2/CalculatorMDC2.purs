@@ -9,8 +9,8 @@ import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (constantly, displayed, forField, foreach, mvu, forProperty, toCase, updated)
-import PUI.HTML (atCase, attrWith, body, clicked, div, provided, staticText, text, (:=))
-import PUI.MDC2 (card, elevation20)
+import PUI.Web.HTML (atCase, attrWith, body, clicked, div, provided, staticText, text, (:=))
+import PUI.Web.MDC2 (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculatorMDC2 :: Effect Unit

@@ -5,8 +5,8 @@ import Prelude (identity, (#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (PUI, asField, completed, focusRecord, forField, mvu, tapped)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC3 (bodyLarge, card, elevation5, filledTextField)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

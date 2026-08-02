@@ -1,4 +1,4 @@
-// PUI.Shoelace design-system vocabulary on a live page: the star rating,
+// PUI.Web.Shoelace design-system vocabulary on a live page: the star rating,
 // text fields, select and switch drive the tapped preview line through the
 // same citizenship/protocols as the MDC modules, and the submit event lands
 // in the sl-alert toast.

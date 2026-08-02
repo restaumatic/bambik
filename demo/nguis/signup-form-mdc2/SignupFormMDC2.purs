@@ -1,6 +1,6 @@
 module SignupFormMDC2 (signupFormMDC2) where
 
-import Prelude (identity, (#), ($), (<>), (==), (>>>), Unit, not)
+import Prelude (Unit, identity, (#), ($), (<>), (==), (>>>))
 
 import Data.Either (Either(..), either)
 import Data.Foldable (elem)
@@ -8,12 +8,11 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (Pattern(..), contains, trim)
-import Data.Variant (match)
 import Effect (Effect)
-import PUI (PUI, asCase, asField, displayed, toCases, forCase, forField, mvu, required)
-import PUI.HTML (atCase, body, staticText, text)
+import PUI (PUI, asField, displayed, forCase, forField, mvu, required, toCases)
+import PUI.Web.HTML (atCase, body, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
+import PUI.Web.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 signupFormMDC2 :: Effect Unit

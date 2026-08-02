@@ -1,5 +1,5 @@
 // A representative MDC3 sibling demo: the same Counter module with the
-// PUI.MDC3 import — the custom elements register, the seeded model renders,
+// PUI.Web.MDC3 import — the custom elements register, the seeded model renders,
 // and the md-filled-button drives the mvu loop.
 export const demos = ['demo/7guis/counter-mdc3']
 export const url = '/demo/7guis/counter-mdc3/'

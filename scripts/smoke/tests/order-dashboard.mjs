@@ -1,5 +1,5 @@
 // Custom dashboard controls packaged as a module (DashboardControlsMDC3 over
-// PUI.MDC3 + HTML/SVG): the five controls render the deterministic seeded
+// PUI.Web.MDC3 + HTML/SVG): the five controls render the deterministic seeded
 // order history, the rangePicker window switch re-scopes every tile, and the
 // `every` stream keeps the since-open count growing.
 export const demos = ['demo/nguis/order-dashboard-mdc3']

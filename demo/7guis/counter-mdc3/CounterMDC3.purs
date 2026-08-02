@@ -4,9 +4,9 @@ import Prelude ((#), ($), (+), (<<<), Unit, const, show)
 
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, forField, mvu, projected, updated)
-import PUI.HTML (body, text)
-import PUI.MDC3 (button, card, elevation5, headlineLarge)
+import PUI (completed, forField, mvu, updated)
+import PUI.Web.HTML (body, text)
+import PUI.Web.MDC3 (button, card, elevation5, headlineLarge)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterMDC3 :: Effect Unit

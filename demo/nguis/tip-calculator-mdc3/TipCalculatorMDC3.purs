@@ -8,8 +8,8 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (asField, completed, mvu, projected, tapped)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 tipCalculatorMDC3 :: Effect Unit

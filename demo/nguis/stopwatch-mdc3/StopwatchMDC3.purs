@@ -1,6 +1,6 @@
 module StopwatchMDC3 (stopwatchMDC3) where
 
-import Prelude (identity, (#), ($), (+), (<), (<>), Unit, const, not, show)
+import Prelude (Unit, const, identity, show, (#), ($), (+), (<), (<>))
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -10,8 +10,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, completed, displayed, every, forField, foreach, mvu, projected, updated)
-import PUI.HTML (atCase, body, li, staticText, text, ul)
-import PUI.MDC3 (button, card, elevation5, displaySmall)
+import PUI.Web.HTML (atCase, body, li, staticText, text, ul)
+import PUI.Web.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 stopwatchMDC3 :: Effect Unit

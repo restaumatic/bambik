@@ -1,50 +1,20 @@
--- Fluent UI (https://fluent2.microsoft.design) components implemented as
--- PUI Web/Ocular (PUI Web) datatypes — a design-system vocabulary beside
--- `PUI.MDC2`/`PUI.MDC3`/`PUI.Shoelace`, proving the vocabularies
--- interchangeable: built on Microsoft's official `@fluentui/web-components`
--- v3 custom elements (`<fluent-button>`, `<fluent-slider>`, ...),
--- registered by importing the FFI module, so a component leaf is just
--- `element "fluent-..."` plus property/event wiring — exactly the
--- `PUI.MDC3` recipe, and the leaf-echo protocols are the same
--- (focus-guarded text field, per-feed display echo, `Just`-only echo on
--- the type-changing selectors). Fluent associates labels through
--- `<fluent-field>`, so the labeled editors carry that wrapper as chrome.
--- Two-sorted, same citizenship, and — where the concept exists in both
--- catalogs — the same names and signatures:
---
---   * **components** — widgets with a model interface, every one a citizen
---     of exactly one row direction:
---       `×→×` editors — `textField @l`, `toggleSwitch @l`
---         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
---         slider emits on every value change; the catalog has no
---         commit/live split), and the type-changing `dropdown @l` and
---         `radioGroup @l` (`{ value :: Maybe a } → { value :: a }`);
---       `×→×` displays — `progressBar` (`{ value :: Number } → {}`, the
---         filled fraction 0–1) and `ratingDisplay`
---         (`{ value :: Number } → {}` — Fluent's read-only star display,
---         honest about MD's missing counterpart: a rating *editor* is not
---         in the Fluent catalog);
---       `×→+` events — `button @l` (`<fluent-button appearance="primary">`);
---       `+→×` statuses — `messageBar @l` (`<fluent-message-bar
---         intent="success">` shown on feed, auto-dismissing) — canonical
---         `[ event :: String ]` in, adopted via `# forCase @l`.
---   * **oculars** — shape-preserving decorators: `card { caption }`
---     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
---     Fluent card is a React-only catalog entry) and the type-ramp
---     typography over `<fluent-text>`: `title3`, `body1`, `caption1`.
---   * plus **announcing statics** (`{} → {}` chrome with a face):
---     `divider` (`<fluent-divider>`).
---
--- Page requirements: none — the design tokens are set globally from the
--- official web light theme at load (`setTheme(webLightTheme)` in the FFI
--- module), and Fluent's type ramp rides the system font stack (Segoe UI
--- where available).
---
--- **The `dimap` round-trip contract for editors** holds as in `PUI.MDC2`:
--- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (`rmap` a total
--- `Model -> Model` after `completed`), not in a leaf bracket.
-module PUI.Fluent
+-- | The **Fluent UI** vocabulary (https://fluent2.microsoft.design), over
+-- | Microsoft's `@fluentui/web-components` — a non-Material design system
+-- | whose names and signatures match the Material modules wherever both
+-- | catalogues have the concept, so a screen changes design system by
+-- | changing this one import. Fluent's own entry is `ratingDisplay`, a
+-- | rating that is shown but not edited: the catalogue has no star
+-- | *editor*, and this vocabulary does not invent one.
+-- |
+-- | **The page needs nothing**: the theme is applied from the bundle at
+-- | load, and Fluent's type ramp rides the system font stack.
+-- |
+-- | The catalogue: `textField`, `toggleSwitch` and `slider` to enter
+-- | values, `dropdown` and `radioGroup` to choose one, `button` to act,
+-- | `messageBar` to say what happened, `progressBar` and `ratingDisplay` to
+-- | show a figure, and `card`, `divider` and the type ramp (`title3`,
+-- | `body1`, `caption1`) for structure.
+module PUI.Web.Fluent
   ( body1
   , button
   , caption1
@@ -80,14 +50,59 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly)
-import PUI.HTML (cl, clicked, div, el, staticHTML, staticText, text, (:=))
+import PUI.Web.HTML (cl, clicked, div, el, staticHTML, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 
+-- Implementation notes — the reference above is the contract.
+--
+-- Fluent UI (https://fluent2.microsoft.design) components implemented as
+-- PUI Web/Ocular (PUI Web) datatypes — a design-system vocabulary beside
+-- `PUI.Web.MDC2`/`PUI.Web.MDC3`/`PUI.Web.Shoelace`, proving the vocabularies
+-- interchangeable: built on Microsoft's official `@fluentui/web-components`
+-- v3 custom elements (`<fluent-button>`, `<fluent-slider>`, ...),
+-- registered by importing the FFI module, so a component leaf is just
+-- `element "fluent-..."` plus property/event wiring — exactly the
+-- `PUI.Web.MDC3` recipe, and the leaf-echo protocols are the same
+-- (focus-guarded text field, per-feed display echo, `Just`-only echo on
+-- the type-changing selectors). Fluent associates labels through
+-- `<fluent-field>`, so the labeled editors carry that wrapper as chrome.
+-- Two-sorted, same citizenship, and — where the concept exists in both
+-- catalogs — the same names and signatures:
+--
+--   * **components** — widgets with a model interface, every one a citizen
+--     of exactly one row direction:
+--       `×→×` editors — `textField @l`, `toggleSwitch @l`
+--         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
+--         slider emits on every value change; the catalog has no
+--         commit/live split), and the type-changing `dropdown @l` and
+--         `radioGroup @l` (`{ value :: Maybe a } → { value :: a }`);
+--       `×→×` displays — `progressBar` (`{ value :: Number } → {}`, the
+--         filled fraction 0–1) and `ratingDisplay`
+--         (`{ value :: Number } → {}` — Fluent's read-only star display,
+--         honest about MD's missing counterpart: a rating *editor* is not
+--         in the Fluent catalog);
+--       `×→+` events — `button @l` (`<fluent-button appearance="primary">`);
+--       `+→×` statuses — `messageBar @l` (`<fluent-message-bar
+--         intent="success">` shown on feed, auto-dismissing) — canonical
+--         `[ event :: String ]` in, adopted via `# forCase @l`.
+--   * **oculars** — shape-preserving decorators: `card { caption }`
+--     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
+--     Fluent card is a React-only catalog entry) and the type-ramp
+--     typography over `<fluent-text>`: `title3`, `body1`, `caption1`.
+--   * plus **announcing statics** (`{} → {}` chrome with a face):
+--     `divider` (`<fluent-divider>`).
+--
+-- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
+-- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
+-- that can fail or lose information belong in the model (`rmap` a total
+-- `Model -> Model` after `completed`), not in a leaf bracket.
+
 -- UIs
 
--- | The `×→+` event button (`<fluent-button appearance="primary">`): reads
--- | the whole record it is shown and fires it as event case `l` on click.
+-- | The **primary button**: the screen's action. It reports on click,
+-- | carrying the data it was showing, under the name the app gives the
+-- | action — `button { label: "Book" } # asCase @"booked"`.
 button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 button config = recordToCase @"clicked" $ eventLeaf $
   el "fluent-button" >>> "appearance" := "primary" $ staticText config.label
@@ -104,12 +119,15 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
   _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
   editor
 
--- | The Fluent text input, a `{ value :: String }` editor. Focus-guarded
--- | like `Web.input`: model updates never clobber the field being typed in
--- | (Fluent keeps the real `<input>` in the light DOM, so the guard checks
--- | containment), but still echo so merge gates keep flowing.
+-- | The **text field**: a labelled single-line input. Shows the string it
+-- | is given and reports each edit; typing is never interrupted by values
+-- | arriving from elsewhere. Attach it to a field of the model with
+-- | `# asField @l`.
 textField :: { label :: String } -> PUI Web { value :: String } { value :: String }
 textField config = field @"value" $ fieldWith "above" config.label do
+  -- focus-guarded like `Web.input`: model updates never clobber the field
+  -- being typed in (Fluent keeps the real `<input>` in the light DOM, so
+  -- the guard checks containment), but still echo so merge gates flow
   element "fluent-text-input" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
@@ -127,8 +145,8 @@ textField config = field @"value" $ fieldWith "above" config.label do
           prop value
     }
 
--- | The Fluent switch, a `×→×` `Boolean` editor; the label associates
--- | through the field wrapper, after the control.
+-- | The **switch**: a setting that takes effect the moment it is flipped.
+-- | Its label sits after the control, in Fluent's manner.
 toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
 toggleSwitch config = field @"value" $ fieldWith "after" config.label do
   element "fluent-switch" (pure unit)
@@ -148,18 +166,20 @@ toggleSwitch config = field @"value" $ fieldWith "after" config.label do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The `×→×` editor of a **bounded quantity** (`<fluent-slider>`) — the
--- | whole business datum `{ current, min, max, step }` rides the canonical
--- | row: the constraints are model data, never UI literals (guardrail A8's
--- | channel-fed resolution), so they arrive from the seed — pointedness
--- | makes a missing bound a compile error at `body` — and may change at
--- | runtime (the leaf re-scopes in place). `step` is `Just` for the
--- | discrete slider, `Nothing` for the continuous one. Emits on every
--- | value change — Fluent's catalog has no commit/live split — the whole
--- | quantity with `current` replaced (an editor cannot invent its own
--- | bounds). The label line carries a live numeric readout (the element
--- | has no value indicator of its own — the counterpart of MD's labeled
--- | handle), fed from the channel, so it follows drags through the loop.
+-- | The **slider**: a quantity chosen by feel, where the range matters more
+-- | than the exact number.
+-- |
+-- | The range is part of the quantity, not part of the screen:
+-- | `{ current, min, max, step }` travels together as one business datum, so
+-- | limits come from the data and can change while the app runs — a slider
+-- | is never silently out of range, and a range nobody supplied is a
+-- | compile error rather than a wrong screen. A `step` makes it discrete,
+-- | no step continuous.
+-- |
+-- | It reports on **every change**, following the drag — Fluent has no
+-- | commit-only slider — so whatever it drives should be cheap to redo, or
+-- | be `debounced` downstream. The current number is shown at the end of
+-- | the label line, since the control has no readout of its own.
 slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 slider config = field @"value" $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
@@ -200,10 +220,12 @@ slider config = field @"value" $ el "fluent-field" >>> "label-position" := "abov
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The Fluent dropdown, a `×→×` editor. Type-changing like `PUI.MDC2`'s
--- | `select @l`: the input field holds the selection state (`Maybe a`),
--- | the output field the bare selection (`a`). Options are design-system
--- | config.
+-- | The **dropdown**: one choice out of a list too long to lay out in the
+-- | open. Until the user picks there is nothing to show, so the field
+-- | arrives as "maybe a choice" and leaves as the choice itself — say which
+-- | with `# optional` (nothing preselected, and whatever needs the choice
+-- | stays hidden until it exists) or `# required`. The options belong to
+-- | the control, not to the model.
 dropdown :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 dropdown config options = field @"value" $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
@@ -235,10 +257,9 @@ dropdown config options = field @"value" $ fieldWith "above" config.label do
   optionsMarkup = "<fluent-listbox>" <> foldMapWithIndex optionMarkup options <> "</fluent-listbox>"
   optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> o.label <> "</fluent-option>"
 
--- | The Fluent radio group, a `×→×` editor. Type-changing like `dropdown
--- | @l`; one `<fluent-radio>` per option, each labeled through its own
--- | field wrapper (Fluent's documented pattern), exclusivity from the
--- | group.
+-- | The **radio group**: one choice among a handful, every option visible
+-- | and comparable at a glance. Beyond about five options use `dropdown`.
+-- | Same picked/unpicked contract as `dropdown`.
 radioGroup :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 radioGroup config options = field @"value" $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
@@ -278,9 +299,10 @@ radioGroup config options = field @"value" $ fieldWith "above" config.label do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The **determinate** progress display, a `{ value :: Number } → {}`
--- | display citizen: `value` is the filled fraction (0.0–1.0). The gauge
--- | shape: `progressBar # projected fraction`.
+-- | The **progress bar**: how far along something is, `value` running 0 to
+-- | 1. As much a gauge as a progress indicator — a quota, a share, a
+-- | rating out of five — written as `progressBar # projected fraction`,
+-- | with the business function deciding what the fraction means.
 progressBar :: PUI Web { value :: Number } {}
 progressBar = wrap do
   element "fluent-progress-bar" (pure unit)
@@ -299,8 +321,10 @@ progressBar = wrap do
         prop {}
     }
 
--- | The read-only star display (`<fluent-rating-display>`), a
--- | `{ value :: Number } → {}` display citizen.
+-- | A **read-only star rating**: someone else's score, shown but not
+-- | editable — Fluent's catalog has the display and not the editor, so
+-- | there is deliberately no star *editor* here (Shoelace's `rating` is
+-- | the one).
 ratingDisplay :: PUI Web { value :: Number } {}
 ratingDisplay = wrap do
   element "fluent-rating-display" (pure unit)
@@ -317,10 +341,13 @@ ratingDisplay = wrap do
         prop {}
     }
 
--- | The `+→×` status receiver: shows message case `l` in a
--- | `<fluent-message-bar intent="success">` fixed at the bottom, shown on
--- | every feed and auto-dismissing after 5s (re-feeding resets the timer).
--- | Contributes no fields (`text` echoes its `{}`, so it announces).
+-- | The **message bar**: a brief success message at the bottom of the
+-- | screen that dismisses itself after a few seconds, for something that
+-- | has just happened and needs no reply. It never interrupts.
+-- |
+-- | The wording belongs to the UI, not to the event: write the copy where
+-- | the message bar is built — `messageBar # forCase @"booked" bookedLine`
+-- | — and let the event carry the bare facts.
 messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
@@ -344,18 +371,23 @@ toastCss = """
 
 -- the Fluent type ramp over <fluent-text>
 
+-- | A **title**: the heading of a screen region or a card, in Fluent's
+-- | semibold title size.
 title3 :: Ocular (PUI Web)
 title3 w = el "fluent-text" >>> "size" := "500" >>> "weight" := "semibold" >>> "block" := "" $ w
 
+-- | **Body** text — the default for a line or a paragraph the user reads.
 body1 :: Ocular (PUI Web)
 body1 w = el "fluent-text" >>> "size" := "300" >>> "block" := "" $ w
 
+-- | A **caption**: the smallest type, for annotations and fine print
+-- | beside the content.
 caption1 :: Ocular (PUI Web)
 caption1 w = el "fluent-text" >>> "size" := "200" >>> "block" := "" $ w
 
--- | A card with a caption — hand-rolled chrome over the Fluent tokens (the
--- | Fluent card is a React-only catalog entry), a flex column supplying
--- | the vertical rhythm between its children.
+-- | A **card**: a surface holding one subject's content, captioned at the
+-- | top. It stacks its children with even spacing, so a form or a summary
+-- | can be dropped in without spacing each row by hand.
 card :: { caption :: String } -> Ocular (PUI Web)
 card config content = wrap do
   liftEffect $ ensureStyle "fluent-card" cardCss
@@ -370,6 +402,8 @@ cardCss = """
 
 -- announcing statics ({} → {} chrome with a face)
 
+-- | A **divider**: the hairline rule between sections of a surface. Fixed
+-- | decoration, carrying no data.
 divider :: PUI Web {} {}
 divider = staticHTML "<fluent-divider style=\"width: 100%;\"></fluent-divider>"
 

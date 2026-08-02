@@ -1,6 +1,6 @@
 module InboxMDC3 (inboxMDC3) where
 
-import Prelude (identity, (#), ($), (+), (<<<), (<>), (==), (/=), (||), Unit, comparing, const, identity, map, not, show)
+import Prelude (identity, (#), ($), (+), (<<<), (<>), (==), (/=), (||), Unit, comparing, const, map, not, show)
 
 import Data.Array (filter, find, length, snoc, sortBy)
 import Data.Maybe (Maybe(..))
@@ -10,9 +10,9 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, mvu, onCase, projected, tapped, toCase, updated)
-import PUI.HTML (body, provided, span, staticText, text)
+import PUI.Web.HTML (body, provided, span, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
+import PUI.Web.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC3 :: Effect Unit

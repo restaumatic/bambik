@@ -1,46 +1,21 @@
--- Shoelace (https://shoelace.style — the design system continued as Web
--- Awesome) components implemented as PUI Web/Ocular (PUI Web) datatypes —
--- a design-system vocabulary beside `PUI.MDC2`/`PUI.MDC3`, proving the
--- vocabularies interchangeable: built on the framework-agnostic
--- `@shoelace-style/shoelace` custom elements (`<sl-button>`, `<sl-rating>`,
--- ...), registered by importing the FFI module, so a component leaf is just
--- `element "sl-..."` plus property/event wiring — exactly the `PUI.MDC3`
--- recipe, and the leaf-echo protocols are the same (focus-guarded text
--- fields, per-feed display echo, `Just`-only echo on the type-changing
--- selector). Two-sorted, same citizenship, and — where the concept exists
--- in both catalogs — the same names and signatures (`textField` carries
--- Shoelace's plain `label` instead of MD's `floatingLabel`; the catalog has
--- no fill/outline split), so a demo switches design systems by switching
--- the import:
---
---   * **components** — widgets with a model interface, every one a citizen
---     of exactly one row direction:
---       `×→×` editors — `textField @l`, `textArea @l`, `rating @l` (the
---         star editor, `{ value :: Number }` — Shoelace's distinctive
---         catalog entry), `toggleSwitch @l` (`<sl-switch>`), and the
---         type-changing `select @l` (`{ value :: Maybe a } → { value :: a }`);
---       `×→+` events — `button @l` (`<sl-button variant="primary">`);
---       `+→×` statuses — `toast @l` (`<sl-alert>` shown on feed,
---         auto-dismissing via its own `duration`) — canonical
---         `[ event :: String ]` in, adopted via `# forCase @l`.
---   * **oculars** — shape-preserving decorators: `card { caption }`
---     (`<sl-card>` with a header slot). Typography is deliberately absent:
---     Shoelace styles plain HTML through its tokens, so the `PUI.HTML`
---     element oculars are the typography.
---   * plus **announcing statics** (`{} → {}` chrome with a face):
---     `divider` (`<sl-divider>`).
---
--- Page requirements: the Shoelace light theme stylesheet
--- (`themes/light.css` from the same release as the bundled components);
--- default-library icons (the rating's stars, the toast's icon) load from
--- the matching CDN base path set by the FFI module. Fonts are the system
--- stack — Shoelace ships no webfont requirement.
---
--- **The `dimap` round-trip contract for editors** holds as in `PUI.MDC2`:
--- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (`rmap` a total
--- `Model -> Model` after `completed`), not in a leaf bracket.
-module PUI.Shoelace
+-- | The **Shoelace** vocabulary (https://shoelace.style, continued as Web
+-- | Awesome) — one of the non-Material design systems, and the evidence
+-- | that they are interchangeable: names and signatures match the Material
+-- | modules wherever both catalogues have the concept, so a screen changes
+-- | design system by changing this one import. What a catalogue has of its
+-- | own appears under its own name — here the star `rating`, which Material
+-- | has no counterpart for.
+-- |
+-- | **The page must load** the Shoelace light theme stylesheet, from the
+-- | same release as the bundled components; icons load from the matching
+-- | CDN. No webfont is needed — Shoelace uses the system font stack.
+-- |
+-- | The catalogue: `textField`/`textArea`, `rating` and `toggleSwitch` to
+-- | enter values, `select` to choose one, `button` to act, `toast` to say
+-- | what happened, `card` and `divider` for structure. Typography is
+-- | deliberately absent: Shoelace styles plain HTML, so the `PUI.Web.HTML`
+-- | elements are the type scale.
+module PUI.Web.Shoelace
   ( button
   , card
   , divider
@@ -69,14 +44,54 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly)
-import PUI.HTML (clicked, div, el, span, staticHTML, staticText, text, (:=))
+import PUI.Web.HTML (clicked, div, el, span, staticHTML, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 
+-- Implementation notes — the reference above is the contract.
+--
+-- Shoelace (https://shoelace.style — the design system continued as Web
+-- Awesome) components implemented as PUI Web/Ocular (PUI Web) datatypes —
+-- a design-system vocabulary beside `PUI.Web.MDC2`/`PUI.Web.MDC3`, proving the
+-- vocabularies interchangeable: built on the framework-agnostic
+-- `@shoelace-style/shoelace` custom elements (`<sl-button>`, `<sl-rating>`,
+-- ...), registered by importing the FFI module, so a component leaf is just
+-- `element "sl-..."` plus property/event wiring — exactly the `PUI.Web.MDC3`
+-- recipe, and the leaf-echo protocols are the same (focus-guarded text
+-- fields, per-feed display echo, `Just`-only echo on the type-changing
+-- selector). Two-sorted, same citizenship, and — where the concept exists
+-- in both catalogs — the same names and signatures (`textField` carries
+-- Shoelace's plain `label` instead of MD's `floatingLabel`; the catalog has
+-- no fill/outline split), so a demo switches design systems by switching
+-- the import:
+--
+--   * **components** — widgets with a model interface, every one a citizen
+--     of exactly one row direction:
+--       `×→×` editors — `textField @l`, `textArea @l`, `rating @l` (the
+--         star editor, `{ value :: Number }` — Shoelace's distinctive
+--         catalog entry), `toggleSwitch @l` (`<sl-switch>`), and the
+--         type-changing `select @l` (`{ value :: Maybe a } → { value :: a }`);
+--       `×→+` events — `button @l` (`<sl-button variant="primary">`);
+--       `+→×` statuses — `toast @l` (`<sl-alert>` shown on feed,
+--         auto-dismissing via its own `duration`) — canonical
+--         `[ event :: String ]` in, adopted via `# forCase @l`.
+--   * **oculars** — shape-preserving decorators: `card { caption }`
+--     (`<sl-card>` with a header slot). Typography is deliberately absent:
+--     Shoelace styles plain HTML through its tokens, so the `PUI.Web.HTML`
+--     element oculars are the typography.
+--   * plus **announcing statics** (`{} → {}` chrome with a face):
+--     `divider` (`<sl-divider>`).
+--
+-- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
+-- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
+-- that can fail or lose information belong in the model (`rmap` a total
+-- `Model -> Model` after `completed`), not in a leaf bracket.
+
 -- UIs
 
--- | The `×→+` event button (`<sl-button variant="primary">`): reads the
--- | whole record it is shown and fires it as event case `l` on click.
+-- | The **primary button**: the screen's action. It reports on click,
+-- | carrying the data it was showing, under the name the app gives the
+-- | action — `button { label: "Submit" } # asCase @"submitted"`.
 button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 button config = recordToCase @"clicked" $ eventLeaf $
   el "sl-button" >>> "variant" := "primary" $ staticText config.label
@@ -86,12 +101,15 @@ button config = recordToCase @"clicked" $ eventLeaf $
 eventLeaf :: forall a. PUI Web {} {} -> PUI Web a a
 eventLeaf chrome = clicked (chrome # constantly {})
 
--- | The Shoelace text input, a `{ value :: String }` editor. Focus-guarded
--- | like `Web.input`: model updates never clobber the field being typed in
--- | (the shadow input keeps the host as `activeElement`), but still echo so
--- | merge gates keep flowing.
+-- | The **text field**: a labelled single-line input. Shows the string it
+-- | is given and reports each edit; typing is never interrupted by values
+-- | arriving from elsewhere. Attach it to a field of the model with
+-- | `# asField @l`.
 textField :: { label :: String } -> PUI Web { value :: String } { value :: String }
 textField config = field @"value" $ wrap do
+  -- focus-guarded like `Web.input`: model updates never clobber the field
+  -- being typed in (the shadow input keeps the host as `activeElement`),
+  -- but still echo so merge gates keep flowing
   element "sl-input" (pure unit)
   attribute "label" config.label
   node <- gets _.sibling
@@ -109,7 +127,8 @@ textField config = field @"value" $ wrap do
           prop value
     }
 
--- | `textField`'s multi-line sibling (`<sl-textarea>`).
+-- | The **multi-line text field**, `rows` lines tall — a note, a review, a
+-- | message. Otherwise `textField`.
 textArea :: { label :: String, rows :: Int } -> PUI Web { value :: String } { value :: String }
 textArea config = field @"value" $ wrap do
   element "sl-textarea" (pure unit)
@@ -130,16 +149,15 @@ textArea config = field @"value" $ wrap do
           prop value
     }
 
--- | The Shoelace star rating, the `×→×` editor of a **bounded quantity**
--- | `{ current, max }` — the catalog entry Material has no counterpart
--- | for. The scale is the business half of the datum: it rides the
--- | canonical row, never a UI literal (guardrail A8's channel-fed
--- | resolution), so it arrives from the seed — pointedness makes a missing
--- | scale a compile error at `body` — and may change at runtime. Emits the
--- | whole quantity with `current` replaced (an editor cannot invent its
--- | own scale). `<sl-rating>` carries only an accessible label of its own,
--- | so a non-empty config label renders visibly above it, like a text
--- | field's label.
+-- | The **star rating** — Shoelace's distinctive control, with no Material
+-- | counterpart: a judgement given by picking a point on a scale the user
+-- | recognises at a glance.
+-- |
+-- | The scale is part of the rating, not part of the screen:
+-- | `{ current, max }` travels together as one business datum, so how many
+-- | stars there are comes from the data and can differ between contexts —
+-- | and a scale nobody supplied is a compile error rather than a wrong
+-- | screen. The label is drawn above the stars.
 rating :: { label :: String } -> PUI Web { value :: { current :: Number, max :: Int } } { value :: { current :: Number, max :: Int } }
 rating config = field @"value" $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
@@ -166,8 +184,9 @@ rating config = field @"value" $
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The Shoelace switch, a `×→×` `Boolean` editor; the label is the
--- | element's own slot content, so clicking the text toggles it.
+-- | The **switch**: a setting that takes effect the moment it is flipped.
+-- | The label sits beside it and is part of the target, so clicking the
+-- | words toggles it too.
 toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
 toggleSwitch config = field @"value" $ wrap do
   element "sl-switch" (void $ unwrap (staticText config.label))
@@ -186,9 +205,11 @@ toggleSwitch config = field @"value" $ wrap do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
--- | The Shoelace select, a `×→×` editor. Type-changing like `PUI.MDC2`'s:
--- | the input field holds the selection state (`Maybe a`), the output field
--- | the bare selection (`a`). Options are design-system config.
+-- | The **dropdown**: one choice out of a list too long to lay out in the
+-- | open. Until the user picks there is nothing to show, so the field
+-- | arrives as "maybe a choice" and leaves as the choice itself — say which
+-- | with `# optional` or `# required`. The options belong to the control,
+-- | not to the model.
 select :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select config options = field @"value" $ wrap do
   _ <- unwrap (staticHTML markup)
@@ -222,10 +243,13 @@ select config options = field @"value" $ wrap do
       <> "</sl-select>"
   optionMarkup idx o = "<sl-option value=\"" <> show idx <> "\">" <> o.label <> "</sl-option>"
 
--- | The `+→×` status receiver: shows message case `l` in a toast — an
--- | `<sl-alert>` fixed at the bottom, (re)opened on every feed and closed
--- | again by its own `duration` (re-feeding restarts the timer). Contributes
--- | no fields (`text` echoes its `{}`, so it announces).
+-- | The **toast**: a brief message at the bottom of the screen that
+-- | dismisses itself, for something that has just happened and needs no
+-- | reply. It never interrupts.
+-- |
+-- | The wording belongs to the UI, not to the event: write the copy where
+-- | the toast is built — `toast # forCase @"submitted" thanksLine` — and
+-- | let the event carry the bare facts.
 toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
@@ -242,8 +266,9 @@ toast = wrap do
 
 -- UIOculars
 
--- | A card with a caption in the header slot (`<sl-card>`); the body is a
--- | flex column supplying the vertical rhythm between its children.
+-- | A **card**: a surface holding one subject's content, captioned in its
+-- | header. The body stacks its children with even spacing, so a form or a
+-- | summary can be dropped in without spacing each row by hand.
 card :: { caption :: String } -> Ocular (PUI Web)
 card config content = el "sl-card" $ wrap do
   _ <- unwrap (div >>> "slot" := "header" >>> "style" := "font-weight: var(--sl-font-weight-semibold);" $ staticText config.caption)
@@ -251,6 +276,8 @@ card config content = el "sl-card" $ wrap do
 
 -- announcing statics ({} → {} chrome with a face)
 
+-- | A **divider**: the hairline rule between sections of a surface. Fixed
+-- | decoration, carrying no data.
 divider :: PUI Web {} {}
 divider = staticHTML "<sl-divider style=\"width: 100%;\"></sl-divider>"
 

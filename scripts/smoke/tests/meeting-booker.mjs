@@ -1,4 +1,4 @@
-// PUI.Fluent design-system vocabulary on a live page, and the no-defaults
+// PUI.Web.Fluent design-system vocabulary on a live page, and the no-defaults
 // discipline: nothing is pre-picked — the unmade choices flow as Nothing
 // (`optional` selectors), the attendees slider exists only once a room
 // gives it bounds, and the plan/booking stage exists only once the pick is

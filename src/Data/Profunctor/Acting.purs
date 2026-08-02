@@ -95,7 +95,7 @@ acted w = actedBy (Record.get prox)
 -- | as the at-most-one-element arrays (identity is trivial at one element, so
 -- | the key is a constant). Keeps the element *fed and live* on
 -- | `Nothing`-to-`Just` transitions per the carrier's retention; contrast
--- | `PUI.HTML.provided`, the *detaching* visibility form with collapsed
+-- | `PUI.Web.HTML.provided`, the *detaching* visibility form with collapsed
 -- | output.
 optioned :: forall p a b. Acting p => Strong p => p a b -> p (Maybe a) (Maybe b)
 optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) (Array.head >>> map _.value)

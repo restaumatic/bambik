@@ -7,7 +7,7 @@ module DashboardControlsMDC3
   , trendChart
   ) where
 
-import Prelude (identity, class Eq, const, show, ($), (#), (*), (-), (/), (<>), (==), (>>>))
+import Prelude (class Eq, identity, show, (#), ($), (*), (-), (/), (<>), (==), (>>>))
 
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
@@ -18,9 +18,9 @@ import Data.Profunctor.Row.RecordToRecord (pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import PUI (PUI, atField, constantly, displayed, forField, foreach, projected)
-import PUI.HTML (attrWith, div, staticText, text, (:=))
-import PUI.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
-import PUI.SVG as SVG
+import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
+import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
+import PUI.Web.SVG as SVG
 import PUI.Web (Web)
 
 board :: Ocular (PUI Web)

@@ -1,4 +1,4 @@
-// PUI.MDC3 (Material Design 3 via @material/web): the espresso-bar demo's
+// PUI.Web.MDC3 (Material Design 3 via @material/web): the espresso-bar demo's
 // editors drive the model through host-level events on the custom elements,
 // the tapped summary and gauge re-render, presets fold via updates, and the
 // order button lands in the hand-rolled snackbar.

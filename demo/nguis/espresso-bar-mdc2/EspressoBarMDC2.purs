@@ -10,9 +10,9 @@ import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped, updated, with)
-import PUI.HTML (body, div, staticText, text)
+import PUI.Web.HTML (body, div, staticText, text)
 import PUI.Web (Web)
-import PUI.MDC2 (body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
+import PUI.Web.MDC2 (body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 espressoBarMDC2 :: Effect Unit

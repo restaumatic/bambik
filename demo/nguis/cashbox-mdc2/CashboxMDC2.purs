@@ -10,8 +10,8 @@ import Data.String (Pattern(..), stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asCase, focusVariant, forField, informed, mvu, onCase, tapped, toCase, updated, with)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC2 (body1, button, card, elevation20, headline6, simpleDialog)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC2 (body1, button, card, elevation20, headline6, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC2 :: Effect Unit

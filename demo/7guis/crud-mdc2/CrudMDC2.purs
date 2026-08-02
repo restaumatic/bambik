@@ -15,8 +15,8 @@ import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import PUI (action, asCase, asField, completed, displayed, forField, looped, onCase, toCase, updated, with)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudMDC2 :: Effect Unit

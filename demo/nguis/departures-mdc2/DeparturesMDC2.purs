@@ -7,8 +7,8 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (dispatched, displayed, every, forField, mvu, projected)
-import PUI.HTML (body, staticText, text)
-import PUI.MDC2 (body2, card, elevation20, list, listItem)
+import PUI.Web.HTML (body, staticText, text)
+import PUI.Web.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 departuresMDC2 :: Effect Unit
