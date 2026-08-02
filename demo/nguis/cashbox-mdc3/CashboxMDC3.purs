@@ -51,9 +51,7 @@ recordAudit :: {} -> { balance :: Number, audits :: Int } -> { balance :: Number
 recordAudit _ till = till { audits = till.audits + 1 }
 
 euros :: Number -> String
-euros n = fromMaybe shown (stripSuffix (Pattern ".0") shown)
-  where
-  shown = show n
+euros n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
 
 openedTill :: { balance :: Number, audits :: Int }
 openedTill = { balance: 200.0, audits: 0 }
