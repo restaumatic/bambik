@@ -104,6 +104,4 @@ negated entry = case stripPrefix (Pattern "-") entry of
   Nothing -> "-" <> entry
 
 format :: Number -> String
-format n = fromMaybe shown (stripSuffix (Pattern ".0") shown)
-  where
-  shown = show n
+format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
