@@ -25,16 +25,16 @@ skill's directory:
 2. **[writing.md](writing.md)** — write the app module. The pipeline and
    the four merges, component citizenship and the adopters, pass-through
    stages, app shapes with the demo that shows each, conditional
-   visibility, modals, collections, separation of concerns, and the type
-   inference gotchas — closing with **Code style**, the definitive
-   contract for bambik application code (layout, types and values,
-   business functions, wiring). That section is normative: the library's
-   own documentation points at it rather than restating it, and the
-   demos are its executable form.
+   visibility, modals, collections, separation of concerns, the type
+   inference gotchas, and what to do when data does not propagate (the
+   starvation watchdog and the emission trace) — closing with **Code
+   style**, the definitive contract for bambik application code (layout,
+   types and values, business functions, wiring). That section is
+   normative: the library's own documentation points at it rather than
+   restating it, and the demos are its executable form.
 
-3. **[building.md](building.md)** — build, run and verify. The page, the
-   npm scripts, the watch-mode agent loop, browser verification, and the
-   runtime debugging aids (starvation watchdog, emission trace).
+3. **[building.md](building.md)** — build, run and verify. The npm
+   scripts, the watch-mode agent loop, and browser verification.
 
 Spago clones the library whole, so after the first build
 **`.spago/bambik/<tag>/`** holds its sources, demos and docs as worked

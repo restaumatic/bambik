@@ -486,6 +486,35 @@ then the business ones, a single exported entry function.
   layout the design system already gives you. Every avoided style string
   is code you don't write.
 
+## When it does not propagate
+
+The compiler proves the wiring; it does not prove data reaches the
+screen. A blank pane or a stale readout is almost always a **knowledge
+gate withholding**: a merge emits only once every operand has spoken, so
+one unfed sibling silences the whole record.
+
+Two aids diagnose this in the browser, and reading them is part of
+writing the app, not an afterthought:
+
+- **The starvation watchdog** is on by default. A gate that withholds
+  and is never fed within 3s prints one `console.warn` naming the gate,
+  the exact missing fields, and the fix — `seeded`/`announce`, or the
+  seed argument of `feedback`/`folding`/`unfolding`. An unprimed gate is
+  therefore a named failure, not a blank screen. Opt out with
+  `window.__bambikNoWarn = true`.
+- **The emission trace** is `window.__bambikTrace = true`, also settable
+  with `localStorage.setItem("bambik-trace", "true")`. It logs every
+  propagation decision — stage-to-stage flow, `looped` re-feeds and
+  swallowed echoes, and gate-withheld emissions with the sibling fields
+  they wait for, the otherwise-invisible ones — as `console.debug`, so
+  enable the Verbose log level in DevTools. The labels the trace prints
+  are the ones adoption introduced (`toCase @l`, `asCase @l`), which is
+  the practical reason to name cases rather than inject them inline.
+
+An unprimed *entry* needs neither: `body` demands input `{}`, so a
+forgotten seed is a compile error at the mount point naming the
+unsupplied fields. Supplying it is what `with initial` / `mvu seed` do.
+
 ## Reference
 
 The API and its semantics are documented in the source module headers —

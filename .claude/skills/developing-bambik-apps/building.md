@@ -36,17 +36,7 @@ The library's own demos are covered by a Chrome CDP harness at
 model; its `tests/*.mjs` files show how a walk through a demo is
 written.
 
-## Runtime debugging
-
-Compile-time contracts live with the library sources ([writing.md](writing.md)
-says where). At runtime:
-
-- A starving knowledge gate warns after 3s, naming the gate, the missing
-  fields, and the fix. This is on by default; opt out with
-  `window.__bambikNoWarn = true`.
-- The full emission trace is `window.__bambikTrace = true`, also
-  settable at runtime with
-  `localStorage.setItem("bambik-trace", "true")`. It logs every
-  propagation decision — stage-to-stage flow, `looped` re-feeds and
-  swallowed echoes, and gate-withheld emissions, the otherwise-invisible
-  ones — as `console.debug`, so enable the Verbose log level in DevTools.
+When the page loads but the data does not arrive, the problem is in the
+app module, not the build: see **When it does not propagate** in
+[writing.md](writing.md#when-it-does-not-propagate) for the starvation
+watchdog and the emission trace.
