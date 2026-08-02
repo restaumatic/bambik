@@ -121,7 +121,9 @@ the model kept flat, background fields threaded) and cashbox
 (`focusVariant` — a sub-family of events intercepted by confirmation
 dialogs, each `simpleDialog … # tapped) # onCase @l # toCase @l' identity`,
 background cases passing straight through; payload-carrying bare buttons
-read `with patch (button …) # asCase @l`).
+read `button { … } # with patch # asCase @l` — widget first, the
+announced payload trailing like every other data concern, inline
+`# with {}` when the payload is the informationless unit).
 
 Conditional visibility is view-model data, never an in-UI predicate.
 When the model field is a payload-carrying variant, case adoption *is*
@@ -369,7 +371,21 @@ honor it, and changes to either side keep the two in sync:
 - **One purely UI-related function first, then pure business functions.**
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing** —
-  `card { caption: "CRUD" } $ ... # asField @"prefix"`.
+  `card { caption: "CRUD" } $ ... # asField @"prefix"`. No data word
+  ever leads a line: an announced payload trails like every other data
+  concern — `button { … } # with patch # asCase @l`, never
+  `with patch (button …)`; inline `# with {}` when the payload is the
+  informationless unit (naming `{}` is ceremony).
+- **Simple text concatenation is UI structure** (guardrail A11). A
+  displayed line glued from fields and literal separators/prefixes is a
+  merge of `staticText` pieces and per-field displays — each field its
+  own text node, updated in place:
+  `headline6 ( RecordToRecord.do staticText "Till balance: €"; text #
+  forField @"balance" euros ) # tapped` — never a business formatter
+  assembling the line for one `projected` leaf. Business functions
+  format *values* (`euros`, `formatTime`), never *lines*; toast/status
+  copy (a String channel) and shape-varying lines (case analysis,
+  conditional fragments) are the exemptions.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line), and it
   rides at the end of the widget's last content line — close the paren

@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import PUI (PUI, action, asCase, asField, bracketed, completed, debounced, displayed, field, forCase, forField, looped, onCase, projected, required, silence, tapped, updated, with)
+import PUI (PUI, action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, onCase, required, silence, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.HTML (body, provided, staticText, text)
 import PUI.Web (Web)
@@ -69,7 +69,10 @@ orderFormMDC3 =
               staticText " (uniquely "
               text # forField @"orderId" identity
               staticText ") for "
-              text # forField @"customer" customerName
+              ( RecordToRecord.do
+                  text # forField @"firstName" identity
+                  staticText " "
+                  text # forField @"lastName" identity ) # atField @"customer"
               staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
@@ -103,9 +106,6 @@ orderFormMDC3 =
 
 distanceKm :: String -> String
 distanceKm address = show (length address)
-
-customerName :: { firstName :: String, lastName :: String } -> String
-customerName { firstName, lastName } = firstName <> " " <> lastName
 
 dineInDetail ::
   { fulfillment ::

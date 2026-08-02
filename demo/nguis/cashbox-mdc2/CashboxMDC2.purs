@@ -3,13 +3,14 @@ module CashboxMDC2 (cashboxMDC2) where
 import Prelude (identity, (#), ($), (+), (-), (<>), Unit, show)
 
 import Data.Maybe (fromMaybe)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.String (Pattern(..), stripSuffix)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, focusVariant, mvu, onCase, projected, tapped, toCase, updated, with)
-import PUI.HTML (body, text)
+import PUI (asCase, focusVariant, forField, mvu, onCase, tapped, toCase, updated, with)
+import PUI.HTML (body, staticText, text)
 import PUI.MDC2 (body1, body2, button, card, elevation20, headline6, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,16 +19,26 @@ cashboxMDC2 =
   body $
     elevation20 $
       card { caption: "Cashbox" } $ ( Semigroupoid.do
-          headline6 text # projected balanceLine # tapped
-          body2 text # projected auditLine # tapped
+          headline6 ( RecordToRecord.do
+              staticText "Till balance: €"
+              text # forField @"balance" euros ) # tapped
+          body2 ( RecordToRecord.do
+              text # forField @"audits" show
+              staticText " register counts today" ) # tapped
           ( Semigroupoid.do
               RecordToVariant.do
-                with standardRefund (button { label: "Refund a customer", icon: "undo" }) # asCase @"refund"
-                with courierFee (button { label: "Pay the courier", icon: "local_shipping" }) # asCase @"payout"
-                with tillAudit (button { label: "Count the register", icon: "fact_check" }) # asCase @"counted"
+                button { label: "Refund a customer", icon: "undo" } # with standardRefund # asCase @"refund"
+                button { label: "Pay the courier", icon: "local_shipping" } # with courierFee # asCase @"payout"
+                button { label: "Count the register", icon: "fact_check" } # with {} # asCase @"counted"
               ( VariantToVariant.do
-                  ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ body1 text # projected refundLine # tapped ) # onCase @"refund" # toCase @"refunded" identity
-                  ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 text # projected payoutLine # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: applyRefund, paidOut: applyPayout, counted: recordAudit })
+                  ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ body1 ( RecordToRecord.do
+                      staticText "Hand €"
+                      text # forField @"amount" euros
+                      staticText " back to the customer." ) # tapped ) # onCase @"refund" # toCase @"refunded" identity
+                  ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 ( RecordToRecord.do
+                      staticText "Hand €"
+                      text # forField @"amount" euros
+                      staticText " to the courier." ) # tapped ) # onCase @"payout" # toCase @"paidOut" identity ) # focusVariant) # updated (match { refunded: applyRefund, paidOut: applyPayout, counted: recordAudit })
       ) # mvu openedTill
 
 applyRefund :: { amount :: Number } -> { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
@@ -38,18 +49,6 @@ applyPayout { amount } till = till { balance = till.balance - amount }
 
 recordAudit :: {} -> { balance :: Number, audits :: Int } -> { balance :: Number, audits :: Int }
 recordAudit _ till = till { audits = till.audits + 1 }
-
-balanceLine :: { balance :: Number } -> String
-balanceLine { balance } = "Till balance: €" <> euros balance
-
-auditLine :: { audits :: Int } -> String
-auditLine { audits } = show audits <> " register counts today"
-
-refundLine :: { amount :: Number } -> String
-refundLine { amount } = "Hand €" <> euros amount <> " back to the customer."
-
-payoutLine :: { amount :: Number } -> String
-payoutLine { amount } = "Hand €" <> euros amount <> " to the courier."
 
 euros :: Number -> String
 euros n = fromMaybe shown (stripSuffix (Pattern ".0") shown)
@@ -64,6 +63,3 @@ standardRefund = { amount: 25.0 }
 
 courierFee :: { amount :: Number }
 courierFee = { amount: 10.0 }
-
-tillAudit :: {}
-tillAudit = {}

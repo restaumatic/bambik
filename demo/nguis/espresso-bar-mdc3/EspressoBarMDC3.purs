@@ -54,7 +54,7 @@ espressoBarMDC3 =
                 checkbox (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"loyalty"
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
-                  with theUsual (menuItem { label: "The usual" } # asCase @"theUsual")
+                  menuItem { label: "The usual" } # asCase @"theUsual" # with theUsual
                   menuItem { label: "Espresso, no frills" } # asCase @"espressoNoFrills" )
                 # updated (match { theUsual: const, espressoNoFrills: \m _ -> espressoNoFrills m })
           ) # mvu usualOrder

@@ -25,7 +25,7 @@ timerMDC3 =
                 staticText "s"
               sliderLive { label: "" } # asField @"duration") # completed
           every tickPeriod tick
-          with nothingElapsed (button { label: "Reset", icon: "replay" }) # updated (match { clicked: const })
+          button { label: "Reset", icon: "replay" } # with nothingElapsed # updated (match { clicked: const })
       ) # mvu tenSecondFreshTimer
 
 nothingElapsed :: { elapsed :: Number }

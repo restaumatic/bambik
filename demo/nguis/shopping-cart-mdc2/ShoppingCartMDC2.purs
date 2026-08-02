@@ -31,7 +31,7 @@ shoppingCartMDC2 =
           body1 ( RecordToRecord.do
               staticText "Total: $"
               text # projected grandTotalText ) # tapped
-          with emptyCart (button { label: "Empty cart" }) # updated (match { clicked: const })
+          button { label: "Empty cart" } # with emptyCart # updated (match { clicked: const })
       ) # mvu emptyCart
 
 emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }

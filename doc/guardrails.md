@@ -366,31 +366,60 @@ The precise, checkable form of L16's top floor:
 speak the vocabulary — the adopters, the mechanisms with their
 projection arguments, the merges' qualified-do — and every raw
 `lcmap`/`rmap`/`dimap` an application would have written has a named
-home (the L16 mechanism list). The constant-patch emitter is `with
-patch (button …) # updated (match { clicked: const })` — the patch is
-announced, the button replays it. What has no home yet goes to the
-library as a missing-vocabulary signal, never inline.
+home (the L16 mechanism list). The constant-patch emitter is
+`button { … } # with patch # updated (match { clicked: const })` — the
+patch is announced, the button replays it (widget first, per A10). What
+has no home yet goes to the library as a missing-vocabulary signal,
+never inline.
 
 ### A10. Every UI line reads `widget # data plumbing`.
 
-Each UI-related line leads with the **visual** concern, plumbed with `$`,
-and trails with the **data** concern, plumbed with `#`:
-`card { caption: "CRUD" } $ … # asField @"prefix"`. Content is handed to
-an ocular with `$`, never with application parens — and since `#`
-(`infixl 1`) binds tighter than `$` (`infixr 0`), a trailing chain that
-must apply to the *whole element* opens its paren **before** the ocular:
-`( simpleDialog { … } $ body1 text # projected refundLine # tapped )
-# onCase @l # toCase @l' identity` (cashbox), `( section >>> cl "course"
-$ RecordToRecord.do` (restaurant-menu). Closing parens and trailing `#`
-chains never start a line: a chain is written whole on the widget's last
-content line, and enclosing levels' closers cascade onto that same line
+Each UI-related line leads with the **visual** concern, plumbed with `$`
+or application parens directly on the ocular, and trails with the
+**data** concern, plumbed with `#`:
+`card { caption: "CRUD" } $ … # asField @"prefix"`,
+`headline6 ( RecordToRecord.do … ) # tapped`. No data word ever leads a
+line — `with x (button …)` is wrong; the announced payload trails like
+every other data concern, `button { … } # with patch # asCase @l`
+(`with {}` inline when the payload is the informationless unit — naming
+`{}` is ceremony, not business language). Since `#` (`infixl 1`) binds
+tighter than `$` (`infixr 0`), a trailing chain that must apply to the
+*whole element* opens its paren **before** the ocular:
+`( simpleDialog { … } $ … # tapped ) # onCase @l # toCase @l' identity`
+(cashbox), `( section >>> cl "course" $ RecordToRecord.do`
+(restaurant-menu). Closing parens and trailing `#` chains never start a
+line: a chain is written whole on the widget's last content line, and
+enclosing levels' closers cascade onto that same line
 (`… ) # focusVariant) # updated (match { … })`). The one exception is
 the app-level closer — the demo's last UI line stays `) # mvu seed` /
-`) # with seed` on its own line. The blessed leading-data exception is
-the announced constant patch, `with patch (button …) # asCase @l` (A9),
-whose `with` is the seed discharging the button's input, not plumbing.
-This is the same contract the demo pages state in their code-style note
-and the skill's code-style section — the three stay in sync.
+`) # with seed` on its own line. This is the same contract the demo
+pages state in their code-style note and the skill's code-style
+section — the three stay in sync.
+
+### A11. Simple text concatenation is UI structure.
+
+A line of displayed text assembled from model fields and literal
+separators, prefixes, or suffixes is **structure**, not a business
+value — it belongs in UI as a merge of `staticText` pieces and
+per-field displays, each field updating its own text node in place:
+
+```
+headline6 ( RecordToRecord.do
+    staticText "Till balance: €"
+    text # forField @"balance" euros ) # tapped
+```
+
+never `text # projected balanceLine` over
+`balanceLine { balance } = "Till balance: €" <> euros balance` — that
+formatter is UI copy hiding in business code, the display-side mirror
+of A3. Business functions format **values** (`euros`, `formatTime`,
+`formatMoney`, a percentage with its unit), never assemble **lines**:
+if deleting the literals would leave only field reads, the function is
+UI structure in disguise. Exempt: copy that must flow through a
+String-typed channel (status/toast lines via `forCase copyOf` /
+`forCases lineOf` — A3 puts that copy in the widget function), and
+genuinely computed lines whose shape varies (case analysis, conditional
+fragments — payment's `statusLine`, espresso-bar's summary).
 
 Any proposed change — combinator, class, component, demo idiom — passes
 these gates in order:
