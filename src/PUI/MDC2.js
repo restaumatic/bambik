@@ -217,10 +217,15 @@ export function configureMdcSlider(node) {
           return function (current) {
             return function () {
               const input = node.querySelector('.mdc-slider__input');
-              input.min = String(min);
-              input.max = String(max);
-              if (discrete) input.step = String(step);
+              // MDCSlider reads its initial numbers from the ATTRIBUTES at
+              // construction (the value property is not attribute-reflected,
+              // so a property write alone leaves the foundation seeing the
+              // markup's value="0" — out of range whenever min > 0)
+              input.setAttribute('min', String(min));
+              input.setAttribute('max', String(max));
+              if (discrete) input.setAttribute('step', String(step));
               else input.removeAttribute('step');
+              input.setAttribute('value', String(current));
               input.value = String(current);
               node.classList.toggle('mdc-slider--discrete', discrete);
               const thumb = node.querySelector('.mdc-slider__thumb');
