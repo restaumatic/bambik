@@ -16,7 +16,7 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 # Using it in your own application
 
 bambik is consumed as a spago git package pinned to a release tag — no clone,
-nothing vendored. The [v0.1.3 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.3)
+nothing vendored. The [v0.1.4 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.4)
 ships **`developing-bambik-apps`**, the authoring skill: how to bootstrap a
 project, the vocabulary and its four row directions, separation of concerns, the
 definitive code-style contract, and the build/verify workflow — with a scaffold
@@ -28,7 +28,7 @@ the library requires (the variant-sugar compiler and the matching
 
 ```bash
 mkdir -p .claude/skills
-curl -sL https://github.com/restaumatic/bambik/releases/download/v0.1.3/developing-bambik-apps-v0.1.3.tar.gz | tar xz -C .claude/skills
+curl -sL https://github.com/restaumatic/bambik/releases/download/v0.1.4/developing-bambik-apps-v0.1.4.tar.gz | tar xz -C .claude/skills
 ```
 
 Its source of truth is [.claude/skills/developing-bambik-apps/](/.claude/skills/developing-bambik-apps/);
