@@ -42,7 +42,7 @@ non-registry dependencies are named by URL and pinned by tag:
 
 | Dependency        | Named in        | Pinned by                                    |
 |-------------------|-----------------|----------------------------------------------|
-| bambik library    | `packages.dhall`| tag `v0.1.1` of `restaumatic/bambik`          |
+| bambik library    | `packages.dhall`| tag `v0.1.2` of `restaumatic/bambik`          |
 | variant fork      | `packages.dhall`| tag `v8.0.0-prim-variant.1`                   |
 | forked compiler   | `package.json`  | release URL + integrity hash in the lock      |
 
