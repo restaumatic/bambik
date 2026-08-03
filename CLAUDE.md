@@ -37,15 +37,31 @@ A bambik release is a tag on this repo plus a release page. Four steps:
 
 1. Bump the tag in the dependency table of `.claude/skills/developing-bambik-apps/bootstrap.md` **before** tagging, so the tagged tree documents its own tag. Nothing else in the scaffold carries a version — the packages.dhall step writes `<tag>` and fetches the library's dependency list from it, so a new library dependency needs no companion edit.
 2. Verify green in full — `spago build`, `spago test`, `npm run bundle-demos`, `npm run smoke` (L15) — then tag the verified commit (`git tag -a v0.2.0`) and push tag and branch.
-3. Create the release page from the tag, restating the two toolchain pins (a consumer cannot guess them) and the prototype status.
+3. Create the release page from the tag, restating the two toolchain pins (a consumer cannot guess them) and the prototype status. Use the **GitHub REST API**, not the `gh` CLI — `gh` is not installed here, and `GITHUB_TOKEN` is in the environment. Write the JSON with a script rather than inlining it in the shell, so the body's newlines and markdown survive quoting:
+
+```sh
+node -e 'require("fs").writeFileSync("body.json", JSON.stringify({
+  tag_name: "v0.2.0", name: "bambik v0.2.0", draft: false, prerelease: false,
+  body: "…the pins and the prototype note…" }))'
+curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/restaumatic/bambik/releases -d @body.json
+```
+
+   The response's `upload_url` (strip its `{?name,label}` suffix) is where step 4 posts. A `message` field in the response means it failed — check it; curl exits 0 on API errors.
 4. Attach the authoring skill as an asset, built **from the tagged tree** so it cannot drift from the library it documents:
 
 ```sh
 mkdir -p /tmp/skillpack && cd /tmp/skillpack
 git -C <repo> archive v0.2.0 .claude/skills/developing-bambik-apps | tar x --strip-components=2
 tar czf developing-bambik-apps-v0.2.0.tar.gz developing-bambik-apps
-gh release upload v0.2.0 developing-bambik-apps-v0.2.0.tar.gz --repo restaumatic/bambik
+curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Content-Type: application/gzip" \
+  --data-binary @developing-bambik-apps-v0.2.0.tar.gz \
+  "<upload_url>?name=developing-bambik-apps-v0.2.0.tar.gz"
 ```
+
+   Then verify the published result rather than assuming it: re-fetch `releases/tags/v0.2.0` (asset `state` must be `uploaded`, `draft` false) and run README's install one-liner into a throwaway directory.
 
 The asset is a snapshot, so it needs re-attaching per tag — that is its one cost, bought for a portable one-command install (`tar xz -C .claude/skills`, no GNU-only flags) and a visible place to find it. README's install command and release link need the new tag too. This procedure lives here, not in the skill: cutting a release is a library-maintainer task, and the skill ships to application developers who never do it.
 
