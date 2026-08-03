@@ -580,6 +580,16 @@ An unprimed *entry* needs neither: `body` demands input `{}`, so a
 forgotten seed is a compile error at the mount point naming the
 unsupplied fields. Supplying it is what `with initial` / `mvu seed` do.
 
+## Finish by running it
+
+A module that compiles is not a delivered change. Every piece of writing
+ends the same way as bootstrapping does: with the app **running in dev
+mode** — `npm run watch` and `npm run dev` in the background, the page at
+`http://127.0.0.1:8000/` open and exercised, no console warnings from the
+starvation watchdog — and the URL handed back to the developer. The
+knowledge gates above are the reason: their withholding is invisible to
+the compiler and obvious on screen. See [building.md](building.md).
+
 ## Reference
 
 The API and its semantics are documented in the source module headers —

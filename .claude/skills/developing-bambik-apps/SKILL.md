@@ -42,6 +42,12 @@ skill's directory:
 3. **[building.md](building.md)** — build, run and verify. The npm
    scripts, the watch-mode agent loop, and browser verification.
 
+All three end at the same place: the application **running in dev mode**
+— `npm run watch` and `npm run dev` in the background, the page verified
+in a browser, its URL reported to the developer. A green build is not a
+finished task; bambik apps are DOM-driven and the knowledge gates that
+silence a pane are invisible to the compiler.
+
 Spago clones the library whole, so after the first build
 **`.spago/bambik/<tag>/`** holds its sources, demos and docs as worked
 examples: `demo/7guis/`, `demo/nguis/`, `doc/type-errors.md`, and the

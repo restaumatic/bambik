@@ -100,10 +100,25 @@ headers under `src/`.
    spago build
    ```
 
-5. **Bundle and run** — `npm run bundle` writes the minified
-   `public/bundle.js` (~500 kB for the starter) and `npm run dev` serves
-   `public/` at `http://127.0.0.1:8000`. The dev loop, its stdin caveat,
-   and how to verify a running page are [building.md](building.md).
+5. **Run it in dev mode** — this is the procedure's finish line:
+   bootstrapping is done when the app is on screen, not when the build is
+   green. Start both long-running processes in the background and leave
+   them running:
+
+   ```sh
+   npm run watch     # spago build -w   — recompiles on each .purs edit
+   npm run dev       # esbuild serve    — http://127.0.0.1:8000
+   ```
+
+   Neither may have its stdin closed (never `</dev/null`; both die on
+   EOF), and only one watcher may own `output/` at a time. Then verify
+   the page in a browser — HTTP 200 on `/` and on `/bundle.js`, the app
+   rendered inside `<body>`, no console errors — and report the URL to
+   the developer, so they land on a running application. From here an
+   edit needs only a browser refresh. `npm run bundle` writes the
+   minified `public/bundle.js` (~500 kB for the starter) and is for
+   deploying, not for the loop. The dev loop and browser verification in
+   full: [building.md](building.md).
 
 ## Scaffold
 

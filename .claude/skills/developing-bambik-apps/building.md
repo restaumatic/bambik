@@ -4,6 +4,11 @@ The workflow is the scaffold's npm scripts, set up by
 [bootstrap.md](bootstrap.md) — which also describes the scaffold's files
 themselves, including the page the app mounts into.
 
+**Dev mode is where every piece of work ends.** Bootstrapping an app,
+adding a stage, fixing a business function — none of it is finished at a
+green compile. Leave the app running at its URL, verified in a browser,
+and say so to the developer.
+
 ## Build and run
 
 1. **Agent loop: use watch mode.** Keep `npm run watch` (`spago build -w`)
@@ -18,9 +23,15 @@ themselves, including the page the app mounts into.
    browser after an edit. It dies on stdin EOF like the watcher. Change
    the port in package.json if 8000 is busy.
 
+   The two together are dev mode: the watcher turns edits into `output/`,
+   the server turns `output/` into the page. Start both in the
+   background, keep them up for the whole session, and verify the running
+   page as below.
+
 3. **Bundle.** `npm run bundle` writes the minified
    `public/bundle.js`. The whole of `public/` is then the deployable
-   artifact: static files, no server.
+   artifact: static files, no server. This is a deploy step — it is not
+   part of the dev loop, and it is not what concludes a task.
 
 ## Verify
 
