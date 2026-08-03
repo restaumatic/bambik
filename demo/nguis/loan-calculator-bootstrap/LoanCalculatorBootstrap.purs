@@ -2,14 +2,12 @@ module LoanCalculatorBootstrap (loanCalculatorBootstrap) where
 
 import Prelude (Unit, ($), (#))
 
-import Data.Maybe (Maybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText, rateText, totalInterestText)
-import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped)
+import PUI (asCase, asField, forCase, mvu, projected, required, tapped)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (body, div, staticText, text)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 loanCalculatorBootstrap :: Effect Unit
@@ -41,7 +39,4 @@ loanCalculatorBootstrap =
           staticText "Interest share of total repayment"
           progress ) # projected interestShare # tapped
       button { label: "Apply for this loan" } # asCase @"applied"
-      appliedToast
-
-appliedToast :: PUI Web [ applied :: { applicant :: String, amount :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, years :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, purpose :: [ car :: {}, home :: {}, holiday :: {} ], insured :: Boolean } ] {}
-appliedToast = toast # forCase @"applied" appliedLine
+      toast # forCase @"applied" appliedLine

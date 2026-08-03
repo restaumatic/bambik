@@ -1,4 +1,4 @@
-module InboxLogic (composeMessage, confirmingDelete, deleteOpened, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark) where
+module InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark) where
 
 import Prelude ((#), (+), (<>), (==), (/=), (||), comparing, map, not, show)
 
@@ -56,6 +56,9 @@ deleteOpened m@{ messages, opened } = m { messages = filter (\g -> Just g.id /= 
 
 keepMessages :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
 keepMessages m = m { deletion = .silent {} }
+
+inboxZeroLine :: String
+inboxZeroLine = "Inbox zero!"
 
 composeMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, nextId :: Int }
 composeMessage m@{ messages, nextId } = m

@@ -8,10 +8,9 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (PUI, action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, onCase, required, silence, tapped, updated, with)
+import PUI (action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, onCase, required, silence, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.Web.HTML (body, provided, staticText, text)
-import PUI.Web (Web)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -93,17 +92,8 @@ orderFormMDC3 =
         indeterminateLinearProgress # action submitOrder # onCase @"submit"
         indeterminateLinearProgress # action printReceipt # onCase @"printReceipt"
       VariantToRecord.do
-        submittedToast
-        rejectionToast
-        receiptToast
+        snackbar # forCase @"orderSubmitted" submittedLine
+        snackbar # forCase @"submissionFailed" rejectionLine
+        snackbar # forCase @"receiptPrinted" receiptLine
       silence
   ) # with {}
-
-submittedToast :: PUI Web [ orderSubmitted :: { shortId :: String } ] {}
-submittedToast = snackbar # forCase @"orderSubmitted" submittedLine
-
-rejectionToast :: PUI Web [ submissionFailed :: { shortId :: String, reason :: String } ] {}
-rejectionToast = snackbar # forCase @"submissionFailed" rejectionLine
-
-receiptToast :: PUI Web [ receiptPrinted :: { shortId :: String } ] {}
-receiptToast = snackbar # forCase @"receiptPrinted" receiptLine

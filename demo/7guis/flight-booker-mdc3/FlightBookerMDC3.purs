@@ -6,9 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (PUI, action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, required, updated)
+import PUI (action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, required, updated)
 import PUI.Web.HTML (atCase, body, provided, staticText, text)
-import PUI.Web (Web)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -40,7 +39,4 @@ flightBookerMDC3 =
               text # forField @"back" identity ) # atCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"book"
       indeterminateLinearProgress # action (match { book: submit })
-      bookingToast
-
-bookingToast :: PUI Web [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] {}
-bookingToast = snackbar # forCases bookingLine
+      snackbar # forCases bookingLine

@@ -5,9 +5,8 @@ import Prelude (Unit, identity, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (PUI, asField, displayed, forCase, forField, mvu, required, toCases)
+import PUI (asField, displayed, forCase, forField, mvu, required, toCases)
 import PUI.Web.HTML (atCase, body, staticText, text)
-import PUI.Web (Web)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
@@ -51,11 +50,5 @@ signupFormMDC3 =
             text # forField @"username" identity ) # atCase @"ready" validation # displayed
         button { label: "Sign up", icon: "person_add" } # toCases register
         VariantToRecord.do
-          welcomeToast
-          rejectionToast
-
-welcomeToast :: PUI Web [ registered :: String ] {}
-welcomeToast = snackbar # forCase @"registered" welcomeLine
-
-rejectionToast :: PUI Web [ rejected :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] ] {}
-rejectionToast = snackbar # forCase @"rejected" rejectionLine
+          snackbar # forCase @"registered" welcomeLine
+          snackbar # forCase @"rejected" rejectionLine

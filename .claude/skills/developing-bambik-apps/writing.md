@@ -251,9 +251,9 @@ The classes live in separate modules, and the dependency between them is
 one-way:
 
 - The **view module** (`<App>.purs`) exports the single entry function
-  and keeps every UI-wiring function (widget builders, named toast
-  widgets). It imports the design-system vocabulary, the library's
-  combinators, and the logic module.
+  and keeps the UI-wiring functions that survive the one-liner rule
+  (widget builders, reusable sub-forms). It imports the design-system
+  vocabulary, the library's combinators, and the logic module.
 - The **logic module** (`<App>Logic.purs`) exports the business
   functions and the named business values (seed models, tick periods,
   default payloads). It depends only on the **domain** — `Prelude`,
@@ -292,6 +292,12 @@ holds the business functions over the model, seed first.
 - **Event constructors.** A wrapper function that injects a payload into
   a case is unnecessary: a channel-fed cell replays its own value on
   click and `toCase @l` introduces the case, closing the row itself.
+- **Named one-liner widgets.** A widget function whose whole body is one
+  pipeline expression — the named toast is the archetype
+  (`submittedToast = snackbar # forCase @"orderSubmitted"
+  submittedLine`) — is glue: inline the expression at its pipeline
+  position and delete the function (see the Layout rule). The copy
+  function's business name already says what shows.
 
 ### What to extract (name the business)
 
@@ -360,6 +366,16 @@ over a logic module, a single exported entry function.
   `PUI.Web.*`, a design-system module, or the row merges. Design-system
   twins are two view modules importing the exact same logic module, so
   anything that differs between twins is view by definition.
+- **One-liner `PUI Web`-returning functions are inlined.** A named
+  widget function whose whole body is a single pipeline expression is
+  indirection: write the expression at its use site —
+  `snackbar # forCase @"orderSubmitted" submittedLine` sits directly in
+  the status merge — and delete the function with its annotation. The
+  named business argument (`submittedLine`) carries the meaning, and its
+  closed signature pins the row the annotation used to pin. A standalone
+  widget function earns its name only by genuinely spanning lines: a
+  `dynamic`/`foreachWith` builder, or a reusable sub-form lifted as a
+  citizen (parcel's `addressForm`).
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
   ever leads a line: an announced payload trails like every other data
@@ -433,11 +449,12 @@ over a logic module, a single exported entry function.
   (toast lines) and shape-varying lines (case analysis, conditional
   fragments) are the exemptions.
 - **Business emissions carry bare data, never UI copy.** Toast and
-  banner text lives in `PUI Web`-returning widget functions
-  (`welcomeToast = snackbar # forCase @"registered" welcomeLine`); the
-  event carries the order, the outcome, the reason — the data, not the
-  sentence. Validation results are payloads, not strings destined for a
-  particular widget.
+  banner copy lives in named copy functions from the logic module,
+  handed to the status adopter in place
+  (`snackbar # forCase @"registered" welcomeLine`); the event carries
+  the order, the outcome, the reason — the data, not the sentence.
+  Validation results are payloads, not strings destined for a particular
+  widget.
 
 ### Business functions
 

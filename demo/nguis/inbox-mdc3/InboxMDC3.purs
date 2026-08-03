@@ -7,10 +7,9 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import InboxLogic (composeMessage, confirmingDelete, deleteOpened, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
-import PUI (PUI, asCase, completed, constantly, displayed, forCase, forField, mvu, onCase, projected, tapped, toCase, updated)
+import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
+import PUI (asCase, completed, displayed, forCase, forField, mvu, observed, onCase, projected, tapped, toCase, updated)
 import PUI.Web.HTML (body, provided, span, staticText, text)
-import PUI.Web (Web)
 import PUI.Web.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -44,7 +43,7 @@ inboxMDC3 =
                   button { label: "Delete" } # asCase @"emptied"
                   button { label: "Keep" } # asCase @"kept") # provided confirmingDelete
               VariantToVariant.do
-                inboxZeroBanner # tapped # onCase @"emptied" # toCase @"emptied" identity
+                snackbar # forCase @"emptied" (const inboxZeroLine) # observed
                 identity # onCase @"kept" # toCase @"kept" identity) # updated (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
           fab { icon: "edit", label: "Compose" } # asCase @"compose" # updated (match { compose: const <<< composeMessage })
           ( menu { label: "Sort" } $ RecordToVariant.do
@@ -52,6 +51,3 @@ inboxMDC3 =
               menuItem { label: "By subject" } # asCase @"bySubject"
               menuItem { label: "Unread first" } # asCase @"unreadFirst") # updated (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
       ) # mvu mondayMail
-
-inboxZeroBanner :: PUI Web {} {}
-inboxZeroBanner = snackbar # forCase @"emptied" identity # constantly (.emptied "Inbox zero!")

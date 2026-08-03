@@ -5,10 +5,9 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, durationText, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
-import PUI (PUI, asCase, asField, completed, displayed, forCase, forField, informed, mvu, optional, projected, tapped, updated)
+import PUI (asCase, asField, completed, displayed, forCase, forField, informed, mvu, optional, projected, tapped, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (body, div, provided, staticText, text)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 meetingBookerFluent :: Effect Unit
@@ -51,7 +50,4 @@ meetingBookerFluent =
               staticText " attendees"
               text # projected onlineNote ) # tapped
           button { label: "Book the room" } # asCase @"booked" ) # provided completePlan
-      bookedBar
-
-bookedBar :: PUI Web [ booked :: { title :: String, room :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], duration :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } ] {}
-bookedBar = messageBar # forCase @"booked" bookedLine
+      messageBar # forCase @"booked" bookedLine

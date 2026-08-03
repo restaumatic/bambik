@@ -5,10 +5,9 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, headlineQuote, ownedText, recommendNote, starGlyphs, submittedLine)
-import PUI (PUI, asCase, asField, forCase, forField, mvu, projected, required, tapped)
+import PUI (asCase, asField, forCase, forField, mvu, projected, required, tapped)
 import PUI.Web.HTML (body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
-import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 productReviewShoelace :: Effect Unit
@@ -36,7 +35,4 @@ productReviewShoelace =
           text # forField @"owned" ownedText
           text # projected recommendNote ) # tapped
       button { label: "Submit review" } # asCase @"submitted"
-      submittedToast
-
-submittedToast :: PUI Web [ submitted :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } ] {}
-submittedToast = toast # forCase @"submitted" submittedLine
+      toast # forCase @"submitted" submittedLine

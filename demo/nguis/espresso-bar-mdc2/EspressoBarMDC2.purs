@@ -2,15 +2,13 @@ module EspressoBarMDC2 (espressoBarMDC2) where
 
 import Prelude (Unit, const, (#), ($), (<<<))
 
-import Data.Maybe (Maybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
-import PUI (PUI, asCase, asField, forCase, mvu, projected, required, tapped, updated, with)
+import PUI (asCase, asField, forCase, mvu, projected, required, tapped, updated, with)
 import PUI.Web.HTML (body, div, staticText, text)
-import PUI.Web (Web)
 import PUI.Web.MDC2 (body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -63,7 +61,4 @@ espressoBarMDC2 =
               caption $ staticText "Caffeine"
               linearProgress ) # projected caffeineFraction # tapped
           button { label: "Place order", icon: "local_cafe" } # asCase @"brewed"
-          brewedToast
-
-brewedToast :: PUI Web [ brewed :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], size :: [ small :: {}, medium :: {}, large :: {} ], milk :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], roast :: [ light :: {}, medium :: {}, dark :: {} ], sugar :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, extraShot :: Boolean, decaf :: Boolean, takeaway :: Boolean, favorite :: Boolean, loyalty :: Maybe {} } ] {}
-brewedToast = snackbar # forCase @"brewed" brewedLine
+          snackbar # forCase @"brewed" brewedLine

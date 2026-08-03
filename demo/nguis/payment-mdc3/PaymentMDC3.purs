@@ -7,9 +7,8 @@ import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
 import PaymentLogic (chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
-import PUI (PUI, action, forCase, forField, mvu, observed, onCase, projected, tapped, toCases, updated)
+import PUI (action, forCase, forField, mvu, observed, onCase, projected, tapped, toCases, updated)
 import PUI.Web.HTML (body, staticText, text)
-import PUI.Web (Web)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -26,8 +25,5 @@ paymentMDC3 =
               button { label: "Charge card", icon: "credit_card" } # toCases startCharge
               ( Semigroupoid.do
                   indeterminateCircularProgress # action chargeFlaky # onCase @"charge"
-                  retryToast ) # iterate) # updated (match { charged: const <<< recordCharged })
+                  snackbar # forCase @"charge" retryLine # observed ) # iterate) # updated (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder
-
-retryToast :: PUI Web [ charged :: { attempt :: Int }, charge :: { amount :: Number, attempt :: Int } ] [ charged :: { attempt :: Int }, charge :: { amount :: Number, attempt :: Int } ]
-retryToast = snackbar # forCase @"charge" retryLine # observed

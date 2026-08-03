@@ -63,9 +63,12 @@ July cells may differ slightly from the previous revision's.
 split (each task is a view module over a logic module the MDC2/MDC3
 twins share verbatim; writing.md states the pattern), so the invocation
 above includes the shared logic modules, per the all-files rule. The
-split costs +235 tokens / +1 109 characters over the previous revision's
+split costs +151 tokens / +841 characters over the previous revision's
 9 856 / 35 533 — module headers, export lists and the import lines both
-halves now carry — and changes no program.
+halves now carry, less the one-liner widget wrappers the split made
+inlinable (flight-booker's `bookingToast` and its row annotation
+dissolved into `snackbar # forCases bookingLine`) — and changes no
+program.
 
 Third-party corpus numbers are carried forward from the July measurement;
 those repositories were not re-fetched, so their figures date from then.
@@ -90,18 +93,18 @@ Two scope caveats that matter throughout:
 |---|---|---|---|---|---|---|
 | Counter | 239 | 204 | 48 | 50 | 109 | 192 |
 | Temperature | 462 | 377 | 165 | 165 | 898 | 1 219 |
-| Flight booker | 2 057¹ | 1 704 | 411 | 333 | 825 | 2 162 |
+| Flight booker | 1 973¹ | 1 704 | 411 | 333 | 825 | 2 162 |
 | Timer | 644 | 495 | 282 | 236 | 673 | 1 028 |
 | CRUD | 1 573² | 913 | 442 | 526 | 849 | 3 182 |
 | Circle drawer | 2 079³ | 1 192 | 599 | 569 | 3 075 | 4 484 |
 | Cells | 3 037 | 2 707 | 590⁴ | 859⁴ | 3 347 | 7 892 |
-| **Total** | **10 091** | **7 592** | **2 537** | **2 738** | **9 776** | **20 159** |
+| **Total** | **10 007** | **7 592** | **2 537** | **2 738** | **9 776** | **20 159** |
 
 ¹ includes the beyond-spec itinerary validation, now in one module.
 ² now simulates an async backend — see caveat 2.
 ³ the canvas moved from a raw HTML string into typed SVG — see below.
 ⁴ reduced scope — see caveat 1. Excluding cells from both sides, bambik
-7 054 vs Vue 1 947, a ratio of 3.6× instead of 4.0×.
+6 970 vs Vue 1 947, a ratio of 3.6× instead of 3.9×.
 
 ### Where the +2 264 tokens went
 
@@ -134,12 +137,12 @@ config records.
 |---|---|---|---|---|---|---|
 | Counter | 888 | 758 | 167 | 182 | 392 | 814 |
 | Temperature | 1 704 | 1 389 | 483 | 455 | 3 457 | 4 404 |
-| Flight booker | 7 285 | 6 371 | 1 601 | 1 180 | 3 469 | 10 006 |
+| Flight booker | 7 017 | 6 371 | 1 601 | 1 180 | 3 469 | 10 006 |
 | Timer | 2 502 | 1 860 | 1 059 | 772 | 2 516 | 4 139 |
 | CRUD | 6 614 | 3 342 | 1 795 | 1 824 | 3 276 | 15 433 |
 | Circle drawer | 7 658 | 4 027 | 2 262 | 1 935 | 12 012 | 24 256 |
 | Cells | 9 991 | 8 734 | 1 825 | 2 851 | 12 929 | 34 817 |
-| **Total** | **36 642** | **26 481** | **9 192** | **9 199** | **38 051** | **93 869** |
+| **Total** | **36 374** | **26 481** | **9 192** | **9 199** | **38 051** | **93 869** |
 
 ## Code density (characters per token)
 
@@ -160,8 +163,8 @@ flatter it more than ever and are the least honest metric here.
 
 | Metric | vs Elm | vs React+MobX | vs Vue/Svelte |
 |---|---|---|---|
-| Tokens | 2.0× smaller | ~parity (1.03×) | 3.7–4.0× larger |
-| Characters | 2.6× smaller | 1.04× smaller | 4.0× larger |
+| Tokens | 2.0× smaller | ~parity (1.02×) | 3.7–3.9× larger |
+| Characters | 2.6× smaller | 1.05× smaller | 4.0× larger |
 
 **This is the headline change since July.** Bambik was 1.4× smaller than
 React+MobX in tokens; it is now level with it. Against Elm the advantage
@@ -172,7 +175,7 @@ the comparison is now unfair in bambik's *disfavour*: its CRUD has an async
 backend theirs lacks, and its flight booker validates dates theirs does not.
 Normalizing for the two scope changes (subtracting CRUD's +590 and treating
 circle-drawer's string-to-SVG move as neutral, since the July count charged
-nothing for the markup) puts bambik near 8 700 tokens — still ~1.2× larger
+nothing for the markup) puts bambik near 8 600 tokens — still ~1.2× larger
 than July's honest 7 592 baseline, and still a materially smaller advantage
 over the typed competition than the previous revision claimed.
 
@@ -348,10 +351,11 @@ read) and some bought scope (CRUD's backend). But the drift also includes
 config-record style pushed character density up. A benchmark corpus that
 grows while its library shrinks is a signal to watch, not to explain away —
 if the next measurement shows the same, the demos are accreting rather than
-demonstrating. (The August re-measure adds a further +235 tokens, +2.4%,
+demonstrating. (The August re-measure adds a further +151 tokens, +1.5%,
 all of it the view/logic module split's headers, export lists and import
 lines — structure, not program, and the price of the twins now sharing
-their logic modules verbatim.)
+their logic modules verbatim — net of the one-liner widget wrappers the
+split let dissolve back into their pipelines.)
 
 Bundle-wise, bambik pays a ~516 kB fixed floor (mostly MDC + runtime) after
 which application code is nearly free.
