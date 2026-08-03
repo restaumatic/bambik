@@ -63,11 +63,15 @@ module PUI.Web.HTML
   , li
   , ol
   , onClickedXY
+  , output
   , p
+  , progress
   , radioButton
+  , rangeInput
   , runWidgetInNode
   , runWidgetInSelectedNode
   , section
+  , select
   , span
   , staticHTML
   , staticText
@@ -90,13 +94,18 @@ module PUI.Web.HTML
 import Prelude
 
 import Control.Monad.State (gets, modify_)
+import Data.Array ((!!), findIndex)
 import Data.Default (class Default, default)
 import Data.Foldable (for_)
+import Data.FoldableWithIndex (forWithIndex_)
+import Data.Int (fromString) as Int
 import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
+import Data.Number (fromString) as Number
+import Data.Profunctor.Row.RecordToRecord (field, projected)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (prj)
+import Data.Variant (case_, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -260,6 +269,111 @@ radioButton = "type" := "radio" $ wrap do
           held <- Ref.read aRef
           prop held
     }
+
+-- | One choice out of a fixed list — the native `<select>` of `<option>`s,
+-- | with no chrome and no label of its own. Until the user picks there is
+-- | nothing to show, so the field arrives as "maybe a choice" and leaves as
+-- | the choice itself — say which with `# optional` or `# required`. The
+-- | options belong to the control, not to the model.
+select :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
+select options = field @"value" $ wrap do
+  element "select" (void $ unwrap optionLeaves)
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  liftEffect $ void $ addEventListener "change" node $ const do
+    picked <- getValue node
+    for_ (Int.fromString picked >>= (options !! _)) \o -> do
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> prop o.value
+  pure
+    { toUser: \ma -> do
+        case ma of
+          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
+          Nothing -> setValue node ""
+        -- leaf echo (output is the bare selection, so only a `Just` echoes)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> for_ ma \a' -> prop a'
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    }
+  where
+  optionLeaves :: PUI Web {} {}
+  optionLeaves = wrap do
+    forWithIndex_ options \idx o -> do
+      element "option" (void $ unwrap (staticText o.label))
+      optionNode <- gets _.sibling
+      liftEffect $ setAttribute optionNode "value" (show idx)
+    pure { toUser: mempty, fromUser: \prop -> prop {} }
+
+-- | The native range slider (`<input type="range">`), with no chrome and no
+-- | readout of its own, reporting while the user drags.
+-- |
+-- | The range is part of the quantity, not part of the screen:
+-- | `{ current, min, max, step }` travels together as one business datum, so
+-- | limits come from the data and can change while the app runs — a slider
+-- | is never silently out of range, and a range nobody supplied is a
+-- | compile error rather than a wrong screen. A `step` makes it discrete,
+-- | no step continuous.
+rangeInput :: PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+rangeInput = field @"value" $ "type" := "range" $ wrap do
+  element "input" (pure unit)
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  qRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \q -> do
+        Ref.write (Just q) qRef
+        setAttribute node "min" (show q.min)
+        setAttribute node "max" (show q.max)
+        setAttribute node "step" (case q.step of
+          Just s -> show s
+          Nothing -> "any")
+        setValue node (show q.current)
+        -- leaf echo: announce what was received, so record-merge gates open
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop q
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        void $ addEventListener "input" node $ const do
+          value <- getValue node
+          mq <- Ref.read qRef
+          for_ mq \q -> for_ (Number.fromString value) \v -> prop (q { current = v })
+    }
+
+-- | The native `<progress>` gauge, `value` running 0 to 1. As much a gauge
+-- | as a progress indicator — a quota, a share, a fraction elapsed —
+-- | written as `progress # projected fraction`, with the business function
+-- | deciding what the fraction means.
+progress :: PUI Web { value :: Number } {}
+progress = wrap do
+  element "progress" (pure unit)
+  attribute "max" "1"
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \r -> do
+        setAttribute node "value" (show r.value)
+        -- display echo (like `text`)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop {}
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        prop {}
+    }
+
+-- | What just happened, told in place — the native `<output>`, HTML's
+-- | element for the result of a user action. It shows the latest event's
+-- | line and keeps it on the page (plain HTML has nothing that dismisses
+-- | itself).
+-- |
+-- | The wording belongs to the UI, not to the event: write the copy where
+-- | the output is built — `output # forCase @"booked" bookedLine` — and
+-- | let the event carry the bare facts.
+output :: PUI Web [ event :: String ] {}
+output = el "output" $ text # projected eventText
+
+-- the canonical status payload, read into the text leaf as its projection
+eventText :: [ event :: String ] -> String
+eventText = on (Proxy @"event") identity case_
 
 -- TODO disable button after click?
 -- | A bare `<button>` around fixed content — a label, an icon, both. Its

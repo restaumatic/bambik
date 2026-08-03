@@ -11,10 +11,12 @@ restates them; other documents point here.
 The demos named throughout are worked examples in the fetched library,
 under `.spago/bambik/<tag>/demo/7guis/` and `demo/nguis/` — read one
 when a rule needs a shape. Their directories carry a vocabulary suffix
-(`counter-mdc2`, `counter-mdc3`); the pair is two view modules over the
-one logic module in the unsuffixed sibling directory
-(`counter/CounterLogic.purs`), differing only in the vocabulary import,
-so read whichever matches the app's design system.
+(`counter-mdc2`, `counter-mdc3`; the 7GUIs set exists in all six —
+`-mdc2`/`-mdc3`/`-shoelace`/`-fluent`/`-bootstrap`/`-html`); the
+siblings are view modules over the one logic module in the unsuffixed
+sibling directory (`counter/CounterLogic.purs`), differing only in the
+vocabulary import and the honest catalog mapping, so read whichever
+matches the app's design system.
 
 ## The pipeline
 
@@ -266,11 +268,12 @@ one-way:
   [Wiring](#wiring).)
 
 The dependency arrow makes the design-system choice a view concern by
-construction: **vocabulary twins are two view modules over the exact
-same logic module**. In the demos, `counter-mdc2/CounterMDC2.purs` and
-`counter-mdc3/CounterMDC3.purs` both import `CounterLogic` from the
-unsuffixed sibling directory `counter/`, and the twins' diff is the
-vocabulary import plus the honest catalog mapping, nothing else.
+construction: **vocabulary siblings are view modules over the exact
+same logic module**. In the demos, `counter-mdc2/CounterMDC2.purs`,
+`counter-mdc3/CounterMDC3.purs` and the other four vocabulary siblings
+all import `CounterLogic` from the unsuffixed sibling directory
+`counter/`, and the siblings' diff is the vocabulary import plus the
+honest catalog mapping, nothing else.
 Anything that would differ between twins is presentation by definition
 and belongs in the view module — a logic module that would vary with the
 design system has presentation hiding in it.

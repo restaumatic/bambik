@@ -10,17 +10,20 @@
 -- | same release as the bundled components; icons load from the matching
 -- | CDN. No webfont is needed — Shoelace uses the system font stack.
 -- |
--- | The catalogue: `textField`/`textArea`, `rating` and `toggleSwitch` to
--- | enter values, `select` to choose one, `button` to act, `toast` to say
--- | what happened, `card` and `divider` for structure. Typography is
--- | deliberately absent: Shoelace styles plain HTML, so the `PUI.Web.HTML`
--- | elements are the type scale.
+-- | The catalogue: `textField`/`textArea`, `rating`, `sliderLive` and
+-- | `toggleSwitch` to enter values, `select` to choose one, `button` to
+-- | act, `toast` to say what happened, `progressBar` to show a figure,
+-- | `card` and `divider` for structure. Typography is deliberately absent:
+-- | Shoelace styles plain HTML, so the `PUI.Web.HTML` elements are the
+-- | type scale.
 module PUI.Web.Shoelace
   ( button
   , card
   , divider
+  , progressBar
   , rating
   , select
+  , sliderLive
   , textArea
   , textField
   , toast
@@ -45,7 +48,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (PUI, constantly)
 import PUI.Web.HTML (clicked, div, el, span, staticHTML, staticText, text, (:=))
-import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue)
+import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
@@ -69,8 +72,12 @@ import Type.Proxy (Proxy(..))
 --     of exactly one row direction:
 --       `×→×` editors — `textField @l`, `textArea @l`, `rating @l` (the
 --         star editor, `{ value :: Number }` — Shoelace's distinctive
---         catalog entry), `toggleSwitch @l` (`<sl-switch>`), and the
+--         catalog entry), `sliderLive @l` (`<sl-range>` — reports per drag
+--         step, the value shown by the control's own tooltip),
+--         `toggleSwitch @l` (`<sl-switch>`), and the
 --         type-changing `select @l` (`{ value :: Maybe a } → { value :: a }`);
+--       `×→×` displays — `progressBar` (`<sl-progress-bar>`,
+--         `{ value :: Number } → {}`, the filled fraction 0–1);
 --       `×→+` events — `button @l` (`<sl-button variant="primary">`);
 --       `+→×` statuses — `toast @l` (`<sl-alert>` shown on feed,
 --         auto-dismissing via its own `duration`) — canonical
@@ -184,6 +191,54 @@ rating config = field @"value" $
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
+-- | The **slider**: a quantity chosen by feel, where the range matters more
+-- | than the exact number.
+-- |
+-- | The range is part of the quantity, not part of the screen:
+-- | `{ current, min, max, step }` travels together as one business datum, so
+-- | limits come from the data and can change while the app runs — a slider
+-- | is never silently out of range, and a range nobody supplied is a
+-- | compile error rather than a wrong screen. A `step` makes it discrete,
+-- | no step continuous.
+-- |
+-- | It reports on **every change**, following the drag — so whatever it
+-- | drives should be cheap to redo, or be `debounced` downstream. The
+-- | current number shows in the control's own tooltip while dragging.
+sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+sliderLive config = field @"value" $ wrap do
+  element "sl-range" (pure unit)
+  attribute "label" config.label
+  attribute "style" "width: 100%; min-width: 240px;"
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  qRef <- liftEffect $ Ref.new Nothing
+  -- the value setter could fire input too; guard the loop
+  busyRef <- liftEffect $ Ref.new false
+  liftEffect $ listenNode node "sl-input" do
+    busy <- Ref.read busyRef
+    unless busy do
+      v <- getNumberProp "value" node
+      mq <- Ref.read qRef
+      for_ mq \q -> do
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop (q { current = v })
+  pure
+    { toUser: \q -> do
+        Ref.write (Just q) qRef
+        Ref.write true busyRef
+        setAttribute node "min" (show q.min)
+        setAttribute node "max" (show q.max)
+        case q.step of
+          Just s -> setAttribute node "step" (show s)
+          Nothing -> removeAttribute node "step"
+        setNumberProp "value" node q.current
+        Ref.write false busyRef
+        -- leaf echo: announce what was received, so record-merge gates open
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop q
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    }
+
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
@@ -242,6 +297,28 @@ select config options = field @"value" $ wrap do
       <> foldMapWithIndex optionMarkup options
       <> "</sl-select>"
   optionMarkup idx o = "<sl-option value=\"" <> show idx <> "\">" <> o.label <> "</sl-option>"
+
+-- | The **progress bar**: how far along something is, `value` running 0 to
+-- | 1. As much a gauge as a progress indicator — a quota, a share, a
+-- | rating out of five — written as `progressBar # projected fraction`,
+-- | with the business function deciding what the fraction means.
+progressBar :: PUI Web { value :: Number } {}
+progressBar = wrap do
+  element "sl-progress-bar" (pure unit)
+  attribute "style" "width: 100%; min-width: 200px;"
+  node <- gets _.sibling
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \r -> do
+        -- sl-progress-bar runs 0–100
+        setNumberProp "value" node (r.value * 100.0)
+        -- display echo (like `text`)
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop {}
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        prop {}
+    }
 
 -- | The **toast**: a brief message at the bottom of the screen that
 -- | dismisses itself, for something that has just happened and needs no
