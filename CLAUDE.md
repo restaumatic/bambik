@@ -37,12 +37,12 @@ A bambik release is a tag on this repo plus a release page. Four steps:
 
 1. Bump the tag in the dependency table of `.claude/skills/developing-bambik-apps/bootstrap.md` **before** tagging, so the tagged tree documents its own tag. Nothing else in the scaffold carries a version — the packages.dhall step writes `<tag>` and fetches the library's dependency list from it, so a new library dependency needs no companion edit.
 2. Verify green in full — `spago build`, `spago test`, `npm run bundle-demos`, `npm run smoke` (L15) — then tag the verified commit (`git tag -a v0.2.0`) and push tag and branch.
-3. Create the release page from the tag, restating the two toolchain pins (a consumer cannot guess them) and the prototype status. Use the **GitHub REST API**, not the `gh` CLI — `gh` is not installed here, and `GITHUB_TOKEN` is in the environment. Write the JSON with a script rather than inlining it in the shell, so the body's newlines and markdown survive quoting:
+3. Create the release page from the tag. The body is **minimal by decision**: the skill-usage prompt naming this tag's asset URL, and nothing else — the toolchain pins, the packages.dhall entry and the prototype status live in the skill's bootstrap.md (which ships attached) and are not restated per release, so there is one place to keep them right. Use the **GitHub REST API**, not the `gh` CLI — `gh` is not installed here, and `GITHUB_TOKEN` is in the environment. Write the JSON with a script rather than inlining it in the shell, so the body's newlines and markdown survive quoting:
 
 ```sh
 node -e 'require("fs").writeFileSync("body.json", JSON.stringify({
   tag_name: "v0.2.0", name: "bambik v0.2.0", draft: false, prerelease: false,
-  body: "…the pins and the prototype note…" }))'
+  body: "…the skill-usage prompt, naming the asset URL for this tag…" }))'
 curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
   -H "Accept: application/vnd.github+json" \
   https://api.github.com/repos/restaumatic/bambik/releases -d @body.json

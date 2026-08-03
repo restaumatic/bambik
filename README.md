@@ -17,14 +17,14 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 bambik is consumed as a spago git package pinned to a release tag — no clone,
 nothing vendored. The [v0.1.3 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.3)
-gives the `packages.dhall` entry and the two toolchain pins it requires (the
-variant-sugar compiler and the matching `purescript-variant` fork; stock `purs`
-cannot build bambik).
+ships **`developing-bambik-apps`**, the authoring skill: how to bootstrap a
+project, the vocabulary and its four row directions, separation of concerns, the
+definitive code-style contract, and the build/verify workflow — with a scaffold
+that produces a working application, left running in dev mode.
 
-That release also ships **`developing-bambik-apps`**, the authoring skill: how to
-bootstrap a project, the vocabulary and its four row directions, separation of
-concerns, the definitive code-style contract, and the build/verify workflow —
-with a scaffold that produces a working application.
+Its `bootstrap.md` gives the `packages.dhall` entry and the two toolchain pins
+the library requires (the variant-sugar compiler and the matching
+`purescript-variant` fork; stock `purs` cannot build bambik).
 
 ```bash
 mkdir -p .claude/skills
