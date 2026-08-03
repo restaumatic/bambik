@@ -1,17 +1,15 @@
 module TodoMvcMDC3 (todoMvcMDC3) where
 
-import Prelude (identity, (#), ($), (<<<), (==), Unit, const, not, show)
+import Prelude (identity, (#), ($), (<<<), Unit, const, show)
 
-import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
-import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.String (trim)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (asField, completed, displayed, forField, forProperty, mvu, required, toCase, updated)
 import PUI.Web.HTML (atCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
+import TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, remainingItems, toggleTodo, visibleEntries)
 
 todoMvcMDC3 :: Effect Unit
 todoMvcMDC3 =
@@ -36,30 +34,3 @@ todoMvcMDC3 =
                 staticText " items left" ) # atCase @"several" remainingItems # displayed
             button { label: "Clear completed" } # updated (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList
-
-emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] }
-emptyTodoList = { entry: "", todos: [], visibility: .all {} }
-
-addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
-addTodo m@{ entry, todos } =
-  if trim entry == "" then m
-  else m { todos = snoc todos { title: trim entry, done: false }, entry = "" }
-
-toggleTodo :: Int -> { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
-toggleTodo i m@{ todos } = m { todos = fromMaybe todos (modifyAt i (\t -> t { done = not t.done }) todos) }
-
-clearCompleted :: { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
-clearCompleted m@{ todos } = m { todos = filter (\t -> not t.done) todos }
-
-itemsLeft :: { todos :: Array { title :: String, done :: Boolean } } -> Int
-itemsLeft { todos } = length (filter (\t -> not t.done) todos)
-
-remainingItems :: { todos :: Array { title :: String, done :: Boolean } } -> [ sole :: { count :: Int }, several :: { count :: Int } ]
-remainingItems { todos } =
-  let count = itemsLeft { todos }
-  in if count == 1 then .sole { count } else .several { count }
-
-visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
-visibleEntries { todos, visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
-  where
-  matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v

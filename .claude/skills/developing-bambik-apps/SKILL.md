@@ -8,10 +8,14 @@ description: How to devlop Profunctor User Interfaces Web applications featuring
 A bambik application is one profunctor pipeline: every widget is a
 profunctor over its carrier, displaying an input and emitting an
 output, and the app composes them with qualified-do pipelines and the
-four row merges. It is a standalone module exporting a single entry
-function named after the application, never `main`, mounted at the
-document body. The smallest complete example is the helloworld demo;
-the counter demo is the smallest one with a model.
+four row merges. It is a pair of modules with a one-way dependency: a
+**view module** exporting a single entry function named after the
+application (never `main`), mounted at the document body, importing the
+design system and the logic module; and a **logic module** of pure
+business functions and values, depending only on the domain. The
+smallest complete example is the helloworld demo (all view, so a single
+module); the counter demo is the smallest one with a model and a logic
+module.
 
 Work through the three procedures in order. Each is a file in this
 skill's directory:
@@ -24,7 +28,7 @@ skill's directory:
    is the design system** — MDC2, MDC3, Shoelace, Fluent, Bootstrap or
    plain HTML — which the developer chooses; ask if they have not said.
 
-2. **[writing.md](writing.md)** — write the app module. The pipeline and
+2. **[writing.md](writing.md)** — write the app modules. The pipeline and
    the four merges, component citizenship and the adopters, pass-through
    stages, app shapes with the demo that shows each, conditional
    visibility, modals, collections, separation of concerns, the type

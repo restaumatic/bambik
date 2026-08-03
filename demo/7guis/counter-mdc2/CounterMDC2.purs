@@ -1,7 +1,8 @@
 module CounterMDC2 (counterMDC2) where
 
-import Prelude ((#), ($), (+), (<<<), Unit, const, show)
+import Prelude ((#), ($), (<<<), Unit, const, show)
 
+import CounterLogic (freshCount, increment)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, forField, mvu, updated)
@@ -17,9 +18,3 @@ counterMDC2 =
           headline4 text # forField @"count" show # completed
           button { label: "Count" } # updated (match { clicked: const <<< increment })
       ) # mvu freshCount
-
-increment :: { count :: Int } -> { count :: Int }
-increment { count } = { count: count + 1 }
-
-freshCount :: { count :: Int }
-freshCount = { count: 0 }

@@ -1,0 +1,84 @@
+module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit) where
+
+import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), bind, pure, show)
+
+import Data.Either (Either(..), either)
+import Data.Int (fromString)
+import Data.Maybe (Maybe(..))
+import Data.String (Pattern(..), split)
+import Data.Variant (expand, match)
+import Effect.Aff (Aff)
+
+plannedTrip :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String }
+plannedTrip = { flightType: .oneWay {}, start: "27.03.2026", return: "27.03.2026" }
+
+itinerarySettleTime :: { ms :: Number }
+itinerarySettleTime = { ms: 300.0 }
+
+bookingLine :: [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] -> String
+bookingLine = match
+  { booked: \itinerary -> "You have booked: " <> summary itinerary
+  , rejected: \problem -> "Cannot book: " <> problem
+  }
+
+returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+returnBetween { out, back } =
+  if dateKey back >= dateKey out then Just (.returnBetween { out, back })
+  else Nothing
+
+parse :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse { flightType, start: startInput, return: returnInput } = case parseDate startInput of
+  Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
+  Just start ->
+    if flightType /= .return {} then Right (.oneWayOn start)
+    else case parseDate returnInput of
+        Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
+        Just back -> case returnBetween { out: start, back } of
+          Nothing -> Left "the return date is before the start date"
+          Just itinerary -> Right itinerary
+
+bookingState :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> [ problem :: { problem :: String }, oneWay :: { date :: String }, return :: { out :: String, back :: String } ]
+bookingState = parse >>> either (\problem -> .problem { problem })
+  (match
+    { oneWayOn: \out -> .oneWay { date: formatDate out }
+    , returnBetween: \r -> .return { out: formatDate r.out, back: formatDate r.back }
+    })
+
+summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
+summary = match
+  { oneWayOn: \out -> "A one-way flight on " <> formatDate out
+  , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
+  }
+
+submit :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
+submit { flightType, start, return } = case parse { flightType, start, return } of
+  Left problem -> pure (.rejected problem)
+  Right itinerary -> expand <$> bookFlight itinerary
+
+bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] ]
+bookFlight itinerary = pure (.booked itinerary)
+
+parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
+parseDate s = case split (Pattern ".") s of
+  [ dd, mm, yyyy ] -> do
+    d <- fromString dd
+    m <- fromString mm
+    y <- fromString yyyy
+    if d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1000
+      then Just { y, m, d }
+      else Nothing
+  _ -> Nothing
+
+formatDate :: { y :: Int, m :: Int, d :: Int } -> String
+formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
+  where
+  pad n = (if n < 10 then "0" else "") <> show n
+
+dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
+dateKey { y, m, d } = y * 10000 + m * 100 + d
+
+returnLeg :: { flightType :: [ oneWay :: {}, return :: {} ], return :: String } -> Maybe { return :: String }
+returnLeg { flightType, return } = if flightType == .return {} then Just { return } else Nothing
+
+setReturn :: { return :: String } -> { return :: String }
+setReturn { return } = { return }

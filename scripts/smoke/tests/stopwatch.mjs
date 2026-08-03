@@ -10,11 +10,11 @@ const click = label =>
 
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelectorAll('ul li').length`), 0, 'empty law: [] builds no elements')
-  assertEq(await ev(`document.querySelector('h3').textContent`), '00:00.0', 'readout starts zeroed')
+  assertEq(await ev(`document.querySelector('.mdc-typography--headline3').textContent`), '00:00.0', 'readout starts zeroed')
 
   assertEq(await ev(click('Start')), true, 'Start button present while halted (provided)')
   await sleep(500)
-  const running = await ev(`document.querySelector('h3').textContent`)
+  const running = await ev(`document.querySelector('.mdc-typography--headline3').textContent`)
   assertEq(running === '00:00.0', false, 'every: the heartbeat advances the readout (' + running + ')')
 
   assertEq(await ev(click('Lap')), true, 'Lap button present while running (provided)')

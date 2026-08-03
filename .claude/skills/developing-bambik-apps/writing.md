@@ -1,17 +1,20 @@
 # Writing a bambik application
 
-The rules below govern the app module (`src/<Module>.purs`) the scaffold
-ships. They are the **definitive statement of bambik application code
-style** — the [Code style](#code-style) section at the end is the strict
-contract, and everything before it is the vocabulary and the shapes that
-contract is written in. Nothing else restates them; other documents
-point here.
+The rules below govern the app modules the scaffold ships — the view
+module (`src/<Module>.purs`) and the logic module beside it
+(`src/<Module>Logic.purs`). They are the **definitive statement of
+bambik application code style** — the [Code style](#code-style) section
+at the end is the strict contract, and everything before it is the
+vocabulary and the shapes that contract is written in. Nothing else
+restates them; other documents point here.
 
 The demos named throughout are worked examples in the fetched library,
 under `.spago/bambik/<tag>/demo/7guis/` and `demo/nguis/` — read one
 when a rule needs a shape. Their directories carry a vocabulary suffix
-(`counter-mdc2`, `counter-mdc3`); the pair is the same module with the
-import switched, so read whichever matches the app's design system.
+(`counter-mdc2`, `counter-mdc3`); the pair is two view modules over the
+one logic module in the unsuffixed sibling directory
+(`counter/CounterLogic.purs`), differing only in the vocabulary import,
+so read whichever matches the app's design system.
 
 ## The pipeline
 
@@ -230,7 +233,7 @@ via `edited`, Rotate and Shuffle as sibling action stages).
 
 ## Separation of concerns
 
-Organize the module (by inlining and extracting) until every function
+Organize the code (by inlining and extracting) until every function
 belongs to exactly one of two classes:
 
 1. **UI wiring** — lives inline in the entry function, or is unavoidably
@@ -238,11 +241,46 @@ belongs to exactly one of two classes:
    Anything that mentions PUI types, variants-as-events, DOM wiring.
 2. **Pure business** — standalone functions over the model and plain
    data: model transformers, formatters, parsers, evaluators, Aff
-   actions. No variant types, no PUI types, no UI vocabulary in their
-   signatures.
+   actions. No PUI types, no UI vocabulary in their signatures
+   (variant rows as *derived states* — a classifier's result — are
+   business data; variants-as-events are UI).
 
-**File order**: the one purely UI-related entry function comes first,
-followed by the pure business functions over the model.
+### The two classes are two modules
+
+The classes live in separate modules, and the dependency between them is
+one-way:
+
+- The **view module** (`<App>.purs`) exports the single entry function
+  and keeps every UI-wiring function (widget builders, named toast
+  widgets). It imports the design-system vocabulary, the library's
+  combinators, and the logic module.
+- The **logic module** (`<App>Logic.purs`) exports the business
+  functions and the named business values (seed models, tick periods,
+  default payloads). It depends only on the **domain** — `Prelude`,
+  plain data (`Data.Array`, `Data.Maybe`, `Data.Variant`, ...), and the
+  effect types business actions live in (`Effect`, `Aff`) — never
+  `PUI`, `PUI.Web.*`, a design-system module, or the row merges. A
+  business function that seems to need a widget type is misdrawn: the
+  widget-shaped part is view. (Business optics — `Shutter`/`Reel` — stay
+  the location-exempt algebra usable below the UI; see
+  [Wiring](#wiring).)
+
+The dependency arrow makes the design-system choice a view concern by
+construction: **vocabulary twins are two view modules over the exact
+same logic module**. In the demos, `counter-mdc2/CounterMDC2.purs` and
+`counter-mdc3/CounterMDC3.purs` both import `CounterLogic` from the
+unsuffixed sibling directory `counter/`, and the twins' diff is the
+vocabulary import plus the honest catalog mapping, nothing else.
+Anything that would differ between twins is presentation by definition
+and belongs in the view module — a logic module that would vary with the
+design system has presentation hiding in it.
+
+An app whose business class is empty (helloworld) stays a single view
+module; the logic module appears with the first business function.
+
+**File order**: within the view module the one entry function comes
+first, followed by the standalone UI-wiring functions; the logic module
+holds the business functions over the model, seed first.
 
 ### What to inline (delete the named glue)
 
@@ -258,15 +296,16 @@ followed by the pure business functions over the model.
 ### What to extract (name the business)
 
 Each case lambda inside the old dispatcher becomes a standalone pure
-function named for the business action, dispatched with `informed` so it
-takes one row (see [Code style](#business-functions)). Existing
-model-to-model functions already belong to the business class — leave
-them standalone.
+function in the logic module, named for the business action, dispatched
+with `informed` so it takes one row (see
+[Code style](#business-functions)); `informed` itself is dispatch — it
+stays in the view. Existing model-to-model functions already belong to
+the business class — leave them standalone, in the logic module.
 
 The model row is spelled once, at the seed and the merges; every
 business helper states its own exact narrow footprint as a closed row,
-never the whole model. Values that legitimately live in the business
-section — seed models, tick periods, default payloads — are named there
+never the whole model. Values that legitimately live in the logic
+module — seed models, tick periods, default payloads — are named there
 in business language.
 
 ### Type-inference gotchas (both hit in practice)
@@ -289,9 +328,12 @@ in business language.
 ### Boundary cases
 
 - Widget-builder functions (for `dynamic`/`foreachWith`) are UI but too
-  large to inline — they stay standalone, and that is fine: they are
-  *purely* UI-related.
-- Caption and validation formatters are pure business — keep them.
+  large to inline — they stay standalone in the view module, and that is
+  fine: they are *purely* UI-related.
+- Caption and validation formatters are pure business — keep them, in
+  the logic module. Toast copy lines (`row -> String`) are business by
+  the same signature test, and being design-system-blind they share
+  across twins like everything else there.
 - **A handler with a phantom payload parameter is a smell**: the
   payload it never reads is UI (the event) smuggled into an otherwise
   pure business function. Strip it — the business function is
@@ -304,14 +346,20 @@ in business language.
 
 The definitive contract for application code. Each rule is strict: code
 that breaks one is wrong even if it compiles and behaves. They build on
-the structural rules above — anonymous view-model types, one UI function
-then the business ones, a single exported entry function.
+the structural rules above — anonymous view-model types, a view module
+over a logic module, a single exported entry function.
 
 ### Layout
 
 - **Comments are deliberately absent** — code should read on its own.
 - **Imports are 100% explicit (including `Prelude`)** — code is honest
   about its dependencies. Add and remove the names each change touches.
+- **View and logic are separate modules, and the dependency is
+  one-way.** The view module imports the logic module and the design
+  system; the logic module imports only the domain — never `PUI`,
+  `PUI.Web.*`, a design-system module, or the row merges. Design-system
+  twins are two view modules importing the exact same logic module, so
+  anything that differs between twins is view by definition.
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
   ever leads a line: an announced payload trails like every other data

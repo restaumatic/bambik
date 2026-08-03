@@ -1,8 +1,8 @@
 module AuctionMDC3 (auctionMDC3) where
 
-import Prelude (identity, (#), ($), (<<<), Unit, max, show)
+import Prelude (identity, (#), ($), (<<<), Unit, show)
 
-import Data.Maybe (Maybe(..))
+import AuctionLogic (noBids, openingBid, raiseTop)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
@@ -26,15 +26,3 @@ auctionMDC3 =
                   staticText "Highest bid so far: $"
                   text # forField @"top" show ) # tapped) # feedback noBids
       ) # mvu openingBid
-
-raiseTop :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number } -> { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
-raiseTop { bid, top } = { bid, top: max bid.current top }
-
-noBids :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
-noBids = { bid: biddingRange, top: 0.0 }
-
-openingBid :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-openingBid = { bid: biddingRange }
-
-biddingRange :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
-biddingRange = { current: 0.0, min: 0.0, max: 1000.0, step: Just 10.0 }

@@ -1,20 +1,16 @@
 module SignupFormMDC3 (signupFormMDC3) where
 
-import Prelude (Unit, identity, (#), ($), (<>), (==), (>>>))
+import Prelude (Unit, identity, (#), ($))
 
-import Data.Either (Either(..), either)
-import Data.Variant (match)
-import Data.Foldable (elem)
-import Data.Maybe (Maybe(..), isJust)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.String (Pattern(..), contains, trim)
 import Effect (Effect)
 import PUI (PUI, asField, displayed, forCase, forField, mvu, required, toCases)
 import PUI.Web.HTML (atCase, body, staticText, text)
 import PUI.Web (Web)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
+import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
 
 signupFormMDC3 :: Effect Unit
 signupFormMDC3 =
@@ -58,63 +54,8 @@ signupFormMDC3 =
           welcomeToast
           rejectionToast
 
-register :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
-register { username, email, terms } = case validate { username, email, terms } of
-  Left problem -> .rejected problem
-  Right name -> .registered name
-
 welcomeToast :: PUI Web [ registered :: String ] {}
-welcomeToast = snackbar # forCase @"registered" (\name -> "Welcome, " <> name <> "!")
+welcomeToast = snackbar # forCase @"registered" welcomeLine
 
 rejectionToast :: PUI Web [ rejected :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] ] {}
-rejectionToast = snackbar # forCase @"rejected" (\reason -> "Cannot sign up: " <> refusalText reason)
-
-refusalText :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
-refusalText = match
-  { unnamed: \_ -> "choose a username"
-  , taken: \{ username } -> "username " <> username <> " is taken"
-  , badEmail: \_ -> "enter a valid email address"
-  , termsUnaccepted: \_ -> "accept the terms of service"
-  }
-
-validate :: { username :: String, email :: String, terms :: Maybe {} } -> Either [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
-validate applicant@{ email, terms } =
-  let username = trim applicant.username
-  in
-    if username == "" then Left (.unnamed {})
-    else if usernameTaken username then Left (.taken { username })
-    else if contains (Pattern "@") email == false then Left (.badEmail {})
-    else if isJust terms == false then Left (.termsUnaccepted {})
-    else Right username
-
-validation :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { username :: String } ]
-validation { username, email, terms } = either (\reason -> .invalid { problem: refusalText reason }) (\name -> .ready { username: name }) (validate { username, email, terms })
-
-namedUsername :: { username :: String } -> Maybe String
-namedUsername { username } = case trim username of
-  "" -> Nothing
-  name -> Just name
-
-usernameStatus :: { username :: String } -> [ unnamed :: {}, taken :: { username :: String }, available :: { username :: String } ]
-usernameStatus { username } = case namedUsername { username } of
-  Nothing -> .unnamed {}
-  Just name | usernameTaken name -> .taken { username: name }
-  Just name -> .available { username: name }
-
-usernameTaken :: String -> Boolean
-usernameTaken username = username `elem` takenUsernames
-
-takenUsernames :: Array String
-takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
-
-usernameSettleTime :: Number
-usernameSettleTime = 300.0
-
-newApplicant :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} }
-newApplicant =
-  { username: ""
-  , email: ""
-  , plan: .free {}
-  , country: .poland {}
-  , terms: Nothing
-  }
+rejectionToast = snackbar # forCase @"rejected" rejectionLine

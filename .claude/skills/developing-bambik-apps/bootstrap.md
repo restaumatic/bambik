@@ -66,12 +66,13 @@ headers under `src/`.
    architecture, and switching later is switching the import plus the
    page's CSS.
 
-2. **Write the six scaffold files** into a fresh directory, from the
+2. **Write the seven scaffold files** into a fresh directory, from the
    [Scaffold](#scaffold) section below. Three names are chosen once and
    used throughout: `<app>` (kebab-case, the directory and package
-   name), `<Module>` (PascalCase, the app module) and `<entryFn>`
-   (camelCase, the exported entry function — named after the
-   application, never `main`).
+   name), `<Module>` (PascalCase, the view module — the logic module
+   beside it is `<Module>Logic`) and `<entryFn>` (camelCase, the
+   exported entry function — named after the application, never
+   `main`).
 
    ```
    <app>/package.json
@@ -79,7 +80,8 @@ headers under `src/`.
    <app>/spago.dhall
    <app>/entry.mjs
    <app>/public/index.html
-   <app>/src/<Module>.purs     ← the deliverable; everything above is scaffolding
+   <app>/src/<Module>.purs        ← the view module; with its logic module,
+   <app>/src/<Module>Logic.purs   ← the deliverable — the rest is scaffolding
    ```
 
 3. **Install and check the compiler**:
@@ -105,7 +107,7 @@ headers under `src/`.
 
 ## Scaffold
 
-Six files, written fresh each time rather than copied from a stored
+Seven files, written fresh each time rather than copied from a stored
 template — the one part that could drift, the library's dependency list,
 is fetched from the tag in the process.
 
@@ -234,22 +236,29 @@ Do **not** copy a demo's page wholesale: those carry the suite's own
 chrome — source panel, `page.js`, highlight.js, the back-link header —
 none of which belongs in an application. Take only the `<link>`s.
 
-### src/&lt;Module&gt;.purs
+### src/&lt;Module&gt;.purs and src/&lt;Module&gt;Logic.purs
 
 The application itself, written to the rules in
-[writing.md](writing.md). If the developer's app is not yet specified,
-copy `.spago/bambik/<tag>/demo/7guis/counter-mdc2/CounterMDC2.purs` as
-the starter and rename its module and entry function to `<Module>` and
-`<entryFn>`. It is a complete working app in twenty-odd lines — the MVU
-shape, a display, an event button and a business function — so a green
-build of it proves the whole toolchain. Its page,
-`demo/7guis/counter-mdc2/index.html`, is the source of the CSS links
-above.
+[writing.md](writing.md): the view module and the logic module it
+imports — view depends on the logic module and the design system, logic
+only on the domain. If the developer's app is not yet specified, copy
+the counter demo as the starter:
+`.spago/bambik/<tag>/demo/7guis/counter-mdc2/CounterMDC2.purs` as
+`src/<Module>.purs` and the shared
+`.spago/bambik/<tag>/demo/7guis/counter/CounterLogic.purs` as
+`src/<Module>Logic.purs`, renaming the modules and entry function to
+`<Module>`, `<Module>Logic` and `<entryFn>` (the view module's import of
+`CounterLogic` follows the rename). It is a complete working app in
+twenty-odd lines — the MVU shape, a display, an event button and a
+business function — so a green build of it proves the whole toolchain.
+Its page, `demo/7guis/counter-mdc2/index.html`, is the source of the CSS
+links above.
 
-For a vocabulary other than MDC2, copy the counter's sibling
+For a vocabulary other than MDC2, copy the counter's sibling view module
 `counter-mdc3/` instead, or the demo named in the last column of the
-table below: the oculars the counter wraps its content in exist under
-each catalog's own names, and drop them entirely for plain HTML.
+table below: the logic module is the same whatever the vocabulary, the
+oculars the counter wraps its content in exist under each catalog's own
+names, and drop them entirely for plain HTML.
 
 ## Design systems
 

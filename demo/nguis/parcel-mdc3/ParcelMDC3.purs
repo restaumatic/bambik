@@ -4,6 +4,7 @@ import Prelude (identity, (#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
+import ParcelLogic (draftParcel)
 import PUI (PUI, asField, completed, focusRecord, forField, mvu, tapped)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
@@ -29,6 +30,3 @@ addressForm :: PUI Web { street :: String, city :: String } { street :: String, 
 addressForm = RecordToRecord.do
   filledTextField { floatingLabel: "Street" } # asField @"street"
   filledTextField { floatingLabel: "City" } # asField @"city"
-
-draftParcel :: { recipient :: String, street :: String, city :: String }
-draftParcel = { recipient: "Ada Lovelace", street: "12 Analytical Row", city: "London" }

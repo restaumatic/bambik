@@ -1,12 +1,10 @@
 module PotluckMDC2 (potluckMDC2) where
 
-import Prelude (identity, (#), ($), Unit, show)
+import Prelude (identity, (#), ($), Unit)
 
-import Data.Array (length)
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Variant (match)
 import Effect (Effect)
+import PotluckLogic (dishText, guestCount, invitation)
 import PUI (acted, asField, displayed, field, foreach, forField, projected, tapped, with)
 import PUI.Web.HTML (body, span, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
@@ -36,19 +34,3 @@ potluckMDC2 =
                 text # forField @"dish" dishText
                 staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation
-
-guestCount :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String
-guestCount { guests } = show (length guests)
-
-dishText :: [ salad :: {}, lasagna :: {}, pavlova :: {} ] -> String
-dishText = match { salad: \_ -> "Salad", lasagna: \_ -> "Lasagna", pavlova: \_ -> "Pavlova" }
-
-invitation :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } }
-invitation =
-  { guests:
-      [ { name: "Ada", dish: Nothing }
-      , { name: "Grace", dish: Nothing }
-      , { name: "Edsger", dish: Nothing }
-      , { name: "Barbara", dish: Nothing }
-      ]
-  }

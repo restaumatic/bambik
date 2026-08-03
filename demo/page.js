@@ -1,7 +1,8 @@
-// Shared chrome for every demo page: the source listing, the header size
+// Shared chrome for every demo page: the source listings, the header size
 // readouts, and the column that groups the running demo with its tracing note.
-// Pages declare only what differs — their .purs filename, via
-// <body data-source="Counter.purs"> — and load this with a relative src.
+// Pages declare only what differs — their .purs filenames, via
+// <body data-source="CounterMDC2.purs ../counter/CounterLogic.purs"> — and
+// load this with a relative src.
 
 const fmt = (n) => n < 1024 ? n + "B"
   : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
@@ -63,10 +64,12 @@ const offerDesignSystemSwitch = () => {
   }).catch(() => {})
 }
 
-// data-source may name several files (space-separated) when a demo is split
-// into an app module plus a packaged components module: the first fills the
-// existing listing, each further file gets its own heading + listing beneath
-// it, and the header readout sums their sizes.
+// data-source names the demo's source files, space-separated: the view module
+// first, then its logic module (for design-system twins a relative path into
+// the shared unsuffixed sibling directory), then any packaged components
+// module. The first fills the existing listing, each further file gets its own
+// heading + listing beneath it (headings show the basename, links keep the
+// path), and the header readout sums their sizes.
 const showSource = (files) => {
   const names = files.trim().split(/\s+/)
   return Promise.all([
@@ -81,7 +84,7 @@ const showSource = (files) => {
       const anchor = panel.querySelector("p.note")
       const heading = (name) => {
         const h = document.createElement("h3")
-        h.innerHTML = '<a href="' + name + '">' + name + '</a>'
+        h.innerHTML = '<a href="' + name + '">' + name.split("/").pop() + '</a>'
         return h
       }
       el.parentElement.before(heading(names[0]))
