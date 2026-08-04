@@ -616,7 +616,3 @@ read them, not a summary. Paths are inside the fetched library,
   the import.
 - `src/Data/Profunctor/Row/` — the four merges, the adopters, the trace
   forms and the business optics; laws in the module headers.
-- `doc/type-errors.md` — row-layer type errors catalogued with
-  reproduced output; read it before fighting a merge error.
-- `doc/no-nominal-types-in-ui.md` — the design rule behind the
-  anonymous-rows discipline above.

@@ -38,7 +38,7 @@
 -- |
 -- | See doc/collections-profunctor-algebra.md §1.
 -- |
--- | Reshape vs focus (doc/row-profunctors.md, "Reshape vs focus"): a
+-- | Reshape vs focus: a
 -- | reshape *drops* the complement — extra record fields are simply never
 -- | read (free coercion), extra variant cases are never emitted (`expand`)
 -- | — while a focus *threads* it (`Strong`/`Choice`).
@@ -245,8 +245,8 @@ instance InclusiveRows o1 o2 o o12 o1x o2x => SharedVariantOutputs o1 o2 o o12 o
 -- =====================================================================
 --
 -- A duplicated label on an owned merge side otherwise dies deep inside the
--- exactness evidence as an anonymous `Lacks` failure (doc/type-errors.md
--- #2). This detector walks both label lists and, on the first shared
+-- exactness evidence as an anonymous `Lacks` failure. This detector
+-- walks both label lists and, on the first shared
 -- label, fails with a message that *names* it — and, so the offending
 -- operand can be found at a glance, renders **both operands' full label
 -- sets** into the error via `LabelsDoc`.
@@ -289,7 +289,7 @@ instance
             (Beside (Beside (Beside (Beside (Text "One operand owns { ") (Text ownDoc)) (Text " }, the other { ")) (Text otherDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block. (doc/type-errors.md #2)")))
+              (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block.")))
       )
   ) => LabelAbsentK EQ l rest own other
 instance LabelAbsent l rest own other => LabelAbsentK LT l rest own other
@@ -321,7 +321,7 @@ instance
             (Beside (Beside (Text "The row is { ") (Text origDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block. (doc/type-errors.md #2)")))
+              (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block.")))
       )
   ) => NoDuplicateLabelsK EQ l rest orig
 instance NoDuplicateLabels rest orig => NoDuplicateLabelsK LT l rest orig

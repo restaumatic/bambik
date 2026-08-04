@@ -5,11 +5,7 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 
 [Why Bambik? — a long-form introduction](/doc/why-bambik.md)
 
-[1000 characters-long description of the idea](/doc/description-1000characters.md)
-
 [20 minutes-long presentation of the idea](/doc/presentation-20min.md)
-
-[Row profunctors over records and variants (design note)](/doc/row-profunctors.md)
 
 [Variant syntax sugar — the forked PureScript compiler this repo builds on](/doc/variant-sugar.md)
 

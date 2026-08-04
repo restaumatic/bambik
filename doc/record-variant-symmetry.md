@@ -45,8 +45,7 @@ events; swapping the modes swaps `RecordToRecord ↔ VariantToVariant` and
    `pempty = silence`).
 3. **Seeds** — every `×`-flavored trace form takes an initial state
    (`feedback`/`folding`/`unfolding`, `with`/`mvu`), `iterate` takes none:
-   entities pre-exist, events occur
-   (doc/pointedness-entities-vs-events.md).
+   entities pre-exist, events occur.
 4. **Field vs case existence** — `atField` feeds unconditionally (a field
    always exists), `atCase` attaches/detaches (a case exists
    one-at-a-time). Same structural role, opposite temporal behavior — the
@@ -58,8 +57,7 @@ events; swapping the modes swaps `RecordToRecord ↔ VariantToVariant` and
 6. **Payload boundary** — `toCase @l` takes a payload projection (it
    dissolves output-side lambdas at collection sites), `onCase @l` takes
    none: a case payload is pinned by its consumer as often as by its
-   emitter, so the input side stays exact
-   (doc/experiment-ad-hoc-rows.md).
+   emitter, so the input side stays exact.
 
 ## Canonical rows (the split is honest)
 

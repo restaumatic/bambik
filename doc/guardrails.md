@@ -97,7 +97,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - A gate MUST withhold until every field has a producer that has spoken,
   and MUST retain last-known values thereafter. A gate MUST NOT be
   papered over with invented data. Three designs are permanently
-  rejected ([pointedness-entities-vs-events.md](pointedness-entities-vs-events.md)):
+  rejected:
   - **no `Initial`/`Default`-style type-derived seeds** — initial state
     is business data, a term; a class invents wrong values with right
     types;
@@ -186,8 +186,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   contracts (`npm run api-docs` renders them).
 - Wrong programs MUST fail with names, as early as possible: compile
   errors where the types can carry the judgment (unclosed app at `body`,
-  duplicated label via `DisjointLabels`, archetypes catalogued in
-  [type-errors.md](type-errors.md)); named runtime watchdogs where they
+  duplicated label via `DisjointLabels`); named runtime watchdogs where they
   cannot (gate starvation names the gate and the missing fields). A
   blank screen with no diagnosis is a library bug, always.
 
@@ -336,10 +335,9 @@ these gates in order:
    re-read it against writing.md when the contract changes.
 
 The historical record is the proof this process works: every rejected
-design ([pointedness-entities-vs-events.md](pointedness-entities-vs-events.md)
-options A–D, the `Sequencing` class, the `New` wrapper, `synced`/
-`latch`, `labeled`) is documented with its reasons, and every survivor
-carries its laws. Guardrails are cheap to state and expensive to
+design (the type-derived seed, the `Sequencing` class, the `New` wrapper,
+`synced`/`latch`, `labeled`) is recorded here with its reasons, and every
+survivor carries its laws. Guardrails are cheap to state and expensive to
 recover once breached — this document exists so no future convenience,
 contributor, or agent trades a rule for a feature without noticing the
 price.

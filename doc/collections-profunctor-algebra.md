@@ -1,7 +1,7 @@
 # The collection problem in general profunctor algebra
 
 *Design note. Rejects the bespoke-class route (a `Sequencing` direction, or a
-family of them) taken by `collections-sequence-merge.md`. Instead it locates
+family of them) an earlier note had taken. Instead it locates
 what the library already does — merges, units, gates, strengths, co-strengths,
 optics, traces — inside **standard algebra**: monoidal profunctors, Tambara
 modules, container/polynomial actions, species, traced monoidal structure.

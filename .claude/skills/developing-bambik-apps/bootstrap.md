@@ -48,8 +48,7 @@ non-registry dependencies are named by URL and pinned by tag:
 
 Spago clones each git package whole, so after the first build the library's
 **demos, docs and CLAUDE.md** sit in `.spago/bambik/<tag>/` as worked
-examples — `demo/7guis/`, `demo/nguis/`, `doc/type-errors.md`, the module
-headers under `src/`.
+examples — `demo/7guis/`, `demo/nguis/`, the module headers under `src/`.
 
 ## Steps
 
@@ -329,6 +328,7 @@ check the library's `dependencies` list in the `bambik` entry when you do.
 - dhall errors mentioning an absolute `/home/...` path — `packages.dhall`
   points at a local checkout instead of the tagged git package; rewrite
   it from [Scaffold](#packagesdhall) above.
-- Custom type errors from the row layer — read
-  `.spago/bambik/<tag>/doc/type-errors.md` before fighting a merge error.
+- Custom type errors from the row layer — the duplicated-label detector
+  names the label and both operands' label sets; read the message before
+  fighting the row unification behind it.
 - Port busy — change `--serve=127.0.0.1:8000` in `package.json`.

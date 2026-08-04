@@ -6,8 +6,8 @@ version `0.15.16-variant.6` — which adds first-class syntactic sugar for
 **Variants**, the exact dual of the record sugar (`{ … }`, `_.label`) that stock
 PureScript already gives products.
 
-Variants are how bambik models event/output channels (sum types — see
-[row-profunctors.md](./row-profunctors.md)), so they appear everywhere; the fork
+Variants are how bambik models event/output channels (sum types), so they
+appear everywhere; the fork
 makes writing them as ergonomic as records. Everything below is purely
 **syntactic** — it desugars to the same `Prim.Variant.Variant` type and the same
 runtime representation the [`purescript-variant`](https://github.com/natefaubion/purescript-variant)

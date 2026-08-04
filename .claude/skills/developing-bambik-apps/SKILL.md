@@ -50,6 +50,6 @@ silence a pane are invisible to the compiler.
 
 Spago clones the library whole, so after the first build
 **`.spago/bambik/<tag>/`** holds its sources, demos and docs as worked
-examples: `demo/7guis/`, `demo/nguis/`, `doc/type-errors.md`, and the
-module headers under `src/` that document the API. Paths below are
+examples: `demo/7guis/`, `demo/nguis/`, and the module headers under
+`src/` that document the API. Paths below are
 written relative to that directory.

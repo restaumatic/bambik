@@ -30,7 +30,7 @@
 -- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
 -- |     guard, so exactly one turn happens per event.
 -- |
--- | **No nominal types in UI** (doc/no-nominal-types-in-ui.md). A view-model
+-- | **No nominal types in UI.** A view-model
 -- | type is one-off and specific to its UI, so it earns no name: applications
 -- | write anonymous Record rows, anonymous Variant rows, and `{}` unit
 -- | payloads in place, and this vocabulary never forces a nominal type into
@@ -1038,8 +1038,8 @@ type Ocular p = forall a b. Optic p a b a b
 -- | `asCase`: `action createPerson # onCase @"create"`.
 -- | No subsumption here, deliberately: a case *payload* is pinned by the
 -- | action that consumes it as often as by the widget that emits it, so
--- | widening this position would leave both unknown (see doc/
--- | experiment-ad-hoc-rows.md — the payload-boundary rule).
+-- | widening this position would leave both unknown (the payload-boundary
+-- | rule).
 onCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p (Variant s) b
 onCase = lcmap (on (Proxy @l) identity case_)
 
