@@ -36,7 +36,6 @@ import Data.FoldableWithIndex (forWithIndex_)
 import Data.Foldable (for_)
 import Data.Int (fromString) as Int
 import Data.Int (round)
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
@@ -47,7 +46,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, constantly)
+import PUI (PUI, Ocular, constantly)
 import PUI.Web.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))

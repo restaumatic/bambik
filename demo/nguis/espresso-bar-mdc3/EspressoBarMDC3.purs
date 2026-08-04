@@ -48,7 +48,7 @@ espressoBarMDC3 =
                   filterChip { label: "Decaf" } # asField @"decaf"
                 toggleSwitch { label: "Takeaway cup" } # asField @"takeaway"
                 iconToggle { onIcon: "favorite", offIcon: "heart_plus", label: "Mark as favorite" } # asField @"favorite"
-                checkbox (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"loyalty"
+                checkbox { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"loyalty"
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem { label: "The usual" } # asCase @"theUsual" # with theUsual

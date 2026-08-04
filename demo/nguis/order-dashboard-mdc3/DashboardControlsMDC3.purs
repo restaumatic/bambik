@@ -11,12 +11,11 @@ import Prelude (class Eq, identity, show, (#), ($), (*), (-), (/), (<>), (==), (
 
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe)
 import Data.Number (max)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import PUI (PUI, atField, constantly, displayed, foreach, forField, pempty, projected)
+import PUI (PUI, Ocular, atField, constantly, displayed, forField, foreach, pempty, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG

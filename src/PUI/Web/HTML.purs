@@ -95,11 +95,9 @@ import Prelude
 
 import Control.Monad.State (gets, modify_)
 import Data.Array ((!!), findIndex)
-import Data.Default (class Default, default)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (fromString) as Int
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
@@ -111,7 +109,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
-import PUI (PUI)
+import PUI (PUI, Ocular)
 import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -219,9 +217,12 @@ textArea = wrap do
 -- | reports nothing-chosen — so an optional piece of the model *is* the
 -- | box's state, with no separate flag to keep in step. It stays disabled
 -- | until it has been given something to show.
-checkboxInput :: forall a . Default a => PUI Web (Maybe a) (Maybe a)
-checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
-  aRef <- liftEffect $ Ref.new default
+-- |
+-- | `ticked` is what the field holds once ticked, before the model has ever
+-- | supplied a value — stated by the caller, never conjured from the type.
+checkboxInput :: forall a. { ticked :: a } -> PUI Web (Maybe a) (Maybe a)
+checkboxInput { ticked } = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
+  aRef <- liftEffect $ Ref.new ticked
   mPropRef <- liftEffect $ Ref.new Nothing
   element "input" (pure unit)
   node <- gets _.sibling
@@ -247,9 +248,12 @@ checkboxInput = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothi
 -- | while it is the current choice, and reporting that choice when picked.
 -- | One per option; the design-system vocabularies package the whole group
 -- | as a single labelled control.
-radioButton :: forall a. Default a => PUI Web (Maybe a) a
-radioButton = "type" := "radio" $ wrap do
-  aRef <- liftEffect $ Ref.new default
+-- |
+-- | `picked` is the choice this button stands for until the model supplies
+-- | one — stated by the caller, never conjured from the type.
+radioButton :: forall a. { picked :: a } -> PUI Web (Maybe a) a
+radioButton { picked } = "type" := "radio" $ wrap do
+  aRef <- liftEffect $ Ref.new picked
   mPropRef <- liftEffect $ Ref.new Nothing
   element "input" (pure unit)
   node <- gets _.sibling

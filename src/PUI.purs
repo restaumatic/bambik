@@ -41,6 +41,7 @@
 -- | functions.
 module PUI
   ( Action
+  , Ocular
   , PUI(..)
   , Hooks
   , class Hosting
@@ -77,7 +78,6 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic)
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
@@ -1006,6 +1006,30 @@ instance Applicative m => VariantToVariant (PUI m) where
 -- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
 
 type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
+
+-- | The transpose of an optic. `Optic p s t a b = p a b -> p s t`, and the
+-- | optic families quantify the *carrier* (`Lens s t a b = forall p. Strong
+-- | p => Optic p s t a b`) to gain access to the data. Fix the carrier and
+-- | quantify the *data* instead and you gain access to the carrier: a
+-- | shape-preserving decorator — a design system's chrome — that by
+-- | parametricity cannot read or produce a single value flowing through it.
+-- |
+-- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, DOM
+-- | nesting). Naturality is free, so every ocular commutes with the
+-- | `dimap`-only adopters (`asField`, `field`, `toCase`, `forField`).
+-- | Commuting with the *strengths* is the extra law, and the admission test
+-- | for anything called an ocular:
+-- |
+-- | ```
+-- | ocular (first w) = first (ocular w)
+-- | ocular (left w)  = left (ocular w)
+-- | ```
+-- |
+-- | It holds for everything that merely wraps nodes, which is why chrome
+-- | slides freely past `field @l`/`focusRecord`. A decorator that captures —
+-- | buffers, replays or withholds a feed — is still a natural transformation
+-- | but breaks these, and needs a stated protocol instead (`dialog`).
+type Ocular p = forall a b. Optic p a b a b
 
 -- | The progress slot is row-shaped like every component interface: the
 -- | widget is a `{ busy :: Boolean } → {}` display citizen.

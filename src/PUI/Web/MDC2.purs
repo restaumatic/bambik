@@ -107,10 +107,8 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Data.Array (findIndex, mapWithIndex, (!!))
-import Data.Default (class Default, default)
 import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
-import Data.Lens.Extra.Types (Ocular)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (field, forField, pempty, projected)
@@ -121,7 +119,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, constantly, foreach)
+import PUI (PUI, Ocular, constantly, foreach)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, ul, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, clazz, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -461,10 +459,14 @@ filledTextArea { columns, rows } = field @"value" $ wrap do
 -- | model *is* the box's state, with no second flag to keep in step. Use a
 -- | checkbox for a fact the user states as part of a form; use
 -- | `toggleSwitch` for a setting that takes effect at once.
-checkbox :: forall a. Default a => PUI Web {} {} -> PUI Web { value :: Maybe a } { value :: Maybe a }
-checkbox labelContent = field @"value" $ wrap do
+-- |
+-- | `ticked` is what the field holds once ticked, before the model has ever
+-- | supplied a value — stated by the caller (`{ ticked: {} }` for a plain
+-- | yes/no fact), never conjured from the type.
+checkbox :: forall a. { ticked :: a } -> PUI Web {} {} -> PUI Web { value :: Maybe a } { value :: Maybe a }
+checkbox { ticked } labelContent = field @"value" $ wrap do
   checkboxId <- liftEffect uniqueId
-  aRef <- liftEffect $ Ref.new default
+  aRef <- liftEffect $ Ref.new ticked
   mPropRef <- liftEffect $ Ref.new Nothing
   parts <- element "div" do
     inputNode <- element "div" do
@@ -1386,7 +1388,7 @@ drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
+-- | `checkbox { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
 tooltip :: { text :: String } -> Ocular (PUI Web)
 tooltip config content = wrap do
   tipId <- liftEffect uniqueId

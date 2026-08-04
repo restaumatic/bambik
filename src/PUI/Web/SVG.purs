@@ -13,8 +13,7 @@ module PUI.Web.SVG
   , text
   ) where
 
-import Data.Lens.Extra.Types (Ocular)
-import PUI (PUI)
+import PUI (PUI, Ocular)
 import PUI.Web.HTML (el)
 import PUI.Web (Web)
 

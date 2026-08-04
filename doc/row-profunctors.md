@@ -364,17 +364,18 @@ RecordToRecord.do
 
 This reads as "this record has these fields, one per line." It is the right style at the **leaf level** — when you start from atomic value-sources.
 
-### Merge style — `src/Data/Profunctor/Row/Example.purs`
+### Merge style
 
 ```purescript
--- src/Data/Profunctor/Row/Example.purs:102-108
-recordToRecordExample :: MyRowToRowProfunctor
-  { in1 :: MyData, in2 :: MyData, in3 :: MyData }
-  { out1 :: MyData, out2 :: MyData, out3 :: MyData }
-recordToRecordExample = RecordToRecord.do
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData } { "out1" :: MyData })
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in1" :: MyData, "in2" :: MyData } { "out2" :: MyData })
-  (MyRowToRowProfunctor :: MyRowToRowProfunctor { "in3" :: MyData } { "out3" :: MyData })
+-- demo/nguis/order-form-mdc2/OrderFormMDC2.purs
+RecordToRecord.do
+  card { caption: "Identifier" } ( RecordToRecord.do
+      filledTextField { floatingLabel: "Short ID" } # asField @"shortId"
+      filledTextField { floatingLabel: "Unique ID" } # asField @"orderId" )
+  card { caption: "Customer" } ( RecordToRecord.do
+      filledTextField { floatingLabel: "First name" } # asField @"firstName"
+      filledTextField { floatingLabel: "Last name" } # asField @"lastName" ) # field @"customer"
+  card { caption: "Payment" } ( … ) # field @"payment"
 ```
 
 Each line is a *complete sub-profunctor with its own multi-field input and output row*. `RecordToRecord.do` merges them, solving `InclusiveRows` on inputs and `ExclusiveRows` on outputs.
@@ -416,7 +417,6 @@ Source locations cited in this document:
   - `src/Data/Profunctor/Row/RecordToVariant.purs`
   - `src/Data/Profunctor/Row/VariantToRecord.purs`
   - `src/Data/Profunctor/Row/VariantToVariant.purs`
-- Merge examples: `src/Data/Profunctor/Row/Example.purs` (phantom carrier)
 - Row strengths and their combinators (each beside its merge):
   - `RecordToRecord.purs` — `focusRecord` (on `Strong`); `property` (on `Strong`) / `field` (on bare `Profunctor`); `tapped` (on `Strong` — the display tap); `feedback` (on `Costrong` — the ×-trace row form)
   - `VariantToVariant.purs` — `case_` (on `Choice`, via `prismE`); `splitVariant`; `iterate` (on ecosystem `Cochoice` — the `+`-diagonal trace at row granularity)
