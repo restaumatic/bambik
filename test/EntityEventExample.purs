@@ -30,12 +30,12 @@ qtyCase :: Prism' OrderEvent Int      -- a case  of the event    (case_)
 qtyCase = case_ @"qty"
 
 -- entity -> event : read the live field, fire it as that case
---   (value-level essence of resolveProperty / Shutter, the × → + leg)
+--   (value-level essence of backgroundProperty / Shutter, the × → + leg)
 fieldToEvent :: OrderEntity -> OrderEvent
 fieldToEvent o = review qtyCase (view qtyField o)
 
 -- event -> entity : fold one event-case back into the held entity
---   (value-level essence of retainCase / Reel, the + → × leg)
+--   (value-level essence of backgroundCase / Reel, the + → × leg)
 applyEvent :: OrderEvent -> OrderEntity -> OrderEntity
 applyEvent e o =
   ( Variant.case_

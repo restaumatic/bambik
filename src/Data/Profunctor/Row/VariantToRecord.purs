@@ -5,9 +5,10 @@
 -- |     `(->)`): the unary power, a Mealy/coroutine step.
 -- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
--- |   * **free functions over the strength** — everything else: `reelWrap`
--- |     (sub-variant focus), `retainCase` (thread one label), `caseToProperty`
--- |     (single-case focus), `caseToRecord` (introduce/reduce), the `Reel`
+-- |   * **free functions over the strength** — everything else, named for
+-- |     *what the wrapped profunctor runs on*: `focusReel` (a sub-variant),
+-- |     `focusCase` (one case), `backgroundCase` (the background, the focus
+-- |     threaded across), `reduceCase` (introduce/reduce), the `Reel`
 -- |     optic with `reel`/`reelE` — and over the co-strength `Coretaining`:
 -- |     the `Coreel` optic with `coreel`/`coreelE` (the reversed `Shutter`)
 -- |     and its row form `unfolding @w` (the productive unfold).
@@ -19,7 +20,7 @@
 -- | introduce operator is the **sink-pinned merge**,
 -- |
 -- | ```
--- | caseToRecord @l g = variantToRecord (lcmap unwrap g) silence
+-- | reduceCase @l g = variantToRecord (lcmap unwrap g) silence
 -- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
 -- | ```
 -- |
@@ -44,16 +45,16 @@ module Data.Profunctor.Row.VariantToRecord
   , coretain
   , discard
   , pempty
-  , caseToProperty
+  , focusCase
   , forCase
   , forCases
-  , caseToRecord
+  , reduceCase
   , class Retaining
   , retain
-  , retainCase
+  , backgroundCase
   , reel
   , reelE
-  , reelWrap
+  , focusReel
   , unfolding
   )
   where
@@ -95,7 +96,7 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | resume — the product output can't be filled without retaining state.
 -- |
 -- | This is the **bare strength** for the `+ → ×` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is `reelWrap` below —
+-- | `Strong`/`Choice`); the row combinator built on it is `focusReel` below —
 -- | exactly as `focusRecord` is built on `Strong`.
 class Profunctor p <= Retaining p where
   retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
@@ -119,7 +120,7 @@ class Profunctor p <= Coretaining p where
 -- | (any case of `i`) or a resume (case `w`, carrying the unfold state
 -- | `{ | fb }`), and every emission's value fields `o` pass while its state
 -- | fields `fb` immediately re-enter as case `w` — a generator. The
--- | `+ → ×` co-analogue of `reelWrap`. Like `feedback`, the output is
+-- | `+ → ×` co-analogue of `focusReel`. Like `feedback`, the output is
 -- | split by coercion (`ExclusiveRows o fb ow` keeps the typed views
 -- | disjoint), so the emitted `{ | o }` runtime-carries the state fields —
 -- | an `unfolding` stage belongs in a pipeline, not as a merge operand.
@@ -225,7 +226,7 @@ forCases :: forall p a o s. Profunctor p => (Variant s -> a) -> p [ event :: a ]
 forCases f = lcmap (\v -> inj (Proxy @"event") (f v))
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
--- | for this direction (the dual of `resolveProperty`). Where `case_`
+-- | for this direction (the dual of `backgroundProperty`). Where `case_`
 -- | **refocuses** (background fixed, focus transformed), this
 -- | **re-backgrounds**: the **focus** `f` at `l` is held fixed and threaded as
 -- | **input case ↔ output field**, while the wrapped profunctor transforms the
@@ -235,7 +236,7 @@ forCases f = lcmap (\v -> inj (Proxy @"event") (f v))
 -- | profunctor runs on the background cases and field `l` is filled from the
 -- | carrier's retained state (the `c` that `retain` always emits), not from
 -- | the wrapped profunctor.
-retainCase
+backgroundCase
   :: forall @l p f b s b' s'
    . Retaining p
   => IsSymbol l
@@ -243,7 +244,7 @@ retainCase
   => Cons l f b' s'
   => p [ | b ] { | b' }
   -> p [ | s ] { | s' }
-retainCase g =
+backgroundCase g =
   dimap
     (on (Proxy @l) Right Left)
     -- no `Lacks`: `unsafeSet` realizes the layout `Cons l f b' s'` pins —
@@ -256,13 +257,13 @@ retainCase g =
 -- | `case_` (row-typed `left`), built on `retain` exactly as `case_` is built
 -- | on `left`. The **focus** `f` at `l` of the input **shot** `s` is fed to the
 -- | wrapped `p f f'` (the `Left`/fresh branch); the **background** `[ | b ]`
--- | cannot stay a variant inside the `Record` output, so — as in `reelWrap` —
+-- | cannot stay a variant inside the `Record` output, so — as in `focusReel` —
 -- | it is wrapped as a single output field `w`. Field `l` carries the wrapped
 -- | profunctor's output `f'` (drawn from the carrier's retained state when a
 -- | background case arrived), field `w` the background-variant. The
--- | single-case form of `reelWrap`; the transpose of `retainCase`, which runs
+-- | single-case form of `focusReel`; the transpose of `backgroundCase`, which runs
 -- | the wrapped profunctor on the *background* and resumes the focus directly.
-caseToProperty
+focusCase
   :: forall @l @w p f f' b s lf s'
    . Retaining p
   => IsSymbol l
@@ -272,7 +273,7 @@ caseToProperty
   => Cons w [ | b ] lf s'
   => p f f'
   -> p [ | s ] { | s' }
-caseToProperty g =
+focusCase g =
   dimap
     (on (Proxy @l) Left Right)
     -- no `Lacks`: `unsafeSet` realizes the layout the `Cons` chain pins —
@@ -280,8 +281,11 @@ caseToProperty g =
     (\(Tuple f' b) -> unsafeSet (reflectSymbol (Proxy @w)) b (unsafeSet (reflectSymbol (Proxy @l)) f' {}))
     (retain g)
 
--- | The `+ → ×` member of the introduce family and the dual of `recordToCase`:
--- | the wrapped `p f { | r }` consumes the **focus** — case `l` of the input
+-- | The `+ → ×` member of the introduce family. Not `recordToCase`'s mirror
+-- | despite the shape: that one merely `rmap`s an injection into an output
+-- | case (mere `Profunctor`), while this one *consumes* an input case and
+-- | needs `Retaining` — hence the reducer name rather than a `…To…` one.
+-- | The wrapped `p f { | r }` consumes the **focus** — case `l` of the input
 -- | **shot** `s` — and produces the whole output record `r`. `r` is the
 -- | **reality** the camera is pointed at: it never enters the shot, and here it
 -- | must be *produced* without arriving — every **background** case must still
@@ -289,14 +293,14 @@ caseToProperty g =
 -- | the carrier's retained state. That is why this member alone needs
 -- | `Retaining`. A Mealy **reducer**: case `l` updates the record via `g`, the
 -- | background cases leave it as it was.
-caseToRecord
+reduceCase
   :: forall @l p b s f r
    . Retaining p
   => IsSymbol l
   => Cons l f b s
   => p f { | r }
   -> p [ | s ] { | r }
-caseToRecord g = dimap (on (Proxy @l) Left Right) fst (retain g)
+reduceCase g = dimap (on (Proxy @l) Left Right) fst (retain g)
 
 -- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`
 -- | (instantiated to `b → t`) by co-Yoneda collapses `∃c. (s → a + c) × (b × c → t)`
@@ -328,7 +332,7 @@ reelE decon recon g = dimap decon recon (retain g)
 -- | shot at `w`, against the inner output `b'`. The inner
 -- | `p [ | f ] { | b' }` runs on the focus; the retained background-variant is
 -- | written at field `w`. The sub-variant focus for this direction, and
--- | the dual of `shutterWrap` — same sub-row focus, but the background is
+-- | the dual of `focusShutter` — same sub-row focus, but the background is
 -- | *wrapped* to cross into the record output rather than carried same-kind.
 -- | The `+ → ×` row combinator over the bare strength `Retaining`,
 -- | just as `focusRecord` is the row combinator over `Strong`.
@@ -340,9 +344,9 @@ reelE decon recon g = dimap decon recon (retain g)
 -- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- s'  output shot
 -- |   [ cancel :: Unit ]                                            -- f   sub-Variant focus
 -- |   { done :: Boolean }                                          -- b'  inner output
--- | step = reelWrap @"pending"
+-- | step = focusReel @"pending"
 -- | ```
-reelWrap
+focusReel
   :: forall @w p f b s b' s'
    . Retaining p
   => IsSymbol w
@@ -352,7 +356,7 @@ reelWrap
   => Cons w [ | b ] b' s'
   => p [ | f ] { | b' }
   -> p [ | s ] { | s' }
-reelWrap g =
+focusReel g =
   reelE
     splitVariant
     -- no `Lacks`: `unsafeSet` realizes the layout `Cons w [ | b ] b' s'` pins —

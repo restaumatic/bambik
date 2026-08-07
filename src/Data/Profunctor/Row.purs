@@ -1,4 +1,92 @@
--- | The shared floor of the row layer — what every direction module
+-- | A **row profunctor** is a profunctor `p a b` where type parameters `a`
+-- | and `b` are **row types** under a carrier:
+-- |
+-- |   * **`Record`** — the product `×`: every row label present at once.
+-- |   * **`Variant`** — the sum `+`: exactly one row label at a time.
+-- |
+-- | So `p (Record a) (Variant b)` (in short `p {|a} [|b]`) instantiates
+-- | profunctor parameters as Record of row `a` and Variant of row `b`.
+-- |
+-- | Choosing a carrier for each parameter gives the four **row profunctor
+-- | shapes**, one module each. Each shape indexes a unary
+-- | **strength**/**co-strength** and a binary **merge** typeclass. Each
+-- | strength and co-strength alike generates an **optic**.
+-- |
+-- | ```
+-- | shape        strength     strength optic  co-strength    co-strength optic  merge
+-- | -----------  -----------  --------------  -------------  -----------------  -----------------
+-- | p {|a} {|b}  Strong       Lens            Costrong       Colens *           RecordToRecord *
+-- | p [|a] [|b]  Choice       Prism           Cochoice       Coprism *          VariantToVariant *
+-- | p {|a} [|b]  Resolving *  Shutter *       Coresolving *  Coshutter *        RecordToVariant *
+-- | p [|a] {|b}  Retaining *  Reel *          Coretaining *  Coreel *           VariantToRecord *
+-- | ```
+-- |
+-- | `*` marks what this library introduces; the rest is the ecosystem's
+-- | (`Strong`/`Choice` and their `Lens`/`Prism`). The optics follow from the
+-- | classes by Pastro–Street.
+-- |
+-- | The **pure** shapes' `Strong`/`Choice` are Tambara modules for the `×` and
+-- | `+` actions. On the **mixed** shapes the background *crosses* carriers
+-- | (`resolve :: p a b -> p (Tuple a c) (Either b c)`), which is not a Tambara
+-- | action — hence the coinage, and hence `PUI m` instances but no `(->)`:
+-- | `resolve` needs quiescence (time), `retain` needs memory (state).
+-- |
+-- | What makes such a profunctor a row profunctor is not its shape alone but
+-- | the structure that shape supports: for each shape, a **merge** combining
+-- | two profunctors over labelled rows into one over the
+-- | combined row, and a **nullary unit** `pempty` for the empty row — so
+-- | every shape is a monoid on labelled rows, written with qualified-do
+-- | (`RecordToRecord.do`), and the labels of the merged row are exactly the
+-- | labels of the operands.
+-- |
+-- | Around each merge sit the functions that place a profunctor **into** a
+-- | row. They divide by what each needs — the same three columns as the
+-- | table above, so a function's column is its power:
+-- |
+-- | ```
+-- | shape        Profunctor only               over the strength      over the co-strength
+-- | -----------  ----------------------------  ---------------------  --------------------
+-- | p {|a} {|b}  field, asField, atField,      property, focusRecord,  feedback
+-- |              forField, forProperty,        tapped, completed
+-- |              projected, required
+-- | p [|a] [|b]  splitVariant                  case_, focusVariant     iterate
+-- | p {|a} [|b]  recordToCase, toCase,         focusProperty,         folding
+-- |              asCase, echoCase, toCases     backgroundProperty,
+-- |                                            focusShutter
+-- | p [|a] {|b}  forCase, forCases             focusCase, reduceCase,  unfolding
+-- |                                            backgroundCase,
+-- |                                            focusReel
+-- | ```
+-- |
+-- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
+-- | nothing threaded and no state — `field` wraps, `asField`/`forCase` rename
+-- | a canonical row, `toCase` introduces one. The **middle** column carries a
+-- | **background** the strength threads: a sub-row (`focusRecord`,
+-- | `focusVariant`, `focusShutter`, `focusReel`), one label (`property`,
+-- | `backgroundCase`), or the input completed from what the widget did not
+-- | produce (`completed`). The **right** column ties a state channel off with
+-- | the co-strength — one trace row form per shape, each seeded but `iterate`
+-- | (entities pre-exist, events occur).
+-- |
+-- | The left column's length tracks the **input** carrier: a shared record
+-- | input can be read many ways, an owned variant input admits one adoption
+-- | per side. That is the sharing polarity below, showing up as vocabulary.
+-- |
+-- | The merge's two obligations are per-side and dual, and they are what the
+-- | constraint vocabulary below spells out: on an **input** side, where does
+-- | each label's value come from; on an **output** side, who is allowed to
+-- | produce it. Records share their input (every operand may read every
+-- | field) and own their output (each field has exactly one producer);
+-- | variants own their input (each case has exactly one handler) and share
+-- | their output (any operand may emit any case). Sharing is inclusive
+-- | (`InclusiveRows`), ownership is exclusive (`ExclusiveRows`) — so a merge
+-- | signature is two words, one per side.
+-- |
+-- | `Data.Profunctor.Acting` extends the family one step past rows: rows are
+-- | the finitary μ-free fragment of the container grammar, and `Array` is
+-- | one `μ` later.
+-- |
+-- | The shared floor of the row layer — what every shape's module
 -- | (`Data.Profunctor.Row.*`) stands on:
 -- |
 -- |   * **row-constraint vocabulary** — `InclusiveRows` (overlapping rows,
@@ -18,11 +106,11 @@
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
 -- |
--- | Two laws govern every direction (the four merges here and the container
+-- | Two laws govern every shape (the four merges here and the container
 -- | action in `Data.Profunctor.Acting` alike), both decided by the
 -- | **output side**:
 -- |
--- |   * **units are forced, not designed** — a direction's nullary merge
+-- |   * **units are forced, not designed** — a shape's nullary merge
 -- |     announces iff its output side is a product: `1_× = {}` (and `[]` at
 -- |     runtime) is inhabited, so the unit announces its canonical value
 -- |     (`pempty = announce {}`); `1_+ = Variant ()` (zero emitters) is
@@ -32,8 +120,8 @@
 -- |   * **gates are the cost of laxity over streams** — pairing two output
 -- |     streams into one stream of pairs has one canonical implementation:
 -- |     retain each side's last value, withhold until every side has spoken.
--- |     So every (·,×)-direction gates and retains (`recordToRecord`,
--- |     `variantToRecord`, `acted`'s gather) and no (·,+)-direction does
+-- |     So every (·,×)-shape gates and retains (`recordToRecord`,
+-- |     `variantToRecord`, `acted`'s gather) and no (·,+)-shape does
 -- |     (injections need no pairing).
 -- |
 -- | See doc/collections-profunctor-algebra.md §1.

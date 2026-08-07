@@ -5,9 +5,10 @@
 -- |     `(->)`): the unary power, a loop/iteration step.
 -- |   * **direction class** — `RecordToVariant`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
--- |   * **free functions over the strength** — everything else: `shutterWrap`
--- |     (sub-record focus), `resolveProperty` (thread one label),
--- |     `propertyToCase` (single-field focus), `recordToCase` (introduce; mere
+-- |   * **free functions over the strength** — everything else, named for
+-- |     *what the wrapped profunctor runs on*: `focusShutter` (a sub-record),
+-- |     `focusProperty` (one field), `backgroundProperty` (the background,
+-- |     the focus escaping), `recordToCase` (introduce; mere
 -- |     `Profunctor`), the `Shutter` optic with `shutter`/`shutterE`, the
 -- |     `Coshutter` optic with `coshutter`/`coshutterE` (the reversed
 -- |     `Reel`) — and
@@ -45,17 +46,17 @@ module Data.Profunctor.Row.RecordToVariant
   , pempty
   , recordToVariant
   , class Resolving
-  , propertyToCase
+  , focusProperty
   , echoCase
   , asCase
   , recordToCase
   , toCase
   , toCases
   , resolve
-  , resolveProperty
+  , backgroundProperty
   , shutter
   , shutterE
-  , shutterWrap
+  , focusShutter
   )
   where
 
@@ -103,7 +104,7 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | always-`Done` step, which carries no iteration.)
 -- |
 -- | This is the **bare strength** for the `× → +` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is `shutterWrap` below —
+-- | `Strong`/`Choice`); the row combinator built on it is `focusShutter` below —
 -- | exactly as `focusRecord` is built on `Strong`.
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
@@ -131,7 +132,7 @@ class Profunctor p <= Coresolving p where
 -- | state sub-record `fb`, and answers with a variant that either continues
 -- | the fold (case `w`, carrying the next `{ | fb }` — retained silently)
 -- | or exits (any `done` case — emitted). The `× → +` co-analogue of
--- | `shutterWrap`: there the background is wrapped as case `w` to *escape*,
+-- | `focusShutter`: there the background is wrapped as case `w` to *escape*,
 -- | here case `w` is unwrapped to *loop*. No coercions: `on` splits the
 -- | output variant exactly.
 -- |
@@ -213,7 +214,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | (turning the input **shot** `s` into the output shot `s'`). The `Done`
 -- | branch emits some case of `b'`; the `Loop`/short-circuit branch lets the
 -- | focus escape directly as output case `l`.
-resolveProperty
+backgroundProperty
   :: forall @l p f lf b s b' s'
    . Resolving p
   => IsSymbol l
@@ -223,7 +224,7 @@ resolveProperty
   => Union b' lf s'
   => p { | b } [ | b' ]
   -> p { | s } [ | s' ]
-resolveProperty g =
+backgroundProperty g =
   dimap
     -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins —
     -- under a shadowed duplicate label the outer entry wins, the same
@@ -236,12 +237,12 @@ resolveProperty g =
 -- | `property` (row-typed `first`), built on `resolve` exactly as `property` is
 -- | built on `first`. The **focus** `f` at `l` of the input **shot** `s` is fed
 -- | to the wrapped `p f f'`; the **background** `{ | b }` cannot stay a record
--- | inside the `Variant` output, so — as in `shutterWrap` — it is wrapped as a
+-- | inside the `Variant` output, so — as in `focusShutter` — it is wrapped as a
 -- | single output case `w`: `Done` emits case `l :: f'`, the `Loop`/escape
 -- | branch emits case `w` carrying the untouched background. The single-field
--- | form of `shutterWrap`; the transpose of `resolveProperty`, which runs the
+-- | form of `focusShutter`; the transpose of `backgroundProperty`, which runs the
 -- | wrapped profunctor on the *background* and lets the focus escape.
-propertyToCase
+focusProperty
   :: forall @l @w p f f' b s lx wx s'
    . Resolving p
   => IsSymbol l
@@ -251,7 +252,7 @@ propertyToCase
   => Cons w { | b } wx s'
   => p f f'
   -> p { | s } [ | s' ]
-propertyToCase g =
+focusProperty g =
   dimap
     -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins —
     -- under a shadowed duplicate label the outer entry wins, the same
@@ -368,9 +369,9 @@ shutterE decon recon g = dimap decon recon (resolve g)
 -- |   [ priced :: Int, draft :: { note :: String } ]              -- s'  output shot
 -- |   { item :: String, qty :: Int }                              -- f   sub-Record focus
 -- |   [ priced :: Int ]                                            -- b'  inner output
--- | checkout = shutterWrap @"draft"
+-- | checkout = focusShutter @"draft"
 -- | ```
-shutterWrap
+focusShutter
   :: forall @w p f b s b' s' mix
    . Resolving p
   => IsSymbol w
@@ -379,7 +380,7 @@ shutterWrap
   => Union b' mix s'
   => p { | f } [ | b' ]
   -> p { | s } [ | s' ]
-shutterWrap g =
+focusShutter g =
   shutterE
     (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
     (either expand (inj (Proxy @w)))

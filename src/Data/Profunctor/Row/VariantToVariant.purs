@@ -4,7 +4,7 @@
 -- | the operand handling their case (`ExclusiveRows` on input: exactly one
 -- | handler per case); outputs may overlap (`InclusiveRows`). Over ecosystem
 -- | `Choice`: `case_` (the value-level case prism, via `prismE`) and
--- | `splitVariant` (the focus/background dispatch `reelWrap` shares).
+-- | `splitVariant` (the focus/background dispatch `focusReel` shares).
 -- |
 -- | The **nullary** operator is the merge **unit** — the class's own
 -- | `pempty :: p (Variant ()) (Variant ())`: `variantToVariant pempty g = g`.
@@ -13,7 +13,7 @@
 -- | silent element implements it (`PUI`: `pempty = silence`).
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
--- | here (doc/record-variant-symmetry.md records the survey): `field`'s
+-- | here: `field`'s
 -- | `+ → +` transpose — the closed-singleton case wrap
 -- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
 -- | subsumption step: it is already vocabulary-expressible as
