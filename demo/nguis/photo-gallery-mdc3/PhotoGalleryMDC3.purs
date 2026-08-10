@@ -17,7 +17,7 @@ photoGalleryMDC3 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } albumChoices (span text # forProperty @"name" identity) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
+              listOf { selected: _.current } albumChoices (span text # forProperty @"value" @"name" identity) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
@@ -30,6 +30,6 @@ photoGalleryMDC3 =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
-              displayMedium text # forField @"album" identity # tapped
+              displayMedium text # forField @"value" @"album" identity # tapped
               ( imageList { columns: 3 } $ imagePane # foreach @"src" albumPhotos ) # displayed )
       ) # mvu landscapesOpen

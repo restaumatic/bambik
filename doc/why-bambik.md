@@ -36,7 +36,7 @@ two remedies but one:
 > Optics *are* profunctor transformers. A lens is exactly a thing that turns
 > a `p field field` into a `p record record` — for any profunctor `p`.
 
-So if a *widget* is a profunctor — a value `PUI i o` that consumes model
+So if a *UI component* is a profunctor — a value `PUI i o` that consumes model
 values of type `i` and produces model values of type `o` — then optics stop
 being a way to talk *about* your model and become a way to *assemble your
 interface*. The lens that focuses the customer's name is the same value that
@@ -88,7 +88,7 @@ load → form (×→×) → live summary → buttons (×→+) → backend (+→+
 
 ## Binary operators: the merges
 
-Each direction has one binary **merge** — how two widgets of that direction
+Each direction has one binary **merge** — how two UI components of that direction
 sit side by side and become one:
 
 - `recordToRecord` — two editors merge; inputs may overlap (everyone may
@@ -157,7 +157,7 @@ record.
 
 ## Nullary operators: the units
 
-A binary operator wants a unit, and each merge has one: `pempty`, the widget
+A binary operator wants a unit, and each merge has one: `pempty`, the UI component
 of type `{} → {}` — pure chrome. A divider, a heading, a spacer. It reads no
 fields and produces none, so merging it in changes nothing about the model:
 the monoid law, and the license to sprinkle decoration freely through a
@@ -173,32 +173,32 @@ mute), `announce` (one registration-time emission of a constant — seeds
 fields, primes loops), and `seeded` (an echo wire that first announces a
 seed).
 
-## Unary operators: strengths, or the small widget in the big world
+## Unary operators: strengths, or the small UI component in the big world
 
 A text field edits a `String`; your model is a whole order. **Strengths**
 are the unary operators that embed the small into the large — and this is
 where optics re-enter, now as UI combinators:
 
-- `Strong` (the `×` strength) gives `property @l` — the field lens — and its
-  closed-singleton form `field @l`, the merge-operand shape; `focusRecord`
+- `Strong` (the `×` strength) gives `focusProperty @l` — the field lens — and its
+  closed-singleton form `field @l`, the merge-operand shape; `subStrong`
   focuses a whole sub-record while the background row rides along.
-- `Choice` (the `+` strength) gives `case_ @l` — the case prism: handle one
+- `Choice` (the `+` strength) gives `focusCase @l` — the case prism: handle one
   case, pass the others through.
 
 Those cover the same-shape directions. The mixed directions need strengths
 of their own, and here the library coins two:
 
-- **`Resolving`**: `p a b -> p (Tuple a c) (Either b c)` — a widget that
+- **`Resolving`**: `p a b -> p (Tuple a c) (Either b c)` — a UI component that
   sees everything but answers with a *decision*: `Left` done, `Right` keep
   going. One step of a loop. It underlies the `Shutter` optic. On `PUI` the
-  decision is derived **from time**: emissions loop while the widget is
+  decision is derived **from time**: emissions loop while the UI component is
   still moving (mid-typing, mid-drag), and the last emission of a burst
   resolves at quiescence. Note the values on the wire are just values — no
   hidden "transient" flag rides along; transiency is when a value arrives,
   not what it carries. (An earlier design *did* smuggle a continuity
   `Boolean` through every wire in a `New` wrapper; deriving the branch from
   time dissolved it.)
-- **`Retaining`**: `p a b -> p (Either a c) (Tuple b c)` — a widget that
+- **`Retaining`**: `p a b -> p (Either a c) (Tuple b c)` — a UI component that
   receives one case at a time but always *remembers* the rest: a
   Mealy/coroutine step. It underlies the `Reel` optic. Tellingly, `(->)` has
   no `Retaining` instance — a stateless function has nowhere to keep the
@@ -225,7 +225,7 @@ pair swap partners under reversal — `Coshutter` is the reversed `Reel`,
 `Coreel` the reversed `Shutter`. Where a lens carries its residual visibly
 in the type (the background rides along), a co-optic *hides* its residual
 and threads it through the loop instead: `Colens` reads each input against
-the widget's own last output; `Coprism` is `tailRec` at the optic level
+the UI component's own last output; `Coprism` is `tailRec` at the optic level
 (every result exits or re-enters as the next focus); `Coshutter`'s fold
 state is a *reader* — its collapsed form `b → Either t (s → a)` has no
 initial reader, which is exactly why the carrier gates inputs until
@@ -244,7 +244,7 @@ this identity stated in its docs.)
 All four loops are knowledge-gated: they will not spin until something
 primes the state channel — which is exactly what `announce` and `seeded`
 exist for. And one loop resists derivation entirely: `looped`, the
-`×`-diagonal **self-trace** that feeds a widget its own emissions
+`×`-diagonal **self-trace** that feeds a UI component its own emissions
 (re-entrancy-guarded), primitive because a gated `unfirst` cannot self-feed
 — no state before the first emission, no emission before the first input.
 Wrapped around a record merge, `looped` gives the operands *cross-feed*:
@@ -256,7 +256,7 @@ subsumed them, which is how you know a design is converging.
 ## The `Category` instance: the spine
 
 Finally the composition everything hangs on: `PUI m` is a `Semigroupoid` and
-`Category`. `ui1 >>> ui2` pipes one widget's output into the next widget's
+`Category`. `ui1 >>> ui2` pipes one UI component's output into the next UI component's
 input, and `Semigroupoid.do` pipelines read top-to-bottom like the user's
 journey through the app — the compass walk from the Directions section is a
 single composite wire.
@@ -264,15 +264,15 @@ single composite wire.
 And `identity`? It is not a no-op. It is the **echo wire**: whatever comes
 in goes straight back out. Give it a seed and it becomes `seeded`; wrap it
 in `retain` and it becomes a counter's heartbeat. Even the unit of
-composition is a live widget — which is perhaps the neatest summary of the
+composition is a live UI component — which is perhaps the neatest summary of the
 whole design: in Bambik there is no boundary where "the algebra" ends and
 "the UI" begins.
 
 ## The story in one line
 
-Four **directions** give the map; the binary **merges** lay widgets side by
+Four **directions** give the map; the binary **merges** lay UI components side by
 side; the nullary **units** decorate and prime; the unary **strengths** let
-small widgets inhabit big models; the **co-strengths** tie every open
+small UI components inhabit big models; the **co-strengths** tie every open
 channel into a living loop; and the **`Category`** instance strings the
 whole journey into one wire from page load to snackbar.
 

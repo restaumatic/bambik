@@ -16,7 +16,7 @@ markdownPreviewerMDC3 =
     elevation5 $
       card { caption: "Markdown Previewer" } $
         layoutGrid $ ( Semigroupoid.do
-            layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"source" # completed
+            layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"value" @"source" # completed
             layoutCell { span: 6 } $ displayed $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->
                   let

@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, completed, displayed, foreach, forField, looped, onCase, silence, toCase, updated, with)
+import PUI (action, asCase, asField, completed, displayed, foreach, forField, looped, atCase, silence, toCase, updated, with)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,21 +21,21 @@ crudBootstrap = do
         silence # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do
-                textField { label: "Filter prefix (surname)" } # asField @"prefix"
-                textField { label: "Name" } # asField @"name"
-                textField { label: "Surname" } # asField @"surname") # completed
+                textField { label: "Filter prefix (surname)" } # asField @"value" @"prefix"
+                textField { label: "Name" } # asField @"value" @"name"
+                textField { label: "Surname" } # asField @"value" @"surname") # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
                 ( clicked ( ( listGroupItem $ displayed $ RecordToRecord.do
-                    text # forField @"surname" identity
+                    text # forField @"value" @"surname" identity
                     staticText ", "
-                    text # forField @"name" identity ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text # forField @"value" @"name" identity ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 ( div $ RecordToVariant.do
-                    button { label: "Create" } # asCase @"create"
-                    button { label: "Update" } # asCase @"update"
-                    button { label: "Delete" } # asCase @"delete") # cl "d-flex" # cl "gap-2"
+                    button { label: "Create" } # asCase @"clicked" @"create"
+                    button { label: "Update" } # asCase @"clicked" @"update"
+                    button { label: "Delete" } # asCase @"clicked" @"delete") # cl "d-flex" # cl "gap-2"
                 VariantToVariant.do
-                  silence # action (createPerson catalogue) # onCase @"create"
-                  silence # action (updatePerson catalogue) # onCase @"update"
-                  silence # action (deletePerson catalogue) # onCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  silence # action (createPerson catalogue) # atCase @"create"
+                  silence # action (updatePerson catalogue) # atCase @"update"
+                  silence # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}

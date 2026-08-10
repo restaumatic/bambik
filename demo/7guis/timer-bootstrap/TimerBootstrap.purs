@@ -16,13 +16,13 @@ timerBootstrap =
   body $
     card { caption: "Timer" } $ ( Semigroupoid.do
         ( RecordToRecord.do
-            progress # projected fraction
+            progress # projected @"value" fraction
             p RecordToRecord.do
-              text # forField @"elapsed" show
+              text # forField @"value" @"elapsed" show
               staticText "s / "
-              text # forField @"duration" wholeSeconds
+              text # forField @"value" @"duration" wholeSeconds
               staticText "s"
-            sliderLive { label: "Duration" } # asField @"duration") # completed
+            sliderLive { label: "Duration" } # asField @"value" @"duration") # completed
         every tickPeriod tick
         button { label: "Reset" } # with nothingElapsed # updated (match { clicked: const })
     ) # mvu tenSecondFreshTimer

@@ -17,13 +17,13 @@ timerMDC2 =
     elevation20 $
       card { caption: "Timer" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projected fraction
+              linearProgress # projected @"value" fraction
               body1 RecordToRecord.do
-                text # forField @"elapsed" show
+                text # forField @"value" @"elapsed" show
                 staticText "s / "
-                text # forField @"duration" wholeSeconds
+                text # forField @"value" @"duration" wholeSeconds
                 staticText "s"
-              sliderLive { label: "" } # asField @"duration") # completed
+              sliderLive { label: "" } # asField @"value" @"duration") # completed
           every tickPeriod tick
           button { label: "Reset", icon: "replay" } # with nothingElapsed # updated (match { clicked: const })
       ) # mvu tenSecondFreshTimer

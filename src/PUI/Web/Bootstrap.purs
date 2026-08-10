@@ -40,13 +40,13 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, Ocular, constantly)
+import PUI (Ocular, PUI, constantly, projected)
 import PUI.Web.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
@@ -67,7 +67,7 @@ import Type.Proxy (Proxy(..))
 -- the type-changing selector). Two-sorted, same citizenship, and — where
 -- the concept exists in both catalogs — the same names and signatures:
 --
---   * **components** — widgets with a model interface, every one a citizen
+--   * **components** — UI components with a model interface, every one a citizen
 --     of exactly one row direction:
 --       `×→×` editors — `textField @l` (`.form-control`), `sliderLive @l`
 --         (`.form-range` — the native range input emits per drag step;
@@ -97,7 +97,7 @@ import Type.Proxy (Proxy(..))
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button { label: "Apply" } # asCase @"applied"`.
+-- | action — `button { label: "Apply" } # asCase @"clicked" @"applied"`.
 button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 button config = recordToCase @"clicked" $ eventLeaf $
   (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
@@ -187,7 +187,7 @@ sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
 -- | The **select**: one choice out of a list, under its label. Until the
 -- | user picks there is nothing to show, so the field arrives as "maybe a
 -- | choice" and leaves as the choice itself — say which with `# optional`
--- | or `# required`. The options belong to the control, not to the model.
+-- | or `# required @"value"`. The options belong to the control, not to the model.
 select :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select config options = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
@@ -248,7 +248,7 @@ toggleSwitch config = field @"value" $ (div $ wrap do
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a share, a quota, a
--- | ratio — written as `progress # projected fraction`, with the business
+-- | ratio — written as `progress # projected @"value" fraction`, with the business
 -- | function deciding what the fraction means.
 progress :: PUI Web { value :: Number } {}
 progress = wrap do
@@ -279,13 +279,13 @@ progress = wrap do
 -- | happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast # forCase @"applied" appliedLine` — and let
+-- | the toast is built — `toast # forCase @"event" @"applied" appliedLine` — and let
 -- | the event carry the bare facts.
 toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ text # projected eventText) # cl "toast-body")
+      (div $ text # projected @"value" eventText) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

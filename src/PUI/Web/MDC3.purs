@@ -122,7 +122,7 @@ import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, forField, pempty, projected)
+import Data.Profunctor.Row.RecordToRecord (field, pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -130,7 +130,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, Ocular, constantly, foreach)
+import PUI (Ocular, PUI, constantly, forField, foreach, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -149,7 +149,7 @@ import Type.Proxy (Proxy(..))
 -- names and signatures as `PUI.Web.MDC2`, so a demo switches design systems by
 -- switching the import:
 --
---   * **components** — widgets with a model interface, every one a citizen
+--   * **components** — UI components with a model interface, every one a citizen
 --     of exactly one row direction:
 --       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
 --         MD3 variant pair), `filledTextArea @l`, `checkbox @l`,
@@ -237,7 +237,7 @@ else instance ConvertOption OptIcon sym a a where
 -- | the actions beside it.
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
--- | the app gives the action: `button { label: "Book" } # asCase @"booked"`.
+-- | the app gives the action: `button { label: "Book" } # asCase @"clicked" @"booked"`.
 -- | Both parts of the face are optional — `button {}` is bare,
 -- | `button { label: "Count" }` labels it, `icon: "add"` puts a Material
 -- | Symbols glyph before the label.
@@ -464,7 +464,7 @@ checkbox { ticked } labelContent = field @"value" $
 -- | Until the user picks there is no choice to show, so the field arrives as
 -- | "maybe a choice" and leaves as the choice itself — say which with
 -- | `# optional` (nothing preselected, and whatever needs the choice stays
--- | hidden until it exists) or `# required` (the model always has one).
+-- | hidden until it exists) or `# required @"value"` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
 radioButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
@@ -598,7 +598,7 @@ bareSliderLeaf live label = wrap do
 -- | `segmentedButton`.
 -- |
 -- | Same contract as `radioButton`: nothing to show until the user picks,
--- | so say `# optional` or `# required`; the options are part of the
+-- | so say `# optional` or `# required @"value"`; the options are part of the
 -- | control, not of the model.
 select :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select config options = field @"value" (selectLeaf config options)
@@ -815,7 +815,7 @@ indeterminateLinearProgress = wrap do
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
 -- | position, a budget's use, a quota — written as
--- | `linearProgress # projected fraction`, with the business function
+-- | `linearProgress # projected @"value" fraction`, with the business function
 -- | deciding what the fraction means.
 linearProgress :: PUI Web { value :: Number } {}
 linearProgress = wrap do
@@ -1023,14 +1023,14 @@ simpleDialog { title, confirm } content =
 -- | something the user must acknowledge, use a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar # forCase @"brewed" brewedLine` — and
+-- | the snackbar is built — `snackbar # forCase @"event" @"brewed" brewedLine` — and
 -- | let the event carry the bare facts. One snackbar can serve several
 -- | mutually exclusive outcomes with `forCases`.
 snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    text # projected eventText
+    text # projected @"value" eventText
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -1075,7 +1075,7 @@ listItem :: Ocular (PUI Web)
 listItem = el "md-list-item"
 
 -- | A **list built from data**: one row per element of the collection the
--- | projection names, each row drawn by the given widget. Rows matching
+-- | projection names, each row drawn by the given UI component. Rows matching
 -- | `selected` take Material's selected styling — `listOf {}` selects
 -- | nothing — and clicking a row reports *that row*, so the list is both
 -- | how a collection is shown and how the user picks from it.
@@ -1264,7 +1264,7 @@ imagePane = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
     imageFace
-    span >>> cl "md3-image-list__label" $ text # forField @"label" identity
+    span >>> cl "md3-image-list__label" $ text # forField @"value" @"label" identity
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

@@ -1,3 +1,22 @@
+// The browser's diagnostics switches, read here and only here: `PUI.Trace`
+// takes them as parameters, so the host-specific spelling lives in the host's
+// own carrier. Applied at the mount entries (see `adoptHostDiagnostics`).
+
+// hostTracing :: Effect Boolean
+export function hostTracing() {
+  if (window.__bambikTrace === true) return true;
+  try {
+    return localStorage.getItem("bambik-trace") === "true";
+  } catch (_) {
+    return false; // storage unavailable (file://, sandboxed iframe)
+  }
+}
+
+// hostDiagnostics :: Effect Boolean
+export function hostDiagnostics() {
+  return window.__bambikNoWarn !== true;
+}
+
 // randomElementId :: Effect String
 export function randomElementId() {
   return "" + Math.floor(Math.random() * 99999999 + 100000000); // TODO use UUID?

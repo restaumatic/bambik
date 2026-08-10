@@ -16,15 +16,15 @@ colorMixerMDC2 =
   body $
     elevation20 $
       card { caption: "Color Mixer" } $ ( Semigroupoid.do
-          sliderLive { label: "Red" } # asField @"red" # completed
-          sliderLive { label: "Green" } # asField @"green" # completed
-          sliderLive { label: "Blue" } # asField @"blue" # completed
+          sliderLive { label: "Red" } # asField @"value" @"red" # completed
+          sliderLive { label: "Green" } # asField @"value" @"green" # completed
+          sliderLive { label: "Blue" } # asField @"value" @"blue" # completed
           ( div $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ pempty # constantly {}
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" (\p -> chipStyle { mix: p.mix }) $ pempty # constantly {} ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          body2 text # projected hexText # tapped
-          body2 text # projected rgbText # tapped
+          body2 text # projected @"value" hexText # tapped
+          body2 text # projected @"value" rgbText # tapped
       ) # mvu duskViolet
 
 chipStyle :: { mix :: { red :: Number, green :: Number, blue :: Number } } -> String

@@ -1,6 +1,6 @@
-// focusVariant end-to-end: the outgoing money (refund, payout) detours
+// subChoice end-to-end: the outgoing money (refund, payout) detours
 // through confirmation dialogs — each dialog the +→+ closed-singleton wrap
-// simpleDialog … # onCase @l # toCase @l' identity, in merge position —
+// simpleDialog … # atCase @l # toCase @l' identity, in merge position —
 // while the incoming deposit posts straight to the fold, untouched by the
 // focus, so every branch shares exactly { balance } (A13).
 // (The MDC dialog reaches --open on a rAF, which this harness starves for

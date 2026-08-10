@@ -22,7 +22,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (rmap)
-import Data.Profunctor.Row.VariantToRecord (reel)
+import Data.Profunctor.Optic (reel)
 import Data.Variant (case_, on)
 import Type.Proxy (Proxy(..))
 import PUI (PUI)

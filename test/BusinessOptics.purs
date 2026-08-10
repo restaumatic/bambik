@@ -11,8 +11,9 @@ module BusinessOptics where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Profunctor.Row.RecordToVariant (Shutter, shutterE, focusShutter)
-import Data.Profunctor.Row.VariantToRecord (Reel, reelE, focusReel)
+import Data.Profunctor.Optic (Reel, Shutter, reelE, shutterE)
+import Data.Profunctor.Row.RecordToVariant (subResolving)
+import Data.Profunctor.Row.VariantToRecord (subRetaining)
 import Data.Tuple (Tuple(..))
 
 type Money = Int
@@ -56,7 +57,7 @@ verifyKyc =
         Left identity_ -> Verified identity_
         Right partial  -> Pending partial )
 
--- | `focusShutter` (row, sub-Record focus): price an order line, focusing only the
+-- | `subResolving` (row, sub-Record focus): price an order line, focusing only the
 -- | `(item, qty)` sub-Record; the leftover field `note` is **wrapped** into the
 -- | output case `draft`. On `Done` the inner's `priced` case passes through; on
 -- | `Loop` the unpriced remainder `{ note }` is carried out as `draft`, not dropped.
@@ -67,7 +68,7 @@ checkout
        [ priced :: Money, draft :: Record (note :: String) ]  -- o'  full output (o + case `draft`)
        (Record (item :: String, qty :: Int))                  -- i   sub-Record focus
        [ priced :: Money ]                                    -- o   inner output
-checkout = focusShutter @"draft"
+checkout = subResolving @"draft"
 
 --------------------------------------------------------------------------------
 -- Reel (+ → ×): fresh focus, or resume state c; fold the result into c.
@@ -106,7 +107,7 @@ ledgerReel =
         ResumeBalance b -> Right b )
     (\(Tuple entry balance) -> { cents: balance.cents + entry.delta })
 
--- | `focusReel` (row, sub-Variant focus): the dual of `focusShutter`. Focus the
+-- | `subRetaining` (row, sub-Variant focus): the dual of `subResolving`. Focus the
 -- | `cancel` sub-Variant; the rest of the input variant is wrapped into output
 -- | field `pending`. (`Proxy @"pending"` is the only caller-supplied bit.)
 countdownStep
@@ -115,4 +116,4 @@ countdownStep
        (Record (done :: Boolean, pending :: [ tick :: Int ]))        -- o'  full output (o + field `pending`)
        [ cancel :: Unit ]                                            -- i   sub-Variant focus
        (Record (done :: Boolean))                                    -- o   inner output
-countdownStep = focusReel @"pending"
+countdownStep = subRetaining @"pending"

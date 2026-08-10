@@ -15,24 +15,24 @@ productReviewShoelace =
   body $
     card { caption: "Review: Astra Moka Espresso Machine" } $ Semigroupoid.do
       ( RecordToRecord.do
-          rating { label: "Overall rating" } # asField @"stars"
-          textField { label: "Headline" } # asField @"headline"
-          textArea { label: "Your review", rows: 4 } # asField @"review"
+          rating { label: "Overall rating" } # asField @"value" @"stars"
+          textField { label: "Headline" } # asField @"value" @"headline"
+          textArea { label: "Your review", rows: 4 } # asField @"value" @"review"
           select { label: "How long have you owned it?" }
             [ { value: .underMonth {}, label: "Less than a month" }
             , { value: .underYear {}, label: "1–12 months" }
             , { value: .overYear {}, label: "More than a year" }
-            ] # required # asField @"owned"
-          toggleSwitch { label: "I'd recommend it to a friend" } # asField @"recommend"
-          textField { label: "Nickname" } # asField @"nickname"
+            ] # required @"value" # asField @"value" @"owned"
+          toggleSwitch { label: "I'd recommend it to a friend" } # asField @"value" @"recommend"
+          textField { label: "Nickname" } # asField @"value" @"nickname"
           divider
       ) # mvu freshImpression
       p ( RecordToRecord.do
           staticText "Preview: "
-          text # forField @"stars" starGlyphs
-          text # forField @"headline" headlineQuote
+          text # forField @"value" @"stars" starGlyphs
+          text # forField @"value" @"headline" headlineQuote
           staticText " · owned "
-          text # forField @"owned" ownedText
-          text # projected recommendNote ) # tapped
-      button { label: "Submit review" } # asCase @"submitted"
-      toast # forCase @"submitted" submittedLine
+          text # forField @"value" @"owned" ownedText
+          text # projected @"value" recommendNote ) # tapped
+      button { label: "Submit review" } # asCase @"clicked" @"submitted"
+      toast # forCase @"event" @"submitted" submittedLine

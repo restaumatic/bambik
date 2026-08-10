@@ -12,13 +12,16 @@ import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
 import Data.Profunctor.Strong (first)
-import Data.Profunctor.Row.RecordToRecord (colens, completed, feedback, property, focusRecord, recordToRecord)
+import Data.Profunctor.Optic (colens, coprism, coreel, coshutter)
+import Data.Profunctor.Resolving (coresolve)
+import Data.Profunctor.Retaining (coretain)
+import Data.Profunctor.Row.RecordToRecord (completed, feedback, focusProperty, subStrong, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.VariantToRecord (coreel, coretain, unfolding, variantToRecord)
+import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.RecordToVariant (coresolve, coshutter, folding, recordToCase, recordToVariant, toCase)
+import Data.Profunctor.Row.RecordToVariant (folding, recordToCase, recordToVariant, toCase)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.VariantToVariant (case_, coprism, iterate, variantToVariant)
+import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, variantToVariant)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
@@ -56,7 +59,7 @@ probeIO insRef propRef = PUI $ pure
   }
 
 -- An element probe for the container action: `acted` instantiates the wrapped
--- widget once per key, so each instantiation registers its own channel legs in
+-- UI component once per key, so each instantiation registers its own channel legs in
 -- the roster (build order) and bumps the build counter — making instance reuse
 -- (identity-follows-key) and per-element firing observable at the value level.
 type ElemHandle i o = { ins :: Ref.Ref (Array i), prop :: Ref.Ref (Maybe (o -> Effect Unit)) }
@@ -79,23 +82,23 @@ fireElem roster n o = do
 
 main :: Effect Unit
 main = do
-  -- == focusRecord: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
+  -- == subStrong: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
 
-  -- focusRecord: rows on both sides. Here a one-field sub-record { a } is transformed
+  -- subStrong: rows on both sides. Here a one-field sub-record { a } is transformed
   -- (Int -> String) while the complement { b } is carried unchanged.
-  assertEqual "focusRecord"
+  assertEqual "subStrong"
     { a: "5", b: true }
-    (focusRecord (\(r :: { a :: Int }) -> { a: show r.a }) { a: 5, b: true })
+    (subStrong (\(r :: { a :: Int }) -> { a: show r.a }) { a: 5, b: true })
 
   -- multi-field sub-record { a, c } transformed, complement { b } carried.
-  assertEqual "focusRecord/multi-field"
+  assertEqual "subStrong/multi-field"
     { a: 50, c: 2, b: "x" }
-    (focusRecord (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
+    (subStrong (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
 
-  -- property = the value-level single-field lens — get / set / over.
-  assertEqual "property/view" 7 (view (property @"foo") { foo: 7, bar: "x" })
-  assertEqual "property/set" { foo: 9, bar: "x" } (set (property @"foo") 9 { foo: 7, bar: "x" })
-  assertEqual "property/over" { foo: 14, bar: "x" } (over (property @"foo") (_ * 2) { foo: 7, bar: "x" })
+  -- focusProperty = the value-level single-field lens — get / set / over.
+  assertEqual "focusProperty/view" 7 (view (focusProperty @"foo") { foo: 7, bar: "x" })
+  assertEqual "focusProperty/set" { foo: 9, bar: "x" } (set (focusProperty @"foo") 9 { foo: 7, bar: "x" })
+  assertEqual "focusProperty/over" { foo: 14, bar: "x" } (over (focusProperty @"foo") (_ * 2) { foo: 7, bar: "x" })
 
   -- recordToCase (x -> +): whole record computes a value, emitted unconditionally
   -- as case l — the introduce-family member Choice can't have, free on any Profunctor.
@@ -245,7 +248,7 @@ main = do
     Ref.read outs >>= assertEqual "coresolve: exit passes" [ "done" ]
 
   -- Coretaining/coretain (productive unfold): every emission yields its
-  -- value and immediately resumes the widget with the new state.
+  -- value and immediately resumes the UI component with the new state.
   do
     ins <- Ref.new ([] :: Array (Either Int Boolean))
     gProp <- Ref.new Nothing
@@ -256,7 +259,7 @@ main = do
     Ref.read ins >>= assertEqual "coretain: input enters fresh" [ Left 1 ]
     fire gProp (Tuple "out" true)
     Ref.read outs >>= assertEqual "coretain: value leg passes" [ "out" ]
-    Ref.read ins >>= assertEqual "coretain: state resumes the widget" [ Left 1, Right true ]
+    Ref.read ins >>= assertEqual "coretain: state resumes the UI component" [ Left 1, Right true ]
 
   -- looped (the ×-diagonal self-trace): every emission is re-fed (guarded)
   -- and propagated.
@@ -326,7 +329,7 @@ main = do
 
   -- unfolding @w (productive unfold at row granularity): the unfold
   -- state's initial value is the argument — fed once as case w at
-  -- registration; value fields pass, state fields resume the widget as
+  -- registration; value fields pass, state fields resume the UI component as
   -- case w.
   do
     ins <- Ref.new ([] :: Array [ start :: Int, resume :: { acc :: Int } ])
@@ -343,7 +346,7 @@ main = do
 
   -- Resolving/resolveFor (the quiescence step): every emission loops
   -- immediately (Right, gated on a first state), and the last emission of a
-  -- burst resolves (Left) once the widget stays quiet for the window —
+  -- burst resolves (Left) once the UI component stays quiet for the window —
   -- transiency derived from time, no wire-level flag.
   do
     gProp <- Ref.new Nothing
@@ -440,7 +443,7 @@ main = do
     fire gProp 3
     Ref.read outs >>= assertEqual "updated: event folded into retained model" [ { n: 10 }, { n: 13 } ]
 
-  -- completed (output completion): fields the widget doesn't produce are
+  -- completed (output completion): fields the UI component doesn't produce are
   -- carried from the retained input; emissions are trimmed first, so a fat
   -- runtime emission cannot shadow carried fields.
   do
@@ -590,8 +593,8 @@ main = do
     fire gProp "b"
     Ref.read outs >>= assertEqual "Strong.first: emission paired with retained state" [ Tuple "b" true ]
 
-  -- Choice.left: Left feeds the widget, Right passes through (after
-  -- registration), widget emissions exit as Left.
+  -- Choice.left: Left feeds the UI component, Right passes through (after
+  -- registration), UI component emissions exit as Left.
   do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
@@ -599,11 +602,11 @@ main = do
     m <- unwrap (left (probeIO ins gProp :: PUI Effect Int String))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (Left 1)
-    Ref.read ins >>= assertEqual "Choice.left: Left feeds the widget" [ 1 ]
+    Ref.read ins >>= assertEqual "Choice.left: Left feeds the UI component" [ 1 ]
     m.toUser (Right true)
     Ref.read outs >>= assertEqual "Choice.left: Right passes through" [ Right true ]
     fire gProp "b"
-    Ref.read outs >>= assertEqual "Choice.left: widget emission exits as Left" [ Right true, Left "b" ]
+    Ref.read outs >>= assertEqual "Choice.left: UI component emission exits as Left" [ Right true, Left "b" ]
 
   -- Retraction law, the + channel: unleft (left g) = g — Choice's channel
   -- tied back shut is the identity on g, and (unlike the gated × channel)
@@ -647,15 +650,15 @@ main = do
       liftEffect $ Ref.read outs >>= assertEqual
         "coresolve∘resolve = debounced: only the last of the burst passes, after quiescence" [ "burst2" ]
 
-  -- == case_ (the value-level case prism) on (->): the Choice strength at ==
-  -- == row granularity, checked like focusRecord/property above. ==
+  -- == focusCase (the value-level case prism) on (->): the Choice strength at ==
+  -- == row granularity, checked like subStrong/focusProperty above. ==
 
-  assertEqual "case_/match"
+  assertEqual "focusCase/match"
     (.ok "5" :: [ ok :: String, err :: String ])
-    (case_ @"ok" (show :: Int -> String) (.ok 5 :: [ ok :: Int, err :: String ]))
-  assertEqual "case_/pass-through"
+    (focusCase @"ok" (show :: Int -> String) (.ok 5 :: [ ok :: Int, err :: String ]))
+  assertEqual "focusCase/pass-through"
     (.err "e" :: [ ok :: String, err :: String ])
-    (case_ @"ok" (show :: Int -> String) (.err "e" :: [ ok :: Int, err :: String ]))
+    (focusCase @"ok" (show :: Int -> String) (.err "e" :: [ ok :: Int, err :: String ]))
 
   -- == Registration protocol: the announcing leaves and the compose order ==
   -- == that lets their announcements be heard. ==

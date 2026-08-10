@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, completed, displayed, forField, looped, onCase, toCase, updated, with)
+import PUI (action, asCase, asField, completed, displayed, forField, looped, atCase, toCase, updated, with)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (button, card, cardActions, elevation5, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,20 +22,20 @@ crudMDC3 = do
           indeterminateLinearProgress # action (loadPeopleCatalogue catalogue)
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"prefix"
-                  filledTextField { floatingLabel: "Name" } # asField @"name"
-                  filledTextField { floatingLabel: "Surname" } # asField @"surname") # completed
+                  filledTextField { floatingLabel: "Filter prefix (surname)" } # asField @"value" @"prefix"
+                  filledTextField { floatingLabel: "Name" } # asField @"value" @"name"
+                  filledTextField { floatingLabel: "Surname" } # asField @"value" @"surname") # completed
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
-                  text # forField @"surname" identity
+                  text # forField @"value" @"surname" identity
                   staticText ", "
-                  text # forField @"name" identity ) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text # forField @"value" @"name" identity ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
-                    button { label: "Create" } # asCase @"create"
-                    button { label: "Update" } # asCase @"update"
-                    button { label: "Delete" } # asCase @"delete"
+                    button { label: "Create" } # asCase @"clicked" @"create"
+                    button { label: "Update" } # asCase @"clicked" @"update"
+                    button { label: "Delete" } # asCase @"clicked" @"delete"
                   VariantToVariant.do
-                    indeterminateLinearProgress # action (createPerson catalogue) # onCase @"create"
-                    indeterminateLinearProgress # action (updatePerson catalogue) # onCase @"update"
-                    indeterminateLinearProgress # action (deletePerson catalogue) # onCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                    indeterminateLinearProgress # action (createPerson catalogue) # atCase @"create"
+                    indeterminateLinearProgress # action (updatePerson catalogue) # atCase @"update"
+                    indeterminateLinearProgress # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
       ) # with {}

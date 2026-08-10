@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, edited, field, mvu, onCase, pempty, silence, updated)
+import PUI (action, asCase, asField, edited, field, mvu, atCase, pempty, silence, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC3 (button, card, cardActions, elevation5, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,13 +20,13 @@ reorderMDC3 =
       card { caption: "Reorder" } $ ( Semigroupoid.do
           ( Semigroupoid.do
               cardActions $ RecordToVariant.do
-                button { label: "Rotate", icon: "sync" } # asCase @"rotate"
-                button { label: "Shuffle", icon: "shuffle" } # asCase @"shuffle"
+                button { label: "Rotate", icon: "sync" } # asCase @"clicked" @"rotate"
+                button { label: "Shuffle", icon: "shuffle" } # asCase @"clicked" @"shuffle"
               VariantToVariant.do
-                silence # action rotateAction # onCase @"rotate"
-                silence # action shuffleAction # onCase @"shuffle") # updated (match { reordered: setOrder })
+                silence # action rotateAction # atCase @"rotate"
+                silence # action shuffleAction # atCase @"shuffle") # updated (match { reordered: setOrder })
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  filledTextField { floatingLabel: "Title" } # asField @"title")) # edited @"id") # field @"order"
+                  filledTextField { floatingLabel: "Title" } # asField @"value" @"title")) # edited @"id") # field @"order"
       ) # mvu openingSetlist

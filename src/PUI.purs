@@ -17,14 +17,14 @@
 -- | back to the top — so a stage placed *before* another is not "above" it
 -- | semantically; all stages see every model value on the next loop turn.
 -- |
--- | A trace of the 7GUIs counter (`display # completed`, then
--- | `button # updated increment`, under `mvu { count: 0 }`):
+-- | A trace of a counter (a display stage `# completed`, then an event
+-- | emitter `# updated increment`, under `mvu { count: 0 }`):
 -- |
 -- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
 -- |  2. the display shows `0` and echoes; `completed` widens the echo to
--- |     the full model, which flows on and arms the button's replay value
+-- |     the full model, which flows on and arms the emitter's replay value
 -- |     and `updated`' retained state;
--- |  3. the user clicks: the button emits, `updated` folds `increment`
+-- |  3. the user acts: the emitter fires, `updated` folds `increment`
 -- |     into the retained model and emits `{ count: 1 }`;
 -- |  4. the loop re-feeds `{ count: 1 }` to the top; the display re-renders;
 -- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
@@ -61,7 +61,6 @@ module PUI
   , looped
   , mvu
   , observed
-  , onCase
   , optional
   , resolveFor
   , settled
@@ -90,29 +89,31 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, atField, completed, field, focusRecord, forField, forProperty, pempty, projected, required, tapped) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, atProperty, completed, field, subStrong, forField, forProperty, pempty, projected, required, tapped, toField) as Adopters
 import Data.Profunctor.Row.RecordToVariant (asCase, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (`tapped`, `displayed`, `updated`,
--- `every`, `edited`, `acted`, `completed`), so a widget's own row is always
+-- `every`, `edited`, `acted`, `completed`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
-import Data.Profunctor.Row.VariantToVariant (focusVariant) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving, class Coresolving)
+import Data.Profunctor.Resolving (class Coresolving, class Resolving)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, class Retaining, class Coretaining)
+import Data.Profunctor.Retaining (class Coretaining, class Retaining)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, Variant, case_, contract, on)
+import Data.Variant (class Contractable, Variant, contract)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -123,50 +124,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (get, insert, merge, union) as Record
-
--- | Dev-mode emission trace: set `window.__bambikTrace = true` (or
--- | `localStorage.setItem("bambik-trace", "true")`) in the browser console
--- | and reload to log every propagation decision — values flowing between
--- | pipeline stages, loop re-feeds and swallowed echoes, and (most
--- | importantly) emissions *withheld* by knowledge gates, which are
--- | otherwise invisible. Zero cost when off beyond one flag check per
--- | emission.
-foreign import traceEnabled :: Effect Boolean
-foreign import traceImpl :: forall a. String -> a -> Effect Unit
-foreign import diagnosticsEnabled :: Effect Boolean
-foreign import warnImpl :: String -> Effect Unit
-
-tr :: forall a. String -> a -> Effect Unit
-tr tag a = do
-  on <- traceEnabled
-  when on $ traceImpl tag a
-
--- | One-shot **starvation watchdog** for a knowledge gate. Every gated
--- | combinator withholds what it cannot yet complete — correct, but
--- | *silent*: an unprimed gate renders as a blank screen with no
--- | diagnostic. The guard turns that into a self-explaining failure:
--- | `blocked msg` (called on each withheld emission or input) arms a timer
--- | on its first call; if the gate hasn't opened (`fed`) within 3 seconds,
--- | a single console warning prints `msg`, naming the gate and what it is
--- | waiting for. Fires at most once per gate instance; browser-only
--- | (silent under Node), opt out with `window.__bambikNoWarn = true`.
-gateGuard :: Effect { blocked :: String -> Effect Unit, fed :: Effect Unit }
-gateGuard = do
-  fedRef <- Ref.new false
-  armedRef <- Ref.new false
-  pure
-    { blocked: \msg -> do
-        enabled <- diagnosticsEnabled
-        armed <- Ref.read armedRef
-        when (enabled && not armed) do
-          Ref.write true armedRef
-          launchAff_ do
-            delay (Milliseconds 3000.0)
-            liftEffect do
-              fed <- Ref.read fedRef
-              unless fed $ warnImpl msg
-    , fed: Ref.write true fedRef
-    }
+import PUI.Trace (gateGuard, tr)
 
 renderFieldNames :: Array String -> String
 renderFieldNames [] = "{}"
@@ -189,7 +147,7 @@ instance Functor m => Profunctor (PUI m) where
       }
 
 -- Stateful instances below share one gating principle (the same one the
--- record merges follow): state a widget hasn't received yet cannot be
+-- record merges follow): state a UI component hasn't received yet cannot be
 -- fabricated, so emissions needing it are withheld until
 -- the state channel has been fed.
 instance Functor m => Strong (PUI m) where
@@ -265,11 +223,11 @@ instance Functor m => Choice (PUI m) where
         p'.fromUser \b -> prop (Right b)
       }
 
--- | The `×`-diagonal **trace** (dual of `Strong`): the `c` a widget emits is
+-- | The `×`-diagonal **trace** (dual of `Strong`): the `c` a UI component emits is
 -- | retained and paired with its next input — feedback of **state**.
 -- | Knowledge-gated like every stateful instance: inputs are withheld until a
 -- | first `c` exists, so the loop needs priming — route the initial state in
--- | through the widget's input where possible, or use `looped` for the
+-- | through the UI component's input where possible, or use `looped` for the
 -- | self-feeding diagonal special case, which has no gate. The retraction law
 -- | `unfirst (first g) ≅ g` holds once the state channel is primed.
 instance Functor m => Costrong (PUI m) where
@@ -283,7 +241,7 @@ instance Functor m => Costrong (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw `unfirst`/`colens` chain from inside (`seeded`)."
+              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw `unfirst`/`colens` chain from inside (`seeded`)."
               tr "Costrong.unfirst: input withheld (state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
@@ -302,7 +260,7 @@ instance Functor m => Costrong (PUI m) where
           ma <- Ref.read aRef
           case ma of
             Nothing -> do
-              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced widget never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw chain from inside (`seeded`)."
+              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw chain from inside (`seeded`)."
               tr "Costrong.unsecond: input withheld (state unprimed)" b
             Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
@@ -313,10 +271,10 @@ instance Functor m => Costrong (PUI m) where
       }
 
 -- | The `+`-diagonal **trace** (dual of `Choice`): a looped-branch emission
--- | re-enters the widget as input — feedback of **control**, i.e. iteration —
+-- | re-enters the UI component as input — feedback of **control**, i.e. iteration —
 -- | until an exit-branch emission passes through. The re-entry is a `toUser`,
--- | so in `PUI` the loop is an *event* loop: it advances on the widget's next
--- | emission (variant-output widgets do not echo, so the leaf protocol cannot
+-- | so in `PUI` the loop is an *event* loop: it advances on the UI component's next
+-- | emission (variant-output UI components do not echo, so the leaf protocol cannot
 -- | provoke a synchronous spin). Retraction law: `unleft (left g) ≅ g`.
 instance Functor m => Cochoice (PUI m) where
   unleft p = wrap $ unwrap p <#> \p' ->
@@ -338,7 +296,7 @@ instance Functor m => Cochoice (PUI m) where
 
 -- | The `× → +` **co-strength** (retraction of `Resolving`): a `Right c`
 -- | emission is retained as the fold state and — **eagerly** — re-fed to
--- | the widget joined with the last input (guarded), so the widget
+-- | the UI component joined with the last input (guarded), so the UI component
 -- | re-renders at every fold step; a `Left b` exits. Gated like `Costrong`
 -- | (a first `c` must arrive before inputs pass — `announce` an initial
 -- | state to prime it); `coresolve (resolve g) ≅ g` once primed.
@@ -374,12 +332,12 @@ instance Functor m => Coresolving (PUI m) where
       }
 
 -- | The `+ → ×` **co-strength** (retraction of `Retaining`): every emission
--- | `Tuple b c` yields `b` and immediately re-enters the widget as a
+-- | `Tuple b c` yields `b` and immediately re-enters the UI component as a
 -- | `Right c` resume — a **productive unfold**/generator.
 -- | `coretain (retain g) ≅ g` once the state channel is primed.
 instance Functor m => Coretaining (PUI m) where
   coretain p = wrap $ unwrap p <#> \p' ->
-    -- the resume re-entry is guarded: a record-output widget echoes on
+    -- the resume re-entry is guarded: a record-output UI component echoes on
     -- `toUser`, and an unguarded re-feed would loop on its own echo
     let busyRef = unsafePerformEffect $ Ref.new false
     in
@@ -427,7 +385,7 @@ instance Applicative m => Category (PUI m) where
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The silent widget: shows nothing, captures nothing — at ANY types, and
+-- | The silent UI component: shows nothing, captures nothing — at ANY types, and
 -- | necessarily so (parametricity: `forall i o. p i o` can neither inspect an
 -- | `i` nor fabricate an `o`). The pinned trivial operand of the mixed
 -- | introduce laws, the implementation of `pempty` at the variant-output
@@ -450,9 +408,9 @@ silence = wrap $ pure
 
 -- | The **announcing constant**: silent except for one emission of `o` at
 -- | registration — the value-level generalization of the record units'
--- | `{}` announcement (`Web.staticText`'s protocol, with a payload). As a
--- | merge operand it seeds fields or cases; composed in front of a widget
--- | it discharges the widget's initial-state obligation (`with`'s
+-- | `{}` announcement (a static leaf's protocol, with a payload). As a
+-- | merge operand it seeds fields or cases; composed in front of a UI component
+-- | it discharges the UI component's initial-state obligation (`with`'s
 -- | implementation) — announcing an initial state the way `pempty`
 -- | announces its informationless `{}`.
 announce :: forall m o. Applicative m => o -> PUI m {} o
@@ -461,7 +419,7 @@ announce o = wrap $ pure
   , fromUser: \prop -> prop o
   }
 
--- | **Discharge a widget's initial-state obligation**: `with a w` supplies
+-- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
 -- | `w`'s input its t=0 value — the entity `w` edits exists from the very
 -- | beginning, and `a` is its initial state — leaving nothing to feed
 -- | (`with a w = announce a >>> w`, so `with a identity = announce a`).
@@ -496,8 +454,8 @@ instance Applicative m => Seeding (PUI m) where
 -- | The **Mealy update stage** on the `×`-diagonal: a pass-through wire
 -- | (every value fed flows on, so ticks and edits upstream keep driving
 -- | the loop) that retains the last value and, on each *event* emission of
--- | the wrapped widget, folds it in and emits the updated value. Event
--- | widgets emit **bare payloads** — no smuggling the model through event
+-- | the wrapped UI component, folds it in and emits the updated value. Event
+-- | UI components emit **bare payloads** — no smuggling the model through event
 -- | cases, no pass-through `state` case in the event merge:
 -- |
 -- | ```
@@ -511,7 +469,7 @@ instance Applicative m => Seeding (PUI m) where
 -- |
 -- | **Both sides subsume** (the row layer's rule: a stated closed row may be
 -- | *read* from any wider row): the handler may touch a sub-row of the model,
--- | and the wrapped event widget may be fed a sub-row of it — typically the
+-- | and the wrapped event UI component may be fed a sub-row of it — typically the
 -- | union of an event merge's operands — so neither side needs a
 -- | `widenRecordInput` at the stage boundary. With `small ≡ big` and
 -- | `narrow ≡ big` this is the plain diagonal stage.
@@ -563,7 +521,7 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
 -- | `mvu` pipeline's last stage they kill the loop). `tapped` and `completed`
 -- | both rely on the display's echo;
 -- | `displayed` does not. (The trivial `updated` fold: any event the
--- | wrapped widget does emit re-emits the retained value.)
+-- | wrapped UI component does emit re-emits the retained value.)
 -- | **Subsumption is built in** (like `tapped`): the display may read a
 -- | *narrower* row than the stage carries, so a closed-row projection needs
 -- | no `widenRecordInput` at the stage boundary.
@@ -573,7 +531,7 @@ displayed w = mealy (\_ s -> s) (widenRecordInput w)
 -- | Make a status an **event pass-through stage** — `displayed`'s sibling on
 -- | the `+`-diagonal, and the variant answer to `tapped`: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `snackbar # forCase @"charge" retryLine
+-- | status consumes are also shown — `status # forCase @"event" @"charge" retryLine
 -- | # observed` narrates a retry loop without interrupting it. Subsumption
 -- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
 -- | `Union` widening): the status may consume a *narrower* row than the
@@ -604,7 +562,7 @@ observed status = wrap $ unwrap status <#> \st ->
         Ref.write (Just prop) mPropRef
     }
 
--- | Pin a stage's input to a known value: the wrapped widget is fed `a` for
+-- | Pin a stage's input to a known value: the wrapped UI component is fed `a` for
 -- | every value flowing through — a constant-fed stage (a fixed catalogue
 -- | driving a collection component) with no input-type annotation. Its own
 -- | input type stays free, so it fits any pipeline position.
@@ -693,7 +651,7 @@ optional p = wrap $ unwrap p <#> \p' ->
 -- | `step` to it — `Just` advances (retained and emitted), `Nothing`
 -- | pauses until fresh input arrives. Inside a `looped` chain this is a
 -- | tick source: the 7GUIs Timer is `every { ms: 100.0 } tick`.
--- | The loop runs for the widget's whole life (no cancellation — a
+-- | The loop runs for the UI component's whole life (no cancellation — a
 -- | prototype limitation shared with `action'`).
 -- |
 -- | The step **subsumes** (like `updated`'s handler): it may read and rebuild
@@ -734,8 +692,8 @@ heartbeat interval step = wrap $ pure unit <#> \_ ->
         launchAff_ loop
     }
 
--- | The `×`-diagonal **self-trace**: feed a diagonal widget its own
--- | emissions, re-entrancy-guarded (leaf widgets echo on `toUser`, and the
+-- | The `×`-diagonal **self-trace**: feed a diagonal UI component its own
+-- | emissions, re-entrancy-guarded (leaf UI components echo on `toUser`, and the
 -- | guard swallows the echoes the re-feed provokes). Wrapped around a record
 -- | merge it supplies the sibling cross-feed the gated merge deliberately
 -- | omits — every operand sees every emission re-broadcast, and per-operand
@@ -854,10 +812,10 @@ instance Applicative m => RecordToVariant (PUI m) where
       }
 
 -- | The loop step, with transiency **derived from time**: the input
--- | `Tuple a c` shows `a` to the inner widget and retains `c`. Every
--- | emission of the inner widget loops immediately — `Right c`, the
+-- | `Tuple a c` shows `a` to the inner UI component and retains `c`. Every
+-- | emission of the inner UI component loops immediately — `Right c`, the
 -- | retained state escapes (withheld until a first `c` exists) — and
--- | (re)arms a quiescence timer; when the widget stays quiet for the
+-- | (re)arms a quiescence timer; when the UI component stays quiet for the
 -- | window, the last emission resolves: `Left b`. **Loop = still moving,
 -- | Done = quiescence** — which is the definition of debouncing, so the
 -- | retraction law refines to `coresolve (resolve g) = debounced g ≅ g`
@@ -901,8 +859,8 @@ resolveFor millis p = wrap ado
             Just c -> prop $ Right c
     }
 
--- | The Mealy step: a fresh `Left a` feeds the inner widget, a `Right c`
--- | (re)places the retained state. When the inner widget emits `b`, the
+-- | The Mealy step: a fresh `Left a` feeds the inner UI component, a `Right c`
+-- | (re)places the retained state. When the inner UI component emits `b`, the
 -- | output pairs it with the retained `c` — and is **withheld until a `c`
 -- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
 -- | mirroring the knowledge-gated record merges.
@@ -1014,7 +972,7 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- | shape-preserving decorator — a design system's chrome — that by
 -- | parametricity cannot read or produce a single value flowing through it.
 -- |
--- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, DOM
+-- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
 -- | `dimap`-only adopters (`asField`, `field`, `toCase`, `forField`).
 -- | Commuting with the *strengths* is the extra law, and the admission test
@@ -1026,23 +984,13 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- | ```
 -- |
 -- | It holds for everything that merely wraps nodes, which is why chrome
--- | slides freely past `field @l`/`focusRecord`. A decorator that captures —
+-- | slides freely past `field @l`/`subStrong`. A decorator that captures —
 -- | buffers, replays or withholds a feed — is still a natural transformation
--- | but breaks these, and needs a stated protocol instead (`dialog`).
+-- | but breaks these, and needs a stated protocol instead (a modal, say).
 type Ocular p = forall a b. Optic p a b a b
 
 -- | The progress slot is row-shaped like every component interface: the
--- | widget is a `{ busy :: Boolean } → {}` display citizen.
--- | Adopt a bare-input widget as the owner of input case `l` inside a
--- | `VariantToVariant.do` merge — `lcmap`-only, the input-side sibling of
--- | `asCase`: `action createPerson # onCase @"create"`.
--- | No subsumption here, deliberately: a case *payload* is pinned by the
--- | action that consumes it as often as by the widget that emits it, so
--- | widening this position would leave both unknown (the payload-boundary
--- | rule).
-onCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p (Variant s) b
-onCase = lcmap (on (Proxy @l) identity case_)
-
+-- | UI component is a `{ busy :: Boolean } → {}` display citizen.
 action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
 action arr = action' \i pro post -> do
   liftEffect $ pro { busy: true }
@@ -1095,10 +1043,10 @@ affAdapter f w = wrap ado
 
 -- Oculars
 
--- | Debounce the widget's *input* leg: each incoming value is delayed by
+-- | Debounce the UI component's *input* leg: each incoming value is delayed by
 -- | `millis`, and a newer value supersedes (kills) the pending one, so only
--- | the last value of a burst reaches the widget. Rapid sources (keystrokes,
--- | slider drags) emit every value; the stage that doesn't want the burst
+-- | the last value of a burst reaches the UI component. Rapid sources (keystrokes,
+-- | continuous drags) emit every value; the stage that doesn't want the burst
 -- | opts in here.
 -- |
 -- | Algebraically this is the `× → +` trace at the value level:
@@ -1164,12 +1112,12 @@ debounced millis = affAdapter $ pure
 -- equality — keys must be unique, never rendered.
 
 -- | What a stateful carrier contributes to the container action: how to
--- | **instantiate** one element widget at runtime and how to **place** it —
+-- | **instantiate** one element UI component at runtime and how to **place** it —
 -- | detach a leaver, restack survivors into the current key order. The keyed
 -- | reconciler and both emission modes are carrier-generic above this, so
--- | `Acting (PUI m)` holds for every hosting carrier: `PUI.Web` supplies DOM
--- | placement; `Effect` (below) is placement-free — the probe carrier the
--- | value-level law tests run on.
+-- | `Acting (PUI m)` holds for every hosting carrier: a display carrier
+-- | supplies node placement, while `Effect` (below) is placement-free — the
+-- | probe carrier the value-level law tests run on.
 class MonadEffect m <= Hosting m node | m -> node where
   hosting :: forall a b. PUI m a b -> m (Hooks a b node)
 

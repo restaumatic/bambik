@@ -68,8 +68,8 @@ module PUI.Web.HTML
   , progress
   , radioButton
   , rangeInput
-  , runWidgetInNode
-  , runWidgetInSelectedNode
+  , runComponentInNode
+  , runComponentInSelectedNode
   , section
   , select
   , span
@@ -86,7 +86,7 @@ module PUI.Web.HTML
   , tr
   , transient
   , ul
-  , atCase
+  , providedCase
   , provided
   )
   where
@@ -101,7 +101,7 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (case_, on, prj)
 import Effect (Effect)
@@ -109,8 +109,8 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
-import PUI (PUI, Ocular)
-import PUI.Web (Node, Web, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI (Ocular, PUI, projected)
+import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
@@ -277,7 +277,7 @@ radioButton { picked } = "type" := "radio" $ wrap do
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
 -- | with no chrome and no label of its own. Until the user picks there is
 -- | nothing to show, so the field arrives as "maybe a choice" and leaves as
--- | the choice itself — say which with `# optional` or `# required`. The
+-- | the choice itself — say which with `# optional` or `# required @"value"`. The
 -- | options belong to the control, not to the model.
 select :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select options = field @"value" $ wrap do
@@ -345,7 +345,7 @@ rangeInput = field @"value" $ "type" := "range" $ wrap do
 
 -- | The native `<progress>` gauge, `value` running 0 to 1. As much a gauge
 -- | as a progress indicator — a quota, a share, a fraction elapsed —
--- | written as `progress # projected fraction`, with the business function
+-- | written as `progress # projected @"value" fraction`, with the business function
 -- | deciding what the fraction means.
 progress :: PUI Web { value :: Number } {}
 progress = wrap do
@@ -370,10 +370,10 @@ progress = wrap do
 -- | itself).
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the output is built — `output # forCase @"booked" bookedLine` — and
+-- | the output is built — `output # forCase @"event" @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output :: PUI Web [ event :: String ] {}
-output = el "output" $ text # projected eventText
+output = el "output" $ text # projected @"value" eventText
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String
@@ -706,15 +706,15 @@ transient ui = wrap do
 -- | Show the pane while the model is in state `l`, fed that state's own
 -- | data — `provided` for a model that names its states: a ticket counter
 -- | whose `display` is either `waiting` or `serving` shows its number pane
--- | as `pane # atCase @"serving" _.display`.
+-- | as `pane # providedCase @"serving" _.display`.
 -- |
 -- | Where several states are **mutually exclusive**, this is the way to say
 -- | so: one business function classifies the situation once
--- | (`# atCase @"taken" usernameStatus`) and each pane adopts its own
+-- | (`# providedCase @"taken" usernameStatus`) and each pane adopts its own
 -- | answer, so two panes can never both be on screen — which separate
 -- | "should this be visible?" tests can always accidentally allow.
-atCase :: forall @l i a b s o. IsSymbol l => Cons l a b s => (i -> [ | s ]) -> PUI Web a o -> PUI Web i o
-atCase f = provided (\shown -> prj (Proxy @l) (f shown))
+providedCase :: forall @l i a b s o. IsSymbol l => Cons l a b s => (i -> [ | s ]) -> PUI Web a o -> PUI Web i o
+providedCase f = provided (\shown -> prj (Proxy @l) (f shown))
 
 -- | Show the pane only when there is something to show. Visibility is the
 -- | presence of data, not a flag: the argument is a business function that
@@ -735,7 +735,7 @@ provided f w = wrap do
     { toUser: \shown -> case f shown of
       Nothing -> ensureDetached
       Just y -> do
-        -- attach before feeding: a widget that measures itself on toUser (the
+        -- attach before feeding: a UI component that measures itself on toUser (the
         -- MDC slider positions its thumb from the track width) needs to be in
         -- the document first, or it lays out against a zero-width detached node
         ensureAttached
@@ -748,7 +748,7 @@ provided f w = wrap do
 -- | overdrawn amount, the highlight on the selected row.
 -- |
 -- | Styling only. To make something *appear and disappear*, use `provided`
--- | or `atCase`, which take the content away with the pane instead of
+-- | or `providedCase`, which take the content away with the pane instead of
 -- | leaving it on the page in a different colour. Applies to the last
 -- | element built, not to a group of siblings.
 clWhen :: forall i o. (i -> Boolean) -> String -> PUI Web i o -> PUI Web i o
@@ -819,7 +819,7 @@ onClickedXY content = wrap do
         onClickXY node \x y -> prop { x, y }
     }
 
--- | Build a widget per element from a function — for a list whose elements
+-- | Build a UI component per element from a function — for a list whose elements
 -- | differ in *shape*, not just in value: the blocks of a rendered markdown
 -- | document, where one is a heading and the next a list
 -- | (`el ("h" <> show level)`).
@@ -844,7 +844,7 @@ foreachWith build = wrap do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- | `foreachWith` for a single value: draw a widget from a function and
+-- | `foreachWith` for a single value: draw a UI component from a function and
 -- | redraw when the value changes — the scene whose whole composition
 -- | depends on the data. `div $ dynamic renderSwatch`. Owns the element it
 -- | sits in.
@@ -854,7 +854,7 @@ dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
 
 -- | Lay out a list that is known up front and never changes — the courses
 -- | on a menu, the keys of a keypad, a row of preset swatches:
--- | `ul $ each courses renderCourse`, `tr $ each keys keyWidget`. Nothing
+-- | `ul $ each courses renderCourse`, `tr $ each keys keyComponent`. Nothing
 -- | about it comes from the model, so it sits among fixed decoration.
 each :: forall a o. Array a -> (a -> PUI Web {} o) -> PUI Web {} o
 each items build = wrap $ unwrap (foreachWith build) <#> \w ->
@@ -872,26 +872,29 @@ each items build = wrap $ unwrap (foreachWith build) <#> \w ->
 -- | naming the missing pieces — a screen can't reach a user half-filled.
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
+  adoptHostDiagnostics
   node <- documentBody
   runDomInNode node do
     { fromUser } <- unwrap ui
     liftEffect $ fromUser \_ -> pure unit
 
--- | Mount a widget into an existing element picked by CSS selector, rather
+-- | Mount a UI component into an existing element picked by CSS selector, rather
 -- | than taking over the page — for embedding into a page bambik does not
 -- | own. The starting value is given here, and the callback receives what
--- | the widget reports.
-runWidgetInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
-runWidgetInSelectedNode selector initial callback ui = do
+-- | the UI component reports.
+runComponentInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
+runComponentInSelectedNode selector initial callback ui = do
   node <- selectedNode selector
-  runWidgetInNode node initial callback ui
+  runComponentInNode node initial callback ui
 
--- | `runWidgetInSelectedNode` with the host element already in hand.
-runWidgetInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
-runWidgetInNode node initial callback ui = runDomInNode node do
-  { toUser, fromUser } <- unwrap ui
-  liftEffect $ fromUser callback
-  void $ liftEffect $ toUser initial
+-- | `runComponentInSelectedNode` with the host element already in hand.
+runComponentInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
+runComponentInNode node initial callback ui = do
+  adoptHostDiagnostics
+  runDomInNode node do
+    { toUser, fromUser } <- unwrap ui
+    liftEffect $ fromUser callback
+    void $ liftEffect $ toUser initial
 
 -- | Any element by name — for a tag this vocabulary has no name for, and
 -- | for a tag computed at runtime (`el ("h" <> show level)`). The named

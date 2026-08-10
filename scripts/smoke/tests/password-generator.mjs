@@ -3,7 +3,7 @@
 // construction, so this asserts the leaf writes them there (a property-only
 // write left the markup's value="0" out of range and threw in
 // validateProperties, killing the form's merge gate). Then the effectful
-// generate walk: button # asCase -> action/onCase -> updated.
+// generate walk: button # asCase -> action/atCase -> updated.
 export const demos = ['demo/nguis/password-generator-mdc2']
 export const url = '/demo/nguis/password-generator-mdc2/'
 

@@ -1,6 +1,6 @@
-// focusRecord end-to-end: the model stays flat ({ recipient, street, city })
+// subStrong end-to-end: the model stays flat ({ recipient, street, city })
 // while the reusable address sub-form is a citizen over its own closed row
-// { street, city } — focusRecord threads the background field, so edits on
+// { street, city } — subStrong threads the background field, so edits on
 // either side of the focus never lose the other side.
 export const demos = ['demo/nguis/parcel-mdc2']
 export const url = '/demo/nguis/parcel-mdc2/'

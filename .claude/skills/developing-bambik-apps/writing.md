@@ -38,15 +38,15 @@ Every component is a citizen of exactly one direction and speaks a
 canonical row, adopted to the business label at the use site:
 
 - **editors** (`filledTextField`, `checkbox`, `slider`, ...) are
-  `{ value :: _ } → { value :: _ }`; adopt with `# asField @l`. A lone
+  `{ value :: _ } → { value :: _ }`; adopt with `# asField @"value" @l`. A lone
   adopted editor followed by `# completed` is a complete `×→×` stage on
   its own — no `RecordToRecord.do` for a single field.
-- **displays** adopt with `# projected f` (feed `f` of the whole value).
+- **displays** adopt with `# projected @"value" f` (feed `f` of the whole value).
   A one-field read of a context-pinned wider row is the label-indexed
-  `# forProperty @"label"`; at merge-operand and `completed` positions,
+  `# forProperty @"value" @"label"`; at merge-operand and `completed` positions,
   which must state their row, the closed form is
-  `# forField @l identity`, and `# projected f # forField @l` reads one
-  field formatted (`forField` takes the bare-value display `projected`
+  `# forField @"value" @l identity`, and `# projected @"value" f # forField @"value" @l` reads one
+  field formatted (`forField` takes the bare-value display `projected @"value"`
   produces). A named projection whose body merely reads one field is a
   smell — use the label-indexed form and delete the function. The same
   applies to mechanism arguments: a feed projection that merely reads a
@@ -54,12 +54,13 @@ canonical row, adopted to the business label at the use site:
   the named function's closed signature *is* the footprint declaration
   and stays.
 - **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) emit
-  `[ clicked :: _ ]`; adopt with `# asCase @l` to rename, or
-  `# toCases f` to fire the business outcome `f` computes from the
-  payload.
+  `[ clicked :: _ ]`; adopt with `# asCase @"clicked" @l` to rename, or
+  `# toCases @"clicked" f` to fire the business outcomes `f` computes from the
+  payload — `f` returns a *variant* of results, which `toCases @"clicked"` emits
+  directly.
 - **statuses** (`snackbar`, `banner`) consume `[ event :: String ]`;
-  adopt with `# forCase @l copyOf` for one case, or
-  `# forCases (match { … })` when one status instance serves several
+  adopt with `# forCase @"event" @l copyOf` for one case, or
+  `# forCases @"event" (match { … })` when one status instance serves several
   mutually exclusive outcomes (flight-booker's booking toast). A status
   mid-pipeline — showing events that must also flow on — wraps with
   `# observed` (payment's retry toast narrates the retry loop); the
@@ -67,8 +68,8 @@ canonical row, adopted to the business label at the use site:
   background cases pass untouched.
 - **type-changing selectors** (`select`, `radioButton`,
   `segmentedButton`) are `{ value :: Maybe a } → { value :: a }`;
-  always-selected ones take `# required # asField @l`,
-  possibly-unselected ones `# optional # asField @l` — the model keeps
+  always-selected ones take `# required @"value" # asField @"value" @l`,
+  possibly-unselected ones `# optional # asField @"value" @l` — the model keeps
   the `Maybe` seeded `Nothing` (no default pick), and the stages
   demanding the bare selection stay `provided`-gated until the user
   picks (meeting-booker is the no-defaults showcase).
@@ -96,7 +97,7 @@ interchangeable:
   editor inside would replay stale upstream values on every edit.
 
 So: editor or record display stage → `# completed`; display over a
-non-record value (a `projected`-formatted readout) → `# tapped`. A live
+non-record value (a `projected @"value"`-formatted readout) → `# tapped`. A live
 readout as a pipeline stage is just a display made pass-through this way
 (tip-calculator's money readouts).
 
@@ -142,7 +143,7 @@ Worked examples, by shape:
 - **panes** — quiz (`provided` panes over multi-stage pipelines keyed on
   `Maybe`-projected state).
 - **effects and time** — password-generator (`button # asCase` →
-  `action`/`onCase` → `updated`), stopwatch (`every` with
+  `action`/`atCase` → `updated`), stopwatch (`every` with
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
@@ -154,7 +155,7 @@ Worked examples, by shape:
   supplied by page CSS).
 - **one focused combinator each** — auction (`feedback`), checkout
   (`folding`), payment (`iterate`), ticket-dispenser (`unfolding`),
-  parcel (`focusRecord`), cashbox (`focusVariant`), departures
+  parcel (`subStrong`), cashbox (`subChoice`), departures
   (`dispatched`), scoreboard (`accumulated`).
 
 ## Conditional visibility
@@ -162,7 +163,7 @@ Worked examples, by shape:
 Conditional visibility is view-model data, never an in-UI predicate.
 
 When the model field is a payload-carrying variant, case adoption *is*
-conditional existence — `# atCase @l identity # atField @l'` shows the
+conditional existence — `# providedCase @l identity # atField @l'` shows the
 pane while the variant sits at that case, fed its payload
 (ticket-dispenser). Mutually exclusive derived states classify once into
 a variant-returning business function, each pane adopting its case
@@ -185,7 +186,7 @@ visibility, and is deliberately last-element-only.
 
 `dialog`/`simpleDialog` open on feed and close on emission. Feed them
 selectively (`# provided` off a model flag, or behind an event case via
-`onCase`), put the deciding emitters inside — their emission closes the
+`atCase`), put the deciding emitters inside — their emission closes the
 dialog and flows on — and keep echoing displays off the content's final
 stage, since an echo would close the dialog on open. Cashbox is the
 worked example.
@@ -239,7 +240,7 @@ Organize the code (by inlining and extracting) until every function
 belongs to exactly one of two classes:
 
 1. **UI wiring** — lives inline in the entry function, or is unavoidably
-   standalone like a widget-builder function for `dynamic`/`foreachWith`.
+   standalone like a UI-component-builder function for `dynamic`/`foreachWith`.
    Anything that mentions PUI types, variants-as-events, DOM wiring.
 2. **Pure business** — standalone functions over the model and plain
    data: model transformers, formatters, parsers, evaluators, Aff
@@ -254,7 +255,7 @@ one-way:
 
 - The **view module** (`<App>.purs`) exports the single entry function
   and keeps the UI-wiring functions that survive the one-liner rule
-  (widget builders, reusable sub-forms). It imports the design-system
+  (UI component builders, reusable sub-forms). It imports the design-system
   vocabulary, the library's combinators, and the logic module.
 - The **logic module** (`<App>Logic.purs`) exports the business
   functions and the named business values (seed models, tick periods,
@@ -262,8 +263,8 @@ one-way:
   plain data (`Data.Array`, `Data.Maybe`, `Data.Variant`, ...), and the
   effect types business actions live in (`Effect`, `Aff`) — never
   `PUI`, `PUI.Web.*`, a design-system module, or the row merges. A
-  business function that seems to need a widget type is misdrawn: the
-  widget-shaped part is view. (Business optics — `Shutter`/`Reel` — stay
+  business function that seems to need a UI component type is misdrawn: the
+  UI component-shaped part is view. (Business optics — `Shutter`/`Reel` — stay
   the location-exempt algebra usable below the UI; see
   [Wiring](#wiring).)
 
@@ -295,9 +296,9 @@ holds the business functions over the model, seed first.
 - **Event constructors.** A wrapper function that injects a payload into
   a case is unnecessary: a channel-fed cell replays its own value on
   click and `toCase @l` introduces the case, closing the row itself.
-- **Named one-liner widgets.** A widget function whose whole body is one
+- **Named one-liner UI components.** A UI component function whose whole body is one
   pipeline expression — the named toast is the archetype
-  (`submittedToast = snackbar # forCase @"orderSubmitted"
+  (`submittedToast = snackbar # forCase @"event" @"orderSubmitted"
   submittedLine`) — is glue: inline the expression at its pipeline
   position and delete the function (see the Layout rule). The copy
   function's business name already says what shows.
@@ -336,7 +337,7 @@ in business language.
 
 ### Boundary cases
 
-- Widget-builder functions (for `dynamic`/`foreachWith`) are UI but too
+- UI-component-builder functions (for `dynamic`/`foreachWith`) are UI but too
   large to inline — they stay standalone in the view module, and that is
   fine: they are *purely* UI-related.
 - Caption and validation formatters are pure business — keep them, in
@@ -370,48 +371,48 @@ over a logic module, a single exported entry function.
   twins are two view modules importing the exact same logic module, so
   anything that differs between twins is view by definition.
 - **One-liner `PUI Web`-returning functions are inlined.** A named
-  widget function whose whole body is a single pipeline expression is
+  UI component function whose whole body is a single pipeline expression is
   indirection: write the expression at its use site —
-  `snackbar # forCase @"orderSubmitted" submittedLine` sits directly in
+  `snackbar # forCase @"event" @"orderSubmitted" submittedLine` sits directly in
   the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
-  widget function earns its name only by genuinely spanning lines: a
+  UI component function earns its name only by genuinely spanning lines: a
   `dynamic`/`foreachWith` builder, or a reusable sub-form lifted as a
   citizen (parcel's `addressForm`).
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
   ever leads a line: an announced payload trails like every other data
-  concern (`button { … } # with patch # asCase @l`, never a leading
+  concern (`button { … } # with patch # asCase @"clicked" @l`, never a leading
   `with patch (button …)`), and `# with {}` is written inline when the
   payload is the informationless unit, since naming `{}` is ceremony.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line) and
-  rides at the end of the widget's last content line — close the paren
-  inline and continue. When a bracketed widget nests, the enclosing
+  rides at the end of the UI component's last content line — close the paren
+  inline and continue. When a bracketed UI component nests, the enclosing
   levels' closers and chains cascade onto that same final line. The one
   exception is the app-level closer: the last UI line stays
   `) # mvu seed` / `) # with seed` on its own.
   **Precedence caveat:** `#` (`infixl 1`) binds tighter than `$`
   (`infixr 0`), so where the chain must apply to the *whole element* —
-  `foreach` multiplying an ocular-wrapped widget — the paren must open
+  `foreach` multiplying an ocular-wrapped UI component — the paren must open
   *before* the ocular, never after its `$`, which would put the chain
   inside the element (one container around the collection instead of one
-  per item). `lcmap`-only adopters (`forField`, `projected`) are safe
+  per item). `lcmap`-only adopters (`forField`, `projected @"value"`) are safe
   either side of a shape-preserving ocular.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live
   summary → events (×→+) → dispatch (+→+) → statuses (+→×) — closed by
   `mvu seed` / `with seed` to `PUI Web {} model`. If the top-level types
   do not tell that story, the structure is wrong, not the types.
-  Indirection layers, widget registries and config objects that assemble
+  Indirection layers, UI component registries and config objects that assemble
   UIs reflectively are out.
 
 ### Types and values
 
 - **No nominal types in UI.** A view-model type is one-off and specific
   to this UI, so it earns no name: no `data`, no `newtype`, no `type`
-  synonym for anything a widget displays, emits, or is configured with.
+  synonym for anything a UI component displays, emits, or is configured with.
   Anonymous record rows for all-at-once, anonymous variant rows for
   one-at-a-time, `{}` for unit payloads (never `Unit`), primitives at
   the leaves, `Array`/`Maybe` as the only generic containers. Role names
@@ -441,10 +442,10 @@ over a logic module, a single exported entry function.
   ```purescript
   headline6 ( RecordToRecord.do
       staticText "Till balance: €"
-      text # forField @"balance" euros ) # tapped
+      text # forField @"value" @"balance" euros ) # tapped
   ```
 
-  never `text # projected balanceLine` over a
+  never `text # projected @"value" balanceLine` over a
   `balanceLine { balance } = "Till balance: €" <> euros balance`. If
   deleting the literals would leave only field reads, the function is UI
   structure in disguise. Business functions format *values* (a money
@@ -454,10 +455,10 @@ over a logic module, a single exported entry function.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status adopter in place
-  (`snackbar # forCase @"registered" welcomeLine`); the event carries
+  (`snackbar # forCase @"event" @"registered" welcomeLine`); the event carries
   the order, the outcome, the reason — the data, not the sentence.
   Validation results are payloads, not strings destined for a particular
-  widget.
+  UI component.
 
 ### Business functions
 
@@ -519,8 +520,8 @@ over a logic module, a single exported entry function.
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
   with their projection arguments — `provided paneOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
-  `toCase @l payloadOf`, `forCase @l copyOf`, `projected f`,
-  `forProperty @l`, `toCases outcomeOf`, `forCases lineOf`,
+  `toCase @l payloadOf`, `forCase @"event" @l copyOf`, `projected @"value" f`,
+  `forProperty @"value" @l`, `toCases @"clicked" outcomeOf`, `forCases @"event" lineOf`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would
   write has one of those homes. A shape none of them fit is a
@@ -529,7 +530,7 @@ over a logic module, a single exported entry function.
   code *below* the UI are exempt by location.
 - **Visibility is business logic.** Conditional visibility is a
   `Maybe`-valued projection plus `provided`, or case adoption
-  (`atCase @l`) on a payload-carrying variant field — never an in-UI
+  (`providedCase @l`) on a payload-carrying variant field — never an in-UI
   predicate. A projection that *derives* visibility is named, so the
   rule lives in testable business code, and mutually exclusive derived
   states classify once into a variant-returning function so exclusivity
@@ -541,7 +542,7 @@ over a logic module, a single exported entry function.
 - **State lives in the model or in the algebra's loops. Nowhere else.**
   No FFI stashes, no module-level `Ref`s, no reading the DOM back as
   state, no window globals. The model under `mvu` holds the entity; a
-  widget's private state is a residual threaded by the trace forms.
+  UI component's private state is a residual threaded by the trace forms.
 - **Lean on the design system's defaults; write no custom chrome.**
   Reach for a stock component and its built-in look before any style
   attribute. Surfaces (`card`, `elevation*`), typography, lists, grids
@@ -576,7 +577,7 @@ writing the app, not an afterthought:
   swallowed echoes, and gate-withheld emissions with the sibling fields
   they wait for, the otherwise-invisible ones — as `console.debug`, so
   enable the Verbose log level in DevTools. The labels the trace prints
-  are the ones adoption introduced (`toCase @l`, `asCase @l`), which is
+  are the ones adoption introduced (`toCase @l`, `asCase @"clicked" @l`), which is
   the practical reason to name cases rather than inject them inline.
 
 An unprimed *entry* needs neither: `body` demands input `{}`, so a
@@ -601,7 +602,7 @@ read them, not a summary. Paths are inside the fetched library,
 
 - `src/PUI.purs` — the core type, pipeline semantics, and the
   combinators: `mvu`/`with`/`looped`/`updated`/`completed`/`action`/
-  `onCase`/`tapped`, the adopter family re-exports, and the collection
+  `tapped`, the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`.
 - `src/PUI/Web/HTML.purs` — HTML vocabulary, `body`, element oculars,

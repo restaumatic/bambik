@@ -1,17 +1,25 @@
 -- | `Variant → Record` (+ → ×) row profunctors, organized (uniformly across
 -- | the four direction modules) as:
 -- |
--- |   * **strength** — `Retaining` (defined here; `PUI m` instances only, no
--- |     `(->)`): the unary power, a Mealy/coroutine step.
+-- |   * **strength** — `Retaining` (`Data.Profunctor.Retaining`; `PUI m`
+-- |     instances only, no `(->)`): the unary power, a Mealy/coroutine step.
+-- |     Its optics `Reel`/`Coreel` are in `Data.Profunctor.Optic` — neither
+-- |     the classes nor the optics mention a row, so neither lives here.
+-- |
+-- | The **canonical-row adopters** here (`forCase`/`forCases`) take the canonical label as their
+-- | first type argument `@c` and carry no literal: which label a component
+-- | speaks (`value`, `clicked`, `event`) is an L3 citizenship convention of
+-- | the vocabulary, not a row-profunctor fact. The label is supplied at the
+-- | **call site** — `# asCase @"clicked" @l` — so no layer hard-codes it and
+-- | the convention is visible where it is used.
 -- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
--- |     *what the wrapped profunctor runs on*: `focusReel` (a sub-variant),
+-- |     *what the wrapped profunctor runs on*: `subRetaining` (a sub-variant),
 -- |     `focusCase` (one case), `backgroundCase` (the background, the focus
--- |     threaded across), `reduceCase` (introduce/reduce), the `Reel`
--- |     optic with `reel`/`reelE` — and over the co-strength `Coretaining`:
--- |     the `Coreel` optic with `coreel`/`coreelE` (the reversed `Shutter`)
--- |     and its row form `unfolding @w` (the productive unfold).
+-- |     threaded across), `reduceCase` (introduce/reduce) — and over the
+-- |     co-strength `Coretaining`: `unfolding @w` (the productive unfold,
+-- |     the `Coreel` optic's row form).
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
@@ -34,27 +42,17 @@
 -- | record-output unit must *announce* its informationless `{}` so the merge
 -- | knows that side is complete, and parametric silence cannot.
 module Data.Profunctor.Row.VariantToRecord
-  ( Coreel
-  , Reel
-  , bind
-  , coreel
-  , coreelE
+  ( bind
   , variantToRecord
-  , class Coretaining
   , class VariantToRecord
-  , coretain
   , discard
   , pempty
   , focusCase
   , forCase
   , forCases
   , reduceCase
-  , class Retaining
-  , retain
   , backgroundCase
-  , reel
-  , reelE
-  , focusReel
+  , subRetaining
   , unfolding
   )
   where
@@ -62,7 +60,6 @@ module Data.Profunctor.Row.VariantToRecord
 import Control.Semigroupoid ((>>>))
 import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
-import Data.Profunctor.Row.VariantToVariant (splitVariant)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..), fst)
@@ -71,56 +68,17 @@ import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs)
+import Data.Profunctor.Optic (reelE)
+import Data.Profunctor.Retaining (class Coretaining, class Retaining, coretain, retain)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs, splitVariant)
 import Unsafe.Coerce (unsafeCoerce)
-
--- | The **unary** sum→product strength for this direction: a **Mealy /
--- | coroutine step**, the dual of `RecordToVariant`'s `Resolving`. `retain`
--- | turns a transformer `p a b` into a step that consumes either a fresh input
--- | `a` or a resumed state `c`, emitting an output `b` together with the next
--- | state `c`:
--- |
--- | ```
--- | retain :: p a b -> p (Either a c) (Tuple b c)
--- |                        -- Left  a = fresh input
--- |                        -- Right c = resume from state
--- | ```
--- |
--- | State enters optionally (a branch of the sum input) and leaves guaranteed
--- | (product output), so the step *always* produces an output and the next
--- | state — a productive, stateful stream. Its binary, two-profunctor form is
--- | the `variantToRecord` merge below.
--- |
--- | There is deliberately **no `(->)` instance**: a stateless function has no
--- | `c` to place in the product on a fresh `Left a`, and no `b` on a `Right c`
--- | resume — the product output can't be filled without retaining state.
--- |
--- | This is the **bare strength** for the `+ → ×` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is `focusReel` below —
--- | exactly as `focusRecord` is built on `Strong`.
-class Profunctor p <= Retaining p where
-  retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)
-
--- | The **co-strength** of `Retaining` — its retraction: where `retain`
--- | *adds* the resumable state channel `c`, `coretain` *ties* it. Every
--- | emission `Tuple b c` yields `b` and immediately re-enters the wrapped
--- | profunctor as a `Right c` resume — a **productive unfold**/generator:
--- | control loops back while output flows every step (the dual corner to
--- | `Coresolving`'s terminating fold in the trace quartet).
--- |
--- | Retraction law: `coretain (retain g) ≅ g` — once the state channel is
--- | primed (state must enter somewhere).
--- |
--- | (No `(->)` instance: tying a knot takes state.)
-class Profunctor p <= Coretaining p where
-  coretain :: forall a b c. p (Either a c) (Tuple b c) -> p a b
 
 -- | `coretain` at row granularity — the **productive unfold** with labeled
 -- | channels: the wrapped profunctor consumes either a fresh input case
 -- | (any case of `i`) or a resume (case `w`, carrying the unfold state
 -- | `{ | fb }`), and every emission's value fields `o` pass while its state
 -- | fields `fb` immediately re-enter as case `w` — a generator. The
--- | `+ → ×` co-analogue of `focusReel`. Like `feedback`, the output is
+-- | `+ → ×` co-analogue of `subRetaining`. Like `feedback`, the output is
 -- | split by coercion (`ExclusiveRows o fb ow` keeps the typed views
 -- | disjoint), so the emitted `{ | o }` runtime-carries the state fields —
 -- | an `unfolding` stage belongs in a pipeline, not as a merge operand.
@@ -147,27 +105,6 @@ unfolding seed g =
       (either expand (inj (Proxy @w)))
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
       (seeded (inj (Proxy @w) seed) >>> g))
-
--- | The optic `coretain` induces: the **Coreel** — the `Shutter` run
--- | backwards (`Coreel s t a b ≅ Shutter b a t s`). Eliminating the residual
--- | `c` (instantiated to `b`) by co-Yoneda collapses
--- | `∃c. (s + c → a) × (b → t × c)` to
--- | `(embed : s → a) × (out : b → t) × (resume : b → a)`: every emission
--- | both leaves as `t` and **re-enters as the next focus input** — a
--- | generator, producing on every step. `unfolding @w` is this optic at row
--- | granularity.
-type Coreel s t a b = forall p. Coretaining p => p a b -> p s t
-
-coreel :: forall s t a b. (s -> a) -> (b -> t) -> (b -> a) -> Coreel s t a b
-coreel embed out resume = coreelE (either embed resume) (\b -> Tuple (out b) b)
-
--- | Construct a `Coreel` straight from its **existential encoding**
--- | `∃c. (s + c → a) × (b → t × c)`: pick the resume channel `c`, then supply
--- | `decon` (read a fresh input or a resumed value) and `recon` (split each
--- | emission into the output and the channel's next value). `coreel` is this
--- | at the co-Yoneda witness `c := b`.
-coreelE :: forall s t a b c. (Either s c -> a) -> (b -> Tuple t c) -> Coreel s t a b
-coreelE decon recon g = coretain (dimap decon recon g)
 
 class Profunctor p <= VariantToRecord p where
   -- | One constraint per side: `OwnedVariantInputs` (disjoint rows — one
@@ -208,22 +145,22 @@ discard first cont = bind first (\_ -> cont unit)
 -- | The copy formatter is the mechanism's own argument (import-tower rule
 -- | L16): the adopted case carries the bare business payload, and `f`
 -- | renders it into the canonical `event` payload at the adoption site —
--- | `snackbar # forCase @"registered" welcomeLine`; `identity` when the
--- | payload already is the copy.
-forCase :: forall @l p a b o s. IsSymbol l => Profunctor p => Cons l b () s => (b -> a) -> p [ event :: a ] o -> p [ | s ] o
-forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @"event") (f b)) case_)
+-- | `status # forCase @"event" @"registered" welcomeLine`; `identity` when
+-- | the payload already is the copy.
+forCase :: forall @c @l p a b o s cs. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () cs => Cons l b () s => (b -> a) -> p [ | cs ] o -> p [ | s ] o
+forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 
 -- | Adopt a status component for a **whole classified variant** — the input
 -- | dual of `RecordToVariant`'s `toCases` and `forCase`'s plural: where
 -- | `forCase @l` renders one business case into the canonical `event`
 -- | payload, `forCases` renders every case through one copy classifier, so
 -- | a single status instance serves mutually exclusive outcomes —
--- | `snackbar # forCases (match { booked: …, rejected: … })`. One-at-a-time
--- | input means one classifier is total over the row; per-case copy stays
--- | a `match` branch, never a sibling widget, when the outcomes share one
+-- | `status # forCases @"event" (match { booked: …, rejected: … })`.
+-- | One-at-a-time input means one classifier is total over the row; per-case
+-- | copy stays a `match` branch, never a sibling operand, when outcomes share one
 -- | status area.
-forCases :: forall p a o s. Profunctor p => (Variant s -> a) -> p [ event :: a ] o -> p [ | s ] o
-forCases f = lcmap (\v -> inj (Proxy @"event") (f v))
+forCases :: forall @c p a o s cs. IsSymbol c => Cons c a () cs => Profunctor p => (Variant s -> a) -> p [ | cs ] o -> p [ | s ] o
+forCases f = lcmap (\v -> inj (Proxy @c) (f v))
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
 -- | for this direction (the dual of `backgroundProperty`). Where `case_`
@@ -254,14 +191,14 @@ backgroundCase g =
     (retain g)
 
 -- | The single-case **focus** for this direction — the `+ → ×` analogue of
--- | `case_` (row-typed `left`), built on `retain` exactly as `case_` is built
--- | on `left`. The **focus** `f` at `l` of the input **shot** `s` is fed to the
+-- | `VariantToVariant.focusCase` (row-typed `left`), built on `retain`
+-- | exactly as that one is built on `left`. The **focus** `f` at `l` of the input **shot** `s` is fed to the
 -- | wrapped `p f f'` (the `Left`/fresh branch); the **background** `[ | b ]`
--- | cannot stay a variant inside the `Record` output, so — as in `focusReel` —
+-- | cannot stay a variant inside the `Record` output, so — as in `subRetaining` —
 -- | it is wrapped as a single output field `w`. Field `l` carries the wrapped
 -- | profunctor's output `f'` (drawn from the carrier's retained state when a
 -- | background case arrived), field `w` the background-variant. The
--- | single-case form of `focusReel`; the transpose of `backgroundCase`, which runs
+-- | single-case form of `subRetaining`; the transpose of `backgroundCase`, which runs
 -- | the wrapped profunctor on the *background* and resumes the focus directly.
 focusCase
   :: forall @l @w p f f' b s lf s'
@@ -302,26 +239,6 @@ reduceCase
   -> p [ | s ] { | r }
 reduceCase g = dimap (on (Proxy @l) Left Right) fst (retain g)
 
--- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`
--- | (instantiated to `b → t`) by co-Yoneda collapses `∃c. (s → a + c) × (b × c → t)`
--- | to `s → Either a (b → t)` — a per-input dispatch that either surfaces a focus
--- | `a`, or supplies a *finisher* `b → t` drawn from retained state. Like a film
--- | reel: a wound transport that holds its position and never finishes.
-type Reel s t a b = forall p. Retaining p => p a b -> p s t
-
-reel :: forall s t a b. (s -> Either a (b -> t)) -> Reel s t a b
-reel dispatch g = reelE dispatch (\(Tuple b f) -> f b) g
-
--- | Construct a `Reel` straight from its **existential encoding**
--- | `∃c. (s → a + c) × (b × c → t)`: pick the residual `c`, then supply `decon`
--- | (match `s` as a fresh focus `a` or a resumed state `c`) and `recon` (combine
--- | the focus result `b` with the carried state `c` into `t`). The quantified `c`
--- | is exactly the eliminator of that existential; `retain` is the carrier. `reel`
--- | is this at the co-Yoneda witness `c := b → t` (`recon = \(Tuple b f) -> f b`,
--- | i.e. evaluation).
-reelE :: forall s t a b c. (s -> Either a c) -> (Tuple b c -> t) -> Reel s t a b
-reelE decon recon g = dimap decon recon (retain g)
-
 -- | Row existential `Reel` focusing a whole **sub-Variant** — the row-valued
 -- | **focus** `f` — of the input **shot** `s`; the residual is the **background**
 -- | `[ | b ]` (`ExclusiveRows f b s`, the split `splitVariant` performs).
@@ -332,10 +249,10 @@ reelE decon recon g = dimap decon recon (retain g)
 -- | shot at `w`, against the inner output `b'`. The inner
 -- | `p [ | f ] { | b' }` runs on the focus; the retained background-variant is
 -- | written at field `w`. The sub-variant focus for this direction, and
--- | the dual of `focusShutter` — same sub-row focus, but the background is
+-- | the dual of `RecordToVariant.subResolving` — same sub-row focus, but the background is
 -- | *wrapped* to cross into the record output rather than carried same-kind.
 -- | The `+ → ×` row combinator over the bare strength `Retaining`,
--- | just as `focusRecord` is the row combinator over `Strong`.
+-- | just as `RecordToRecord.subStrong` is the row combinator over `Strong`.
 -- |
 -- | ```purescript
 -- | -- focus the `cancel` case; wrap the background into output field `pending`
@@ -344,9 +261,9 @@ reelE decon recon g = dimap decon recon (retain g)
 -- |   { done :: Boolean, pending :: [ tick :: Int ] }              -- s'  output shot
 -- |   [ cancel :: Unit ]                                            -- f   sub-Variant focus
 -- |   { done :: Boolean }                                          -- b'  inner output
--- | step = focusReel @"pending"
+-- | step = subRetaining @"pending"
 -- | ```
-focusReel
+subRetaining
   :: forall @w p f b s b' s'
    . Retaining p
   => IsSymbol w
@@ -356,7 +273,7 @@ focusReel
   => Cons w [ | b ] b' s'
   => p [ | f ] { | b' }
   -> p [ | s ] { | s' }
-focusReel g =
+subRetaining g =
   reelE
     splitVariant
     -- no `Lacks`: `unsafeSet` realizes the layout `Cons w [ | b ] b' s'` pins —

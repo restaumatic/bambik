@@ -13,6 +13,6 @@ temperatureConverterFluent :: Effect Unit
 temperatureConverterFluent =
   body $
     card { caption: "Temperature Converter" } $ ( Semigroupoid.do
-        textField { label: "Celsius" } # forField @"celsius" show # updated (informed fromCelsius)
-        textField { label: "Fahrenheit" } # forField @"fahrenheit" show # updated (informed fromFahrenheit)
+        textField { label: "Celsius" } # forField @"value" @"celsius" show # updated (informed fromCelsius)
+        textField { label: "Fahrenheit" } # forField @"value" @"fahrenheit" show # updated (informed fromFahrenheit)
     ) # mvu roomTemperature

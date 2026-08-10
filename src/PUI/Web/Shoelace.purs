@@ -39,13 +39,13 @@ import Data.Foldable (for_)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, Ocular, constantly)
+import PUI (Ocular, PUI, constantly, projected)
 import PUI.Web.HTML (clicked, div, el, span, staticHTML, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
@@ -67,7 +67,7 @@ import Type.Proxy (Proxy(..))
 -- no fill/outline split), so a demo switches design systems by switching
 -- the import:
 --
---   * **components** — widgets with a model interface, every one a citizen
+--   * **components** — UI components with a model interface, every one a citizen
 --     of exactly one row direction:
 --       `×→×` editors — `textField @l`, `textArea @l`, `rating @l` (the
 --         star editor, `{ value :: Number }` — Shoelace's distinctive
@@ -97,7 +97,7 @@ import Type.Proxy (Proxy(..))
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button { label: "Submit" } # asCase @"submitted"`.
+-- | action — `button { label: "Submit" } # asCase @"clicked" @"submitted"`.
 button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 button config = recordToCase @"clicked" $ eventLeaf $
   el "sl-button" >>> "variant" := "primary" $ staticText config.label
@@ -262,7 +262,7 @@ toggleSwitch config = field @"value" $ wrap do
 -- | The **dropdown**: one choice out of a list too long to lay out in the
 -- | open. Until the user picks there is nothing to show, so the field
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
--- | with `# optional` or `# required`. The options belong to the control,
+-- | with `# optional` or `# required @"value"`. The options belong to the control,
 -- | not to the model.
 select :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select config options = field @"value" $ wrap do
@@ -299,7 +299,7 @@ select config options = field @"value" $ wrap do
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — written as `progressBar # projected fraction`,
+-- | rating out of five — written as `progressBar # projected @"value" fraction`,
 -- | with the business function deciding what the fraction means.
 progressBar :: PUI Web { value :: Number } {}
 progressBar = wrap do
@@ -324,14 +324,14 @@ progressBar = wrap do
 -- | reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast # forCase @"submitted" thanksLine` — and
+-- | the toast is built — `toast # forCase @"event" @"submitted" thanksLine` — and
 -- | let the event carry the bare facts.
 toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (text # projected eventText)
+    unwrap (text # projected @"value" eventText)
   node <- gets _.sibling
   pure
     { toUser: \i -> do

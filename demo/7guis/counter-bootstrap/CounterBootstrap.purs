@@ -14,6 +14,6 @@ counterBootstrap :: Effect Unit
 counterBootstrap =
   body $
     card { caption: "Counter" } $ ( Semigroupoid.do
-        h4 text # forField @"count" show # completed
+        h4 text # forField @"value" @"count" show # completed
         button { label: "Count" } # updated (match { clicked: const <<< increment })
     ) # mvu freshCount

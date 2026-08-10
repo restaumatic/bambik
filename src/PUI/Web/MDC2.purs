@@ -111,7 +111,7 @@ import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, forField, pempty, projected)
+import Data.Profunctor.Row.RecordToRecord (field, pempty)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -119,7 +119,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, Ocular, constantly, foreach)
+import PUI (Ocular, PUI, constantly, forField, foreach, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, span, staticHTML, staticText, table, tbody, td, text, th, thead, tr, ul, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, clazz, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -138,7 +138,7 @@ import Type.Proxy (Proxy(..))
 -- concept exists in both design systems) the same names and signatures as
 -- `PUI.Web.MDC3`, so a demo switches design systems by switching the import:
 --
---   * **components** — widgets with a model interface, every one a citizen
+--   * **components** — UI components with a model interface, every one a citizen
 --     of exactly one row direction:
 --       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
 --         MD2 variant pair), `filledTextArea @l`, `checkbox @l`,
@@ -202,7 +202,7 @@ import Type.Proxy (Proxy(..))
 -- components and required on others — `label` is optional on `button`,
 -- required on `slider`; `icon` is optional on `button`, required on `fab`
 -- — so the *tag*, not a global per-symbol instance, decides which fields
--- are optional for a given widget. One tag per distinct optional-field
+-- are optional for a given UI component. One tag per distinct optional-field
 -- set: `OptLabelIcon` (buttons), `OptLabel` (fab, caption via card),
 -- `OptSelected` (listOf), `OptIcon` (tabBar options).
 -- | Marks `label` and `icon` as optional on the buttons — write either,
@@ -247,7 +247,7 @@ else instance ConvertOption OptIcon sym a a where
 -- | and low emphasis, for the secondary actions beside it.
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
--- | the app gives the action: `button { label: "Book" } # asCase @"booked"`.
+-- | the app gives the action: `button { label: "Book" } # asCase @"clicked" @"booked"`.
 -- | Both parts of the face are optional — `button {}` is bare,
 -- | `button { label: "Count" }` labels it, `icon: "add"` puts a Material
 -- | Icons glyph before the label.
@@ -519,7 +519,7 @@ checkbox { ticked } labelContent = field @"value" $ wrap do
 -- | Until the user picks there is no choice to show, so the field arrives as
 -- | "maybe a choice" and leaves as the choice itself — say which with
 -- | `# optional` (nothing preselected, and whatever needs the choice stays
--- | hidden until it exists) or `# required` (the model always has one).
+-- | hidden until it exists) or `# required @"value"` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
 radioButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
@@ -695,7 +695,7 @@ sliderLeaf live label = wrap do
 -- | comparing side by side, prefer `radioButton` or `segmentedButton`.
 -- |
 -- | Same contract as `radioButton`: nothing to show until the user picks,
--- | so say `# optional` or `# required`; the options are part of the
+-- | so say `# optional` or `# required @"value"`; the options are part of the
 -- | control, not of the model.
 select :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 select config options = field @"value" (selectLeaf config options)
@@ -956,7 +956,7 @@ indeterminateLinearProgress = wrap do
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
 -- | position, a budget's use, a quota — written as
--- | `linearProgress # projected fraction`, with the business function
+-- | `linearProgress # projected @"value" fraction`, with the business function
 -- | deciding what the fraction means.
 linearProgress :: PUI Web { value :: Number } {}
 linearProgress = wrap do
@@ -1185,11 +1185,11 @@ simpleDialog { title, confirm } content = wrap do
 -- | must acknowledge, use `banner` or a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar # forCase @"booked" bookingLine` —
+-- | the snackbar is built — `snackbar # forCase @"event" @"booked" bookingLine` —
 -- | and let the event carry the bare facts. One snackbar can serve several
 -- | mutually exclusive outcomes with `forCases`.
 snackbar :: PUI Web [ event :: String ] {}
-snackbar = snackbarContainer $ text # projected eventText
+snackbar = snackbarContainer $ text # projected @"value" eventText
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -1210,7 +1210,7 @@ snackbarContainer content =
 -- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
 -- | none.
 banner :: PUI Web [ event :: String ] {}
-banner = bannerContainer $ text # projected eventText
+banner = bannerContainer $ text # projected @"value" eventText
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String
 eventText = Variant.on (Proxy @"event") identity Variant.case_
@@ -1276,7 +1276,7 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
   unwrap (span >>> cl "mdc-deprecated-list-item__text" >>> "style" := "display: flex; align-items: center; gap: 16px; width: 100%; white-space: normal; overflow: visible;" $ content)
 
 -- | A **list built from data**: one row per element of the collection the
--- | projection names, each row drawn by the given widget. Rows matching
+-- | projection names, each row drawn by the given UI component. Rows matching
 -- | `selected` take Material's selected styling — `listOf {}` selects
 -- | nothing — and clicking a row reports *that row*, so the list is both
 -- | how a collection is shown and how the user picks from it.
@@ -1425,7 +1425,7 @@ imagePane :: PUI Web { src :: String, label :: String } {}
 imagePane =
   li >>> cl "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
     imageFace
-    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ text # forField @"label" identity
+    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ text # forField @"value" @"label" identity
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

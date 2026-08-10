@@ -3,7 +3,7 @@
 -- | browser, plus the DOM building blocks and FFI every vocabulary beneath
 -- | this module is built from.
 -- |
--- | No widgets live here — those are the submodules: the element
+-- | No UI components live here — those are the submodules: the element
 -- | vocabularies `PUI.Web.HTML` and `PUI.Web.SVG`, and one module per
 -- | design system — `PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`,
 -- | `PUI.Web.Fluent`, `PUI.Web.Bootstrap`. A screen is written in one of
@@ -23,6 +23,7 @@ module PUI.Web
   , clazz
   , createElementNS
   , createTextNode
+  , adoptHostDiagnostics
   , documentBody
   , element
   , elementsInRange
@@ -63,6 +64,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import PUI (class Hosting)
+import PUI.Trace as Trace
 
 foreign import data Node :: Type
 
@@ -210,6 +212,20 @@ foreign import setInnerHTML :: Node -> String -> Effect Unit
 -- | works for mouse, touch and pen alike.
 foreign import onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
+
+foreign import hostTracing :: Effect Boolean
+foreign import hostDiagnostics :: Effect Boolean
+
+-- | Hand the browser's diagnostics switches to `PUI.Trace`, which takes them
+-- | as parameters and knows no host of its own: `window.__bambikTrace = true`
+-- | (or `localStorage.setItem("bambik-trace", "true")`) turns the emission
+-- | trace on, and `window.__bambikNoWarn = true` silences the starvation
+-- | watchdog. Called at the mount entries, so a carrier that never mounts —
+-- | the `Effect` probe carrier the law tests run on — leaves both off.
+adoptHostDiagnostics :: Effect Unit
+adoptHostDiagnostics = do
+  hostTracing >>= Trace.setTracing
+  hostDiagnostics >>= Trace.setDiagnostics
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }

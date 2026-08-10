@@ -6,7 +6,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserLogic (favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
 import PUI (asField, completed, displayed, foreach, forField, informed, mvu, projected, toCase, updated)
-import PUI.Web.HTML (atCase, body, clWhen, span, staticText, text)
+import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -21,24 +21,24 @@ movieBrowserMDC3 =
             , { value: .action {}, label: "Action" }
             , { value: .drama {}, label: "Drama" }
             , { value: .comedy {}, label: "Comedy" }
-            ] # asField @"category" # completed
+            ] # asField @"value" @"category" # completed
           chipSet ( RecordToRecord.do
-              filterChip { label: "Classic" } # asField @"classic"
-              filterChip { label: "Cult" } # asField @"cult"
-              filterChip { label: "Oscar" } # asField @"oscar") # completed
+              filterChip { label: "Classic" } # asField @"value" @"classic"
+              filterChip { label: "Cult" } # asField @"value" @"cult"
+              filterChip { label: "Oscar" } # asField @"value" @"oscar") # completed
           elevation1 ( titleMedium $ RecordToRecord.do
-              text # forField @"count" show
-              staticText " favorite" ) # atCase @"sole" favorites # displayed
+              text # forField @"value" @"count" show
+              staticText " favorite" ) # providedCase @"sole" favorites # displayed
           elevation1 ( titleMedium $ RecordToRecord.do
-              text # forField @"count" show
-              staticText " favorites" ) # atCase @"several" favorites # displayed
+              text # forField @"value" @"count" show
+              staticText " favorites" ) # providedCase @"several" favorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
-                    span text # forField @"title" identity
-                    span text # forField @"year" show
+                    span text # forField @"value" @"title" identity
+                    span text # forField @"value" @"year" show
                     span ( RecordToRecord.do
                         staticText "★ "
-                        text # projected ratingText )
-                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
+                        text # projected @"value" ratingText )
+                    iconToggle { onIcon: "star", offIcon: "star_border", label: "Favorite" } # asField @"value" @"favorite") # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
       ) # mvu movieCatalogue

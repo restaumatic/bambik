@@ -82,7 +82,7 @@ general notion behind the library's strength classes:
 - `Strong` = Tambara for the `×` self-action; `Choice` = Tambara for `+`.
   The Pastro–Street correspondence then *generates* the optics: lenses are
   the optics of the `×` action, prisms of the `+` action — `field`,
-  `focusRecord`, `case_` are their row-strict forms.
+  `subStrong`, `focusCase` are their row-strict forms.
 - `Resolving`/`Retaining` are the library's genuine addition: Tambara-like
   structures for **mixed actions that only a stateful, temporal carrier
   supports** (`resolve` needs a notion of quiescence — time; `retain` needs

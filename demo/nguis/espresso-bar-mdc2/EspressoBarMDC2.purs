@@ -24,41 +24,41 @@ espressoBarMDC2 =
                   [ { value: .espresso {}, label: "Espresso" }
                   , { value: .cappuccino {}, label: "Cappuccino" }
                   , { value: .latte {}, label: "Latte" }
-                  ] # asField @"drink"
-                filledTextField { floatingLabel: "Your name" } # asField @"customer"
+                  ] # asField @"value" @"drink"
+                filledTextField { floatingLabel: "Your name" } # asField @"value" @"customer"
                 segmentedButton
                   [ { value: .small {}, label: "Small" }
                   , { value: .medium {}, label: "Medium" }
                   , { value: .large {}, label: "Large" }
-                  ] # required # asField @"size"
+                  ] # required @"value" # asField @"value" @"size"
                 select { floatingLabel: "Milk" }
                   [ { value: .whole {}, label: "Whole" }
                   , { value: .oat {}, label: "Oat" }
                   , { value: .almond {}, label: "Almond" }
                   , { value: .none {}, label: "None" }
-                  ] # required # asField @"milk"
+                  ] # required @"value" # asField @"value" @"milk"
                 radioButton
                   [ { value: .light {}, label: "Light roast" }
                   , { value: .medium {}, label: "Medium roast" }
                   , { value: .dark {}, label: "Dark roast" }
-                  ] # required # asField @"roast"
-                sliderLive { label: "Sugar" } # asField @"sugar"
+                  ] # required @"value" # asField @"value" @"roast"
+                sliderLive { label: "Sugar" } # asField @"value" @"sugar"
                 chipSet RecordToRecord.do
-                  filterChip { label: "Extra shot" } # asField @"extraShot"
-                  filterChip { label: "Decaf" } # asField @"decaf"
-                toggleSwitch { label: "Takeaway cup" } # asField @"takeaway"
-                iconToggle { onIcon: "favorite", offIcon: "favorite_border", label: "Mark as favorite" } # asField @"favorite"
-                checkbox { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"loyalty"
+                  filterChip { label: "Extra shot" } # asField @"value" @"extraShot"
+                  filterChip { label: "Decaf" } # asField @"value" @"decaf"
+                toggleSwitch { label: "Takeaway cup" } # asField @"value" @"takeaway"
+                iconToggle { onIcon: "favorite", offIcon: "favorite_border", label: "Mark as favorite" } # asField @"value" @"favorite"
+                checkbox { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"value" @"loyalty"
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
-                  menuItem { label: "The usual" } # asCase @"theUsual" # with theUsual
-                  menuItem { label: "Espresso, no frills" } # asCase @"espressoNoFrills" ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
+                  menuItem { label: "The usual" } # asCase @"clicked" @"theUsual" # with theUsual
+                  menuItem { label: "Espresso, no frills" } # asCase @"clicked" @"espressoNoFrills" ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
           ) # mvu usualOrder
           body2 ( RecordToRecord.do
               staticText "Your cup: "
-              text # projected summaryText ) # tapped
+              text # projected @"value" summaryText ) # tapped
           ( div $ RecordToRecord.do
               caption $ staticText "Caffeine"
-              linearProgress ) # projected caffeineFraction # tapped
-          button { label: "Place order", icon: "local_cafe" } # asCase @"brewed"
-          snackbar # forCase @"brewed" brewedLine
+              linearProgress ) # projected @"value" caffeineFraction # tapped
+          button { label: "Place order", icon: "local_cafe" } # asCase @"clicked" @"brewed"
+          snackbar # forCase @"event" @"brewed" brewedLine

@@ -18,12 +18,12 @@ departuresMDC2 =
           every tickPeriod tick
           ( Semigroupoid.do
               list ( ( listItem $ RecordToRecord.do
-                  text # forField @"code" identity
+                  text # forField @"value" @"code" identity
                   staticText " — "
-                  text # forField @"status" identity ) # displayed ) # dispatched arrival
+                  text # forField @"value" @"status" identity ) # displayed ) # dispatched arrival
               body2 ( RecordToRecord.do
                   staticText "Last update: "
-                  text # projected updatedFlight
+                  text # projected @"value" updatedFlight
                   staticText " → "
-                  text # projected updatedStatus ) ) # displayed
+                  text # projected @"value" updatedStatus ) ) # displayed
       ) # mvu boardOpening

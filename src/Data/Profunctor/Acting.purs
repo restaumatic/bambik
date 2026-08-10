@@ -1,4 +1,4 @@
--- | The **container action**: lift a widget over a container of its focus —
+-- | The **container action**: lift a UI component over a container of its focus —
 -- | `p a b -> p (F a) (F b)` — here at `F = Array`, the container
 -- | `μ x. 1 + a × x`. Containers are generated from `×`, `+` and fixpoints,
 -- | so this class is not a fifth merge direction: it is the closure of
@@ -36,7 +36,7 @@
 -- | merge classes' instances do: `PUI` holds the shared keyed reconciler,
 -- | the generic `Hosting m node => Acting (PUI m)` instance and the sibling
 -- | collection combinators (`foreach`, `edited`, `dispatched`,
--- | `accumulated`); `PUI.Web` holds the DOM `Hosting` instance.
+-- | `accumulated`); each display carrier holds its own `Hosting` instance.
 module Data.Profunctor.Acting
   ( class Acting
   , actedBy
@@ -57,7 +57,7 @@ import Prim.Row (class Cons, class Lacks, class Union)
 import Record (get, insert) as Record
 import Type.Proxy (Proxy(..))
 
--- | The class primitive: lift a widget over the `Array` container, keyed by
+-- | The class primitive: lift a UI component over the `Array` container, keyed by
 -- | a function. Carriers implement this; the vocabulary form is `acted @l`.
 class Profunctor p <= Acting p where
   actedBy :: forall k a b. Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
@@ -67,7 +67,7 @@ class Profunctor p <= Acting p where
 instance Acting (->) where
   actedBy _ = map
 
--- | Lift a widget over the keyed `Array` container (see the module header
+-- | Lift a UI component over the keyed `Array` container (see the module header
 -- | for the laws), keyed by the row's materialized identity field `@l`.
 -- | Written trailing, like the merges' operands: `row # acted @"id"`.
 -- |
@@ -94,9 +94,9 @@ acted w = actedBy (Record.get prox)
 -- | The `Maybe = 1 + a` container action, derived: `Maybe` embeds in `Array`
 -- | as the at-most-one-element arrays (identity is trivial at one element, so
 -- | the key is a constant). Keeps the element *fed and live* on
--- | `Nothing`-to-`Just` transitions per the carrier's retention; contrast
--- | `PUI.Web.HTML.provided`, the *detaching* visibility form with collapsed
--- | output.
+-- | `Nothing`-to-`Just` transitions per the carrier's retention; contrast a
+-- | carrier's *detaching* visibility form, which drops the element and
+-- | collapses its output.
 optioned :: forall p a b. Acting p => Strong p => p a b -> p (Maybe a) (Maybe b)
 optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) (Array.head >>> map _.value)
   (acted @"key" element)

@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, completed, displayed, foreach, forField, looped, onCase, silence, toCase, updated, with)
+import PUI (action, asCase, asField, completed, displayed, foreach, forField, looped, atCase, silence, toCase, updated, with)
 import PUI.Web.HTML (attrWith, body, clicked, div, li, staticText, text, ul, (:=))
 import PUI.Web.Shoelace (button, card, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,23 +21,23 @@ crudShoelace = do
         silence # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do
-                textField { label: "Filter prefix (surname)" } # asField @"prefix"
-                textField { label: "Name" } # asField @"name"
-                textField { label: "Surname" } # asField @"surname") # completed
+                textField { label: "Filter prefix (surname)" } # asField @"value" @"prefix"
+                textField { label: "Name" } # asField @"value" @"name"
+                textField { label: "Surname" } # asField @"value" @"surname") # completed
             ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--sl-color-neutral-300, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
                 ( clicked ( li >>> attrWith "style" (entryStyle <<< _.selected) $ displayed $ RecordToRecord.do
-                    text # forField @"surname" identity
+                    text # forField @"value" @"surname" identity
                     staticText ", "
-                    text # forField @"name" identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text # forField @"value" @"name" identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 div $ RecordToVariant.do
-                  button { label: "Create" } # asCase @"create"
-                  button { label: "Update" } # asCase @"update"
-                  button { label: "Delete" } # asCase @"delete"
+                  button { label: "Create" } # asCase @"clicked" @"create"
+                  button { label: "Update" } # asCase @"clicked" @"update"
+                  button { label: "Delete" } # asCase @"clicked" @"delete"
                 VariantToVariant.do
-                  silence # action (createPerson catalogue) # onCase @"create"
-                  silence # action (updatePerson catalogue) # onCase @"update"
-                  silence # action (deletePerson catalogue) # onCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  silence # action (createPerson catalogue) # atCase @"create"
+                  silence # action (updatePerson catalogue) # atCase @"update"
+                  silence # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
 
 entryStyle :: Boolean -> String

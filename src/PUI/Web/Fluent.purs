@@ -41,14 +41,14 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (PUI, Ocular, constantly)
+import PUI (Ocular, PUI, constantly, projected)
 import PUI.Web.HTML (cl, clicked, div, el, staticHTML, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
@@ -69,7 +69,7 @@ import Type.Proxy (Proxy(..))
 -- Two-sorted, same citizenship, and — where the concept exists in both
 -- catalogs — the same names and signatures:
 --
---   * **components** — widgets with a model interface, every one a citizen
+--   * **components** — UI components with a model interface, every one a citizen
 --     of exactly one row direction:
 --       `×→×` editors — `textField @l`, `toggleSwitch @l`
 --         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
@@ -101,7 +101,7 @@ import Type.Proxy (Proxy(..))
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button { label: "Book" } # asCase @"booked"`.
+-- | action — `button { label: "Book" } # asCase @"clicked" @"booked"`.
 button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
 button config = recordToCase @"clicked" $ eventLeaf $
   el "fluent-button" >>> "appearance" := "primary" $ staticText config.label
@@ -223,7 +223,7 @@ slider config = field @"value" $ el "fluent-field" >>> "label-position" := "abov
 -- | open. Until the user picks there is nothing to show, so the field
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
 -- | with `# optional` (nothing preselected, and whatever needs the choice
--- | stays hidden until it exists) or `# required`. The options belong to
+-- | stays hidden until it exists) or `# required @"value"`. The options belong to
 -- | the control, not to the model.
 dropdown :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 dropdown config options = field @"value" $ fieldWith "above" config.label do
@@ -300,7 +300,7 @@ radioGroup config options = field @"value" $ fieldWith "above" config.label do
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — written as `progressBar # projected fraction`,
+-- | rating out of five — written as `progressBar # projected @"value" fraction`,
 -- | with the business function deciding what the fraction means.
 progressBar :: PUI Web { value :: Number } {}
 progressBar = wrap do
@@ -345,13 +345,13 @@ ratingDisplay = wrap do
 -- | has just happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the message bar is built — `messageBar # forCase @"booked" bookedLine`
+-- | the message bar is built — `messageBar # forCase @"event" @"booked" bookedLine`
 -- | — and let the event carry the bare facts.
 messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    text # projected eventText) # cl "fluent-toast"
+    text # projected @"value" eventText) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

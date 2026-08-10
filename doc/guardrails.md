@@ -9,7 +9,7 @@ library already paid to learn it.*
 The rules exist because bambik is a bet, and a bet pays only if it is not
 hedged:
 
-> A widget is a profunctor. Everything is structure **on** the one core
+> A UI component is a profunctor. Everything is structure **on** the one core
 > type — instances, plain combinators, laws — never machinery beside it.
 > Refuse anything that does not come from the algebra.
 
@@ -172,7 +172,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 - Canonical rows adopted by label; anonymous-record configs
   (`{ floatingLabel }`); durations as `{ ms :: Number }` (never
-  `Milliseconds` in a widget signature); unit payloads as `{}` (no
+  `Milliseconds` in a UI component signature); unit payloads as `{}` (no
   `Default Unit` instance, deliberately); selector options carry
   variant-row values, never strings-as-enums (the `labeled` helper was
   removed because it existed only to feed that antipattern).
@@ -245,7 +245,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`field`, `recordToCase`, `projected`, `constantly`).
+  applications use (`field`, `recordToCase`, `projected @"value"`, `constantly`).
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
@@ -259,11 +259,11 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
-copyOf`, `projected f`/`forProperty @l`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @"event" @l
+copyOf`, `projected @"value" f`/`forProperty @"value" @l`, `toCases @"clicked" outcomeOf`, `forCases @"event" lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
-the next `required` waiting to be coined — never a reason to import the
+the next `required @"value"` waiting to be coined — never a reason to import the
 module one floor down. Business optics (`Shutter`/`Reel` in business
 code below the UI) are algebra-layer material and exempt by location.
 
@@ -291,7 +291,7 @@ The library's obligations to it are one-way and concrete:
   "application code never imports `Data.Profunctor`". The checkable
   form: `grep "import Data.Profunctor (" demo/` is empty, always.
 - A shape no mechanism fits is a **missing-vocabulary signal** addressed
-  to the library — the next `required` waiting to be coined — and is
+  to the library — the next `required @"value"` waiting to be coined — and is
   answered here, by admitting vocabulary through the gates below, never
   by relaxing a rule in writing.md.
 - When a library change alters what application code should look like,

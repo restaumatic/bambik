@@ -1,19 +1,27 @@
 -- | `Record → Variant` (× → +) row profunctors, organized (uniformly across
 -- | the four direction modules) as:
 -- |
--- |   * **strength** — `Resolving` (defined here; `PUI m` instances only, no
--- |     `(->)`): the unary power, a loop/iteration step.
+-- |   * **strength** — `Resolving` (`Data.Profunctor.Resolving`; `PUI m`
+-- |     instances only, no `(->)`): the unary power, a loop/iteration step.
+-- |     Its optics `Shutter`/`Coshutter` are in `Data.Profunctor.Optic` —
+-- |     neither the classes nor the optics mention a row, so neither lives
+-- |     here.
+-- |
+-- | The **canonical-row adopters** here (`asCase`/`toCases`) take the canonical label as their
+-- | first type argument `@c` and carry no literal: which label a component
+-- | speaks (`value`, `clicked`, `event`) is an L3 citizenship convention of
+-- | the vocabulary, not a row-profunctor fact. The label is supplied at the
+-- | **call site** — `# asCase @"clicked" @l` — so no layer hard-codes it and
+-- | the convention is visible where it is used.
 -- |   * **direction class** — `RecordToVariant`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
--- |     *what the wrapped profunctor runs on*: `focusShutter` (a sub-record),
+-- |     *what the wrapped profunctor runs on*: `subResolving` (a sub-record),
 -- |     `focusProperty` (one field), `backgroundProperty` (the background,
 -- |     the focus escaping), `recordToCase` (introduce; mere
--- |     `Profunctor`), the `Shutter` optic with `shutter`/`shutterE`, the
--- |     `Coshutter` optic with `coshutter`/`coshutterE` (the reversed
--- |     `Reel`) — and
--- |     over the co-strength `Coresolving`: `folding @w` (the terminating
--- |     fold at row granularity).
+-- |     `Profunctor`) — and over the co-strength `Coresolving`:
+-- |     `folding @w` (the terminating fold at row granularity, the
+-- |     `Coshutter` optic's row form).
 -- |
 -- | Law connecting the two classes: the mixed directions have no `identity` to
 -- | pin (nothing inhabits a mode-crossing diagonal), but they have the class's
@@ -30,38 +38,26 @@
 -- | As nullary operator, `pempty` is the empty merge:
 -- | `recordToVariant pempty g = g`. Silence is forced on the output end (the
 -- | empty variant is uninhabited) and sufficient on the input end (the empty
--- | record demands nothing), so `PUI` implements it as its silent widget:
+-- | record demands nothing), so `PUI` implements it as its silent UI component:
 -- | `pempty = silence`.
 module Data.Profunctor.Row.RecordToVariant
-  ( Coshutter
-  , coshutter
-  , coshutterE
-  , Shutter
-  , bind
-  , class Coresolving
+  ( bind
   , class RecordToVariant
-  , coresolve
   , discard
   , folding
   , pempty
   , recordToVariant
-  , class Resolving
   , focusProperty
-  , echoCase
   , asCase
   , recordToCase
   , toCase
   , toCases
-  , resolve
   , backgroundProperty
-  , shutter
-  , shutterE
-  , focusShutter
+  , subResolving
   )
   where
 
 import Data.Either (Either(..), either)
-import Control.Category (class Category, identity)
 import Control.Semigroupoid ((>>>))
 import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
@@ -74,65 +70,17 @@ import Record (get)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
+import Data.Profunctor.Optic (shutterE)
+import Data.Profunctor.Resolving (class Coresolving, class Resolving, coresolve, resolve)
 import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
 import Unsafe.Coerce (unsafeCoerce)
-
--- | The **unary** product→sum strength for this direction: a single **loop /
--- | iteration step**. `resolve` runs a transformer `p a b` on an input `a`
--- | alongside a carried state `c`, returning a `Step`:
--- |
--- | ```
--- | resolve :: p a b -> p (Tuple a c) (Either b c)
--- |                                      -- Left  b = Done b  (finish)
--- |                                      -- Right c = Loop c  (continue)
--- | ```
--- |
--- | State enters guaranteed (product input) and leaves optionally (a branch of
--- | the sum output), so the step may *halt*; closing the `c` channel gives `p`
--- | a terminating iteration (`tailRec`-style). It is the `identity`-pinned form
--- | of the positional product→sum base merge
--- | `p a b -> p c d -> p (Tuple a c) (Either b d)` (its second operand fixed
--- | to `identity`) — the product→sum analogue of how `focusRecord` is the
--- | unary form of `recordToRecord`.
--- |
--- | With no out-of-band loop signal in the wire protocol (values are just
--- | values), the `PUI` instance derives the branch **from time**: every
--- | emission loops (`Right`) while the widget is still moving, and the last
--- | emission resolves (`Left`) at quiescence — so
--- | `coresolve (resolve g) = debounced g ≅ g` up to time, once primed.
--- | (No `(->)` instance: a timeless carrier could only give the trivial
--- | always-`Done` step, which carries no iteration.)
--- |
--- | This is the **bare strength** for the `× → +` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is `focusShutter` below —
--- | exactly as `focusRecord` is built on `Strong`.
-class Profunctor p <= Resolving p where
-  resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
-
--- | The **co-strength** of `Resolving` — its retraction: where `resolve`
--- | *adds* the loop channel `c`, `coresolve` *ties* it. A `Right c` emission
--- | is retained as the state paired with subsequent inputs; a `Left b` exits.
--- | Semantically a **terminating fold**: inputs accumulate through `c` until
--- | the wrapped profunctor decides `b` — the fourth loop flavor in the trace
--- | quartet (`Costrong` = state that emits each step, `Cochoice` = control
--- | that emits at exit, `Coresolving` = state that emits at exit,
--- | `Coretaining` = control that emits each step).
--- |
--- | Retraction law, shared by all four traces: `coresolve (resolve g) ≅ g` —
--- | once the state channel is primed (state must enter somewhere; the `PUI`
--- | instance is knowledge-gated like `Costrong`, withholding inputs until a
--- | first `c` exists).
--- |
--- | (No `(->)` instance: tying a knot takes state.)
-class Profunctor p <= Coresolving p where
-  coresolve :: forall a b c. p (Tuple a c) (Either b c) -> p a b
 
 -- | `coresolve` at row granularity — the **terminating fold** with labeled
 -- | channels: the wrapped profunctor sees its input joined with the folded
 -- | state sub-record `fb`, and answers with a variant that either continues
 -- | the fold (case `w`, carrying the next `{ | fb }` — retained silently)
 -- | or exits (any `done` case — emitted). The `× → +` co-analogue of
--- | `focusShutter`: there the background is wrapped as case `w` to *escape*,
+-- | `subResolving`: there the background is wrapped as case `w` to *escape*,
 -- | here case `w` is unwrapped to *loop*. No coercions: `on` splits the
 -- | output variant exactly.
 -- |
@@ -160,27 +108,6 @@ folding seed g =
       (on (Proxy @w) Right Left)
       (g >>> seeded (inj (Proxy @w) seed)))
 
--- | The optic `coresolve` induces: the **Coshutter** — the `Reel` run
--- | backwards (`Coshutter s t a b ≅ Reel b a t s`). Eliminating the residual
--- | `c` (instantiated to `s → a`) by co-Yoneda collapses
--- | `∃c. (s × c → a) × (b → t + c)` to a single `step : b → t + (s → a)`:
--- | each emission either exits with `t` or yields a **new way to read
--- | inputs** — the fold state is a reader. The collapsed form has no initial
--- | reader, which is exactly why the `PUI` carrier gates inputs until primed.
--- | `folding @w` is this optic at row granularity.
-type Coshutter s t a b = forall p. Coresolving p => p a b -> p s t
-
-coshutter :: forall s t a b. (b -> Either t (s -> a)) -> Coshutter s t a b
-coshutter step = coshutterE (\(Tuple s f) -> f s) step
-
--- | Construct a `Coshutter` straight from its **existential encoding**
--- | `∃c. (s × c → a) × (b → t + c)`: pick the fold channel `c`, then supply
--- | `decon` (read the input joined with the fold state) and `recon` (exit or
--- | continue each emission). `coshutter` is this at the co-Yoneda witness
--- | `c := s → a`.
-coshutterE :: forall s t a b c. (Tuple s c -> a) -> (b -> Either t c) -> Coshutter s t a b
-coshutterE decon recon g = coresolve (dimap decon recon g)
-
 class Profunctor p <= RecordToVariant p where
   recordToVariant :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
     SharedRecordInputs i1 i2 i i12 i1x i2x =>
@@ -207,7 +134,7 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
--- | for this direction. Where `property` **refocuses** (background fixed, focus
+-- | for this direction. Where `RecordToRecord.focusProperty` **refocuses** (background fixed, focus
 -- | transformed), this **re-backgrounds**: the **focus** `f` at `l` is held
 -- | fixed and threaded across the boundary as **input field ↔ output case**,
 -- | while the wrapped profunctor transforms the **background** `b → b'`
@@ -234,13 +161,13 @@ backgroundProperty g =
     (resolve g)
 
 -- | The single-field **focus** for this direction — the `× → +` analogue of
--- | `property` (row-typed `first`), built on `resolve` exactly as `property` is
--- | built on `first`. The **focus** `f` at `l` of the input **shot** `s` is fed
+-- | `RecordToRecord.focusProperty` (row-typed `first`), built on `resolve`
+-- | exactly as that one is built on `first`. The **focus** `f` at `l` of the input **shot** `s` is fed
 -- | to the wrapped `p f f'`; the **background** `{ | b }` cannot stay a record
--- | inside the `Variant` output, so — as in `focusShutter` — it is wrapped as a
+-- | inside the `Variant` output, so — as in `subResolving` — it is wrapped as a
 -- | single output case `w`: `Done` emits case `l :: f'`, the `Loop`/escape
 -- | branch emits case `w` carrying the untouched background. The single-field
--- | form of `focusShutter`; the transpose of `backgroundProperty`, which runs the
+-- | form of `subResolving`; the transpose of `backgroundProperty`, which runs the
 -- | wrapped profunctor on the *background* and lets the focus escape.
 focusProperty
   :: forall @l @w p f f' b s lx wx s'
@@ -275,8 +202,8 @@ focusProperty g =
 -- | Adopt a **canonically-labeled** event component (`[ clicked :: a ]` out,
 -- | the citizenship-carrying interface) as business case `l`: renames the
 -- | case, input untouched — `rmap`-only, the `asField` twin at `× → +`.
-asCase :: forall @l p i a s. IsSymbol l => Profunctor p => Cons l a () s => p i [ clicked :: a ] -> p i [ | s ]
-asCase = rmap (on (Proxy @"clicked") (inj (Proxy @l)) case_)
+asCase :: forall @c @l p i a s cs. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () cs => Cons l a () s => p i [ | cs ] -> p i [ | s ]
+asCase = rmap (on (Proxy @c) (inj (Proxy @l)) case_)
 
 recordToCase
   :: forall @l p r b s f
@@ -287,15 +214,16 @@ recordToCase
   -> p { | r } [ | s ]
 recordToCase = rmap (inj (Proxy @l))
 
--- | Introduce a widget's **bare** output as case `l`, projected by the
+-- | Introduce a UI component's **bare** output as case `l`, projected by the
 -- | payload projection — `recordToCase` freed from the record-input
--- | constraint, at the **closed singleton row** (the `field`/`echoCase`
--- | lesson: pinned empty background, so it infers with no annotations).
+-- | constraint, at the **closed singleton row** (the `field` lesson:
+-- | pinned empty background, so it infers with no annotations).
 -- | The payload projection is the mechanism's own argument (import-tower
 -- | rule L16: projections ride mechanisms, applications never map raw
--- | channels): `listOf {} entries item # toCase @"picked" _.key`;
+-- | channels): a collection element emitting its identity,
+-- | `… # toCase @"picked" _.key`;
 -- | `identity` says verbatim, the `forValue` of case introduction. The
--- | output-side dual of `onCase` and the general sibling of `asCase`
+-- | output-side dual of `atCase` and the general sibling of `asCase`
 -- | (which renames the canonical `clicked` case).
 toCase :: forall @l p i a b s. IsSymbol l => Cons l b () s => Profunctor p => (a -> b) -> p i a -> p i [ | s ]
 toCase f = rmap (\a -> inj (Proxy @l) (f a))
@@ -303,53 +231,19 @@ toCase f = rmap (\a -> inj (Proxy @l) (f a))
 -- | Fire the **business outcome** of what the emitter was shown: adopt the
 -- | canonical click case by applying `f` to its payload. Where `asCase @l`
 -- | renames the event and leaves the payload alone, `toCases` dissolves the
--- | event into the outcome `f` computes — typically a variant of business
--- | results: `button { label: "Sign up" } # toCases register` emits
--- | `register`'s cases directly. The output dual of `VariantToRecord`'s
--- | `forCases` (emitters classify outward, statuses render inward).
-toCases :: forall p i a o. Profunctor p => (a -> o) -> p i [ clicked :: a ] -> p i o
-toCases f = rmap (on (Proxy @"clicked") f case_)
-
--- | `recordToCase` over the echo wire, at the **closed singleton row** —
--- | the `field` lesson applied to `× → +`: the pinned empty background
--- | (`Cons l { | r } () s`) is what lets this infer with no annotations as
--- | a merge operand, where `recordToCase @l identity`'s open output row is
--- | ambiguous under the merges' `Nub`. Echoes every record fed as output
--- | case `l` — the pass-through operand of an event merge.
-echoCase
-  :: forall @l p r s
-   . IsSymbol l
-  => Cons l { | r } () s
-  => Profunctor p
-  => Category p
-  => p { | r } [ | s ]
-echoCase = rmap (inj (Proxy @l)) identity
-
--- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`
--- | (instantiated to `s`) by co-Yoneda collapses `∃c. (s → a × c) × (b + c → t)`
--- | to `(view : s → a) × (build : b → t) × (escape : s → t)` — a lens that can
--- | *snap shut*: run the focus and `build` (the `Done` branch), or `escape`
--- | straight to `t` (the `Loop`/short-circuit). Like a camera shutter: it opens,
--- | loops while held, then snaps to a single captured value.
-type Shutter s t a b = forall p. Resolving p => p a b -> p s t
-
-shutter :: forall s t a b. (s -> a) -> (b -> t) -> (s -> t) -> Shutter s t a b
-shutter view build escape g = shutterE (\s -> Tuple (view s) s) (either build escape) g
-
--- | Construct a `Shutter` straight from its **existential encoding**
--- | `∃c. (s → a × c) × (b + c → t)`: pick the residual `c`, then supply `decon`
--- | (split `s` into a focus `a` and the residual `c`) and `recon` (rebuild `t`
--- | from the focus result `b` — the `Done` branch — *or* the residual `c` — the
--- | `Loop`/escape branch). The quantified `c` is exactly the eliminator of that
--- | existential; `resolve` is the carrier that threads `c`. `shutter` is this at
--- | the co-Yoneda witness `c := s` (`decon = \s -> Tuple (view s) s`,
--- | `recon = either build escape`).
-shutterE :: forall s t a b c. (s -> Tuple a c) -> (Either b c -> t) -> Shutter s t a b
-shutterE decon recon g = dimap decon recon (resolve g)
+-- | event into the **variant of business results** `f` computes:
+-- | an emitter `# toCases @"clicked" register` emits `register`'s cases
+-- | directly. The output dual of `VariantToRecord`'s `forCases` (emitters
+-- | classify outward, statuses render inward). The outcome row is row-typed
+-- | on purpose: this is the `× → +` output side, where a non-variant result
+-- | would be out of shape — so `toCases`, like every other placement here,
+-- | both takes and returns a row profunctor.
+toCases :: forall @c p i a o s. IsSymbol c => Cons c a () s => Profunctor p => (a -> [ | o ]) -> p i [ | s ] -> p i [ | o ]
+toCases f = rmap (on (Proxy @c) f case_)
 
 -- | Row existential `Shutter` focusing a whole **sub-Record** — the row-valued
 -- | **focus** `f` — of the input **shot** `s`; the residual is the **background**
--- | `{ | b }` (`ExclusiveRows f b s`, the same split `focusRecord` uses).
+-- | `{ | b }` (`ExclusiveRows f b s`, the same split `RecordToRecord.subStrong` uses).
 -- | Crossing `× → +`, the background can't stay a record in the `Variant`
 -- | output, so it is **wrapped as a single output case `w`** — a variant
 -- | carrying the record. The output extension is itself shot-shaped:
@@ -357,10 +251,11 @@ shutterE decon recon g = dimap decon recon (resolve g)
 -- | shot at `w`, against the inner output `b'`. The inner
 -- | `p { | f } [ | b' ]` runs on the focus: `Done` expands its result into
 -- | `s'`, `Loop` injects the retained background-record into case `w`. The
--- | mixed-direction analogue of `focusRecord` — same sub-record focus, but the
+-- | mixed-direction analogue of `RecordToRecord.subStrong` — same sub-record focus, but the
 -- | background is *wrapped* to cross into the variant output rather than
 -- | carried same-kind. The `× → +` row combinator over the bare strength
--- | `Resolving`, just as `focusRecord` is the row combinator over `Strong`.
+-- | `Resolving`, just as `RecordToRecord.subStrong` is the row combinator over
+-- | `Strong`.
 -- |
 -- | ```purescript
 -- | -- focus (item, qty); wrap the background { note } into output case `draft`
@@ -369,9 +264,9 @@ shutterE decon recon g = dimap decon recon (resolve g)
 -- |   [ priced :: Int, draft :: { note :: String } ]              -- s'  output shot
 -- |   { item :: String, qty :: Int }                              -- f   sub-Record focus
 -- |   [ priced :: Int ]                                            -- b'  inner output
--- | checkout = focusShutter @"draft"
+-- | checkout = subResolving @"draft"
 -- | ```
-focusShutter
+subResolving
   :: forall @w p f b s b' s' mix
    . Resolving p
   => IsSymbol w
@@ -380,7 +275,7 @@ focusShutter
   => Union b' mix s'
   => p { | f } [ | b' ]
   -> p { | s } [ | s' ]
-focusShutter g =
+subResolving g =
   shutterE
     (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
     (either expand (inj (Proxy @w)))

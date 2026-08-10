@@ -14,15 +14,15 @@ timerHTML :: Effect Unit
 timerHTML =
   body $ div $ ( Semigroupoid.do
       ( RecordToRecord.do
-          progress # projected fraction
+          progress # projected @"value" fraction
           p RecordToRecord.do
-            text # forField @"elapsed" show
+            text # forField @"value" @"elapsed" show
             staticText "s / "
-            text # forField @"duration" wholeSeconds
+            text # forField @"value" @"duration" wholeSeconds
             staticText "s"
           p ( label $ RecordToRecord.do
               staticText "Duration "
-              rangeInput ) # asField @"duration") # completed
+              rangeInput ) # asField @"value" @"duration") # completed
       every tickPeriod tick
       button (staticText "Reset") # with nothingElapsed # toCase @"clicked" identity # updated (match { clicked: const })
   ) # mvu tenSecondFreshTimer

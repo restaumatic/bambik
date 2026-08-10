@@ -9,7 +9,7 @@ const fmt = (n) => n < 1024 ? n + "B"
   : (n / 1048576).toFixed(1).replace(/\.0$/, "") + "MB"
 
 // The demo mounts into <body> at runtime and has no marker class of its own (it
-// is whatever the widget builds), so it cannot be wrapped in static markup:
+// is whatever the UI component builds), so it cannot be wrapped in static markup:
 // everything body gains that is not page chrome is moved into one column box,
 // with the tracing note last — which is what makes that note read as belonging
 // to the running demo rather than to the source listing beside it.

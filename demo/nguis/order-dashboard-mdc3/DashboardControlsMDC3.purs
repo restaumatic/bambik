@@ -37,7 +37,7 @@ gauge config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     linearProgress
-    labelLarge $ text # projected percentText
+    labelLarge $ text # projected @"value" percentText
 
 trendChart :: { label :: String } -> PUI Web { value :: Array Number } {}
 trendChart config =
@@ -53,9 +53,9 @@ leaderboard config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     list ( ( listItem $ RecordToRecord.do
-        text # forField @"name" identity
+        text # forField @"value" @"name" identity
         staticText " — "
-        text # forField @"score" identity ) # foreach @"name" identity ) # atField @"value" # displayed
+        text # forField @"value" @"score" identity ) # foreach @"name" identity ) # atField @"value" # displayed
 
 rangePicker :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 rangePicker config options =

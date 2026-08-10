@@ -16,21 +16,21 @@ potluckMDC3 =
     elevation5 $
       card { caption: "Potluck" } $ ( Semigroupoid.do
           bodyMedium ( Semigroupoid.do
-              text # projected guestCount
+              text # projected @"value" guestCount
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # displayed ) # tapped
           ( list $
               ( listItem $ RecordToRecord.do
-                  titleMedium text # forField @"name" identity
+                  titleMedium text # forField @"value" @"name" identity
                   segmentedButton
                     [ { value: .salad {}, label: "Salad" }
                     , { value: .lasagna {}, label: "Lasagna" }
                     , { value: .pavlova {}, label: "Pavlova" }
-                    ] # asField @"dish" ) # acted @"name" ) # field @"guests"
+                    ] # asField @"value" @"dish" ) # acted @"name" ) # field @"guests"
           headlineSmall $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do
-                text # forField @"name" identity
+                text # forField @"value" @"name" identity
                 staticText "’s "
-                text # forField @"dish" dishText
+                text # forField @"value" @"dish" dishText
                 staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation

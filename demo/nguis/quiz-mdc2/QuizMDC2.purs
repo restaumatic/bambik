@@ -17,22 +17,22 @@ quizMDC2 =
     elevation20 $
       card { caption: "Quiz" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projected progressFraction
+              linearProgress # projected @"value" progressFraction
               body1 RecordToRecord.do
                 staticText "Question "
-                text # projected questionNumberText
+                text # projected @"value" questionNumberText
                 staticText " of "
                 staticText questionCountText
                 staticText " · Score "
-                text # forField @"correct" show) # completed
+                text # forField @"value" @"correct" show) # completed
           ( Semigroupoid.do
-              headline5 text # forField @"prompt" identity # completed
-              listOf {} _.choices (text # forProperty @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
+              headline5 text # forField @"value" @"prompt" identity # completed
+              listOf {} _.choices (text # forProperty @"value" @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
           ( Semigroupoid.do
               headline6 ( RecordToRecord.do
                   staticText "Final score: "
-                  text # forField @"correct" show
+                  text # forField @"value" @"correct" show
                   staticText " / "
-                  text # forField @"total" show) # displayed
-              button { label: "Restart", icon: "replay" } # asCase @"restarted") # provided finalOutcome # updated (match { restarted: const (const freshQuizRun) })
+                  text # forField @"value" @"total" show) # displayed
+              button { label: "Restart", icon: "replay" } # asCase @"clicked" @"restarted") # provided finalOutcome # updated (match { restarted: const (const freshQuizRun) })
       ) # mvu freshQuizRun

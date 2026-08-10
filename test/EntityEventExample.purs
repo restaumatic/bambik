@@ -4,8 +4,8 @@ import Prelude
 
 import Data.Lens (Lens', Prism', preview, review, set, view)
 import Data.Maybe (Maybe)
-import Data.Profunctor.Row.RecordToRecord (property)
-import Data.Profunctor.Row.VariantToVariant (case_)
+import Data.Profunctor.Row.RecordToRecord (focusProperty)
+import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Variant (case_, on) as Variant
 import Type.Proxy (Proxy(..))
 
@@ -23,11 +23,11 @@ sampleOrder = { customer: "Ada", item: "Espresso", qty: 1 }
 
 -- The SAME label "qty" reads two ways on the same row ----------------------
 
-qtyField :: Lens' OrderEntity Int     -- a field of the entity   (property)
-qtyField = property @"qty"
+qtyField :: Lens' OrderEntity Int     -- a field of the entity   (focusProperty)
+qtyField = focusProperty @"qty"
 
-qtyCase :: Prism' OrderEvent Int      -- a case  of the event    (case_)
-qtyCase = case_ @"qty"
+qtyCase :: Prism' OrderEvent Int      -- a case  of the event    (focusCase)
+qtyCase = focusCase @"qty"
 
 -- entity -> event : read the live field, fire it as that case
 --   (value-level essence of backgroundProperty / Shutter, the × → + leg)

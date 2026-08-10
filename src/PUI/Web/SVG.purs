@@ -4,7 +4,7 @@
 -- | sparkline or a scatter of circles is drawn once and moved in place as
 -- | values arrive.
 -- |
--- | Import it qualified (`import PUI.Web.SVG as SVG`) when a widget needs both
+-- | Import it qualified (`import PUI.Web.SVG as SVG`) when a UI component needs both
 -- | the SVG `<text>` shape and the HTML `text` leaf that shows a string.
 module PUI.Web.SVG
   ( circle

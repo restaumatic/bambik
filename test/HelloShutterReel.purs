@@ -13,13 +13,11 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Row.RecordToVariant (shutter)
-import Data.Profunctor.Row.RecordToRecord (asField)
-import Data.Profunctor.Row.VariantToRecord (reel)
+import Data.Profunctor.Optic (reel, shutter)
 import Effect (Effect)
 import PUI.Web.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (PUI, silence, with)
+import PUI (PUI, asField, silence, with)
 import PUI.Web.HTML (body, button, staticText, text)
 import PUI.Web (Web)
 
@@ -35,7 +33,7 @@ greet :: PUI Web String String
 greet =
   reel
     (\prefix -> Right \typed -> prefix <> typed.name)
-    (asField @"name" (MDC.filledTextField { floatingLabel: "Your name" }))
+    (asField @"value" @"name" (MDC.filledTextField { floatingLabel: "Your name" }))
 
 -- | The **Shutter** (× → +): open on the greeting, then snap shut on one value.
 -- | The button click is a `Done` (`cont=false`), so the **build** leg fires and

@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
-import PUI (asCase, completed, displayed, forCase, forField, mvu, observed, onCase, projected, tapped, toCase, updated)
+import PUI (asCase, completed, displayed, forCase, forField, mvu, observed, atCase, projected, tapped, toCase, updated)
 import PUI.Web.HTML (body, provided, span, staticText, text)
 import PUI.Web.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,35 +19,35 @@ inboxMDC3 =
     elevation5 $
       card { caption: "Inbox" } $ ( Semigroupoid.do
           bodySmall ( RecordToRecord.do
-              text # projected unreadCountText
+              text # projected @"value" unreadCountText
               staticText " unread of "
-              text # projected messageCountText
+              text # projected @"value" messageCountText
               staticText " messages" ) # completed
           listOf { selected: _.attention } mailboxRows
             ( span $ Semigroupoid.do
                 staticText "● " # provided unreadMark # displayed
                 ( RecordToRecord.do
-                    text # forField @"sender" identity
+                    text # forField @"value" @"sender" identity
                     staticText " — "
-                    text # forField @"subject" identity ) # displayed ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text # forField @"value" @"subject" identity ) # displayed ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headlineSmall text # forField @"subject" identity
+                  headlineSmall text # forField @"value" @"subject" identity
                   bodyMedium RecordToRecord.do
                     staticText "From: "
-                    text # forField @"sender" identity
-                  bodyLarge text # forField @"body" identity) # tapped
-              iconButton { icon: "delete", label: "Delete message" } # asCase @"deleteRequested") # provided openedMessage # updated (match { deleteRequested: const requestDelete })
+                    text # forField @"value" @"sender" identity
+                  bodyLarge text # forField @"value" @"body" identity) # tapped
+              iconButton { icon: "delete", label: "Delete message" } # asCase @"clicked" @"deleteRequested") # provided openedMessage # updated (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
-                  button { label: "Delete" } # asCase @"emptied"
-                  button { label: "Keep" } # asCase @"kept") # provided confirmingDelete
+                  button { label: "Delete" } # asCase @"clicked" @"emptied"
+                  button { label: "Keep" } # asCase @"clicked" @"kept") # provided confirmingDelete
               VariantToVariant.do
-                snackbar # forCase @"emptied" (const inboxZeroLine) # observed
-                identity # onCase @"kept" # toCase @"kept" identity) # updated (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
-          fab { icon: "edit", label: "Compose" } # asCase @"compose" # updated (match { compose: const <<< composeMessage })
+                snackbar # forCase @"event" @"emptied" (const inboxZeroLine) # observed
+                identity # atCase @"kept" # toCase @"kept" identity) # updated (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
+          fab { icon: "edit", label: "Compose" } # asCase @"clicked" @"compose" # updated (match { compose: const <<< composeMessage })
           ( menu { label: "Sort" } $ RecordToVariant.do
-              menuItem { label: "By sender" } # asCase @"bySender"
-              menuItem { label: "By subject" } # asCase @"bySubject"
-              menuItem { label: "Unread first" } # asCase @"unreadFirst") # updated (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
+              menuItem { label: "By sender" } # asCase @"clicked" @"bySender"
+              menuItem { label: "By subject" } # asCase @"clicked" @"bySubject"
+              menuItem { label: "Unread first" } # asCase @"clicked" @"unreadFirst") # updated (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
       ) # mvu mondayMail

@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asField, completed, displayed, field, foreach, forField, looped, onCase, silence, toCase, updated, with)
+import PUI (action, asField, completed, displayed, field, foreach, forField, looped, atCase, silence, toCase, updated, with)
 import PUI.Web.HTML (attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,27 +21,27 @@ crudHTML = do
           ( RecordToRecord.do
               p ( label $ RecordToRecord.do
                   staticText "Filter prefix (surname) "
-                  input "text" # field @"value" ) # asField @"prefix"
+                  input "text" # field @"value" ) # asField @"value" @"prefix"
               p ( label $ RecordToRecord.do
                   staticText "Name "
-                  input "text" # field @"value" ) # asField @"name"
+                  input "text" # field @"value" ) # asField @"value" @"name"
               p ( label $ RecordToRecord.do
                   staticText "Surname "
-                  input "text" # field @"value" ) # asField @"surname") # completed
+                  input "text" # field @"value" ) # asField @"value" @"surname") # completed
           ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
               ( clicked ( li >>> attrWith "style" (entryStyle <<< _.selected) $ displayed $ RecordToRecord.do
-                  text # forField @"surname" identity
+                  text # forField @"value" @"surname" identity
                   staticText ", "
-                  text # forField @"name" identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text # forField @"value" @"name" identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
           ( Semigroupoid.do
               div $ RecordToVariant.do
                 button (staticText "Create") # toCase @"create" identity
                 button (staticText "Update") # toCase @"update" identity
                 button (staticText "Delete") # toCase @"delete" identity
               VariantToVariant.do
-                silence # action (createPerson catalogue) # onCase @"create"
-                silence # action (updatePerson catalogue) # onCase @"update"
-                silence # action (deletePerson catalogue) # onCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                silence # action (createPerson catalogue) # atCase @"create"
+                silence # action (updatePerson catalogue) # atCase @"update"
+                silence # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
   ) # with {}
 
 entryStyle :: Boolean -> String

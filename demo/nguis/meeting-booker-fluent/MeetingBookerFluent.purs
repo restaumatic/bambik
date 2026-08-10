@@ -16,20 +16,20 @@ meetingBookerFluent =
     card { caption: "Book a meeting room" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
-              textField { label: "Meeting title" } # asField @"title"
+              textField { label: "Meeting title" } # asField @"value" @"title"
               dropdown { label: "Room" }
                 [ { value: .focusPod {}, label: "Focus pod (4 seats)" }
                 , { value: .boardroom {}, label: "Boardroom (12 seats)" }
                 , { value: .auditorium {}, label: "Auditorium (40 seats)" }
-                ] # optional # asField @"room"
+                ] # optional # asField @"value" @"room"
               radioGroup { label: "Duration" }
                 [ { value: .quarter {}, label: "15 min" }
                 , { value: .half {}, label: "30 min" }
                 , { value: .hour {}, label: "60 min" }
-                ] # optional # asField @"duration"
-              toggleSwitch { label: "Include a Teams link" } # asField @"online"
+                ] # optional # asField @"value" @"duration"
+              toggleSwitch { label: "Include a Teams link" } # asField @"value" @"online"
               divider ) # completed
-          (slider { label: "Attendees" } # asField @"seats") # provided seatsFor # updated (informed chooseSeats)
+          (slider { label: "Attendees" } # asField @"value" @"seats") # provided seatsFor # updated (informed chooseSeats)
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
@@ -40,14 +40,14 @@ meetingBookerFluent =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
-              text # forField @"title" titleText
+              text # forField @"value" @"title" titleText
               staticText " in the "
-              text # forField @"room" roomText
+              text # forField @"value" @"room" roomText
               staticText ", "
-              text # forField @"duration" durationText
+              text # forField @"value" @"duration" durationText
               staticText ", "
-              text # forField @"attendees" headcount
+              text # forField @"value" @"attendees" headcount
               staticText " attendees"
-              text # projected onlineNote ) # tapped
-          button { label: "Book the room" } # asCase @"booked" ) # provided completePlan
-      messageBar # forCase @"booked" bookedLine
+              text # projected @"value" onlineNote ) # tapped
+          button { label: "Book the room" } # asCase @"clicked" @"booked" ) # provided completePlan
+      messageBar # forCase @"event" @"booked" bookedLine

@@ -23,7 +23,12 @@
 -- |
 -- | `*` marks what this library introduces; the rest is the ecosystem's
 -- | (`Strong`/`Choice` and their `Lens`/`Prism`). The optics follow from the
--- | classes by Pastro–Street.
+-- | classes by Pastro–Street, and neither the classes nor the optics mention
+-- | a row: the coined strengths live in `Data.Profunctor.Resolving` and
+-- | `Data.Profunctor.Retaining`, all six coined optics in
+-- | `Data.Profunctor.Optic`, so a `Data.Profunctor.Row.*` module holds only
+-- | what is about rows — the merge, its unit, and the placements and trace
+-- | row forms below.
 -- |
 -- | The **pure** shapes' `Strong`/`Choice` are Tambara modules for the `×` and
 -- | `+` actions. On the **mixed** shapes the background *crosses* carriers
@@ -44,33 +49,76 @@
 -- | table above, so a function's column is its power:
 -- |
 -- | ```
--- | shape        Profunctor only               over the strength      over the co-strength
--- | -----------  ----------------------------  ---------------------  --------------------
--- | p {|a} {|b}  field, asField, atField,      property, focusRecord,  feedback
--- |              forField, forProperty,        tapped, completed
--- |              projected, required
--- | p [|a] [|b]  splitVariant                  case_, focusVariant     iterate
--- | p {|a} [|b]  recordToCase, toCase,         focusProperty,         folding
--- |              asCase, echoCase, toCases     backgroundProperty,
--- |                                            focusShutter
--- | p [|a] {|b}  forCase, forCases             focusCase, reduceCase,  unfolding
--- |                                            backgroundCase,
--- |                                            focusReel
+-- | shape        Profunctor only                 over the strength            over the co-strength
+-- | -----------  ------------------------------  ---------------------------  --------------------
+-- | p {|a} {|b}  atField, atProperty, forField,  subStrong, focusProperty     feedback
+-- |              forProperty, projected,         tapped, completed
+-- |              toField, field, asField,
+-- |              required
+-- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
+-- | p {|a} [|b]  toCase, recordToCase, asCase,   subResolving, focusProperty  folding
+-- |              toCases                         backgroundProperty
+-- | p [|a] {|b}  forCase, forCases               subRetaining, focusCase      unfolding
+-- |                                              backgroundCase, reduceCase
 -- | ```
 -- |
 -- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
 -- | nothing threaded and no state — `field` wraps, `asField`/`forCase` rename
 -- | a canonical row, `toCase` introduces one. The **middle** column carries a
--- | **background** the strength threads: a sub-row (`focusRecord`,
--- | `focusVariant`, `focusShutter`, `focusReel`), one label (`property`,
--- | `backgroundCase`), or the input completed from what the widget did not
--- | produce (`completed`). The **right** column ties a state channel off with
+-- | **background** the strength threads. The sub-row family is named for the
+-- | strength it stands on, so each name is the first constraint in its own
+-- | signature (`subStrong`/`subChoice`/`subResolving`/`subRetaining`) — a
+-- | strength names the carrier *pair*, so no side is privileged, where a
+-- | carrier word would be honest on the pure shapes and half-true on the
+-- | mixed ones. The rest name a single label (`focusProperty`/`focusCase`)
+-- | or that label's complement (`backgroundProperty`/`backgroundCase`), and
+-- | `completed` completes the input from what the UI component did not produce. The
+-- | **right** column ties a state channel off with
 -- | the co-strength — one trace row form per shape, each seeded but `iterate`
 -- | (entities pre-exist, events occur).
 -- |
--- | The left column's length tracks the **input** carrier: a shared record
--- | input can be read many ways, an owned variant input admits one adoption
--- | per side. That is the sharing polarity below, showing up as vocabulary.
+-- | The **complement** cells are blank on the pure shapes for a reason:
+-- | `ExclusiveRows f b s` is symmetric, so `subStrong`/`subChoice` may be
+-- | pointed at either half of a split, and "hold `l`, transform the rest" is
+-- | already one of them at the singleton complement. Only on the mixed shapes
+-- | do the two halves differ, because the escaping half must cross carriers,
+-- | and there are two ways to cross: wrapped whole at a synthetic label
+-- | (`subResolving`/`focusProperty` send the background across as case `w`) or,
+-- | when what escapes is a single label, injected under its own
+-- | (`backgroundProperty`/`backgroundCase`). So `background*` is not the
+-- | complement of `focus*` so much as the **label-preserving** crossing, and
+-- | it exists only at single-label granularity.
+-- |
+-- | The **left** column is generated by three choices: which side is
+-- | reshaped (`lcmap` or `rmap`), that side's carrier, and whether the
+-- | wrapped side is a bare value, the canonical row, or the whole row.
+-- |
+-- | ```
+-- |                          input ×      input +    output ×   output +
+-- | -----------------------  -----------  ---------  ---------  ------------
+-- | bare, closed singleton   atField      atCase     toField    toCase
+-- | bare, open row           atProperty   —          —          recordToCase
+-- | canonical rename         forField     forCase    —          asCase
+-- | whole row                projected    forCases   —          toCases
+-- | ```
+-- |
+-- | The blanks are the **merge law** restated one layer down. A *shared* side
+-- | may be touched partially; an *owned* side must be handled or produced
+-- | whole — records share their input and own their output, variants own
+-- | their input and share their output. So open-row adopters exist at
+-- | record-input and variant-output and nowhere else: a partial variant read
+-- | is not total, and a partial record build would have to invent the
+-- | remaining fields, which is `completed`'s job over `Strong`.
+-- |
+-- | The output-`×` canonical rename needs no entry of its own — it is
+-- | `toField @l _.value`, exactly as `asCase` is `toCase` at the canonical
+-- | eliminator. `field` and `asField` are the fused both-side forms the
+-- | `× → ×` citizens want (canonical on both sides, being editors):
+-- | `field @l = atField @l <<< toField @l identity`, and the deliberately
+-- | absent `+ → +` fusion is `atCase @l # toCase @l' f`. The one entry
+-- | outside the grid is `required` (a canonical-row adjustment, not a row
+-- | reshaping; its dual `optional` needs the carrier and lives in `PUI`),
+-- | plus `splitVariant`, a plain function rather than a placement.
 -- |
 -- | The merge's two obligations are per-side and dual, and they are what the
 -- | constraint vocabulary below spells out: on an **input** side, where does
@@ -133,6 +181,7 @@
 module Data.Profunctor.Row
   ( class InclusiveRows
   , class ExclusiveRows
+  , splitVariant
   , class DispatchableVariants
   , class MergeableRecords
   , class FieldNames
@@ -159,7 +208,10 @@ import Prelude (identity, (<<<), (<>))
 
 import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (expand)
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
+import Data.Variant (class Contractable, contract, expand)
+import Effect.Exception.Unsafe (unsafeThrow)
 import Data.Variant.Internal (class VariantTags)
 import Prim.Ordering (Ordering, LT, EQ, GT)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union) as Row
@@ -230,7 +282,7 @@ instance
 -- | Rebuild a record field-by-field so its **runtime** shape is exactly its
 -- | row — no more, no less. A record's type never guarantees its runtime
 -- | object carries only the declared labels: the widening reshapings above
--- | are coercions, so a widget that echoes or lens-rebuilds its input emits
+-- | are coercions, so a UI component that echoes or lens-rebuilds its input emits
 -- | an object runtime-carrying every field of the *merged* row while typed
 -- | at its own narrow slice. The gated merges use `exactRow` to trim each
 -- | operand's emission to its declared output row before the left-biased
@@ -475,3 +527,20 @@ widenVariantOutput :: forall p i narrow extra wider.
   Row.Union narrow extra wider =>
   p i [ | narrow ] -> p i [ | wider ]
 widenVariantOutput = rmap expand
+
+-- | Dispatch a shot into the focused sub-variant or the background — a
+-- | plain row function, no profunctor in sight, which is why it sits on the
+-- | floor rather than in a shape module. `subChoice`, `iterate` and
+-- | `subRetaining` all split with it.
+splitVariant
+  :: forall f b s
+   . ExclusiveRows f b s
+  => Contractable s f
+  => Contractable s b
+  => [ | s ]
+  -> Either [ | f ] [ | b ]
+splitVariant v = case contract v of
+  Just f -> Left f
+  Nothing -> case contract v of
+    Just b -> Right b
+    Nothing -> unsafeThrow "splitVariant: case in neither focus nor background"
