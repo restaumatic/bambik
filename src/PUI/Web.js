@@ -1,6 +1,15 @@
-// The browser's diagnostics switches, read here and only here: `PUI.Trace`
-// takes them as parameters, so the host-specific spelling lives in the host's
-// own carrier. Applied at the mount entries (see `adoptHostDiagnostics`).
+// The browser's diagnostics: the console sink and the two switches, all of
+// which `PUI.Trace` takes as parameters — it has no JavaScript of its own, so
+// every line of JS in this library lives under the Web layer. Installed at the
+// mount entries (see `adoptHostDiagnostics`).
+
+// traceSink :: String -> Logged -> Effect Unit
+export const traceSink = (tag) => (value) => () =>
+  console.debug("%c[bambik]%c " + tag, "color:#6200ee;font-weight:bold", "color:inherit", value);
+
+// warnSink :: String -> Effect Unit
+export const warnSink = (msg) => () =>
+  console.warn("%c[bambik]%c " + msg, "color:#b26a00;font-weight:bold", "color:inherit");
 
 // hostTracing :: Effect Boolean
 export function hostTracing() {

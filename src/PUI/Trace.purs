@@ -3,15 +3,18 @@
 -- | rather than part of the carrier, which is why they live here and not in
 -- | `PUI` — the core type module carries no foreign import of its own.
 -- |
--- | Nothing here knows about any host. Both switches are **parameters**, off
--- | until something calls `setTracing`/`setDiagnostics`, and the only foreign
--- | code is the log sink itself (`console`, present in every JavaScript host).
--- | A carrier decides where the switches come from: `PUI.Web` reads the
--- | browser's, at its mount entries. Nothing sets them under a headless
--- | `spago test`, so a run over `PUI Effect` probes is silent.
+-- | Nothing here knows about any host, and this module has **no JavaScript at
+-- | all**: the two switches and the log sink are all parameters, installed by
+-- | a carrier (`setTracing`/`setDiagnostics`/`setSink`) and no-ops until then.
+-- | `PUI.Web` installs the browser console and reads the browser's switches at
+-- | its mount entries; nothing installs anything under a headless `spago test`,
+-- | so a run over `PUI Effect` probes is silent.
 module PUI.Trace
-  ( tr
+  ( Logged
+  , Sink
+  , tr
   , gateGuard
+  , setSink
   , setTracing
   , setDiagnostics
   ) where
@@ -25,9 +28,28 @@ import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
+import Unsafe.Coerce (unsafeCoerce)
 
-foreign import traceImpl :: forall a. String -> a -> Effect Unit
-foreign import warnImpl :: String -> Effect Unit
+-- | Whatever a trace line carries, seen opaquely: `tr` is polymorphic in the
+-- | logged value but a `Ref` cannot hold a `forall`, so the value crosses to
+-- | the sink as this. Declared `foreign import data`, which needs no foreign
+-- | *module* — this module has no JavaScript of its own.
+foreign import data Logged :: Type
+
+-- | Where diagnostics go. A carrier installs one; until then both are no-ops,
+-- | so nothing prints even with the switches on.
+type Sink =
+  { trace :: String -> Logged -> Effect Unit
+  , warn :: String -> Effect Unit
+  }
+
+sinkRef :: Ref Sink
+sinkRef = unsafePerformEffect (Ref.new { trace: \_ _ -> pure unit, warn: \_ -> pure unit })
+
+-- | Install the sink. `PUI.Web` passes the browser console at its mount
+-- | entries; a different host passes whatever it logs to.
+setSink :: Sink -> Effect Unit
+setSink sink = Ref.write sink sinkRef
 
 tracingRef :: Ref Boolean
 tracingRef = unsafePerformEffect (Ref.new false)
@@ -55,7 +77,9 @@ setDiagnostics on = Ref.write on diagnosticsRef
 tr :: forall a. String -> a -> Effect Unit
 tr tag a = do
   on <- Ref.read tracingRef
-  when on $ traceImpl tag a
+  when on do
+    sink <- Ref.read sinkRef
+    sink.trace tag (unsafeCoerce a)
 
 -- | One-shot **starvation watchdog** for a knowledge gate. Every gated
 -- | combinator withholds what it cannot yet complete — correct, but
@@ -80,6 +104,8 @@ gateGuard = do
             delay (Milliseconds 3000.0)
             liftEffect do
               fed <- Ref.read fedRef
-              unless fed $ warnImpl msg
+              unless fed do
+                sink <- Ref.read sinkRef
+                sink.warn msg
     , fed: Ref.write true fedRef
     }

@@ -215,15 +215,18 @@ foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> 
 
 foreign import hostTracing :: Effect Boolean
 foreign import hostDiagnostics :: Effect Boolean
+foreign import traceSink :: String -> Trace.Logged -> Effect Unit
+foreign import warnSink :: String -> Effect Unit
 
--- | Hand the browser's diagnostics switches to `PUI.Trace`, which takes them
--- | as parameters and knows no host of its own: `window.__bambikTrace = true`
+-- | Hand the browser's console and diagnostics switches to `PUI.Trace`, which
+-- | takes all three as parameters and has no JavaScript of its own: `window.__bambikTrace = true`
 -- | (or `localStorage.setItem("bambik-trace", "true")`) turns the emission
 -- | trace on, and `window.__bambikNoWarn = true` silences the starvation
 -- | watchdog. Called at the mount entries, so a carrier that never mounts —
 -- | the `Effect` probe carrier the law tests run on — leaves both off.
 adoptHostDiagnostics :: Effect Unit
 adoptHostDiagnostics = do
+  Trace.setSink { trace: traceSink, warn: warnSink }
   hostTracing >>= Trace.setTracing
   hostDiagnostics >>= Trace.setDiagnostics
 
