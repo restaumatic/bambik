@@ -101,11 +101,13 @@ import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
-import Data.Profunctor.Resolving (class Coresolving, class Resolving)
+import Data.Profunctor.Coresolving (class Coresolving)
+import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
-import Data.Profunctor.Retaining (class Coretaining, class Retaining)
+import Data.Profunctor.Coretaining (class Coretaining)
+import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)

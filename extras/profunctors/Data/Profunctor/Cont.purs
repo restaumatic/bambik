@@ -1,5 +1,10 @@
--- | The CPS profunctor — **parked**: nothing in the library, the demos or the
--- | tests reaches it (L14), so it lives outside the build glob.
+-- | The CPS profunctor — the one member of `extras/profunctors` that is a
+-- | **carrier** rather than a class: it does not merely sit beside the
+-- | ecosystem's own, it *instantiates* bambik's row algebra, so unlike its
+-- | neighbours here it could not be lifted into `purescript-profunctor`
+-- | unchanged. It is in the build glob so that the inventory below cannot rot
+-- | against the classes it names, though nothing in the library, the demos or
+-- | the tests reaches it.
 -- |
 -- | `Cont r a b = (b -> r) -> (a -> r) ≅ a -> ((b -> r) -> r)`: the `Star` of
 -- | the continuation monad `K r`, which is where most of the instances below
@@ -12,6 +17,8 @@
 -- |
 -- |   * `Strong`/`Choice` — Tambara over × and +
 -- |   * `Semigroupoid`/`Category` — CPS composition
+-- |     (`K r` is the full continuation *monad* — `Bind`/`Monad` below — so
+-- |     the `Star`-derived instances are available at full strength)
 -- |   * `Wander` — instantiate a traversal's `Applicative` at `K r`
 -- |   * `Acting` — `Wander` at `traverse`; the key is ignored, exactly as in
 -- |     `actedBy _ = map` for `(->)`
@@ -28,6 +35,13 @@
 -- | `Resolving`/`Coretaining` typecheck but are degenerate and stated here
 -- | only to record that: `resolve` can only ever take `Left` (without time
 -- | there is no "still moving"), and `coretain` must drop the state.
+-- |
+-- | The two lists below are **exhaustive** over every profunctor subclass in
+-- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
+-- | plus `Wander`, the four coined strengths in `extras/profunctors`
+-- | (`Resolving`/`Coresolving`/`Retaining`/`Coretaining`), and bambik's own
+-- | `Acting`, `Seeding` and four row merges. Nothing is merely unwritten:
+-- | each class either has an instance here or appears below with its reason.
 -- |
 -- | What it cannot inhabit, and why — the same reasons that shape the
 -- | library's seeded trace forms:
@@ -54,11 +68,12 @@ import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
-import Data.Profunctor.Row (exactRow, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (exactRow, splitVariant, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, class Resolving)
-import Data.Profunctor.Row.VariantToRecord (class Coretaining)
-import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, splitVariant)
+import Data.Profunctor.Coretaining (class Coretaining)
+import Data.Profunctor.Resolving (class Resolving)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Traversable (traverse)
 import Record as Record
@@ -79,6 +94,11 @@ instance Apply (K r) where
 
 instance Applicative (K r) where
   pure b = K \k -> k b
+
+instance Bind (K r) where
+  bind (K g) f = K \k -> g \b -> case f b of K h -> h k
+
+instance Monad (K r)
 
 star :: forall r a b. Cont r a b -> a -> K r b
 star p a = K \k -> unwrap p k a

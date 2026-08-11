@@ -3,8 +3,9 @@
 -- |
 -- |   * **strength** — `Retaining` (`Data.Profunctor.Retaining`; `PUI m`
 -- |     instances only, no `(->)`): the unary power, a Mealy/coroutine step.
--- |     Its optics `Reel`/`Coreel` are in `Data.Profunctor.Optic` — neither
--- |     the classes nor the optics mention a row, so neither lives here.
+-- |     Its co-strength `Coretaining` is in `Data.Profunctor.Coretaining`,
+-- |     and their optics in `Data.Lens.Reel`/`Data.Lens.Coreel` — neither the
+-- |     classes nor the optics mention a row, so none of them lives here.
 -- |
 -- | The **canonical-row adopters** here (`forCase`/`forCases`) take the canonical label as their
 -- | first type argument `@c` and carry no literal: which label a component
@@ -68,8 +69,9 @@ import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Optic (reelE)
-import Data.Profunctor.Retaining (class Coretaining, class Retaining, coretain, retain)
+import Data.Lens.Reel (reelE)
+import Data.Profunctor.Coretaining (class Coretaining, coretain)
+import Data.Profunctor.Retaining (class Retaining, retain)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs, splitVariant)
 import Unsafe.Coerce (unsafeCoerce)
 

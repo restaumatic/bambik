@@ -216,9 +216,39 @@ are 100% explicit, so the list follows them.
 { name = "<app>"
 , dependencies = [ "bambik", "effect", "prelude", "qualified-do", "variant" ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs" ]
+, sources =
+  [ "src/**/*.purs"
+  , ".spago/bambik/<tag>/extras/**/*.purs"
+  ]
 }
 ```
+
+The **second glob is required**, with `<tag>` the same tag as in
+`packages.dhall`. bambik keeps its **ecosystem complements** — modules that
+claim a `Data.Profunctor.*` or `Data.Lens.*` name because they belong in
+those families, mentioning no `PUI`, no row and no carrier — outside its
+`src/`, under two source roots that the one glob covers:
+
+| Root                      | Modules                                                                          |
+|---------------------------|----------------------------------------------------------------------------------|
+| `extras/profunctors/`     | `Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`, `Data.Profunctor.Cont` |
+| `extras/optics/`          | `Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`, `Data.Lens.Prism.Existential` |
+| `extras/row-profunctors/` | `Data.Profunctor.Row` and `Data.Profunctor.Row.*` (the four merges), `Data.Profunctor.Acting`, `Data.Profunctor.Seeding` |
+
+The third root matters most in practice: **`Data.Profunctor.Row.RecordToRecord`
+and its three siblings are what an app imports to write a `.do` merge**, so
+without the glob an ordinary app fails on its own first merge, not on some
+library internal. `src/` in the library holds only `PUI` and `PUI.Web.*`.
+
+Spago globs a git dependency as `.spago/<pkg>/<ver>/src/**/*.purs` —
+hardcoded, ignoring the package's own `sources`, the same reason the
+`bambik` entry above must spell out the dependency list — so without this
+line those eleven modules are never compiled and the build fails with
+`Module Data.Profunctor.Resolving was not found` (or `Module
+Data.Lens.Reel was not found`, whichever the app's imports reach first;
+bambik's own `src/` reaches all of them, so it fails even for an app that
+imports none directly). It is the one place an app names a path inside the
+library, and it must be re-pointed whenever `bambik.version` moves.
 
 ### entry.mjs
 
@@ -301,8 +331,12 @@ by the choice — same scaffold, same build, same rules in
 ## Updating and pinning
 
 To move to a newer library, bump `bambik.version` in `packages.dhall` to a
-newer tag and re-run `spago build`; spago fetches that tag into its own
-`.spago/bambik/<tag>/`, so nothing is upgraded behind your back. The other
+newer tag **and re-point the `.spago/bambik/<tag>/extras/**/*.purs` glob in
+`spago.dhall` to the same tag** (the two must agree — a stale glob points at
+the old checkout, or at nothing once it is cleaned, and the four
+`Data.Profunctor` complement classes go missing), then re-run `spago build`;
+spago fetches that tag into its own `.spago/bambik/<tag>/`, so nothing is
+upgraded behind your back. The other
 two are pinned the same way: the compiler by the release URL in
 `package.json` (npm records the tarball's integrity hash in
 `package-lock.json`, so a re-published asset of the same name is rejected
@@ -319,6 +353,14 @@ check the library's `dependencies` list in the `bambik` entry when you do.
 - `Module PUI was not found` — `bambik` is missing from `spago.dhall`'s
   `dependencies`, or its `packages.dhall` entry failed to fetch (check
   `.spago/bambik/<tag>/src/PUI.purs` exists).
+- `Module Data.Profunctor.Resolving was not found` (or `.Coresolving`,
+  `.Retaining`, `.Coretaining`) — the second `sources` glob in
+  `spago.dhall` is missing or names the wrong tag. It must read
+  `.spago/bambik/<tag>/extras/**/*.purs` with the tag from
+  `packages.dhall`; confirm
+  `.spago/bambik/<tag>/extras/profunctors/Data/Profunctor/Resolving.purs`
+  exists. These four live outside the library's `src/`, which spago's
+  hardcoded git-dependency glob does not reach.
 - A missing module from some *other* library while compiling bambik itself
   — the `bambik` entry's `dependencies` list is behind the library's;
   compare it with `spago.dhall` in `.spago/bambik/<tag>/`.

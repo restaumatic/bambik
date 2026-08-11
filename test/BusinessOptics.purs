@@ -11,7 +11,8 @@ module BusinessOptics where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Profunctor.Optic (Reel, Shutter, reelE, shutterE)
+import Data.Lens.Reel (Reel, reelE)
+import Data.Lens.Shutter (Shutter, shutterE)
 import Data.Profunctor.Row.RecordToVariant (subResolving)
 import Data.Profunctor.Row.VariantToRecord (subRetaining)
 import Data.Tuple (Tuple(..))

@@ -13,7 +13,8 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (lcmap)
-import Data.Profunctor.Optic (reel, shutter)
+import Data.Lens.Reel (reel)
+import Data.Lens.Shutter (shutter)
 import Effect (Effect)
 import PUI.Web.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid

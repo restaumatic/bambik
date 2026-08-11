@@ -8,16 +8,9 @@ would otherwise have to restate in prose.
 
 Re-enter the build by adding `"extra/**/*.purs"` to `sources`.
 
-- **Data/Profunctor/Cont.purs** — the CPS profunctor
-  `Cont r a b = (b -> r) -> (a -> r)`, the repo's only *pure* carrier of the
-  row algebra: a timeless model where the merge gate is continuation nesting
-  rather than a pair of `Ref`s. Its module header inventories which classes it
-  validly inhabits (`Strong`, `Choice`, `Category`, `Wander`, `Acting`,
-  `Cochoice`, `RecordToRecord`, `VariantToVariant`, `Monoid r =>
-  RecordToVariant`) and — more usefully — which it provably cannot
-  (`Costrong`, `Coresolving`, `Retaining`, `VariantToRecord`, `Seeding`,
-  `Closed`), each with the reason. Those impossibilities are exactly why the
-  library's trace forms take seeds and why `looped` is a primitive.
+`Data/Profunctor/Cont.purs` left for `extras/profunctors/`, where it builds:
+being parked was the one thing that let its exhaustive class inventory rot.
+
 - **Data/Default.purs** — `class Default` with a `RecordDefault` derivation,
   once used to prime the checkbox and radio leaves with a value to report
   before the model had supplied one. Removed because that is precisely the

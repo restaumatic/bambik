@@ -3,9 +3,10 @@
 -- |
 -- |   * **strength** — `Resolving` (`Data.Profunctor.Resolving`; `PUI m`
 -- |     instances only, no `(->)`): the unary power, a loop/iteration step.
--- |     Its optics `Shutter`/`Coshutter` are in `Data.Profunctor.Optic` —
--- |     neither the classes nor the optics mention a row, so neither lives
--- |     here.
+-- |     Its co-strength `Coresolving` is in `Data.Profunctor.Coresolving`,
+-- |     and their optics in `Data.Lens.Shutter`/`Data.Lens.Coshutter` —
+-- |     neither the classes nor the optics mention a row, so none of them
+-- |     lives here.
 -- |
 -- | The **canonical-row adopters** here (`asCase`/`toCases`) take the canonical label as their
 -- | first type argument `@c` and carry no literal: which label a component
@@ -70,8 +71,9 @@ import Record (get)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Optic (shutterE)
-import Data.Profunctor.Resolving (class Coresolving, class Resolving, coresolve, resolve)
+import Data.Lens.Shutter (shutterE)
+import Data.Profunctor.Coresolving (class Coresolving, coresolve)
+import Data.Profunctor.Resolving (class Resolving, resolve)
 import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
 import Unsafe.Coerce (unsafeCoerce)
 

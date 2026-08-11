@@ -7,7 +7,7 @@
 -- | `subChoice` (sub-variant focus); over bare `Profunctor`: `atCase`
 -- | (the closed-singleton unwrap, `RecordToRecord.atField`'s transpose);
 -- | over `Cochoice`: `iterate` (the `Coprism` optic's row form). The
--- | `Coprism` optic itself is in `Data.Profunctor.Optic`, and the
+-- | `Coprism` optic itself is in `Data.Lens.Coprism`, and the
 -- | focus/background dispatch `splitVariant` on the floor in
 -- | `Data.Profunctor.Row` — neither mentions a row profunctor.
 -- |
@@ -50,7 +50,7 @@ import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Optic (prismE)
+import Data.Lens.Prism.Existential (prismE)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
 
 class Profunctor p <= VariantToVariant p where

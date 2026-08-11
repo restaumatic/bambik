@@ -22,13 +22,29 @@
 -- | ```
 -- |
 -- | `*` marks what this library introduces; the rest is the ecosystem's
--- | (`Strong`/`Choice` and their `Lens`/`Prism`). The optics follow from the
--- | classes by Pastro–Street, and neither the classes nor the optics mention
--- | a row: the coined strengths live in `Data.Profunctor.Resolving` and
--- | `Data.Profunctor.Retaining`, all six coined optics in
--- | `Data.Profunctor.Optic`, so a `Data.Profunctor.Row.*` module holds only
--- | what is about rows — the merge, its unit, and the placements and trace
--- | row forms below.
+-- | (`Strong`/`Choice` with their `Lens`/`Prism`, and the duals
+-- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
+-- | ecosystem never built). The optics follow from the strength/co-strength
+-- | classes by Pastro–Street, and neither those classes nor the optics
+-- | mention a row, so neither lives in `Data.Profunctor.Row.*`. Both follow
+-- | the ecosystem's own layout: one class per module beside `Strong`/`Costrong`
+-- | (`Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`),
+-- | and one optic per module beside `Data.Lens.Lens`/`.Prism`
+-- | (`Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`).
+-- | Claiming those ecosystem names is a claim about what the modules are, so
+-- | they sit outside `src/` altogether, under the `extras/profunctors` and
+-- | `extras/optics` source roots: complements of the ecosystem's families,
+-- | mentioning no `PUI`, no row and no carrier. A `Data.Profunctor.Row.*`
+-- | module holds only what is about rows — the merge, its unit, and the
+-- | placements and trace row forms below.
+-- |
+-- | The row layer itself is a **third** source root, `extras/row-profunctors`,
+-- | which is a different claim again: these modules are bambik's own
+-- | invention rather than anyone's complement, but they are still
+-- | carrier-agnostic — the algebra of merging labelled rows, with `PUI` only
+-- | one carrier that satisfies it. What remains in `src/` is the carrier and
+-- | its vocabularies (`PUI`, `PUI.Web.*`), so the split is: `src/` is the UI
+-- | library, `extras/` is the algebra it stands on.
 -- |
 -- | The **pure** shapes' `Strong`/`Choice` are Tambara modules for the `×` and
 -- | `+` actions. On the **mixed** shapes the background *crosses* carriers

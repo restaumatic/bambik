@@ -1,15 +1,21 @@
--- | The coined **product→sum** strength `Resolving` and its co-strength
--- | `Coresolving` — the `× → +` analogue of the ecosystem's
--- | `Data.Profunctor.Strong`/`Data.Profunctor.Costrong`, and the reason this
--- | pair lives in its own module: like `Strong`/`Choice` they are stated
--- | **positionally** (`Tuple`/`Either`), with no row in sight. The row layer
--- | that builds on them is `Data.Profunctor.Row.RecordToVariant`; the optics
--- | they generate (`Shutter`/`Coshutter`) are in `Data.Profunctor.Optic`.
+-- | The coined **product→sum** strength `Resolving` — the `× → +` analogue of
+-- | the ecosystem's `Data.Profunctor.Strong`, and the reason it lives in its
+-- | own module: like `Strong`/`Choice` it is stated **positionally**
+-- | (`Tuple`/`Either`), with no row in sight. Its co-strength is
+-- | `Data.Profunctor.Coresolving`, one module over exactly as `Costrong` sits
+-- | beside `Strong`. The row layer that builds on it is
+-- | `Data.Profunctor.Row.RecordToVariant`; the optic it generates is
+-- | `Data.Lens.Shutter`.
+-- |
+-- | This module is a **complement of the ecosystem's own**, not bambik's: it
+-- | claims a `Data.Profunctor.*` name because it belongs in that family
+-- | beside `Strong`/`Choice`/`Costrong`/`Cochoice`, and it lives under the
+-- | separate `extras/profunctors` source root to say so — nothing here
+-- | mentions `PUI`, a row, or a carrier, so it could be lifted into
+-- | `purescript-profunctor` unchanged.
 module Data.Profunctor.Resolving
   ( class Resolving
   , resolve
-  , class Coresolving
-  , coresolve
   )
   where
 
@@ -44,25 +50,8 @@ import Data.Tuple (Tuple)
 -- | always-`Done` step, which carries no iteration.)
 -- |
 -- | This is the **bare strength** for the `× → +` direction (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is `subResolving` below —
--- | exactly as `RecordToRecord.subStrong` is built on `Strong`.
+-- | `Strong`/`Choice`); the row combinator built on it is
+-- | `RecordToVariant.subResolving` — exactly as `RecordToRecord.subStrong` is
+-- | built on `Strong`.
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)
-
--- | The **co-strength** of `Resolving` — its retraction: where `resolve`
--- | *adds* the loop channel `c`, `coresolve` *ties* it. A `Right c` emission
--- | is retained as the state paired with subsequent inputs; a `Left b` exits.
--- | Semantically a **terminating fold**: inputs accumulate through `c` until
--- | the wrapped profunctor decides `b` — the fourth loop flavor in the trace
--- | quartet (`Costrong` = state that emits each step, `Cochoice` = control
--- | that emits at exit, `Coresolving` = state that emits at exit,
--- | `Coretaining` = control that emits each step).
--- |
--- | Retraction law, shared by all four traces: `coresolve (resolve g) ≅ g` —
--- | once the state channel is primed (state must enter somewhere; the `PUI`
--- | instance is knowledge-gated like `Costrong`, withholding inputs until a
--- | first `c` exists).
--- |
--- | (No `(->)` instance: tying a knot takes state.)
-class Profunctor p <= Coresolving p where
-  coresolve :: forall a b c. p (Tuple a c) (Either b c) -> p a b

@@ -3,7 +3,7 @@ module TicketDispenserMDC3 (ticketDispenserMDC3) where
 import Prelude (Unit, const, identity, show, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Optic (reelE)
+import Data.Lens.Reel (reelE)
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
 import PUI (asCase, atField, displayed, forField, mvu, updated)

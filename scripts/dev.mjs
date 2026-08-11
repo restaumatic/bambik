@@ -75,14 +75,14 @@ const watched = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
 
 const stamp = () => {
   const seen = new Map()
-  for (const f of ['src', 'demo'].flatMap(watched)) {
+  for (const f of ['src', 'extras', 'demo'].flatMap(watched)) {
     try { seen.set(f, statSync(f).mtimeMs) } catch { /* raced with a delete */ }
   }
   return seen
 }
 
 let prev = stamp()
-console.log(`polling ${prev.size} files in src/ and demo/ every ${POLL_MS}ms`)
+console.log(`polling ${prev.size} files in src/, extras/ and demo/ every ${POLL_MS}ms`)
 setInterval(() => {
   const next = stamp()
   const touched = []

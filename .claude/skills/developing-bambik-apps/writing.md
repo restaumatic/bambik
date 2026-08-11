@@ -615,5 +615,8 @@ read them, not a summary. Paths are inside the fetched library,
   sit beside it (`MDC3.purs`, `Shoelace.purs`, `Fluent.purs`,
   `Bootstrap.purs`) — same two-sorted vocabulary, switch by switching
   the import.
-- `src/Data/Profunctor/Row/` — the four merges, the adopters, the trace
-  forms and the business optics; laws in the module headers.
+- `extras/row-profunctors/Data/Profunctor/Row/` — the four merges, the
+  adopters, the trace forms and the business optics; laws in the module
+  headers. (The library keeps its carrier-agnostic algebra outside `src/`
+  under `extras/`, which is why the app's `spago.dhall` carries a second
+  source glob — see bootstrap.md.)

@@ -6,7 +6,7 @@
 -- | `dispatch :: OrderEvent -> Either a (b -> t)` only sees the event. So the
 -- | retained order must enter through the channel the Reel actually exposes —
 -- | the residual `c`, which `reel` fixes to the finisher `b -> t`
--- | ([VariantToRecord.purs:100](src/Data/Profunctor/Row/VariantToRecord.purs#L100)).
+-- | ([VariantToRecord.purs:100](extras/row-profunctors/Data/Profunctor/Row/VariantToRecord.purs#L100)).
 -- |
 -- | That makes the protocol a genuine two-beat (exactly the `Right` = "resume
 -- | from state" / `Left` = "fresh input" reading in `retain`'s docstring):
@@ -22,7 +22,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Profunctor (rmap)
-import Data.Profunctor.Optic (reel)
+import Data.Lens.Reel (reel)
 import Data.Variant (case_, on)
 import Type.Proxy (Proxy(..))
 import PUI (PUI)

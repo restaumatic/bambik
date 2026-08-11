@@ -25,7 +25,7 @@
 -- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
 -- |     granularity — a state sub-record loops from output to input, the
 -- |     `Colens` optic's row form; the optic itself is in
--- |     `Data.Profunctor.Optic`).
+-- |     `Data.Lens.Colens`).
 -- |
 -- | The **nullary** operator is the class's own unit `pempty :: p {} {}` —
 -- | the empty merge:
