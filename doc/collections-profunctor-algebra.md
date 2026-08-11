@@ -233,7 +233,7 @@ pure treatments never see.
   gate (withhold → complete → retain-last), identity-follows-key (zero
   rebuilds on re-feed/permutation/drop; output order follows fed key order),
   collapsed silent-on-empty. DOM-identity laws stay in
-  `scripts/smoke/tests/sequence-laws.mjs` (green).
+  `scripts/smoke/tests/acting-laws.mjs` (green).
 - **`demo/nguis/potluck-mdc2/`** — the focused `acted` demo: per-guest dish
   editors lifted with `# acted _.name`, the menu summary withheld by the
   gather gate until every guest has chosen, retain-last on re-choices, row
