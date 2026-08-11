@@ -63,8 +63,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import PUI (class Hosting)
-import PUI.Trace as Trace
+import PUI (class Hosting, Logged, setDiagnostics, setSink, setTracing)
 
 foreign import data Node :: Type
 
@@ -215,20 +214,21 @@ foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> 
 
 foreign import hostTracing :: Effect Boolean
 foreign import hostDiagnostics :: Effect Boolean
-foreign import traceSink :: String -> Trace.Logged -> Effect Unit
+foreign import traceSink :: String -> Logged -> Effect Unit
 foreign import warnSink :: String -> Effect Unit
 
--- | Hand the browser's console and diagnostics switches to `PUI.Trace`, which
--- | takes all three as parameters and has no JavaScript of its own: `window.__bambikTrace = true`
+-- | Hand the browser's console and diagnostics switches to `PUI`'s diagnostics,
+-- | which take all three as parameters and have no JavaScript of their own:
+-- | `window.__bambikTrace = true`
 -- | (or `localStorage.setItem("bambik-trace", "true")`) turns the emission
 -- | trace on, and `window.__bambikNoWarn = true` silences the starvation
 -- | watchdog. Called at the mount entries, so a carrier that never mounts —
 -- | the `Effect` probe carrier the law tests run on — leaves both off.
 adoptHostDiagnostics :: Effect Unit
 adoptHostDiagnostics = do
-  Trace.setSink { trace: traceSink, warn: warnSink }
-  hostTracing >>= Trace.setTracing
-  hostDiagnostics >>= Trace.setDiagnostics
+  setSink { trace: traceSink, warn: warnSink }
+  hostTracing >>= setTracing
+  hostDiagnostics >>= setDiagnostics
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
 runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }

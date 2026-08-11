@@ -44,8 +44,13 @@ module PUI
   , Ocular
   , PUI(..)
   , Hooks
+  , Logged
+  , Sink
   , class Hosting
   , hosting
+  , setSink
+  , setTracing
+  , setDiagnostics
   , action
   , accumulated
   , announce
@@ -126,7 +131,99 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (get, insert, merge, union) as Record
-import PUI.Trace (gateGuard, tr)
+
+-- ## Development diagnostics
+--
+-- The emission trace and the knowledge-gate starvation watchdog: an instrument
+-- pointed at the combinators below, not part of the algebra they state. Both
+-- switches **and the log sink** are parameters, so this has no JavaScript of
+-- its own — every `.js` in the library lives under the Web layer — and both
+-- are no-ops until a carrier installs a sink. `PUI.Web.adoptHostDiagnostics`
+-- passes the browser console and reads the browser's switches at the mount
+-- entries, so a headless `spago test` over `PUI Effect` probes is silent.
+-- They live here rather than in a module of their own because `PUI` is their
+-- only caller and a carrier's diagnostics are the carrier's own business;
+-- they cannot live under `PUI.Web`, which imports this module.
+
+-- | Whatever a trace line carries, seen opaquely: `tr` is polymorphic in the
+-- | logged value but a `Ref` cannot hold a `forall`, so the value crosses to
+-- | the sink as this. Declared `foreign import data`, which needs no foreign
+-- | *module*.
+foreign import data Logged :: Type
+
+-- | Where diagnostics go. A carrier installs one; until then both are no-ops,
+-- | so nothing prints even with the switches on.
+type Sink =
+  { trace :: String -> Logged -> Effect Unit
+  , warn :: String -> Effect Unit
+  }
+
+sinkRef :: Ref.Ref Sink
+sinkRef = unsafePerformEffect (Ref.new { trace: \_ _ -> pure unit, warn: \_ -> pure unit })
+
+-- | Install the sink. `PUI.Web` passes the browser console at its mount
+-- | entries; a different host passes whatever it logs to.
+setSink :: Sink -> Effect Unit
+setSink sink = Ref.write sink sinkRef
+
+tracingRef :: Ref.Ref Boolean
+tracingRef = unsafePerformEffect (Ref.new false)
+
+diagnosticsRef :: Ref.Ref Boolean
+diagnosticsRef = unsafePerformEffect (Ref.new false)
+
+-- | Turn the emission trace on or off. Off at startup; a carrier calls this
+-- | with whatever its host offers (`PUI.Web` reads `window.__bambikTrace` and
+-- | the `bambik-trace` local-storage key).
+setTracing :: Boolean -> Effect Unit
+setTracing on = Ref.write on tracingRef
+
+-- | Turn starvation warnings on or off. Off at startup, so a carrier that
+-- | never opts in — the `Effect` probe carrier the law tests run on — stays
+-- | silent.
+setDiagnostics :: Boolean -> Effect Unit
+setDiagnostics on = Ref.write on diagnosticsRef
+
+-- | Dev-mode emission trace: with `setTracing true`, log every propagation
+-- | decision — values flowing between pipeline stages, loop re-feeds and
+-- | swallowed echoes, and (most importantly) emissions *withheld* by
+-- | knowledge gates, which are otherwise invisible. Zero cost when off beyond
+-- | one flag read per emission.
+tr :: forall a. String -> a -> Effect Unit
+tr tag a = do
+  on <- Ref.read tracingRef
+  when on do
+    sink <- Ref.read sinkRef
+    sink.trace tag (unsafeCoerce a)
+
+-- | One-shot **starvation watchdog** for a knowledge gate. Every gated
+-- | combinator withholds what it cannot yet complete — correct, but
+-- | *silent*: an unprimed gate renders as a blank screen with no
+-- | diagnostic. The guard turns that into a self-explaining failure:
+-- | `blocked msg` (called on each withheld emission or input) arms a timer
+-- | on its first call; if the gate hasn't opened (`fed`) within 3 seconds,
+-- | a single console warning prints `msg`, naming the gate and what it is
+-- | waiting for. Fires at most once per gate instance, and only under
+-- | `setDiagnostics true`.
+gateGuard :: Effect { blocked :: String -> Effect Unit, fed :: Effect Unit }
+gateGuard = do
+  fedRef <- Ref.new false
+  armedRef <- Ref.new false
+  pure
+    { blocked: \msg -> do
+        enabled <- Ref.read diagnosticsRef
+        armed <- Ref.read armedRef
+        when (enabled && not armed) do
+          Ref.write true armedRef
+          launchAff_ do
+            delay (Milliseconds 3000.0)
+            liftEffect do
+              fed <- Ref.read fedRef
+              unless fed do
+                sink <- Ref.read sinkRef
+                sink.warn msg
+    , fed: Ref.write true fedRef
+    }
 
 renderFieldNames :: Array String -> String
 renderFieldNames [] = "{}"

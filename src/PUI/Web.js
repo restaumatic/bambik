@@ -1,5 +1,5 @@
 // The browser's diagnostics: the console sink and the two switches, all of
-// which `PUI.Trace` takes as parameters — it has no JavaScript of its own, so
+// which `PUI`'s diagnostics take as parameters — they have no JS of their own, so
 // every line of JS in this library lives under the Web layer. Installed at the
 // mount entries (see `adoptHostDiagnostics`).
 
