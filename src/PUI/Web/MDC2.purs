@@ -644,10 +644,13 @@ sliderLeaf live label = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   stateRef <- liftEffect $ Ref.new Nothing
   let
-    emit comp = do
-      v <- getSliderValue comp
+    -- reads the *current* foundation out of the state ref rather than closing
+    -- over one: a bounds change replaces the foundation, and a handler holding
+    -- the old one would read a destroyed foundation
+    emit = do
       st <- Ref.read stateRef
       for_ st \s -> do
+        v <- getSliderValue s.comp
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop (s.quantity { current = v })
     scoped q = do
@@ -660,10 +663,15 @@ sliderLeaf live label = wrap do
           for_ st \s -> destroyComponent s.comp
           configureMdcSlider node q.min q.max (fromMaybe 0.0 q.step) (isJust q.step) q.current
           comp <- newComponent material.slider."MDCSlider" node
-          when live $ listen comp "MDCSlider:input" (emit comp)
-          listen comp "MDCSlider:change" (emit comp)
           Ref.write (Just { comp, quantity: q }) stateRef
           pure comp
+  -- the foundation's events surface on the root node, and the node outlives
+  -- every rebuild — so listen once here, not per rebuild inside `scoped`
+  -- (`MDCComponent.listen` is `addEventListener` and `destroy` removes
+  -- nothing, so re-listening per rebuild would leak a handler each time)
+  liftEffect do
+    when live $ listenNode node "MDCSlider:input" emit
+    listenNode node "MDCSlider:change" emit
   pure
     { toUser: \q -> do
         comp <- scoped q

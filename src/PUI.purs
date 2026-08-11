@@ -126,7 +126,7 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Effect (Effect)
 import Effect.AVar as AVar
-import Effect.Aff (Aff, delay, error, forkAff, killFiber, launchAff_)
+import Effect.Aff (Aff, attempt, delay, error, forkAff, killFiber, launchAff_, message)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
@@ -195,6 +195,15 @@ tr tag a = do
   when on do
     sink <- Ref.read sinkRef
     sink.trace tag (unsafeCoerce a)
+
+-- | Report a failure through the installed sink. Unlike `tr` this is **not**
+-- | gated on the trace switch — a swallowed failure is exactly what leaves a
+-- | UI dead with no diagnosis — but it is still a no-op until a carrier
+-- | installs a sink, so a headless `spago test` stays silent.
+warn :: String -> Effect Unit
+warn msg = do
+  sink <- Ref.read sinkRef
+  sink.warn msg
 
 -- | One-shot **starvation watchdog** for a knowledge gate. Every gated
 -- | combinator withholds what it cannot yet complete — correct, but
@@ -1090,12 +1099,19 @@ type Ocular p = forall a b. Optic p a b a b
 
 -- | The progress slot is row-shaped like every component interface: the
 -- | UI component is a `{ busy :: Boolean } → {}` display citizen.
+-- |
+-- | A failing action is **reported, not swallowed**: the progress slot is
+-- | cleared whichever way the `Aff` ends — so a throw cannot strand the
+-- | spinner — and the error reaches the diagnostics sink by name. Nothing is
+-- | posted onward, since there is no output to post.
 action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
 action arr = action' \i pro post -> do
   liftEffect $ pro { busy: true }
-  o <- arr i
+  result <- attempt (arr i)
   liftEffect $ pro { busy: false }
-  liftEffect $ post o
+  case result of
+    Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
+    Right o -> liftEffect $ post o
 
 action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
 action' arr w = wrap ado
@@ -1106,7 +1122,10 @@ action' arr w = wrap ado
     { toUser: \i -> launchAff_ $ arr i (\a -> void $ w'.toUser a) (\o -> void $ AVar.put o oVar mempty)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
-            Left _error -> pure unit -- TODO handle error
+            -- the take failed (the var was killed): the chain stops here, so
+            -- say so rather than going quiet — a dead stage with no output and
+            -- no diagnostic is the failure mode the watchdog exists to prevent
+            Left err -> warn $ "action: the output channel closed, so this stage will emit nothing further — " <> message err
             Right o -> do
               prop o
               waitAndPropagate

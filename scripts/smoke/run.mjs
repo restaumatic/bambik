@@ -118,6 +118,17 @@ const main = async () => {
       const session = await openSession(cdpBase, base + mod.url)
       await new Promise(r => setTimeout(r, 1200)) // page + MDC init
       const assertEq = (actual, expected, label) => {
+        // `ev()` yields undefined when the page expression produced no value —
+        // a selector that missed, a page that never mounted. JSON.stringify
+        // maps undefined to undefined on BOTH sides, so a naive compare would
+        // read that as a pass: an assertion that checks nothing. Reject it.
+        if (actual === undefined || expected === undefined) {
+          const which = actual === undefined && expected === undefined ? 'both sides are'
+            : actual === undefined ? 'the actual value is' : 'the expected value is'
+          console.log(`  FAIL ${label} — ${which} undefined (no value came back from the page; the assertion proves nothing)`)
+          failures++
+          return
+        }
         const ok = JSON.stringify(actual) === JSON.stringify(expected)
         console.log(`  ${ok ? 'PASS' : 'FAIL'} ${label}${ok ? '' : ` — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`}`)
         if (!ok) failures++
