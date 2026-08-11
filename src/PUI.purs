@@ -6,9 +6,10 @@
 -- | interact as in a duoidal category: a pipeline can only emulate a merge
 -- | through a **comonoid** — a stage that *duplicates* its input onward, not
 -- | merely consumes it. `displayed` is exactly that comultiplication (render
--- | *and* forward); `muted` is only the counit (render and discard), which is
--- | why `muted` chrome ahead of a live stage starves it under `⊳` while the
--- | same chrome inside a merge needs nothing. See
+-- | *and* forward); a bare display is only the counit (render and discard),
+-- | which is why undisplayed chrome ahead of a live stage starves it under
+-- | `⊳` while the same chrome inside a merge needs nothing — a display is
+-- | made into a pass-through stage precisely by `displayed`. See
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's

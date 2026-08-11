@@ -23,7 +23,7 @@ timerMDC2 =
                 staticText "s / "
                 text # forField @"value" @"duration" wholeSeconds
                 staticText "s"
-              sliderLive { label: "" } # asField @"value" @"duration") # completed
+              sliderLive { label: "Duration" } # asField @"value" @"duration") # completed
           every tickPeriod tick
           button { label: "Reset", icon: "replay" } # with nothingElapsed # updated (match { clicked: const })
       ) # mvu tenSecondFreshTimer

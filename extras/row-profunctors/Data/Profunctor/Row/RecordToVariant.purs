@@ -190,6 +190,12 @@ focusProperty g =
     (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
 
+-- | Adopt a **canonically-labeled** event component (`[ clicked :: a ]` out,
+-- | the citizenship-carrying interface) as business case `l`: renames the
+-- | case, input untouched — `rmap`-only, the `asField` twin at `× → +`.
+asCase :: forall @c @l p i a s cs. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () cs => Cons l a () s => p i [ | cs ] -> p i [ | s ]
+asCase = rmap (on (Proxy @c) (inj (Proxy @l)) case_)
+
 -- | The `× → +` member of the introduce family: the wrapped `p { | r } f` reads
 -- | the whole record — `r`, the **reality** the camera is pointed at, which
 -- | never enters the shot — and its result, the **focus**
@@ -201,12 +207,6 @@ focusProperty g =
 -- | plain `rmap (inj l)` on any `Profunctor`. (The **background** `b` of the
 -- | output **shot** `s` is simply never produced — the widening is free, as
 -- | with `inj` itself.)
--- | Adopt a **canonically-labeled** event component (`[ clicked :: a ]` out,
--- | the citizenship-carrying interface) as business case `l`: renames the
--- | case, input untouched — `rmap`-only, the `asField` twin at `× → +`.
-asCase :: forall @c @l p i a s cs. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () cs => Cons l a () s => p i [ | cs ] -> p i [ | s ]
-asCase = rmap (on (Proxy @c) (inj (Proxy @l)) case_)
-
 recordToCase
   :: forall @l p r b s f
    . IsSymbol l
@@ -224,7 +224,8 @@ recordToCase = rmap (inj (Proxy @l))
 -- | rule L16: projections ride mechanisms, applications never map raw
 -- | channels): a collection element emitting its identity,
 -- | `… # toCase @"picked" _.key`;
--- | `identity` says verbatim, the `forValue` of case introduction. The
+-- | `identity` says verbatim (the case-introduction counterpart of
+-- | `projected @"value" identity`). The
 -- | output-side dual of `atCase` and the general sibling of `asCase`
 -- | (which renames the canonical `clicked` case).
 toCase :: forall @l p i a b s. IsSymbol l => Cons l b () s => Profunctor p => (a -> b) -> p i a -> p i [ | s ]

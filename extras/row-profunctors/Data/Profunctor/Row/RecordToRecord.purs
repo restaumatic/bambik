@@ -159,12 +159,9 @@ focusProperty = prop (Proxy @l)
 
 -- | Feed a canonically-labeled component a **function of the whole input**:
 -- | `projected f` turns a `{ value :: b }` component into one fed a bare `a`,
--- | with `f a` flowing in as its `value` — so `forValue` is exactly
--- | `projected identity`, and formatted displays read `text # projected @"value"
--- | readout` with no trailing `# forValue`. Composes straight into `forField`
--- | (which now reads a field into a *bare*-value display): `text # projected @"value"
--- | show # forField @l` formats field `l`. `lcmap`-only.
--- | The whole-value verbatim read is `projected identity`.
+-- | with `f a` flowing in as its `value` — so formatted displays read
+-- | `text # projected @"value" readout`, and the whole-value verbatim read is
+-- | `projected @"value" identity`. `lcmap`-only.
 projected :: forall @c p a b o cr. IsSymbol c => Lacks c () => Cons c b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
 projected f = lcmap \a -> Record.insert (Proxy @c) (f a) {}
 
@@ -180,19 +177,6 @@ projected f = lcmap \a -> Record.insert (Proxy @c) (f a) {}
 required :: forall @c p a b si so. IsSymbol c => Lacks c () => Cons c (Maybe a) () si => Cons c a () so => Profunctor p => p { | si } b -> p { | so } b
 required = lcmap (\r -> Record.insert (Proxy @c) (Just (Record.get (Proxy @c) r)) {})
 
--- | Read field `l` into a **bare-value** display — the display expecting a
--- | plain `a`, as produced by `forValue`/`projected`: `text # projected @"value" show
--- | # forField @l` formats field `l`, and `text # forValue # forField @l`
--- | shows it verbatim. `lcmap`-only, the input-side member of the adopter
--- | family (`asField` renames both sides of an editor). Closed singleton row:
--- | annotation-free as a merge operand, and a display owns no output fields.
--- | Read field `l` (closed singleton row) into the canonical `{ value }`
--- | display, through the formatter — the display-side member of the
--- | mechanism-argument doctrine (L16): `text # forField @"value" @"points" show`,
--- | `identity` says verbatim (`text # forField @"value" @"prompt" identity`). The
--- | closed row is what makes a merge operand state its exact input;
--- | context-pinned wider rows use `forProperty @l f`. The whole-value
--- | reads are `projected f` (`projected identity` for verbatim).
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
 -- | row) — the non-display sibling of `forField` (which formats into the
 -- | canonical `{ value }` display): a packaged collection reads its array
@@ -211,6 +195,16 @@ atField = lcmap (Record.get (Proxy @l))
 atProperty :: forall @l p a o t r. IsSymbol l => Profunctor p => Cons l a t r => p a o -> p { | r } o
 atProperty = lcmap (Record.get (Proxy @l))
 
+-- | Read field `l` (closed singleton row) into the canonical `{ value }`
+-- | display, through the formatter — the display-side member of the
+-- | mechanism-argument doctrine (L16): `text # forField @"value" @"points" show`,
+-- | `identity` says verbatim (`text # forField @"value" @"prompt" identity`). The
+-- | closed row is what makes a merge operand state its exact input;
+-- | context-pinned wider rows use `forProperty @l f`. The whole-value
+-- | reads are `projected f` (`projected identity` for verbatim).
+-- |
+-- | `lcmap`-only, the input-side member of the adopter family (`asField`
+-- | renames both sides of an editor); a display owns no output fields.
 forField :: forall @c @l p a b o r cr. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c b () cr => Lacks l () => Cons l a () r => (a -> b) -> p { | cr } o -> p { | r } o
 forField f = lcmap (\r -> Record.insert (Proxy @c) (f (Record.get (Proxy @l) r)) {})
 

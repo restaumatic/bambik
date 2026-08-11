@@ -73,7 +73,6 @@ module PUI.Web.HTML
   , section
   , select
   , span
-  , staticHTML
   , staticText
   , strong
   , table
@@ -427,19 +426,6 @@ staticText content = wrap do
     , fromUser: \prop -> prop {}
     }
 
--- | Fixed decoration given as a raw markup string — for chrome a design
--- | system only documents as markup. Like `staticText` it never changes and
--- | carries no data; unlike it, the string is inserted as markup, so it must
--- | be written in the source and never assembled from model or user text.
-staticHTML :: String -> PUI Web {} {}
-staticHTML html = wrap do
-  parent <- gets _.parent
-  newNode <- liftEffect $ appendRawHtml html parent
-  modify_ _ { sibling = newNode}
-  pure
-    { toUser: mempty
-    , fromUser: \prop -> prop {}
-    }
 
 -- | A horizontal rule separating sections — fixed decoration, and the one
 -- | element with nothing inside it, so it is written as a leaf rather than

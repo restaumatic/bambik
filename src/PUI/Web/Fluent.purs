@@ -49,8 +49,8 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, constantly, projected)
-import PUI.Web.HTML (cl, clicked, div, el, staticHTML, staticText, text, (:=))
-import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
+import PUI.Web.HTML (cl, clicked, div, el, staticText, text, (:=))
+import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.

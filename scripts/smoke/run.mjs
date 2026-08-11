@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Bambik smoke harness: serves the repo over HTTP, drives demos in headless
 // Chrome via CDP, and runs the assertions in tests/*.mjs. This is where the
-// carrier-only laws get their tests — `Sequencing`'s keyed reconciliation
+// carrier-only laws get their tests — the container action's keyed reconciliation
 // (identity follows the key), the empty/singleton collection laws, the
 // quiescence-driven event flow — alongside per-demo smokes; the value-level
 // laws live in test/Main.purs (`spago test`).

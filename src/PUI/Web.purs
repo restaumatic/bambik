@@ -44,6 +44,7 @@ module PUI.Web
   , setAttribute
   , setChecked
   , setInnerHTML
+  , staticHTML
   , setTextNodeValue
   , setValue
   , svgNS
@@ -56,14 +57,14 @@ import Prelude
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
-import PUI (class Hosting, Logged, setDiagnostics, setSink, setTracing)
+import PUI (class Hosting, PUI, Logged, setDiagnostics, setSink, setTracing)
 
 foreign import data Node :: Type
 
@@ -249,6 +250,25 @@ instance Hosting Web Node where
       , detach: \node -> removeChild node parent
       , restack: \nodes -> for_ nodes \node -> appendChild node parent
       }
+
+-- | Fixed decoration given as a raw markup string — for chrome a design
+-- | system only documents as markup. Like `staticText` it never changes and
+-- | carries no data; unlike it, the string is inserted as markup, so it must
+-- | be written in the source and never assembled from model or user text.
+-- |
+-- | **Internal chrome plumbing** (L10): it lives here, on the carrier, rather
+-- | than in the `PUI.Web.HTML` vocabulary, because an HTML-string surface must
+-- | not be part of the public vocabulary an application composes from. The
+-- | design-system modules reach it; application code does not.
+staticHTML :: String -> PUI Web {} {}
+staticHTML html = wrap do
+  parent <- gets _.parent
+  newNode <- liftEffect $ appendRawHtml html parent
+  modify_ _ { sibling = newNode}
+  pure
+    { toUser: mempty
+    , fromUser: \prop -> prop {}
+    }
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
