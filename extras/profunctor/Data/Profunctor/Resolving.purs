@@ -10,7 +10,7 @@
 -- | This module is a **complement of the ecosystem's own**, not bambik's: it
 -- | claims a `Data.Profunctor.*` name because it belongs in that family
 -- | beside `Strong`/`Choice`/`Costrong`/`Cochoice`, and it lives under the
--- | separate `extras/profunctors` source root to say so — nothing here
+-- | separate `extras/profunctor` source root to say so — nothing here
 -- | mentions `PUI`, a row, or a carrier, so it could be lifted into
 -- | `purescript-profunctor` unchanged.
 module Data.Profunctor.Resolving

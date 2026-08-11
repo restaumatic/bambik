@@ -1,4 +1,4 @@
-# extras/optics — complements of `profunctor-lenses`
+# extras/lenses — complements of `profunctor-lenses`
 
 Modules here claim names in **`Data.Lens.*`**, the namespace of
 [`purescript-profunctor-lenses`](https://pursuit.purescript.org/packages/purescript-profunctor-lenses),
@@ -29,7 +29,7 @@ had to be invented here is the actions, not the technique.
 are **already** the ecosystem's (`Data.Profunctor.Costrong`/`.Cochoice`) —
 `profunctor-lenses` simply never built the optics. The other four are coined
 class and optic alike, so each would travel upstream with its class from
-[`extras/profunctors`](../profunctors/README.md).
+[`extras/profunctor`](../profunctor/README.md).
 
 `Data.Lens.Prism.Existential` is the purest complement in the whole tree:
 both the optic and its `Choice` are already `profunctor-lenses`', and only

@@ -1,8 +1,8 @@
-# extras/row-profunctors — a candidate standalone library
+# extras/row-profunctor — a candidate standalone library
 
 **This root is not an ecosystem complement, and not really bambik either.**
-Its two siblings, [`extras/profunctors`](../profunctors/README.md) and
-[`extras/optics`](../optics/README.md), claim `Data.Profunctor.*` and
+Its two siblings, [`extras/profunctor`](../profunctor/README.md) and
+[`extras/lenses`](../lenses/README.md), claim `Data.Profunctor.*` and
 `Data.Lens.*` names because they belong in those *existing* upstream
 families. This root claims `Data.Profunctor.Row*` for something the ecosystem
 has no home for at all: **row profunctors** — profunctors whose parameters are
@@ -25,7 +25,7 @@ root defines is a general algebra:
   `(M, N)`-monoidal structure for `M, N ∈ {×, +}` — with its nullary unit
   `pempty`, so every direction is a monoid on labelled rows.
 - **Row-granularity strengths and co-strengths**, the row forms of the optics
-  in `extras/optics`.
+  in `extras/lenses`.
 - **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —
   rows being the finitary, `μ`-free, label-strict fragment of the same
   container grammar.
@@ -55,11 +55,13 @@ knowing before cutting a package:
    and the keyed reconciler live in `PUI`; DOM placement in `PUI.Web`. That
    split is already enforced (this root has no `PUI` import), so extraction is
    a move, not a disentangling.
-2. **Two dependencies come along**: `extras/profunctors` for the coined
-   strengths the row forms stand on, and `extras/optics` for the optics they
+2. **Two dependencies come along**: `extras/profunctor` for the coined
+   strengths the row forms stand on, and `extras/lenses` for the optics they
    are row-granularity forms of. Those are themselves upstream candidates, so
    the honest packaging question is whether all three ship as one
-   `row-profunctors` package or as a small stack.
+   `purescript-row-profunctor` package or as a small stack. (Each root here is
+   named after the upstream package it belongs to or would become, so the
+   directory names already carry the answer's shape.)
 3. **The toolchain pins are milder than they look.** These modules import only
    the *standard* `Data.Variant` API (`inj`/`on`/`case_`/`expand`/`Contractable`)
    — no `Prim.Variant` reference anywhere — so the row layer itself is not
@@ -71,8 +73,8 @@ knowing before cutting a package:
    ergonomic surface for consumers would still want the fork until the sugar
    lands upstream. Worth measuring before publishing, not assuming.
 
-   (Its two dependency roots are cleaner still: `extras/profunctors` and
-   `extras/optics` use no row sugar at all — positional `Tuple`/`Either`
+   (Its two dependency roots are cleaner still: `extras/profunctor` and
+   `extras/lenses` use no row sugar at all — positional `Tuple`/`Either`
    only — so they are fork-independent outright.)
 
 Meanwhile `src/` holds the carrier and its vocabularies — `PUI`, `PUI.Trace`,

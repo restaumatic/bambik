@@ -220,7 +220,7 @@ pure treatments never see.
 
 §6 is implemented:
 
-- **`extras/row-profunctors/Data/Profunctor/Acting.purs`** — `class Acting`/`acted` (the keyed
+- **`extras/row-profunctor/Data/Profunctor/Acting.purs`** — `class Acting`/`acted` (the keyed
   `Array` container action), instances for `(->)` (`acted _ = map`),
   `PUI Effect` (the probe carrier), and `PUI Web` (DOM hooks); one shared
   keyed reconciler carries both emission modes — `acted` gathers

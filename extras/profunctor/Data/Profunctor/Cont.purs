@@ -1,4 +1,4 @@
--- | The CPS profunctor — the one member of `extras/profunctors` that is a
+-- | The CPS profunctor — the one member of `extras/profunctor` that is a
 -- | **carrier** rather than a class: it does not merely sit beside the
 -- | ecosystem's own, it *instantiates* bambik's row algebra, so unlike its
 -- | neighbours here it could not be lifted into `purescript-profunctor`
@@ -38,7 +38,7 @@
 -- |
 -- | The two lists below are **exhaustive** over every profunctor subclass in
 -- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
--- | plus `Wander`, the four coined strengths in `extras/profunctors`
+-- | plus `Wander`, the four coined strengths in `extras/profunctor`
 -- | (`Resolving`/`Coresolving`/`Retaining`/`Coretaining`), and bambik's own
 -- | `Acting`, `Seeding` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.

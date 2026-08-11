@@ -32,13 +32,13 @@
 -- | and one optic per module beside `Data.Lens.Lens`/`.Prism`
 -- | (`Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`).
 -- | Claiming those ecosystem names is a claim about what the modules are, so
--- | they sit outside `src/` altogether, under the `extras/profunctors` and
--- | `extras/optics` source roots: complements of the ecosystem's families,
+-- | they sit outside `src/` altogether, under the `extras/profunctor` and
+-- | `extras/lenses` source roots: complements of the ecosystem's families,
 -- | mentioning no `PUI`, no row and no carrier. A `Data.Profunctor.Row.*`
 -- | module holds only what is about rows — the merge, its unit, and the
 -- | placements and trace row forms below.
 -- |
--- | The row layer itself is a **third** source root, `extras/row-profunctors`,
+-- | The row layer itself is a **third** source root, `extras/row-profunctor`,
 -- | which is a different claim again: these modules are bambik's own
 -- | invention rather than anyone's complement, but they are still
 -- | carrier-agnostic — the algebra of merging labelled rows, with `PUI` only

@@ -231,9 +231,9 @@ those families, mentioning no `PUI`, no row and no carrier — outside its
 
 | Root                      | Modules                                                                          |
 |---------------------------|----------------------------------------------------------------------------------|
-| `extras/profunctors/`     | `Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`, `Data.Profunctor.Cont` |
-| `extras/optics/`          | `Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`, `Data.Lens.Prism.Existential` |
-| `extras/row-profunctors/` | `Data.Profunctor.Row` and `Data.Profunctor.Row.*` (the four merges), `Data.Profunctor.Acting`, `Data.Profunctor.Seeding` |
+| `extras/profunctor/`     | `Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`, `Data.Profunctor.Cont` |
+| `extras/lenses/`          | `Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`, `Data.Lens.Prism.Existential` |
+| `extras/row-profunctor/` | `Data.Profunctor.Row` and `Data.Profunctor.Row.*` (the four merges), `Data.Profunctor.Acting`, `Data.Profunctor.Seeding` |
 
 The third root matters most in practice: **`Data.Profunctor.Row.RecordToRecord`
 and its three siblings are what an app imports to write a `.do` merge**, so
@@ -358,7 +358,7 @@ check the library's `dependencies` list in the `bambik` entry when you do.
   `spago.dhall` is missing or names the wrong tag. It must read
   `.spago/bambik/<tag>/extras/**/*.purs` with the tag from
   `packages.dhall`; confirm
-  `.spago/bambik/<tag>/extras/profunctors/Data/Profunctor/Resolving.purs`
+  `.spago/bambik/<tag>/extras/profunctor/Data/Profunctor/Resolving.purs`
   exists. These four live outside the library's `src/`, which spago's
   hardcoded git-dependency glob does not reach.
 - A missing module from some *other* library while compiling bambik itself

@@ -6,7 +6,7 @@
 -- | `Data.Lens.Coshutter`.
 -- |
 -- | Like its strength, a **complement of the ecosystem's own** — hence the
--- | `Data.Profunctor.*` name and the separate `extras/profunctors` source
+-- | `Data.Profunctor.*` name and the separate `extras/profunctor` source
 -- | root: nothing here mentions `PUI`, a row, or a carrier.
 module Data.Profunctor.Coresolving
   ( class Coresolving

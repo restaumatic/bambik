@@ -8,7 +8,7 @@
 -- | The purest **complement of the ecosystem's own** in the tree — both the
 -- | optic and its `Choice` are `profunctor-lenses`', and only this one
 -- | constructor is missing — hence the `Data.Lens.*` name and the separate
--- | `extras/optics` source root.
+-- | `extras/lenses` source root.
 module Data.Lens.Prism.Existential
   ( prismE
   )

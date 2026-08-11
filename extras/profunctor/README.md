@@ -1,4 +1,4 @@
-# extras/profunctors — complements of `purescript-profunctor`
+# extras/profunctor — complements of `purescript-profunctor`
 
 Modules here claim names in **`Data.Profunctor.*`**, the namespace of
 [`purescript-profunctor`](https://pursuit.purescript.org/packages/purescript-profunctor),
@@ -28,8 +28,8 @@ and which it provably cannot. Those impossibilities are why the trace forms
 take seeds and why `looped` is a primitive.
 
 The optics these classes generate live one root over, in
-[`extras/optics`](../optics/README.md). The row-granularity combinators built
-on them live in [`extras/row-profunctors`](../row-profunctors/README.md).
+[`extras/lenses`](../lenses/README.md). The row-granularity combinators built
+on them live in [`extras/row-profunctor`](../row-profunctor/README.md).
 
 ## Building
 

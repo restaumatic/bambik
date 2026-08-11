@@ -6,7 +6,7 @@
 -- | `dispatch :: OrderEvent -> Either a (b -> t)` only sees the event. So the
 -- | retained order must enter through the channel the Reel actually exposes —
 -- | the residual `c`, which `reel` fixes to the finisher `b -> t`
--- | ([VariantToRecord.purs:100](extras/row-profunctors/Data/Profunctor/Row/VariantToRecord.purs#L100)).
+-- | ([VariantToRecord.purs:100](extras/row-profunctor/Data/Profunctor/Row/VariantToRecord.purs#L100)).
 -- |
 -- | That makes the protocol a genuine two-beat (exactly the `Right` = "resume
 -- | from state" / `Left` = "fresh input" reading in `retain`'s docstring):

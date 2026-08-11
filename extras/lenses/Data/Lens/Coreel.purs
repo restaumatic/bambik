@@ -5,7 +5,7 @@
 -- | `Data.Profunctor.Row.VariantToRecord.unfolding`.
 -- |
 -- | It claims a `Data.Lens.*` name and lives under the separate
--- | `extras/optics` source root because it belongs to that family by
+-- | `extras/lenses` source root because it belongs to that family by
 -- | construction — an optic over a co-strength, mentioning no `PUI`, no row
 -- | and no carrier. Unlike `Colens`/`Coprism` it could not be upstreamed
 -- | alone: its class is coined too, so the pair travels together.

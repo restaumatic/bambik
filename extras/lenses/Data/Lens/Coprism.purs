@@ -6,7 +6,7 @@
 -- |
 -- | This module is a **complement of the ecosystem's own**, not bambik's: it
 -- | claims a `Data.Lens.*` name because it belongs in that family beside
--- | `Lens`/`Prism`, and it lives under the separate `extras/optics` source
+-- | `Lens`/`Prism`, and it lives under the separate `extras/lenses` source
 -- | root to say so — nothing here mentions `PUI`, a row, or a carrier, so it
 -- | could be lifted into `profunctor-lenses` unchanged.
 module Data.Lens.Coprism
