@@ -864,46 +864,13 @@ recordToRecordPUI p1 p2 = wrap ado
   p1' <- unwrap (widenRecordInput p1)
   p2' <- unwrap (widenRecordInput p2)
   in
-    let p1Last = unsafePerformEffect $ Ref.new Nothing
-        p2Last = unsafePerformEffect $ Ref.new Nothing
-        guard1 = unsafePerformEffect gateGuard
-        guard2 = unsafePerformEffect gateGuard
-        fields1 = renderFieldNames (rowLabels (Proxy @o1l))
-        fields2 = renderFieldNames (rowLabels (Proxy @o2l))
-        starving mine sibling = "×→× record merge: emissions dropped for 3s — the operand producing " <> mine
-          <> " keeps emitting, but its sibling operand producing " <> sibling
-          <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
-    in
     { toUser: \new -> do
           p1'.toUser new
           p2'.toUser new
-    , fromUser: \prop -> do
-        p1'.fromUser \partial -> do
-          -- runtime-exactness: trim to the declared output row, so stale
-          -- runtime copies of sibling fields (echo wires, lens rebuilds
-          -- over the widening-coerced input) never shadow the other
-          -- side's genuine contribution in the left-biased union
-          let exact = exactRow partial
-          let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
-          let mp2 = unsafePerformEffect $ Ref.read p2Last
-          case mp2 of
-            Nothing -> do
-              guard1.blocked $ starving fields1 fields2
-              tr ("merge ×→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
-            Just p2val -> do
-              guard1.fed *> guard2.fed
-              prop $ Record.union exact p2val
-        p2'.fromUser \partial -> do
-          let exact = exactRow partial
-          let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
-          let mp1 = unsafePerformEffect $ Ref.read p1Last
-          case mp1 of
-            Nothing -> do
-              guard2.blocked $ starving fields2 fields1
-              tr ("merge ×→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
-            Just p1val -> do
-              guard1.fed *> guard2.fed
-              prop $ Record.union p1val exact
+    , fromUser: gatedRecordOutputs "×→×"
+        (renderFieldNames (rowLabels (Proxy @o1l)))
+        (renderFieldNames (rowLabels (Proxy @o2l)))
+        exactRow exactRow p1'.fromUser p2'.fromUser
     }
 
 instance Applicative m => RecordToVariant (PUI m) where
@@ -1002,6 +969,67 @@ instance Applicative m => VariantToRecord (PUI m) where
     }
   variantToRecord = variantToRecordPUI
 
+-- | The **output gate** both record-output merges run on, stated once.
+-- |
+-- | `recordToRecord` and `variantToRecord` differ only in how the *input*
+-- | reaches the operands (broadcast to both, versus dispatched by case); the
+-- | output side is one algorithm: hold each operand's contribution until the
+-- | sibling has spoken at least once, then emit their left-biased union,
+-- | retaining the last contribution of each thereafter.
+-- |
+-- | Runtime-exactness: each contribution is trimmed to its declared output
+-- | row before the union, so stale runtime copies of sibling fields (echo
+-- | wires, lens rebuilds over the widening-coerced input) can never shadow
+-- | the other side's genuine contribution.
+-- |
+-- | `direction` names the merge in the trace and starvation copy ("×→×",
+-- | "+→×"), and `fields1`/`fields2` are the operands' rendered output labels,
+-- | so a withholding gate says exactly which sibling it is waiting for.
+gatedRecordOutputs
+  :: forall e1 e2 o1 o2 o
+   . Union o1 o2 o
+  => Union o2 o1 o
+  => String
+  -> String
+  -> String
+  -> (e1 -> { | o1 })
+  -> (e2 -> { | o2 })
+  -> ((e1 -> Effect Unit) -> Effect Unit)
+  -> ((e2 -> Effect Unit) -> Effect Unit)
+  -> ({ | o } -> Effect Unit)
+  -> Effect Unit
+gatedRecordOutputs direction fields1 fields2 exact1 exact2 sub1 sub2 prop = do
+  sub1 \partial -> do
+    let exact = exact1 partial
+    let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
+    let mp2 = unsafePerformEffect $ Ref.read p2Last
+    case mp2 of
+      Nothing -> do
+        guard1.blocked $ starving fields1 fields2
+        tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
+      Just p2val -> do
+        guard1.fed *> guard2.fed
+        prop $ Record.union exact p2val
+  sub2 \partial -> do
+    let exact = exact2 partial
+    let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
+    let mp1 = unsafePerformEffect $ Ref.read p1Last
+    case mp1 of
+      Nothing -> do
+        guard2.blocked $ starving fields2 fields1
+        tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
+      Just p1val -> do
+        guard1.fed *> guard2.fed
+        prop $ Record.union p1val exact
+  where
+  p1Last = unsafePerformEffect $ Ref.new Nothing
+  p2Last = unsafePerformEffect $ Ref.new Nothing
+  guard1 = unsafePerformEffect gateGuard
+  guard2 = unsafePerformEffect gateGuard
+  starving mine sibling = direction <> " merge: emissions dropped for 3s — the operand producing " <> mine
+    <> " keeps emitting, but its sibling operand producing " <> sibling
+    <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
+
 -- Hoisted like `recordToRecordPUI`, for the same reason: the starvation
 -- diagnostics name the sibling fields a withholding gate is waiting for.
 variantToRecordPUI :: forall m i1 i1l i2 i2l o1 o2 i o o1l o2l.
@@ -1013,45 +1041,16 @@ variantToRecordPUI p1 p2 = wrap ado
   p1' <- unwrap p1
   p2' <- unwrap p2
   in
-    -- gate like `recordToRecord`: hold propagation until both sides' fields
-    -- are known (each operand emits its complete sub-record)
-    let p1Last = unsafePerformEffect $ Ref.new Nothing
-        p2Last = unsafePerformEffect $ Ref.new Nothing
-        guard1 = unsafePerformEffect gateGuard
-        guard2 = unsafePerformEffect gateGuard
-        fields1 = renderFieldNames (rowLabels (Proxy @o1l))
-        fields2 = renderFieldNames (rowLabels (Proxy @o2l))
-        starving mine sibling = "+→× status merge: emissions dropped for 3s — the operand producing " <> mine
-          <> " keeps emitting, but its sibling operand producing " <> sibling
-          <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
-    in
+    -- the input side is what differs from `recordToRecord`: one case at a
+    -- time, dispatched to whichever operand owns it. The output side is the
+    -- same gate, held until both operands have contributed.
     { toUser: \v -> do
         for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
         for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
-    , fromUser: \prop -> do
-        p1'.fromUser \partial -> do
-          -- runtime-exactness trim, as in `recordToRecord`
-          let exact = exactRow partial
-          let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
-          let mp2 = unsafePerformEffect $ Ref.read p2Last
-          case mp2 of
-            Nothing -> do
-              guard1.blocked $ starving fields1 fields2
-              tr ("merge +→×: contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
-            Just p2val -> do
-              guard1.fed *> guard2.fed
-              prop $ Record.union exact p2val
-        p2'.fromUser \partial -> do
-          let exact = exactRow partial
-          let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
-          let mp1 = unsafePerformEffect $ Ref.read p1Last
-          case mp1 of
-            Nothing -> do
-              guard2.blocked $ starving fields2 fields1
-              tr ("merge +→×: contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
-            Just p1val -> do
-              guard1.fed *> guard2.fed
-              prop $ Record.union p1val exact
+    , fromUser: gatedRecordOutputs "+→×"
+        (renderFieldNames (rowLabels (Proxy @o1l)))
+        (renderFieldNames (rowLabels (Proxy @o2l)))
+        exactRow exactRow p1'.fromUser p2'.fromUser
     }
 
 instance Applicative m => VariantToVariant (PUI m) where
