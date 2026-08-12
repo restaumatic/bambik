@@ -1,6 +1,7 @@
 {
   "name": "bambik",
   "private": false,
+  "license": "BSD-3-Clause",
   "scripts": {
     "build": "spago build -w",
     "dev": "node scripts/dev.mjs",
