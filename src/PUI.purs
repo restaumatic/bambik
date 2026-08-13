@@ -54,20 +54,18 @@ module PUI
   , setDiagnostics
   , action
   , accumulated
-  , bracketed
   , debounced
   , dispatched
   , displayed
   , edited
   , every
   , foreach
-  , looped
-  , mvu
   , observed
   , optional
   , resolveFor
   , updated
   , module Adopters
+  , module Looping
   , module Seeding
   )
   where
@@ -89,7 +87,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, subStrong, forField, forProperty, informed, pempty, projected, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forField, forProperty, informed, pempty, projected, required, settled, tapped, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, asCase, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -97,8 +95,10 @@ import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `every`, `settled`, `armed`, `edited`, `acted`, `completed`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
-import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, bracketed, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
+import Data.Profunctor.Looping (class Looping)
+import Data.Profunctor.Looping (class Looping, looped) as Looping
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
@@ -407,6 +407,35 @@ instance Applicative m => Seeding (PUI m) where
       , fromUser: \prop -> do
           Ref.write (Just prop) mPropRef
           prop a
+      }
+
+-- | Self-reference as carrier structure (`Data.Profunctor.Looping`,
+-- | `Seeding`'s sibling): feed a UI component its own emissions,
+-- | re-entrancy-guarded — leaf UI components echo on `toUser`, and the
+-- | guard swallows the echoes the re-feed provokes (the class's
+-- | idempotence law, operationally). Wrapped around a record merge it
+-- | supplies the sibling cross-feed the gated merge deliberately omits —
+-- | every operand sees every emission re-broadcast, and per-operand
+-- | *retention* falls out of the merge gates (each gate holds its side's
+-- | last contribution). The instance is the primitive the class exists
+-- | for: `Costrong`'s gated `unfirst` cannot self-feed, so the knot is
+-- | tied directly here.
+instance Functor m => Looping (PUI m) where
+  looped p = wrap $ unwrap p <#> \p' ->
+    let busyRef = unsafePerformEffect $ Ref.new false
+    in
+      { toUser: p'.toUser
+      , fromUser: \prop ->
+          p'.fromUser \u -> do
+            busy <- Ref.read busyRef
+            if busy
+              then tr "looped: echo swallowed (re-entrant)" u
+              else do
+                tr "looped: re-feeding emission" u
+                Ref.write true busyRef
+                p'.toUser u
+                Ref.write false busyRef
+                prop u
       }
 
 instance Applicative m => RecordToRecord (PUI m) where
@@ -866,15 +895,6 @@ observed status = wrap $ unwrap status <#> \st ->
         Ref.write (Just prop) mPropRef
     }
 
--- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
--- | (every case's payload retained) as an editor of one-at-a-time variant
--- | state — `stateOf` brackets the variant in (seeding absent payloads
--- | from the retained editor state), `caseOf` projects the selection back
--- | out, and the self-trace in between keeps the ensemble consistent. The
--- | demos' variant editors read
--- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
-bracketed :: forall m v s v'. Functor m => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> PUI m { | s } { | s } -> PUI m [ | v ] [ | v' ]
-bracketed f g w = dimap f g (looped w)
 
 -- | Mark a type-changing selector as **possibly unselected** — the dual of
 -- | `required`. The selection state is an entity always known from the
@@ -950,49 +970,6 @@ heartbeat interval step = wrap $ pure unit <#> \_ ->
         launchAff_ loop
     }
 
--- | The `×`-diagonal **self-trace**: feed a diagonal UI component its own
--- | emissions, re-entrancy-guarded (leaf UI components echo on `toUser`, and the
--- | guard swallows the echoes the re-feed provokes). Wrapped around a record
--- | merge it supplies the sibling cross-feed the gated merge deliberately
--- | omits — every operand sees every emission re-broadcast, and per-operand
--- | *retention* falls out of the merge gates (each gate holds its side's
--- | last contribution). Primitive rather than derived: `Costrong`'s
--- | `unfirst` cannot self-feed (no `c` before the first emission, no
--- | emission before the first input — the gate deadlocks), so the
--- | self-feeding special case ties the knot directly.
--- | Row-typed at the **record** diagonal: the looped value is an entity (a
--- | model row). Self-feeding an event diagonal would replay one-shot
--- | events; the lawful `+`-loop is `iterate`.
-looped :: forall m r. Functor m => PUI m { | r } { | r } -> PUI m { | r } { | r }
-looped p = wrap $ unwrap p <#> \p' ->
-  let busyRef = unsafePerformEffect $ Ref.new false
-  in
-    { toUser: p'.toUser
-    , fromUser: \prop ->
-        p'.fromUser \u -> do
-          busy <- Ref.read busyRef
-          if busy
-            then tr "looped: echo swallowed (re-entrant)" u
-            else do
-              tr "looped: re-feeding emission" u
-              Ref.write true busyRef
-              p'.toUser u
-              Ref.write false busyRef
-              prop u
-    }
-
--- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
--- | `w` is a same-type pipeline over the model — editors (`# completed`
--- | where they don't produce the whole model), displays, wires (`every`),
--- | and event stages folded in with `updated`. The model is an **entity**:
--- | it exists from the very beginning with a known initial state, and
--- | `seed` is that state — fed once at registration; from then on every
--- | emission of any stage re-enters at the top, re-entrancy-guarded. The
--- | result is **closed** (input `{}`): supplying the seed discharges the
--- | pipeline's initial-state obligation, which is what `body` demands. The
--- | standalone app reads `body $ ... $ mvu seed pipeline`.
-mvu :: forall m model. Applicative m => { | model } -> PUI m { | model } { | model } -> PUI m {} { | model }
-mvu seed w = with seed (looped w)
 
 -- Optics
 

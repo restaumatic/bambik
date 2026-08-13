@@ -15,7 +15,8 @@
 -- | `pempty :: p (Variant ()) (Variant ())`: `variantToVariant pempty g = g`.
 -- | Here silence is not merely lawful but forced — both empty-variant ends
 -- | are uninhabited, so the unit can neither receive nor emit — and any
--- | silent element implements it (`PUI`: `pempty = silence`).
+-- | silent element implements it (`PUI` writes a direct silent body: the
+-- | variant *input* is outside `silence`'s `{ | i }` shape).
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
 -- | here: `field`'s
@@ -36,12 +37,14 @@ module Data.Profunctor.Row.VariantToVariant
   , subChoice
   , iterate
   , atCase
+  , bracketed
   , pempty
   )
   where
 
 import Control.Category (identity)
 import Data.Either (Either(..), either)
+import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice, unleft)
@@ -53,6 +56,18 @@ import Type.Proxy (Proxy(..))
 import Data.Lens.Prism.Existential (prismE)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
 
+-- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
+-- | (every case's payload retained) as an editor of one-at-a-time variant
+-- | state — `stateOf` brackets the variant in (seeding absent payloads
+-- | from the retained editor state), `caseOf` projects the selection back
+-- | out, and the self-trace in between (`Looping`) keeps the ensemble
+-- | consistent. An adopter with a `+ → +` *result* — which is why it
+-- | lives here, like `asCase` lives at its `× → +` result. The demos'
+-- | variant editors read
+-- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
+bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
+bracketed f g w = dimap f g (looped w)
+
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
     OwnedVariantInputs i1 i2 i i1l i2l =>
@@ -60,7 +75,8 @@ class Profunctor p <= VariantToVariant p where
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
   -- | The **nullary** merge — the unit: handles no cases, emits no cases.
   -- | Both empty-variant ends are uninhabited, so silence is forced — any
-  -- | silent element implements it (`PUI`: `pempty = silence`).
+  -- | silent element implements it (`PUI` writes a direct silent body: the
+  -- | variant *input* is outside `silence`'s `{ | i }` shape).
   pempty :: p (Variant ()) (Variant ())
 
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.

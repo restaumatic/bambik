@@ -51,6 +51,7 @@ module Data.Profunctor.Row.RecordToRecord
   , announce
   , blank
   , with
+  , mvu
   , settled
   , informed
   , feedback
@@ -75,6 +76,7 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
+import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Strong (class Strong, first, second)
 import Control.Semigroupoid (class Semigroupoid, (>>>))
@@ -174,6 +176,19 @@ blank = lcmap (const {}) pempty
 -- | composed, spelled as such: `announce patch >>> button { … }`.
 with :: forall p a o. RecordToRecord p => Semigroupoid p => { | a } -> p { | a } { | o } -> p {} { | o }
 with a w = announce a >>> w
+
+-- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
+-- | `w` is a same-type pipeline over the model — editors (`# completed`
+-- | where they don't produce the whole model), displays, wires, and event
+-- | stages folded in with Mealy folds. The model is an **entity**: it
+-- | exists from the very beginning with a known initial state, and `seed`
+-- | is that state — fed once at registration; from then on every emission
+-- | of any stage re-enters at the top, re-entrancy-guarded (`Looping`).
+-- | The result is **closed** (input `{}`): supplying the seed discharges
+-- | the pipeline's initial-state obligation, which is what a mount entry
+-- | demands. The standalone app reads `body $ ... $ mvu seed pipeline`.
+mvu :: forall p model. Looping p => RecordToRecord p => Semigroupoid p => { | model } -> p { | model } { | model } -> p {} { | model }
+mvu seed w = with seed (looped w)
 
 -- | Row-typed `Strong`: focus a whole **sub-record** — the row-valued **focus**
 -- | `f` — transforming it against the **background** `b`, which is carried

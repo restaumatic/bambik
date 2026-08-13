@@ -40,7 +40,7 @@
 -- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
 -- | plus `Wander`, the four coined strengths in `extras/profunctor`
 -- | (`Resolving`/`Coresolving`/`Retaining`/`Coretaining`), and bambik's own
--- | `Acting`, `Seeding` and four row merges. Nothing is merely unwritten:
+-- | `Acting`, `Seeding`, `Looping` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
 -- | What it cannot inhabit, and why — the same reasons that shape the
@@ -55,6 +55,10 @@
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
 -- |     other never contributes; retention is what `PUI`'s `Ref`s supply
 -- |   * `Seeding` — needs a registration moment; a timeless carrier has none
+-- |   * `Looping` — needs an emission channel that can re-enter its own
+-- |     input; a CPS run is a single pass through one continuation, so
+-- |     there is nothing to feed back into (`Seeding`'s sibling
+-- |     impossibility: no beginning, no feedback)
 -- |   * `Closed` — would have to extract a `b` per `x`, and CPS only ever
 -- |     hands `b` to a continuation
 module Data.Profunctor.Cont where
