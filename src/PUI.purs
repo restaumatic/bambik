@@ -62,7 +62,6 @@ module PUI
   , edited
   , every
   , foreach
-  , informed
   , looped
   , mvu
   , observed
@@ -91,7 +90,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, completed, field, subStrong, forField, forProperty, pempty, projected, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, completed, field, subStrong, forField, forProperty, informed, pempty, projected, required, settled, tapped, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (asCase, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -129,116 +128,19 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import Record (get, insert, merge, union) as Record
 
--- ## Development diagnostics
---
--- The emission trace and the knowledge-gate starvation watchdog: an instrument
--- pointed at the combinators below, not part of the algebra they state. Both
--- switches **and the log sink** are parameters, so this has no JavaScript of
--- its own — every `.js` in the library lives under the Web layer — and both
--- are no-ops until a carrier installs a sink. `PUI.Web.adoptHostDiagnostics`
--- passes the browser console and reads the browser's switches at the mount
--- entries, so a headless `spago test` over `PUI Effect` probes is silent.
--- They live here rather than in a module of their own because `PUI` is their
--- only caller and a carrier's diagnostics are the carrier's own business;
--- they cannot live under `PUI.Web`, which imports this module.
-
--- | Whatever a trace line carries, seen opaquely: `tr` is polymorphic in the
--- | logged value but a `Ref` cannot hold a `forall`, so the value crosses to
--- | the sink as this. Declared `foreign import data`, which needs no foreign
--- | *module*.
-foreign import data Logged :: Type
-
--- | Where diagnostics go. A carrier installs one; until then both are no-ops,
--- | so nothing prints even with the switches on.
-type Sink =
-  { trace :: String -> Logged -> Effect Unit
-  , warn :: String -> Effect Unit
-  }
-
-sinkRef :: Ref.Ref Sink
-sinkRef = unsafePerformEffect (Ref.new { trace: \_ _ -> pure unit, warn: \_ -> pure unit })
-
--- | Install the sink. `PUI.Web` passes the browser console at its mount
--- | entries; a different host passes whatever it logs to.
-setSink :: Sink -> Effect Unit
-setSink sink = Ref.write sink sinkRef
-
-tracingRef :: Ref.Ref Boolean
-tracingRef = unsafePerformEffect (Ref.new false)
-
-diagnosticsRef :: Ref.Ref Boolean
-diagnosticsRef = unsafePerformEffect (Ref.new false)
-
--- | Turn the emission trace on or off. Off at startup; a carrier calls this
--- | with whatever its host offers (`PUI.Web` reads `window.__bambikTrace` and
--- | the `bambik-trace` local-storage key).
-setTracing :: Boolean -> Effect Unit
-setTracing on = Ref.write on tracingRef
-
--- | Turn starvation warnings on or off. Off at startup, so a carrier that
--- | never opts in — the `Effect` probe carrier the law tests run on — stays
--- | silent.
-setDiagnostics :: Boolean -> Effect Unit
-setDiagnostics on = Ref.write on diagnosticsRef
-
--- | Dev-mode emission trace: with `setTracing true`, log every propagation
--- | decision — values flowing between pipeline stages, loop re-feeds and
--- | swallowed echoes, and (most importantly) emissions *withheld* by
--- | knowledge gates, which are otherwise invisible. Zero cost when off beyond
--- | one flag read per emission.
-tr :: forall a. String -> a -> Effect Unit
-tr tag a = do
-  on <- Ref.read tracingRef
-  when on do
-    sink <- Ref.read sinkRef
-    sink.trace tag (unsafeCoerce a)
-
--- | Report a failure through the installed sink. Unlike `tr` this is **not**
--- | gated on the trace switch — a swallowed failure is exactly what leaves a
--- | UI dead with no diagnosis — but it is still a no-op until a carrier
--- | installs a sink, so a headless `spago test` stays silent.
-warn :: String -> Effect Unit
-warn msg = do
-  sink <- Ref.read sinkRef
-  sink.warn msg
-
--- | One-shot **starvation watchdog** for a knowledge gate. Every gated
--- | combinator withholds what it cannot yet complete — correct, but
--- | *silent*: an unprimed gate renders as a blank screen with no
--- | diagnostic. The guard turns that into a self-explaining failure:
--- | `blocked msg` (called on each withheld emission or input) arms a timer
--- | on its first call; if the gate hasn't opened (`fed`) within 3 seconds,
--- | a single console warning prints `msg`, naming the gate and what it is
--- | waiting for. Fires at most once per gate instance, and only under
--- | `setDiagnostics true`.
-gateGuard :: Effect { blocked :: String -> Effect Unit, fed :: Effect Unit }
-gateGuard = do
-  fedRef <- Ref.new false
-  armedRef <- Ref.new false
-  pure
-    { blocked: \msg -> do
-        enabled <- Ref.read diagnosticsRef
-        armed <- Ref.read armedRef
-        when (enabled && not armed) do
-          Ref.write true armedRef
-          launchAff_ do
-            delay (Milliseconds 3000.0)
-            liftEffect do
-              fed <- Ref.read fedRef
-              unless fed do
-                sink <- Ref.read sinkRef
-                sink.warn msg
-    , fed: Ref.write true fedRef
-    }
-
-renderFieldNames :: Array String -> String
-renderFieldNames [] = "{}"
-renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
+--------------------------------------------------------------------------------
+-- The carrier
+--------------------------------------------------------------------------------
 
 newtype PUI m i o = PUI (m
   { toUser :: i -> Effect Unit
   , fromUser :: (o -> Effect Unit) -> Effect Unit
   })
+
+
+--------------------------------------------------------------------------------
+-- Instances (the Hosting/Acting instances live with the container-action machinery below)
+--------------------------------------------------------------------------------
 
 derive instance Newtype (PUI m i o) _
 
@@ -508,282 +410,6 @@ instance Applicative m => Seeding (PUI m) where
           prop a
       }
 
--- | The **Mealy update stage** on the `×`-diagonal: a pass-through wire
--- | (every value fed flows on, so ticks and edits upstream keep driving
--- | the loop) that retains the last value and, on each *event* emission of
--- | the wrapped UI component, folds it in and emits the updated value. Event
--- | UI components emit **bare payloads** — no smuggling the model through event
--- | cases, no pass-through `state` case in the event merge:
--- |
--- | ```
--- | looped Semigroupoid.do
--- |   form                                   -- ×→× editors
--- |   updates handle RecordToVariant.do ...  -- ×→+ events, bare payloads
--- | ```
--- |
--- | is the model–view–update shape as two named stages. Events arriving
--- | before a first value are withheld (the usual knowledge gate).
--- |
--- | **Both sides subsume** (the row layer's rule: a stated closed row may be
--- | *read* from any wider row): the handler may touch a sub-row of the model,
--- | and the wrapped event UI component may be fed a sub-row of it — typically the
--- | union of an event merge's operands — so neither side needs a
--- | `widenRecordInput` at the stage boundary. With `small ≡ big` and
--- | `narrow ≡ big` this is the plain diagonal stage.
-updated
-  :: forall m small u big narrow extra e
-   . Functor m
-  => Union small big u
-  => Nub u big
-  => Union narrow extra big
-  => (e -> { | small } -> { | small })
-  -> PUI m { | narrow } e
-  -> PUI m { | big } { | big }
-updated handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
-
--- | The type-agnostic Mealy stage `updated` and `displayed` are built from —
--- | private, because the vocabulary's stages carry rows (subsumption is
--- | stated in their signatures) while this one is exact at any type.
-mealy :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
-mealy handler events = wrap $ unwrap events <#> \evts ->
-  let sRef = unsafePerformEffect $ Ref.new Nothing
-      mPropRef = unsafePerformEffect $ Ref.new Nothing
-      guard = unsafePerformEffect gateGuard
-  in
-    { toUser: \s -> do
-        guard.fed
-        Ref.write (Just s) sRef
-        evts.toUser s
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop s
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        evts.fromUser \e -> do
-          ms <- Ref.read sRef
-          case ms of
-            Nothing -> do
-              guard.blocked "updated: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
-              tr "updated: event withheld (no retained state yet)" e
-            Just s -> do
-              tr "updated: folding event" e
-              let s' = handler e s
-              Ref.write (Just s') sRef
-              prop s'
-    }
-
--- | Make any display an **unconditional pass-through stage**: every value
--- | fed is shown and forwarded, no echo required. The honest wrapper for
--- | displays that cannot echo — `foreach`/`foreachWith` collections (silent on
--- | an empty array, so inside a gated merge they starve the gate, and as a
--- | `mvu` pipeline's last stage they kill the loop). `tapped` and `completed`
--- | both rely on the display's echo;
--- | `displayed` does not. (The trivial `updated` fold: any event the
--- | wrapped UI component does emit re-emits the retained value.)
--- | **Subsumption is built in** (like `tapped`): the display may read a
--- | *narrower* row than the stage carries, so a closed-row projection needs
--- | no `widenRecordInput` at the stage boundary.
-displayed :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
-displayed w = mealy (\_ s -> s) (widenRecordInput w)
-
--- | Make a status an **event pass-through stage** — `displayed`'s sibling on
--- | the `+`-diagonal, and the variant answer to `tapped`: every event flowing
--- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `status # forCase @"event" @"charge" retryLine
--- | # observed` narrates a retry loop without interrupting it. Subsumption
--- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
--- | `Union` widening): the status may consume a *narrower* row than the
--- | stage carries — its cases are contracted out and shown, background cases
--- | pass untouched. The status's own emissions are dropped, deliberately:
--- | entities are idempotent so a display echo may re-forward them
--- | (`tapped`), but events are one-shot — re-emitting the last event on an
--- | echo would duplicate it.
-observed
-  :: forall m narrow wider e
-   . Functor m
-  => Contractable wider narrow
-  => PUI m [ | narrow ] e
-  -> PUI m [ | wider ] [ | wider ]
-observed status = wrap $ unwrap status <#> \st ->
-  let mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
-    { toUser: \v -> do
-        case contract v of
-          Just n -> do
-            tr "observed → status" n
-            st.toUser n
-          Nothing -> pure unit
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop v
-    , fromUser: \prop -> do
-        st.fromUser \_ -> pure unit
-        Ref.write (Just prop) mPropRef
-    }
-
--- | Pin a stage's input to a known value: the wrapped UI component is fed `a` for
--- | every value flowing through — a constant-fed stage (a fixed catalogue
--- | driving a collection component) with no input-type annotation. Its own
--- | input type stays free, so it fits any pipeline position.
-constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
-constantly a = lcmap (const a)
-
--- | The **dispatch adapter**: make a single-record business function an
--- | `updated` handler (or a `match` branch of one). The handler's two
--- | records — the event's payload and the retained model row — travel
--- | together into every fold, so `informed` merges them and the business
--- | function sees **one row of facts**, the payload's fields laid over the
--- | model's (fresh knowledge wins — the union is left-biased, like the
--- | merges), returning the match row:
--- |
--- | ```
--- | # updated (match { refunded: informed applyRefund })
--- | applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
--- | ```
--- |
--- | Reads are **per-branch exact**: `fed` is the function's own closed row,
--- | read from the merged facts by subsumption, so a branch states precisely
--- | which payload and model fields it consumes — unused payload fields cost
--- | nothing, and a payload label shadowing a model label reads as the
--- | payload's (first-label convention). What A12 once exempted as
--- | "mechanism-dictated currying" dissolves here; only scalar and `Array`
--- | payloads (a key, a fetched list) stay positional — they are not rows.
-informed
-  :: forall pay small u fed extra
-   . Union pay small u
-  => Union fed extra u
-  => ({ | fed } -> { | small })
-  -> { | pay }
-  -> { | small }
-  -> { | small }
-informed g pay small = g (unsafeCoerce (Record.union pay small))
-
--- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
--- | (every case's payload retained) as an editor of one-at-a-time variant
--- | state — `stateOf` brackets the variant in (seeding absent payloads
--- | from the retained editor state), `caseOf` projects the selection back
--- | out, and the self-trace in between keeps the ensemble consistent. The
--- | demos' variant editors read
--- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
-bracketed :: forall m v s v'. Functor m => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> PUI m { | s } { | s } -> PUI m [ | v ] [ | v' ]
-bracketed f g w = dimap f g (looped w)
-
--- | Mark a type-changing selector as **possibly unselected** — the dual of
--- | `required`. The selection state is an entity always known from the
--- | input, *including* "nothing picked yet", so `optional` completes the
--- | selector's `Just`-only leaf echo with the missing `Nothing` half (fed
--- | `Nothing` it announces `Nothing`; fed `Just` the leaf's own echo
--- | speaks — exactly one echo per feed either way) and wraps every user
--- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
--- | honest knowledge instead of starving the merge gate, and only a
--- | genuine pick can ever produce the bare value —
--- | `dropdown config options # optional # asField @l` seeds as `Nothing`
--- | and the stages demanding the selection stay `provided`-gated until the
--- | user picks.
-optional :: forall m a. Functor m => PUI m { value :: Maybe a } { value :: a } -> PUI m { value :: Maybe a } { value :: Maybe a }
-optional p = wrap $ unwrap p <#> \p' ->
-  let mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
-    { toUser: \i -> do
-        p'.toUser i
-        case i.value of
-          Nothing -> do
-            mProp <- Ref.read mPropRef
-            for_ mProp \prop -> prop { value: Nothing }
-          Just _ -> pure unit
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        p'.fromUser \o -> prop { value: Just o.value }
-    }
-
--- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
--- | Retains the last value flowing through; every `interval`, applies
--- | `step` to it — `Just` advances (retained and emitted), `Nothing`
--- | pauses until fresh input arrives. Inside a `looped` chain this is a
--- | tick source: the 7GUIs Timer is `every { ms: 100.0 } tick`.
--- | The loop runs for the UI component's whole life (no cancellation — a
--- | prototype limitation shared with `action'`).
--- |
--- | The step **subsumes** (like `updated`'s handler): it may read and rebuild
--- | a sub-row of the model, merged back over the last full value on each
--- | tick, so the tick's footprint is stated once in the step's own signature.
-every
-  :: forall m small u big
-   . Applicative m
-  => Union small big u
-  => Nub u big
-  => { ms :: Number }
-  -> ({ | small } -> Maybe { | small })
-  -> PUI m { | big } { | big }
-every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
-
--- | The type-agnostic heartbeat `every` is built from — private for the same
--- | reason as `mealy`.
-heartbeat :: forall m a. Applicative m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
-heartbeat interval step = wrap $ pure unit <#> \_ ->
-  let lastRef = unsafePerformEffect $ Ref.new Nothing
-      mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
-    { toUser: \a -> do
-        Ref.write (Just a) lastRef
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop a
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        let
-          loop = do
-            delay (Milliseconds interval.ms)
-            liftEffect do
-              ma <- Ref.read lastRef
-              for_ (ma >>= step) \a' -> do
-                Ref.write (Just a') lastRef
-                prop a'
-            loop
-        launchAff_ loop
-    }
-
--- | The `×`-diagonal **self-trace**: feed a diagonal UI component its own
--- | emissions, re-entrancy-guarded (leaf UI components echo on `toUser`, and the
--- | guard swallows the echoes the re-feed provokes). Wrapped around a record
--- | merge it supplies the sibling cross-feed the gated merge deliberately
--- | omits — every operand sees every emission re-broadcast, and per-operand
--- | *retention* falls out of the merge gates (each gate holds its side's
--- | last contribution). Primitive rather than derived: `Costrong`'s
--- | `unfirst` cannot self-feed (no `c` before the first emission, no
--- | emission before the first input — the gate deadlocks), so the
--- | self-feeding special case ties the knot directly.
--- | Row-typed at the **record** diagonal: the looped value is an entity (a
--- | model row). Self-feeding an event diagonal would replay one-shot
--- | events; the lawful `+`-loop is `iterate`.
-looped :: forall m r. Functor m => PUI m { | r } { | r } -> PUI m { | r } { | r }
-looped p = wrap $ unwrap p <#> \p' ->
-  let busyRef = unsafePerformEffect $ Ref.new false
-  in
-    { toUser: p'.toUser
-    , fromUser: \prop ->
-        p'.fromUser \u -> do
-          busy <- Ref.read busyRef
-          if busy
-            then tr "looped: echo swallowed (re-entrant)" u
-            else do
-              tr "looped: re-feeding emission" u
-              Ref.write true busyRef
-              p'.toUser u
-              Ref.write false busyRef
-              prop u
-    }
-
--- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
--- | `w` is a same-type pipeline over the model — editors (`# completed`
--- | where they don't produce the whole model), displays, wires (`every`),
--- | and event stages folded in with `updated`. The model is an **entity**:
--- | it exists from the very beginning with a known initial state, and
--- | `seed` is that state — fed once at registration; from then on every
--- | emission of any stage re-enters at the top, re-entrancy-guarded. The
--- | result is **closed** (input `{}`): supplying the seed discharges the
--- | pipeline's initial-state obligation, which is what `body` demands. The
--- | standalone app reads `body $ ... $ mvu seed pipeline`.
-mvu :: forall m model. Applicative m => { | model } -> PUI m { | model } { | model } -> PUI m {} { | model }
-mvu seed w = with seed (looped w)
-
 instance Applicative m => RecordToRecord (PUI m) where
   -- the unit announces its informationless {} once, so the merge gates below
   -- never starve against it
@@ -1018,6 +644,363 @@ instance Applicative m => VariantToVariant (PUI m) where
           p1'.fromUser prop
           p2'.fromUser prop
       }
+
+
+--------------------------------------------------------------------------------
+-- Combinators, machinery, diagnostics
+--------------------------------------------------------------------------------
+
+-- ## Development diagnostics
+--
+-- The emission trace and the knowledge-gate starvation watchdog: an instrument
+-- pointed at the combinators below, not part of the algebra they state. Both
+-- switches **and the log sink** are parameters, so this has no JavaScript of
+-- its own — every `.js` in the library lives under the Web layer — and both
+-- are no-ops until a carrier installs a sink. `PUI.Web.adoptHostDiagnostics`
+-- passes the browser console and reads the browser's switches at the mount
+-- entries, so a headless `spago test` over `PUI Effect` probes is silent.
+-- They live here rather than in a module of their own because `PUI` is their
+-- only caller and a carrier's diagnostics are the carrier's own business;
+-- they cannot live under `PUI.Web`, which imports this module.
+
+-- | Whatever a trace line carries, seen opaquely: `tr` is polymorphic in the
+-- | logged value but a `Ref` cannot hold a `forall`, so the value crosses to
+-- | the sink as this. Declared `foreign import data`, which needs no foreign
+-- | *module*.
+foreign import data Logged :: Type
+
+-- | Where diagnostics go. A carrier installs one; until then both are no-ops,
+-- | so nothing prints even with the switches on.
+type Sink =
+  { trace :: String -> Logged -> Effect Unit
+  , warn :: String -> Effect Unit
+  }
+
+sinkRef :: Ref.Ref Sink
+sinkRef = unsafePerformEffect (Ref.new { trace: \_ _ -> pure unit, warn: \_ -> pure unit })
+
+-- | Install the sink. `PUI.Web` passes the browser console at its mount
+-- | entries; a different host passes whatever it logs to.
+setSink :: Sink -> Effect Unit
+setSink sink = Ref.write sink sinkRef
+
+tracingRef :: Ref.Ref Boolean
+tracingRef = unsafePerformEffect (Ref.new false)
+
+diagnosticsRef :: Ref.Ref Boolean
+diagnosticsRef = unsafePerformEffect (Ref.new false)
+
+-- | Turn the emission trace on or off. Off at startup; a carrier calls this
+-- | with whatever its host offers (`PUI.Web` reads `window.__bambikTrace` and
+-- | the `bambik-trace` local-storage key).
+setTracing :: Boolean -> Effect Unit
+setTracing on = Ref.write on tracingRef
+
+-- | Turn starvation warnings on or off. Off at startup, so a carrier that
+-- | never opts in — the `Effect` probe carrier the law tests run on — stays
+-- | silent.
+setDiagnostics :: Boolean -> Effect Unit
+setDiagnostics on = Ref.write on diagnosticsRef
+
+-- | Dev-mode emission trace: with `setTracing true`, log every propagation
+-- | decision — values flowing between pipeline stages, loop re-feeds and
+-- | swallowed echoes, and (most importantly) emissions *withheld* by
+-- | knowledge gates, which are otherwise invisible. Zero cost when off beyond
+-- | one flag read per emission.
+tr :: forall a. String -> a -> Effect Unit
+tr tag a = do
+  on <- Ref.read tracingRef
+  when on do
+    sink <- Ref.read sinkRef
+    sink.trace tag (unsafeCoerce a)
+
+-- | Report a failure through the installed sink. Unlike `tr` this is **not**
+-- | gated on the trace switch — a swallowed failure is exactly what leaves a
+-- | UI dead with no diagnosis — but it is still a no-op until a carrier
+-- | installs a sink, so a headless `spago test` stays silent.
+warn :: String -> Effect Unit
+warn msg = do
+  sink <- Ref.read sinkRef
+  sink.warn msg
+
+-- | One-shot **starvation watchdog** for a knowledge gate. Every gated
+-- | combinator withholds what it cannot yet complete — correct, but
+-- | *silent*: an unprimed gate renders as a blank screen with no
+-- | diagnostic. The guard turns that into a self-explaining failure:
+-- | `blocked msg` (called on each withheld emission or input) arms a timer
+-- | on its first call; if the gate hasn't opened (`fed`) within 3 seconds,
+-- | a single console warning prints `msg`, naming the gate and what it is
+-- | waiting for. Fires at most once per gate instance, and only under
+-- | `setDiagnostics true`.
+gateGuard :: Effect { blocked :: String -> Effect Unit, fed :: Effect Unit }
+gateGuard = do
+  fedRef <- Ref.new false
+  armedRef <- Ref.new false
+  pure
+    { blocked: \msg -> do
+        enabled <- Ref.read diagnosticsRef
+        armed <- Ref.read armedRef
+        when (enabled && not armed) do
+          Ref.write true armedRef
+          launchAff_ do
+            delay (Milliseconds 3000.0)
+            liftEffect do
+              fed <- Ref.read fedRef
+              unless fed do
+                sink <- Ref.read sinkRef
+                sink.warn msg
+    , fed: Ref.write true fedRef
+    }
+
+renderFieldNames :: Array String -> String
+renderFieldNames [] = "{}"
+renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
+
+-- | The **Mealy update stage** on the `×`-diagonal: a pass-through wire
+-- | (every value fed flows on, so ticks and edits upstream keep driving
+-- | the loop) that retains the last value and, on each *event* emission of
+-- | the wrapped UI component, folds it in and emits the updated value. Event
+-- | UI components emit **bare payloads** — no smuggling the model through event
+-- | cases, no pass-through `state` case in the event merge:
+-- |
+-- | ```
+-- | looped Semigroupoid.do
+-- |   form                                   -- ×→× editors
+-- |   updates handle RecordToVariant.do ...  -- ×→+ events, bare payloads
+-- | ```
+-- |
+-- | is the model–view–update shape as two named stages. Events arriving
+-- | before a first value are withheld (the usual knowledge gate).
+-- |
+-- | **Both sides subsume** (the row layer's rule: a stated closed row may be
+-- | *read* from any wider row): the handler may touch a sub-row of the model,
+-- | and the wrapped event UI component may be fed a sub-row of it — typically the
+-- | union of an event merge's operands — so neither side needs a
+-- | `widenRecordInput` at the stage boundary. With `small ≡ big` and
+-- | `narrow ≡ big` this is the plain diagonal stage.
+updated
+  :: forall m small u big narrow extra e
+   . Functor m
+  => Union small big u
+  => Nub u big
+  => Union narrow extra big
+  => (e -> { | small } -> { | small })
+  -> PUI m { | narrow } e
+  -> PUI m { | big } { | big }
+updated handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
+
+-- | The type-agnostic Mealy stage `updated` and `displayed` are built from —
+-- | private, because the vocabulary's stages carry rows (subsumption is
+-- | stated in their signatures) while this one is exact at any type.
+mealy :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
+mealy handler events = wrap $ unwrap events <#> \evts ->
+  let sRef = unsafePerformEffect $ Ref.new Nothing
+      mPropRef = unsafePerformEffect $ Ref.new Nothing
+      guard = unsafePerformEffect gateGuard
+  in
+    { toUser: \s -> do
+        guard.fed
+        Ref.write (Just s) sRef
+        evts.toUser s
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop s
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        evts.fromUser \e -> do
+          ms <- Ref.read sRef
+          case ms of
+            Nothing -> do
+              guard.blocked "updated: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
+              tr "updated: event withheld (no retained state yet)" e
+            Just s -> do
+              tr "updated: folding event" e
+              let s' = handler e s
+              Ref.write (Just s') sRef
+              prop s'
+    }
+
+-- | Make any display an **unconditional pass-through stage**: every value
+-- | fed is shown and forwarded, no echo required. The honest wrapper for
+-- | displays that cannot echo — `foreach`/`foreachWith` collections (silent on
+-- | an empty array, so inside a gated merge they starve the gate, and as a
+-- | `mvu` pipeline's last stage they kill the loop). `tapped` and `completed`
+-- | both rely on the display's echo;
+-- | `displayed` does not. (The trivial `updated` fold: any event the
+-- | wrapped UI component does emit re-emits the retained value.)
+-- | **Subsumption is built in** (like `tapped`): the display may read a
+-- | *narrower* row than the stage carries, so a closed-row projection needs
+-- | no `widenRecordInput` at the stage boundary.
+displayed :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
+displayed w = mealy (\_ s -> s) (widenRecordInput w)
+
+-- | Make a status an **event pass-through stage** — `displayed`'s sibling on
+-- | the `+`-diagonal, and the variant answer to `tapped`: every event flowing
+-- | through is forwarded exactly once, at feed time, and the events the
+-- | status consumes are also shown — `status # forCase @"event" @"charge" retryLine
+-- | # observed` narrates a retry loop without interrupting it. Subsumption
+-- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
+-- | `Union` widening): the status may consume a *narrower* row than the
+-- | stage carries — its cases are contracted out and shown, background cases
+-- | pass untouched. The status's own emissions are dropped, deliberately:
+-- | entities are idempotent so a display echo may re-forward them
+-- | (`tapped`), but events are one-shot — re-emitting the last event on an
+-- | echo would duplicate it.
+observed
+  :: forall m narrow wider e
+   . Functor m
+  => Contractable wider narrow
+  => PUI m [ | narrow ] e
+  -> PUI m [ | wider ] [ | wider ]
+observed status = wrap $ unwrap status <#> \st ->
+  let mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \v -> do
+        case contract v of
+          Just n -> do
+            tr "observed → status" n
+            st.toUser n
+          Nothing -> pure unit
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop v
+    , fromUser: \prop -> do
+        st.fromUser \_ -> pure unit
+        Ref.write (Just prop) mPropRef
+    }
+
+-- | Pin a stage's input to a known value: the wrapped UI component is fed `a` for
+-- | every value flowing through — a constant-fed stage (a fixed catalogue
+-- | driving a collection component) with no input-type annotation. Its own
+-- | input type stays free, so it fits any pipeline position.
+constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
+constantly a = lcmap (const a)
+
+-- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
+-- | (every case's payload retained) as an editor of one-at-a-time variant
+-- | state — `stateOf` brackets the variant in (seeding absent payloads
+-- | from the retained editor state), `caseOf` projects the selection back
+-- | out, and the self-trace in between keeps the ensemble consistent. The
+-- | demos' variant editors read
+-- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
+bracketed :: forall m v s v'. Functor m => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> PUI m { | s } { | s } -> PUI m [ | v ] [ | v' ]
+bracketed f g w = dimap f g (looped w)
+
+-- | Mark a type-changing selector as **possibly unselected** — the dual of
+-- | `required`. The selection state is an entity always known from the
+-- | input, *including* "nothing picked yet", so `optional` completes the
+-- | selector's `Just`-only leaf echo with the missing `Nothing` half (fed
+-- | `Nothing` it announces `Nothing`; fed `Just` the leaf's own echo
+-- | speaks — exactly one echo per feed either way) and wraps every user
+-- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
+-- | honest knowledge instead of starving the merge gate, and only a
+-- | genuine pick can ever produce the bare value —
+-- | `dropdown config options # optional # asField @l` seeds as `Nothing`
+-- | and the stages demanding the selection stay `provided`-gated until the
+-- | user picks.
+optional :: forall m a. Functor m => PUI m { value :: Maybe a } { value :: a } -> PUI m { value :: Maybe a } { value :: Maybe a }
+optional p = wrap $ unwrap p <#> \p' ->
+  let mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \i -> do
+        p'.toUser i
+        case i.value of
+          Nothing -> do
+            mProp <- Ref.read mPropRef
+            for_ mProp \prop -> prop { value: Nothing }
+          Just _ -> pure unit
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        p'.fromUser \o -> prop { value: Just o.value }
+    }
+
+-- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
+-- | Retains the last value flowing through; every `interval`, applies
+-- | `step` to it — `Just` advances (retained and emitted), `Nothing`
+-- | pauses until fresh input arrives. Inside a `looped` chain this is a
+-- | tick source: the 7GUIs Timer is `every { ms: 100.0 } tick`.
+-- | The loop runs for the UI component's whole life (no cancellation — a
+-- | prototype limitation shared with `action'`).
+-- |
+-- | The step **subsumes** (like `updated`'s handler): it may read and rebuild
+-- | a sub-row of the model, merged back over the last full value on each
+-- | tick, so the tick's footprint is stated once in the step's own signature.
+every
+  :: forall m small u big
+   . Applicative m
+  => Union small big u
+  => Nub u big
+  => { ms :: Number }
+  -> ({ | small } -> Maybe { | small })
+  -> PUI m { | big } { | big }
+every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
+
+-- | The type-agnostic heartbeat `every` is built from — private for the same
+-- | reason as `mealy`.
+heartbeat :: forall m a. Applicative m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
+heartbeat interval step = wrap $ pure unit <#> \_ ->
+  let lastRef = unsafePerformEffect $ Ref.new Nothing
+      mPropRef = unsafePerformEffect $ Ref.new Nothing
+  in
+    { toUser: \a -> do
+        Ref.write (Just a) lastRef
+        mProp <- Ref.read mPropRef
+        for_ mProp \prop -> prop a
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        let
+          loop = do
+            delay (Milliseconds interval.ms)
+            liftEffect do
+              ma <- Ref.read lastRef
+              for_ (ma >>= step) \a' -> do
+                Ref.write (Just a') lastRef
+                prop a'
+            loop
+        launchAff_ loop
+    }
+
+-- | The `×`-diagonal **self-trace**: feed a diagonal UI component its own
+-- | emissions, re-entrancy-guarded (leaf UI components echo on `toUser`, and the
+-- | guard swallows the echoes the re-feed provokes). Wrapped around a record
+-- | merge it supplies the sibling cross-feed the gated merge deliberately
+-- | omits — every operand sees every emission re-broadcast, and per-operand
+-- | *retention* falls out of the merge gates (each gate holds its side's
+-- | last contribution). Primitive rather than derived: `Costrong`'s
+-- | `unfirst` cannot self-feed (no `c` before the first emission, no
+-- | emission before the first input — the gate deadlocks), so the
+-- | self-feeding special case ties the knot directly.
+-- | Row-typed at the **record** diagonal: the looped value is an entity (a
+-- | model row). Self-feeding an event diagonal would replay one-shot
+-- | events; the lawful `+`-loop is `iterate`.
+looped :: forall m r. Functor m => PUI m { | r } { | r } -> PUI m { | r } { | r }
+looped p = wrap $ unwrap p <#> \p' ->
+  let busyRef = unsafePerformEffect $ Ref.new false
+  in
+    { toUser: p'.toUser
+    , fromUser: \prop ->
+        p'.fromUser \u -> do
+          busy <- Ref.read busyRef
+          if busy
+            then tr "looped: echo swallowed (re-entrant)" u
+            else do
+              tr "looped: re-feeding emission" u
+              Ref.write true busyRef
+              p'.toUser u
+              Ref.write false busyRef
+              prop u
+    }
+
+-- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
+-- | `w` is a same-type pipeline over the model — editors (`# completed`
+-- | where they don't produce the whole model), displays, wires (`every`),
+-- | and event stages folded in with `updated`. The model is an **entity**:
+-- | it exists from the very beginning with a known initial state, and
+-- | `seed` is that state — fed once at registration; from then on every
+-- | emission of any stage re-enters at the top, re-entrancy-guarded. The
+-- | result is **closed** (input `{}`): supplying the seed discharges the
+-- | pipeline's initial-state obligation, which is what `body` demands. The
+-- | standalone app reads `body $ ... $ mvu seed pipeline`.
+mvu :: forall m model. Applicative m => { | model } -> PUI m { | model } { | model } -> PUI m {} { | model }
+mvu seed w = with seed (looped w)
 
 -- Optics
 

@@ -51,6 +51,7 @@ module Data.Profunctor.Row.RecordToRecord
   , announce
   , with
   , settled
+  , informed
   , feedback
   , asField
   , atField
@@ -302,6 +303,38 @@ settled
   -> p i { | big }
   -> p i { | big }
 settled f = rmap (\big -> Record.merge (f (unsafeCoerce big)) big)
+
+-- | The **dispatch adapter**: make a single-record business function a
+-- | Mealy handler (`PUI.updated`, or a `match` branch of one). The
+-- | handler's two records — the event's payload and the retained model
+-- | row — travel together into every fold, so `informed` merges them and
+-- | the business function sees **one row of facts**, the payload's fields
+-- | laid over the model's (fresh knowledge wins — the union is
+-- | left-biased, like the merges), returning the match row:
+-- |
+-- | ```
+-- | # updated (match { refunded: informed applyRefund })
+-- | applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
+-- | ```
+-- |
+-- | Reads are **per-branch exact**: `fed` is the function's own closed row,
+-- | read from the merged facts by subsumption, so a branch states precisely
+-- | which payload and model fields it consumes — unused payload fields cost
+-- | nothing, and a payload label shadowing a model label reads as the
+-- | payload's (first-label convention). What A12 once exempted as
+-- | "mechanism-dictated currying" dissolves here; only scalar and `Array`
+-- | payloads (a key, a fetched list) stay positional — they are not rows.
+-- | Pure record algebra — no profunctor in sight; it lives here because
+-- | its rows are this direction's.
+informed
+  :: forall pay small u fed extra
+   . Union pay small u
+  => Union fed extra u
+  => ({ | fed } -> { | small })
+  -> { | pay }
+  -> { | small }
+  -> { | small }
+informed g pay small = g (unsafeCoerce (Record.union pay small))
 
 -- | A display **tap** on the `×`-diagonal: shows the value flowing through
 -- | and passes it on — the pipeline-stage form of a live view. Pure `Strong`
