@@ -1,11 +1,11 @@
 module TimerHTML (timerHTML) where
 
-import Prelude ((#), ($), Unit, const, identity, show)
+import Prelude ((>>>), (#), ($), Unit, const, identity, show)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, every, forField, mvu, projected, toCase, updated, with)
+import PUI (announce, asField, completed, every, forField, mvu, projected, toCase, updated)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
@@ -24,5 +24,5 @@ timerHTML =
               staticText "Duration "
               rangeInput ) # asField @"value" @"duration") # completed
       every tickPeriod tick
-      button (staticText "Reset") # with nothingElapsed # toCase @"clicked" identity # updated (match { clicked: const })
+      announce nothingElapsed >>> button (staticText "Reset") # toCase @"clicked" identity # updated (match { clicked: const })
   ) # mvu tenSecondFreshTimer

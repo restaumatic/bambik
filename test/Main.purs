@@ -267,16 +267,16 @@ main = do
   -- looped (the ×-diagonal self-trace): every emission is re-fed (guarded)
   -- and propagated.
   do
-    ins <- Ref.new ([] :: Array Int)
+    ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (looped (probeIO ins gProp :: PUI Effect Int Int))
+    outs <- Ref.new ([] :: Array { n :: Int })
+    m <- unwrap (looped (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser 5
-    Ref.read ins >>= assertEqual "looped: input feeds through" [ 5 ]
-    fire gProp 7
-    Ref.read ins >>= assertEqual "looped: emission re-fed" [ 5, 7 ]
-    Ref.read outs >>= assertEqual "looped: emission propagates" [ 7 ]
+    m.toUser { n: 5 }
+    Ref.read ins >>= assertEqual "looped: input feeds through" [ { n: 5 } ]
+    fire gProp { n: 7 }
+    Ref.read ins >>= assertEqual "looped: emission re-fed" [ { n: 5 }, { n: 7 } ]
+    Ref.read outs >>= assertEqual "looped: emission propagates" [ { n: 7 } ]
 
   -- iterate (the +-trace at row granularity): `again` cases loop back,
   -- `done` cases exit.
@@ -668,20 +668,20 @@ main = do
 
   -- announce: exactly one registration-time emission, then silence.
   do
-    outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (announce 42 :: PUI Effect {} Int)
+    outs <- Ref.new ([] :: Array { n :: Int })
+    m <- unwrap (announce { n: 42 } :: PUI Effect {} { n :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser {}
-    Ref.read outs >>= assertEqual "announce: exactly one registration emission" [ 42 ]
+    Ref.read outs >>= assertEqual "announce: exactly one registration emission" [ { n: 42 } ]
 
   -- compose registers downstream first, so an upstream registration
   -- announcement finds downstream's wiring already listening.
   do
-    ins <- Ref.new ([] :: Array Int)
+    ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
-    m <- unwrap ((announce 5 :: PUI Effect {} Int) >>> probeIO ins gProp)
+    m <- unwrap ((announce { n: 5 } :: PUI Effect {} { n :: Int }) >>> probeIO ins gProp)
     m.fromUser \_ -> pure unit
-    Ref.read ins >>= assertEqual "compose: registration announcement reaches downstream" [ 5 ]
+    Ref.read ins >>= assertEqual "compose: registration announcement reaches downstream" [ { n: 5 } ]
 
   -- identity: the echo wire — whatever comes in goes straight back out.
   do

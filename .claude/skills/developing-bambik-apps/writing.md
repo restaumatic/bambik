@@ -124,7 +124,7 @@ Worked examples, by shape:
 
 - **smallest MVU** — counter.
 - **loop-free pipeline** — order-form (load action → form → events →
-  backend dispatch → statuses → `silence`); it is also the
+  backend dispatch → statuses); it is also the
   four-direction showcase.
 - **both combined** — crud (a load action feeding a `looped` form whose
   commands dispatch through write actions).
@@ -382,10 +382,13 @@ over a logic module, a single exported entry function.
   citizen (parcel's `addressForm`).
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
-  ever leads a line: an announced payload trails like every other data
-  concern (`button { … } # with patch # asCase @"clicked" @l`, never a leading
-  `with patch (button …)`), and `# with {}` is written inline when the
-  payload is the informationless unit, since naming `{}` is ceremony.
+  ever leads a line — but `announce` is a component (the announcing
+  leaf), not a data word: an emitter's replay payload is seeded by the
+  announcement composed in registration order
+  (`announce patch >>> button { … } # asCase @"clicked" @l` — `with` is the
+  record-pipeline closer and does not fit a `×→+` emitter), and `# with {}`
+  is written inline when the payload is the informationless unit, since
+  naming `{}` is ceremony.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line) and
   rides at the end of the UI component's last content line — close the paren
@@ -470,7 +473,7 @@ over a logic module, a single exported entry function.
   that reads nothing is not a transformer but a **constant patch**
   (`beginTiming :: { running :: Boolean }`, dispatched with
   `const (const beginTiming)`, or announced to a bare button as
-  `button { … } # with reset # updated (match { clicked: const })`).
+  `announce reset >>> button { … } # updated (match { clicked: const })`).
 - **One record of data per business function.** Several record
   parameters that travel together are one row in disguise — merge them
   and let the field labels name the roles that positional currying

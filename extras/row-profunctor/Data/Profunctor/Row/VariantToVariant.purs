@@ -113,7 +113,7 @@ subChoice g = dimap splitVariant (either expand expand) (left g)
 -- | action that consumes it as often as by the UI component that emits it, so
 -- | widening this position would leave both unknown (the payload-boundary
 -- | rule).
-atCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p (Variant s) b
+atCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p [ | s ] b
 atCase = lcmap (on (Proxy @l) identity case_)
 
 -- | Focus an existing case in place — the standard `Choice` case prism, read

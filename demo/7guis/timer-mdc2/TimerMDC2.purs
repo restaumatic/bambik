@@ -1,11 +1,11 @@
 module TimerMDC2 (timerMDC2) where
 
-import Prelude ((#), ($), Unit, const, show)
+import Prelude ((>>>), (#), ($), Unit, const, show)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, every, forField, mvu, projected, updated, with)
+import PUI (announce, asField, completed, every, forField, mvu, projected, updated)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,5 +25,5 @@ timerMDC2 =
                 staticText "s"
               sliderLive { label: "Duration" } # asField @"value" @"duration") # completed
           every tickPeriod tick
-          button { label: "Reset", icon: "replay" } # with nothingElapsed # updated (match { clicked: const })
+          announce nothingElapsed >>> button { label: "Reset", icon: "replay" } # updated (match { clicked: const })
       ) # mvu tenSecondFreshTimer

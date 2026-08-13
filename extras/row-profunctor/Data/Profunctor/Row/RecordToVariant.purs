@@ -39,14 +39,15 @@
 -- | As nullary operator, `pempty` is the empty merge:
 -- | `recordToVariant pempty g = g`. Silence is forced on the output end (the
 -- | empty variant is uninhabited) and sufficient on the input end (the empty
--- | record demands nothing), so `PUI` implements it as its silent UI component:
--- | `pempty = silence`.
+-- | record demands nothing), and parametricity extends both to arbitrary
+-- | types — which is `silence` (below), the unit's `dimap`-closure.
 module Data.Profunctor.Row.RecordToVariant
   ( bind
   , class RecordToVariant
   , discard
   , folding
   , pempty
+  , silence
   , recordToVariant
   , focusProperty
   , asCase
@@ -60,6 +61,7 @@ module Data.Profunctor.Row.RecordToVariant
 
 import Data.Either (Either(..), either)
 import Control.Semigroupoid ((>>>))
+import Data.Function (const)
 import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -118,7 +120,8 @@ class Profunctor p <= RecordToVariant p where
   -- | The **nullary** merge — the unit: reads nothing, emits no cases. The
   -- | silent source of the header's law; silence is forced on the uninhabited
   -- | variant output and sufficient on the empty record input, so any silent
-  -- | element implements it (`PUI`: `pempty = silence`).
+  -- | element implements it — this is the one direct silent body a carrier
+  -- | writes, and `silence` below generalizes it to any types.
   pempty :: p {} (Variant ())
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
@@ -134,6 +137,19 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   SharedVariantOutputs o1 o2 o o12 o1x o2x =>
   p { | i1 } [ | o1 ] -> (Unit -> p { | i2 } [ | o2 ]) -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
+
+-- | The **silent UI component**: shows nothing, captures nothing — at any
+-- | rows, and necessarily so (parametricity survives the shaping:
+-- | `forall i o. p { | i } [ | o ]` can neither inspect unknown fields nor
+-- | fabricate a case of an unknown row). Shaped `× → +` like everything
+-- | here — silence's citizenship is this direction's, since it is the
+-- | `dimap`-closure of its unit. The pinned trivial operand of the mixed
+-- | introduce laws and the terminal sink of event pipelines. The lawful
+-- | faceless leaf at *record* output is not silence but the announcing
+-- | unit adopted to any input — `pempty # constantly {}` — since record
+-- | outputs must announce.
+silence :: forall p i o. RecordToVariant p => p { | i } [ | o ]
+silence = dimap (const {}) case_ pempty
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
 -- | for this direction. Where `RecordToRecord.focusProperty` **refocuses** (background fixed, focus

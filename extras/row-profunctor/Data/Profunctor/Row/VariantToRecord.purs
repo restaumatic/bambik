@@ -161,7 +161,7 @@ forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 -- | One-at-a-time input means one classifier is total over the row; per-case
 -- | copy stays a `match` branch, never a sibling operand, when outcomes share one
 -- | status area.
-forCases :: forall @c p a o s cs. IsSymbol c => Cons c a () cs => Profunctor p => (Variant s -> a) -> p [ | cs ] o -> p [ | s ] o
+forCases :: forall @c p a o s cs. IsSymbol c => Cons c a () cs => Profunctor p => ([ | s ] -> a) -> p [ | cs ] o -> p [ | s ] o
 forCases f = lcmap (\v -> inj (Proxy @c) (f v))
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator

@@ -1,13 +1,13 @@
 module EspressoBarMDC2 (espressoBarMDC2) where
 
-import Prelude (Unit, const, (#), ($), (<<<))
+import Prelude ((>>>), Unit, const, (#), ($), (<<<))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
-import PUI (asCase, asField, forCase, mvu, projected, required, tapped, updated, with)
+import PUI (announce, asCase, asField, forCase, mvu, projected, required, tapped, updated)
 import PUI.Web.HTML (body, div, staticText, text)
 import PUI.Web.MDC2 (body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -51,7 +51,7 @@ espressoBarMDC2 =
                 checkbox { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" } # asField @"value" @"loyalty"
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
-                  menuItem { label: "The usual" } # asCase @"clicked" @"theUsual" # with theUsual
+                  announce theUsual >>> menuItem { label: "The usual" } # asCase @"clicked" @"theUsual"
                   menuItem { label: "Espresso, no frills" } # asCase @"clicked" @"espressoNoFrills" ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
           ) # mvu usualOrder
           body2 ( RecordToRecord.do

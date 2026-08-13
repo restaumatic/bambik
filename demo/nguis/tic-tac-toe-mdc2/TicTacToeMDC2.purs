@@ -1,11 +1,11 @@
 module TicTacToeMDC2 (ticTacToeMDC2) where
 
-import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
+import Prelude ((>>>), identity, (#), ($), (<>), (>>>), Unit, const)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, forField, foreach, mvu, forProperty, toCase, updated, with)
+import PUI (announce, displayed, forField, forProperty, foreach, mvu, toCase, updated)
 import PUI.Web.HTML (providedCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,7 +28,7 @@ ticTacToeMDC2 =
                       ( div
                           >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
                           $ text # forProperty @"value" @"mark" identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
-          button { label: "New game", icon: "replay" } # with openingPosition # updated (match { clicked: const })
+          announce openingPosition >>> button { label: "New game", icon: "replay" } # updated (match { clicked: const })
       ) # mvu openingPosition
 
 cellStyle :: String

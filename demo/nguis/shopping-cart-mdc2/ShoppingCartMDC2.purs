@@ -1,11 +1,11 @@
 module ShoppingCartMDC2 (shoppingCartMDC2) where
 
-import Prelude (identity, (#), ($), Unit, const)
+import Prelude ((>>>), identity, (#), ($), Unit, const)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (forField, foreach, informed, mvu, projected, tapped, toCase, updated, with)
+import PUI (announce, forField, foreach, informed, mvu, projected, tapped, toCase, updated)
 import PUI.Web.HTML (body, clicked, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,5 +30,5 @@ shoppingCartMDC2 =
           body1 ( RecordToRecord.do
               staticText "Total: $"
               text # projected @"value" grandTotalText ) # tapped
-          button { label: "Empty cart" } # with emptyCart # updated (match { clicked: const })
+          announce emptyCart >>> button { label: "Empty cart" } # updated (match { clicked: const })
       ) # mvu emptyCart

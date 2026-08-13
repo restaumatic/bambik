@@ -13,6 +13,10 @@
 -- |     genuine per-carrier primitive.
 -- |   * **free functions** — over the strength: `subStrong` (sub-record
 -- |     focus), `focusProperty` (the field lens), `tapped` (the display tap);
+-- |     over the **unit**: `announce` (its `rmap`-closure — the announcing
+-- |     constant) and `with` (`announce a >>> w` over `Semigroupoid` —
+-- |     discharge the initial-state obligation), plus the subsuming
+-- |     `settled` (`rmap`-only normalization over a stated sub-row);
 -- |     over bare `Profunctor`: the adopters `atField`/`atProperty` (read a
 -- |     field, closed or open row), `forField`/`forProperty` (read one into
 -- |     the canonical display row), `projected` (read the whole), `toField`
@@ -44,6 +48,9 @@ module Data.Profunctor.Row.RecordToRecord
   , recordToRecord
   , class RecordToRecord
   , discard
+  , announce
+  , with
+  , settled
   , feedback
   , asField
   , atField
@@ -68,13 +75,14 @@ import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Strong (class Strong, first, second)
-import Control.Semigroupoid ((>>>))
+import Control.Semigroupoid (class Semigroupoid, (>>>))
+import Data.Function (const)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Prim.RowList (class RowToList)
-import Record (get, insert, union) as Record
+import Record (get, insert, merge, union) as Record
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
@@ -112,6 +120,39 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   OwnedRecordOutputs o1 o2 o o1l o2l =>
   p { | i1 } { | o1 } -> (Unit -> p { | i2 } { | o2 }) -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
+
+-- | The **announcing constant**: silent except for one emission of `o` at
+-- | registration — the `rmap`-closure of the unit,
+-- |
+-- | ```
+-- | announce o = rmap (const o) pempty
+-- | ```
+-- |
+-- | generalizing the unit's informationless `{}` announcement to a row of
+-- | fields. As a merge operand it seeds fields; composed in front of a
+-- | UI component it discharges the initial-state obligation (`with`'s
+-- | implementation). Record-shaped like every `× → ×` built side (the
+-- | `toField` convention) — a case is seeded by adopting an announcement
+-- | (`announce { … } # toCase @l f`) or a `seeded` wire's `inj`, never by
+-- | a variant-typed constant: the `× → +` unit is silent, so no
+-- | case-announcer can close over it.
+announce :: forall p r. RecordToRecord p => { | r } -> p {} { | r }
+announce o = rmap (const o) pempty
+
+-- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
+-- | `w`'s input its t=0 value — the entity `w` edits exists from the very
+-- | beginning, and `a` is its initial state — leaving nothing to feed
+-- | (`with a w = announce a >>> w`, so `with a identity = announce a` on
+-- | `Category` carriers). The residual input row of a pipeline is exactly
+-- | what is *not yet known* at t=0; `with` (and `PUI.mvu`, its looping
+-- | sibling) turns that obligation into `{}`, the one self-pointed record.
+-- | For a pass-through seeding *stage* (feed once, then keep forwarding
+-- | inputs), use the `seeded` wire directly: `seeded a >>> w`.
+-- | Shaped `× → ×` like everything here: `with` closes a record pipeline.
+-- | Seeding a `× → +` *emitter's* replay value is the announcement
+-- | composed, spelled as such: `announce patch >>> button { … }`.
+with :: forall p a o. RecordToRecord p => Semigroupoid p => { | a } -> p { | a } { | o } -> p {} { | o }
+with a w = announce a >>> w
 
 -- | Row-typed `Strong`: focus a whole **sub-record** — the row-valued **focus**
 -- | `f` — transforming it against the **background** `b`, which is carried
@@ -240,6 +281,27 @@ field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 -- | eliminator.
 toField :: forall @l p i a b s. IsSymbol l => Profunctor p => Lacks l () => Cons l b () s => (a -> b) -> p i a -> p i { | s }
 toField f = rmap (\a -> Record.insert (Proxy @l) (f a) {})
+
+-- | Settle a stage's emissions through a **total, type-preserving**
+-- | normalization — the round-trip rule's mechanism made a word: a lossy
+-- | adjustment belongs in the model, after `completed`, where the loop
+-- | makes it a transaction — `formula # completed # settled commit`.
+-- | Type-preservation is the contract: `settled` normalizes, it cannot
+-- | re-shape. `rmap`-only.
+-- |
+-- | The normalizer **subsumes** (like `PUI.updated`'s handler): it may read
+-- | and rebuild a sub-row of the emission, merged back over the full value,
+-- | so a normalization states its exact footprint in its own signature.
+-- | With `small ≡ big` this is the plain whole-row form.
+settled
+  :: forall p small u big i
+   . Profunctor p
+  => Union small big u
+  => Nub u big
+  => ({ | small } -> { | small })
+  -> p i { | big }
+  -> p i { | big }
+settled f = rmap (\big -> Record.merge (f (unsafeCoerce big)) big)
 
 -- | A display **tap** on the `×`-diagonal: shows the value flowing through
 -- | and passes it on — the pipeline-stage form of a live view. Pure `Strong`

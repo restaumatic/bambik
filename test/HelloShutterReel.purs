@@ -12,13 +12,13 @@ module HelloShutterReel where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Profunctor (lcmap)
+import Data.Profunctor (lcmap, rmap)
 import Data.Lens.Reel (reel)
 import Data.Lens.Shutter (shutter)
 import Effect (Effect)
 import PUI.Web.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (PUI, asField, silence, with)
+import PUI (PUI, asField, pempty, silence)
 import PUI.Web.HTML (body, button, staticText, text)
 import PUI.Web (Web)
 
@@ -52,7 +52,9 @@ confirm =
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.
 main :: Effect Unit
-main = body $ with "Hello, " $ Semigroupoid.do
+-- the scalar seed is the raw unit closure — `announce` proper is
+-- record-shaped, and this file works at the positional algebra level anyway
+main = body $ rmap (const "Hello, ") pempty >>> Semigroupoid.do
   greet
   confirm
   lcmap (\v -> { value: v }) text

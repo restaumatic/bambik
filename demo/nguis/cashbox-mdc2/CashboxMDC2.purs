@@ -1,6 +1,6 @@
 module CashboxMDC2 (cashboxMDC2) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude ((>>>), identity, (#), ($), Unit)
 
 import CashboxLogic (applyDeposit, applyPayout, applyRefund, courierFee, customerDeposit, euros, openedTill, standardRefund)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, subChoice, forField, informed, mvu, atCase, tapped, toCase, updated, with)
+import PUI (announce, asCase, atCase, forField, informed, mvu, subChoice, tapped, toCase, updated)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, headline6, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,9 +23,9 @@ cashboxMDC2 =
               text # forField @"value" @"balance" euros ) # tapped
           ( Semigroupoid.do
               RecordToVariant.do
-                button { label: "Refund a customer", icon: "undo" } # with standardRefund # asCase @"clicked" @"refund"
-                button { label: "Pay the courier", icon: "local_shipping" } # with courierFee # asCase @"clicked" @"payout"
-                button { label: "Take a deposit", icon: "savings" } # with customerDeposit # asCase @"clicked" @"deposited"
+                announce standardRefund >>> button { label: "Refund a customer", icon: "undo" } # asCase @"clicked" @"refund"
+                announce courierFee >>> button { label: "Pay the courier", icon: "local_shipping" } # asCase @"clicked" @"payout"
+                announce customerDeposit >>> button { label: "Take a deposit", icon: "savings" } # asCase @"clicked" @"deposited"
               ( VariantToVariant.do
                   ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"

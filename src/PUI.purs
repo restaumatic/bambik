@@ -54,7 +54,6 @@ module PUI
   , setDiagnostics
   , action
   , accumulated
-  , announce
   , bracketed
   , constantly
   , debounced
@@ -69,10 +68,7 @@ module PUI
   , observed
   , optional
   , resolveFor
-  , settled
-  , silence
   , updated
-  , with
   , module Adopters
   , module Seeding
   )
@@ -87,27 +83,27 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, atField, atProperty, completed, field, subStrong, forField, forProperty, pempty, projected, required, tapped, toField) as Adopters
-import Data.Profunctor.Row.RecordToVariant (asCase, toCase, toCases) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, completed, field, subStrong, forField, forProperty, pempty, projected, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToVariant (asCase, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (`tapped`, `displayed`, `updated`,
--- `every`, `edited`, `acted`, `completed`), so a UI component's own row is always
+-- `every`, `settled`, `edited`, `acted`, `completed`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
-import Data.Profunctor.Seeding (class Seeding)
+import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
-import Data.Profunctor.Coresolving (class Coresolving)
+import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
@@ -121,7 +117,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, Variant, contract)
+import Data.Variant (class Contractable, contract)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -239,7 +235,6 @@ renderFieldNames :: Array String -> String
 renderFieldNames [] = "{}"
 renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 
--- could it be: newtype PUI m i o = PUI ((o -> Effect Unit) -> m (i -> Effect Unit))
 newtype PUI m i o = PUI (m
   { toUser :: i -> Effect Unit
   , fromUser :: (o -> Effect Unit) -> Effect Unit
@@ -494,53 +489,6 @@ instance Applicative m => Category (PUI m) where
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The silent UI component: shows nothing, captures nothing — at ANY types, and
--- | necessarily so (parametricity: `forall i o. p i o` can neither inspect an
--- | `i` nor fabricate an `o`). The pinned trivial operand of the mixed
--- | introduce laws, the implementation of `pempty` at the variant-output
--- | directions (where silence is forced), and the terminal sink of data-flow
--- | pipelines.
--- |
--- | Not primitive — the `dimap`-closure of the `× → +` unit (the one unit
--- | with record input and variant output, so the one that repolarizes):
--- |
--- | ```
--- | silence = dimap (const {}) case_ RecordToVariant.pempty
--- | ```
--- |
--- | Implemented directly, as elsewhere laws are stated and bodies stay lean.
-silence :: forall m i o. Applicative m => PUI m i o
-silence = wrap $ pure
-  { toUser: mempty
-  , fromUser: mempty
-  }
-
--- | The **announcing constant**: silent except for one emission of `o` at
--- | registration — the value-level generalization of the record units'
--- | `{}` announcement (a static leaf's protocol, with a payload). As a
--- | merge operand it seeds fields or cases; composed in front of a UI component
--- | it discharges the UI component's initial-state obligation (`with`'s
--- | implementation) — announcing an initial state the way `pempty`
--- | announces its informationless `{}`.
-announce :: forall m o. Applicative m => o -> PUI m {} o
-announce o = wrap $ pure
-  { toUser: mempty
-  , fromUser: \prop -> prop o
-  }
-
--- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
--- | `w`'s input its t=0 value — the entity `w` edits exists from the very
--- | beginning, and `a` is its initial state — leaving nothing to feed
--- | (`with a w = announce a >>> w`, so `with a identity = announce a`).
--- | The residual input row of a pipeline is exactly what is *not yet known*
--- | at t=0; `with` (and `mvu`, its looping sibling) turns that obligation
--- | into `{}`, the one self-pointed record — the type `body` demands. The
--- | standalone app reads `body $ with initial $ ...`. For a pass-through
--- | seeding *stage* (feed once, then keep forwarding inputs), use the
--- | `seeded` wire directly: `seeded a >>> w`.
-with :: forall m a b. Applicative m => a -> PUI m a b -> PUI m {} b
-with a w = announce a >>> w
-
 -- | The **seeded echo wire** (the `Seeding` instance): `identity`'s
 -- | pass-through plus one emission of the seed at registration — the
 -- | pointedness primitive the knot-tying row forms (`feedback`/`folding`/
@@ -588,9 +536,9 @@ updated
   => Union small big u
   => Nub u big
   => Union narrow extra big
-  => (e -> Record small -> Record small)
-  -> PUI m (Record narrow) e
-  -> PUI m (Record big) (Record big)
+  => (e -> { | small } -> { | small })
+  -> PUI m { | narrow } e
+  -> PUI m { | big } { | big }
 updated handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
 
 -- | The type-agnostic Mealy stage `updated` and `displayed` are built from —
@@ -653,8 +601,8 @@ observed
   :: forall m narrow wider e
    . Functor m
   => Contractable wider narrow
-  => PUI m (Variant narrow) e
-  -> PUI m (Variant wider) (Variant wider)
+  => PUI m [ | narrow ] e
+  -> PUI m [ | wider ] [ | wider ]
 observed status = wrap $ unwrap status <#> \st ->
   let mPropRef = unsafePerformEffect $ Ref.new Nothing
   in
@@ -708,15 +656,6 @@ informed
   -> { | small }
 informed g pay small = g (unsafeCoerce (Record.union pay small))
 
--- | Settle a stage's emissions through a **total, type-preserving**
--- | normalization — the round-trip rule's mechanism made a word: a lossy
--- | adjustment belongs in the model, after `completed`, where the loop
--- | makes it a transaction — `formula # completed # settled commit`.
--- | Type-preservation is the contract: `settled` normalizes, it cannot
--- | re-shape.
-settled :: forall m i o. Functor m => (o -> o) -> PUI m i o -> PUI m i o
-settled = rmap
-
 -- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
 -- | (every case's payload retained) as an editor of one-at-a-time variant
 -- | state — `stateOf` brackets the variant in (seeding absent payloads
@@ -724,7 +663,7 @@ settled = rmap
 -- | out, and the self-trace in between keeps the ensemble consistent. The
 -- | demos' variant editors read
 -- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
-bracketed :: forall m i s o. Functor m => (i -> s) -> (s -> o) -> PUI m s s -> PUI m i o
+bracketed :: forall m v s v'. Functor m => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> PUI m { | s } { | s } -> PUI m [ | v ] [ | v' ]
 bracketed f g w = dimap f g (looped w)
 
 -- | Mark a type-changing selector as **possibly unselected** — the dual of
@@ -772,8 +711,8 @@ every
   => Union small big u
   => Nub u big
   => { ms :: Number }
-  -> (Record small -> Maybe (Record small))
-  -> PUI m (Record big) (Record big)
+  -> ({ | small } -> Maybe { | small })
+  -> PUI m { | big } { | big }
 every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
 
 -- | The type-agnostic heartbeat `every` is built from — private for the same
@@ -811,7 +750,10 @@ heartbeat interval step = wrap $ pure unit <#> \_ ->
 -- | `unfirst` cannot self-feed (no `c` before the first emission, no
 -- | emission before the first input — the gate deadlocks), so the
 -- | self-feeding special case ties the knot directly.
-looped :: forall m a. Functor m => PUI m a a -> PUI m a a
+-- | Row-typed at the **record** diagonal: the looped value is an entity (a
+-- | model row). Self-feeding an event diagonal would replay one-shot
+-- | events; the lawful `+`-loop is `iterate`.
+looped :: forall m r. Functor m => PUI m { | r } { | r } -> PUI m { | r } { | r }
 looped p = wrap $ unwrap p <#> \p' ->
   let busyRef = unsafePerformEffect $ Ref.new false
   in
@@ -839,7 +781,7 @@ looped p = wrap $ unwrap p <#> \p' ->
 -- | result is **closed** (input `{}`): supplying the seed discharges the
 -- | pipeline's initial-state obligation, which is what `body` demands. The
 -- | standalone app reads `body $ ... $ mvu seed pipeline`.
-mvu :: forall m model. Applicative m => model -> PUI m model model -> PUI m {} model
+mvu :: forall m model. Applicative m => { | model } -> PUI m { | model } { | model } -> PUI m {} { | model }
 mvu seed w = with seed (looped w)
 
 instance Applicative m => RecordToRecord (PUI m) where
@@ -874,7 +816,12 @@ recordToRecordPUI p1 p2 = wrap ado
     }
 
 instance Applicative m => RecordToVariant (PUI m) where
-  pempty = silence
+  -- the one direct silent body: `silence` (in the row module) is this
+  -- unit's `dimap`-closure, so the primitive must live here, not there
+  pempty = wrap $ pure
+    { toUser: mempty
+    , fromUser: mempty
+    }
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
     p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
@@ -957,7 +904,7 @@ instance Functor m => Retaining (PUI m) where
             mc <- Ref.read cRef
             case mc of
               Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`/`announce`)."
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`)."
                 tr "Retaining.retain: emission withheld (state unprimed)" b
               Just c -> prop $ Tuple b c
       }
@@ -1054,7 +1001,12 @@ variantToRecordPUI p1 p2 = wrap ado
     }
 
 instance Applicative m => VariantToVariant (PUI m) where
-  pempty = silence
+  -- silent like the `×→+` unit, but at variant *input* — outside
+  -- `silence`'s `{ | i }` shape, so it carries its own direct body
+  pempty = wrap $ pure
+    { toUser: mempty
+    , fromUser: mempty
+    }
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
     p2' <- unwrap (widenVariantOutput p2)
@@ -1132,51 +1084,19 @@ action' arr w = wrap ado
       in waitAndPropagate
     }
 
--- TODO is this needed?
-affAdapter :: forall m a b s t. Apply m => m { pre :: s -> Aff a, post ::  b -> Aff t} -> Optic (PUI m) s t a b
-affAdapter f w = wrap ado
-  { toUser, fromUser } <- unwrap w
-  { pre, post } <- f
-  in
-    let mInputFiberRef = unsafePerformEffect $ Ref.new Nothing
-        mOutputFiberRef = unsafePerformEffect $ Ref.new Nothing
-    in
-    { toUser: \s -> launchAff_ do
-        mFiber <- liftEffect $ Ref.read mInputFiberRef
-        for_ mFiber $ killFiber (error "Obsolete input")
-        newFiber <- forkAff do
-          a <- pre s
-          liftEffect $ toUser a
-        liftEffect $ Ref.write (Just newFiber) mInputFiberRef
-    , fromUser: \prop -> do
-      fromUser \b -> do
-        launchAff_ do
-          mFiber <- liftEffect $ Ref.read mOutputFiberRef
-          for_ mFiber $ killFiber (error "Obsolete output")
-          newFiber <- forkAff do
-            t <- post b
-            liftEffect $ prop t
-          liftEffect $ Ref.write (Just newFiber) mOutputFiberRef
-    }
-
 -- Oculars
 
--- | Debounce the UI component's *input* leg: each incoming value is delayed by
--- | `millis`, and a newer value supersedes (kills) the pending one, so only
--- | the last value of a burst reaches the UI component. Rapid sources (keystrokes,
--- | continuous drags) emit every value; the stage that doesn't want the burst
--- | opts in here.
+-- | Debounce the UI component: values feed it live, and its emissions forward
+-- | only after `millis` of quiescence — the last value of a burst resolves,
+-- | the rest loop. Rapid sources (keystrokes, continuous drags) emit every
+-- | value; the stage that doesn't want the burst opts in here.
 -- |
--- | Algebraically this is the `× → +` trace at the value level:
--- | `debounced g ≅ coresolve (resolveFor millis g)` once primed — the
--- | quiescence step composed with its retraction. Implemented directly
--- | (ungated, on the input leg) as elsewhere laws are stated and bodies
--- | stay lean.
+-- | Not primitive — the `× → +` trace at the value level, the stated law
+-- | `coresolve (resolve g) = debounced g` made the body: the quiescence
+-- | step composed with its retraction, the loop channel primed by a
+-- | `seeded` wire exactly as `folding` primes its fold state.
 debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
-debounced millis = affAdapter $ pure
-  { pre: \i -> delay (Milliseconds millis.ms) *> pure i
-  , post: pure
-  }
+debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 
 -- The container action on PUI (class in Data.Profunctor.Acting — the pure
 -- algebra; instances live with the carriers, like the merge instances above).

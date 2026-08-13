@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asField, completed, displayed, field, foreach, forField, looped, atCase, silence, toCase, updated, with)
+import PUI (action, asField, atCase, completed, constantly, displayed, field, forField, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.HTML (attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -16,7 +16,7 @@ crudHTML :: Effect Unit
 crudHTML = do
   catalogue <- sharedPeopleCatalogue
   body $ div $ ( Semigroupoid.do
-      silence # action (loadPeopleCatalogue catalogue)
+      pempty # constantly {} # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
           ( RecordToRecord.do
               p ( label $ RecordToRecord.do
@@ -39,9 +39,9 @@ crudHTML = do
                 button (staticText "Update") # toCase @"update" identity
                 button (staticText "Delete") # toCase @"delete" identity
               VariantToVariant.do
-                silence # action (createPerson catalogue) # atCase @"create"
-                silence # action (updatePerson catalogue) # atCase @"update"
-                silence # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                pempty # constantly {} # action (createPerson catalogue) # atCase @"create"
+                pempty # constantly {} # action (updatePerson catalogue) # atCase @"update"
+                pempty # constantly {} # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
   ) # with {}
 
 entryStyle :: Boolean -> String

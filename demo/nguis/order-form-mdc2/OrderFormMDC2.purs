@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (action, asCase, asField, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, atCase, required, silence, tapped, updated, with)
+import PUI (action, asCase, asField, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, required, tapped, updated, with)
 import Data.Profunctor.Row (widenRecordInput)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
@@ -95,5 +95,4 @@ orderFormMDC2 =
         snackbar # forCase @"event" @"orderSubmitted" submittedLine
         snackbar # forCase @"event" @"submissionFailed" rejectionLine
         snackbar # forCase @"event" @"receiptPrinted" receiptLine
-      silence
   ) # with {}
