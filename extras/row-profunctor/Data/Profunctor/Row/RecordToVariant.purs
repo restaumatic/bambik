@@ -48,6 +48,7 @@ module Data.Profunctor.Row.RecordToVariant
   , folding
   , pempty
   , silence
+  , armed
   , recordToVariant
   , focusProperty
   , asCase
@@ -76,7 +77,7 @@ import Type.Proxy (Proxy(..))
 import Data.Lens.Shutter (shutterE)
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving, resolve)
-import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
+import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | `coresolve` at row granularity — the **terminating fold** with labeled
@@ -145,11 +146,24 @@ discard first cont = bind first (\_ -> cont unit)
 -- | here — silence's citizenship is this direction's, since it is the
 -- | `dimap`-closure of its unit. The pinned trivial operand of the mixed
 -- | introduce laws and the terminal sink of event pipelines. The lawful
--- | faceless leaf at *record* output is not silence but the announcing
--- | unit adopted to any input — `pempty # constantly {}` — since record
--- | outputs must announce.
+-- | faceless leaf at *record* output is not silence but `blank` (the
+-- | unit's `lcmap`-closure in `RecordToRecord`) — record outputs must
+-- | announce.
 silence :: forall p i o. RecordToVariant p => p { | i } [ | o ]
 silence = dimap (const {}) case_ pempty
+
+-- | The **emit stage** of a record pipeline — the `× → +` member of the
+-- | stage-subsumption family (`tapped`/`displayed`/`updated`/`settled` on
+-- | the `×`-diagonal, `observed` on `+`): feed an event ensemble the
+-- | sub-row its emitters replay, emissions passing on unchanged. Feeding
+-- | *arms* the replay values — hence the name. The wrapped stage's row is
+-- | already stated exactly by its emitters' consumers (payloads are
+-- | exact), so a linear pipeline's polarity flip reads narrow with no
+-- | call-site coercion: `(RecordToVariant.do … buttons …) # armed`.
+-- | `lcmap`-only — the vocabulary face of `widenRecordInput` at this
+-- | direction's citizenship.
+armed :: forall p narrow extra wider o. Profunctor p => Union narrow extra wider => p { | narrow } [ | o ] -> p { | wider } [ | o ]
+armed = widenRecordInput
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
 -- | for this direction. Where `RecordToRecord.focusProperty` **refocuses** (background fixed, focus

@@ -1,6 +1,6 @@
 module TicTacToeMDC3 (ticTacToeMDC3) where
 
-import Prelude ((>>>), identity, (#), ($), (<>), (>>>), Unit, const)
+import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
@@ -26,10 +26,15 @@ ticTacToeMDC3 =
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div
-                          >>> attrWith "style" (\c -> cellStyle <> if c.win then "background: #a5d6a7;" else "background: #eceff1;")
+                          >>> attrWith "style" cellFace
                           $ text # forProperty @"value" @"mark" identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
           announce openingPosition >>> button { label: "New game", icon: "replay" } # updated (match { clicked: const })
       ) # mvu openingPosition
+
+-- closed signature states the clicked content's row (the row-stating
+-- exception): the leaf reads mark, the style reads win
+cellFace :: { mark :: String, win :: Boolean } -> String
+cellFace { win } = cellStyle <> if win then "background: #a5d6a7;" else "background: #eceff1;"
 
 cellStyle :: String
 cellStyle =

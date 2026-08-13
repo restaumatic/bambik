@@ -15,7 +15,7 @@ import Data.Maybe (Maybe)
 import Data.Number (max)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import PUI (PUI, Ocular, atField, constantly, displayed, forField, foreach, pempty, projected)
+import PUI (Ocular, PUI, atField, blank, displayed, forField, foreach, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -46,7 +46,7 @@ trendChart config =
     SVG.svg >>> "viewBox" := "0 0 120 40" >>> "preserveAspectRatio" := "none" >>> "style" := "width: 100%; height: 40px;" $
       ( SVG.path >>> "fill" := "none" >>> "stroke" := "var(--md-sys-color-primary, #6750a4)" >>> "stroke-width" := "2"
           >>> "stroke-linejoin" := "round" >>> "vector-effect" := "non-scaling-stroke"
-          >>> attrWith "d" sparkline $ pempty # constantly {} )
+          >>> attrWith "d" sparkline $ blank )
 
 leaderboard :: { label :: String } -> PUI Web { value :: Array { name :: String, score :: String } } { value :: Array { name :: String, score :: String } }
 leaderboard config =

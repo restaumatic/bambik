@@ -101,12 +101,13 @@ import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row (widenRecordInput)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (case_, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI, projected)
 import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
@@ -772,9 +773,16 @@ attrWith name valueOf w = wrap do
 -- | the display, the click is the report, so the identity of what was
 -- | picked comes from what was on screen and cannot be got wrong. A click
 -- | before the element has been shown anything does nothing.
-clicked :: forall i o. PUI Web i o -> PUI Web i i
+-- | Row-shaped: the click **replays** the last value fed, and replay is
+-- | lawful over records only — an entity's value may be re-said, a
+-- | one-shot event may not (the `looped`/`observed`/`simpleDialog`
+-- | argument). **The content subsumes** (it is a display — the baked-in
+-- | reads-narrow rule): it may read a closed sub-row of the replayed row,
+-- | and pure chrome states `{}`, so `clicked staticChrome` needs no
+-- | adapter.
+clicked :: forall @narrow @extra r o. Union narrow extra r => PUI Web { | narrow } o -> PUI Web { | r } { | r }
 clicked w = wrap do
-  w' <- unwrap w
+  w' <- unwrap (widenRecordInput w)
   node <- gets _.sibling
   iRef <- liftEffect $ Ref.new Nothing
   pure

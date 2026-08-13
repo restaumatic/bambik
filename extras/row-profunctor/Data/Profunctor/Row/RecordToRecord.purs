@@ -49,6 +49,7 @@ module Data.Profunctor.Row.RecordToRecord
   , class RecordToRecord
   , discard
   , announce
+  , blank
   , with
   , settled
   , informed
@@ -139,6 +140,25 @@ discard first cont = bind first (\_ -> cont unit)
 -- | case-announcer can close over it.
 announce :: forall p r. RecordToRecord p => { | r } -> p {} { | r }
 announce o = rmap (const o) pempty
+
+-- | The **faceless announcing leaf**: reads nothing — stated as
+-- | subsumption in its own signature, like `tapped`'s — and announces the
+-- | informationless `{}` once at registration. The unit's `lcmap`-closure,
+-- | `announce`'s exact twin on the other side:
+-- |
+-- | ```
+-- | announce o = rmap (const o) pempty      -- build a constant output
+-- | blank      = lcmap (const {}) pempty    -- accept any record input
+-- | ```
+-- |
+-- | The leaf for elements whose whole face is decorators — a channel-fed
+-- | SVG shape or styled `div` (`circle >>> attrWith "fill" f $ blank`):
+-- | the decorators read the fed row, the leaf under them reads `()` of it,
+-- | which is always exact. Positions whose mechanism already subsumes
+-- | (merge operands, `clicked` content, `action`'s progress slot) need no
+-- | `blank` — `pempty` fits them directly.
+blank :: forall p i. RecordToRecord p => p { | i } {}
+blank = lcmap (const {}) pempty
 
 -- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
 -- | `w`'s input its t=0 value — the entity `w` edits exists from the very

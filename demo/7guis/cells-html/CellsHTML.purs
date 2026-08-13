@@ -22,8 +22,13 @@ cellsHTML =
               "size" := "32" $ input "text" # field @"formula" ) ) # completed # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
           ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-              ( tr $ ( clicked ( td >>> attrWith "style" (\c -> cellStyle { header: c.header, sel: c.sel }) $ text # forProperty @"value" @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
+              ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text # forProperty @"value" @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
   ) # mvu orderSheet
+
+-- closed signature states the clicked content's row (the row-stating
+-- exception): the leaf reads text, the style reads header/sel
+cellFace :: { text :: String, header :: Boolean, sel :: Boolean } -> String
+cellFace { header, sel } = cellStyle { header, sel }
 
 cellStyle :: { header :: Boolean, sel :: Boolean } -> String
 cellStyle { header, sel }

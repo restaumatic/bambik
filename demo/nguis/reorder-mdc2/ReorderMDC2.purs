@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, atCase, constantly, edited, field, mvu, pempty, updated)
+import PUI (action, asCase, asField, atCase, edited, field, mvu, pempty, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,8 +23,8 @@ reorderMDC2 =
                 button { label: "Rotate", icon: "sync" } # asCase @"clicked" @"rotate"
                 button { label: "Shuffle", icon: "shuffle" } # asCase @"clicked" @"shuffle"
               VariantToVariant.do
-                pempty # constantly {} # action rotateAction # atCase @"rotate"
-                pempty # constantly {} # action shuffleAction # atCase @"shuffle") # updated (match { reordered: setOrder })
+                pempty # action rotateAction # atCase @"rotate"
+                pempty # action shuffleAction # atCase @"shuffle") # updated (match { reordered: setOrder })
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty

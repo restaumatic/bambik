@@ -55,7 +55,6 @@ module PUI
   , action
   , accumulated
   , bracketed
-  , constantly
   , debounced
   , dispatched
   , displayed
@@ -90,12 +89,12 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, completed, field, subStrong, forField, forProperty, informed, pempty, projected, required, settled, tapped, toField, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (asCase, silence, toCase, toCases) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, subStrong, forField, forProperty, informed, pempty, projected, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToVariant (armed, asCase, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (`tapped`, `displayed`, `updated`,
--- `every`, `settled`, `edited`, `acted`, `completed`), so a UI component's own row is always
+-- `every`, `settled`, `armed`, `edited`, `acted`, `completed`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
@@ -867,13 +866,6 @@ observed status = wrap $ unwrap status <#> \st ->
         Ref.write (Just prop) mPropRef
     }
 
--- | Pin a stage's input to a known value: the wrapped UI component is fed `a` for
--- | every value flowing through — a constant-fed stage (a fixed catalogue
--- | driving a collection component) with no input-type annotation. Its own
--- | input type stays free, so it fits any pipeline position.
-constantly :: forall m a i o. Functor m => a -> PUI m a o -> PUI m i o
-constantly a = lcmap (const a)
-
 -- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
 -- | (every case's payload retained) as an editor of one-at-a-time variant
 -- | state — `stateOf` brackets the variant in (seeding absent payloads
@@ -1033,20 +1025,24 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 type Ocular p = forall a b. Optic p a b a b
 
 -- | The progress slot is row-shaped like every component interface: the
--- | UI component is a `{ busy :: Boolean } → {}` display citizen.
+-- | UI component is a `{ busy :: Boolean } → {}` display citizen — and the
+-- | slot **subsumes** (a display reads narrow): a no-progress stage passes
+-- | the unit directly, `pempty # action …`.
 -- |
 -- | A failing action is **reported, not swallowed**: the progress slot is
 -- | cleared whichever way the `Aff` ends — so a throw cannot strand the
 -- | spinner — and the error reaches the diagnostics sink by name. Nothing is
 -- | posted onward, since there is no output to post.
-action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
-action arr = action' \i pro post -> do
-  liftEffect $ pro { busy: true }
-  result <- attempt (arr i)
-  liftEffect $ pro { busy: false }
-  case result of
-    Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
-    Right o -> liftEffect $ post o
+action :: forall narrow extra s t. Union narrow extra (busy :: Boolean) => (s -> Aff t) -> Action s t { | narrow } {}
+action arr w = action'
+  (\i pro post -> do
+    liftEffect $ pro { busy: true }
+    result <- attempt (arr i)
+    liftEffect $ pro { busy: false }
+    case result of
+      Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
+      Right o -> liftEffect $ post o)
+  (widenRecordInput w)
 
 action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
 action' arr w = wrap ado

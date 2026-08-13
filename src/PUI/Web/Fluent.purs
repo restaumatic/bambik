@@ -48,7 +48,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, constantly, projected)
+import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, staticText, text, (:=))
 import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
@@ -108,8 +108,8 @@ button config = recordToCase @"clicked" $ eventLeaf $
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
-eventLeaf :: forall a. PUI Web {} {} -> PUI Web a a
-eventLeaf chrome = clicked (chrome # constantly {})
+eventLeaf :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
+eventLeaf chrome = clicked chrome
 
 -- a `<fluent-field>` associating a label with the editor its builder
 -- appends (Fluent's label protocol: both are slotted children of the field)

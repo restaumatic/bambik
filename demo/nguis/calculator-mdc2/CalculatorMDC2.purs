@@ -1,12 +1,12 @@
 module CalculatorMDC2 (calculatorMDC2) where
 
-import Prelude (identity, (#), ($), (<<<), (<>), (>>>), Unit)
+import Prelude (const, identity, (#), ($), (<<<), (<>), (>>>), Unit)
 
 import CalculatorLogic (blankTally, conditionOf, currentEntry, keyPad, operatorKeys, pressKey)
 import Data.Array (elem)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (constantly, displayed, forField, foreach, mvu, forProperty, toCase, updated)
+import PUI (displayed, forField, foreach, mvu, forProperty, toCase, updated)
 import PUI.Web.HTML (providedCase, attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.Web.MDC2 (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,8 +24,12 @@ calculatorMDC2 =
                     staticText "Error" # providedCase @"faulty" conditionOf # displayed
                     text # forField @"value" @"entry" identity # provided currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" (keyStyle <<< _.key) $ text # forProperty @"value" @"key" identity ) # foreach @"key" identity # constantly keyPad ) # toCase @"keyPressed" _.key
+                  clicked ( div >>> attrWith "style" keyFace $ text # forProperty @"value" @"key" identity ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
         ) # updated (match { keyPressed: pressKey }) # mvu blankTally
+
+-- closed signature states the clicked content's row
+keyFace :: { key :: String } -> String
+keyFace = keyStyle <<< _.key
 
 keyStyle :: String -> String
 keyStyle key =

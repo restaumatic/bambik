@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, atCase, completed, constantly, displayed, forField, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, asCase, asField, atCase, completed, forField, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,14 +18,14 @@ crudBootstrap = do
   catalogue <- sharedPeopleCatalogue
   body $
     card { caption: "CRUD" } $ ( Semigroupoid.do
-        pempty # constantly {} # action (loadPeopleCatalogue catalogue)
+        pempty # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do
                 textField { label: "Filter prefix (surname)" } # asField @"value" @"prefix"
                 textField { label: "Name" } # asField @"value" @"name"
                 textField { label: "Surname" } # asField @"value" @"surname") # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
-                ( clicked ( ( listGroupItem $ displayed $ RecordToRecord.do
+                ( clicked ( ( listGroupItem $ RecordToRecord.do
                     text # forField @"value" @"surname" identity
                     staticText ", "
                     text # forField @"value" @"name" identity ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
@@ -35,7 +35,7 @@ crudBootstrap = do
                     button { label: "Update" } # asCase @"clicked" @"update"
                     button { label: "Delete" } # asCase @"clicked" @"delete") # cl "d-flex" # cl "gap-2"
                 VariantToVariant.do
-                  pempty # constantly {} # action (createPerson catalogue) # atCase @"create"
-                  pempty # constantly {} # action (updatePerson catalogue) # atCase @"update"
-                  pempty # constantly {} # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  pempty # action (createPerson catalogue) # atCase @"create"
+                  pempty # action (updatePerson catalogue) # atCase @"update"
+                  pempty # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}

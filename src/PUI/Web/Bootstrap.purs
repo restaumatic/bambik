@@ -46,7 +46,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, constantly, projected)
+import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
@@ -104,8 +104,8 @@ button config = recordToCase @"clicked" $ eventLeaf $
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
-eventLeaf :: forall a. PUI Web {} {} -> PUI Web a a
-eventLeaf chrome = clicked (chrome # constantly {})
+eventLeaf :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
+eventLeaf chrome = clicked chrome
 
 -- | The **text field**: a single-line input under its label. Shows the
 -- | string it is given and reports each edit; typing is never interrupted

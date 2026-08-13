@@ -8,8 +8,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (action, asCase, asField, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, required, tapped, updated, with)
-import Data.Profunctor.Row (widenRecordInput)
+import PUI (action, armed, asCase, asField, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, required, tapped, updated, with)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -87,7 +86,7 @@ orderFormMDC2 =
               text # forField @"value" @"method" methodText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"clicked" @"submit"
-          button { label: "Receipt", icon: "file" } # asCase @"clicked" @"printReceipt") # widenRecordInput
+          button { label: "Receipt", icon: "file" } # asCase @"clicked" @"printReceipt") # armed
       VariantToVariant.do
         indeterminateLinearProgress # action submitOrder # atCase @"submit"
         indeterminateLinearProgress # action printReceipt # atCase @"printReceipt"

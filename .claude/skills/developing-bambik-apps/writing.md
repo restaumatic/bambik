@@ -111,8 +111,15 @@ so an open one leaves no `Union` instance and the error lands on
 delete-the-one-field-projection rule. Stopwatch's laps list is the
 worked example.
 
-A constant-fed stage — a fixed catalogue driving `listOf`/`foreach` —
-reads `constantly catalogue` instead of an input-annotated feed.
+A fixed catalogue drives `listOf`/`foreach` through the mechanism's own
+projection argument (`# foreach @"key" (const keyPad)`) — never an
+input-annotated feed. The same closed-row rule serves `clicked`: its
+content subsumes, and a multi-reader content (a leaf plus `attrWith`
+decorators) states its row once, in a named closed **face** function
+(`attrWith "style" cellFace` with
+`cellFace :: { text :: String, header :: Boolean, sel :: Boolean } -> String`
+— the row-stating exception again). An element whose whole face is
+decorators sits on `blank`, the faceless announcing leaf.
 
 ## App shape
 
@@ -222,8 +229,11 @@ key is a **label**, not a function, and the element editor's output row
 address, so an element structurally cannot change its key.
 It folds every element emission back into the array by key, emitting the
 whole updated array immediately, input-primed. An element whose merge
-covers less than the full row widens its input (`# widenRecordInput`)
-instead of `completed`-ing the id through. The result is a first-class
+covers less than the full row simply subsumes — `edited` reads the
+element row narrow, so there is no `completed`-ing the id through and
+no call-site widening. (The same rule at a linear pipeline's `×→+`
+polarity flip is `# armed`: the emit stage reads the sub-row its
+emitters replay.) The result is a first-class
 `Array a → Array a` stage: nest it in a form via `# field @l` or feed it
 straight to `# mvu`.
 

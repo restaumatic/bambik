@@ -122,7 +122,7 @@ import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, pempty)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -130,10 +130,11 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, constantly, forField, foreach, projected)
+import PUI (Ocular, PUI, blank, forField, foreach, pempty, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
+import Prim.Row (class Union)
 import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
@@ -305,8 +306,8 @@ buttonOf tag provided = recordToCase @"clicked" $ eventLeaf $ el tag $ RecordToR
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
 -- `clicked` over the input-freed chrome, the last-built element listening
-eventLeaf :: forall a. PUI Web {} {} -> PUI Web a a
-eventLeaf chrome = clicked (chrome # constantly {})
+eventLeaf :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
+eventLeaf chrome = clicked chrome
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -1009,13 +1010,17 @@ dialog { title } content =
 -- | show what is about to happen, and the button reports it. The content
 -- | needs no button of its own; a content that only displays needs a
 -- | `# tapped` so there is something to confirm.
-simpleDialog :: { title :: String, confirm :: String } -> Ocular (PUI Web)
+-- | Not a full `Ocular`, deliberately: the confirm **replays** the
+-- | content's last output, and replay is lawful over **records** only —
+-- | an entity's last value may be re-said, a one-shot event may not (the
+-- | `looped`/`observed` argument) — so the content's output is row-shaped.
+simpleDialog :: forall i o. { title :: String, confirm :: String } -> PUI Web i { | o } -> PUI Web i { | o }
 simpleDialog { title, confirm } content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     wrap do
       _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ clicked ((el "md-text-button" $ staticText confirm) # constantly {})
+    div >>> "slot" := "actions" $ clicked ((el "md-text-button" $ staticText confirm))
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1083,16 +1088,19 @@ listItem = el "md-list-item"
 -- | Rows are updated in place as the collection changes rather than
 -- | rebuilt, so the list can refresh under the user without flicker.
 listOf
-  :: forall provided i a o
-   . ConvertOptionsWithDefaults OptSelected { selected :: a -> Boolean } { | provided } { selected :: a -> Boolean }
+  :: forall provided i r o
+   . ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
+  -- the subsumption evidence the internal `clicked` needs at the exact
+  -- element row (extra = ()); trivially discharged at every concrete call
+  => Union r () r
   => { | provided }
-  -> (i -> Array a)
-  -> PUI Web a o
-  -> PUI Web i a
+  -> (i -> Array { | r })
+  -> PUI Web { | r } o
+  -> PUI Web i { | r }
 listOf provided f item = wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( inRow ( clicked $ clWhen config.selected "md3-list-item--selected"
+    ( inRow ( clicked @r @() $ clWhen config.selected "md3-list-item--selected"
           $ el "md-list-item" >>> "type" := "button" $ item
       ) # foreach @"ix" (mapWithIndex (\ix it -> { ix, item: it }) <<< f)
     )
@@ -1268,7 +1276,7 @@ imagePane = wrap do
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =
-  img >>> cl "md3-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.label $ constantly {} pempty
+  img >>> cl "md3-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.label $ blank
 
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the

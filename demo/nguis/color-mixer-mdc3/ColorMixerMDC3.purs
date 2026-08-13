@@ -6,7 +6,7 @@ import ColorMixerLogic (applyPreset, duskViolet, hexText, mixOf, palette, rgb, r
 import Data.Maybe (Maybe)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, constantly, foreach, mvu, pempty, projected, tapped, toCase, updated)
+import PUI (asField, blank, completed, foreach, mvu, projected, tapped, toCase, updated)
 import PUI.Web.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,12 +20,17 @@ colorMixerMDC3 =
           sliderLive { label: "Green" } # asField @"value" @"green" # completed
           sliderLive { label: "Blue" } # asField @"value" @"blue" # completed
           ( div $ Semigroupoid.do
-              attrWith "style" swatchStyle $ div $ pempty # constantly {}
+              attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-                ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" (\p -> chipStyle { mix: p.mix }) $ pempty # constantly {} ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
+                ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
           bodyMedium text # projected @"value" hexText # tapped
           bodyMedium text # projected @"value" rgbText # tapped
       ) # mvu duskViolet
+
+-- closed signature states the clicked content's row (the row-stating
+-- exception): the title reads name, the style reads mix
+chipFace :: { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } } -> String
+chipFace { mix } = chipStyle { mix }
 
 chipStyle :: { mix :: { red :: Number, green :: Number, blue :: Number } } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"

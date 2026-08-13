@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, asCase, asField, completed, constantly, debounced, displayed, forCases, forField, informed, mvu, pempty, required, updated)
+import PUI (action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, pempty, required, updated)
 import PUI.Web.Bootstrap (button, card, select, textField, toast)
 import PUI.Web.HTML (providedCase, body, p, provided, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -37,5 +37,5 @@ flightBookerBootstrap =
               staticText ", back "
               text # forField @"value" @"back" identity ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
       button { label: "Book" } # asCase @"clicked" @"book"
-      pempty # constantly {} # action (match { book: submit })
+      pempty # action (match { book: submit })
       toast # forCases @"event" bookingLine

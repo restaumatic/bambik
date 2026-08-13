@@ -245,7 +245,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`field`, `recordToCase`, `projected @"value"`, `constantly`).
+  applications use (`field`, `recordToCase`, `projected @"value"`, `blank`).
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
