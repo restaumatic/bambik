@@ -18,9 +18,9 @@ timerFluent =
         ( RecordToRecord.do
             progressBar # projected @"value" fraction
             body1 RecordToRecord.do
-              text # forField @"value" @"elapsed" show
+              text # forField @"elapsed" show
               staticText "s / "
-              text # forField @"value" @"duration" wholeSeconds
+              text # forField @"duration" wholeSeconds
               staticText "s"
             slider { label: "Duration" } # asField @"value" @"duration") # completed
         every tickPeriod tick

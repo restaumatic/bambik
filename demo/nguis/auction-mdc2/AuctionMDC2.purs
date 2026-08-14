@@ -18,11 +18,11 @@ auctionMDC2 =
       card { caption: "Live Auction" } $ ( Semigroupoid.do
           body2 ( RecordToRecord.do
               staticText "Your current bid: $"
-              text # forField @"value" @"bid" (show <<< _.current) ) # tapped
+              text # forField @"bid" (show <<< _.current) ) # tapped
           sliderLive { label: "Your bid ($)" } # asField @"value" @"bid"
           ( Semigroupoid.do
               identity # settled raiseTop
               headline6 ( RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text # forField @"value" @"top" show ) # tapped) # feedback noBids
+                  text # forField @"top" show ) # tapped) # feedback noBids
       ) # mvu openingBid

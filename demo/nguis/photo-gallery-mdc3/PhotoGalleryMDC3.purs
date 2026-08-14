@@ -30,6 +30,6 @@ photoGalleryMDC3 =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
-              displayMedium text # forField @"value" @"album" identity # tapped
+              displayMedium text # forField @"album" identity # tapped
               ( imageList { columns: 3 } $ imagePane # foreach @"src" albumPhotos ) # displayed )
       ) # mvu landscapesOpen

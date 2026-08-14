@@ -18,9 +18,9 @@ departuresMDC3 =
           every tickPeriod tick
           ( Semigroupoid.do
               list ( ( listItem $ RecordToRecord.do
-                  text # forField @"value" @"code" identity
+                  text # forField @"code" identity
                   staticText " — "
-                  text # forField @"value" @"status" identity ) # displayed ) # dispatched arrival
+                  text # forField @"status" identity ) # displayed ) # dispatched arrival
               bodyMedium ( RecordToRecord.do
                   staticText "Last update: "
                   text # projected @"value" updatedFlight

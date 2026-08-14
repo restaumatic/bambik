@@ -16,9 +16,9 @@ timerHTML =
       ( RecordToRecord.do
           progress # projected @"value" fraction
           p RecordToRecord.do
-            text # forField @"value" @"elapsed" show
+            text # forField @"elapsed" show
             staticText "s / "
-            text # forField @"value" @"duration" wholeSeconds
+            text # forField @"duration" wholeSeconds
             staticText "s"
           p ( label $ RecordToRecord.do
               staticText "Duration "

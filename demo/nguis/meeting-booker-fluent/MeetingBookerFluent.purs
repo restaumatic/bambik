@@ -40,13 +40,13 @@ meetingBookerFluent =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
-              text # forField @"value" @"title" titleText
+              text # forField @"title" titleText
               staticText " in the "
-              text # forField @"value" @"room" roomText
+              text # forField @"room" roomText
               staticText ", "
-              text # forField @"value" @"duration" durationText
+              text # forField @"duration" durationText
               staticText ", "
-              text # forField @"value" @"attendees" headcount
+              text # forField @"attendees" headcount
               staticText " attendees"
               text # projected @"value" onlineNote ) # tapped
           button { label: "Book the room" } # asCase @"clicked" @"booked" ) # provided completePlan

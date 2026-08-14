@@ -17,7 +17,7 @@ stopwatchMDC2 =
   body $
     elevation20 $
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
-          headline3 text # forField @"value" @"elapsedTenths" formatTime # completed
+          headline3 text # forField @"elapsedTenths" formatTime # completed
           every tickPeriod tick
           ( RecordToVariant.do
               button { label: "Start", icon: "play_arrow" } # asCase @"clicked" @"start" # providedCase @"halted" stopwatchPhase
@@ -27,7 +27,7 @@ stopwatchMDC2 =
               button { label: "Reset", icon: "replay" } # asCase @"clicked" @"reset" # providedCase @"halted" stopwatchPhase) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
-                   text # forField @"value" @"number" identity
+                   text # forField @"number" identity
                    staticText " — "
-                   text # forField @"value" @"time" identity ) # foreach @"number" lapRows ) # displayed
+                   text # forField @"time" identity ) # foreach @"number" lapRows ) # displayed
       ) # mvu zeroedStopwatch

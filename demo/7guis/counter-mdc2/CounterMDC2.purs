@@ -15,6 +15,6 @@ counterMDC2 =
   body $
     elevation20 $
       card { caption: "Counter" } $ ( Semigroupoid.do
-          headline4 text # forField @"value" @"count" show # completed
+          headline4 text # forField @"count" show # completed
           button { label: "Count" } # updated (match { clicked: const <<< increment })
       ) # mvu freshCount

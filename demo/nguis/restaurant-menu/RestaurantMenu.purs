@@ -22,16 +22,16 @@ restaurantMenu =
       hr
     div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
-          h2 text # forField @"value" @"name" identity
+          h2 text # forField @"name" identity
           ul >>> cl "dishes" $
             ( li >>> cl "dish" $ RecordToRecord.do
                 div >>> cl "dish-head" $ RecordToRecord.do
-                  span >>> cl "dish-name" $ text # forField @"value" @"name" identity
+                  span >>> cl "dish-name" $ text # forField @"name" identity
                   span >>> cl "dish-dots" $ pempty
                   span >>> cl "dish-price" $ RecordToRecord.do
                     staticText "€"
-                    text # forField @"value" @"price" identity
-                p >>> cl "dish-desc" $ text # forField @"value" @"description" identity
+                    text # forField @"price" identity
+                p >>> cl "dish-desc" $ text # forField @"description" identity
                 span >>> cl "tags" $
                   ( span >>> cl "tag" $ text # forProperty @"value" @"tag" identity ) # foreach @"tag" (map { tag: _ }) # atField @"tags") # foreach @"name" identity # atField @"dishes") # foreach @"name" identity # atField @"courses"
     blockquote >>> cl "chef-note" $ RecordToRecord.do

@@ -31,15 +31,15 @@ flightBookerHTML =
     ( Semigroupoid.do
         p ( RecordToRecord.do
             staticText "⚠ "
-            text # forField @"value" @"problem" identity ) # providedCase @"problem" bookingState # displayed
+            text # forField @"problem" identity ) # providedCase @"problem" bookingState # displayed
         p ( RecordToRecord.do
             staticText "A one-way flight on "
-            text # forField @"value" @"date" identity ) # providedCase @"oneWay" bookingState # displayed
+            text # forField @"date" identity ) # providedCase @"oneWay" bookingState # displayed
         p ( RecordToRecord.do
             staticText "A return flight: out "
-            text # forField @"value" @"out" identity
+            text # forField @"out" identity
             staticText ", back "
-            text # forField @"value" @"back" identity ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+            text # forField @"back" identity ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     pempty # action (match { book: submit })
     output # forCases @"event" bookingLine

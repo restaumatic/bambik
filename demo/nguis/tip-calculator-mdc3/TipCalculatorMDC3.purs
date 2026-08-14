@@ -19,11 +19,11 @@ tipCalculatorMDC3 =
           slider { label: "Tip percentage" } # asField @"value" @"tipPercent" # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip: "
-              text # forField @"value" @"tipPercent" whole
+              text # forField @"tipPercent" whole
               staticText "%" ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Split between: "
-              text # forField @"value" @"people" whole
+              text # forField @"people" whole
               staticText " people" ) # tapped
           slider { label: "Split between" } # asField @"value" @"people" # completed
           bodyMedium ( RecordToRecord.do

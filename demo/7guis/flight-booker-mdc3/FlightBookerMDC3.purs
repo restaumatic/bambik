@@ -28,15 +28,15 @@ flightBookerMDC3 =
       ( Semigroupoid.do
           bodyLarge ( RecordToRecord.do
               staticText "⚠ "
-              text # forField @"value" @"problem" identity ) # providedCase @"problem" bookingState # displayed
+              text # forField @"problem" identity ) # providedCase @"problem" bookingState # displayed
           bodyLarge ( RecordToRecord.do
               staticText "A one-way flight on "
-              text # forField @"value" @"date" identity ) # providedCase @"oneWay" bookingState # displayed
+              text # forField @"date" identity ) # providedCase @"oneWay" bookingState # displayed
           bodyLarge ( RecordToRecord.do
               staticText "A return flight: out "
-              text # forField @"value" @"out" identity
+              text # forField @"out" identity
               staticText ", back "
-              text # forField @"value" @"back" identity ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+              text # forField @"back" identity ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"clicked" @"book"
       indeterminateLinearProgress # action (match { book: submit })
       snackbar # forCases @"event" bookingLine

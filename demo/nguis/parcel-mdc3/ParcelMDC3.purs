@@ -19,11 +19,11 @@ parcelMDC3 =
           filledTextField { floatingLabel: "Recipient" } # asField @"value" @"recipient" # completed
           addressForm # subStrong
           bodyLarge ( RecordToRecord.do
-              text # forField @"value" @"recipient" identity
+              text # forField @"recipient" identity
               staticText " · "
-              text # forField @"value" @"street" identity
+              text # forField @"street" identity
               staticText " · "
-              text # forField @"value" @"city" identity ) # tapped
+              text # forField @"city" identity ) # tapped
       ) # mvu draftParcel
 
 addressForm :: PUI Web { street :: String, city :: String } { street :: String, city :: String }

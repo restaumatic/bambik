@@ -14,8 +14,8 @@ temperatureConverterHTML =
   body $ div $ ( Semigroupoid.do
       p ( label $ RecordToRecord.do
           staticText "Celsius "
-          input "text" # field @"value" ) # forField @"value" @"celsius" show # updated (informed fromCelsius)
+          input "text" # field @"value" ) # forField @"celsius" show # updated (informed fromCelsius)
       p ( label $ RecordToRecord.do
           staticText "Fahrenheit "
-          input "text" # field @"value" ) # forField @"value" @"fahrenheit" show # updated (informed fromFahrenheit)
+          input "text" # field @"value" ) # forField @"fahrenheit" show # updated (informed fromFahrenheit)
   ) # mvu roomTemperature

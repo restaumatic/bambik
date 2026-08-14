@@ -19,9 +19,9 @@ timerMDC3 =
           ( RecordToRecord.do
               linearProgress # projected @"value" fraction
               bodyLarge RecordToRecord.do
-                text # forField @"value" @"elapsed" show
+                text # forField @"elapsed" show
                 staticText "s / "
-                text # forField @"value" @"duration" wholeSeconds
+                text # forField @"duration" wholeSeconds
                 staticText "s"
               sliderLive { label: "Duration" } # asField @"value" @"duration") # completed
           every tickPeriod tick

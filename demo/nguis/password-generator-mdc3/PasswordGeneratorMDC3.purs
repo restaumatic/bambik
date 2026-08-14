@@ -26,7 +26,7 @@ passwordGeneratorMDC3 =
               staticText "Strength: "
               text # projected @"value" strengthText ) # tapped
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
-            text # forField @"value" @"password" identity # tapped
+            text # forField @"password" identity # tapped
           ( Semigroupoid.do
               button { label: "Generate" } # asCase @"clicked" @"generate"
               indeterminateLinearProgress # action samplePassword # atCase @"generate") # updated (match { generated: rememberPassword })

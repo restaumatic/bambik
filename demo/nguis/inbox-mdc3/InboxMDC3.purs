@@ -27,16 +27,16 @@ inboxMDC3 =
             ( span $ Semigroupoid.do
                 staticText "● " # provided unreadMark # displayed
                 ( RecordToRecord.do
-                    text # forField @"value" @"sender" identity
+                    text # forField @"sender" identity
                     staticText " — "
-                    text # forField @"value" @"subject" identity ) # displayed ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text # forField @"subject" identity ) # displayed ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  headlineSmall text # forField @"value" @"subject" identity
+                  headlineSmall text # forField @"subject" identity
                   bodyMedium RecordToRecord.do
                     staticText "From: "
-                    text # forField @"value" @"sender" identity
-                  bodyLarge text # forField @"value" @"body" identity) # tapped
+                    text # forField @"sender" identity
+                  bodyLarge text # forField @"body" identity) # tapped
               iconButton { icon: "delete", label: "Delete message" } # asCase @"clicked" @"deleteRequested") # provided openedMessage # updated (match { deleteRequested: const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

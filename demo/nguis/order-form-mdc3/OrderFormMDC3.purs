@@ -20,7 +20,7 @@ orderFormMDC3 =
       RecordToRecord.do
         headlineSmall ( RecordToRecord.do
             staticText "Order "
-            text # forField @"value" @"shortId" identity )
+            text # forField @"shortId" identity )
         card { caption: "Identifier" } $ RecordToRecord.do
           filledTextField { floatingLabel: "Short ID" } # asField @"value" @"shortId"
           filledTextField { floatingLabel: "Unique ID" } # asField @"value" @"orderId"
@@ -41,7 +41,7 @@ orderFormMDC3 =
                     filledTextField { floatingLabel: "Address" } # asField @"value" @"address"
                     bodyLarge ( RecordToRecord.do
                         staticText "Distance "
-                        text # forField @"value" @"address" distanceKm
+                        text # forField @"address" distanceKm
                         staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField { floatingLabel: "Total" } # asField @"value" @"total"
         card { caption: "Payment" }
@@ -53,37 +53,37 @@ orderFormMDC3 =
               filledTextField { floatingLabel: "Paid" } # asField @"value" @"paid"
               bodyLarge ( RecordToRecord.do
                   staticText "Paying by "
-                  text # forField @"value" @"method" methodText )) # field @"payment"
+                  text # forField @"method" methodText )) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea { columns: 80, rows: 3 } # asField @"value" @"remarks"
       bodyLarge ( Semigroupoid.do
           ( RecordToRecord.do
               staticText "Summary: Order "
-              text # forField @"value" @"shortId" identity
+              text # forField @"shortId" identity
               staticText " (uniquely "
-              text # forField @"value" @"orderId" identity
+              text # forField @"orderId" identity
               staticText ") for "
               ( RecordToRecord.do
-                  text # forField @"value" @"firstName" identity
+                  text # forField @"firstName" identity
                   staticText " "
-                  text # forField @"value" @"lastName" identity ) # atField @"customer"
+                  text # forField @"lastName" identity ) # atField @"customer"
               staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
-              text # forField @"value" @"table" identity ) # provided dineInDetail # displayed
+              text # forField @"table" identity ) # provided dineInDetail # displayed
           ( RecordToRecord.do
               staticText "takeaway at "
-              text # forField @"value" @"time" identity ) # provided takeawayDetail # displayed
+              text # forField @"time" identity ) # provided takeawayDetail # displayed
           ( RecordToRecord.do
               staticText "delivery to "
-              text # forField @"value" @"address" identity
+              text # forField @"address" identity
               staticText " ("
-              text # forField @"value" @"address" distanceKm
+              text # forField @"address" distanceKm
               staticText " km away)" ) # provided deliveryDetail # displayed
           ( RecordToRecord.do
               staticText ", paid "
-              text # forField @"value" @"paid" identity
+              text # forField @"paid" identity
               staticText " by "
-              text # forField @"value" @"method" methodText ) # field @"payment" # debounced summarySettleTime # tapped )
+              text # forField @"method" methodText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button { label: "Submit order", icon: "save" } # asCase @"clicked" @"submit"
           button { label: "Receipt", icon: "file" } # asCase @"clicked" @"printReceipt") # armed

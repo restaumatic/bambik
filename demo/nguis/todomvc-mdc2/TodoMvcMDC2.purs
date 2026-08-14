@@ -27,10 +27,10 @@ todoMvcMDC2 =
             ] # required @"value" # asField @"value" @"visibility" # completed
           Semigroupoid.do
             caption ( RecordToRecord.do
-                text # forField @"value" @"count" show
+                text # forField @"count" show
                 staticText " item left" ) # providedCase @"sole" remainingItems # displayed
             caption ( RecordToRecord.do
-                text # forField @"value" @"count" show
+                text # forField @"count" show
                 staticText " items left" ) # providedCase @"several" remainingItems # displayed
             button { label: "Clear completed" } # updated (match { clicked: const <<< clearCompleted })
       ) # mvu emptyTodoList

@@ -14,6 +14,6 @@ counterFluent :: Effect Unit
 counterFluent =
   body $
     card { caption: "Counter" } $ ( Semigroupoid.do
-        title3 text # forField @"value" @"count" show # completed
+        title3 text # forField @"count" show # completed
         button { label: "Count" } # updated (match { clicked: const <<< increment })
     ) # mvu freshCount

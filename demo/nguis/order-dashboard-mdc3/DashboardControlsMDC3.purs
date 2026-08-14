@@ -53,9 +53,9 @@ leaderboard config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     list ( ( listItem $ RecordToRecord.do
-        text # forField @"value" @"name" identity
+        text # forField @"name" identity
         staticText " — "
-        text # forField @"value" @"score" identity ) # foreach @"name" identity ) # atField @"value" # displayed
+        text # forField @"score" identity ) # foreach @"name" identity ) # atField @"value" # displayed
 
 rangePicker :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
 rangePicker config options =

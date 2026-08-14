@@ -20,7 +20,7 @@ potluckMDC3 =
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # displayed ) # tapped
           ( list $
               ( listItem $ RecordToRecord.do
-                  titleMedium text # forField @"value" @"name" identity
+                  titleMedium text # forField @"name" identity
                   segmentedButton
                     [ { value: .salad {}, label: "Salad" }
                     , { value: .lasagna {}, label: "Lasagna" }
@@ -29,8 +29,8 @@ potluckMDC3 =
           headlineSmall $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do
-                text # forField @"value" @"name" identity
+                text # forField @"name" identity
                 staticText "’s "
-                text # forField @"value" @"dish" dishText
+                text # forField @"dish" dishText
                 staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation

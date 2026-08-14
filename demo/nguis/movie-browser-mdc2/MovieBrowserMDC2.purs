@@ -27,16 +27,16 @@ movieBrowserMDC2 =
               filterChip { label: "Cult" } # asField @"value" @"cult"
               filterChip { label: "Oscar" } # asField @"value" @"oscar") # completed
           elevation1 ( subtitle1 $ RecordToRecord.do
-              text # forField @"value" @"count" show
+              text # forField @"count" show
               staticText " favorite" ) # providedCase @"sole" favorites # displayed
           elevation1 ( subtitle1 $ RecordToRecord.do
-              text # forField @"value" @"count" show
+              text # forField @"count" show
               staticText " favorites" ) # providedCase @"several" favorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
-                    span text # forField @"value" @"title" identity
-                    span text # forField @"value" @"year" show
+                    span text # forField @"title" identity
+                    span text # forField @"year" show
                     span ( RecordToRecord.do
                         staticText "★ "
                         text # projected @"value" ratingText )

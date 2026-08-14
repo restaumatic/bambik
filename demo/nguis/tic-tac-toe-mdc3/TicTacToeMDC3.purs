@@ -17,11 +17,11 @@ ticTacToeMDC3 =
     elevation5 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headlineSmall ( RecordToRecord.do
-              text # forField @"value" @"mark" identity
+              text # forField @"mark" identity
               staticText " wins" ) # providedCase @"won" gameOutcome # displayed
           headlineSmall (staticText "Draw") # providedCase @"drawn" gameOutcome # displayed
           headlineSmall ( RecordToRecord.do
-              text # forField @"value" @"mark" identity
+              text # forField @"mark" identity
               staticText " to move" ) # providedCase @"toMove" gameOutcome # displayed
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked

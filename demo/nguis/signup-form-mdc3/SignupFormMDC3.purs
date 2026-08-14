@@ -36,18 +36,18 @@ signupFormMDC3 =
         ( bodyMedium $ staticText "Pick a username to check its availability" ) # providedCase @"unnamed" usernameStatus # displayed
         ( bodyMedium $ RecordToRecord.do
             staticText "✗ "
-            text # forField @"value" @"username" identity
+            text # forField @"username" identity
             staticText " is already taken" ) # providedCase @"taken" usernameStatus # displayed
         ( bodyMedium $ RecordToRecord.do
             staticText "✓ "
-            text # forField @"value" @"username" identity
+            text # forField @"username" identity
             staticText " is available" ) # providedCase @"available" usernameStatus # displayed
         ( titleSmall $ RecordToRecord.do
             staticText "⚠ "
-            text # forField @"value" @"problem" identity ) # providedCase @"invalid" validation # displayed
+            text # forField @"problem" identity ) # providedCase @"invalid" validation # displayed
         ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text # forField @"value" @"username" identity ) # providedCase @"ready" validation # displayed
+            text # forField @"username" identity ) # providedCase @"ready" validation # displayed
         button { label: "Sign up", icon: "person_add" } # toCases @"clicked" register
         VariantToRecord.do
           snackbar # forCase @"event" @"registered" welcomeLine

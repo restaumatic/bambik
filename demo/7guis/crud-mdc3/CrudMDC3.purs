@@ -26,9 +26,9 @@ crudMDC3 = do
                   filledTextField { floatingLabel: "Name" } # asField @"value" @"name"
                   filledTextField { floatingLabel: "Surname" } # asField @"value" @"surname") # completed
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
-                  text # forField @"value" @"surname" identity
+                  text # forField @"surname" identity
                   staticText ", "
-                  text # forField @"value" @"name" identity ) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text # forField @"name" identity ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button { label: "Create" } # asCase @"clicked" @"create"

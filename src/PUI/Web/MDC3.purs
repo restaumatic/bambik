@@ -1272,7 +1272,7 @@ imagePane = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
     imageFace
-    span >>> cl "md3-image-list__label" $ text # forField @"value" @"label" identity
+    span >>> cl "md3-image-list__label" $ text # forField @"label" identity
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

@@ -26,9 +26,9 @@ crudBootstrap = do
                 textField { label: "Surname" } # asField @"value" @"surname") # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
                 ( clicked ( ( listGroupItem $ RecordToRecord.do
-                    text # forField @"value" @"surname" identity
+                    text # forField @"surname" identity
                     staticText ", "
-                    text # forField @"value" @"name" identity ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text # forField @"name" identity ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 ( div $ RecordToVariant.do
                     button { label: "Create" } # asCase @"clicked" @"create"

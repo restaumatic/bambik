@@ -1441,7 +1441,7 @@ imagePane :: PUI Web { src :: String, label :: String } {}
 imagePane =
   li >>> cl "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
     imageFace
-    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ text # forField @"value" @"label" identity
+    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ text # forField @"label" identity
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

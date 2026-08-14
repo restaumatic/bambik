@@ -29,10 +29,10 @@ productReviewShoelace =
       ) # mvu freshImpression
       p ( RecordToRecord.do
           staticText "Preview: "
-          text # forField @"value" @"stars" starGlyphs
-          text # forField @"value" @"headline" headlineQuote
+          text # forField @"stars" starGlyphs
+          text # forField @"headline" headlineQuote
           staticText " · owned "
-          text # forField @"value" @"owned" ownedText
+          text # forField @"owned" ownedText
           text # projected @"value" recommendNote ) # tapped
       button { label: "Submit review" } # asCase @"clicked" @"submitted"
       toast # forCase @"event" @"submitted" submittedLine

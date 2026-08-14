@@ -21,12 +21,12 @@ ticketDispenserMDC2 =
               (staticText "—" # providedCase @"waiting" identity # atField @"display") # displayed
               ( ( RecordToRecord.do
                   staticText "#"
-                  text # forField @"value" @"number" show ) # providedCase @"serving" identity # atField @"display" ) # displayed )
+                  text # forField @"number" show ) # providedCase @"serving" identity # atField @"display" ) # displayed )
           body2 ( Semigroupoid.do
               (staticText "Press the button to draw the first ticket." # providedCase @"waiting" identity # atField @"display") # displayed
               ( ( RecordToRecord.do
                   staticText "Now serving ticket "
-                  text # forField @"value" @"number" show
+                  text # forField @"number" show
                   staticText "." ) # providedCase @"serving" identity # atField @"display" ) # displayed )
           ( Semigroupoid.do
               button { label: "Take a number" } # asCase @"clicked" @"take"

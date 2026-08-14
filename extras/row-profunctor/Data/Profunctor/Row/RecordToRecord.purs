@@ -274,16 +274,16 @@ atProperty = lcmap (Record.get (Proxy @l))
 
 -- | Read field `l` (closed singleton row) into the canonical `{ value }`
 -- | display, through the formatter — the display-side member of the
--- | mechanism-argument doctrine (L16): `text # forField @"value" @"points" show`,
--- | `identity` says verbatim (`text # forField @"value" @"prompt" identity`). The
+-- | mechanism-argument doctrine (L16): `text # forField @"points" show`,
+-- | `identity` says verbatim (`text # forField @"prompt" identity`). The
 -- | closed row is what makes a merge operand state its exact input;
 -- | context-pinned wider rows use `forProperty @l f`. The whole-value
 -- | reads are `projected f` (`projected identity` for verbatim).
 -- |
 -- | `lcmap`-only, the input-side member of the adopter family (`asField`
 -- | renames both sides of an editor); a display owns no output fields.
-forField :: forall @c @l p a b o r cr. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c b () cr => Lacks l () => Cons l a () r => (a -> b) -> p { | cr } { | o } -> p { | r } { | o }
-forField f = lcmap (\r -> Record.insert (Proxy @c) (f (Record.get (Proxy @l) r)) {})
+forField :: forall @l p a b o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => (a -> b) -> p { value :: b } { | o } -> p { | r } { | o }
+forField f = lcmap (\r -> { value: f (Record.get (Proxy @l) r) })
 
 -- | `forField`'s **open-row** sibling (the display-side `focusProperty`: the
 -- | background is carried), for positions whose row the context already
