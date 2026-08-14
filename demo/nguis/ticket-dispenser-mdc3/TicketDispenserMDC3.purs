@@ -29,6 +29,6 @@ ticketDispenserMDC3 =
                   text @"number" # projection show
                   staticText "." ) # providedCase @"serving" identity # atField @"display" ) # displayed )
           ( Semigroupoid.do
-              button @"take" { label: "Take a number" }
+              button @"Take a number" {}
               (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const
       ) # mvu emptyQueue

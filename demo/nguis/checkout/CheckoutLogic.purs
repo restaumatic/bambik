@@ -1,4 +1,4 @@
-module CheckoutLogic (atCart, atPayment, atShipping, backAtPayment, backAtShipping, cartStep, freshOrder, nextAtCart, nextAtShipping, orderPlaced, placeAtPayment, placedOrder) where
+module CheckoutLogic (atCart, atPayment, atShipping, cartStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, placeAtPayment, placedOrder, previousOf) where
 
 import Prelude ((==))
 
@@ -25,17 +25,29 @@ atShipping { address, step } = if step == .shipping {} then Just { address } els
 atPayment :: { card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { card :: String }
 atPayment { card, step } = if step == .payment {} then Just { card } else Nothing
 
-nextAtCart :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-nextAtCart { step } = if step == .cart {} then Just { step: .shipping {} } else Nothing
+-- the step a wizard button leads to: forward while there is one ahead,
+-- backward while there is one behind — Nothing hides the button
+onwardFrom :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+onwardFrom { step } = match
+  { cart: \_ -> Just { step: .shipping {} }
+  , shipping: \_ -> Just { step: .payment {} }
+  , payment: \_ -> Nothing
+  } step
 
-nextAtShipping :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-nextAtShipping { step } = if step == .shipping {} then Just { step: .payment {} } else Nothing
+previousOf :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+previousOf { step } = match
+  { cart: \_ -> Nothing
+  , shipping: \_ -> Just { step: .cart {} }
+  , payment: \_ -> Just { step: .shipping {} }
+  } step
 
-backAtShipping :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-backAtShipping { step } = if step == .shipping {} then Just { step: .cart {} } else Nothing
+-- each button's own case becomes the fold's loop case: the step it carries
+-- is where the wizard resumes
+goneOn :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ next :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ]
+goneOn resumed = .next resumed
 
-backAtPayment :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-backAtPayment { step } = if step == .payment {} then Just { step: .shipping {} } else Nothing
+goneBack :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ next :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ]
+goneBack resumed = .next resumed
 
 placeAtPayment :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> Maybe {}
 placeAtPayment { step } = if step == .payment {} then Just {} else Nothing

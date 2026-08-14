@@ -83,11 +83,14 @@ syntax (`r { "Name" = … }`) all work unchanged.
   and draws those words. So an emitter never repeats itself in a
   `label:` config — the copy goes in the type argument, and the case is
   quoted at every mention (`atCase @"Submit order"`,
-  `match { "Submit order": … }`). `label:` stays for what the case
-  cannot say: copy that must differ from the case name — a case the
-  logic module owns as a row label (checkout's `folding @"next"` loop
-  case captioned "Next" and "Back" by four buttons, ticket-dispenser's
-  `take`), or a glyph-only face (`fab { label: Nothing }`).
+  `match { "Submit order": … }`). **No demo passes an emitter `label:`.**
+  When a trace form's loop case would force two buttons to share one
+  case under different words, that is a signal the buttons are two
+  business actions: give each its own self-describing case and adopt it
+  into the loop case with `# toCases`, so the fold still sees one case
+  while each button reads as what it does (checkout's
+  `button @"Next" {} # toCases goneOn`). `label:` is left for a
+  glyph-only face (`fab { label: Nothing }`).
   `# toCases f` fires the business outcomes `f` computes from the
   payload — `f` returns a *variant* of results, which `toCases` emits
   directly, deriving the consumed case from the emitter's row.

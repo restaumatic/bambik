@@ -13,11 +13,11 @@ firstTicket :: { next :: Int }
 firstTicket = { next: 1 }
 
 issue ::
-  [ take :: { display :: [ waiting :: {}, serving :: { number :: Int } ] }
+  [ "Take a number" :: { display :: [ waiting :: {}, serving :: { number :: Int } ] }
   , resume :: { next :: Int }
   ]
   -> Either { display :: [ waiting :: {}, serving :: { number :: Int } ] } { next :: Int }
-issue = match { take: Left, resume: Right }
+issue = match { "Take a number": Left, resume: Right }
 
 nextTicket :: forall a. Tuple a { next :: Int } -> { display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int }
 nextTicket (Tuple _ { next }) = { display: .serving { number: next }, next: next + 1 }
