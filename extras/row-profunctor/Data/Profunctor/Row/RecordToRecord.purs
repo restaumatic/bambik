@@ -171,10 +171,11 @@ blank = lcmap (const {}) pempty
 -- | sibling) turns that obligation into `{}`, the one self-pointed record.
 -- | For a pass-through seeding *stage* (feed once, then keep forwarding
 -- | inputs), use the `seeded` wire directly: `seeded a >>> w`.
--- | Shaped `× → ×` like everything here: `with` closes a record pipeline.
--- | Seeding a `× → +` *emitter's* replay value is the announcement
--- | composed, spelled as such: `announce patch >>> button { … }`.
-with :: forall p a o. RecordToRecord p => Semigroupoid p => { | a } -> p { | a } { | o } -> p {} { | o }
+-- | Only the *input* side is record-shaped (the announcement is a row of
+-- | fields); the output rides through untouched, so `with` closes a
+-- | record pipeline and seeds a `× → +` emitter's replay value alike —
+-- | the leaf leads, the plumbing trails: `button { … } # with patch`.
+with :: forall p a o. RecordToRecord p => Semigroupoid p => { | a } -> p { | a } o -> p {} o
 with a w = announce a >>> w
 
 -- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.

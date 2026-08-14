@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, displayed, forProperty, foreach, mvu, toCase, updated)
+import PUI (displayed, forProperty, foreach, mvu, toCase, updated, with)
 import PUI.Web.HTML (providedCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC3 (button, card, elevation5, headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,7 +28,7 @@ ticTacToeMDC3 =
                       ( div
                           >>> attrWith "style" cellFace
                           $ text @"mark" # forProperty identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
-          announce openingPosition >>> button @"newGame" { label: "New game", icon: "replay" } # updated (match { newGame: const })
+          button @"newGame" { label: "New game", icon: "replay" } # with openingPosition # updated (match { newGame: const })
       ) # mvu openingPosition
 cellFace :: { mark :: String, win :: Boolean } -> String
 cellFace { win } = cellStyle <> if win then "background: #a5d6a7;" else "background: #eceff1;"

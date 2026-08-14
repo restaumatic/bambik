@@ -402,13 +402,11 @@ over a logic module, a single exported entry function.
   citizen (parcel's `addressForm`).
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
-  ever leads a line — but `announce` is a component (the announcing
-  leaf), not a data word: an emitter's replay payload is seeded by the
-  announcement composed in registration order
-  (`announce patch >>> button @l { … }` — `with` is the
-  record-pipeline closer and does not fit a `×→+` emitter), and `# with {}`
-  is written inline when the payload is the informationless unit, since
-  naming `{}` is ceremony.
+  ever leads a line — an emitter's replay payload trails like every
+  other data concern (`button @l { … } # with patch`; `with` is
+  output-polymorphic, so it seeds record pipelines and `×→+` emitters
+  alike), and `# with {}` is written inline when the payload is the
+  informationless unit, since naming `{}` is ceremony.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line) and
   rides at the end of the UI component's last content line — close the paren
