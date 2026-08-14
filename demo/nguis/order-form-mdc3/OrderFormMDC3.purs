@@ -26,8 +26,8 @@ orderFormMDC3 =
           filledTextField @"orderId" { floatingLabel: "Unique ID" }
         card { caption: "Customer" }
           ( RecordToRecord.do
-              filledTextField @"firstName" { floatingLabel: "First name" }
-              filledTextField @"lastName" { floatingLabel: "Last name" }) # field @"customer"
+              filledTextField @"firstName" {}
+              filledTextField @"lastName" {}) # field @"customer"
         card { caption: "Fulfillment" }
           ( ( Semigroupoid.do
                 tabBar @"selected"
@@ -35,22 +35,22 @@ orderFormMDC3 =
                   , { value: .takeaway {}, label: "Takeaway" }
                   , { value: .delivery {}, label: "Delivery" }
                   ] # completed
-                filledTextField @"table" { floatingLabel: "Table" } # provided dineInPane # updated (informed setTable)
-                filledTextField @"time" { floatingLabel: "Time" } # provided takeawayPane # updated (informed setTime)
+                filledTextField @"table" {} # provided dineInPane # updated (informed setTable)
+                filledTextField @"time" {} # provided takeawayPane # updated (informed setTime)
                 ( RecordToRecord.do
-                    filledTextField @"address" { floatingLabel: "Address" }
+                    filledTextField @"address" {}
                     bodyLarge ( RecordToRecord.do
                         staticText "Distance "
                         text @"value" # forField @"address" distanceKm
                         staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
-        card { caption: "Total" } $ filledTextField @"total" { floatingLabel: "Total" }
+        card { caption: "Total" } $ filledTextField @"total" {}
         card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton @"method"
                 [ { value: .cash {}, label: "Cash" }
                 , { value: .card {}, label: "Card" }
                 ] # required
-              filledTextField @"paid" { floatingLabel: "Paid" }
+              filledTextField @"paid" {}
               bodyLarge ( RecordToRecord.do
                   staticText "Paying by "
                   text @"value" # forField @"method" methodText )) # field @"payment"

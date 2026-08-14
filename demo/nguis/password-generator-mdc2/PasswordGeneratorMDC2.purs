@@ -17,11 +17,11 @@ passwordGeneratorMDC2 =
     elevation20 $
       card { caption: "Password Generator" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              slider @"length" { label: "Length" }
+              slider @"length" {}
               toggleSwitch @"uppercase" { label: "Uppercase letters" }
               toggleSwitch @"lowercase" { label: "Lowercase letters" }
-              toggleSwitch @"digits" { label: "Digits" }
-              toggleSwitch @"symbols" { label: "Symbols" }) # completed
+              toggleSwitch @"digits" {}
+              toggleSwitch @"symbols" {}) # completed
           body2 ( RecordToRecord.do
               staticText "Strength: "
               text @"value" # projected @"value" strengthText ) # tapped

@@ -16,7 +16,7 @@ circleDrawerFluent :: Effect Unit
 circleDrawerFluent =
   body $
     card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-        slider @"diameter" { label: "Diameter" } # provided selectedDiameter # updated (informed adjustDiameter)
+        slider @"diameter" {} # provided selectedDiameter # updated (informed adjustDiameter)
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
             ( onClickedXY
                 ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r

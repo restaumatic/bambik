@@ -18,19 +18,19 @@ signupFormMDC3 =
       card { caption: "Sign-Up Form" } $ Semigroupoid.do
         ( RecordToRecord.do
             headlineLarge $ staticText "Create account"
-            debouncedTextField @"username" { floatingLabel: "Username", ms: usernameSettleTime }
+            debouncedTextField @"username" { ms: usernameSettleTime }
             radioButton @"plan"
               [ { value: .free {}, label: "Free plan" }
               , { value: .pro {}, label: "Pro plan" }
               , { value: .team {}, label: "Team plan" }
               ] # required
-            select @"country" { floatingLabel: "Country" }
+            select @"country" {}
               [ { value: .poland {}, label: "Poland" }
               , { value: .germany {}, label: "Germany" }
               , { value: .france {}, label: "France" }
               , { value: .spain {}, label: "Spain" }
               ] # required
-            filledTextField @"email" { floatingLabel: "Email" }
+            filledTextField @"email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
         ( bodyMedium $ staticText "Pick a username to check its availability" ) # providedCase @"unnamed" usernameStatus # displayed

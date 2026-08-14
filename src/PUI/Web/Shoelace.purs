@@ -47,10 +47,11 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (clicked, div, el, span, staticText, text, (:=))
-import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
+import PUI.Web (Node, Web, OptCaption(..), humanizeLabel, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons, class Lacks)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
@@ -114,8 +115,8 @@ eventLeaf chrome = clicked chrome
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { label :: String } -> PUI Web { | r } { | r }
-textField config = field @l $ wrap do
+textField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
   -- but still echo so merge gates keep flowing
@@ -138,8 +139,8 @@ textField config = field @l $ wrap do
 
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
-textArea :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { label :: String, rows :: Int } -> PUI Web { | r } { | r }
-textArea config = field @l $ wrap do
+textArea :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
+textArea provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
   attribute "rows" (show config.rows)
@@ -167,8 +168,8 @@ textArea config = field @l $ wrap do
 -- | stars there are comes from the data and can differ between contexts —
 -- | and a scale nobody supplied is a compile error rather than a wrong
 -- | screen. The label is drawn above the stars.
-rating :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, max :: Int } () r => { label :: String } -> PUI Web { | r } { | r }
-rating config = field @l $
+rating :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, max :: Int } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+rating provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
     _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
@@ -206,8 +207,8 @@ rating config = field @l $
 -- | It reports on **every change**, following the drag — so whatever it
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
-sliderLive :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => { label :: String } -> PUI Web { | r } { | r }
-sliderLive config = field @l $ wrap do
+sliderLive :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-range" (pure unit)
   attribute "label" config.label
   attribute "style" "width: 100%; min-width: 240px;"
@@ -244,8 +245,8 @@ sliderLive config = field @l $ wrap do
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
-toggleSwitch :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { label :: String } -> PUI Web { | r } { | r }
-toggleSwitch config = field @l $ wrap do
+toggleSwitch :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-switch" (void $ unwrap (staticText config.label))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -267,8 +268,8 @@ toggleSwitch config = field @l $ wrap do
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
 -- | with `# optional` or `# required`. The options belong to the control,
 -- | not to the model.
-select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select config options = field @l $ wrap do
+select :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -294,6 +295,7 @@ select config options = field @l $ wrap do
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
+  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided
   markup =
     "<sl-select label=\"" <> config.label <> "\" style=\"min-width: 240px;\">"
       <> foldMapWithIndex optionMarkup options

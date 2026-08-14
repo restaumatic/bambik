@@ -23,8 +23,8 @@ crudMDC3 = do
           ( Semigroupoid.do
               ( RecordToRecord.do
                   filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
-                  filledTextField @"name" { floatingLabel: "Name" }
-                  filledTextField @"surname" { floatingLabel: "Surname" }) # completed
+                  filledTextField @"name" {}
+                  filledTextField @"surname" {}) # completed
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
                   text @"surname"
                   staticText ", "

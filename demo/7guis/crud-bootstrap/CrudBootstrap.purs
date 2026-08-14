@@ -22,8 +22,8 @@ crudBootstrap = do
         ( Semigroupoid.do
             ( RecordToRecord.do
                 textField @"prefix" { label: "Filter prefix (surname)" }
-                textField @"name" { label: "Name" }
-                textField @"surname" { label: "Surname" }) # completed
+                textField @"name" {}
+                textField @"surname" {}) # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
                 ( clicked ( ( listGroupItem $ RecordToRecord.do
                     text @"surname"

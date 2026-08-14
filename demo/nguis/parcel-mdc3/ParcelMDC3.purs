@@ -16,7 +16,7 @@ parcelMDC3 =
   body $
     elevation5 $
       card { caption: "Parcel" } $ ( Semigroupoid.do
-          filledTextField @"recipient" { floatingLabel: "Recipient" } # completed
+          filledTextField @"recipient" {} # completed
           addressForm # subStrong
           bodyLarge ( RecordToRecord.do
               text @"recipient"
@@ -28,5 +28,5 @@ parcelMDC3 =
 
 addressForm :: PUI Web { street :: String, city :: String } { street :: String, city :: String }
 addressForm = RecordToRecord.do
-  filledTextField @"street" { floatingLabel: "Street" }
-  filledTextField @"city" { floatingLabel: "City" }
+  filledTextField @"street" {}
+  filledTextField @"city" {}

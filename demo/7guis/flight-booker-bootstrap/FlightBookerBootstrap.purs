@@ -17,7 +17,7 @@ flightBookerBootstrap =
     card { caption: "Book Flight" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
-              select @"flightType" { label: "Flight type" }
+              select @"flightType" {}
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
                 ] # required

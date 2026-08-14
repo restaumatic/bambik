@@ -22,7 +22,7 @@ timerFluent =
               staticText "s / "
               text @"value" # forField @"duration" wholeSeconds
               staticText "s"
-            slider @"duration" { label: "Duration" }) # completed
+            slider @"duration" {}) # completed
         every tickPeriod tick
         announce nothingElapsed >>> button { label: "Reset" } # updated (match { clicked: const })
     ) # mvu tenSecondFreshTimer

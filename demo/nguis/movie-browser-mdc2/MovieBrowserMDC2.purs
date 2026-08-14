@@ -23,9 +23,9 @@ movieBrowserMDC2 =
             , { value: .comedy {}, label: "Comedy" }
             ] # completed
           chipSet ( RecordToRecord.do
-              filterChip @"classic" { label: "Classic" }
-              filterChip @"cult" { label: "Cult" }
-              filterChip @"oscar" { label: "Oscar" }) # completed
+              filterChip @"classic" {}
+              filterChip @"cult" {}
+              filterChip @"oscar" {}) # completed
           elevation1 ( subtitle1 $ RecordToRecord.do
               text @"value" # forField @"count" show
               staticText " favorite" ) # providedCase @"sole" favorites # displayed
@@ -40,5 +40,5 @@ movieBrowserMDC2 =
                     span ( RecordToRecord.do
                         staticText "★ "
                         text @"value" # projected @"value" ratingText )
-                    iconToggle @"favorite" { onIcon: "star", offIcon: "star_border", label: "Favorite" }) # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
+                    iconToggle @"favorite" { onIcon: "star", offIcon: "star_border" }) # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
       ) # mvu movieCatalogue

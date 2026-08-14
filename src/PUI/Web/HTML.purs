@@ -102,7 +102,7 @@ import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row (widenRecordInput)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -281,7 +281,7 @@ radioButton { picked } = "type" := "radio" $ wrap do
 -- | the choice itself — say which with `# optional` or `# required`. The
 -- | options belong to the control, not to the model.
 select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select options = field @l $ wrap do
+select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -319,7 +319,7 @@ select options = field @l $ wrap do
 -- | compile error rather than a wrong screen. A `step` makes it discrete,
 -- | no step continuous.
 rangeInput :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => PUI Web { | r } { | r }
-rangeInput = field @l $ "type" := "range" $ wrap do
+rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing

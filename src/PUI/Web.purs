@@ -12,6 +12,7 @@ module PUI.Web
   ( DOM
   , Event
   , Node
+  , OptCaption(..)
   , Web
   , addClass
   , addEventListener
@@ -47,6 +48,7 @@ module PUI.Web
   , staticHTML
   , setTextNodeValue
   , setValue
+  , humanizeLabel
   , svgNS
   , uniqueId
   )
@@ -55,7 +57,10 @@ module PUI.Web
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
-import Data.Foldable (for_)
+import ConvertableOptions (class ConvertOption)
+import Data.Foldable (foldMap, for_)
+import Data.String (toLower, toUpper) as String
+import Data.String.CodeUnits (singleton, toCharArray, uncons) as CU
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
@@ -272,3 +277,25 @@ staticHTML html = wrap do
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
+
+-- | "firstName" -> "First name": the humanized form of a row label — the
+-- | caption a label-indexed leaf renders when its config supplies none, so
+-- | the label parameter names the component and captions it by default.
+-- | Real copy (localized wording, units, anything the identifier can't say)
+-- | still belongs in the config; this is only the default.
+humanizeLabel :: String -> String
+humanizeLabel s = case CU.uncons spaced of
+  Just { head, tail } -> String.toUpper (CU.singleton head) <> tail
+  Nothing -> spaced
+  where
+  spaced = CU.toCharArray s # foldMap \c ->
+    if c >= 'A' && c <= 'Z' then " " <> String.toLower (CU.singleton c) else CU.singleton c
+
+-- | Marks a leaf's caption field (`label`/`floatingLabel`) as optional —
+-- | left out, it defaults to `humanizeLabel` of the row label the leaf is
+-- | indexed by. The `ConvertOptionsWithDefaults` tag the design systems'
+-- | captioned leaves share.
+data OptCaption = OptCaption
+
+instance ConvertOption OptCaption sym a a where
+  convertOption _ _ = identity

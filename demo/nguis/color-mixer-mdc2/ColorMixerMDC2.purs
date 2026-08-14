@@ -16,9 +16,9 @@ colorMixerMDC2 =
   body $
     elevation20 $
       card { caption: "Color Mixer" } $ ( Semigroupoid.do
-          sliderLive @"red" { label: "Red" } # completed
-          sliderLive @"green" { label: "Green" } # completed
-          sliderLive @"blue" { label: "Blue" } # completed
+          sliderLive @"red" {} # completed
+          sliderLive @"green" {} # completed
+          sliderLive @"blue" {} # completed
           ( div $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $

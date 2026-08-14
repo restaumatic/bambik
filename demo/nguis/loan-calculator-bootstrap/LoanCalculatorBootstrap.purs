@@ -15,10 +15,10 @@ loanCalculatorBootstrap =
   body $
     card { caption: "Loan calculator" } $ Semigroupoid.do
       ( RecordToRecord.do
-          textField @"applicant" { label: "Applicant" }
+          textField @"applicant" {}
           sliderLive @"amount" { label: "Amount (€)" }
           sliderLive @"years" { label: "Term (years)" }
-          select @"purpose" { label: "Purpose" }
+          select @"purpose" {}
             [ { value: .car {}, label: "Car" }
             , { value: .home {}, label: "Home improvement" }
             , { value: .holiday {}, label: "Holiday" }

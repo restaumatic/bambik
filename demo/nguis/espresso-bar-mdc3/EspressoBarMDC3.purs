@@ -31,7 +31,7 @@ espressoBarMDC3 =
                   , { value: .medium {}, label: "Medium" }
                   , { value: .large {}, label: "Large" }
                   ] # required
-                select @"milk" { floatingLabel: "Milk" }
+                select @"milk" {}
                   [ { value: .whole {}, label: "Whole" }
                   , { value: .oat {}, label: "Oat" }
                   , { value: .almond {}, label: "Almond" }
@@ -42,10 +42,10 @@ espressoBarMDC3 =
                   , { value: .medium {}, label: "Medium roast" }
                   , { value: .dark {}, label: "Dark roast" }
                   ] # required
-                sliderLive @"sugar" { label: "Sugar" }
+                sliderLive @"sugar" {}
                 chipSet RecordToRecord.do
-                  filterChip @"extraShot" { label: "Extra shot" }
-                  filterChip @"decaf" { label: "Decaf" }
+                  filterChip @"extraShot" {}
+                  filterChip @"decaf" {}
                 toggleSwitch @"takeaway" { label: "Takeaway cup" }
                 iconToggle @"favorite" { onIcon: "favorite", offIcon: "heart_plus", label: "Mark as favorite" }
                 checkbox @"loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }

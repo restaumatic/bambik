@@ -18,7 +18,7 @@ flightBookerMDC3 =
       card { caption: "Book Flight" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
-              select @"flightType" { floatingLabel: "Flight type" }
+              select @"flightType" {}
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
                 ] # required

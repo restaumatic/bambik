@@ -28,5 +28,5 @@ reorderMDC3 =
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  filledTextField @"title" { floatingLabel: "Title" })) # edited @"id") # field @"order"
+                  filledTextField @"title" {})) # edited @"id") # field @"order"
       ) # mvu openingSetlist
