@@ -15,5 +15,5 @@ counterBootstrap =
   body $
     card { caption: "Counter" } $ ( Semigroupoid.do
         h4 (text @"count") # projection show # completed
-        button @"increment" { label: "Count" } # updated (match { increment: const <<< increment })
+        button @"Count" {} # updated (match { "Count": const <<< increment })
     ) # mvu freshCount

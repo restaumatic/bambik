@@ -24,5 +24,5 @@ timerFluent =
               staticText "s"
             slider @"duration" {}) # completed
         every tickPeriod tick
-        button @"reset" { label: "Reset" } # with nothingElapsed # updated (match { reset: const })
+        button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
     ) # mvu tenSecondFreshTimer

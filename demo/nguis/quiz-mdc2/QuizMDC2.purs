@@ -34,5 +34,5 @@ quizMDC2 =
                   text @"correct" # projection show
                   staticText " / "
                   text @"total" # projection show) # displayed
-              button @"restarted" { label: "Restart", icon: "replay" }) # provided finalOutcome # updated (match { restarted: const (const freshQuizRun) })
+              button @"Restart" { icon: "replay" }) # provided finalOutcome # updated (match { "Restart": const (const freshQuizRun) })
       ) # mvu freshQuizRun

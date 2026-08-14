@@ -38,5 +38,5 @@ loanCalculatorBootstrap =
       ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
           progress @"interestShare" ) # projected interestShare # tapped
-      button @"applied" { label: "Apply for this loan" }
-      toast # forCase @"applied" appliedLine
+      button @"Apply for this loan" {}
+      toast # forCase @"Apply for this loan" appliedLine

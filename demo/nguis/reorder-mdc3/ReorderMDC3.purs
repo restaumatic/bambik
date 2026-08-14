@@ -20,11 +20,11 @@ reorderMDC3 =
       card { caption: "Reorder" } $ ( Semigroupoid.do
           ( Semigroupoid.do
               cardActions $ RecordToVariant.do
-                button @"rotate" { label: "Rotate", icon: "sync" }
-                button @"shuffle" { label: "Shuffle", icon: "shuffle" }
+                button @"Rotate" { icon: "sync" }
+                button @"Shuffle" { icon: "shuffle" }
               VariantToVariant.do
-                pempty # action rotateAction # atCase @"rotate"
-                pempty # action shuffleAction # atCase @"shuffle") # updated (match { reordered: setOrder })
+                pempty # action rotateAction # atCase @"Rotate"
+                pempty # action shuffleAction # atCase @"Shuffle") # updated (match { reordered: setOrder })
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty

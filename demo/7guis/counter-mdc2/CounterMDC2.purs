@@ -16,5 +16,5 @@ counterMDC2 =
     elevation20 $
       card { caption: "Counter" } $ ( Semigroupoid.do
           headline4 (text @"count") # projection show # completed
-          button @"increment" { label: "Count" } # updated (match { increment: const <<< increment })
+          button @"Count" {} # updated (match { "Count": const <<< increment })
       ) # mvu freshCount

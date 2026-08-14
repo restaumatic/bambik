@@ -31,11 +31,11 @@ crudBootstrap = do
                     text @"name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 ( div $ RecordToVariant.do
-                    button @"create" { label: "Create" }
-                    button @"update" { label: "Update" }
-                    button @"delete" { label: "Delete" }) # cl "d-flex" # cl "gap-2"
+                    button @"Create" {}
+                    button @"Update" {}
+                    button @"Delete" {}) # cl "d-flex" # cl "gap-2"
                 VariantToVariant.do
-                  pempty # action (createPerson catalogue) # atCase @"create"
-                  pempty # action (updatePerson catalogue) # atCase @"update"
-                  pempty # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  pempty # action (createPerson catalogue) # atCase @"Create"
+                  pempty # action (updatePerson catalogue) # atCase @"Update"
+                  pempty # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}

@@ -85,11 +85,11 @@ orderFormMDC2 =
               staticText " by "
               text @"method" # projection methodText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
-          button @"submit" { label: "Submit order", icon: "save" }
-          button @"printReceipt" { label: "Receipt", icon: "file" }) # armed
+          button @"Submit order" { icon: "save" }
+          button @"Receipt" { icon: "file" }) # armed
       VariantToVariant.do
-        indeterminateLinearProgress @"busy" # action submitOrder # atCase @"submit"
-        indeterminateLinearProgress @"busy" # action printReceipt # atCase @"printReceipt"
+        indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
+        indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
       VariantToRecord.do
         snackbar # forCase @"orderSubmitted" submittedLine
         snackbar # forCase @"submissionFailed" rejectionLine

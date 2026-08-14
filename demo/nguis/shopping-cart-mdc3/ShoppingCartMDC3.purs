@@ -30,5 +30,5 @@ shoppingCartMDC3 =
           bodyLarge ( RecordToRecord.do
               staticText "Total: $"
               text @"grandTotal" # projected grandTotalText ) # tapped
-          button @"emptied" { label: "Empty cart" } # with emptyCart # updated (match { emptied: const })
+          button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
       ) # mvu emptyCart

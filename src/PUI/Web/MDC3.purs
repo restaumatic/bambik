@@ -326,8 +326,9 @@ eventLeaf chrome = clicked chrome
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
 -- | showing, like `button`. The `icon` is required — a FAB is recognised by
--- | its glyph; adding a `label` makes it the extended FAB, with the words
--- | beside the glyph.
+-- | its glyph; the `label` — the extended FAB's words beside the glyph —
+-- | defaults to `humanizeLabel` of the case label (`label: Nothing` gives
+-- | the icon-only FAB, `label:` copy overrides).
 fab
   :: forall @l provided r cl
    . IsSymbol l
@@ -339,26 +340,32 @@ fab provided = recordToCase @l $ eventLeaf $
   el "md-fab" >>> "aria-label" := fromMaybe config.icon config.label >>> extended $
     el "md-icon" >>> "slot" := "icon" $ staticText config.icon
   where
-  config = convertOptionsWithDefaults OptLabel { label: Nothing } provided :: { icon :: String, label :: Maybe String }
+  config = convertOptionsWithDefaults OptLabel { label: Just (humanizeLabel (reflectSymbol (Proxy @l))) } provided :: { icon :: String, label :: Maybe String }
   extended = case config.label of
     Just label' -> "label" := label'
     Nothing -> identity
 
 -- | A compact **icon-only action**, for toolbars, list rows and card
 -- | corners where a labelled button would not fit. `label` is not drawn —
--- | it is what assistive technology announces, so it is required. For an
--- | icon that stays pressed (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { icon :: String, label :: String } -> PUI Web { | r } [ | cl ]
-iconButton config = recordToCase @l $ eventLeaf $
+-- | it is what assistive technology announces, defaulting to
+-- | `humanizeLabel` of the case label. For an icon that stays pressed
+-- | (favourite, mute), use `iconToggle` instead.
+iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
+iconButton provided = recordToCase @l $ eventLeaf $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText config.icon
+  where
+  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { icon :: String, label :: String }
 
 -- | One choice in a `menu`: reports the data it was showing when picked,
--- | and the menu closes itself.
-menuItem :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
-menuItem config = recordToCase @l $ eventLeaf $
+-- | and the menu closes itself. The line's text defaults to
+-- | `humanizeLabel` of the case label (`label:` overrides with real copy).
+menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
+menuItem provided = recordToCase @l $ eventLeaf $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
+  where
+  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { label :: String }
 
 -- | The **filled text field** — Material's default single-line input.
 -- | `floatingLabel` names the field and rises above the text once there is

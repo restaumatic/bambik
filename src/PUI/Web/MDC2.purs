@@ -250,10 +250,10 @@ else instance ConvertOption OptIcon sym a a where
 -- | and low emphasis, for the secondary actions beside it.
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
--- | the app gives the action: `button @"booked" { label: "Book" }`.
--- | Both parts of the face are optional — `button {}` is bare,
--- | `button { label: "Count" }` labels it, `icon: "add"` puts a Material
--- | Icons glyph before the label.
+-- | the app gives the action: `button @"Book the flight" {}`. Both parts
+-- | of the face are optional — the label defaults to `humanizeLabel` of
+-- | the case label (`label:` overrides with real copy), `icon: "add"`
+-- | puts a Material Icons glyph before the label.
 button
   :: forall @l provided r cl
    . IsSymbol l
@@ -305,7 +305,7 @@ buttonOf mModifier provided = recordToCase @l $ eventLeaf $
       Just label' -> span >>> cl "mdc-button__label" $ staticText label'
       Nothing -> pempty
   where
-  config = convertOptionsWithDefaults OptLabelIcon { label: Nothing, icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
+  config = convertOptionsWithDefaults OptLabelIcon { label: Just (humanizeLabel (reflectSymbol (Proxy @l))), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
   modifier = case mModifier of
     Just m -> cl m
     Nothing -> identity
@@ -319,8 +319,9 @@ eventLeaf chrome = clicked chrome
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
 -- | showing, like `button`. The `icon` is required — a FAB is recognised by
--- | its glyph; adding a `label` makes it the extended FAB, with the words
--- | beside the glyph.
+-- | its glyph; the `label` — the extended FAB's words beside the glyph —
+-- | defaults to `humanizeLabel` of the case label (`label: Nothing` gives
+-- | the icon-only FAB, `label:` copy overrides).
 fab
   :: forall @l provided r cl
    . IsSymbol l
@@ -337,29 +338,35 @@ fab provided = recordToCase @l $ eventLeaf $
       Just label' -> span >>> cl "mdc-fab__label" $ staticText label'
       Nothing -> pempty
   where
-  config = convertOptionsWithDefaults OptLabel { label: Nothing } provided :: { icon :: String, label :: Maybe String }
+  config = convertOptionsWithDefaults OptLabel { label: Just (humanizeLabel (reflectSymbol (Proxy @l))) } provided :: { icon :: String, label :: Maybe String }
   extended = case config.label of
     Just _ -> cl "mdc-fab--extended"
     Nothing -> identity
 
 -- | A compact **icon-only action**, for toolbars, list rows and card
 -- | corners where a labelled button would not fit. `label` is not drawn —
--- | it is what assistive technology announces, so it is required. For an
--- | icon that stays pressed (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { icon :: String, label :: String } -> PUI Web { | r } [ | cl ]
-iconButton config = recordToCase @l $ eventLeaf $
+-- | it is what assistive technology announces, defaulting to
+-- | `humanizeLabel` of the case label. For an icon that stays pressed
+-- | (favourite, mute), use `iconToggle` instead.
+iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
+iconButton provided = recordToCase @l $ eventLeaf $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     div >>> cl "mdc-icon-button__ripple" $ pempty
     span >>> cl "mdc-icon-button__focus-ring" $ pempty
     staticText config.icon
+  where
+  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { icon :: String, label :: String }
 
 -- | One choice in a `menu`: reports the data it was showing when picked,
--- | and the menu closes itself.
-menuItem :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
-menuItem config = recordToCase @l $ eventLeaf $
+-- | and the menu closes itself. The line's text defaults to
+-- | `humanizeLabel` of the case label (`label:` overrides with real copy).
+menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
+menuItem provided = recordToCase @l $ eventLeaf $
   li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" >>> "tabindex" := "-1" $ RecordToRecord.do
     span >>> cl "mdc-deprecated-list-item__ripple" $ pempty
     span >>> cl "mdc-deprecated-list-item__text" $ staticText config.label
+  where
+  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { label :: String }
 
 -- TODO support input types: email, text, password, number, search, tel, url
 -- | The **filled text field** — Material's default single-line input.

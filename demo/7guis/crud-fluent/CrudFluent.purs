@@ -31,13 +31,13 @@ crudFluent = do
                     text @"name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 div $ RecordToVariant.do
-                  button @"create" { label: "Create" }
-                  button @"update" { label: "Update" }
-                  button @"delete" { label: "Delete" }
+                  button @"Create" {}
+                  button @"Update" {}
+                  button @"Delete" {}
                 VariantToVariant.do
-                  pempty # action (createPerson catalogue) # atCase @"create"
-                  pempty # action (updatePerson catalogue) # atCase @"update"
-                  pempty # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  pempty # action (createPerson catalogue) # atCase @"Create"
+                  pempty # action (updatePerson catalogue) # atCase @"Update"
+                  pempty # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
 entryFace :: { name :: String, surname :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected

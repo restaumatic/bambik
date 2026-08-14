@@ -49,5 +49,5 @@ meetingBookerFluent =
               text @"attendees" # projection headcount
               staticText " attendees"
               text @"onlineNote" # projected onlineNote ) # tapped
-          button @"booked" { label: "Book the room" } ) # provided completePlan
-      messageBar # forCase @"booked" bookedLine
+          button @"Book the room" {} ) # provided completePlan
+      messageBar # forCase @"Book the room" bookedLine

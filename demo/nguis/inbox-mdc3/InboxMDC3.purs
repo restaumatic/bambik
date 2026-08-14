@@ -37,17 +37,17 @@ inboxMDC3 =
                     staticText "From: "
                     text @"sender"
                   bodyLarge (text @"body")) # tapped
-              iconButton @"deleteRequested" { icon: "delete", label: "Delete message" }) # provided openedMessage # updated (match { deleteRequested: const requestDelete })
+              iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
-                  button @"emptied" { label: "Delete" }
-                  button @"kept" { label: "Keep" }) # provided confirmingDelete
+                  button @"Delete" {}
+                  button @"Keep" {}) # provided confirmingDelete
               VariantToVariant.do
-                snackbar # forCase @"emptied" (const inboxZeroLine) # observed
-                identity # atCase @"kept" # toCase @"kept" identity) # updated (match { emptied: const <<< deleteOpened, kept: const <<< keepMessages })
-          fab @"compose" { icon: "edit", label: "Compose" } # updated (match { compose: const <<< composeMessage })
+                snackbar # forCase @"Delete" (const inboxZeroLine) # observed
+                identity # atCase @"Keep" # toCase @"Keep" identity) # updated (match { "Delete": const <<< deleteOpened, "Keep": const <<< keepMessages })
+          fab @"Compose" { icon: "edit" } # updated (match { "Compose": const <<< composeMessage })
           ( menu { label: "Sort" } $ RecordToVariant.do
-              menuItem @"bySender" { label: "By sender" }
-              menuItem @"bySubject" { label: "By subject" }
-              menuItem @"unreadFirst" { label: "Unread first" }) # updated (match { bySender: const <<< sortBySender, bySubject: const <<< sortBySubject, unreadFirst: const <<< sortUnreadFirst })
+              menuItem @"By sender" {}
+              menuItem @"By subject" {}
+              menuItem @"Unread first" {}) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
       ) # mvu mondayMail

@@ -51,8 +51,8 @@ espressoBarMDC2 =
                 checkbox @"loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
-                  menuItem @"theUsual" { label: "The usual" } # with theUsual
-                  menuItem @"espressoNoFrills" { label: "Espresso, no frills" } ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
+                  menuItem @"The usual" {} # with theUsual
+                  menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
           ) # mvu usualOrder
           body2 ( RecordToRecord.do
               staticText "Your cup: "
@@ -60,5 +60,5 @@ espressoBarMDC2 =
           ( div $ RecordToRecord.do
               caption $ staticText "Caffeine"
               linearProgress @"caffeine" ) # projected caffeineFraction # tapped
-          button @"brewed" { label: "Place order", icon: "local_cafe" }
-          snackbar # forCase @"brewed" brewedLine
+          button @"Place order" { icon: "local_cafe" }
+          snackbar # forCase @"Place order" brewedLine

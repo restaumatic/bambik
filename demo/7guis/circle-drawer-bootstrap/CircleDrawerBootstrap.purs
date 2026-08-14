@@ -22,6 +22,6 @@ circleDrawerBootstrap =
                 ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
                       >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ blank) # foreach @"key" canvasCircles) # toCase @"picked" identity)) # updated (match { picked: informed selectOrAddCircle })
         ( ( div $ RecordToVariant.do
-            button @"undo" { label: "Undo" }
-            button @"redo" { label: "Redo" }) # cl "d-flex" # cl "gap-2" ) # updated (match { undo: const <<< undo, redo: const <<< redo })
+            button @"Undo" {}
+            button @"Redo" {}) # cl "d-flex" # cl "gap-2" ) # updated (match { "Undo": const <<< undo, "Redo": const <<< redo })
     ) # mvu emptyCanvas

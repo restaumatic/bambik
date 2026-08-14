@@ -36,6 +36,6 @@ flightBookerFluent =
               text @"out"
               staticText ", back "
               text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
-      button @"book" { label: "Book" }
-      pempty # action (match { book: submit })
+      button @"Book" {}
+      pempty # action (match { "Book": submit })
       messageBar # forCases bookingLine

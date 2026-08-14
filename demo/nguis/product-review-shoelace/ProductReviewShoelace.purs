@@ -34,5 +34,5 @@ productReviewShoelace =
           staticText " · owned "
           text @"owned" # projection ownedText
           text @"recommendNote" # projected recommendNote ) # tapped
-      button @"submitted" { label: "Submit review" }
-      toast # forCase @"submitted" submittedLine
+      button @"Submit review" {}
+      toast # forCase @"Submit review" submittedLine

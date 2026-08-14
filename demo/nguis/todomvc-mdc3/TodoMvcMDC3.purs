@@ -18,7 +18,7 @@ todoMvcMDC3 =
       card { caption: "TodoMVC" } $ ( Semigroupoid.do
           Semigroupoid.do
             filledTextField @"entry" { floatingLabel: "What needs to be done?" } # completed
-            button @"add" { label: "Add" } # updated (match { add: const <<< addTodo })
+            button @"Add" {} # updated (match { "Add": const <<< addTodo })
           listOf { selected: _.done } visibleEntries (span (text @"title") # forProperty identity # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
           segmentedButton @"visibility"
             [ { value: .all {}, label: "All" }
@@ -32,5 +32,5 @@ todoMvcMDC3 =
             bodySmall ( RecordToRecord.do
                 text @"count" # projection show
                 staticText " items left" ) # providedCase @"several" remainingItems # displayed
-            button @"clearCompleted" { label: "Clear completed" } # updated (match { clearCompleted: const <<< clearCompleted })
+            button @"Clear completed" {} # updated (match { "Clear completed": const <<< clearCompleted })
       ) # mvu emptyTodoList

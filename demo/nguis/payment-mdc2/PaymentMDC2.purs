@@ -22,7 +22,7 @@ paymentMDC2 =
               text @"amount" # projection show ) # tapped
           body2 (text @"status") # projected statusLine # tapped
           ( Semigroupoid.do
-              button @"startCharge" { label: "Charge card", icon: "credit_card" } # toCases startCharge
+              button @"Charge card" { icon: "credit_card" } # toCases startCharge
               ( Semigroupoid.do
                   indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
                   snackbar # forCase @"charge" retryLine # observed ) # iterate) # updated (match { charged: const <<< recordCharged })

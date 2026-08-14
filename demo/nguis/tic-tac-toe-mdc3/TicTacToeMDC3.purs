@@ -28,7 +28,7 @@ ticTacToeMDC3 =
                       ( div
                           >>> attrWith "style" cellFace
                           $ text @"mark" # forProperty identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
-          button @"newGame" { label: "New game", icon: "replay" } # with openingPosition # updated (match { newGame: const })
+          button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
       ) # mvu openingPosition
 cellFace :: { mark :: String, win :: Boolean } -> String
 cellFace { win } = cellStyle <> if win then "background: #a5d6a7;" else "background: #eceff1;"

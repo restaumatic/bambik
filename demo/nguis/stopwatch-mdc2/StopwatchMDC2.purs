@@ -20,11 +20,11 @@ stopwatchMDC2 =
           headline3 (text @"elapsedTenths") # projection formatTime # completed
           every tickPeriod tick
           ( RecordToVariant.do
-              button @"start" { label: "Start", icon: "play_arrow" } # providedCase @"halted" stopwatchPhase
-              button @"stop" { label: "Stop", icon: "stop" } # providedCase @"timing" stopwatchPhase) # updated (match { start: const (const beginTiming), stop: const (const haltTiming) })
+              button @"Start" { icon: "play_arrow" } # providedCase @"halted" stopwatchPhase
+              button @"Stop" { icon: "stop" } # providedCase @"timing" stopwatchPhase) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
           ( RecordToVariant.do
-              button @"lap" { label: "Lap", icon: "flag" } # providedCase @"timing" stopwatchPhase
-              button @"reset" { label: "Reset", icon: "replay" } # providedCase @"halted" stopwatchPhase) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
+              button @"Lap" { icon: "flag" } # providedCase @"timing" stopwatchPhase
+              button @"Reset" { icon: "replay" } # providedCase @"halted" stopwatchPhase) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
                    text @"number"

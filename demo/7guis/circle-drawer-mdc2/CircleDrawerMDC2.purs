@@ -23,6 +23,6 @@ circleDrawerMDC2 =
                   ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
                         >>> attrWith "fill" (\c -> if c.on then "#ddd" else "transparent") $ blank) # foreach @"key" canvasCircles) # toCase @"picked" identity)) # updated (match { picked: informed selectOrAddCircle })
           ( cardActions $ RecordToVariant.do
-              button @"undo" { label: "Undo", icon: "undo" }
-              button @"redo" { label: "Redo", icon: "redo" }) # updated (match { undo: const <<< undo, redo: const <<< redo })
+              button @"Undo" { icon: "undo" }
+              button @"Redo" { icon: "redo" }) # updated (match { "Undo": const <<< undo, "Redo": const <<< redo })
       ) # mvu emptyCanvas

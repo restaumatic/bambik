@@ -31,11 +31,11 @@ crudMDC2 = do
                   text @"name" ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
-                    button @"create" { label: "Create" }
-                    button @"update" { label: "Update" }
-                    button @"delete" { label: "Delete" }
+                    button @"Create" {}
+                    button @"Update" {}
+                    button @"Delete" {}
                   VariantToVariant.do
-                    indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"create"
-                    indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"update"
-                    indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                    indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"Create"
+                    indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"Update"
+                    indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
       ) # with {}

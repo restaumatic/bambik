@@ -37,10 +37,10 @@ weatherMDC2 =
               text @"servedReports" # projected servedReportsText
               staticText " reports served" ) # tapped
           ( Semigroupoid.do
-              iconButton @"about" { icon: "info", label: "About this dashboard" }
+              iconButton @"About this dashboard" { icon: "info" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
                 ( body1 ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text @"servedReports" # projected servedReportsText
-                    staticText "." )) # atCase @"about") # displayed
+                    staticText "." )) # atCase @"About this dashboard") # displayed
       ) # mvu warsawBulletin

@@ -58,11 +58,20 @@ row:
   row-stating positions, where the named function's closed signature
   *is* the footprint declaration and stays.
 - **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) are
-  label-indexed at their case: `button @"submit" {…}` emits
-  `[ submit :: _ ]` directly. `# toCases f` fires the business outcomes
-  `f` computes from the payload — `f` returns a *variant* of results,
-  which `toCases` emits directly, deriving the consumed case from the
-  emitter's row.
+  label-indexed at their case, and the case label **is the caption**:
+  `button @"Submit order" {}` emits `[ "Submit order" :: _ ]` and draws
+  those words, since the caption defaults to the humanized label. So an
+  emitter never repeats itself in a `label:` config — the copy goes in
+  the type argument, and a case whose words a Purescript identifier
+  cannot spell is quoted at every mention (`atCase @"Submit order"`,
+  `match { "Submit order": … }`). `label:` stays for what the case
+  cannot say: copy that must differ from the case name — a case the
+  logic module owns as a row label (checkout's `folding @"next"` loop
+  case captioned "Next" and "Back" by four buttons, ticket-dispenser's
+  `take`), or a glyph-only face (`fab { label: Nothing }`).
+  `# toCases f` fires the business outcomes `f` computes from the
+  payload — `f` returns a *variant* of results, which `toCases` emits
+  directly, deriving the consumed case from the emitter's row.
 - **statuses** (`snackbar`, `banner`) derive their own payload case;
   adopt with `# forCase @l copyOf` for one business case, or
   `# forCases (match { … })` when one status instance serves several

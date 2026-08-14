@@ -37,6 +37,6 @@ flightBookerMDC2 =
               text @"out"
               staticText ", back "
               text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
-      button @"book" { label: "Book", icon: "flight_takeoff" }
-      indeterminateLinearProgress @"busy" # action (match { book: submit })
+      button @"Book" { icon: "flight_takeoff" }
+      indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine

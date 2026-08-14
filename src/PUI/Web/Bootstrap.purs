@@ -101,9 +101,10 @@ import Record (get) as Record
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button @"applied" { label: "Apply" }`.
-button :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
-button config = recordToCase @l $ eventLeaf $
+-- | action — `button @"Apply for the loan" {}`. The label defaults to
+-- | `humanizeLabel` of the case label (`label:` overrides with real copy).
+button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
+button provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { label :: String } in recordToCase @l $ eventLeaf $
   (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the

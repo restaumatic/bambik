@@ -28,6 +28,6 @@ passwordGeneratorMDC2 =
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
             text @"password" # tapped
           ( Semigroupoid.do
-              button @"generate" { label: "Generate" }
-              indeterminateLinearProgress @"busy" # action samplePassword # atCase @"generate") # updated (match { generated: rememberPassword })
+              button @"Generate" {}
+              indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate") # updated (match { generated: rememberPassword })
       ) # mvu strongMixRecipe

@@ -23,16 +23,16 @@ cashboxMDC2 =
               text @"balance" # projection euros ) # tapped
           ( Semigroupoid.do
               RecordToVariant.do
-                button @"refund" { label: "Refund a customer", icon: "undo" } # with standardRefund
-                button @"payout" { label: "Pay the courier", icon: "local_shipping" } # with courierFee
-                button @"deposited" { label: "Take a deposit", icon: "savings" } # with customerDeposit
+                button @"Refund a customer" { icon: "undo" } # with standardRefund
+                button @"Pay the courier" { icon: "local_shipping" } # with courierFee
+                button @"Take a deposit" { icon: "savings" } # with customerDeposit
               ( VariantToVariant.do
                   ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " back to the customer." ) # tapped ) # atCase @"refund" # toCase @"refunded" identity
+                      staticText " back to the customer." ) # tapped ) # atCase @"Refund a customer" # toCase @"refunded" identity
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " to the courier." ) # tapped ) # atCase @"payout" # toCase @"paidOut" identity ) # subChoice) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, deposited: informed applyDeposit })
+                      staticText " to the courier." ) # tapped ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, "Take a deposit": informed applyDeposit })
       ) # mvu openedTill
