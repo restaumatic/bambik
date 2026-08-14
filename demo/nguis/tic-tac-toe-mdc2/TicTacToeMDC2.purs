@@ -30,9 +30,6 @@ ticTacToeMDC2 =
                           $ text @"mark" # forProperty identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
           announce openingPosition >>> button @"newGame" { label: "New game", icon: "replay" } # updated (match { newGame: const })
       ) # mvu openingPosition
-
--- closed signature states the clicked content's row (the row-stating
--- exception): the leaf reads mark, the style reads win
 cellFace :: { mark :: String, win :: Boolean } -> String
 cellFace { win } = cellStyle <> if win then "background: #a5d6a7;" else "background: #eceff1;"
 

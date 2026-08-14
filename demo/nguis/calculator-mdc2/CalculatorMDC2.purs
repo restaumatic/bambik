@@ -26,8 +26,6 @@ calculatorMDC2 =
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
                   clicked ( div >>> attrWith "style" keyFace $ text @"key" # forProperty identity ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
         ) # updated (match { keyPressed: pressKey }) # mvu blankTally
-
--- closed signature states the clicked content's row
 keyFace :: { key :: String } -> String
 keyFace = keyStyle <<< _.key
 

@@ -39,9 +39,6 @@ crudFluent = do
                   pempty # action (updatePerson catalogue) # atCase @"update"
                   pempty # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
-
--- closed signature states the clicked content's row (the row-stating
--- exception): the merge reads name/surname, the style reads selected
 entryFace :: { name :: String, surname :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected
 

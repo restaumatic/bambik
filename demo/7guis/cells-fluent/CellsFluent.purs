@@ -24,9 +24,6 @@ cellsFluent =
             ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
                 ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
     ) # mvu orderSheet
-
--- closed signature states the clicked content's row (the row-stating
--- exception): the leaf reads text, the style reads header/sel
 cellFace :: { text :: String, header :: Boolean, sel :: Boolean } -> String
 cellFace { header, sel } = cellStyle { header, sel }
 

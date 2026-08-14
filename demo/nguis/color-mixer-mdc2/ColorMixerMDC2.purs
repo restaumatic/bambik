@@ -26,9 +26,6 @@ colorMixerMDC2 =
           body2 (text @"hex") # projected hexText # tapped
           body2 (text @"rgb") # projected rgbText # tapped
       ) # mvu duskViolet
-
--- closed signature states the clicked content's row (the row-stating
--- exception): the title reads name, the style reads mix
 chipFace :: { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } } -> String
 chipFace { mix } = chipStyle { mix }
 
