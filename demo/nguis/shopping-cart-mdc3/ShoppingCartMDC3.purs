@@ -17,18 +17,18 @@ shoppingCartMDC3 =
     elevation5 $
       card { caption: "Shopping Cart" } $ ( Semigroupoid.do
           listOf {} productCatalogue ( RecordToRecord.do
-              text # forField @"name" identity
+              text @"name"
               staticText " · $"
-              text # forField @"unitPrice" formatMoney ) # toCase @"productPicked" { product: _ } # updated (match { productPicked: informed addUnit })
+              text @"value" # forField @"unitPrice" formatMoney ) # toCase @"productPicked" { product: _ } # updated (match { productPicked: informed addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
-                  dataCell text # forField @"product" identity
-                  dataCell text # forField @"quantity" identity
+                  dataCell (text @"product")
+                  dataCell (text @"quantity")
                   dataCell ( RecordToRecord.do
                       staticText "$"
-                      text # forField @"lineTotal" identity )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
+                      text @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           bodyLarge ( RecordToRecord.do
               staticText "Total: $"
-              text # projected @"value" grandTotalText ) # tapped
+              text @"value" # projected @"value" grandTotalText ) # tapped
           announce emptyCart >>> button { label: "Empty cart" } # updated (match { clicked: const })
       ) # mvu emptyCart

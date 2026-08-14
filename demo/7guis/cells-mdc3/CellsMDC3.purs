@@ -6,7 +6,7 @@ import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedName)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, completed, foreach, mvu, forProperty, projected, settled, toCase, updated)
+import PUI (completed, foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.Web.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
 import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,11 +19,11 @@ cellsMDC3 =
           ( RecordToRecord.do
               bodyLarge ( RecordToRecord.do
                   staticText "Cell "
-                  text # projected @"value" selectedName )
-              filledTextField { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" } # asField @"value" @"formula") # completed # settled commit
+                  text @"value" # projected @"value" selectedName )
+              filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }) # completed # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text # forProperty @"value" @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
+                  ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"value" # forProperty @"value" @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
       ) # mvu orderSheet
 
 -- closed signature states the clicked content's row (the row-stating

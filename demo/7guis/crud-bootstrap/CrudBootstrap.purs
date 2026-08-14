@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, atCase, completed, forField, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, asCase, atCase, completed, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,14 +21,14 @@ crudBootstrap = do
         pempty # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do
-                textField { label: "Filter prefix (surname)" } # asField @"value" @"prefix"
-                textField { label: "Name" } # asField @"value" @"name"
-                textField { label: "Surname" } # asField @"value" @"surname") # completed
+                textField @"prefix" { label: "Filter prefix (surname)" }
+                textField @"name" { label: "Name" }
+                textField @"surname" { label: "Surname" }) # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
                 ( clicked ( ( listGroupItem $ RecordToRecord.do
-                    text # forField @"surname" identity
+                    text @"surname"
                     staticText ", "
-                    text # forField @"name" identity ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 ( div $ RecordToVariant.do
                     button { label: "Create" } # asCase @"clicked" @"create"

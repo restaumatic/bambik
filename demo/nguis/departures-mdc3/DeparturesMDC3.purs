@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import DeparturesLogic (arrival, boardOpening, tick, tickPeriod, updatedFlight, updatedStatus)
 import Effect (Effect)
-import PUI (dispatched, displayed, every, forField, mvu, projected)
+import PUI (dispatched, displayed, every, mvu, projected)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,12 +18,12 @@ departuresMDC3 =
           every tickPeriod tick
           ( Semigroupoid.do
               list ( ( listItem $ RecordToRecord.do
-                  text # forField @"code" identity
+                  text @"code"
                   staticText " — "
-                  text # forField @"status" identity ) # displayed ) # dispatched arrival
+                  text @"status" ) # displayed ) # dispatched arrival
               bodyMedium ( RecordToRecord.do
                   staticText "Last update: "
-                  text # projected @"value" updatedFlight
+                  text @"value" # projected @"value" updatedFlight
                   staticText " → "
-                  text # projected @"value" updatedStatus ) ) # displayed
+                  text @"value" # projected @"value" updatedStatus ) ) # displayed
       ) # mvu boardOpening

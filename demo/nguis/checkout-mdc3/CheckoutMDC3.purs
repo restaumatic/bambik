@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, displayed, forField, mvu, updated)
+import PUI (asCase, displayed, mvu, updated)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,13 +21,13 @@ checkoutMDC3 =
           ( Semigroupoid.do
               bodyMedium ( RecordToRecord.do
                   staticText "Step 1 of 3 — Cart: "
-                  text # forField @"item" identity ) # provided atCart # displayed
+                  text @"item" ) # provided atCart # displayed
               bodyMedium ( RecordToRecord.do
                   staticText "Step 2 of 3 — Shipping to "
-                  text # forField @"address" identity ) # provided atShipping # displayed
+                  text @"address" ) # provided atShipping # displayed
               bodyMedium ( RecordToRecord.do
                   staticText "Step 3 of 3 — Pay with card "
-                  text # forField @"card" identity ) # provided atPayment # displayed
+                  text @"card" ) # provided atPayment # displayed
               RecordToVariant.do
                 button { label: "Next" } # asCase @"clicked" @"next" # provided nextAtCart
                 button { label: "Next" } # asCase @"clicked" @"next" # provided nextAtShipping
@@ -36,10 +36,10 @@ checkoutMDC3 =
                 button { label: "Place order", icon: "shopping_cart_checkout" } # asCase @"clicked" @"placed" # provided placeAtPayment) # folding @"next" cartStep # updated (match { placed: const (const orderPlaced) })
           bodyMedium ( RecordToRecord.do
               staticText "Order placed: "
-              text # forField @"item" identity
+              text @"item"
               staticText " → "
-              text # forField @"address" identity
+              text @"address"
               staticText " (card "
-              text # forField @"card" identity
+              text @"card"
               staticText ")" ) # provided placedOrder # displayed
       ) # mvu freshOrder

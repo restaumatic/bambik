@@ -107,7 +107,8 @@ import Data.Variant (case_, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons, class Union)
+import Prim.Row (class Cons, class Lacks, class Union)
+import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI, projected)
 import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
@@ -122,7 +123,7 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | by side, with `staticText` for the literal words between them: each
 -- | value is its own text node and updates on its own, and the sentence is
 -- | assembled where it is read rather than in the business code behind it.
-text :: PUI Web { value :: String } {}
+text :: forall @l r. IsSymbol l => Cons l String () r => PUI Web { | r } {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -134,7 +135,7 @@ text = wrap do
   propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
     { toUser: \s -> do
-        setTextNodeValue node s.value
+        setTextNodeValue node (Record.get (Proxy @l) s)
         prop <- Ref.read propRef
         prop {}
     , fromUser: \prop -> Ref.write prop propRef
@@ -279,8 +280,8 @@ radioButton { picked } = "type" := "radio" $ wrap do
 -- | nothing to show, so the field arrives as "maybe a choice" and leaves as
 -- | the choice itself — say which with `# optional` or `# required @"value"`. The
 -- | options belong to the control, not to the model.
-select :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-select options = field @"value" $ wrap do
+select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select options = field @l $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -317,8 +318,8 @@ select options = field @"value" $ wrap do
 -- | is never silently out of range, and a range nobody supplied is a
 -- | compile error rather than a wrong screen. A `step` makes it discrete,
 -- | no step continuous.
-rangeInput :: PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-rangeInput = field @"value" $ "type" := "range" $ wrap do
+rangeInput :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => PUI Web { | r } { | r }
+rangeInput = field @l $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -347,7 +348,7 @@ rangeInput = field @"value" $ "type" := "range" $ wrap do
 -- | as a progress indicator — a quota, a share, a fraction elapsed —
 -- | written as `progress # projected @"value" fraction`, with the business function
 -- | deciding what the fraction means.
-progress :: PUI Web { value :: Number } {}
+progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progress = wrap do
   element "progress" (pure unit)
   attribute "max" "1"
@@ -355,7 +356,7 @@ progress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setAttribute node "value" (show r.value)
+        setAttribute node "value" (show (Record.get (Proxy @l) r))
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -373,7 +374,7 @@ progress = wrap do
 -- | the output is built — `output # forCase @"event" @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output :: PUI Web [ event :: String ] {}
-output = el "output" $ text # projected @"value" eventText
+output = el "output" $ text @"value" # projected @"value" eventText
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

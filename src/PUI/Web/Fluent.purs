@@ -52,6 +52,9 @@ import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, staticText, text, (:=))
 import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
+import Prim.Row (class Cons, class Lacks)
+import Data.Symbol (class IsSymbol)
+import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
 --
@@ -122,8 +125,8 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: { label :: String } -> PUI Web { value :: String } { value :: String }
-textField config = field @"value" $ fieldWith "above" config.label do
+textField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { label :: String } -> PUI Web { | r } { | r }
+textField config = field @l $ fieldWith "above" config.label do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (Fluent keeps the real `<input>` in the light DOM, so
   -- the guard checks containment), but still echo so merge gates flow
@@ -146,8 +149,8 @@ textField config = field @"value" $ fieldWith "above" config.label do
 
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | Its label sits after the control, in Fluent's manner.
-toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
-toggleSwitch config = field @"value" $ fieldWith "after" config.label do
+toggleSwitch :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { label :: String } -> PUI Web { | r } { | r }
+toggleSwitch config = field @l $ fieldWith "after" config.label do
   element "fluent-switch" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
@@ -179,11 +182,11 @@ toggleSwitch config = field @"value" $ fieldWith "after" config.label do
 -- | commit-only slider — so whatever it drives should be cheap to redo, or
 -- | be `debounced` downstream. The current number is shown at the end of
 -- | the label line, since the control has no readout of its own.
-slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-slider config = field @"value" $ el "fluent-field" >>> "label-position" := "above" $ wrap do
+slider :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => { label :: String } -> PUI Web { | r } { | r }
+slider config = field @l $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
       _ <- unwrap (staticText config.label)
-      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text))
+      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text @"value"))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
   element "fluent-slider" (pure unit)
@@ -225,8 +228,8 @@ slider config = field @"value" $ el "fluent-field" >>> "label-position" := "abov
 -- | with `# optional` (nothing preselected, and whatever needs the choice
 -- | stays hidden until it exists) or `# required @"value"`. The options belong to
 -- | the control, not to the model.
-dropdown :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-dropdown config options = field @"value" $ fieldWith "above" config.label do
+dropdown :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+dropdown config options = field @l $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
@@ -259,8 +262,8 @@ dropdown config options = field @"value" $ fieldWith "above" config.label do
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
 -- | Same picked/unpicked contract as `dropdown`.
-radioGroup :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-radioGroup config options = field @"value" $ fieldWith "above" config.label do
+radioGroup :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+radioGroup config options = field @l $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do
@@ -302,7 +305,7 @@ radioGroup config options = field @"value" $ fieldWith "above" config.label do
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
 -- | rating out of five — written as `progressBar # projected @"value" fraction`,
 -- | with the business function deciding what the fraction means.
-progressBar :: PUI Web { value :: Number } {}
+progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progressBar = wrap do
   element "fluent-progress-bar" (pure unit)
   attribute "max" "1"
@@ -311,7 +314,7 @@ progressBar = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "value" node r.value
+        setNumberProp "value" node (Record.get (Proxy @l) r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -324,14 +327,14 @@ progressBar = wrap do
 -- | editable — Fluent's catalog has the display and not the editor, so
 -- | there is deliberately no star *editor* here (Shoelace's `rating` is
 -- | the one).
-ratingDisplay :: PUI Web { value :: Number } {}
+ratingDisplay :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 ratingDisplay = wrap do
   element "fluent-rating-display" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "value" node r.value
+        setNumberProp "value" node (Record.get (Proxy @l) r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -351,7 +354,7 @@ messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    text # projected @"value" eventText) # cl "fluent-toast"
+    text @"value" # projected @"value" eventText) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

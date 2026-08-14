@@ -20,7 +20,7 @@ cashboxMDC2 =
       card { caption: "Cashbox" } $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               staticText "Till balance: €"
-              text # forField @"balance" euros ) # tapped
+              text @"value" # forField @"balance" euros ) # tapped
           ( Semigroupoid.do
               RecordToVariant.do
                 announce standardRefund >>> button { label: "Refund a customer", icon: "undo" } # asCase @"clicked" @"refund"
@@ -29,10 +29,10 @@ cashboxMDC2 =
               ( VariantToVariant.do
                   ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"
-                      text # forField @"amount" euros
+                      text @"value" # forField @"amount" euros
                       staticText " back to the customer." ) # tapped ) # atCase @"refund" # toCase @"refunded" identity
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"
-                      text # forField @"amount" euros
+                      text @"value" # forField @"amount" euros
                       staticText " to the courier." ) # tapped ) # atCase @"payout" # toCase @"paidOut" identity ) # subChoice) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, deposited: informed applyDeposit })
       ) # mvu openedTill

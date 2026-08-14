@@ -18,7 +18,7 @@ import Data.Lens.Shutter (shutter)
 import Effect (Effect)
 import PUI.Web.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (PUI, asField, pempty, silence)
+import PUI (PUI, pempty, silence)
 import PUI.Web.HTML (body, button, staticText, text)
 import PUI.Web (Web)
 
@@ -34,7 +34,7 @@ greet :: PUI Web String String
 greet =
   reel
     (\prefix -> Right \typed -> prefix <> typed.name)
-    (asField @"value" @"name" (MDC.filledTextField { floatingLabel: "Your name" }))
+    (MDC.filledTextField @"name" { floatingLabel: "Your name" })
 
 -- | The **Shutter** (× → +): open on the greeting, then snap shut on one value.
 -- | The button click is a `Done` (`cont=false`), so the **build** leg fires and
@@ -57,5 +57,5 @@ main :: Effect Unit
 main = body $ rmap (const "Hello, ") pempty >>> Semigroupoid.do
   greet
   confirm
-  lcmap (\v -> { value: v }) text
+  lcmap (\v -> { value: v }) (text @"value")
   silence

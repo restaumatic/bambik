@@ -17,22 +17,22 @@ quizMDC3 =
     elevation5 $
       card { caption: "Quiz" } $ ( Semigroupoid.do
           ( RecordToRecord.do
-              linearProgress # projected @"value" progressFraction
+              linearProgress @"value" # projected @"value" progressFraction
               bodyLarge RecordToRecord.do
                 staticText "Question "
-                text # projected @"value" questionNumberText
+                text @"value" # projected @"value" questionNumberText
                 staticText " of "
                 staticText questionCountText
                 staticText " · Score "
-                text # forField @"correct" show) # completed
+                text @"value" # forField @"correct" show) # completed
           ( Semigroupoid.do
-              headlineMedium text # forField @"prompt" identity # completed
-              listOf {} _.choices (text # forProperty @"value" @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
+              headlineMedium (text @"prompt") # completed
+              listOf {} _.choices (text @"value" # forProperty @"value" @"label" identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
           ( Semigroupoid.do
               headlineSmall ( RecordToRecord.do
                   staticText "Final score: "
-                  text # forField @"correct" show
+                  text @"value" # forField @"correct" show
                   staticText " / "
-                  text # forField @"total" show) # displayed
+                  text @"value" # forField @"total" show) # displayed
               button { label: "Restart", icon: "replay" } # asCase @"clicked" @"restarted") # provided finalOutcome # updated (match { restarted: const (const freshQuizRun) })
       ) # mvu freshQuizRun

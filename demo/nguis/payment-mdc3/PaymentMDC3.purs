@@ -19,11 +19,11 @@ paymentMDC3 =
       card { caption: "Payment" } $ ( Semigroupoid.do
           headlineSmall ( RecordToRecord.do
               staticText "Amount due: $"
-              text # forField @"amount" show ) # tapped
-          bodyMedium text # projected @"value" statusLine # tapped
+              text @"value" # forField @"amount" show ) # tapped
+          bodyMedium (text @"value") # projected @"value" statusLine # tapped
           ( Semigroupoid.do
               button { label: "Charge card", icon: "credit_card" } # toCases @"clicked" startCharge
               ( Semigroupoid.do
-                  indeterminateCircularProgress # action chargeFlaky # atCase @"charge"
+                  indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
                   snackbar # forCase @"event" @"charge" retryLine # observed ) # iterate) # updated (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder

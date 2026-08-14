@@ -6,7 +6,7 @@ import CircleDrawerLogic (adjustDiameter, canvasCircles, emptyCanvas, redo, sele
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, asField, blank, foreach, informed, mvu, toCase, updated)
+import PUI (asCase, blank, foreach, informed, mvu, toCase, updated)
 import PUI.Web.HTML (attrWith, body, onClickedXY, provided, (:=))
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, sliderLive)
 import PUI.Web.SVG (circle, svg)
@@ -17,7 +17,7 @@ circleDrawerMDC2 =
   body $
     elevation20 $
       card { caption: "Circle Drawer" } $ ( Semigroupoid.do
-          sliderLive { label: "Diameter" } # asField @"value" @"diameter" # provided selectedDiameter # updated (informed adjustDiameter)
+          sliderLive @"diameter" { label: "Diameter" } # provided selectedDiameter # updated (informed adjustDiameter)
           ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
               ( onClickedXY
                   ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r

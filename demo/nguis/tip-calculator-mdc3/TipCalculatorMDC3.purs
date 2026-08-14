@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (asField, completed, forField, mvu, projected, tapped)
+import PUI (completed, forField, mvu, projected, tapped)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,24 +15,24 @@ tipCalculatorMDC3 =
   body $
     elevation5 $
       card { caption: "Tip Calculator" } $ ( Semigroupoid.do
-          filledTextField { floatingLabel: "Bill amount" } # asField @"value" @"amount" # completed
-          slider { label: "Tip percentage" } # asField @"value" @"tipPercent" # completed
+          filledTextField @"amount" { floatingLabel: "Bill amount" } # completed
+          slider @"tipPercent" { label: "Tip percentage" } # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip: "
-              text # forField @"tipPercent" whole
+              text @"value" # forField @"tipPercent" whole
               staticText "%" ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Split between: "
-              text # forField @"people" whole
+              text @"value" # forField @"people" whole
               staticText " people" ) # tapped
-          slider { label: "Split between" } # asField @"value" @"people" # completed
+          slider @"people" { label: "Split between" } # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip amount: "
-              text # projected @"value" tipAmountText ) # tapped
+              text @"value" # projected @"value" tipAmountText ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Total: "
-              text # projected @"value" totalText ) # tapped
+              text @"value" # projected @"value" totalText ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Per person: "
-              text # projected @"value" perPersonText ) # tapped
+              text @"value" # projected @"value" perPersonText ) # tapped
       ) # mvu dinnerBill

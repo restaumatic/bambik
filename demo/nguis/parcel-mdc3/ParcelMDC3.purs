@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ParcelLogic (draftParcel)
-import PUI (PUI, asField, completed, subStrong, forField, mvu, tapped)
+import PUI (PUI, completed, subStrong, mvu, tapped)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import PUI.Web (Web)
@@ -16,17 +16,17 @@ parcelMDC3 =
   body $
     elevation5 $
       card { caption: "Parcel" } $ ( Semigroupoid.do
-          filledTextField { floatingLabel: "Recipient" } # asField @"value" @"recipient" # completed
+          filledTextField @"recipient" { floatingLabel: "Recipient" } # completed
           addressForm # subStrong
           bodyLarge ( RecordToRecord.do
-              text # forField @"recipient" identity
+              text @"recipient"
               staticText " · "
-              text # forField @"street" identity
+              text @"street"
               staticText " · "
-              text # forField @"city" identity ) # tapped
+              text @"city" ) # tapped
       ) # mvu draftParcel
 
 addressForm :: PUI Web { street :: String, city :: String } { street :: String, city :: String }
 addressForm = RecordToRecord.do
-  filledTextField { floatingLabel: "Street" } # asField @"value" @"street"
-  filledTextField { floatingLabel: "City" } # asField @"value" @"city"
+  filledTextField @"street" { floatingLabel: "Street" }
+  filledTextField @"city" { floatingLabel: "City" }

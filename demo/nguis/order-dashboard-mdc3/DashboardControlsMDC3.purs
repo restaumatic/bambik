@@ -15,7 +15,9 @@ import Data.Maybe (Maybe)
 import Data.Number (max)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import PUI (Ocular, PUI, atField, blank, displayed, forField, foreach, projected)
+import Data.Symbol (class IsSymbol)
+import Prim.Row (class Cons, class Lacks)
+import PUI (Ocular, PUI, asField, atField, blank, displayed, foreach, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -29,15 +31,15 @@ statTile config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     ( div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ RecordToRecord.do
-        displaySmall text
+        displaySmall (text @"value")
         labelMedium $ staticText config.unit )
 
 gauge :: { label :: String } -> PUI Web { value :: Number } {}
 gauge config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
-    linearProgress
-    labelLarge $ text # projected @"value" percentText
+    linearProgress @"value"
+    labelLarge $ text @"value" # projected @"value" percentText
 
 trendChart :: { label :: String } -> PUI Web { value :: Array Number } {}
 trendChart config =
@@ -53,15 +55,15 @@ leaderboard config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     list ( ( listItem $ RecordToRecord.do
-        text # forField @"name" identity
+        text @"name"
         staticText " — "
-        text # forField @"score" identity ) # foreach @"name" identity ) # atField @"value" # displayed
+        text @"score" ) # foreach @"name" identity ) # atField @"value" # displayed
 
-rangePicker :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
+rangePicker :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 rangePicker config options =
-  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ RecordToRecord.do
-    labelMedium $ staticText config.label
-    segmentedButton options
+  ( div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ RecordToRecord.do
+      labelMedium $ staticText config.label
+      segmentedButton @"value" options ) # asField @"value" @l
 
 tile :: Ocular (PUI Web)
 tile = div >>> "style" := "display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; background: var(--md-sys-color-surface-container-low, #f7f2fa); flex: 1 1 200px; min-width: 200px; box-sizing: border-box;"

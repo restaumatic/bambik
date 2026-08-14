@@ -5,7 +5,7 @@ import Prelude (Unit, show, (#), ($), (<>), (>>>))
 import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
-import PUI (asField, atField, completed, displayed, mvu)
+import PUI (atField, completed, displayed, mvu)
 import PUI.Web.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC3 (card, elevation5, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,7 +16,7 @@ markdownPreviewerMDC3 =
     elevation5 $
       card { caption: "Markdown Previewer" } $
         layoutGrid $ ( Semigroupoid.do
-            layoutCell { span: 6 } $ filledTextArea { columns: 60, rows: 24 } # asField @"value" @"source" # completed
+            layoutCell { span: 6 } $ filledTextArea @"source" { columns: 60, rows: 24 } # completed
             layoutCell { span: 6 } $ displayed $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->
                   let

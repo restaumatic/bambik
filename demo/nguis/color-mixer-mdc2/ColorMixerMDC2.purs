@@ -6,7 +6,7 @@ import ColorMixerLogic (applyPreset, duskViolet, hexText, mixOf, palette, rgb, r
 import Data.Maybe (Maybe)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asField, blank, completed, foreach, mvu, projected, tapped, toCase, updated)
+import PUI (blank, completed, foreach, mvu, projected, tapped, toCase, updated)
 import PUI.Web.HTML (attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC2 (body2, card, elevation20, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,15 +16,15 @@ colorMixerMDC2 =
   body $
     elevation20 $
       card { caption: "Color Mixer" } $ ( Semigroupoid.do
-          sliderLive { label: "Red" } # asField @"value" @"red" # completed
-          sliderLive { label: "Green" } # asField @"value" @"green" # completed
-          sliderLive { label: "Blue" } # asField @"value" @"blue" # completed
+          sliderLive @"red" { label: "Red" } # completed
+          sliderLive @"green" { label: "Green" } # completed
+          sliderLive @"blue" { label: "Blue" } # completed
           ( div $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          body2 text # projected @"value" hexText # tapped
-          body2 text # projected @"value" rgbText # tapped
+          body2 (text @"value") # projected @"value" hexText # tapped
+          body2 (text @"value") # projected @"value" rgbText # tapped
       ) # mvu duskViolet
 
 -- closed signature states the clicked content's row (the row-stating

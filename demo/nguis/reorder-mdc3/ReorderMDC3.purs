@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, asField, atCase, edited, field, mvu, pempty, updated)
+import PUI (action, asCase, atCase, edited, field, mvu, pempty, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC3 (button, card, cardActions, elevation5, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,5 +28,5 @@ reorderMDC3 =
           list
             ( ( listItem $ ( RecordToRecord.do
                   el "input" >>> "type" := "checkbox" $ pempty
-                  filledTextField { floatingLabel: "Title" } # asField @"value" @"title")) # edited @"id") # field @"order"
+                  filledTextField @"title" { floatingLabel: "Title" })) # edited @"id") # field @"order"
       ) # mvu openingSetlist

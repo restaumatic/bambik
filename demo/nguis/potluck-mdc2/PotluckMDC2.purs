@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PotluckLogic (dishText, guestCount, invitation)
-import PUI (acted, asField, displayed, field, foreach, forField, projected, tapped, with)
+import PUI (acted, displayed, field, foreach, forField, projected, tapped, with)
 import PUI.Web.HTML (body, span, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,21 +16,21 @@ potluckMDC2 =
     elevation20 $
       card { caption: "Potluck" } $ ( Semigroupoid.do
           body2 ( Semigroupoid.do
-              text # projected @"value" guestCount
+              text @"value" # projected @"value" guestCount
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." # displayed ) # tapped
           ( list $
               ( listItem $ RecordToRecord.do
-                  subtitle1 text # forField @"name" identity
-                  segmentedButton
+                  subtitle1 (text @"name")
+                  segmentedButton @"dish"
                     [ { value: .salad {}, label: "Salad" }
                     , { value: .lasagna {}, label: "Lasagna" }
                     , { value: .pavlova {}, label: "Pavlova" }
-                    ] # asField @"value" @"dish" ) # acted @"name" ) # field @"guests"
+                    ] ) # acted @"name" ) # field @"guests"
           headline6 $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do
-                text # forField @"name" identity
+                text @"name"
                 staticText "’s "
-                text # forField @"dish" dishText
+                text @"value" # forField @"dish" dishText
                 staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation

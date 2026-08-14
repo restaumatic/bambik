@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesOpen, openAlbum)
-import PUI (displayed, foreach, forField, forProperty, mvu, tapped, toCase, updated)
+import PUI (displayed, foreach, forProperty, mvu, tapped, toCase, updated)
 import PUI.Web.HTML (body, span, staticText, text)
 import PUI.Web.MDC2 (divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,7 +17,7 @@ photoGalleryMDC2 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } albumChoices (span text # forProperty @"value" @"name" identity) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
+              listOf { selected: _.current } albumChoices (span (text @"value") # forProperty @"value" @"name" identity) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
@@ -30,6 +30,6 @@ photoGalleryMDC2 =
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
-              headline2 text # forField @"album" identity # tapped
+              headline2 (text @"album") # tapped
               ( imageList { columns: 3 } $ imagePane # foreach @"src" albumPhotos ) # displayed )
       ) # mvu landscapesOpen

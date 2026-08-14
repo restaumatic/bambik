@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, asCase, asField, completed, debounced, displayed, forCases, forField, informed, mvu, required, updated)
+import PUI (action, asCase, completed, debounced, displayed, forCases, informed, mvu, required, updated)
 import PUI.Web.HTML (providedCase, body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,25 +18,25 @@ flightBookerMDC2 =
       card { caption: "Book Flight" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
-              select { floatingLabel: "Flight type" }
+              select @"flightType" { floatingLabel: "Flight type" }
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
-                ] # required @"value" # asField @"value" @"flightType"
-              filledTextField { floatingLabel: "Start date (DD.MM.YYYY)" } # asField @"value" @"start") # completed
-          filledTextField { floatingLabel: "Return date (DD.MM.YYYY)" } # asField @"value" @"return" # provided returnLeg # updated (informed setReturn)
+                ] # required @"flightType"
+              filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }) # completed
+          filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" } # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "⚠ "
-              text # forField @"problem" identity ) # providedCase @"problem" bookingState # displayed
+              text @"problem" ) # providedCase @"problem" bookingState # displayed
           body1 ( RecordToRecord.do
               staticText "A one-way flight on "
-              text # forField @"date" identity ) # providedCase @"oneWay" bookingState # displayed
+              text @"date" ) # providedCase @"oneWay" bookingState # displayed
           body1 ( RecordToRecord.do
               staticText "A return flight: out "
-              text # forField @"out" identity
+              text @"out"
               staticText ", back "
-              text # forField @"back" identity ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+              text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
       button { label: "Book", icon: "flight_takeoff" } # asCase @"clicked" @"book"
-      indeterminateLinearProgress # action (match { book: submit })
+      indeterminateLinearProgress @"busy" # action (match { book: submit })
       snackbar # forCases @"event" bookingLine

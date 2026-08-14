@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, headlineQuote, ownedText, recommendNote, starGlyphs, submittedLine)
-import PUI (asCase, asField, forCase, forField, mvu, projected, required, tapped)
+import PUI (asCase, forCase, forField, mvu, projected, required, tapped)
 import PUI.Web.HTML (body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,24 +15,24 @@ productReviewShoelace =
   body $
     card { caption: "Review: Astra Moka Espresso Machine" } $ Semigroupoid.do
       ( RecordToRecord.do
-          rating { label: "Overall rating" } # asField @"value" @"stars"
-          textField { label: "Headline" } # asField @"value" @"headline"
-          textArea { label: "Your review", rows: 4 } # asField @"value" @"review"
-          select { label: "How long have you owned it?" }
+          rating @"stars" { label: "Overall rating" }
+          textField @"headline" { label: "Headline" }
+          textArea @"review" { label: "Your review", rows: 4 }
+          select @"owned" { label: "How long have you owned it?" }
             [ { value: .underMonth {}, label: "Less than a month" }
             , { value: .underYear {}, label: "1–12 months" }
             , { value: .overYear {}, label: "More than a year" }
-            ] # required @"value" # asField @"value" @"owned"
-          toggleSwitch { label: "I'd recommend it to a friend" } # asField @"value" @"recommend"
-          textField { label: "Nickname" } # asField @"value" @"nickname"
+            ] # required @"owned"
+          toggleSwitch @"recommend" { label: "I'd recommend it to a friend" }
+          textField @"nickname" { label: "Nickname" }
           divider
       ) # mvu freshImpression
       p ( RecordToRecord.do
           staticText "Preview: "
-          text # forField @"stars" starGlyphs
-          text # forField @"headline" headlineQuote
+          text @"value" # forField @"stars" starGlyphs
+          text @"value" # forField @"headline" headlineQuote
           staticText " · owned "
-          text # forField @"owned" ownedText
-          text # projected @"value" recommendNote ) # tapped
+          text @"value" # forField @"owned" ownedText
+          text @"value" # projected @"value" recommendNote ) # tapped
       button { label: "Submit review" } # asCase @"clicked" @"submitted"
       toast # forCase @"event" @"submitted" submittedLine

@@ -905,23 +905,23 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
 -- | honest knowledge instead of starving the merge gate, and only a
 -- | genuine pick can ever produce the bare value —
--- | `dropdown config options # optional # asField @l` seeds as `Nothing`
+-- | `dropdown @l config options # optional` seeds as `Nothing`
 -- | and the stages demanding the selection stay `provided`-gated until the
 -- | user picks.
-optional :: forall m a. Functor m => PUI m { value :: Maybe a } { value :: a } -> PUI m { value :: Maybe a } { value :: Maybe a }
+optional :: forall @l m a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Functor m => PUI m { | ri } { | ro } -> PUI m { | ri } { | ri }
 optional p = wrap $ unwrap p <#> \p' ->
   let mPropRef = unsafePerformEffect $ Ref.new Nothing
   in
     { toUser: \i -> do
         p'.toUser i
-        case i.value of
+        case Record.get (Proxy @l) i of
           Nothing -> do
             mProp <- Ref.read mPropRef
-            for_ mProp \prop -> prop { value: Nothing }
+            for_ mProp \prop -> prop i
           Just _ -> pure unit
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
-        p'.fromUser \o -> prop { value: Just o.value }
+        p'.fromUser \o -> prop (Record.insert (Proxy @l) (Just (Record.get (Proxy @l) o)) {})
     }
 
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.

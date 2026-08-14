@@ -49,6 +49,9 @@ import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (clicked, div, el, span, staticText, text, (:=))
 import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
+import Prim.Row (class Cons, class Lacks)
+import Data.Symbol (class IsSymbol)
+import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
 --
@@ -111,8 +114,8 @@ eventLeaf chrome = clicked chrome
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: { label :: String } -> PUI Web { value :: String } { value :: String }
-textField config = field @"value" $ wrap do
+textField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { label :: String } -> PUI Web { | r } { | r }
+textField config = field @l $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
   -- but still echo so merge gates keep flowing
@@ -135,8 +138,8 @@ textField config = field @"value" $ wrap do
 
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
-textArea :: { label :: String, rows :: Int } -> PUI Web { value :: String } { value :: String }
-textArea config = field @"value" $ wrap do
+textArea :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { label :: String, rows :: Int } -> PUI Web { | r } { | r }
+textArea config = field @l $ wrap do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
   attribute "rows" (show config.rows)
@@ -164,8 +167,8 @@ textArea config = field @"value" $ wrap do
 -- | stars there are comes from the data and can differ between contexts —
 -- | and a scale nobody supplied is a compile error rather than a wrong
 -- | screen. The label is drawn above the stars.
-rating :: { label :: String } -> PUI Web { value :: { current :: Number, max :: Int } } { value :: { current :: Number, max :: Int } }
-rating config = field @"value" $
+rating :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, max :: Int } () r => { label :: String } -> PUI Web { | r } { | r }
+rating config = field @l $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
     _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
@@ -203,8 +206,8 @@ rating config = field @"value" $
 -- | It reports on **every change**, following the drag — so whatever it
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
-sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-sliderLive config = field @"value" $ wrap do
+sliderLive :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => { label :: String } -> PUI Web { | r } { | r }
+sliderLive config = field @l $ wrap do
   element "sl-range" (pure unit)
   attribute "label" config.label
   attribute "style" "width: 100%; min-width: 240px;"
@@ -241,8 +244,8 @@ sliderLive config = field @"value" $ wrap do
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
-toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
-toggleSwitch config = field @"value" $ wrap do
+toggleSwitch :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { label :: String } -> PUI Web { | r } { | r }
+toggleSwitch config = field @l $ wrap do
   element "sl-switch" (void $ unwrap (staticText config.label))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -264,8 +267,8 @@ toggleSwitch config = field @"value" $ wrap do
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
 -- | with `# optional` or `# required @"value"`. The options belong to the control,
 -- | not to the model.
-select :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-select config options = field @"value" $ wrap do
+select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select config options = field @l $ wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -301,7 +304,7 @@ select config options = field @"value" $ wrap do
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
 -- | rating out of five — written as `progressBar # projected @"value" fraction`,
 -- | with the business function deciding what the fraction means.
-progressBar :: PUI Web { value :: Number } {}
+progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progressBar = wrap do
   element "sl-progress-bar" (pure unit)
   attribute "style" "width: 100%; min-width: 200px;"
@@ -310,7 +313,7 @@ progressBar = wrap do
   pure
     { toUser: \r -> do
         -- sl-progress-bar runs 0–100
-        setNumberProp "value" node (r.value * 100.0)
+        setNumberProp "value" node (Record.get (Proxy @l) r * 100.0)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -331,7 +334,7 @@ toast = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (text # projected @"value" eventText)
+    unwrap (text @"value" # projected @"value" eventText)
   node <- gets _.sibling
   pure
     { toUser: \i -> do

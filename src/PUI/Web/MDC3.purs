@@ -134,7 +134,9 @@ import PUI (Ocular, PUI, blank, forField, foreach, pempty, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Prim.Row (class Union)
+import Prim.Row (class Cons, class Lacks, class Union)
+import Data.Symbol (class IsSymbol)
+import Record (get) as Record
 import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
@@ -351,19 +353,19 @@ menuItem config = recordToCase @"clicked" $ eventLeaf $
 -- | Shows the string it is given and reports each edit; typing is never
 -- | interrupted by values arriving from elsewhere. Attach it to a field of
 -- | the model with `# asField @l`.
-filledTextField :: { floatingLabel :: String } -> PUI Web { value :: String } { value :: String }
-filledTextField config = field @"value" (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
+filledTextField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { floatingLabel :: String } -> PUI Web { | r } { | r }
+filledTextField config = field @l (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
-outlinedTextField :: { floatingLabel :: String } -> PUI Web { value :: String } { value :: String }
-outlinedTextField config = field @"value" (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
+outlinedTextField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { floatingLabel :: String } -> PUI Web { | r } { | r }
+outlinedTextField config = field @l (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
-debouncedTextField :: { floatingLabel :: String, ms :: Number } -> PUI Web { value :: String } { value :: String }
-debouncedTextField { floatingLabel, ms } = field @"value" (textFieldLeaf "md-filled-text-field" (Just ms) floatingLabel)
+debouncedTextField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { floatingLabel :: String, ms :: Number } -> PUI Web { | r } { | r }
+debouncedTextField { floatingLabel, ms } = field @l (textFieldLeaf "md-filled-text-field" (Just ms) floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -396,8 +398,8 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
 -- | The **multi-line text field**, sized in `rows` and `columns` of text —
 -- | a note, a description, a message. Otherwise `filledTextField`: shows a
 -- | string, reports each edit, never interrupts typing.
-filledTextArea :: { columns :: Int, rows :: Int } -> PUI Web { value :: String } { value :: String }
-filledTextArea { columns, rows } = field @"value" $ wrap do
+filledTextArea :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { columns :: Int, rows :: Int } -> PUI Web { | r } { | r }
+filledTextArea { columns, rows } = field @l $ wrap do
   element "md-filled-text-field" (pure unit)
   attribute "type" "textarea"
   attribute "rows" (show rows)
@@ -431,8 +433,8 @@ filledTextArea { columns, rows } = field @"value" $ wrap do
 -- | `ticked` is what the field holds once ticked, before the model has ever
 -- | supplied a value — stated by the caller (`{ ticked: {} }` for a plain
 -- | yes/no fact), never conjured from the type.
-checkbox :: forall a. { ticked :: a } -> PUI Web {} {} -> PUI Web { value :: Maybe a } { value :: Maybe a }
-checkbox { ticked } labelContent = field @"value" $
+checkbox :: forall @l a r. IsSymbol l => Lacks l () => Cons l (Maybe a) () r => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
+checkbox { ticked } labelContent = field @l $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     aRef <- liftEffect $ Ref.new ticked
     mPropRef <- liftEffect $ Ref.new Nothing
@@ -468,8 +470,8 @@ checkbox { ticked } labelContent = field @"value" $
 -- | hidden until it exists) or `# required @"value"` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-radioButton options = field @"value" (radioLeaf options)
+radioButton :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+radioButton options = field @l (radioLeaf options)
 
 radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 radioLeaf options =
@@ -503,8 +505,8 @@ radioLeaf options =
 -- | The Material **switch**: a setting that takes effect the moment it is
 -- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
 -- | to be submitted with the rest of a form; a switch acts immediately.)
-toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
-toggleSwitch config = field @"value" (switchLeaf config.label)
+toggleSwitch :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { label :: String } -> PUI Web { | r } { | r }
+toggleSwitch config = field @l (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl =
@@ -539,15 +541,15 @@ switchLeaf lbl =
 -- | It reports on **release**, once per adjustment, so one drag is one
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
-slider :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-slider config = field @"value" (sliderLeaf false config.label)
+slider :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => { label :: String } -> PUI Web { | r } { | r }
+slider config = field @l (sliderLeaf false config.label)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
-sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-sliderLive config = field @"value" (sliderLeaf true config.label)
+sliderLive :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => { label :: String } -> PUI Web { | r } { | r }
+sliderLive config = field @l (sliderLeaf true config.label)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
 -- value indicator), so a non-empty config label renders visibly above the
@@ -601,8 +603,8 @@ bareSliderLeaf live label = wrap do
 -- | Same contract as `radioButton`: nothing to show until the user picks,
 -- | so say `# optional` or `# required @"value"`; the options are part of the
 -- | control, not of the model.
-select :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-select config options = field @"value" (selectLeaf config options)
+select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select config options = field @l (selectLeaf config options)
 
 selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 selectLeaf config options = wrap do
@@ -642,8 +644,8 @@ selectLeaf config options = wrap do
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
 -- | hide the alternatives. Same picked/unpicked contract as `select`.
-segmentedButton :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-segmentedButton options = field @"value" (segmentedLeaf options)
+segmentedButton :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+segmentedButton options = field @l (segmentedLeaf options)
 
 segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 segmentedLeaf options =
@@ -683,8 +685,8 @@ segmentedButtonCss = """
 -- | showing a checkmark while on. Chips come in sets where any number may
 -- | be active at once — dietary tags, categories, facets. Put them in a
 -- | `chipSet`.
-filterChip :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
-filterChip config = field @"value" (chipLeaf config.label)
+filterChip :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { label :: String } -> PUI Web { | r } { | r }
+filterChip config = field @l (chipLeaf config.label)
 
 chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = wrap do
@@ -712,8 +714,8 @@ chipLeaf lbl = wrap do
 -- | `label` is what assistive technology announces. The on glyph renders
 -- | filled, so the same glyph in both slots still reads as off and on. The
 -- | compact form of a `toggleSwitch`, for list rows and toolbars.
-iconToggle :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
-iconToggle config = field @"value" (iconToggleLeaf config)
+iconToggle :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { onIcon :: String, offIcon :: String, label :: String } -> PUI Web { | r } { | r }
+iconToggle config = field @l (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = wrap do
@@ -747,12 +749,15 @@ iconToggleLeaf config = wrap do
 -- | `provided` pane per section, each pane editing its own part of the
 -- | model.
 tabBar
-  :: forall provided a
-   . Eq a
+  :: forall @l provided a r
+   . IsSymbol l
+  => Lacks l ()
+  => Cons l a () r
+  => Eq a
   => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String }
   => Array { | provided }
-  -> PUI Web { value :: a } { value :: a }
-tabBar options = field @"value" (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options))
+  -> PUI Web { | r } { | r }
+tabBar options = field @l (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options))
 
 tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
 tabBarLeaf options = wrap do
@@ -790,7 +795,7 @@ tabBarLeaf options = wrap do
 -- | telling how long — a request in flight, a file being processed. Shown
 -- | while `busy`, gone when it isn't, so it is driven by the app's own
 -- | notion of being busy rather than by a separate visibility flag.
-indeterminateLinearProgress :: PUI Web { busy :: Boolean } {}
+indeterminateLinearProgress :: forall @l r. IsSymbol l => Cons l Boolean () r => PUI Web { | r } {}
 indeterminateLinearProgress = wrap do
   element "md-linear-progress" (pure unit)
   attribute "indeterminate" ""
@@ -800,7 +805,7 @@ indeterminateLinearProgress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setAttribute node "style" (if r.busy then visibleStyle else hiddenStyle)
+        setAttribute node "style" (if Record.get (Proxy @l) r then visibleStyle else hiddenStyle)
         -- display echo (like `text`): announce the `{}` per feed, so gated
         -- merges and `tapped`/`completed` stages keep flowing
         mProp <- Ref.read mPropRef
@@ -818,7 +823,7 @@ indeterminateLinearProgress = wrap do
 -- | position, a budget's use, a quota — written as
 -- | `linearProgress # projected @"value" fraction`, with the business function
 -- | deciding what the fraction means.
-linearProgress :: PUI Web { value :: Number } {}
+linearProgress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 linearProgress = wrap do
   element "md-linear-progress" (pure unit)
   attribute "aria-label" "Progress"
@@ -827,7 +832,7 @@ linearProgress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "value" node r.value
+        setNumberProp "value" node (Record.get (Proxy @l) r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -839,7 +844,7 @@ linearProgress = wrap do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: PUI Web { busy :: Boolean } {}
+indeterminateCircularProgress :: forall @l r. IsSymbol l => Cons l Boolean () r => PUI Web { | r } {}
 indeterminateCircularProgress = wrap do
   element "md-circular-progress" (pure unit)
   attribute "indeterminate" ""
@@ -849,7 +854,7 @@ indeterminateCircularProgress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setAttribute node "style" (if r.busy then visibleStyle else hiddenStyle)
+        setAttribute node "style" (if Record.get (Proxy @l) r then visibleStyle else hiddenStyle)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -1035,7 +1040,7 @@ snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    text # projected @"value" eventText
+    text @"value" # projected @"value" eventText
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -1272,7 +1277,7 @@ imagePane = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
     imageFace
-    span >>> cl "md3-image-list__label" $ text # forField @"label" identity
+    span >>> cl "md3-image-list__label" $ text @"label"
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

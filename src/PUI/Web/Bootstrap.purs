@@ -50,6 +50,9 @@ import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
+import Prim.Row (class Cons, class Lacks)
+import Data.Symbol (class IsSymbol)
+import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
 --
@@ -111,8 +114,8 @@ eventLeaf chrome = clicked chrome
 -- | string it is given and reports each edit; typing is never interrupted
 -- | by values arriving from elsewhere. Attach it to a field of the model
 -- | with `# asField @l`.
-textField :: { label :: String } -> PUI Web { value :: String } { value :: String }
-textField config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
+textField :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { label :: String } -> PUI Web { | r } { | r }
+textField config = field @l $ div >>> "style" := "width: 100%;" $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in, but still echo so merge gates keep flowing
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
@@ -149,11 +152,11 @@ textField config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
 -- | it drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
-sliderLive :: { label :: String } -> PUI Web { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } { value :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
+sliderLive :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => { label :: String } -> PUI Web { | r } { | r }
+sliderLive config = field @l $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
-      unwrap ((span $ text) # cl "text-body-secondary")
+      unwrap ((span $ text @"value") # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -188,8 +191,8 @@ sliderLive config = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
 -- | user picks there is nothing to show, so the field arrives as "maybe a
 -- | choice" and leaves as the choice itself — say which with `# optional`
 -- | or `# required @"value"`. The options belong to the control, not to the model.
-select :: forall a. Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { value :: Maybe a } { value :: a }
-select config options = field @"value" $ div >>> "style" := "width: 100%;" $ wrap do
+select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select config options = field @l $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling
@@ -221,8 +224,8 @@ select config options = field @"value" $ div >>> "style" := "width: 100%;" $ wra
 
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label is part of the target, so clicking the words toggles it too.
-toggleSwitch :: { label :: String } -> PUI Web { value :: Boolean } { value :: Boolean }
-toggleSwitch config = field @"value" $ (div $ wrap do
+toggleSwitch :: forall @l r. IsSymbol l => Lacks l () => Cons l Boolean () r => { label :: String } -> PUI Web { | r } { | r }
+toggleSwitch config = field @l $ (div $ wrap do
   inputId <- liftEffect uniqueId
   element "input" (pure unit)
   node <- gets _.sibling
@@ -250,7 +253,7 @@ toggleSwitch config = field @"value" $ (div $ wrap do
 -- | 1. As much a gauge as a progress indicator — a share, a quota, a
 -- | ratio — written as `progress # projected @"value" fraction`, with the business
 -- | function deciding what the fraction means.
-progress :: PUI Web { value :: Number } {}
+progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progress = wrap do
   barNode <- element "div" do
     element "div" (pure unit)
@@ -265,7 +268,7 @@ progress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setAttribute barNode "style" ("width: " <> show (round (r.value * 100.0)) <> "%;")
+        setAttribute barNode "style" ("width: " <> show (round (Record.get (Proxy @l) r * 100.0)) <> "%;")
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -285,7 +288,7 @@ toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ text # projected @"value" eventText) # cl "toast-body")
+      (div $ text @"value" # projected @"value" eventText) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, displayed, forField, forProperty, foreach, mvu, toCase, updated)
+import PUI (announce, displayed, forProperty, foreach, mvu, toCase, updated)
 import PUI.Web.HTML (providedCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC3 (button, card, elevation5, headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,17 +17,17 @@ ticTacToeMDC3 =
     elevation5 $
       card { caption: "Tic-Tac-Toe" } $ ( Semigroupoid.do
           headlineSmall ( RecordToRecord.do
-              text # forField @"mark" identity
+              text @"mark"
               staticText " wins" ) # providedCase @"won" gameOutcome # displayed
           headlineSmall (staticText "Draw") # providedCase @"drawn" gameOutcome # displayed
           headlineSmall ( RecordToRecord.do
-              text # forField @"mark" identity
+              text @"mark"
               staticText " to move" ) # providedCase @"toMove" gameOutcome # displayed
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div
                           >>> attrWith "style" cellFace
-                          $ text # forProperty @"value" @"mark" identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
+                          $ text @"value" # forProperty @"value" @"mark" identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
           announce openingPosition >>> button { label: "New game", icon: "replay" } # updated (match { clicked: const })
       ) # mvu openingPosition
 

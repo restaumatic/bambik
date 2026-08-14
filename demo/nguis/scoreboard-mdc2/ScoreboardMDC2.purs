@@ -18,17 +18,17 @@ scoreboardMDC2 =
           every tickPeriod tick
           ( Semigroupoid.do
               list ( ( listItem $ RecordToRecord.do
-                  text # forField @"team" identity
+                  text @"team"
                   staticText ": "
-                  text # forField @"points" show ) # displayed ) # accumulated goal
+                  text @"value" # forField @"points" show ) # displayed ) # accumulated goal
               ( body2 $ Semigroupoid.do
                   ( RecordToRecord.do
-                      text # forField @"teams" identity
+                      text @"teams"
                       staticText " teams on the board — leading: " ) # displayed
                   ( RecordToRecord.do
-                      text # forField @"team" identity
+                      text @"team"
                       staticText " ("
-                      text # forField @"points" show
+                      text @"value" # forField @"points" show
                       staticText ")" ) # provided leadingTeam # displayed
                   staticText "—" # provided noLeader # displayed ) # foreach @"key" boardSummary ) # displayed
       ) # mvu gameStart
