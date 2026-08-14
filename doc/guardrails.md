@@ -67,15 +67,25 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `μ`) or wrongly conceived.
 - Every component MUST be a citizen of exactly one direction, and its
   row MUST speak the **business label**, stated once as the leaf's own
-  type argument (`text @"firstName"`, `filledTextField @"email" {}`,
-  `button @"submit" {…}`, `select @"milk" cfg opts`). No canonical label
-  (`value`/`clicked`/`event`) appears in application code: adopters that
-  need a leaf's label derive it from the closed singleton row via
+  type argument (`text @"Total"`, `filledTextField @"First name" {}`,
+  `button @"Submit order" {}`, `select @"Milk" cfg opts`). No canonical
+  label (`value`/`clicked`/`event`) appears in application code: adopters
+  that need a leaf's label derive it from the closed singleton row via
   `RowToList`'s fundep (`projection`/`projected`/`forProperty`/`required`/
   `optional`/`toCases`/`forCase`/`forCases`). Statuses keep their
   internal payload case private and derived. Components MUST NOT have
   scalar or polymorphic model interfaces; raw scalar leaves stay private
   or in optic positions.
+- A **label is the copy it draws**: a captioned leaf's caption defaults
+  to its label verbatim — nothing derives copy from an identifier — so
+  labels are written as the words they render and are therefore usually
+  quoted strings, in the business rows as much as at the leaf
+  (`{ "First name" :: String }`). A quoted label MUST NOT appear in a
+  record pun (the compiler forbids it); bind explicitly instead. An
+  emitter MUST NOT be given a `label:` config: where a trace form's loop
+  case would force two buttons to share one case under different words,
+  they are two business actions — each takes its own case and `toCases`
+  adopts it into the loop case.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 
@@ -202,8 +212,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   in the design notes, where the algebra needs their names).
 - **Subsumption:** when a new form makes an old one derivable, the old
   one is deleted, not deprecated alongside (`synced`/`latch`,
-  `Sequencing`, `labeled` — all gone). Convergence is the health metric:
+  `Sequencing`, `labeled`, `constantly`, `forField`/`asCase`,
+  `humanizeLabel` — all gone). Convergence is the health metric:
   a design is right when the algebra starts subsuming its own features.
+  `humanizeLabel` is the sharpest case: once a label *is* the copy it
+  draws, deriving copy from an identifier has nothing left to do.
 - **Scope:** bambik owns model↔UI wiring and its algebra. It MUST NOT
   grow a router, an animation system, a theme engine, a CSS-in-PS
   layer, a state-management add-on, or an HTTP client. Styling is

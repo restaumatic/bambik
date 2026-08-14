@@ -104,7 +104,7 @@ syntax (`r { "Name" = … }`) all work unchanged.
   background cases pass untouched.
 - **type-changing selectors** (`select`, `radioButton`,
   `segmentedButton`) carry the business label through both rows
-  (`select @"milk" cfg opts :: { milk :: Maybe _ } → { milk :: _ }`);
+  (`select @"Milk" cfg opts :: { "Milk" :: Maybe _ } → { "Milk" :: _ }`);
   always-selected ones take `# required`, possibly-unselected ones
   `# optional` (both derive the label) — the model keeps the `Maybe`
   seeded `Nothing` (no default pick), and the stages demanding the bare
