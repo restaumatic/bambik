@@ -7,9 +7,9 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.String (trim)
 import Data.Variant (match)
 
-usualOrder :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], "Size" :: [ small :: {}, medium :: {}, large :: {} ], "Milk" :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], "Roast" :: [ light :: {}, medium :: {}, dark :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} }
+usualOrder :: { "Your name" :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], "Size" :: [ small :: {}, medium :: {}, large :: {} ], "Milk" :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], "Roast" :: [ light :: {}, medium :: {}, dark :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} }
 usualOrder =
-  { customer: ""
+  { "Your name": ""
   , drink: .cappuccino {}
   , "Size": .medium {}
   , "Milk": .whole {}
@@ -28,14 +28,14 @@ theUsual = { drink: .cappuccino {}, "Size": .medium {}, "Milk": .whole {}, "Roas
 espressoNoFrills :: { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], "Size" :: [ small :: {}, medium :: {}, large :: {} ], "Milk" :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], "Roast" :: [ light :: {}, medium :: {}, dark :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean } -> { drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], "Size" :: [ small :: {}, medium :: {}, large :: {} ], "Milk" :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], "Roast" :: [ light :: {}, medium :: {}, dark :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
 espressoNoFrills order = order { drink = .espresso {}, "Size" = .small {}, "Milk" = .none {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
 
-brewedLine :: { customer :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], "Size" :: [ small :: {}, medium :: {}, large :: {} ], "Milk" :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], "Roast" :: [ light :: {}, medium :: {}, dark :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} } -> String
-brewedLine { customer, drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Mark as favorite": favorite, "Loyalty": loyalty } =
-  "Coming right up" <> forCustomer { customer }
+brewedLine :: { "Your name" :: String, drink :: [ espresso :: {}, cappuccino :: {}, latte :: {} ], "Size" :: [ small :: {}, medium :: {}, large :: {} ], "Milk" :: [ whole :: {}, oat :: {}, almond :: {}, none :: {} ], "Roast" :: [ light :: {}, medium :: {}, dark :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} } -> String
+brewedLine { "Your name": customer, drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Mark as favorite": favorite, "Loyalty": loyalty } =
+  "Coming right up" <> forCustomer { "Your name": customer }
     <> ": " <> summaryText { drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty": loyalty }
     <> (if favorite then " ★" else "")
 
-forCustomer :: { customer :: String } -> String
-forCustomer { customer } = case trim customer of
+forCustomer :: { "Your name" :: String } -> String
+forCustomer { "Your name": customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 

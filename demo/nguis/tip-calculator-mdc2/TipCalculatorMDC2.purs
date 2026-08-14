@@ -15,7 +15,7 @@ tipCalculatorMDC2 =
   body $
     elevation20 $
       card { caption: "Tip Calculator" } $ ( Semigroupoid.do
-          filledTextField @"amount" { floatingLabel: "Bill amount" } # completed
+          filledTextField @"Bill amount" {} # completed
           slider @"Tip percentage" {} # completed
           body2 ( RecordToRecord.do
               staticText "Tip: "

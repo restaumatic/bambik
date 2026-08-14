@@ -25,7 +25,7 @@ espressoBarMDC2 =
                   , { value: .cappuccino {}, label: "Cappuccino" }
                   , { value: .latte {}, label: "Latte" }
                   ]
-                filledTextField @"customer" { floatingLabel: "Your name" }
+                filledTextField @"Your name" {}
                 segmentedButton @"Size"
                   [ { value: .small {}, label: "Small" }
                   , { value: .medium {}, label: "Medium" }

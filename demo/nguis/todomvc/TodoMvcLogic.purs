@@ -7,13 +7,13 @@ import Data.Maybe (fromMaybe)
 import Data.String (trim)
 import Data.Variant (match)
 
-emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ all :: {}, active :: {}, completed :: {} ] }
-emptyTodoList = { entry: "", todos: [], "Visibility": .all {} }
+emptyTodoList :: { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ all :: {}, active :: {}, completed :: {} ] }
+emptyTodoList = { "What needs to be done?": "", todos: [], "Visibility": .all {} }
 
-addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
-addTodo m@{ entry, todos } =
+addTodo :: { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean } } -> { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean } }
+addTodo m@{ "What needs to be done?": entry, todos } =
   if trim entry == "" then m
-  else m { todos = snoc todos { title: trim entry, done: false }, entry = "" }
+  else m { todos = snoc todos { title: trim entry, done: false }, "What needs to be done?" = "" }
 
 toggleTodo :: Int -> { todos :: Array { title :: String, done :: Boolean } } -> { todos :: Array { title :: String, done :: Boolean } }
 toggleTodo i m@{ todos } = m { todos = fromMaybe todos (modifyAt i (\t -> t { done = not t.done }) todos) }

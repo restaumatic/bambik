@@ -87,8 +87,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   they are two business actions — each takes its own case and `toCases`
   adopts it into the loop case. An editor MAY carry one, but only where
   the caption genuinely cannot be the field name — a format hint, a unit,
-  or localized wording; a `label:` that merely repeats what the label
-  already says MUST move onto the label.
+  a disambiguating rename, or the two-label case where the read field
+  differs from the typed-text payload; a caption that merely repeats what
+  the label already says MUST move onto the label.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 

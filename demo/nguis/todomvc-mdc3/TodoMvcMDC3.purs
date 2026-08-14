@@ -17,7 +17,7 @@ todoMvcMDC3 =
     elevation5 $
       card { caption: "TodoMVC" } $ ( Semigroupoid.do
           Semigroupoid.do
-            filledTextField @"entry" { floatingLabel: "What needs to be done?" } # completed
+            filledTextField @"What needs to be done?" {} # completed
             button @"Add" {} # updated (match { "Add": const <<< addTodo })
           listOf { selected: _.done } visibleEntries (span (text @"title") # forProperty identity # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
           segmentedButton @"Visibility"
