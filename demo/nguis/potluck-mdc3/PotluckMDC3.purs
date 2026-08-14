@@ -21,7 +21,7 @@ potluckMDC3 =
           ( list $
               ( listItem $ RecordToRecord.do
                   titleMedium (text @"name")
-                  segmentedButton @"dish"
+                  segmentedButton @"Dish"
                     [ { value: .salad {}, label: "Salad" }
                     , { value: .lasagna {}, label: "Lasagna" }
                     , { value: .pavlova {}, label: "Pavlova" }
@@ -31,6 +31,6 @@ potluckMDC3 =
             ( span $ RecordToRecord.do
                 text @"name"
                 staticText "’s "
-                text @"dish" # projection dishText
+                text @"Dish" # projection dishText
                 staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation

@@ -8,9 +8,9 @@ import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 
-welcomeDocument :: { source :: String }
+welcomeDocument :: { "Source" :: String }
 welcomeDocument =
-  { source: """# Markdown Previewer
+  { "Source": """# Markdown Previewer
 
 ## What it does
 

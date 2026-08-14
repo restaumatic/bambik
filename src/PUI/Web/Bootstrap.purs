@@ -48,7 +48,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
-import PUI.Web (Node, Web, OptCaption(..), humanizeLabel, addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
+import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons, class Lacks)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -102,9 +102,9 @@ import Record (get) as Record
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
 -- | action — `button @"Apply for the loan" {}`. The label defaults to
--- | `humanizeLabel` of the case label (`label:` overrides with real copy).
+-- | the case label verbatim (`label:` overrides with real copy).
 button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-button provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { label :: String } in recordToCase @l $ eventLeaf $
+button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in recordToCase @l $ eventLeaf $
   (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
@@ -117,7 +117,7 @@ eventLeaf chrome = clicked chrome
 -- | by values arriving from elsewhere. Attach it to a field of the model
 -- | with `# asField @l`.
 textField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in, but still echo so merge gates keep flowing
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
@@ -155,7 +155,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
 sliderLive :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
       unwrap ((span $ text @"readout") # cl "text-body-secondary")
@@ -194,7 +194,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | choice" and leaves as the choice itself — say which with `# optional`
 -- | or `# required`. The options belong to the control, not to the model.
 select :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select provided options = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+select provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling
@@ -227,7 +227,7 @@ select provided options = let config = convertOptionsWithDefaults OptCaption { l
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label is part of the target, so clicking the words toggles it too.
 toggleSwitch :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (div $ wrap do
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (div $ wrap do
   inputId <- liftEffect uniqueId
   element "input" (pure unit)
   node <- gets _.sibling

@@ -8,60 +8,60 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 
-newApplicant :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} }
+newApplicant :: { "Username" :: String, "Email" :: String, "Plan" :: [ free :: {}, pro :: {}, team :: {} ], "Country" :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], "Terms" :: Maybe {} }
 newApplicant =
-  { username: ""
-  , email: ""
-  , plan: .free {}
-  , country: .poland {}
-  , terms: Nothing
+  { "Username": ""
+  , "Email": ""
+  , "Plan": .free {}
+  , "Country": .poland {}
+  , "Terms": Nothing
   }
 
 usernameSettleTime :: Number
 usernameSettleTime = 300.0
 
-register :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
-register { username, email, terms } = case validate { username, email, terms } of
+register :: { "Username" :: String, "Email" :: String, "Plan" :: [ free :: {}, pro :: {}, team :: {} ], "Country" :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], "Terms" :: Maybe {} } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
+register { "Username": username, "Email": email, "Terms": terms } = case validate { "Username": username, "Email": email, "Terms": terms } of
   Left problem -> .rejected problem
   Right name -> .registered name
 
 welcomeLine :: String -> String
 welcomeLine name = "Welcome, " <> name <> "!"
 
-rejectionLine :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
+rejectionLine :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
 rejectionLine reason = "Cannot sign up: " <> refusalText reason
 
-refusalText :: [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
+refusalText :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
 refusalText = match
   { unnamed: \_ -> "choose a username"
-  , taken: \{ username } -> "username " <> username <> " is taken"
+  , taken: \{ "Username": username } -> "username " <> username <> " is taken"
   , badEmail: \_ -> "enter a valid email address"
   , termsUnaccepted: \_ -> "accept the terms of service"
   }
 
-validate :: { username :: String, email :: String, terms :: Maybe {} } -> Either [ unnamed :: {}, taken :: { username :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
-validate applicant@{ email, terms } =
-  let username = trim applicant.username
+validate :: { "Username" :: String, "Email" :: String, "Terms" :: Maybe {} } -> Either [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
+validate applicant@{ "Email": email, "Terms": terms } =
+  let username = trim applicant."Username"
   in
     if username == "" then Left (.unnamed {})
-    else if usernameTaken username then Left (.taken { username })
+    else if usernameTaken username then Left (.taken { "Username": username })
     else if contains (Pattern "@") email == false then Left (.badEmail {})
     else if isJust terms == false then Left (.termsUnaccepted {})
     else Right username
 
-validation :: { username :: String, email :: String, plan :: [ free :: {}, pro :: {}, team :: {} ], country :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], terms :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { username :: String } ]
-validation { username, email, terms } = either (\reason -> .invalid { problem: refusalText reason }) (\name -> .ready { username: name }) (validate { username, email, terms })
+validation :: { "Username" :: String, "Email" :: String, "Plan" :: [ free :: {}, pro :: {}, team :: {} ], "Country" :: [ poland :: {}, germany :: {}, france :: {}, spain :: {} ], "Terms" :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { "Username" :: String } ]
+validation { "Username": username, "Email": email, "Terms": terms } = either (\reason -> .invalid { problem: refusalText reason }) (\name -> .ready { "Username": name }) (validate { "Username": username, "Email": email, "Terms": terms })
 
-namedUsername :: { username :: String } -> Maybe String
-namedUsername { username } = case trim username of
+namedUsername :: { "Username" :: String } -> Maybe String
+namedUsername { "Username": username } = case trim username of
   "" -> Nothing
   name -> Just name
 
-usernameStatus :: { username :: String } -> [ unnamed :: {}, taken :: { username :: String }, available :: { username :: String } ]
-usernameStatus { username } = case namedUsername { username } of
+usernameStatus :: { "Username" :: String } -> [ unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ]
+usernameStatus { "Username": username } = case namedUsername { "Username": username } of
   Nothing -> .unnamed {}
-  Just name | usernameTaken name -> .taken { username: name }
-  Just name -> .available { username: name }
+  Just name | usernameTaken name -> .taken { "Username": name }
+  Just name -> .available { "Username": name }
 
 usernameTaken :: String -> Boolean
 usernameTaken username = username `elem` takenUsernames

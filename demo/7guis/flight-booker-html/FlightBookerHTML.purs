@@ -17,7 +17,7 @@ flightBookerHTML =
         ( RecordToRecord.do
             p ( label $ RecordToRecord.do
                 staticText "Flight type "
-                select @"flightType"
+                select @"Flight type"
                   [ { value: .oneWay {}, label: "one-way flight" }
                   , { value: .return {}, label: "return flight" }
                   ] ) # required

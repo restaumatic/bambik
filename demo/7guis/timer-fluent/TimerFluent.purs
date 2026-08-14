@@ -20,9 +20,9 @@ timerFluent =
             body1 RecordToRecord.do
               text @"elapsed" # projection show
               staticText "s / "
-              text @"duration" # projection wholeSeconds
+              text @"Duration" # projection wholeSeconds
               staticText "s"
-            slider @"duration" {}) # completed
+            slider @"Duration" {}) # completed
         every tickPeriod tick
         button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
     ) # mvu tenSecondFreshTimer

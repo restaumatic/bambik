@@ -38,13 +38,33 @@ Every component is a citizen of exactly one direction and **states its
 business label once, as the leaf's own type argument** — no canonical
 label (`value`/`clicked`/`event`) ever appears in application code, and
 adopters that need a leaf's label derive it from the closed singleton
-row:
+row.
+
+**A label is the copy it draws.** Captions are never derived from an
+identifier — the library has no humanizing step — so a labelled leaf
+carries its words directly (`filledTextField @"First name" {}`,
+`button @"Submit order" {}`), which means the label is usually a quoted
+string, since human copy is no identifier. That reaches into the model:
+a leaf's label *is* the field it edits, so the business rows carry the
+same quoted labels (`{ "First name" :: String }`), and the one syntax
+that a quoted label rules out is the **record pun** — write the explicit
+pattern instead, which is the whole cost of copy living in the row:
+
+```purescript
+-- pun is unavailable on a quoted label; bind explicitly
+createPerson { "Name": name, "Surname": surname, people } = …
+```
+
+Field access (`r."Name"`), accessor sections (`_."Name"`) and update
+syntax (`r { "Name" = … }`) all work unchanged.
 
 - **editors** (`filledTextField`, `checkbox`, `slider`, ...) take the
-  business field directly: `filledTextField @"email" {}`. The label is
-  stamped on the host element as its `name` attribute and defaults the
-  caption to its humanized form (`@"firstName"` captions "First name");
-  real copy overrides in the config (`{ floatingLabel: "Your name" }`).
+  business field directly: `filledTextField @"Email" {}`. The label is
+  stamped on the host element as its `name` attribute and **is** the
+  caption, verbatim — so a field label is written as the copy it draws,
+  quoted whenever human copy is no identifier (`@"First name"`); real
+  copy the label cannot be (localized wording, units) overrides in the
+  config (`{ floatingLabel: "Your name" }`).
   A lone editor followed by `# completed` is a complete `×→×` stage on
   its own — no `RecordToRecord.do` for a single field.
 - **displays** state their field on the leaf: `text @"prompt"` reads it
@@ -58,12 +78,11 @@ row:
   row-stating positions, where the named function's closed signature
   *is* the footprint declaration and stays.
 - **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) are
-  label-indexed at their case, and the case label **is the caption**:
-  `button @"Submit order" {}` emits `[ "Submit order" :: _ ]` and draws
-  those words, since the caption defaults to the humanized label. So an
-  emitter never repeats itself in a `label:` config — the copy goes in
-  the type argument, and a case whose words a Purescript identifier
-  cannot spell is quoted at every mention (`atCase @"Submit order"`,
+  label-indexed at their case, and the case label **is the caption**,
+  verbatim: `button @"Submit order" {}` emits `[ "Submit order" :: _ ]`
+  and draws those words. So an emitter never repeats itself in a
+  `label:` config — the copy goes in the type argument, and the case is
+  quoted at every mention (`atCase @"Submit order"`,
   `match { "Submit order": … }`). `label:` stays for what the case
   cannot say: copy that must differ from the case name — a case the
   logic module owns as a row label (checkout's `folding @"next"` loop

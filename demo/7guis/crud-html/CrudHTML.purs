@@ -24,15 +24,15 @@ crudHTML = do
                   input "text" # field @"prefix" )
               p ( label $ RecordToRecord.do
                   staticText "Name "
-                  input "text" # field @"name" )
+                  input "text" # field @"Name" )
               p ( label $ RecordToRecord.do
                   staticText "Surname "
-                  input "text" # field @"surname" )) # completed
+                  input "text" # field @"Surname" )) # completed
           ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
               ( clicked ( li >>> attrWith "style" entryFace $ displayed $ RecordToRecord.do
-                  text @"surname"
+                  text @"Surname"
                   staticText ", "
-                  text @"name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text @"Name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
           ( Semigroupoid.do
               div $ RecordToVariant.do
                 button (staticText "Create") # toCase @"create" identity
@@ -43,7 +43,7 @@ crudHTML = do
                 pempty # action (updatePerson catalogue) # atCase @"update"
                 pempty # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
   ) # with {}
-entryFace :: { name :: String, surname :: String, selected :: Boolean } -> String
+entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected
 
 entryStyle :: Boolean -> String

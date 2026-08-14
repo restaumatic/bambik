@@ -20,7 +20,7 @@ todoMvcMDC2 =
             filledTextField @"entry" { floatingLabel: "What needs to be done?" } # completed
             button @"Add" {} # updated (match { "Add": const <<< addTodo })
           listOf { selected: _.done } visibleEntries (span (text @"title") # forProperty identity # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
-          segmentedButton @"visibility"
+          segmentedButton @"Visibility"
             [ { value: .all {}, label: "All" }
             , { value: .active {}, label: "Active" }
             , { value: .completed {}, label: "Completed" }

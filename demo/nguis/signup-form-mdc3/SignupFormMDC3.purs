@@ -18,36 +18,36 @@ signupFormMDC3 =
       card { caption: "Sign-Up Form" } $ Semigroupoid.do
         ( RecordToRecord.do
             headlineLarge $ staticText "Create account"
-            debouncedTextField @"username" { ms: usernameSettleTime }
-            radioButton @"plan"
+            debouncedTextField @"Username" { ms: usernameSettleTime }
+            radioButton @"Plan"
               [ { value: .free {}, label: "Free plan" }
               , { value: .pro {}, label: "Pro plan" }
               , { value: .team {}, label: "Team plan" }
               ] # required
-            select @"country" {}
+            select @"Country" {}
               [ { value: .poland {}, label: "Poland" }
               , { value: .germany {}, label: "Germany" }
               , { value: .france {}, label: "France" }
               , { value: .spain {}, label: "Spain" }
               ] # required
-            filledTextField @"email" {}
+            filledTextField @"Email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
-              checkbox @"terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
+              checkbox @"Terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
         ( bodyMedium $ staticText "Pick a username to check its availability" ) # providedCase @"unnamed" usernameStatus # displayed
         ( bodyMedium $ RecordToRecord.do
             staticText "✗ "
-            text @"username"
+            text @"Username"
             staticText " is already taken" ) # providedCase @"taken" usernameStatus # displayed
         ( bodyMedium $ RecordToRecord.do
             staticText "✓ "
-            text @"username"
+            text @"Username"
             staticText " is available" ) # providedCase @"available" usernameStatus # displayed
         ( titleSmall $ RecordToRecord.do
             staticText "⚠ "
             text @"problem" ) # providedCase @"invalid" validation # displayed
         ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text @"username" ) # providedCase @"ready" validation # displayed
+            text @"Username" ) # providedCase @"ready" validation # displayed
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
           snackbar # forCase @"registered" welcomeLine

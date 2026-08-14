@@ -23,12 +23,12 @@ crudMDC3 = do
           ( Semigroupoid.do
               ( RecordToRecord.do
                   filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
-                  filledTextField @"name" {}
-                  filledTextField @"surname" {}) # completed
+                  filledTextField @"Name" {}
+                  filledTextField @"Surname" {}) # completed
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do
-                  text @"surname"
+                  text @"Surname"
                   staticText ", "
-                  text @"name" ) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text @"Name" ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button @"Create" {}

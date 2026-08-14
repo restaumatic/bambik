@@ -9,8 +9,8 @@ import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect.Aff (Aff)
 
-plannedTrip :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String }
-plannedTrip = { flightType: .oneWay {}, start: "27.03.2026", return: "27.03.2026" }
+plannedTrip :: { "Flight type" :: [ oneWay :: {}, return :: {} ], start :: String, return :: String }
+plannedTrip = { "Flight type": .oneWay {}, start: "27.03.2026", return: "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
@@ -26,8 +26,8 @@ returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-parse { flightType, start: startInput, return: returnInput } = case parseDate startInput of
+parse :: { "Flight type" :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse { "Flight type": flightType, start: startInput, return: returnInput } = case parseDate startInput of
   Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
   Just start ->
     if flightType /= .return {} then Right (.oneWayOn start)
@@ -37,7 +37,7 @@ parse { flightType, start: startInput, return: returnInput } = case parseDate st
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-bookingState :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> [ problem :: { problem :: String }, oneWay :: { date :: String }, return :: { out :: String, back :: String } ]
+bookingState :: { "Flight type" :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> [ problem :: { problem :: String }, oneWay :: { date :: String }, return :: { out :: String, back :: String } ]
 bookingState = parse >>> either (\problem -> .problem { problem })
   (match
     { oneWayOn: \out -> .oneWay { date: formatDate out }
@@ -50,8 +50,8 @@ summary = match
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit :: { flightType :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
-submit { flightType, start, return } = case parse { flightType, start, return } of
+submit :: { "Flight type" :: [ oneWay :: {}, return :: {} ], start :: String, return :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
+submit { "Flight type": flightType, start, return } = case parse { "Flight type": flightType, start, return } of
   Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
 
@@ -77,8 +77,8 @@ formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
 dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
 dateKey { y, m, d } = y * 10000 + m * 100 + d
 
-returnLeg :: { flightType :: [ oneWay :: {}, return :: {} ], return :: String } -> Maybe { return :: String }
-returnLeg { flightType, return } = if flightType == .return {} then Just { return } else Nothing
+returnLeg :: { "Flight type" :: [ oneWay :: {}, return :: {} ], return :: String } -> Maybe { return :: String }
+returnLeg { "Flight type": flightType, return } = if flightType == .return {} then Just { return } else Nothing
 
 setReturn :: { return :: String } -> { return :: String }
 setReturn { return } = { return }

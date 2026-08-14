@@ -17,7 +17,7 @@ flightBookerFluent =
     card { caption: "Book Flight" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
-              dropdown @"flightType" {}
+              dropdown @"Flight type" {}
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
                 ] # required

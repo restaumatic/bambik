@@ -22,13 +22,13 @@ crudFluent = do
         ( Semigroupoid.do
             ( RecordToRecord.do
                 textField @"prefix" { label: "Filter prefix (surname)" }
-                textField @"name" {}
-                textField @"surname" {}) # completed
+                textField @"Name" {}
+                textField @"Surname" {}) # completed
             ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--colorNeutralStroke1, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
                 ( clicked ( li >>> attrWith "style" entryFace $ displayed $ RecordToRecord.do
-                    text @"surname"
+                    text @"Surname"
                     staticText ", "
-                    text @"name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"Name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 div $ RecordToVariant.do
                   button @"Create" {}
@@ -39,7 +39,7 @@ crudFluent = do
                   pempty # action (updatePerson catalogue) # atCase @"Update"
                   pempty # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
-entryFace :: { name :: String, surname :: String, selected :: Boolean } -> String
+entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected
 
 entryStyle :: Boolean -> String

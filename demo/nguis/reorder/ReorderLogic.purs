@@ -11,36 +11,36 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-openingSetlist :: { order :: Array { id :: String, title :: String } }
+openingSetlist :: { order :: Array { id :: String, "Title" :: String } }
 openingSetlist =
   { order:
-      [ { id: "t1", title: "Track 1" }
-      , { id: "t2", title: "Track 2" }
-      , { id: "t3", title: "Track 3" }
-      , { id: "t4", title: "Track 4" }
+      [ { id: "t1", "Title": "Track 1" }
+      , { id: "t2", "Title": "Track 2" }
+      , { id: "t3", "Title": "Track 3" }
+      , { id: "t4", "Title": "Track 4" }
       ]
   }
 
 rotateAction
-  :: { order :: Array { id :: String, title :: String } }
-  -> Aff [ reordered :: Array { id :: String, title :: String } ]
+  :: { order :: Array { id :: String, "Title" :: String } }
+  -> Aff [ reordered :: Array { id :: String, "Title" :: String } ]
 rotateAction { order } = pure (.reordered (rotate { order }))
 
 shuffleAction
-  :: { order :: Array { id :: String, title :: String } }
-  -> Aff [ reordered :: Array { id :: String, title :: String } ]
+  :: { order :: Array { id :: String, "Title" :: String } }
+  -> Aff [ reordered :: Array { id :: String, "Title" :: String } ]
 shuffleAction { order } = liftEffect (.reordered <$> shuffleOrder order)
 
-rotate :: { order :: Array { id :: String, title :: String } } -> Array { id :: String, title :: String }
+rotate :: { order :: Array { id :: String, "Title" :: String } } -> Array { id :: String, "Title" :: String }
 rotate { order } = maybe order (\{ head, tail } -> snoc tail head) (uncons order)
 
 setOrder
-  :: Array { id :: String, title :: String }
-  -> { order :: Array { id :: String, title :: String } }
-  -> { order :: Array { id :: String, title :: String } }
+  :: Array { id :: String, "Title" :: String }
+  -> { order :: Array { id :: String, "Title" :: String } }
+  -> { order :: Array { id :: String, "Title" :: String } }
 setOrder order pl = pl { order = order }
 
-shuffleOrder :: Array { id :: String, title :: String } -> Effect (Array { id :: String, title :: String })
+shuffleOrder :: Array { id :: String, "Title" :: String } -> Effect (Array { id :: String, "Title" :: String })
 shuffleOrder tracks = do
   keyed <- traverse withKey tracks
   pure (map snd (sortBy (\a b -> compare (fst a) (fst b)) keyed))

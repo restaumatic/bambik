@@ -16,7 +16,7 @@ markdownPreviewerMDC2 =
     elevation20 $
       card { caption: "Markdown Previewer" } $
         layoutGrid $ ( Semigroupoid.do
-            layoutCell { span: 6 } $ filledTextArea @"source" { columns: 60, rows: 24 } # completed
+            layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 } # completed
             layoutCell { span: 6 } $ displayed $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->
                   let
@@ -32,5 +32,5 @@ markdownPreviewerMDC2 =
                     , paragraph: \is -> p (inlines is)
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
-                    } ) # atField @"source"
+                    } ) # atField @"Source"
         ) # mvu welcomeDocument

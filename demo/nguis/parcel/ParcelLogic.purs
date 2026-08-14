@@ -1,4 +1,4 @@
 module ParcelLogic (draftParcel) where
 
-draftParcel :: { recipient :: String, street :: String, city :: String }
-draftParcel = { recipient: "Ada Lovelace", street: "12 Analytical Row", city: "London" }
+draftParcel :: { "Recipient" :: String, "Street" :: String, "City" :: String }
+draftParcel = { "Recipient": "Ada Lovelace", "Street": "12 Analytical Row", "City": "London" }

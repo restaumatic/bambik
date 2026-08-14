@@ -16,17 +16,17 @@ parcelMDC2 =
   body $
     elevation20 $
       card { caption: "Parcel" } $ ( Semigroupoid.do
-          filledTextField @"recipient" {} # completed
+          filledTextField @"Recipient" {} # completed
           addressForm # subStrong
           body1 ( RecordToRecord.do
-              text @"recipient"
+              text @"Recipient"
               staticText " · "
-              text @"street"
+              text @"Street"
               staticText " · "
-              text @"city" ) # tapped
+              text @"City" ) # tapped
       ) # mvu draftParcel
 
-addressForm :: PUI Web { street :: String, city :: String } { street :: String, city :: String }
+addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = RecordToRecord.do
-  filledTextField @"street" {}
-  filledTextField @"city" {}
+  filledTextField @"Street" {}
+  filledTextField @"City" {}

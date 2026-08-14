@@ -132,7 +132,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach, pempty, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
-import PUI.Web (Node, Web, OptCaption(..), humanizeLabel, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
+import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -240,10 +240,11 @@ else instance ConvertOption OptIcon sym a a where
 -- | the actions beside it.
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
--- | the app gives the action: `button @"booked" {}`. Both parts of the
--- | face are optional — the label defaults to `humanizeLabel` of the case
--- | label (`label:` overrides with real copy), `icon: "add"` puts a
--- | Material Symbols glyph before the label.
+-- | the app gives the action: `button @"Book the flight" {}`. Both parts
+-- | of the face are optional — the label defaults to the case label
+-- | verbatim, so the case *is* the copy (`label:` overrides with copy the
+-- | case cannot be), `icon: "add"` puts a Material Symbols glyph before
+-- | the label.
 button
   :: forall @l provided r cl
    . IsSymbol l
@@ -315,7 +316,7 @@ buttonOf tag provided = recordToCase @l $ eventLeaf $ el tag $ RecordToRecord.do
     Just label' -> staticText label'
     Nothing -> pempty
   where
-  config = convertOptionsWithDefaults OptLabelIcon { label: Just (humanizeLabel (reflectSymbol (Proxy @l))), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
+  config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
@@ -327,7 +328,7 @@ eventLeaf chrome = clicked chrome
 -- | in view above the content. Reports on click carrying what it was
 -- | showing, like `button`. The `icon` is required — a FAB is recognised by
 -- | its glyph; the `label` — the extended FAB's words beside the glyph —
--- | defaults to `humanizeLabel` of the case label (`label: Nothing` gives
+-- | defaults to the case label verbatim (`label: Nothing` gives
 -- | the icon-only FAB, `label:` copy overrides).
 fab
   :: forall @l provided r cl
@@ -340,7 +341,7 @@ fab provided = recordToCase @l $ eventLeaf $
   el "md-fab" >>> "aria-label" := fromMaybe config.icon config.label >>> extended $
     el "md-icon" >>> "slot" := "icon" $ staticText config.icon
   where
-  config = convertOptionsWithDefaults OptLabel { label: Just (humanizeLabel (reflectSymbol (Proxy @l))) } provided :: { icon :: String, label :: Maybe String }
+  config = convertOptionsWithDefaults OptLabel { label: Just (reflectSymbol (Proxy @l)) } provided :: { icon :: String, label :: Maybe String }
   extended = case config.label of
     Just label' -> "label" := label'
     Nothing -> identity
@@ -348,24 +349,24 @@ fab provided = recordToCase @l $ eventLeaf $
 -- | A compact **icon-only action**, for toolbars, list rows and card
 -- | corners where a labelled button would not fit. `label` is not drawn —
 -- | it is what assistive technology announces, defaulting to
--- | `humanizeLabel` of the case label. For an icon that stays pressed
+-- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
 iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
 iconButton provided = recordToCase @l $ eventLeaf $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText config.icon
   where
-  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { icon :: String, label :: String }
+  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { icon :: String, label :: String }
 
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
--- | `humanizeLabel` of the case label (`label:` overrides with real copy).
+-- | the case label verbatim (`label:` overrides with real copy).
 menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
 menuItem provided = recordToCase @l $ eventLeaf $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
   where
-  config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided :: { label :: String }
+  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
 -- | The **filled text field** — Material's default single-line input.
 -- | `floatingLabel` names the field and rises above the text once there is
@@ -375,18 +376,18 @@ menuItem provided = recordToCase @l $ eventLeaf $
 -- | interrupted by values arriving from elsewhere. Attach it to a field of
 -- | the model with `# asField @l`.
 filledTextField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
-filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
+filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
-outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
+outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, ms :: Number } => { | provided } -> PUI Web { | r } { | r }
-debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just config.ms) config.floatingLabel)
+debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just config.ms) config.floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -527,7 +528,7 @@ radioLeaf options =
 -- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
 -- | to be submitted with the rest of a form; a switch acts immediately.)
 toggleSwitch :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl =
@@ -563,14 +564,14 @@ switchLeaf lbl =
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
 slider :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-slider provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
+slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
 sliderLive :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
+sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
 -- value indicator), so a non-empty config label renders visibly above the
@@ -625,7 +626,7 @@ bareSliderLeaf live label = wrap do
 -- | so say `# optional` or `# required`; the options are part of the
 -- | control, not of the model.
 select :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
+select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
 
 selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 selectLeaf config options = wrap do
@@ -707,7 +708,7 @@ segmentedButtonCss = """
 -- | be active at once — dietary tags, categories, facets. Put them in a
 -- | `chipSet`.
 filterChip :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-filterChip provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
+filterChip provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
 
 chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = wrap do
@@ -736,7 +737,7 @@ chipLeaf lbl = wrap do
 -- | filled, so the same glyph in both slots still reads as off and on. The
 -- | compact form of a `toggleSwitch`, for list rows and toolbars.
 iconToggle :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { onIcon :: String, offIcon :: String, label :: String } => { | provided } -> PUI Web { | r } { | r }
-iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
+iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = wrap do

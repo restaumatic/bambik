@@ -22,13 +22,13 @@ crudBootstrap = do
         ( Semigroupoid.do
             ( RecordToRecord.do
                 textField @"prefix" { label: "Filter prefix (surname)" }
-                textField @"name" {}
-                textField @"surname" {}) # completed
+                textField @"Name" {}
+                textField @"Surname" {}) # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
                 ( clicked ( ( listGroupItem $ RecordToRecord.do
-                    text @"surname"
+                    text @"Surname"
                     staticText ", "
-                    text @"name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"Name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 ( div $ RecordToVariant.do
                     button @"Create" {}

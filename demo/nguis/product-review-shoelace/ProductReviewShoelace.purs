@@ -16,7 +16,7 @@ productReviewShoelace =
     card { caption: "Review: Astra Moka Espresso Machine" } $ Semigroupoid.do
       ( RecordToRecord.do
           rating @"stars" { label: "Overall rating" }
-          textField @"headline" {}
+          textField @"Headline" {}
           textArea @"review" { label: "Your review", rows: 4 }
           select @"owned" { label: "How long have you owned it?" }
             [ { value: .underMonth {}, label: "Less than a month" }
@@ -24,13 +24,13 @@ productReviewShoelace =
             , { value: .overYear {}, label: "More than a year" }
             ] # required
           toggleSwitch @"recommend" { label: "I'd recommend it to a friend" }
-          textField @"nickname" {}
+          textField @"Nickname" {}
           divider
       ) # mvu freshImpression
       p ( RecordToRecord.do
           staticText "Preview: "
           text @"stars" # projection starGlyphs
-          text @"headline" # projection headlineQuote
+          text @"Headline" # projection headlineQuote
           staticText " · owned "
           text @"owned" # projection ownedText
           text @"recommendNote" # projected recommendNote ) # tapped

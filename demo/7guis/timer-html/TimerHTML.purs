@@ -18,11 +18,11 @@ timerHTML =
           p RecordToRecord.do
             text @"elapsed" # projection show
             staticText "s / "
-            text @"duration" # projection wholeSeconds
+            text @"Duration" # projection wholeSeconds
             staticText "s"
           p ( label $ RecordToRecord.do
               staticText "Duration "
-              rangeInput @"duration" )) # completed
+              rangeInput @"Duration" )) # completed
       every tickPeriod tick
       button (staticText "Reset") # with nothingElapsed # toCase @"reset" identity # updated (match { reset: const })
   ) # mvu tenSecondFreshTimer

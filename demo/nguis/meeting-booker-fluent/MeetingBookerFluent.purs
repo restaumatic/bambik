@@ -17,12 +17,12 @@ meetingBookerFluent =
       ( Semigroupoid.do
           ( RecordToRecord.do
               textField @"title" { label: "Meeting title" }
-              dropdown @"room" {}
+              dropdown @"Room" {}
                 [ { value: .focusPod {}, label: "Focus pod (4 seats)" }
                 , { value: .boardroom {}, label: "Boardroom (12 seats)" }
                 , { value: .auditorium {}, label: "Auditorium (40 seats)" }
                 ] # optional
-              radioGroup @"duration" {}
+              radioGroup @"Duration" {}
                 [ { value: .quarter {}, label: "15 min" }
                 , { value: .half {}, label: "30 min" }
                 , { value: .hour {}, label: "60 min" }
@@ -42,9 +42,9 @@ meetingBookerFluent =
               staticText "Plan: "
               text @"title" # projection titleText
               staticText " in the "
-              text @"room" # projection roomText
+              text @"Room" # projection roomText
               staticText ", "
-              text @"duration" # projection durationText
+              text @"Duration" # projection durationText
               staticText ", "
               text @"attendees" # projection headcount
               staticText " attendees"

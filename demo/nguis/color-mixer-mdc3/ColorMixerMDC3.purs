@@ -16,9 +16,9 @@ colorMixerMDC3 =
   body $
     elevation5 $
       card { caption: "Color Mixer" } $ ( Semigroupoid.do
-          sliderLive @"red" {} # completed
-          sliderLive @"green" {} # completed
-          sliderLive @"blue" {} # completed
+          sliderLive @"Red" {} # completed
+          sliderLive @"Green" {} # completed
+          sliderLive @"Blue" {} # completed
           ( div $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
@@ -26,11 +26,11 @@ colorMixerMDC3 =
           bodyMedium (text @"hex") # projected hexText # tapped
           bodyMedium (text @"rgb") # projected rgbText # tapped
       ) # mvu duskViolet
-chipFace :: { name :: String, mix :: { red :: Number, green :: Number, blue :: Number } } -> String
+chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = chipStyle { mix }
 
-chipStyle :: { mix :: { red :: Number, green :: Number, blue :: Number } } -> String
+chipStyle :: { mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
 
-swatchStyle :: { red :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, green :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, blue :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+swatchStyle :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
 swatchStyle channels = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb (mixOf channels) <> ";"

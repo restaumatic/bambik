@@ -63,7 +63,7 @@ rangePicker :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) (
 rangePicker config options =
   ( div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ RecordToRecord.do
       labelMedium $ staticText config.label
-      segmentedButton @"picked" options ) # asField @"picked" @l
+      segmentedButton @"Picked" options ) # asField @"Picked" @l
 
 tile :: Ocular (PUI Web)
 tile = div >>> "style" := "display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; background: var(--md-sys-color-surface-container-low, #f7f2fa); flex: 1 1 200px; min-width: 200px; box-sizing: border-box;"

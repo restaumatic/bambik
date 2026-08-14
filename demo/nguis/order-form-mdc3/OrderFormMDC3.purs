@@ -26,8 +26,8 @@ orderFormMDC3 =
           filledTextField @"orderId" { floatingLabel: "Unique ID" }
         card { caption: "Customer" }
           ( RecordToRecord.do
-              filledTextField @"firstName" {}
-              filledTextField @"lastName" {}) # field @"customer"
+              filledTextField @"First name" {}
+              filledTextField @"Last name" {}) # field @"customer"
         card { caption: "Fulfillment" }
           ( ( Semigroupoid.do
                 tabBar @"selected"
@@ -35,26 +35,26 @@ orderFormMDC3 =
                   , { value: .takeaway {}, label: "Takeaway" }
                   , { value: .delivery {}, label: "Delivery" }
                   ] # completed
-                filledTextField @"table" {} # provided dineInPane # updated (informed setTable)
-                filledTextField @"time" {} # provided takeawayPane # updated (informed setTime)
+                filledTextField @"Table" {} # provided dineInPane # updated (informed setTable)
+                filledTextField @"Time" {} # provided takeawayPane # updated (informed setTime)
                 ( RecordToRecord.do
-                    filledTextField @"address" {}
+                    filledTextField @"Address" {}
                     bodyLarge ( RecordToRecord.do
                         staticText "Distance "
-                        text @"address" # projection distanceKm
+                        text @"Address" # projection distanceKm
                         staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
-        card { caption: "Total" } $ filledTextField @"total" {}
+        card { caption: "Total" } $ filledTextField @"Total" {}
         card { caption: "Payment" }
           ( RecordToRecord.do
-              segmentedButton @"method"
+              segmentedButton @"Method"
                 [ { value: .cash {}, label: "Cash" }
                 , { value: .card {}, label: "Card" }
                 ] # required
-              filledTextField @"paid" {}
+              filledTextField @"Paid" {}
               bodyLarge ( RecordToRecord.do
                   staticText "Paying by "
-                  text @"method" # projection methodText )) # field @"payment"
-        card { caption: "Remarks" } $ filledTextArea @"remarks" { columns: 80, rows: 3 }
+                  text @"Method" # projection methodText )) # field @"payment"
+        card { caption: "Remarks" } $ filledTextArea @"Remarks" { columns: 80, rows: 3 }
       bodyLarge ( Semigroupoid.do
           ( RecordToRecord.do
               staticText "Summary: Order "
@@ -63,27 +63,27 @@ orderFormMDC3 =
               text @"orderId"
               staticText ") for "
               ( RecordToRecord.do
-                  text @"firstName"
+                  text @"First name"
                   staticText " "
-                  text @"lastName" ) # atField @"customer"
+                  text @"Last name" ) # atField @"customer"
               staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
-              text @"table" ) # provided dineInDetail # displayed
+              text @"Table" ) # provided dineInDetail # displayed
           ( RecordToRecord.do
               staticText "takeaway at "
-              text @"time" ) # provided takeawayDetail # displayed
+              text @"Time" ) # provided takeawayDetail # displayed
           ( RecordToRecord.do
               staticText "delivery to "
-              text @"address"
+              text @"Address"
               staticText " ("
-              text @"address" # projection distanceKm
+              text @"Address" # projection distanceKm
               staticText " km away)" ) # provided deliveryDetail # displayed
           ( RecordToRecord.do
               staticText ", paid "
-              text @"paid"
+              text @"Paid"
               staticText " by "
-              text @"method" # projection methodText ) # field @"payment" # debounced summarySettleTime # tapped )
+              text @"Method" # projection methodText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

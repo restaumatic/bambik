@@ -26,29 +26,29 @@ espressoBarMDC2 =
                   , { value: .latte {}, label: "Latte" }
                   ]
                 filledTextField @"customer" { floatingLabel: "Your name" }
-                segmentedButton @"size"
+                segmentedButton @"Size"
                   [ { value: .small {}, label: "Small" }
                   , { value: .medium {}, label: "Medium" }
                   , { value: .large {}, label: "Large" }
                   ] # required
-                select @"milk" {}
+                select @"Milk" {}
                   [ { value: .whole {}, label: "Whole" }
                   , { value: .oat {}, label: "Oat" }
                   , { value: .almond {}, label: "Almond" }
                   , { value: .none {}, label: "None" }
                   ] # required
-                radioButton @"roast"
+                radioButton @"Roast"
                   [ { value: .light {}, label: "Light roast" }
                   , { value: .medium {}, label: "Medium roast" }
                   , { value: .dark {}, label: "Dark roast" }
                   ] # required
-                sliderLive @"sugar" {}
+                sliderLive @"Sugar" {}
                 chipSet RecordToRecord.do
-                  filterChip @"extraShot" {}
-                  filterChip @"decaf" {}
+                  filterChip @"Extra shot" {}
+                  filterChip @"Decaf" {}
                 toggleSwitch @"takeaway" { label: "Takeaway cup" }
                 iconToggle @"favorite" { onIcon: "favorite", offIcon: "favorite_border", label: "Mark as favorite" }
-                checkbox @"loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
+                checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem @"The usual" {} # with theUsual

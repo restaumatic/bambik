@@ -7,22 +7,22 @@ import Data.Monoid (power)
 import Data.String (trim)
 import Data.Variant (match)
 
-freshImpression :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String }
+freshImpression :: { stars :: { current :: Number, max :: Int }, "Headline" :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, "Nickname" :: String }
 freshImpression =
   { stars: { current: 0.0, max: maxStars }
-  , headline: ""
+  , "Headline": ""
   , review: ""
   , owned: .underMonth {}
   , recommend: false
-  , nickname: ""
+  , "Nickname": ""
   }
 
-submittedLine :: { stars :: { current :: Number, max :: Int }, headline :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, nickname :: String } -> String
-submittedLine { stars, nickname } =
-  "Thanks" <> forReviewer { nickname } <> "! Your " <> starGlyphs stars <> " review is in."
+submittedLine :: { stars :: { current :: Number, max :: Int }, "Headline" :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, "Nickname" :: String } -> String
+submittedLine { stars, "Nickname": nickname } =
+  "Thanks" <> forReviewer { "Nickname": nickname } <> "! Your " <> starGlyphs stars <> " review is in."
 
-forReviewer :: { nickname :: String } -> String
-forReviewer { nickname } = case trim nickname of
+forReviewer :: { "Nickname" :: String } -> String
+forReviewer { "Nickname": nickname } = case trim nickname of
   "" -> ""
   name -> ", " <> name
 

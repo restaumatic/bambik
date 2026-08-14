@@ -6,17 +6,17 @@ import Data.Array (length)
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
-invitation :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } }
+invitation :: { guests :: Array { name :: String, "Dish" :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } }
 invitation =
   { guests:
-      [ { name: "Ada", dish: Nothing }
-      , { name: "Grace", dish: Nothing }
-      , { name: "Edsger", dish: Nothing }
-      , { name: "Barbara", dish: Nothing }
+      [ { name: "Ada", "Dish": Nothing }
+      , { name: "Grace", "Dish": Nothing }
+      , { name: "Edsger", "Dish": Nothing }
+      , { name: "Barbara", "Dish": Nothing }
       ]
   }
 
-guestCount :: { guests :: Array { name :: String, dish :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String
+guestCount :: { guests :: Array { name :: String, "Dish" :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String
 guestCount { guests } = show (length guests)
 
 dishText :: [ salad :: {}, lasagna :: {}, pavlova :: {} ] -> String

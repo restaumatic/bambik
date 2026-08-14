@@ -7,8 +7,8 @@ import Data.Maybe (fromMaybe)
 import Data.String (trim)
 import Data.Variant (match)
 
-emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] }
-emptyTodoList = { entry: "", todos: [], visibility: .all {} }
+emptyTodoList :: { entry :: String, todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ all :: {}, active :: {}, completed :: {} ] }
+emptyTodoList = { entry: "", todos: [], "Visibility": .all {} }
 
 addTodo :: { entry :: String, todos :: Array { title :: String, done :: Boolean } } -> { entry :: String, todos :: Array { title :: String, done :: Boolean } }
 addTodo m@{ entry, todos } =
@@ -29,7 +29,7 @@ remainingItems { todos } =
   let count = itemsLeft { todos }
   in if count == 1 then .sole { count } else .several { count }
 
-visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, visibility :: [ all :: {}, active :: {}, completed :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
-visibleEntries { todos, visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
+visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ all :: {}, active :: {}, completed :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
+visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
   where
   matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v
