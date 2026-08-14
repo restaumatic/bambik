@@ -48,7 +48,7 @@ signupFormMDC3 =
         ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
             text @"username" ) # providedCase @"ready" validation # displayed
-        button { label: "Sign up", icon: "person_add" } # toCases @"clicked" register
+        button @"register" { label: "Sign up", icon: "person_add" } # toCases register
         VariantToRecord.do
-          snackbar # forCase @"event" @"registered" welcomeLine
-          snackbar # forCase @"event" @"rejected" rejectionLine
+          snackbar # forCase @"registered" welcomeLine
+          snackbar # forCase @"rejected" rejectionLine

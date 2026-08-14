@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Lens.Reel (reelE)
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
-import PUI (asCase, atField, displayed, forField, mvu, updated)
+import PUI (atField, displayed, projection, mvu, updated)
 import PUI.Web.HTML (providedCase, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,14 +21,14 @@ ticketDispenserMDC3 =
               (staticText "—" # providedCase @"waiting" identity # atField @"display") # displayed
               ( ( RecordToRecord.do
                   staticText "#"
-                  text @"value" # forField @"number" show ) # providedCase @"serving" identity # atField @"display" ) # displayed )
+                  text @"number" # projection show ) # providedCase @"serving" identity # atField @"display" ) # displayed )
           bodyMedium ( Semigroupoid.do
               (staticText "Press the button to draw the first ticket." # providedCase @"waiting" identity # atField @"display") # displayed
               ( ( RecordToRecord.do
                   staticText "Now serving ticket "
-                  text @"value" # forField @"number" show
+                  text @"number" # projection show
                   staticText "." ) # providedCase @"serving" identity # atField @"display" ) # displayed )
           ( Semigroupoid.do
-              button { label: "Take a number" } # asCase @"clicked" @"take"
+              button @"take" { label: "Take a number" }
               (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const
       ) # mvu emptyQueue

@@ -45,14 +45,14 @@ roomText = match { focusPod: \_ -> "focus pod", boardroom: \_ -> "boardroom", au
 durationText :: [ quarter :: {}, half :: {}, hour :: {} ] -> String
 durationText = match { quarter: \_ -> "15 min", half: \_ -> "30 min", hour: \_ -> "60 min" }
 
-ratedRoom :: { room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] } -> Maybe { value :: Number }
-ratedRoom { room } = (\r -> { value: roomRating r }) <$> room
+ratedRoom :: { room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] } -> Maybe { rating :: Number }
+ratedRoom { room } = (\r -> { rating: roomRating r }) <$> room
 
 roomRating :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number
 roomRating = match { focusPod: \_ -> 4.5, boardroom: \_ -> 3.5, auditorium: \_ -> 4.0 }
 
-seatsTaken :: { room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Maybe { value :: Number }
-seatsTaken { room, attendees } = (\r -> { value: seatedIn r attendees / roomCapacity r }) <$> room
+seatsTaken :: { room :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Maybe { occupancy :: Number }
+seatsTaken { room, attendees } = (\r -> { occupancy: seatedIn r attendees / roomCapacity r }) <$> room
 
 roomCapacity :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number
 roomCapacity = match { focusPod: \_ -> 4.0, boardroom: \_ -> 12.0, auditorium: \_ -> 40.0 }

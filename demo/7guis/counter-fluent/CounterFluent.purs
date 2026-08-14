@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<<<), Unit, const, show)
 import CounterLogic (freshCount, increment)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, forField, mvu, updated)
+import PUI (completed, projection, mvu, updated)
 import PUI.Web.Fluent (button, card, title3)
 import PUI.Web.HTML (body, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,6 +14,6 @@ counterFluent :: Effect Unit
 counterFluent =
   body $
     card { caption: "Counter" } $ ( Semigroupoid.do
-        title3 (text @"value") # forField @"count" show # completed
-        button { label: "Count" } # updated (match { clicked: const <<< increment })
+        title3 (text @"count") # projection show # completed
+        button @"increment" { label: "Count" } # updated (match { increment: const <<< increment })
     ) # mvu freshCount

@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (action, armed, asCase, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, forField, informed, required, tapped, updated, with)
+import PUI (action, armed, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, projection, informed, required, tapped, updated, with)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -41,7 +41,7 @@ orderFormMDC3 =
                     filledTextField @"address" {}
                     bodyLarge ( RecordToRecord.do
                         staticText "Distance "
-                        text @"value" # forField @"address" distanceKm
+                        text @"address" # projection distanceKm
                         staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
         card { caption: "Total" } $ filledTextField @"total" {}
         card { caption: "Payment" }
@@ -53,7 +53,7 @@ orderFormMDC3 =
               filledTextField @"paid" {}
               bodyLarge ( RecordToRecord.do
                   staticText "Paying by "
-                  text @"value" # forField @"method" methodText )) # field @"payment"
+                  text @"method" # projection methodText )) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea @"remarks" { columns: 80, rows: 3 }
       bodyLarge ( Semigroupoid.do
           ( RecordToRecord.do
@@ -77,21 +77,21 @@ orderFormMDC3 =
               staticText "delivery to "
               text @"address"
               staticText " ("
-              text @"value" # forField @"address" distanceKm
+              text @"address" # projection distanceKm
               staticText " km away)" ) # provided deliveryDetail # displayed
           ( RecordToRecord.do
               staticText ", paid "
               text @"paid"
               staticText " by "
-              text @"value" # forField @"method" methodText ) # field @"payment" # debounced summarySettleTime # tapped )
+              text @"method" # projection methodText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
-          button { label: "Submit order", icon: "save" } # asCase @"clicked" @"submit"
-          button { label: "Receipt", icon: "file" } # asCase @"clicked" @"printReceipt") # armed
+          button @"submit" { label: "Submit order", icon: "save" }
+          button @"printReceipt" { label: "Receipt", icon: "file" }) # armed
       VariantToVariant.do
         indeterminateLinearProgress @"busy" # action submitOrder # atCase @"submit"
         indeterminateLinearProgress @"busy" # action printReceipt # atCase @"printReceipt"
       VariantToRecord.do
-        snackbar # forCase @"event" @"orderSubmitted" submittedLine
-        snackbar # forCase @"event" @"submissionFailed" rejectionLine
-        snackbar # forCase @"event" @"receiptPrinted" receiptLine
+        snackbar # forCase @"orderSubmitted" submittedLine
+        snackbar # forCase @"submissionFailed" rejectionLine
+        snackbar # forCase @"receiptPrinted" receiptLine
   ) # with {}

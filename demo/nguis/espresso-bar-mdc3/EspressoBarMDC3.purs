@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
-import PUI (announce, asCase, forCase, mvu, projected, required, tapped, updated)
+import PUI (announce, forCase, mvu, projected, required, tapped, updated)
 import PUI.Web.HTML (body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -51,14 +51,14 @@ espressoBarMDC3 =
                 checkbox @"loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
                 divider
               menu { label: "Presets" } ( RecordToVariant.do
-                  announce theUsual >>> menuItem { label: "The usual" } # asCase @"clicked" @"theUsual"
-                  menuItem { label: "Espresso, no frills" } # asCase @"clicked" @"espressoNoFrills" ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
+                  announce theUsual >>> menuItem @"theUsual" { label: "The usual" }
+                  menuItem @"espressoNoFrills" { label: "Espresso, no frills" } ) # updated (match { theUsual: const, espressoNoFrills: const <<< espressoNoFrills })
           ) # mvu usualOrder
           bodyMedium ( RecordToRecord.do
               staticText "Your cup: "
-              text @"value" # projected @"value" summaryText ) # tapped
+              text @"summary" # projected summaryText ) # tapped
           ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
-              linearProgress @"value" ) # projected @"value" caffeineFraction # tapped
-          button { label: "Place order", icon: "local_cafe" } # asCase @"clicked" @"brewed"
-          snackbar # forCase @"event" @"brewed" brewedLine
+              linearProgress @"caffeine" ) # projected caffeineFraction # tapped
+          button @"brewed" { label: "Place order", icon: "local_cafe" }
+          snackbar # forCase @"brewed" brewedLine

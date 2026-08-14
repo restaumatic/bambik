@@ -346,7 +346,7 @@ rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $
 
 -- | The native `<progress>` gauge, `value` running 0 to 1. As much a gauge
 -- | as a progress indicator — a quota, a share, a fraction elapsed —
--- | written as `progress # projected @"value" fraction`, with the business function
+-- | written as `progress # projected fraction`, with the business function
 -- | deciding what the fraction means.
 progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progress = wrap do
@@ -371,10 +371,10 @@ progress = wrap do
 -- | itself).
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the output is built — `output # forCase @"event" @"booked" bookedLine` — and
+-- | the output is built — `output # forCase @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output :: PUI Web [ event :: String ] {}
-output = el "output" $ text @"value" # projected @"value" eventText
+output = el "output" $ text @"line" # projected eventText
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

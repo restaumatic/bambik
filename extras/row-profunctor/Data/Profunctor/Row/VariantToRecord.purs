@@ -67,6 +67,8 @@ import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
 import Data.Lens.Reel (reelE)
@@ -149,7 +151,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | renders it into the canonical `event` payload at the adoption site —
 -- | `status # forCase @"event" @"registered" welcomeLine`; `identity` when
 -- | the payload already is the copy.
-forCase :: forall @c @l p a b o s cs. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () cs => Cons l b () s => (b -> a) -> p [ | cs ] o -> p [ | s ] o
+forCase :: forall @l c p a b o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => IsSymbol l => Cons c a () cs => Cons l b () s => Profunctor p => (b -> a) -> p [ | cs ] o -> p [ | s ] o
 forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 
 -- | Adopt a status component for a **whole classified variant** — the input
@@ -161,7 +163,7 @@ forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 -- | One-at-a-time input means one classifier is total over the row; per-case
 -- | copy stays a `match` branch, never a sibling operand, when outcomes share one
 -- | status area.
-forCases :: forall @c p a o s cs. IsSymbol c => Cons c a () cs => Profunctor p => ([ | s ] -> a) -> p [ | cs ] o -> p [ | s ] o
+forCases :: forall c p a o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () cs => Profunctor p => ([ | s ] -> a) -> p [ | cs ] o -> p [ | s ] o
 forCases f = lcmap (\v -> inj (Proxy @c) (f v))
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator

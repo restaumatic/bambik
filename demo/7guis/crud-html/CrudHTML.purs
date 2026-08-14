@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asField, atCase, completed, displayed, field, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, completed, displayed, field, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.HTML (attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,13 +21,13 @@ crudHTML = do
           ( RecordToRecord.do
               p ( label $ RecordToRecord.do
                   staticText "Filter prefix (surname) "
-                  input "text" # field @"value" ) # asField @"value" @"prefix"
+                  input "text" # field @"prefix" )
               p ( label $ RecordToRecord.do
                   staticText "Name "
-                  input "text" # field @"value" ) # asField @"value" @"name"
+                  input "text" # field @"name" )
               p ( label $ RecordToRecord.do
                   staticText "Surname "
-                  input "text" # field @"value" ) # asField @"value" @"surname") # completed
+                  input "text" # field @"surname" )) # completed
           ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
               ( clicked ( li >>> attrWith "style" entryFace $ displayed $ RecordToRecord.do
                   text @"surname"

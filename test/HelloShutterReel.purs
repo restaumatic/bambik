@@ -57,5 +57,5 @@ main :: Effect Unit
 main = body $ rmap (const "Hello, ") pempty >>> Semigroupoid.do
   greet
   confirm
-  lcmap (\v -> { value: v }) (text @"value")
+  lcmap (\v -> { greeting: v }) (text @"greeting")
   silence

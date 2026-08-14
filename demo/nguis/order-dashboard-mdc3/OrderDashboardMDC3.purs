@@ -22,9 +22,9 @@ orderDashboardMDC3 =
             , { value: .sinceOpen {}, label: "Since open" }
             ] # required # completed
           board $ Semigroupoid.do
-            statTile { label: "Orders", unit: "placed" } # projected @"value" ordersCount # displayed
-            statTile { label: "Revenue", unit: "EUR" } # projected @"value" revenue # displayed
-            gauge { label: "Kitchen load" } # projected @"value" kitchenLoad # displayed
-            trendChart { label: "Order flow" } # projected @"value" orderFlow # displayed
-            leaderboard { label: "Top dishes" } # projected @"value" topDishes # displayed
+            statTile { label: "Orders", unit: "placed" } # projected ordersCount # displayed
+            statTile { label: "Revenue", unit: "EUR" } # projected revenue # displayed
+            gauge { label: "Kitchen load" } # projected kitchenLoad # displayed
+            trendChart { label: "Order flow" } # projected orderFlow # displayed
+            leaderboard { label: "Top dishes" } # projected topDishes # displayed
       ) # mvu openingDay

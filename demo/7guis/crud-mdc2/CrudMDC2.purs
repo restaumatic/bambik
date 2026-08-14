@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, completed, displayed, looped, atCase, toCase, updated, with)
+import PUI (action, completed, displayed, looped, atCase, toCase, updated, with)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,9 +31,9 @@ crudMDC2 = do
                   text @"name" ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
-                    button { label: "Create" } # asCase @"clicked" @"create"
-                    button { label: "Update" } # asCase @"clicked" @"update"
-                    button { label: "Delete" } # asCase @"clicked" @"delete"
+                    button @"create" { label: "Create" }
+                    button @"update" { label: "Update" }
+                    button @"delete" { label: "Delete" }
                   VariantToVariant.do
                     indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"create"
                     indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"update"

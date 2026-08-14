@@ -16,13 +16,13 @@ cellsHTML =
       ( RecordToRecord.do
           p ( RecordToRecord.do
               staticText "Cell "
-              text @"value" # projected @"value" selectedName )
+              text @"selectedName" # projected selectedName )
           p ( label $ RecordToRecord.do
               staticText "Formula (e.g. =SUM(A0:A5)*2) "
               "size" := "32" $ input "text" # field @"formula" ) ) # completed # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
           ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-              ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"value" # forProperty @"value" @"text" identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
+              ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
   ) # mvu orderSheet
 
 -- closed signature states the clicked content's row (the row-stating

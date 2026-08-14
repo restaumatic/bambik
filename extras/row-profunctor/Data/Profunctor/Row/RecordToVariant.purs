@@ -8,12 +8,10 @@
 -- |     neither the classes nor the optics mention a row, so none of them
 -- |     lives here.
 -- |
--- | The **canonical-row adopters** here (`asCase`/`toCases`) take the canonical label as their
--- | first type argument `@c` and carry no literal: which label a component
--- | speaks (`value`, `clicked`, `event`) is an L3 citizenship convention of
--- | the vocabulary, not a row-profunctor fact. The label is supplied at the
--- | **call site** — `# asCase @"clicked" @l` — so no layer hard-codes it and
--- | the convention is visible where it is used.
+-- | The adopter here (`toCases`) carries **no canonical label**: the
+-- | emitter states its business case once, as its own type argument, and
+-- | `toCases` reads it back out of the closed singleton variant row via
+-- | `RowToList`'s fundep — no layer hard-codes a label.
 -- |   * **direction class** — `RecordToVariant`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
@@ -51,7 +49,6 @@ module Data.Profunctor.Row.RecordToVariant
   , armed
   , recordToVariant
   , focusProperty
-  , asCase
   , recordToCase
   , toCase
   , toCases
@@ -70,6 +67,8 @@ import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant (Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Record (get)
 import Record (union) as Record
 import Record.Unsafe (unsafeDelete)
@@ -220,12 +219,6 @@ focusProperty g =
     (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
 
--- | Adopt a **canonically-labeled** event component (`[ clicked :: a ]` out,
--- | the citizenship-carrying interface) as business case `l`: renames the
--- | case, input untouched — `rmap`-only, the `asField` twin at `× → +`.
-asCase :: forall @c @l p i a s cs. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () cs => Cons l a () s => p i [ | cs ] -> p i [ | s ]
-asCase = rmap (on (Proxy @c) (inj (Proxy @l)) case_)
-
 -- | The `× → +` member of the introduce family: the wrapped `p { | r } f` reads
 -- | the whole record — `r`, the **reality** the camera is pointed at, which
 -- | never enters the shot — and its result, the **focus**
@@ -271,7 +264,7 @@ toCase f = rmap (\a -> inj (Proxy @l) (f a))
 -- | on purpose: this is the `× → +` output side, where a non-variant result
 -- | would be out of shape — so `toCases`, like every other placement here,
 -- | both takes and returns a row profunctor.
-toCases :: forall @c p i a o s. IsSymbol c => Cons c a () s => Profunctor p => (a -> [ | o ]) -> p i [ | s ] -> p i [ | o ]
+toCases :: forall c p i a o s. RowToList s (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () s => Profunctor p => (a -> [ | o ]) -> p i [ | s ] -> p i [ | o ]
 toCases f = rmap (on (Proxy @c) f case_)
 
 -- | Row existential `Shutter` focusing a whole **sub-Record** — the row-valued

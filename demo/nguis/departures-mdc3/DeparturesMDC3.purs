@@ -23,7 +23,7 @@ departuresMDC3 =
                   text @"status" ) # displayed ) # dispatched arrival
               bodyMedium ( RecordToRecord.do
                   staticText "Last update: "
-                  text @"value" # projected @"value" updatedFlight
+                  text @"updatedFlight" # projected updatedFlight
                   staticText " → "
-                  text @"value" # projected @"value" updatedStatus ) ) # displayed
+                  text @"updatedStatus" # projected updatedStatus ) ) # displayed
       ) # mvu boardOpening

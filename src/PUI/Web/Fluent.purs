@@ -105,9 +105,9 @@ import Record (get) as Record
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button { label: "Book" } # asCase @"clicked" @"booked"`.
-button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
-button config = recordToCase @"clicked" $ eventLeaf $
+-- | action — `button @"booked" { label: "Book" }`.
+button :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
+button config = recordToCase @l $ eventLeaf $
   el "fluent-button" >>> "appearance" := "primary" $ staticText config.label
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
@@ -187,7 +187,7 @@ slider :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: 
 slider provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
       _ <- unwrap (staticText config.label)
-      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text @"value"))
+      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text @"readout"))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
   element "fluent-slider" (pure unit)
@@ -216,7 +216,7 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: hu
           Nothing -> removeAttribute node "step"
         setNumberProp "valueAsNumber" node q.current
         Ref.write false busyRef
-        readout.toUser { value: toString q.current }
+        readout.toUser { readout: toString q.current }
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
@@ -304,7 +304,7 @@ radioGroup provided options = let config = convertOptionsWithDefaults OptCaption
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — written as `progressBar # projected @"value" fraction`,
+-- | rating out of five — written as `progressBar # projected fraction`,
 -- | with the business function deciding what the fraction means.
 progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progressBar = wrap do
@@ -349,13 +349,13 @@ ratingDisplay = wrap do
 -- | has just happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the message bar is built — `messageBar # forCase @"event" @"booked" bookedLine`
+-- | the message bar is built — `messageBar # forCase @"booked" bookedLine`
 -- | — and let the event carry the bare facts.
 messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    text @"value" # projected @"value" eventText) # cl "fluent-toast"
+    text @"line" # projected eventText) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

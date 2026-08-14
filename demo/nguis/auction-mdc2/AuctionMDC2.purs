@@ -6,7 +6,7 @@ import AuctionLogic (noBids, openingBid, raiseTop)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (forField, mvu, settled, tapped)
+import PUI (projection, mvu, settled, tapped)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,11 +18,11 @@ auctionMDC2 =
       card { caption: "Live Auction" } $ ( Semigroupoid.do
           body2 ( RecordToRecord.do
               staticText "Your current bid: $"
-              text @"value" # forField @"bid" (show <<< _.current) ) # tapped
+              text @"bid" # projection (show <<< _.current) ) # tapped
           sliderLive @"bid" { label: "Your bid ($)" }
           ( Semigroupoid.do
               identity # settled raiseTop
               headline6 ( RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text @"value" # forField @"top" show ) # tapped) # feedback noBids
+                  text @"top" # projection show ) # tapped) # feedback noBids
       ) # mvu openingBid

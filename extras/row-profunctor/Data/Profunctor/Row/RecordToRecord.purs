@@ -3,12 +3,11 @@
 -- |   * **strength** — `Strong` (ecosystem class, imported): the unary power,
 -- |     minimal and interop-friendly.
 -- |
--- | The **canonical-row adopters** here (`forField`/`forProperty`/`projected`/`asField`/`required`) take the canonical label as their
--- | first type argument `@c` and carry no literal: which label a component
--- | speaks (`value`, `clicked`, `event`) is an L3 citizenship convention of
--- | the vocabulary, not a row-profunctor fact. The label is supplied at the
--- | **call site** — `# asCase @"clicked" @l` — so no layer hard-codes it and
--- | the convention is visible where it is used.
+-- | The adopters here (`projection`/`projected`/`forProperty`/`required`)
+-- | carry **no canonical label at all**: the leaf states its business label
+-- | once, as its own type argument, and each adopter reads it back out of
+-- | the closed singleton row via `RowToList`'s fundep — so no layer
+-- | hard-codes a label and none is ever repeated.
 -- |   * **direction class** — `RecordToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions** — over the strength: `subStrong` (sub-record
@@ -18,7 +17,7 @@
 -- |     discharge the initial-state obligation), plus the subsuming
 -- |     `settled` (`rmap`-only normalization over a stated sub-row);
 -- |     over bare `Profunctor`: the adopters `atField`/`atProperty` (read a
--- |     field, closed or open row), `forField`/`forProperty` (read one into
+-- |     field, closed or open row), `projection`/`forProperty` (retype/read one into
 -- |     the canonical display row), `projected` (read the whole), `toField`
 -- |     (build a field, the transpose of `toCase`) and the fused
 -- |     `field`/`asField` (`field @l = atField @l <<< toField @l identity`;
@@ -58,7 +57,7 @@ module Data.Profunctor.Row.RecordToRecord
   , asField
   , atField
   , atProperty
-  , forField
+  , projection
   , forProperty
   , projected
   , required
@@ -240,8 +239,8 @@ focusProperty = prop (Proxy @l)
 -- | with `f a` flowing in as its `value` — so formatted displays read
 -- | `text # projected @"value" readout`, and the whole-value verbatim read is
 -- | `projected @"value" identity`. `lcmap`-only.
-projected :: forall @c p a b o cr. IsSymbol c => Lacks c () => Cons c b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
-projected f = lcmap \a -> Record.insert (Proxy @c) (f a) {}
+projected :: forall l p a b o cr. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
+projected f = lcmap \a -> Record.insert (Proxy @l) (f a) {}
 
 -- | Mark a type-changing selector (`{ value :: Maybe a } → { value :: a }`)
 -- | as **always selected**: the `Maybe` input exists for the unselected
@@ -275,26 +274,25 @@ atField = lcmap (Record.get (Proxy @l))
 atProperty :: forall @l p a o t r. IsSymbol l => Profunctor p => Cons l a t r => p a o -> p { | r } o
 atProperty = lcmap (Record.get (Proxy @l))
 
--- | Read field `l` (closed singleton row) into the canonical `{ value }`
--- | display, through the formatter — the display-side member of the
--- | mechanism-argument doctrine (L16): `text # forField @"points" show`,
--- | `identity` says verbatim (`text # forField @"prompt" identity`). The
--- | closed row is what makes a merge operand state its exact input;
--- | context-pinned wider rows use `forProperty @l f`. The whole-value
--- | reads are `projected f` (`projected identity` for verbatim).
+-- | Retype a display's field **through a formatter**, label untouched:
+-- | `text @"bid" # projection (show <<< _.current)` shows the quantity's
+-- | current value as field `bid`. The leaf states the business label once;
+-- | `RowToList`'s fundep reads it back out of the closed singleton row, so
+-- | no label is repeated and no canonical label exists. Verbatim reads need
+-- | no `projection` at all (`text @"prompt"`).
 -- |
--- | `lcmap`-only, the input-side member of the adopter family (`asField`
--- | renames both sides of an editor); a display owns no output fields.
-forField :: forall @l p a b o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => (a -> b) -> p { value :: b } { | o } -> p { | r } { | o }
-forField f = lcmap (\r -> { value: f (Record.get (Proxy @l) r) })
+-- | `lcmap`-only; a display owns no output fields. Whole-value reads are
+-- | `projected f`; context-pinned wider rows are `forProperty f`.
+projection :: forall l p a b ia ib o. RowToList ia (RL.Cons l a RL.Nil) => IsSymbol l => Lacks l () => Cons l a () ia => Cons l b () ib => Profunctor p => (b -> a) -> p { | ia } o -> p { | ib } o
+projection f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
 
 -- | `forField`'s **open-row** sibling (the display-side `focusProperty`: the
 -- | background is carried), for positions whose row the context already
 -- | pins — collection items, pane payloads:
 -- | `… # forProperty @"value" @"label" identity` on a collection element,
 -- | `… # forProperty @"value" @"score" show`.
-forProperty :: forall @c @l p a b t r cr o. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c b () cr => Cons l a t r => (a -> b) -> p { | cr } o -> p { | r } o
-forProperty f = lcmap (\r -> Record.insert (Proxy @c) (f (Record.get (Proxy @l) r)) {})
+forProperty :: forall l p a b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Cons l a t r => Profunctor p => (a -> b) -> p { | cr } o -> p { | r } o
+forProperty f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
 
 -- | Adopt a **canonically-labeled** component (`{ value :: a }` in and out,
 -- | the citizenship-carrying scalar interface) as business field `l`: a pure

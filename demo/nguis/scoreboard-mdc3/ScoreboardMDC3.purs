@@ -4,7 +4,7 @@ import Prelude (identity, (#), ($), Unit, show)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, displayed, every, forField, foreach, mvu)
+import PUI (accumulated, displayed, every, projection, foreach, mvu)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,7 +20,7 @@ scoreboardMDC3 =
               list ( ( listItem $ RecordToRecord.do
                   text @"team"
                   staticText ": "
-                  text @"value" # forField @"points" show ) # displayed ) # accumulated goal
+                  text @"points" # projection show ) # displayed ) # accumulated goal
               ( bodyMedium $ Semigroupoid.do
                   ( RecordToRecord.do
                       text @"teams"
@@ -28,7 +28,7 @@ scoreboardMDC3 =
                   ( RecordToRecord.do
                       text @"team"
                       staticText " ("
-                      text @"value" # forField @"points" show
+                      text @"points" # projection show
                       staticText ")" ) # provided leadingTeam # displayed
                   staticText "—" # provided noLeader # displayed ) # foreach @"key" boardSummary ) # displayed
       ) # mvu gameStart

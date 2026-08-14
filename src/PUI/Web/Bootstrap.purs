@@ -101,9 +101,9 @@ import Record (get) as Record
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button { label: "Apply" } # asCase @"clicked" @"applied"`.
-button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
-button config = recordToCase @"clicked" $ eventLeaf $
+-- | action — `button @"applied" { label: "Apply" }`.
+button :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
+button config = recordToCase @l $ eventLeaf $
   (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
@@ -157,7 +157,7 @@ sliderLive :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: humanizeLabel (reflectSymbol (Proxy @l)) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
-      unwrap ((span $ text @"value") # cl "text-body-secondary")
+      unwrap ((span $ text @"readout") # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -176,7 +176,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
           Just s -> show s
           Nothing -> "any")
         setValue node (show q.current)
-        readout.toUser { value: toString q.current }
+        readout.toUser { readout: toString q.current }
         -- leaf echo: announce what was received, so record-merge gates open
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
@@ -252,7 +252,7 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a share, a quota, a
--- | ratio — written as `progress # projected @"value" fraction`, with the business
+-- | ratio — written as `progress # projected fraction`, with the business
 -- | function deciding what the fraction means.
 progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progress = wrap do
@@ -283,13 +283,13 @@ progress = wrap do
 -- | happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast # forCase @"event" @"applied" appliedLine` — and let
+-- | the toast is built — `toast # forCase @"applied" appliedLine` — and let
 -- | the event carry the bare facts.
 toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ text @"value" # projected @"value" eventText) # cl "toast-body")
+      (div $ text @"line" # projected eventText) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, durationText, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
-import PUI (asCase, completed, displayed, forCase, forField, informed, mvu, optional, projected, tapped, updated)
+import PUI (completed, displayed, forCase, projection, informed, mvu, optional, projected, tapped, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (body, div, provided, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,21 +33,21 @@ meetingBookerFluent =
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
-          ratingDisplay @"value" ) # provided ratedRoom # displayed
+          ratingDisplay @"rating" ) # provided ratedRoom # displayed
       ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
-          progressBar @"value" ) # provided seatsTaken # displayed
+          progressBar @"occupancy" ) # provided seatsTaken # displayed
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
-              text @"value" # forField @"title" titleText
+              text @"title" # projection titleText
               staticText " in the "
-              text @"value" # forField @"room" roomText
+              text @"room" # projection roomText
               staticText ", "
-              text @"value" # forField @"duration" durationText
+              text @"duration" # projection durationText
               staticText ", "
-              text @"value" # forField @"attendees" headcount
+              text @"attendees" # projection headcount
               staticText " attendees"
-              text @"value" # projected @"value" onlineNote ) # tapped
-          button { label: "Book the room" } # asCase @"clicked" @"booked" ) # provided completePlan
-      messageBar # forCase @"event" @"booked" bookedLine
+              text @"onlineNote" # projected onlineNote ) # tapped
+          button @"booked" { label: "Book the room" } ) # provided completePlan
+      messageBar # forCase @"booked" bookedLine

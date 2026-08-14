@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (asCase, completed, displayed, every, forField, foreach, mvu, updated)
+import PUI (completed, displayed, every, projection, foreach, mvu, updated)
 import PUI.Web.HTML (providedCase, body, li, staticText, text, ul)
 import PUI.Web.MDC2 (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,14 +17,14 @@ stopwatchMDC2 =
   body $
     elevation20 $
       card { caption: "Stopwatch" } $ ( Semigroupoid.do
-          headline3 (text @"value") # forField @"elapsedTenths" formatTime # completed
+          headline3 (text @"elapsedTenths") # projection formatTime # completed
           every tickPeriod tick
           ( RecordToVariant.do
-              button { label: "Start", icon: "play_arrow" } # asCase @"clicked" @"start" # providedCase @"halted" stopwatchPhase
-              button { label: "Stop", icon: "stop" } # asCase @"clicked" @"stop" # providedCase @"timing" stopwatchPhase) # updated (match { start: const (const beginTiming), stop: const (const haltTiming) })
+              button @"start" { label: "Start", icon: "play_arrow" } # providedCase @"halted" stopwatchPhase
+              button @"stop" { label: "Stop", icon: "stop" } # providedCase @"timing" stopwatchPhase) # updated (match { start: const (const beginTiming), stop: const (const haltTiming) })
           ( RecordToVariant.do
-              button { label: "Lap", icon: "flag" } # asCase @"clicked" @"lap" # providedCase @"timing" stopwatchPhase
-              button { label: "Reset", icon: "replay" } # asCase @"clicked" @"reset" # providedCase @"halted" stopwatchPhase) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
+              button @"lap" { label: "Lap", icon: "flag" } # providedCase @"timing" stopwatchPhase
+              button @"reset" { label: "Reset", icon: "replay" } # providedCase @"halted" stopwatchPhase) # updated (match { lap: const recordLap, reset: const (const clearStopwatch) })
           ul ( ( li $ RecordToRecord.do
                    staticText "Lap "
                    text @"number"

@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, atCase, edited, field, mvu, pempty, updated)
+import PUI (action, atCase, edited, field, mvu, pempty, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,8 +20,8 @@ reorderMDC2 =
       card { caption: "Reorder" } $ ( Semigroupoid.do
           ( Semigroupoid.do
               cardActions $ RecordToVariant.do
-                button { label: "Rotate", icon: "sync" } # asCase @"clicked" @"rotate"
-                button { label: "Shuffle", icon: "shuffle" } # asCase @"clicked" @"shuffle"
+                button @"rotate" { label: "Rotate", icon: "sync" }
+                button @"shuffle" { label: "Shuffle", icon: "shuffle" }
               VariantToVariant.do
                 pempty # action rotateAction # atCase @"rotate"
                 pempty # action shuffleAction # atCase @"shuffle") # updated (match { reordered: setOrder })

@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText, rateText, totalInterestText)
-import PUI (asCase, forCase, mvu, projected, required, tapped)
+import PUI (forCase, mvu, projected, required, tapped)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (body, div, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,15 +28,15 @@ loanCalculatorBootstrap =
       listGroup ( RecordToRecord.do
           listGroupItem ( RecordToRecord.do
               staticText "Monthly payment "
-              badge { variant: "primary" } (text @"value" # projected @"value" monthlyText) )
+              badge { variant: "primary" } (text @"monthly" # projected monthlyText) )
           listGroupItem ( RecordToRecord.do
               staticText "Interest rate "
-              text @"value" # projected @"value" rateText )
+              text @"rate" # projected rateText )
           listGroupItem ( RecordToRecord.do
               staticText "Total interest "
-              text @"value" # projected @"value" totalInterestText ) ) # tapped
+              text @"totalInterest" # projected totalInterestText ) ) # tapped
       ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
-          progress @"value" ) # projected @"value" interestShare # tapped
-      button { label: "Apply for this loan" } # asCase @"clicked" @"applied"
-      toast # forCase @"event" @"applied" appliedLine
+          progress @"interestShare" ) # projected interestShare # tapped
+      button @"applied" { label: "Apply for this loan" }
+      toast # forCase @"applied" appliedLine

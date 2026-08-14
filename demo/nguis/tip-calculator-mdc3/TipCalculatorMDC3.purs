@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (completed, forField, mvu, projected, tapped)
+import PUI (completed, projection, mvu, projected, tapped)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,20 +19,20 @@ tipCalculatorMDC3 =
           slider @"tipPercent" { label: "Tip percentage" } # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip: "
-              text @"value" # forField @"tipPercent" whole
+              text @"tipPercent" # projection whole
               staticText "%" ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Split between: "
-              text @"value" # forField @"people" whole
+              text @"people" # projection whole
               staticText " people" ) # tapped
           slider @"people" { label: "Split between" } # completed
           bodyMedium ( RecordToRecord.do
               staticText "Tip amount: "
-              text @"value" # projected @"value" tipAmountText ) # tapped
+              text @"tipAmount" # projected tipAmountText ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Total: "
-              text @"value" # projected @"value" totalText ) # tapped
+              text @"total" # projected totalText ) # tapped
           bodyMedium ( RecordToRecord.do
               staticText "Per person: "
-              text @"value" # projected @"value" perPersonText ) # tapped
+              text @"perPerson" # projected perPersonText ) # tapped
       ) # mvu dinnerBill

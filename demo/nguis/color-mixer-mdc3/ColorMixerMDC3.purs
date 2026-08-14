@@ -23,8 +23,8 @@ colorMixerMDC3 =
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          bodyMedium (text @"value") # projected @"value" hexText # tapped
-          bodyMedium (text @"value") # projected @"value" rgbText # tapped
+          bodyMedium (text @"hex") # projected hexText # tapped
+          bodyMedium (text @"rgb") # projected rgbText # tapped
       ) # mvu duskViolet
 
 -- closed signature states the clicked content's row (the row-stating

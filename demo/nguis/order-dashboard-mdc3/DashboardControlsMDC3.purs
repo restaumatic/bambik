@@ -26,22 +26,22 @@ import PUI.Web (Web)
 board :: Ocular (PUI Web)
 board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;"
 
-statTile :: { label :: String, unit :: String } -> PUI Web { value :: String } {}
+statTile :: { label :: String, unit :: String } -> PUI Web { stat :: String } {}
 statTile config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     ( div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ RecordToRecord.do
-        displaySmall (text @"value")
+        displaySmall (text @"stat")
         labelMedium $ staticText config.unit )
 
-gauge :: { label :: String } -> PUI Web { value :: Number } {}
+gauge :: { label :: String } -> PUI Web { fraction :: Number } {}
 gauge config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
-    linearProgress @"value"
-    labelLarge $ text @"value" # projected @"value" percentText
+    linearProgress @"fraction"
+    labelLarge $ text @"percent" # projected percentText
 
-trendChart :: { label :: String } -> PUI Web { value :: Array Number } {}
+trendChart :: { label :: String } -> PUI Web { trend :: Array Number } {}
 trendChart config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
@@ -50,36 +50,36 @@ trendChart config =
           >>> "stroke-linejoin" := "round" >>> "vector-effect" := "non-scaling-stroke"
           >>> attrWith "d" sparkline $ blank )
 
-leaderboard :: { label :: String } -> PUI Web { value :: Array { name :: String, score :: String } } { value :: Array { name :: String, score :: String } }
+leaderboard :: { label :: String } -> PUI Web { entries :: Array { name :: String, score :: String } } { entries :: Array { name :: String, score :: String } }
 leaderboard config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     list ( ( listItem $ RecordToRecord.do
         text @"name"
         staticText " — "
-        text @"score" ) # foreach @"name" identity ) # atField @"value" # displayed
+        text @"score" ) # foreach @"name" identity ) # atField @"entries" # displayed
 
 rangePicker :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 rangePicker config options =
   ( div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ RecordToRecord.do
       labelMedium $ staticText config.label
-      segmentedButton @"value" options ) # asField @"value" @l
+      segmentedButton @"picked" options ) # asField @"picked" @l
 
 tile :: Ocular (PUI Web)
 tile = div >>> "style" := "display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; background: var(--md-sys-color-surface-container-low, #f7f2fa); flex: 1 1 200px; min-width: 200px; box-sizing: border-box;"
 
-percentText :: { value :: Number } -> String
-percentText { value } = show (round (value * 100.0)) <> "%"
+percentText :: { fraction :: Number } -> String
+percentText { fraction } = show (round (fraction * 100.0)) <> "%"
 
-sparkline :: { value :: Array Number } -> String
-sparkline { value } = case length value of
+sparkline :: { trend :: Array Number } -> String
+sparkline { trend } = case length trend of
   0 -> "M 0 38 L 120 38"
   1 -> "M 0 38 L 120 38"
   n ->
-    let peak = foldl max 1.0 value
+    let peak = foldl max 1.0 trend
         x i = 120.0 * toNumber i / toNumber (n - 1)
         y v = 38.0 - 36.0 * v / peak
-    in joinWith " " (mapWithIndex (\i v -> (if i == 0 then "M " else "L ") <> fmt (x i) <> " " <> fmt (y v)) value)
+    in joinWith " " (mapWithIndex (\i v -> (if i == 0 then "M " else "L ") <> fmt (x i) <> " " <> fmt (y v)) trend)
 
 fmt :: Number -> String
 fmt n = show (toNumber (round (n * 10.0)) / 10.0)

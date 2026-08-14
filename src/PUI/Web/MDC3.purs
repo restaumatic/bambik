@@ -130,7 +130,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, blank, forField, foreach, pempty, projected)
+import PUI (Ocular, PUI, blank, foreach, pempty, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, OptCaption(..), humanizeLabel, staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -240,62 +240,74 @@ else instance ConvertOption OptIcon sym a a where
 -- | the actions beside it.
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
--- | the app gives the action: `button { label: "Book" } # asCase @"clicked" @"booked"`.
+-- | the app gives the action: `button @"booked" { label: "Book" }`.
 -- | Both parts of the face are optional — `button {}` is bare,
 -- | `button { label: "Count" }` labels it, `icon: "add"` puts a Material
 -- | Symbols glyph before the label.
 button
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-button = buttonOf "md-filled-button"
+  -> PUI Web { | r } [ | cl ]
+button = buttonOf @l "md-filled-button"
 
 -- | `button` **elevated**: a shadow lifts it off the surface — for an
 -- | important action over a busy or patterned background, where a flat fill
 -- | would not separate.
 elevatedButton
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-elevatedButton = buttonOf "md-elevated-button"
+  -> PUI Web { | r } [ | cl ]
+elevatedButton = buttonOf @l "md-elevated-button"
 
 -- | `button` **tonal**: a softer fill, one step below filled — the second
 -- | action next to a filled one (Save beside Publish).
 tonalButton
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-tonalButton = buttonOf "md-filled-tonal-button"
+  -> PUI Web { | r } [ | cl ]
+tonalButton = buttonOf @l "md-filled-tonal-button"
 
 -- | `button` **outlined**: a border and no fill — an important action that
 -- | is not *the* action of the screen.
 outlinedButton
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-outlinedButton = buttonOf "md-outlined-button"
+  -> PUI Web { | r } [ | cl ]
+outlinedButton = buttonOf @l "md-outlined-button"
 
 -- | `button` at the lowest emphasis — label only: the dismissive or
 -- | tertiary action (Cancel, Learn more), and what belongs in dialogs and
 -- | cards.
 textButton
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-textButton = buttonOf "md-text-button"
+  -> PUI Web { | r } [ | cl ]
+textButton = buttonOf @l "md-text-button"
 
 buttonOf
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => String
   -> { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-buttonOf tag provided = recordToCase @"clicked" $ eventLeaf $ el tag $ RecordToRecord.do
+  -> PUI Web { | r } [ | cl ]
+buttonOf tag provided = recordToCase @l $ eventLeaf $ el tag $ RecordToRecord.do
   case config.icon of
     Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticText icon'
     Nothing -> pempty
@@ -317,11 +329,13 @@ eventLeaf chrome = clicked chrome
 -- | its glyph; adding a `label` makes it the extended FAB, with the words
 -- | beside the glyph.
 fab
-  :: forall provided r
-   . ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
+  :: forall @l provided r cl
+   . IsSymbol l
+  => Cons l { | r } () cl
+  => ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
   => { | provided }
-  -> PUI Web { | r } [ clicked :: { | r } ]
-fab provided = recordToCase @"clicked" $ eventLeaf $
+  -> PUI Web { | r } [ | cl ]
+fab provided = recordToCase @l $ eventLeaf $
   el "md-fab" >>> "aria-label" := fromMaybe config.icon config.label >>> extended $
     el "md-icon" >>> "slot" := "icon" $ staticText config.icon
   where
@@ -334,15 +348,15 @@ fab provided = recordToCase @"clicked" $ eventLeaf $
 -- | corners where a labelled button would not fit. `label` is not drawn —
 -- | it is what assistive technology announces, so it is required. For an
 -- | icon that stays pressed (favourite, mute), use `iconToggle` instead.
-iconButton :: forall r. { icon :: String, label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
-iconButton config = recordToCase @"clicked" $ eventLeaf $
+iconButton :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { icon :: String, label :: String } -> PUI Web { | r } [ | cl ]
+iconButton config = recordToCase @l $ eventLeaf $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText config.icon
 
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself.
-menuItem :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
-menuItem config = recordToCase @"clicked" $ eventLeaf $
+menuItem :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
+menuItem config = recordToCase @l $ eventLeaf $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
 
@@ -821,7 +835,7 @@ indeterminateLinearProgress = wrap do
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
 -- | position, a budget's use, a quota — written as
--- | `linearProgress # projected @"value" fraction`, with the business function
+-- | `linearProgress # projected fraction`, with the business function
 -- | deciding what the fraction means.
 linearProgress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 linearProgress = wrap do
@@ -1033,14 +1047,14 @@ simpleDialog { title, confirm } content =
 -- | something the user must acknowledge, use a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar # forCase @"event" @"brewed" brewedLine` — and
+-- | the snackbar is built — `snackbar # forCase @"brewed" brewedLine` — and
 -- | let the event carry the bare facts. One snackbar can serve several
 -- | mutually exclusive outcomes with `forCases`.
 snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    text @"value" # projected @"value" eventText
+    text @"line" # projected eventText
   node <- gets _.sibling
   pure
     { toUser: \i -> do

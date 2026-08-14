@@ -5,7 +5,7 @@ import Prelude ((>>>), identity, (#), ($), Unit, const)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, forField, foreach, informed, mvu, projected, tapped, toCase, updated)
+import PUI (announce, projection, foreach, informed, mvu, projected, tapped, toCase, updated)
 import PUI.Web.HTML (body, clicked, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,7 +19,7 @@ shoppingCartMDC2 =
           listOf {} productCatalogue ( RecordToRecord.do
               text @"name"
               staticText " · $"
-              text @"value" # forField @"unitPrice" formatMoney ) # toCase @"productPicked" { product: _ } # updated (match { productPicked: informed addUnit })
+              text @"unitPrice" # projection formatMoney ) # toCase @"productPicked" { product: _ } # updated (match { productPicked: informed addUnit })
           dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
             ( ( clicked $ dataRow RecordToRecord.do
                   dataCell (text @"product")
@@ -29,6 +29,6 @@ shoppingCartMDC2 =
                       text @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           body1 ( RecordToRecord.do
               staticText "Total: $"
-              text @"value" # projected @"value" grandTotalText ) # tapped
-          announce emptyCart >>> button { label: "Empty cart" } # updated (match { clicked: const })
+              text @"grandTotal" # projected grandTotalText ) # tapped
+          announce emptyCart >>> button @"emptied" { label: "Empty cart" } # updated (match { emptied: const })
       ) # mvu emptyCart

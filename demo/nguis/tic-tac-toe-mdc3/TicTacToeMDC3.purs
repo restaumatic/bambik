@@ -27,8 +27,8 @@ ticTacToeMDC3 =
                   ( clicked
                       ( div
                           >>> attrWith "style" cellFace
-                          $ text @"value" # forProperty @"value" @"mark" identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
-          announce openingPosition >>> button { label: "New game", icon: "replay" } # updated (match { clicked: const })
+                          $ text @"mark" # forProperty identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
+          announce openingPosition >>> button @"newGame" { label: "New game", icon: "replay" } # updated (match { newGame: const })
       ) # mvu openingPosition
 
 -- closed signature states the clicked content's row (the row-stating

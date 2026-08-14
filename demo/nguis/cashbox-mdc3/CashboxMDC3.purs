@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (announce, asCase, atCase, forField, informed, mvu, subChoice, tapped, toCase, updated)
+import PUI (announce, atCase, projection, informed, mvu, subChoice, tapped, toCase, updated)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, headlineSmall, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,19 +20,19 @@ cashboxMDC3 =
       card { caption: "Cashbox" } $ ( Semigroupoid.do
           headlineSmall ( RecordToRecord.do
               staticText "Till balance: €"
-              text @"value" # forField @"balance" euros ) # tapped
+              text @"balance" # projection euros ) # tapped
           ( Semigroupoid.do
               RecordToVariant.do
-                announce standardRefund >>> button { label: "Refund a customer", icon: "undo" } # asCase @"clicked" @"refund"
-                announce courierFee >>> button { label: "Pay the courier", icon: "local_shipping" } # asCase @"clicked" @"payout"
-                announce customerDeposit >>> button { label: "Take a deposit", icon: "savings" } # asCase @"clicked" @"deposited"
+                announce standardRefund >>> button @"refund" { label: "Refund a customer", icon: "undo" }
+                announce courierFee >>> button @"payout" { label: "Pay the courier", icon: "local_shipping" }
+                announce customerDeposit >>> button @"deposited" { label: "Take a deposit", icon: "savings" }
               ( VariantToVariant.do
                   ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ bodyLarge ( RecordToRecord.do
                       staticText "Hand €"
-                      text @"value" # forField @"amount" euros
+                      text @"amount" # projection euros
                       staticText " back to the customer." ) # tapped ) # atCase @"refund" # toCase @"refunded" identity
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge ( RecordToRecord.do
                       staticText "Hand €"
-                      text @"value" # forField @"amount" euros
+                      text @"amount" # projection euros
                       staticText " to the courier." ) # tapped ) # atCase @"payout" # toCase @"paidOut" identity ) # subChoice) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, deposited: informed applyDeposit })
       ) # mvu openedTill

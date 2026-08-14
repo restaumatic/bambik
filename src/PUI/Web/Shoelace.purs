@@ -101,9 +101,9 @@ import Record (get) as Record
 
 -- | The **primary button**: the screen's action. It reports on click,
 -- | carrying the data it was showing, under the name the app gives the
--- | action — `button { label: "Submit" } # asCase @"clicked" @"submitted"`.
-button :: forall r. { label :: String } -> PUI Web { | r } [ clicked :: { | r } ]
-button config = recordToCase @"clicked" $ eventLeaf $
+-- | action — `button @"submitted" { label: "Submit" }`.
+button :: forall @l r cl. IsSymbol l => Cons l { | r } () cl => { label :: String } -> PUI Web { | r } [ | cl ]
+button config = recordToCase @l $ eventLeaf $
   el "sl-button" >>> "variant" := "primary" $ staticText config.label
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
@@ -304,7 +304,7 @@ select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap d
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — written as `progressBar # projected @"value" fraction`,
+-- | rating out of five — written as `progressBar # projected fraction`,
 -- | with the business function deciding what the fraction means.
 progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progressBar = wrap do
@@ -329,14 +329,14 @@ progressBar = wrap do
 -- | reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast # forCase @"event" @"submitted" thanksLine` — and
+-- | the toast is built — `toast # forCase @"submitted" thanksLine` — and
 -- | let the event carry the bare facts.
 toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (text @"value" # projected @"value" eventText)
+    unwrap (text @"line" # projected eventText)
   node <- gets _.sibling
   pure
     { toUser: \i -> do

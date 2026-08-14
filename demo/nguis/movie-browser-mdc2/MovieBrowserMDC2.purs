@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), Unit, show)
 import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserLogic (favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
-import PUI (completed, displayed, foreach, forField, informed, mvu, projected, toCase, updated)
+import PUI (completed, displayed, foreach, projection, informed, mvu, projected, toCase, updated)
 import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC2 (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,18 +27,18 @@ movieBrowserMDC2 =
               filterChip @"cult" {}
               filterChip @"oscar" {}) # completed
           elevation1 ( subtitle1 $ RecordToRecord.do
-              text @"value" # forField @"count" show
+              text @"count" # projection show
               staticText " favorite" ) # providedCase @"sole" favorites # displayed
           elevation1 ( subtitle1 $ RecordToRecord.do
-              text @"value" # forField @"count" show
+              text @"count" # projection show
               staticText " favorites" ) # providedCase @"several" favorites # displayed
           list $
             ( clWhen _.favorite "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do
                     span (text @"title")
-                    span (text @"value") # forField @"year" show
+                    span (text @"year") # projection show
                     span ( RecordToRecord.do
                         staticText "★ "
-                        text @"value" # projected @"value" ratingText )
+                        text @"rating" # projected ratingText )
                     iconToggle @"favorite" { onIcon: "star", offIcon: "star_border" }) # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
       ) # mvu movieCatalogue

@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, atCase, completed, displayed, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, completed, displayed, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Fluent (button, card, textField)
 import PUI.Web.HTML (attrWith, body, clicked, div, li, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,9 +31,9 @@ crudFluent = do
                     text @"name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 div $ RecordToVariant.do
-                  button { label: "Create" } # asCase @"clicked" @"create"
-                  button { label: "Update" } # asCase @"clicked" @"update"
-                  button { label: "Delete" } # asCase @"clicked" @"delete"
+                  button @"create" { label: "Create" }
+                  button @"update" { label: "Update" }
+                  button @"delete" { label: "Delete" }
                 VariantToVariant.do
                   pempty # action (createPerson catalogue) # atCase @"create"
                   pempty # action (updatePerson catalogue) # atCase @"update"

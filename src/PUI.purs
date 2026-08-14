@@ -87,8 +87,8 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forField, forProperty, informed, pempty, projected, required, settled, tapped, toField, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (armed, asCase, silence, toCase, toCases) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, projected, projection, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (`tapped`, `displayed`, `updated`,

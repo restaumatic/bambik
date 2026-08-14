@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, asCase, atCase, completed, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, completed, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,9 +31,9 @@ crudBootstrap = do
                     text @"name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 ( div $ RecordToVariant.do
-                    button { label: "Create" } # asCase @"clicked" @"create"
-                    button { label: "Update" } # asCase @"clicked" @"update"
-                    button { label: "Delete" } # asCase @"clicked" @"delete") # cl "d-flex" # cl "gap-2"
+                    button @"create" { label: "Create" }
+                    button @"update" { label: "Update" }
+                    button @"delete" { label: "Delete" }) # cl "d-flex" # cl "gap-2"
                 VariantToVariant.do
                   pempty # action (createPerson catalogue) # atCase @"create"
                   pempty # action (updatePerson catalogue) # atCase @"update"

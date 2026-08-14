@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), (>>>), Unit)
 import Data.Variant (match)
 import Effect (Effect)
 import PasswordGeneratorLogic (rememberPassword, samplePassword, strengthText, strongMixRecipe)
-import PUI (action, asCase, completed, mvu, atCase, projected, tapped, updated)
+import PUI (action, completed, mvu, atCase, projected, tapped, updated)
 import PUI.Web.HTML (attr, body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -24,10 +24,10 @@ passwordGeneratorMDC3 =
               toggleSwitch @"symbols" {}) # completed
           bodyMedium ( RecordToRecord.do
               staticText "Strength: "
-              text @"value" # projected @"value" strengthText ) # tapped
+              text @"strength" # projected strengthText ) # tapped
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
             text @"password" # tapped
           ( Semigroupoid.do
-              button { label: "Generate" } # asCase @"clicked" @"generate"
+              button @"generate" { label: "Generate" }
               indeterminateLinearProgress @"busy" # action samplePassword # atCase @"generate") # updated (match { generated: rememberPassword })
       ) # mvu strongMixRecipe

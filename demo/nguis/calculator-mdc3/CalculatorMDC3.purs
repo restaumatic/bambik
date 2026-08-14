@@ -24,7 +24,7 @@ calculatorMDC3 =
                     staticText "Error" # providedCase @"faulty" conditionOf # displayed
                     text @"entry" # provided currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" keyFace $ text @"value" # forProperty @"value" @"key" identity ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
+                  clicked ( div >>> attrWith "style" keyFace $ text @"key" # forProperty identity ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
         ) # updated (match { keyPressed: pressKey }) # mvu blankTally
 
 -- closed signature states the clicked content's row

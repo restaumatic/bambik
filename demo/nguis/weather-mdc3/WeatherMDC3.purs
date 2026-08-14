@@ -17,30 +17,30 @@ weatherMDC3 =
     elevation5 $
       card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
           ( Semigroupoid.do
-              listOf { selected: _.shown } forecastRequests (text @"value" # forProperty @"value" @"city" identity) # toCase @"cityPicked" identity
+              listOf { selected: _.shown } forecastRequests (text @"city" # forProperty identity) # toCase @"cityPicked" identity
               indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked") # updated (match { reportServed: informed rememberReport })
           displayLarge ( RecordToRecord.do
-              text @"value" # projected @"value" temperatureText
+              text @"temperature" # projected temperatureText
               staticText " °C" ) # tapped
           headlineMedium ( RecordToRecord.do
-              text @"value" # projected @"value" conditionText
+              text @"condition" # projected conditionText
               staticText " in "
-              text @"value" # projected @"value" cityText ) # tapped
+              text @"city" # projected cityText ) # tapped
           bodyLarge ( RecordToRecord.do
               staticText "Humidity "
-              text @"value" # projected @"value" humidityText
+              text @"humidity" # projected humidityText
               staticText "% · Wind "
-              text @"value" # projected @"value" windText
+              text @"wind" # projected windText
               staticText " km/h" ) # tapped
           bodySmall ( RecordToRecord.do
               staticText "Simulated service · "
-              text @"value" # projected @"value" servedReportsText
+              text @"servedReports" # projected servedReportsText
               staticText " reports served" ) # tapped
           ( Semigroupoid.do
-              iconButton { icon: "info", label: "About this dashboard" }
+              iconButton @"about" { icon: "info", label: "About this dashboard" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
                 ( bodyLarge ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
-                    text @"value" # projected @"value" servedReportsText
-                    staticText "." )) # atCase @"clicked") # displayed
+                    text @"servedReports" # projected servedReportsText
+                    staticText "." )) # atCase @"about") # displayed
       ) # mvu warsawBulletin
