@@ -282,7 +282,7 @@ atProperty = lcmap (Record.get (Proxy @l))
 -- |
 -- | `lcmap`-only, the input-side member of the adopter family (`asField`
 -- | renames both sides of an editor); a display owns no output fields.
-forField :: forall @c @l p a b o r cr. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c b () cr => Lacks l () => Cons l a () r => (a -> b) -> p { | cr } o -> p { | r } o
+forField :: forall @c @l p a b o r cr. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c b () cr => Lacks l () => Cons l a () r => (a -> b) -> p { | cr } { | o } -> p { | r } { | o }
 forField f = lcmap (\r -> Record.insert (Proxy @c) (f (Record.get (Proxy @l) r)) {})
 
 -- | `forField`'s **open-row** sibling (the display-side `focusProperty`: the
