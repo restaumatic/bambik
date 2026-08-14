@@ -20,7 +20,7 @@ orderDashboardMDC3 =
             [ { value: .lastMinute {}, label: "Last minute" }
             , { value: .lastQuarter {}, label: "Last 15 min" }
             , { value: .sinceOpen {}, label: "Since open" }
-            ] # required @"window" # completed
+            ] # required # completed
           board $ Semigroupoid.do
             statTile { label: "Orders", unit: "placed" } # projected @"value" ordersCount # displayed
             statTile { label: "Revenue", unit: "EUR" } # projected @"value" revenue # displayed

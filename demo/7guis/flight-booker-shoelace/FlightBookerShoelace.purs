@@ -20,7 +20,7 @@ flightBookerShoelace =
               select @"flightType" { label: "Flight type" }
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
-                ] # required @"flightType"
+                ] # required
               textField @"start" { label: "Start date (DD.MM.YYYY)" }) # completed
           textField @"return" { label: "Return date (DD.MM.YYYY)" } # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip

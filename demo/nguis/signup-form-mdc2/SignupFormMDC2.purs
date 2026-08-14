@@ -23,13 +23,13 @@ signupFormMDC2 =
               [ { value: .free {}, label: "Free plan" }
               , { value: .pro {}, label: "Pro plan" }
               , { value: .team {}, label: "Team plan" }
-              ] # required @"plan"
+              ] # required
             select @"country" { floatingLabel: "Country" }
               [ { value: .poland {}, label: "Poland" }
               , { value: .germany {}, label: "Germany" }
               , { value: .france {}, label: "France" }
               , { value: .spain {}, label: "Spain" }
-              ] # required @"country"
+              ] # required
             filledTextField @"email" { floatingLabel: "Email" }
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant

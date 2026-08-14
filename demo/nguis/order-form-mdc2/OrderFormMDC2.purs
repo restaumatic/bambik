@@ -49,7 +49,7 @@ orderFormMDC2 =
               segmentedButton @"method"
                 [ { value: .cash {}, label: "Cash" }
                 , { value: .card {}, label: "Card" }
-                ] # required @"method"
+                ] # required
               filledTextField @"paid" { floatingLabel: "Paid" }
               body1 ( RecordToRecord.do
                   staticText "Paying by "

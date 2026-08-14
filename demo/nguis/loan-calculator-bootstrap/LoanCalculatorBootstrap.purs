@@ -22,7 +22,7 @@ loanCalculatorBootstrap =
             [ { value: .car {}, label: "Car" }
             , { value: .home {}, label: "Home improvement" }
             , { value: .holiday {}, label: "Holiday" }
-            ] # required @"purpose"
+            ] # required
           toggleSwitch @"insured" { label: "Payment protection insurance" }
       ) # mvu cityCarLoan
       listGroup ( RecordToRecord.do

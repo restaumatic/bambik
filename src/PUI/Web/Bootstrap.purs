@@ -190,7 +190,7 @@ sliderLive config = field @l $ div >>> "style" := "width: 100%;" $ wrap do
 -- | The **select**: one choice out of a list, under its label. Until the
 -- | user picks there is nothing to show, so the field arrives as "maybe a
 -- | choice" and leaves as the choice itself — say which with `# optional`
--- | or `# required @"value"`. The options belong to the control, not to the model.
+-- | or `# required`. The options belong to the control, not to the model.
 select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select config options = field @l $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")

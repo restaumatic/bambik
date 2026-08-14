@@ -30,18 +30,18 @@ espressoBarMDC3 =
                   [ { value: .small {}, label: "Small" }
                   , { value: .medium {}, label: "Medium" }
                   , { value: .large {}, label: "Large" }
-                  ] # required @"size"
+                  ] # required
                 select @"milk" { floatingLabel: "Milk" }
                   [ { value: .whole {}, label: "Whole" }
                   , { value: .oat {}, label: "Oat" }
                   , { value: .almond {}, label: "Almond" }
                   , { value: .none {}, label: "None" }
-                  ] # required @"milk"
+                  ] # required
                 radioButton @"roast"
                   [ { value: .light {}, label: "Light roast" }
                   , { value: .medium {}, label: "Medium roast" }
                   , { value: .dark {}, label: "Dark roast" }
-                  ] # required @"roast"
+                  ] # required
                 sliderLive @"sugar" { label: "Sugar" }
                 chipSet RecordToRecord.do
                   filterChip @"extraShot" { label: "Extra shot" }

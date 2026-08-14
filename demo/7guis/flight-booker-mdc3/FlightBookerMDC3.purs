@@ -21,7 +21,7 @@ flightBookerMDC3 =
               select @"flightType" { floatingLabel: "Flight type" }
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
-                ] # required @"flightType"
+                ] # required
               filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }) # completed
           filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" } # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip

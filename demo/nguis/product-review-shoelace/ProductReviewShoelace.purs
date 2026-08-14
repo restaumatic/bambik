@@ -22,7 +22,7 @@ productReviewShoelace =
             [ { value: .underMonth {}, label: "Less than a month" }
             , { value: .underYear {}, label: "1–12 months" }
             , { value: .overYear {}, label: "More than a year" }
-            ] # required @"owned"
+            ] # required
           toggleSwitch @"recommend" { label: "I'd recommend it to a friend" }
           textField @"nickname" { label: "Nickname" }
           divider

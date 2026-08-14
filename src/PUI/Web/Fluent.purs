@@ -226,7 +226,7 @@ slider config = field @l $ el "fluent-field" >>> "label-position" := "above" $ w
 -- | open. Until the user picks there is nothing to show, so the field
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
 -- | with `# optional` (nothing preselected, and whatever needs the choice
--- | stays hidden until it exists) or `# required @"value"`. The options belong to
+-- | stays hidden until it exists) or `# required`. The options belong to
 -- | the control, not to the model.
 dropdown :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 dropdown config options = field @l $ fieldWith "above" config.label do

@@ -522,7 +522,7 @@ checkbox { ticked } labelContent = field @l $ wrap do
 -- | Until the user picks there is no choice to show, so the field arrives as
 -- | "maybe a choice" and leaves as the choice itself — say which with
 -- | `# optional` (nothing preselected, and whatever needs the choice stays
--- | hidden until it exists) or `# required @"value"` (the model always has one).
+-- | hidden until it exists) or `# required` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
 radioButton :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
@@ -706,7 +706,7 @@ sliderLeaf live label = wrap do
 -- | comparing side by side, prefer `radioButton` or `segmentedButton`.
 -- |
 -- | Same contract as `radioButton`: nothing to show until the user picks,
--- | so say `# optional` or `# required @"value"`; the options are part of the
+-- | so say `# optional` or `# required`; the options are part of the
 -- | control, not of the model.
 select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select config options = field @l (selectLeaf config options)

@@ -278,7 +278,7 @@ radioButton { picked } = "type" := "radio" $ wrap do
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
 -- | with no chrome and no label of its own. Until the user picks there is
 -- | nothing to show, so the field arrives as "maybe a choice" and leaves as
--- | the choice itself — say which with `# optional` or `# required @"value"`. The
+-- | the choice itself — say which with `# optional` or `# required`. The
 -- | options belong to the control, not to the model.
 select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select options = field @l $ wrap do

@@ -21,12 +21,12 @@ meetingBookerFluent =
                 [ { value: .focusPod {}, label: "Focus pod (4 seats)" }
                 , { value: .boardroom {}, label: "Boardroom (12 seats)" }
                 , { value: .auditorium {}, label: "Auditorium (40 seats)" }
-                ] # optional @"room"
+                ] # optional
               radioGroup @"duration" { label: "Duration" }
                 [ { value: .quarter {}, label: "15 min" }
                 , { value: .half {}, label: "30 min" }
                 , { value: .hour {}, label: "60 min" }
-                ] # optional @"duration"
+                ] # optional
               toggleSwitch @"online" { label: "Include a Teams link" }
               divider ) # completed
           (slider @"seats" { label: "Attendees" }) # provided seatsFor # updated (informed chooseSeats)

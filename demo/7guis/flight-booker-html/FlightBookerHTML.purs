@@ -20,7 +20,7 @@ flightBookerHTML =
                 select @"flightType"
                   [ { value: .oneWay {}, label: "one-way flight" }
                   , { value: .return {}, label: "return flight" }
-                  ] ) # required @"flightType"
+                  ] ) # required
             p ( label $ RecordToRecord.do
                 staticText "Start date (DD.MM.YYYY) "
                 input "text" # field @"value" ) # asField @"value" @"start") # completed

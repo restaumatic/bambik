@@ -117,6 +117,8 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (class Contractable, contract)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
+import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Effect (Effect)
@@ -905,10 +907,11 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
 -- | honest knowledge instead of starving the merge gate, and only a
 -- | genuine pick can ever produce the bare value —
--- | `dropdown @l config options # optional` seeds as `Nothing`
+-- | `dropdown @l config options # optional` seeds as `Nothing` (the label
+-- | is not repeated — `RowToList`'s fundep reads it from the leaf's row)
 -- | and the stages demanding the selection stay `provided`-gated until the
 -- | user picks.
-optional :: forall @l m a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Functor m => PUI m { | ri } { | ro } -> PUI m { | ri } { | ri }
+optional :: forall l m a ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Functor m => PUI m { | ri } { | ro } -> PUI m { | ri } { | ri }
 optional p = wrap $ unwrap p <#> \p' ->
   let mPropRef = unsafePerformEffect $ Ref.new Nothing
   in

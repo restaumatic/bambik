@@ -86,6 +86,7 @@ import Data.Tuple (Tuple(..), fst)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Record (get, insert, merge, union) as Record
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
@@ -247,12 +248,14 @@ projected f = lcmap \a -> Record.insert (Proxy @c) (f a) {}
 -- | display state, so when the model guarantees a selection it is vacuous —
 -- | every model value shows as chosen. Dissolves the
 -- | `dimap (\v -> { value: Just v }) _.value` bracket into a named stage:
--- | `select config options # required @"value" # asField @l`.
+-- | `select @l config options # required`. The label is not repeated: the
+-- | selector's closed singleton row states it once, and `RowToList`'s
+-- | row-to-list functional dependency reads it back out.
 -- | Its dual — a selector left possibly-unselected, the model keeping the
 -- | `Maybe` — is `PUI.optional` (carrier-level: it must complete the leaf's
 -- | `Just`-only echo, which no `dimap` can).
-required :: forall @c p a b si so. IsSymbol c => Lacks c () => Cons c (Maybe a) () si => Cons c a () so => Profunctor p => p { | si } b -> p { | so } b
-required = lcmap (\r -> Record.insert (Proxy @c) (Just (Record.get (Proxy @c) r)) {})
+required :: forall l p a b si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Lacks l () => Cons l (Maybe a) () si => Cons l a () so => Profunctor p => p { | si } b -> p { | so } b
+required = lcmap (\r -> Record.insert (Proxy @l) (Just (Record.get (Proxy @l) r)) {})
 
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
 -- | row) — the non-display sibling of `forField` (which formats into the

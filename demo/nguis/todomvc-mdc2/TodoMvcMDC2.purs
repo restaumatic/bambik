@@ -24,7 +24,7 @@ todoMvcMDC2 =
             [ { value: .all {}, label: "All" }
             , { value: .active {}, label: "Active" }
             , { value: .completed {}, label: "Completed" }
-            ] # required @"visibility" # completed
+            ] # required # completed
           Semigroupoid.do
             caption ( RecordToRecord.do
                 text @"value" # forField @"count" show
