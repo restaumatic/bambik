@@ -18,8 +18,8 @@ passwordGeneratorMDC2 =
       card { caption: "Password Generator" } $ ( Semigroupoid.do
           ( RecordToRecord.do
               slider @"Length" {}
-              toggleSwitch @"uppercase" { label: "Uppercase letters" }
-              toggleSwitch @"lowercase" { label: "Lowercase letters" }
+              toggleSwitch @"Uppercase letters" {}
+              toggleSwitch @"Lowercase letters" {}
               toggleSwitch @"Digits" {}
               toggleSwitch @"Symbols" {}) # completed
           body2 ( RecordToRecord.do

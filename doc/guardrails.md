@@ -85,7 +85,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   emitter MUST NOT be given a `label:` config: where a trace form's loop
   case would force two buttons to share one case under different words,
   they are two business actions — each takes its own case and `toCases`
-  adopts it into the loop case.
+  adopts it into the loop case. An editor MAY carry one, but only where
+  the caption genuinely cannot be the field name — a format hint, a unit,
+  or localized wording; a `label:` that merely repeats what the label
+  already says MUST move onto the label.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 

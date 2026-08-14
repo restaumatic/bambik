@@ -16,7 +16,7 @@ meetingBookerFluent =
     card { caption: "Book a meeting room" } $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
-              textField @"title" { label: "Meeting title" }
+              textField @"Meeting title" {}
               dropdown @"Room" {}
                 [ { value: .focusPod {}, label: "Focus pod (4 seats)" }
                 , { value: .boardroom {}, label: "Boardroom (12 seats)" }
@@ -27,9 +27,9 @@ meetingBookerFluent =
                 , { value: .half {}, label: "30 min" }
                 , { value: .hour {}, label: "60 min" }
                 ] # optional
-              toggleSwitch @"online" { label: "Include a Teams link" }
+              toggleSwitch @"Include a Teams link" {}
               divider ) # completed
-          (slider @"seats" { label: "Attendees" }) # provided seatsFor # updated (informed chooseSeats)
+          (slider @"Attendees" {}) # provided seatsFor # updated (informed chooseSeats)
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
@@ -40,7 +40,7 @@ meetingBookerFluent =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "Plan: "
-              text @"title" # projection titleText
+              text @"Meeting title" # projection titleText
               staticText " in the "
               text @"Room" # projection roomText
               staticText ", "

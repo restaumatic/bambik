@@ -7,18 +7,18 @@ import Data.Monoid (power)
 import Data.String (trim)
 import Data.Variant (match)
 
-freshImpression :: { stars :: { current :: Number, max :: Int }, "Headline" :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, "Nickname" :: String }
+freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String }
 freshImpression =
-  { stars: { current: 0.0, max: maxStars }
+  { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
-  , review: ""
-  , owned: .underMonth {}
-  , recommend: false
+  , "Your review": ""
+  , "How long have you owned it?": .underMonth {}
+  , "I'd recommend it to a friend": false
   , "Nickname": ""
   }
 
-submittedLine :: { stars :: { current :: Number, max :: Int }, "Headline" :: String, review :: String, owned :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], recommend :: Boolean, "Nickname" :: String } -> String
-submittedLine { stars, "Nickname": nickname } =
+submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String } -> String
+submittedLine { "Overall rating": stars, "Nickname": nickname } =
   "Thanks" <> forReviewer { "Nickname": nickname } <> "! Your " <> starGlyphs stars <> " review is in."
 
 forReviewer :: { "Nickname" :: String } -> String
@@ -26,8 +26,8 @@ forReviewer { "Nickname": nickname } = case trim nickname of
   "" -> ""
   name -> ", " <> name
 
-recommendNote :: { recommend :: Boolean } -> String
-recommendNote { recommend } = if recommend then " · would recommend" else ""
+recommendNote :: { "I'd recommend it to a friend" :: Boolean } -> String
+recommendNote { "I'd recommend it to a friend": recommend } = if recommend then " · would recommend" else ""
 
 headlineQuote :: String -> String
 headlineQuote headline = case trim headline of

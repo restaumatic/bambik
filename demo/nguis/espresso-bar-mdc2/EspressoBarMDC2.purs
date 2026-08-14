@@ -46,8 +46,8 @@ espressoBarMDC2 =
                 chipSet RecordToRecord.do
                   filterChip @"Extra shot" {}
                   filterChip @"Decaf" {}
-                toggleSwitch @"takeaway" { label: "Takeaway cup" }
-                iconToggle @"favorite" { onIcon: "favorite", offIcon: "favorite_border", label: "Mark as favorite" }
+                toggleSwitch @"Takeaway cup" {}
+                iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
                 checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
                 divider
               menu { label: "Presets" } ( RecordToVariant.do

@@ -8,31 +8,31 @@ import Data.Ord (clamp)
 import Data.String (trim)
 import Data.Variant (match)
 
-blankBooking :: { title :: String, "Room" :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean }
-blankBooking = { title: "", "Room": Nothing, "Duration": Nothing, attendees: justTheOrganizer, online: false }
+blankBooking :: { "Meeting title" :: String, "Room" :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
+blankBooking = { "Meeting title": "", "Room": Nothing, "Duration": Nothing, attendees: justTheOrganizer, "Include a Teams link": false }
 
-seatsFor :: { "Room" :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Maybe { seats :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-seatsFor { "Room": room, attendees } = (\r -> { seats: { current: seatedIn r attendees, min: justTheOrganizer, max: roomCapacity r, step: Just 1.0 } }) <$> room
+seatsFor :: { "Room" :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], attendees :: Number } -> Maybe { "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+seatsFor { "Room": room, attendees } = (\r -> { "Attendees": { current: seatedIn r attendees, min: justTheOrganizer, max: roomCapacity r, step: Just 1.0 } }) <$> room
 
-chooseSeats :: { seats :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { attendees :: Number }
-chooseSeats { seats } = { attendees: seats.current }
+chooseSeats :: { "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { attendees :: Number }
+chooseSeats { "Attendees": seats } = { attendees: seats.current }
 
 seatedIn :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ] -> Number -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
 
-completePlan :: { title :: String, "Room" :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> Maybe { title :: String, "Room" :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean }
-completePlan { title, "Room": room, "Duration": duration, attendees, online } =
-  (\r d -> { title, "Room": r, "Duration": d, attendees: seatedIn r attendees, online }) <$> room <*> duration
+completePlan :: { "Meeting title" :: String, "Room" :: Maybe [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: Maybe [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> Maybe { "Meeting title" :: String, "Room" :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
+completePlan { "Meeting title": title, "Room": room, "Duration": duration, attendees, "Include a Teams link": online } =
+  (\r d -> { "Meeting title": title, "Room": r, "Duration": d, attendees: seatedIn r attendees, "Include a Teams link": online }) <$> room <*> duration
 
-bookedLine :: { title :: String, "Room" :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, online :: Boolean } -> String
-bookedLine { title, "Room": room, "Duration": duration } =
+bookedLine :: { "Meeting title" :: String, "Room" :: [ focusPod :: {}, boardroom :: {}, auditorium :: {} ], "Duration" :: [ quarter :: {}, half :: {}, hour :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
+bookedLine { "Meeting title": title, "Room": room, "Duration": duration } =
   "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> durationText duration
 
 headcount :: Number -> String
 headcount attendees = show (round attendees)
 
-onlineNote :: { online :: Boolean } -> String
-onlineNote { online } = if online then ", with a Teams link" else ""
+onlineNote :: { "Include a Teams link" :: Boolean } -> String
+onlineNote { "Include a Teams link": online } = if online then ", with a Teams link" else ""
 
 titleText :: String -> String
 titleText title = case trim title of

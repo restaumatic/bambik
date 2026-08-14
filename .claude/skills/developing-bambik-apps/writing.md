@@ -62,9 +62,13 @@ syntax (`r { "Name" = … }`) all work unchanged.
   business field directly: `filledTextField @"Email" {}`. The label is
   stamped on the host element as its `name` attribute and **is** the
   caption, verbatim — so a field label is written as the copy it draws,
-  quoted whenever human copy is no identifier (`@"First name"`); real
-  copy the label cannot be (localized wording, units) overrides in the
-  config (`{ floatingLabel: "Your name" }`).
+  quoted whenever human copy is no identifier (`@"First name"`,
+  `toggleSwitch @"Takeaway cup" {}`). The config survives only where the
+  caption genuinely *cannot* be the field name, which in practice is
+  three kinds: a **format hint** (`{ label: "Start date (DD.MM.YYYY)" }`),
+  a **unit** (`{ label: "Amount (€)" }`), or localized wording. Copy that
+  is merely a plain phrase belongs on the label instead — a `label:`
+  repeating what the field already says is the smell.
   A lone editor followed by `# completed` is a complete `×→×` stage on
   its own — no `RecordToRecord.do` for a single field.
 - **displays** state their field on the leaf: `text @"prompt"` reads it

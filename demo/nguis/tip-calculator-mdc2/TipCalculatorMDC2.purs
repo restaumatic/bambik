@@ -16,16 +16,16 @@ tipCalculatorMDC2 =
     elevation20 $
       card { caption: "Tip Calculator" } $ ( Semigroupoid.do
           filledTextField @"amount" { floatingLabel: "Bill amount" } # completed
-          slider @"tipPercent" { label: "Tip percentage" } # completed
+          slider @"Tip percentage" {} # completed
           body2 ( RecordToRecord.do
               staticText "Tip: "
-              text @"tipPercent" # projection whole
+              text @"Tip percentage" # projection whole
               staticText "%" ) # tapped
           body2 ( RecordToRecord.do
               staticText "Split between: "
-              text @"people" # projection whole
+              text @"Split between" # projection whole
               staticText " people" ) # tapped
-          slider @"people" { label: "Split between" } # completed
+          slider @"Split between" {} # completed
           body2 ( RecordToRecord.do
               staticText "Tip amount: "
               text @"tipAmount" # projected tipAmountText ) # tapped
