@@ -240,10 +240,10 @@ else instance ConvertOption OptIcon sym a a where
 -- | the actions beside it.
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
--- | the app gives the action: `button @"booked" { label: "Book" }`.
--- | Both parts of the face are optional — `button {}` is bare,
--- | `button { label: "Count" }` labels it, `icon: "add"` puts a Material
--- | Symbols glyph before the label.
+-- | the app gives the action: `button @"booked" {}`. Both parts of the
+-- | face are optional — the label defaults to `humanizeLabel` of the case
+-- | label (`label:` overrides with real copy), `icon: "add"` puts a
+-- | Material Symbols glyph before the label.
 button
   :: forall @l provided r cl
    . IsSymbol l
@@ -315,7 +315,7 @@ buttonOf tag provided = recordToCase @l $ eventLeaf $ el tag $ RecordToRecord.do
     Just label' -> staticText label'
     Nothing -> pempty
   where
-  config = convertOptionsWithDefaults OptLabelIcon { label: Nothing, icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
+  config = convertOptionsWithDefaults OptLabelIcon { label: Just (humanizeLabel (reflectSymbol (Proxy @l))), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —

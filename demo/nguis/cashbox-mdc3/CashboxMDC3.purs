@@ -23,9 +23,9 @@ cashboxMDC3 =
               text @"balance" # projection euros ) # tapped
           ( Semigroupoid.do
               RecordToVariant.do
-                button @"Refund a customer" { label: "Refund a customer", icon: "undo" } # with standardRefund
-                button @"Pay the courier" { label: "Pay the courier", icon: "local_shipping" } # with courierFee
-                button @"Take a deposit" { label: "Take a deposit", icon: "savings" } # with customerDeposit
+                button @"Refund a customer" { icon: "undo" } # with standardRefund
+                button @"Pay the courier" { icon: "local_shipping" } # with courierFee
+                button @"Take a deposit" { icon: "savings" } # with customerDeposit
               ( VariantToVariant.do
                   ( simpleDialog { title: "Refund the customer?", confirm: "Refund" } $ bodyLarge ( RecordToRecord.do
                       staticText "Hand €"

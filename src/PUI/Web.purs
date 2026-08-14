@@ -58,10 +58,10 @@ import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
-import Data.Foldable (foldMap, for_)
+import Data.Foldable (foldl, for_)
 import Data.String (toLower, toUpper) as String
 import Data.String.CodeUnits (singleton, toCharArray, uncons) as CU
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
@@ -281,15 +281,22 @@ slotCounter = unsafePerformEffect $ Ref.new 0
 -- | "firstName" -> "First name": the humanized form of a row label — the
 -- | caption a label-indexed leaf renders when its config supplies none, so
 -- | the label parameter names the component and captions it by default.
--- | Real copy (localized wording, units, anything the identifier can't say)
--- | still belongs in the config; this is only the default.
+-- | Idempotent on copy that is already human ("Refund a customer" stays
+-- | as it is): a word break is inserted only where an uppercase letter
+-- | follows a non-space character. Real copy (localized wording, units,
+-- | anything the identifier can't say) still belongs in the config; this
+-- | is only the default.
 humanizeLabel :: String -> String
 humanizeLabel s = case CU.uncons spaced of
   Just { head, tail } -> String.toUpper (CU.singleton head) <> tail
   Nothing -> spaced
   where
-  spaced = CU.toCharArray s # foldMap \c ->
-    if c >= 'A' && c <= 'Z' then " " <> String.toLower (CU.singleton c) else CU.singleton c
+  spaced = (CU.toCharArray s # foldl step { prev: Nothing, acc: "" }).acc
+  step { prev, acc } c = { prev: Just c, acc: acc <> render c }
+    where
+    render c'
+      | c' >= 'A' && c' <= 'Z' && maybe false (_ /= ' ') prev = " " <> String.toLower (CU.singleton c')
+      | otherwise = CU.singleton c'
 
 -- | Marks a leaf's caption field (`label`/`floatingLabel`) as optional —
 -- | left out, it defaults to `humanizeLabel` of the row label the leaf is
