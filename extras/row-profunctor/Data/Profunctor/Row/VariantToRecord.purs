@@ -7,12 +7,11 @@
 -- |     and their optics in `Data.Lens.Reel`/`Data.Lens.Coreel` — neither the
 -- |     classes nor the optics mention a row, so none of them lives here.
 -- |
--- | The **canonical-row adopters** here (`forCase`/`forCases`) take the canonical label as their
--- | first type argument `@c` and carry no literal: which label a component
--- | speaks (`value`, `clicked`, `event`) is an L3 citizenship convention of
--- | the vocabulary, not a row-profunctor fact. The label is supplied at the
--- | **call site** — `# asCase @"clicked" @l` — so no layer hard-codes it and
--- | the convention is visible where it is used.
+-- | The adopters here (`forCase`/`forCases`) carry **no canonical label**:
+-- | a status states its payload case once, in its own row, and the adopters
+-- | read it back out via `RowToList`'s fundep — application code writes only
+-- | the business case (`# forCase @"booked" bookedLine`), and no layer
+-- | hard-codes a label.
 -- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
@@ -148,8 +147,8 @@ discard first cont = bind first (\_ -> cont unit)
 -- | `+ → ×` (statuses receive; events emit).
 -- | The copy formatter is the mechanism's own argument (import-tower rule
 -- | L16): the adopted case carries the bare business payload, and `f`
--- | renders it into the canonical `event` payload at the adoption site —
--- | `status # forCase @"event" @"registered" welcomeLine`; `identity` when
+-- | renders it into the status's own payload case at the adoption site —
+-- | `status # forCase @"registered" welcomeLine`; `identity` when
 -- | the payload already is the copy.
 forCase :: forall @l c p a b o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => IsSymbol l => Cons c a () cs => Cons l b () s => Profunctor p => (b -> a) -> p [ | cs ] o -> p [ | s ] o
 forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
@@ -159,7 +158,7 @@ forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 -- | `forCase @l` renders one business case into the canonical `event`
 -- | payload, `forCases` renders every case through one copy classifier, so
 -- | a single status instance serves mutually exclusive outcomes —
--- | `status # forCases @"event" (match { booked: …, rejected: … })`.
+-- | `status # forCases (match { booked: …, rejected: … })`.
 -- | One-at-a-time input means one classifier is total over the row; per-case
 -- | copy stays a `match` branch, never a sibling operand, when outcomes share one
 -- | status area.

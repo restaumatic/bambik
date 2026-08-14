@@ -248,17 +248,17 @@ recordToCase = rmap (inj (Proxy @l))
 -- | channels): a collection element emitting its identity,
 -- | `… # toCase @"picked" _.key`;
 -- | `identity` says verbatim (the case-introduction counterpart of
--- | `projected @"value" identity`). The
--- | output-side dual of `atCase` and the general sibling of `asCase`
+-- | `projected identity`). The
+-- | output-side dual of `atCase`
 -- | (which renames the canonical `clicked` case).
 toCase :: forall @l p i a b s. IsSymbol l => Cons l b () s => Profunctor p => (a -> b) -> p i a -> p i [ | s ]
 toCase f = rmap (\a -> inj (Proxy @l) (f a))
 
 -- | Fire the **business outcome** of what the emitter was shown: adopt the
--- | canonical click case by applying `f` to its payload. Where `asCase @l`
--- | renames the event and leaves the payload alone, `toCases` dissolves the
--- | event into the **variant of business results** `f` computes:
--- | an emitter `# toCases @"clicked" register` emits `register`'s cases
+-- | emitter's case — derived from its closed singleton variant row — by
+-- | applying `f` to its payload: `toCases` dissolves the
+-- | event into the **variant of business results** `f` computes, so
+-- | `button @"register" {…} # toCases register` emits `register`'s cases
 -- | directly. The output dual of `VariantToRecord`'s `forCases` (emitters
 -- | classify outward, statuses render inward). The outcome row is row-typed
 -- | on purpose: this is the `× → +` output side, where a non-variant result

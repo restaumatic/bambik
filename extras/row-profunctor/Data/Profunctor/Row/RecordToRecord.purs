@@ -235,10 +235,11 @@ focusProperty
 focusProperty = prop (Proxy @l)
 
 -- | Feed a canonically-labeled component a **function of the whole input**:
--- | `projected f` turns a `{ value :: b }` component into one fed a bare `a`,
--- | with `f a` flowing in as its `value` — so formatted displays read
--- | `text # projected @"value" readout`, and the whole-value verbatim read is
--- | `projected @"value" identity`. `lcmap`-only.
+-- | `projected f` turns a single-field component into one fed a bare `a`,
+-- | with `f a` flowing in as its field — the label derived from the leaf's
+-- | own row, so whole-value reads name what they show:
+-- | `text @"summary" # projected summaryText` (`projected identity` for
+-- | verbatim). `lcmap`-only.
 projected :: forall l p a b o cr. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
 projected f = lcmap \a -> Record.insert (Proxy @l) (f a) {}
 
@@ -257,16 +258,16 @@ required :: forall l p a b si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => I
 required = lcmap (\r -> Record.insert (Proxy @l) (Just (Record.get (Proxy @l) r)) {})
 
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
--- | row) — the non-display sibling of `forField` (which formats into the
--- | canonical `{ value }` display): a packaged collection reads its array
--- | (`… # atField @"value" # displayed`, the packaged-collection-display
+-- | row) — the non-display sibling of `projection` (which formats a
+-- | display's field in place): a packaged collection reads its array
+-- | (`… # atField @"entries" # displayed`, the packaged-collection-display
 -- | protocol), nested chrome reads its sub-rows
 -- | (`… # foreach @"name" identity # atField @"dishes"`).
 atField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
 atField = lcmap (Record.get (Proxy @l))
 
 -- | `atField`'s **open-row** sibling, exactly as `forProperty` is
--- | `forField`'s: feed a structural UI component the bare field `l` of a *wider*
+-- | `forProperty`'s: feed a structural UI component the bare field `l` of a *wider*
 -- | row, the background labels untouched. `lcmap`-only. The open row is
 -- | legal here because a record input is **shared** — every operand may read
 -- | every field — which is the same law that permits `forProperty` and
@@ -286,11 +287,11 @@ atProperty = lcmap (Record.get (Proxy @l))
 projection :: forall l p a b ia ib o. RowToList ia (RL.Cons l a RL.Nil) => IsSymbol l => Lacks l () => Cons l a () ia => Cons l b () ib => Profunctor p => (b -> a) -> p { | ia } o -> p { | ib } o
 projection f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
 
--- | `forField`'s **open-row** sibling (the display-side `focusProperty`: the
+-- | `projection`'s **open-row** sibling (the display-side `focusProperty`: the
 -- | background is carried), for positions whose row the context already
--- | pins — collection items, pane payloads:
--- | `… # forProperty @"value" @"label" identity` on a collection element,
--- | `… # forProperty @"value" @"score" show`.
+-- | pins — collection items, pane payloads. The label is the leaf's own,
+-- | read back out of its row: `text @"label" # forProperty identity` on a
+-- | collection element, `text @"score" # forProperty show`.
 forProperty :: forall l p a b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Cons l a t r => Profunctor p => (a -> b) -> p { | cr } o -> p { | r } o
 forProperty f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
 
@@ -380,7 +381,7 @@ informed g pay small = g (unsafeCoerce (Record.union pay small))
 -- | would replay the retained upstream value on every edit.
 -- |
 -- | **Subsumption is built in**: the display may read a *narrower* row than
--- | the stage carries (`text # projected @"value" readout # tapped`, where `readout`
+-- | the stage carries (`text @"summary" # projected readout # tapped`, where `readout`
 -- | declares only the fields it formats), so a closed-row read function needs
 -- | no `widenRecordInput` at the tap.
 tapped :: forall p narrow extra wider x. Strong p => Union narrow extra wider => p { | narrow } x -> p { | wider } { | wider }

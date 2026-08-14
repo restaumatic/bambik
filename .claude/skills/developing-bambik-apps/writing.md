@@ -34,45 +34,55 @@ The merges are imported from the row modules
 
 ## Component citizenship
 
-Every component is a citizen of exactly one direction and speaks a
-canonical row, adopted to the business label at the use site:
+Every component is a citizen of exactly one direction and **states its
+business label once, as the leaf's own type argument** — no canonical
+label (`value`/`clicked`/`event`) ever appears in application code, and
+adopters that need a leaf's label derive it from the closed singleton
+row:
 
-- **editors** (`filledTextField`, `checkbox`, `slider`, ...) are
-  `{ value :: _ } → { value :: _ }`; adopt with `# asField @"value" @l`. A lone
-  adopted editor followed by `# completed` is a complete `×→×` stage on
+- **editors** (`filledTextField`, `checkbox`, `slider`, ...) take the
+  business field directly: `filledTextField @"email" {}`. The label is
+  stamped on the host element as its `name` attribute and defaults the
+  caption to its humanized form (`@"firstName"` captions "First name");
+  real copy overrides in the config (`{ floatingLabel: "Your name" }`).
+  A lone editor followed by `# completed` is a complete `×→×` stage on
   its own — no `RecordToRecord.do` for a single field.
-- **displays** adopt with `# projected @"value" f` (feed `f` of the whole value).
-  A one-field read of a context-pinned wider row is the label-indexed
-  `# forProperty @"value" @"label"`; at merge-operand and `completed` positions,
-  which must state their row, the closed form is
-  `# forField @"value" @l identity`, and `# projected @"value" f # forField @"value" @l` reads one
-  field formatted (`forField` takes the bare-value display `projected @"value"`
-  produces). A named projection whose body merely reads one field is a
-  smell — use the label-indexed form and delete the function. The same
-  applies to mechanism arguments: a feed projection that merely reads a
-  field is the accessor. The exception is row-stating positions, where
-  the named function's closed signature *is* the footprint declaration
-  and stays.
-- **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) emit
-  `[ clicked :: _ ]`; adopt with `# asCase @"clicked" @l` to rename, or
-  `# toCases @"clicked" f` to fire the business outcomes `f` computes from the
-  payload — `f` returns a *variant* of results, which `toCases @"clicked"` emits
-  directly.
-- **statuses** (`snackbar`, `banner`) consume `[ event :: String ]`;
-  adopt with `# forCase @"event" @l copyOf` for one case, or
-  `# forCases @"event" (match { … })` when one status instance serves several
+- **displays** state their field on the leaf: `text @"prompt"` reads it
+  verbatim; `text @"bid" # projection f` reads it through a formatter
+  (label untouched); `text @"summary" # projected f` names what a
+  whole-value read shows; a one-field read of a context-pinned wider row
+  is `text @"label" # forProperty identity`. A named projection whose
+  body merely reads one field is a smell — put the label on the leaf and
+  delete the function. The same applies to mechanism arguments: a feed
+  projection that merely reads a field is the accessor. The exception is
+  row-stating positions, where the named function's closed signature
+  *is* the footprint declaration and stays.
+- **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) are
+  label-indexed at their case: `button @"submit" {…}` emits
+  `[ submit :: _ ]` directly. `# toCases f` fires the business outcomes
+  `f` computes from the payload — `f` returns a *variant* of results,
+  which `toCases` emits directly, deriving the consumed case from the
+  emitter's row.
+- **statuses** (`snackbar`, `banner`) derive their own payload case;
+  adopt with `# forCase @l copyOf` for one business case, or
+  `# forCases (match { … })` when one status instance serves several
   mutually exclusive outcomes (flight-booker's booking toast). A status
   mid-pipeline — showing events that must also flow on — wraps with
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
   background cases pass untouched.
 - **type-changing selectors** (`select`, `radioButton`,
-  `segmentedButton`) are `{ value :: Maybe a } → { value :: a }`;
-  always-selected ones take `# required @"value" # asField @"value" @l`,
-  possibly-unselected ones `# optional # asField @"value" @l` — the model keeps
-  the `Maybe` seeded `Nothing` (no default pick), and the stages
-  demanding the bare selection stay `provided`-gated until the user
-  picks (meeting-booker is the no-defaults showcase).
+  `segmentedButton`) carry the business label through both rows
+  (`select @"milk" cfg opts :: { milk :: Maybe _ } → { milk :: _ }`);
+  always-selected ones take `# required`, possibly-unselected ones
+  `# optional` (both derive the label) — the model keeps the `Maybe`
+  seeded `Nothing` (no default pick), and the stages demanding the bare
+  selection stay `provided`-gated until the user picks (meeting-booker
+  is the no-defaults showcase). The one two-label case — an editor whose
+  read field differs from its typed-text payload — reads through a named
+  face function via `# projected` with a distinct payload label
+  (temperature-converter's `@"celsiusText"` over `celsiusText`),
+  keeping the model field unshadowed in `informed`.
 
 **Oculars** (`card`, `dialog`, `layoutGrid`, `topAppBar`, typography,
 elevations, ...) are shape-preserving decorators — wrap freely; code
@@ -97,7 +107,7 @@ interchangeable:
   editor inside would replay stale upstream values on every edit.
 
 So: editor or record display stage → `# completed`; display over a
-non-record value (a `projected @"value"`-formatted readout) → `# tapped`. A live
+non-record value (a `projected`-formatted readout) → `# tapped`. A live
 readout as a pipeline stage is just a display made pass-through this way
 (tip-calculator's money readouts).
 
@@ -149,7 +159,7 @@ Worked examples, by shape:
   (`acted`, the gather gate as UX).
 - **panes** — quiz (`provided` panes over multi-stage pipelines keyed on
   `Maybe`-projected state).
-- **effects and time** — password-generator (`button # asCase` →
+- **effects and time** — password-generator (`button @l` →
   `action`/`atCase` → `updated`), stopwatch (`every` with
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
@@ -308,7 +318,7 @@ holds the business functions over the model, seed first.
   click and `toCase @l` introduces the case, closing the row itself.
 - **Named one-liner UI components.** A UI component function whose whole body is one
   pipeline expression — the named toast is the archetype
-  (`submittedToast = snackbar # forCase @"event" @"orderSubmitted"
+  (`submittedToast = snackbar # forCase @"orderSubmitted"
   submittedLine`) — is glue: inline the expression at its pipeline
   position and delete the function (see the Layout rule). The copy
   function's business name already says what shows.
@@ -358,7 +368,7 @@ in business language.
   payload it never reads is UI (the event) smuggled into an otherwise
   pure business function. Strip it — the business function is
   model-to-model — and absorb the event in the inline dispatch. Note a
-  bare (un-`asCase`d) button emits the canonical `[ clicked :: _ ]`, so
+  unlabeled button leaves its case ambiguous — the label is the leaf's type argument, so
   the dispatch is a one-case match that applies the business function to
   the payload snapshot, which also pins the button's row.
 
@@ -383,7 +393,7 @@ over a logic module, a single exported entry function.
 - **One-liner `PUI Web`-returning functions are inlined.** A named
   UI component function whose whole body is a single pipeline expression is
   indirection: write the expression at its use site —
-  `snackbar # forCase @"event" @"orderSubmitted" submittedLine` sits directly in
+  `snackbar # forCase @"orderSubmitted" submittedLine` sits directly in
   the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
@@ -395,7 +405,7 @@ over a logic module, a single exported entry function.
   ever leads a line — but `announce` is a component (the announcing
   leaf), not a data word: an emitter's replay payload is seeded by the
   announcement composed in registration order
-  (`announce patch >>> button { … } # asCase @"clicked" @l` — `with` is the
+  (`announce patch >>> button @l { … }` — `with` is the
   record-pipeline closer and does not fit a `×→+` emitter), and `# with {}`
   is written inline when the payload is the informationless unit, since
   naming `{}` is ceremony.
@@ -411,7 +421,7 @@ over a logic module, a single exported entry function.
   `foreach` multiplying an ocular-wrapped UI component — the paren must open
   *before* the ocular, never after its `$`, which would put the chain
   inside the element (one container around the collection instead of one
-  per item). `lcmap`-only adopters (`forField`, `projected @"value"`) are safe
+  per item). `lcmap`-only adopters (`projection`, `projected`) are safe
   either side of a shape-preserving ocular.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live
@@ -455,10 +465,10 @@ over a logic module, a single exported entry function.
   ```purescript
   headline6 ( RecordToRecord.do
       staticText "Till balance: €"
-      text # forField @"value" @"balance" euros ) # tapped
+      text @"balance" # projection euros ) # tapped
   ```
 
-  never `text # projected @"value" balanceLine` over a
+  never `text @"balance" # projected balanceLine` over a
   `balanceLine { balance } = "Till balance: €" <> euros balance`. If
   deleting the literals would leave only field reads, the function is UI
   structure in disguise. Business functions format *values* (a money
@@ -468,7 +478,7 @@ over a logic module, a single exported entry function.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status adopter in place
-  (`snackbar # forCase @"event" @"registered" welcomeLine`); the event carries
+  (`snackbar # forCase @"registered" welcomeLine`); the event carries
   the order, the outcome, the reason — the data, not the sentence.
   Validation results are payloads, not strings destined for a particular
   UI component.
@@ -533,8 +543,8 @@ over a logic module, a single exported entry function.
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
   with their projection arguments — `provided paneOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
-  `toCase @l payloadOf`, `forCase @"event" @l copyOf`, `projected @"value" f`,
-  `forProperty @"value" @l`, `toCases @"clicked" outcomeOf`, `forCases @"event" lineOf`,
+  `toCase @l payloadOf`, `forCase @l copyOf`, `projection f`, `projected f`,
+  `forProperty f`, `toCases outcomeOf`, `forCases lineOf`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would
   write has one of those homes. A shape none of them fit is a
@@ -590,7 +600,7 @@ writing the app, not an afterthought:
   swallowed echoes, and gate-withheld emissions with the sibling fields
   they wait for, the otherwise-invisible ones — as `console.debug`, so
   enable the Verbose log level in DevTools. The labels the trace prints
-  are the ones adoption introduced (`toCase @l`, `asCase @"clicked" @l`), which is
+  are the ones adoption introduced (`toCase @l`, the emitter's own `@l`), which is
   the practical reason to name cases rather than inject them inline.
 
 An unprimed *entry* needs neither: `body` demands input `{}`, so a

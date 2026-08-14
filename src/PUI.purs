@@ -866,7 +866,7 @@ displayed w = mealy (\_ s -> s) (widenRecordInput w)
 -- | Make a status an **event pass-through stage** — `displayed`'s sibling on
 -- | the `+`-diagonal, and the variant answer to `tapped`: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `status # forCase @"event" @"charge" retryLine
+-- | status consumes are also shown — `status # forCase @"charge" retryLine
 -- | # observed` narrates a retry loop without interrupting it. Subsumption
 -- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
 -- | `Union` widening): the status may consume a *narrower* row than the
@@ -989,7 +989,7 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- |
 -- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`asField`, `field`, `toCase`, `forField`).
+-- | `dimap`-only adopters (`asField`, `field`, `toCase`, `projection`).
 -- | Commuting with the *strengths* is the extra law, and the admission test
 -- | for anything called an ocular:
 -- |

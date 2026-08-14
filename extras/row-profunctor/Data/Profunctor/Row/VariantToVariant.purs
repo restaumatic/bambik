@@ -62,7 +62,7 @@ import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class
 -- | from the retained editor state), `caseOf` projects the selection back
 -- | out, and the self-trace in between (`Looping`) keeps the ensemble
 -- | consistent. An adopter with a `+ → +` *result* — which is why it
--- | lives here, like `asCase` lives at its `× → +` result. The demos'
+-- | lives here, like a label-indexed emitter lives at its `× → +` result. The demos'
 -- | variant editors read
 -- | `(RecordToRecord.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
 bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
@@ -124,7 +124,7 @@ subChoice g = dimap splitVariant (either expand expand) (left g)
 -- | the **closed-singleton unwrap** at `+`, and so `RecordToRecord.atField`'s
 -- | exact transpose (`Cons l a () s` on both): `action createPerson #
 -- | atCase @"create"` inside a `VariantToVariant.do` merge, and the input-side
--- | sibling of `RecordToVariant.asCase`.
+-- | transpose of `RecordToRecord.asField` at `+`.
 -- | No subsumption here, deliberately: a case *payload* is pinned by the
 -- | action that consumes it as often as by the UI component that emits it, so
 -- | widening this position would leave both unknown (the payload-boundary

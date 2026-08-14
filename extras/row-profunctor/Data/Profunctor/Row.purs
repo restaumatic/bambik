@@ -67,12 +67,12 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  atField, atProperty, forField,  subStrong, focusProperty     feedback
+-- | p {|a} {|b}  atField, atProperty, projection, subStrong, focusProperty    feedback
 -- |              forProperty, projected,         tapped, completed
 -- |              toField, field, asField,
 -- |              required
 -- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
--- | p {|a} [|b]  toCase, recordToCase, asCase,   subResolving, focusProperty  folding
+-- | p {|a} [|b]  toCase, recordToCase,           subResolving, focusProperty  folding
 -- |              toCases                         backgroundProperty
 -- | p [|a] {|b}  forCase, forCases               subRetaining, focusCase      unfolding
 -- |                                              backgroundCase, reduceCase
@@ -114,9 +114,15 @@
 -- | -----------------------  -----------  ---------  ---------  ------------
 -- | bare, closed singleton   atField      atCase     toField    toCase
 -- | bare, open row           atProperty   —          —          recordToCase
--- | canonical rename         forField     forCase    —          asCase
+-- | derived-label formatter  projection   forCase    —          —
 -- | whole row                projected    forCases   —          toCases
 -- | ```
+-- |
+-- | The derived-label row and the whole-row readers carry **no label
+-- | argument**: the leaf states the business label once, as its own type
+-- | argument, and the adopter reads it back out of the closed singleton
+-- | row via `RowToList`'s fundep. Renames (`asField`-style) survive only
+-- | where a packaged control fuses a canonical core to a surface label.
 -- |
 -- | The blanks are the **merge law** restated one layer down. A *shared* side
 -- | may be touched partially; an *owned* side must be handled or produced
@@ -126,10 +132,10 @@
 -- | is not total, and a partial record build would have to invent the
 -- | remaining fields, which is `completed`'s job over `Strong`.
 -- |
--- | The output-`×` canonical rename needs no entry of its own — it is
--- | `toField @l _.value`, exactly as `asCase` is `toCase` at the canonical
--- | eliminator. `field` and `asField` are the fused both-side forms the
--- | `× → ×` citizens want (canonical on both sides, being editors):
+-- | The output-`×` rename needs no entry of its own — it is
+-- | `toField @l`, exactly as a label-indexed emitter is `recordToCase @l`
+-- | at the leaf. `field` and `asField` are the fused both-side forms
+-- | packaged controls want (a fixed core row renamed at the surface):
 -- | `field @l = atField @l <<< toField @l identity`, and the deliberately
 -- | absent `+ → +` fusion is `atCase @l # toCase @l' f`. The one entry
 -- | outside the grid is `required` (a canonical-row adjustment, not a row

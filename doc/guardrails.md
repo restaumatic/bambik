@@ -65,12 +65,17 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   directions. There MUST NOT be a fifth: anything that looks like one is
   either a corollary of closure (collections = the algebra closed under
   `μ`) or wrongly conceived.
-- Every component MUST be a citizen of exactly one direction, speaking a
-  canonical row (`{ value :: String }`, `[ clicked :: r ]`,
-  `[ event :: String ]`), adopted per business label
-  (`asField`/`asCase`/`forCase`). Components MUST NOT have scalar or
-  polymorphic model interfaces; raw scalar leaves stay private or in
-  optic positions.
+- Every component MUST be a citizen of exactly one direction, and its
+  row MUST speak the **business label**, stated once as the leaf's own
+  type argument (`text @"firstName"`, `filledTextField @"email" {}`,
+  `button @"submit" {…}`, `select @"milk" cfg opts`). No canonical label
+  (`value`/`clicked`/`event`) appears in application code: adopters that
+  need a leaf's label derive it from the closed singleton row via
+  `RowToList`'s fundep (`projection`/`projected`/`forProperty`/`required`/
+  `optional`/`toCases`/`forCase`/`forCases`). Statuses keep their
+  internal payload case private and derived. Components MUST NOT have
+  scalar or polymorphic model interfaces; raw scalar leaves stay private
+  or in optic positions.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 
@@ -245,7 +250,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`field`, `recordToCase`, `projected @"value"`, `blank`).
+  applications use (`field`, `recordToCase`, `projected`, `blank`).
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
@@ -259,11 +264,11 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @"event" @l
-copyOf`, `projected @"value" f`/`forProperty @"value" @l`, `toCases @"clicked" outcomeOf`, `forCases @"event" lineOf`, `settled normalize`,
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
+copyOf`, `projection f`/`projected f`/`forProperty f`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
-the next `required @"value"` waiting to be coined — never a reason to import the
+the next `required` waiting to be coined — never a reason to import the
 module one floor down. Business optics (`Shutter`/`Reel` in business
 code below the UI) are algebra-layer material and exempt by location.
 
@@ -291,7 +296,7 @@ The library's obligations to it are one-way and concrete:
   "application code never imports `Data.Profunctor`". The checkable
   form: `grep "import Data.Profunctor (" demo/` is empty, always.
 - A shape no mechanism fits is a **missing-vocabulary signal** addressed
-  to the library — the next `required @"value"` waiting to be coined — and is
+  to the library — the next `required` waiting to be coined — and is
   answered here, by admitting vocabulary through the gates below, never
   by relaxing a rule in writing.md.
 - When a library change alters what application code should look like,
