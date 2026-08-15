@@ -7,9 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
 import PUI (action, completed, debounced, displayed, forCases, informed, mvu, required, updated)
-import PUI.Web (choices)
+import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
-import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (providedCase, body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +21,7 @@ flightBookerMDC2 =
       ( Semigroupoid.do
           ( RecordToRecord.do
               select @"Flight type" {}
-                (choices (Proxy @"one-way flight" /\ Proxy @"return flight")) # required
+                [ choice @"one-way flight", choice @"return flight" ] # required
               filledTextField @"Start date (DD.MM.YYYY)" {}) # completed
           filledTextField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip

@@ -8,9 +8,8 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
 import PUI (action, completed, debounced, displayed, forCases, informed, mvu, pempty, required, updated)
 import PUI.Web.Fluent (body1, button, card, dropdown, messageBar, textField)
-import PUI.Web (choices)
+import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
-import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (providedCase, body, provided, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,7 +20,7 @@ flightBookerFluent =
       ( Semigroupoid.do
           ( RecordToRecord.do
               dropdown @"Flight type" {}
-                (choices (Proxy @"one-way flight" /\ Proxy @"return flight")) # required
+                [ choice @"one-way flight", choice @"return flight" ] # required
               textField @"Start date (DD.MM.YYYY)" {}) # completed
           textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip

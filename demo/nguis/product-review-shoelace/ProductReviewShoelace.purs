@@ -6,9 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, headlineQuote, ownedText, recommendNote, starGlyphs, submittedLine)
 import PUI (forCase, projection, mvu, projected, required, tapped)
-import PUI.Web (choices)
+import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
-import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +21,7 @@ productReviewShoelace =
           textField @"Headline" {}
           textArea @"Your review" { rows: 4 }
           select @"How long have you owned it?" {}
-            (choices (Proxy @"Less than a month" /\ Proxy @"1–12 months" /\ Proxy @"More than a year")) # required
+            [ choice @"Less than a month", choice @"1–12 months", choice @"More than a year" ] # required
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
           divider

@@ -7,9 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
 import PUI (action, completed, debounced, displayed, forCases, informed, mvu, pempty, required, updated)
-import PUI.Web (choices)
+import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
-import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (providedCase, body, p, provided, staticText, text)
 import PUI.Web.Shoelace (button, card, select, textField, toast)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,7 +20,7 @@ flightBookerShoelace =
       ( Semigroupoid.do
           ( RecordToRecord.do
               select @"Flight type" {}
-                (choices (Proxy @"one-way flight" /\ Proxy @"return flight")) # required
+                [ choice @"one-way flight", choice @"return flight" ] # required
               textField @"Start date (DD.MM.YYYY)" {}) # completed
           textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip

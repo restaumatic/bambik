@@ -6,9 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PotluckLogic (dishText, guestCount, invitation)
 import PUI (acted, displayed, field, foreach, projection, projected, tapped, with)
-import PUI.Web (choices)
+import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
-import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (body, span, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,7 +24,7 @@ potluckMDC2 =
               ( listItem $ RecordToRecord.do
                   subtitle1 (text @"name")
                   segmentedButton @"Dish"
-                    (choices (Proxy @"Salad" /\ Proxy @"Lasagna" /\ Proxy @"Pavlova")) ) # acted @"name" ) # field @"guests"
+                    [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name" ) # field @"guests"
           headline6 $ Semigroupoid.do
             staticText "On the table: " # displayed
             ( span $ RecordToRecord.do

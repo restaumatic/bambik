@@ -9,9 +9,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
 import PUI (action, armed, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, projection, informed, required, tapped, updated, with)
-import PUI.Web (choices)
+import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
-import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -34,7 +33,7 @@ orderFormMDC2 =
         card { caption: "Fulfillment" }
           ( ( Semigroupoid.do
                 tabBar @"selected"
-                  (choices (Proxy @"Dine in" /\ Proxy @"Takeaway" /\ Proxy @"Delivery")) # completed
+                  [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ] # completed
                 filledTextField @"Table" {} # provided dineInPane # updated (informed setTable)
                 filledTextField @"Time" {} # provided takeawayPane # updated (informed setTime)
                 ( RecordToRecord.do
@@ -47,7 +46,7 @@ orderFormMDC2 =
         card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton @"Method"
-                (choices (Proxy @"Cash" /\ Proxy @"Card")) # required
+                [ choice @"Cash", choice @"Card" ] # required
               filledTextField @"Paid" {}
               body1 ( RecordToRecord.do
                   staticText "Paying by "
