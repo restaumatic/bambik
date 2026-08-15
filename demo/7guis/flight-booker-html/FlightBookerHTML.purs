@@ -23,10 +23,10 @@ flightBookerHTML =
                   ] ) # required
             p ( label $ RecordToRecord.do
                 staticText "Start date (DD.MM.YYYY) "
-                input "text" # field @"start" )) # completed
+                input "text" # field @"Start date (DD.MM.YYYY)" )) # completed
         p ( label $ RecordToRecord.do
             staticText "Return date (DD.MM.YYYY) "
-            input "text" # field @"return" ) # provided returnLeg # updated (informed setReturn)
+            input "text" # field @"Return date (DD.MM.YYYY)" ) # provided returnLeg # updated (informed setReturn)
     ) # mvu plannedTrip
     ( Semigroupoid.do
         p ( RecordToRecord.do

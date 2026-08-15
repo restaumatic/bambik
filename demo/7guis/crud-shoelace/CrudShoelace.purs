@@ -21,7 +21,7 @@ crudShoelace = do
         pempty # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do
-                textField @"prefix" { label: "Filter prefix (surname)" }
+                textField @"Filter prefix (surname)" {}
                 textField @"Name" {}
                 textField @"Surname" {}) # completed
             ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--sl-color-neutral-300, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $

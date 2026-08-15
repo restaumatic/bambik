@@ -14,6 +14,6 @@ temperatureConverterMDC3 =
   body $
     elevation5 $
       card { caption: "Temperature Converter" } $ ( Semigroupoid.do
-          filledTextField @"celsiusText" { floatingLabel: "Celsius" } # projected celsiusText # updated (informed fromCelsius)
-          filledTextField @"fahrenheitText" { floatingLabel: "Fahrenheit" } # projected fahrenheitText # updated (informed fromFahrenheit)
+          filledTextField @"Celsius" {} # projected celsiusText # updated (informed fromCelsius)
+          filledTextField @"Fahrenheit" {} # projected fahrenheitText # updated (informed fromFahrenheit)
       ) # mvu roomTemperature

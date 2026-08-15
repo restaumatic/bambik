@@ -16,8 +16,8 @@ loanCalculatorBootstrap =
     card { caption: "Loan calculator" } $ Semigroupoid.do
       ( RecordToRecord.do
           textField @"Applicant" {}
-          sliderLive @"amount" { label: "Amount (€)" }
-          sliderLive @"years" { label: "Term (years)" }
+          sliderLive @"Amount (€)" {}
+          sliderLive @"Term (years)" {}
           select @"Purpose" {}
             [ { value: .car {}, label: "Car" }
             , { value: .home {}, label: "Home improvement" }

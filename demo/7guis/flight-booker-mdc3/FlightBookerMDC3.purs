@@ -22,8 +22,8 @@ flightBookerMDC3 =
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
                 ] # required
-              filledTextField @"start" { floatingLabel: "Start date (DD.MM.YYYY)" }) # completed
-          filledTextField @"return" { floatingLabel: "Return date (DD.MM.YYYY)" } # provided returnLeg # updated (informed setReturn)
+              filledTextField @"Start date (DD.MM.YYYY)" {}) # completed
+          filledTextField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
       ( Semigroupoid.do
           bodyLarge ( RecordToRecord.do

@@ -35,10 +35,10 @@ refreshPeople people m = m { people = people }
 peopleDeleted :: Array { "Name" :: String, "Surname" :: String } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: Maybe Int }
 peopleDeleted people = { people, selected: Nothing }
 
-loadPeopleCatalogue :: Ref (Array { "Name" :: String, "Surname" :: String }) -> {} -> Aff { prefix :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: Maybe Int }
+loadPeopleCatalogue :: Ref (Array { "Name" :: String, "Surname" :: String }) -> {} -> Aff { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: Maybe Int }
 loadPeopleCatalogue catalogue _ = do
   people <- readPeople catalogue
-  pure { prefix: "", "Name": "", "Surname": "", people, selected: Nothing }
+  pure { "Filter prefix (surname)": "", "Name": "", "Surname": "", people, selected: Nothing }
 
 readPeople :: Ref (Array { "Name" :: String, "Surname" :: String }) -> Aff (Array { "Name" :: String, "Surname" :: String })
 readPeople catalogue = do
@@ -58,8 +58,8 @@ sharedPeopleCatalogue = Ref.new
   , { "Name": "Roman", "Surname": "Tisch" }
   ]
 
-entries :: { prefix :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: Maybe Int } -> Array { key :: Int, "Name" :: String, "Surname" :: String, selected :: Boolean }
-entries { prefix, selected, people } =
+entries :: { "Filter prefix (surname)" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: Maybe Int } -> Array { key :: Int, "Name" :: String, "Surname" :: String, selected :: Boolean }
+entries { "Filter prefix (surname)": prefix, selected, people } =
   (\{ i, p } -> { key: i, "Name": p."Name", "Surname": p."Surname", selected: selected == Just i })
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where

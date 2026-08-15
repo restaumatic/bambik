@@ -15,13 +15,15 @@ import Data.Maybe (Maybe)
 import Data.Number (max)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Lacks)
 import PUI (Ocular, PUI, asField, atField, blank, displayed, foreach, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
-import PUI.Web (Web)
+import PUI.Web (OptCaption(..), Web)
+import Type.Proxy (Proxy(..))
+import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
 board :: Ocular (PUI Web)
 board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;"
@@ -59,11 +61,13 @@ leaderboard config =
         staticText " — "
         text @"score" ) # foreach @"name" identity ) # atField @"entries" # displayed
 
-rangePicker :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => { label :: String } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-rangePicker config options =
+rangePicker :: forall @l provided a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+rangePicker provided options =
   ( div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ RecordToRecord.do
       labelMedium $ staticText config.label
       segmentedButton @"Picked" options ) # asField @"Picked" @l
+  where
+  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
 tile :: Ocular (PUI Web)
 tile = div >>> "style" := "display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; background: var(--md-sys-color-surface-container-low, #f7f2fa); flex: 1 1 200px; min-width: 200px; box-sizing: border-box;"

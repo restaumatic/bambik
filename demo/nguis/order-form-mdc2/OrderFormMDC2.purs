@@ -20,10 +20,10 @@ orderFormMDC2 =
       RecordToRecord.do
         headline6 ( RecordToRecord.do
             staticText "Order "
-            text @"shortId" )
+            text @"Short ID" )
         card { caption: "Identifier" } $ RecordToRecord.do
-          filledTextField @"shortId" { floatingLabel: "Short ID" }
-          filledTextField @"orderId" { floatingLabel: "Unique ID" }
+          filledTextField @"Short ID" {}
+          filledTextField @"Unique ID" {}
         card { caption: "Customer" }
           ( RecordToRecord.do
               filledTextField @"First name" {}
@@ -58,9 +58,9 @@ orderFormMDC2 =
       body1 ( Semigroupoid.do
           ( RecordToRecord.do
               staticText "Summary: Order "
-              text @"shortId"
+              text @"Short ID"
               staticText " (uniquely "
-              text @"orderId"
+              text @"Unique ID"
               staticText ") for "
               ( RecordToRecord.do
                   text @"First name"

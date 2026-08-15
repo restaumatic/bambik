@@ -94,8 +94,8 @@ setAddress :: { "Address" :: String } -> { "Address" :: String }
 setAddress { "Address": address } = { "Address": address }
 
 loadOrder :: {} -> Aff
-  { shortId :: String
-  , orderId :: String
+  { "Short ID" :: String
+  , "Unique ID" :: String
   , customer ::
       { "First name" :: String
       , "Last name" :: String
@@ -120,8 +120,8 @@ loadOrder _ = do
   delay (Milliseconds 1000.0)
   liftEffect $ log "loaded order"
   pure
-    { shortId: "7"
-    , orderId: "4617821"
+    { "Short ID": "7"
+    , "Unique ID": "4617821"
     , customer:
         { "First name": "John"
         , "Last name": "Doe"
@@ -136,44 +136,44 @@ loadOrder _ = do
     }
 
 submitOrder ::
-  { shortId :: String
-  , orderId :: String
+  { "Short ID" :: String
+  , "Unique ID" :: String
   , "Total" :: String
   }
   -> Aff
-    [ orderSubmitted :: { shortId :: String }
-    , submissionFailed :: { shortId :: String, reason :: String }
+    [ orderSubmitted :: { "Short ID" :: String }
+    , submissionFailed :: { "Short ID" :: String, reason :: String }
     ]
-submitOrder { shortId, orderId, "Total": total } = do
+submitOrder { "Short ID": shortId, "Unique ID": orderId, "Total": total } = do
   liftEffect $ log $ "submitting order " <> orderId
   delay (Milliseconds 1000.0)
   if total == ""
     then do
       liftEffect $ log "order submission failed"
-      pure $ .submissionFailed { shortId, reason: "missing total" }
+      pure $ .submissionFailed { "Short ID": shortId, reason: "missing total" }
     else do
       liftEffect $ log "submitted order"
-      pure $ .orderSubmitted { shortId }
+      pure $ .orderSubmitted { "Short ID": shortId }
 
-submittedLine :: { shortId :: String } -> String
-submittedLine { shortId } = "Order " <> shortId <> " submitted"
+submittedLine :: { "Short ID" :: String } -> String
+submittedLine { "Short ID": shortId } = "Order " <> shortId <> " submitted"
 
-rejectionLine :: { shortId :: String, reason :: String } -> String
-rejectionLine { shortId, reason } = "Order " <> shortId <> " rejected: " <> reason
+rejectionLine :: { "Short ID" :: String, reason :: String } -> String
+rejectionLine { "Short ID": shortId, reason } = "Order " <> shortId <> " rejected: " <> reason
 
 printReceipt ::
-  { shortId :: String
-  , orderId :: String
+  { "Short ID" :: String
+  , "Unique ID" :: String
   }
-  -> Aff [ receiptPrinted :: { shortId :: String } ]
-printReceipt { shortId, orderId } = do
+  -> Aff [ receiptPrinted :: { "Short ID" :: String } ]
+printReceipt { "Short ID": shortId, "Unique ID": orderId } = do
   liftEffect $ log $ "printing receipt for order " <> orderId
   delay (Milliseconds 2000.0)
   liftEffect $ log $ "printed receipt for order " <> orderId
-  pure $ .receiptPrinted { shortId }
+  pure $ .receiptPrinted { "Short ID": shortId }
 
-receiptLine :: { shortId :: String } -> String
-receiptLine { shortId } = "Receipt for order " <> shortId <> " printed"
+receiptLine :: { "Short ID" :: String } -> String
+receiptLine { "Short ID": shortId } = "Receipt for order " <> shortId <> " printed"
 
 summarySettleTime :: { ms :: Number }
 summarySettleTime = { ms: 300.0 }

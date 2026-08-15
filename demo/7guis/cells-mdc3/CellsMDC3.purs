@@ -20,7 +20,7 @@ cellsMDC3 =
               bodyLarge ( RecordToRecord.do
                   staticText "Cell "
                   text @"selectedName" # projected selectedName )
-              filledTextField @"formula" { floatingLabel: "Formula (e.g. =SUM(A0:A5)*2)" }) # completed # settled commit
+              filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {}) # completed # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
                   ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })

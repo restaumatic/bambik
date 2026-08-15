@@ -21,7 +21,7 @@ crudBootstrap = do
         pempty # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do
-                textField @"prefix" { label: "Filter prefix (surname)" }
+                textField @"Filter prefix (surname)" {}
                 textField @"Name" {}
                 textField @"Surname" {}) # completed
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $

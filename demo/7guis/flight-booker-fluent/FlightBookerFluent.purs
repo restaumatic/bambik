@@ -21,8 +21,8 @@ flightBookerFluent =
                 [ { value: .oneWay {}, label: "one-way flight" }
                 , { value: .return {}, label: "return flight" }
                 ] # required
-              textField @"start" { label: "Start date (DD.MM.YYYY)" }) # completed
-          textField @"return" { label: "Return date (DD.MM.YYYY)" } # provided returnLeg # updated (informed setReturn)
+              textField @"Start date (DD.MM.YYYY)" {}) # completed
+          textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
       ( Semigroupoid.do
           body1 ( RecordToRecord.do

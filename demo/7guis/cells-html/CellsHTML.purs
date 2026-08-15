@@ -19,7 +19,7 @@ cellsHTML =
               text @"selectedName" # projected selectedName )
           p ( label $ RecordToRecord.do
               staticText "Formula (e.g. =SUM(A0:A5)*2) "
-              "size" := "32" $ input "text" # field @"formula" ) ) # completed # settled commit
+              "size" := "32" $ input "text" # field @"Formula (e.g. =SUM(A0:A5)*2)" ) ) # completed # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
           ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
               ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })

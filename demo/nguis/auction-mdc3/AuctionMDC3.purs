@@ -18,8 +18,8 @@ auctionMDC3 =
       card { caption: "Live Auction" } $ ( Semigroupoid.do
           bodyMedium ( RecordToRecord.do
               staticText "Your current bid: $"
-              text @"bid" # projection (show <<< _.current) ) # tapped
-          sliderLive @"bid" { label: "Your bid ($)" }
+              text @"Your bid ($)" # projection (show <<< _.current) ) # tapped
+          sliderLive @"Your bid ($)" {}
           ( Semigroupoid.do
               identity # settled raiseTop
               headlineSmall ( RecordToRecord.do

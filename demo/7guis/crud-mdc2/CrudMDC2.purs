@@ -22,7 +22,7 @@ crudMDC2 = do
           indeterminateLinearProgress @"busy" # action (loadPeopleCatalogue catalogue)
           ( Semigroupoid.do
               ( RecordToRecord.do
-                  filledTextField @"prefix" { floatingLabel: "Filter prefix (surname)" }
+                  filledTextField @"Filter prefix (surname)" {}
                   filledTextField @"Name" {}
                   filledTextField @"Surname" {}) # completed
               listOf { selected: _.selected } entries ( displayed $ RecordToRecord.do

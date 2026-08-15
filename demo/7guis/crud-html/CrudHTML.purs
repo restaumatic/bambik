@@ -21,7 +21,7 @@ crudHTML = do
           ( RecordToRecord.do
               p ( label $ RecordToRecord.do
                   staticText "Filter prefix (surname) "
-                  input "text" # field @"prefix" )
+                  input "text" # field @"Filter prefix (surname)" )
               p ( label $ RecordToRecord.do
                   staticText "Name "
                   input "text" # field @"Name" )

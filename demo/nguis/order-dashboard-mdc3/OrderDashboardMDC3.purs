@@ -16,7 +16,7 @@ orderDashboardMDC3 =
     elevation5 $
       topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
           every tickPeriod ordersArrive
-          rangePicker @"window" { label: "Showing" }
+          rangePicker @"Showing" {}
             [ { value: .lastMinute {}, label: "Last minute" }
             , { value: .lastQuarter {}, label: "Last 15 min" }
             , { value: .sinceOpen {}, label: "Since open" }

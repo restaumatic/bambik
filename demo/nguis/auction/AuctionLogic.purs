@@ -4,14 +4,14 @@ import Prelude (max)
 
 import Data.Maybe (Maybe(..))
 
-openingBid :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-openingBid = { bid: biddingRange }
+openingBid :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+openingBid = { "Your bid ($)": biddingRange }
 
-noBids :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
-noBids = { bid: biddingRange, top: 0.0 }
+noBids :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
+noBids = { "Your bid ($)": biddingRange, top: 0.0 }
 
-raiseTop :: { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number } -> { bid :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
-raiseTop { bid, top } = { bid, top: max bid.current top }
+raiseTop :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, top :: Number }
+raiseTop { "Your bid ($)": bid, top } = { "Your bid ($)": bid, top: max bid.current top }
 
 biddingRange :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
 biddingRange = { current: 0.0, min: 0.0, max: 1000.0, step: Just 10.0 }

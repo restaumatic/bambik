@@ -14,7 +14,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
-orderSheet :: { cells :: Object String, selected :: Maybe String, formula :: String }
+orderSheet :: { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 orderSheet =
   { cells: fromHomogeneous
       { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -23,7 +23,7 @@ orderSheet =
       , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
       }
   , selected: Nothing
-  , formula: ""
+  , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
 
 cols :: Int
@@ -48,12 +48,12 @@ gridRows m =
     [ { rowKey: "header", cells: headerCells } ]
       <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
 
-selectCell :: String -> { cells :: Object String, selected :: Maybe String, formula :: String } -> { cells :: Object String, selected :: Maybe String, formula :: String }
+selectCell :: String -> { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 selectCell "" m = m
-selectCell key m = m { selected = Just key, formula = fromMaybe "" (lookup key m.cells) }
+selectCell key m = m { selected = Just key, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
-commit :: { cells :: Object String, selected :: Maybe String, formula :: String } -> { cells :: Object String, selected :: Maybe String, formula :: String }
-commit m@{ selected, formula } = case selected of
+commit :: { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = case selected of
   Just k | lookup k m.cells /= Just formula ->
     m { cells = if formula == "" then delete k m.cells else insert k formula m.cells }
   _ -> m
