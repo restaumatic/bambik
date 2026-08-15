@@ -17,6 +17,12 @@ const type = (i, value) => `(() => {
 
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`${fields}.length`), 2, 'both temperature fields render')
+
+  // the label is a typographic symbol; it must survive bundling into the caption
+  assertEq(await ev(`[...document.querySelectorAll('.mdc-floating-label')].map(l => l.textContent)`),
+    ['\u00B0C', '\u00B0F'], 'the °C/°F labels caption the fields')
+  assertEq(await ev(`[...document.querySelectorAll('.mdc-text-field[name]')].map(f => f.getAttribute('name'))`),
+    ['\u00B0C', '\u00B0F'], 'and are stamped as the host name attribute')
   assertEq(await ev(valueOf(0)), '20.0', 'the seeded celsius reading renders')
   assertEq(await ev(valueOf(1)), '68.0', 'the seeded fahrenheit reading renders')
 

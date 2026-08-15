@@ -13,6 +13,6 @@ temperatureConverterShoelace :: Effect Unit
 temperatureConverterShoelace =
   body $
     card { caption: "Temperature Converter" } $ ( Semigroupoid.do
-        textField @"Degrees Celsius" {} # projected celsiusText # updated (informed fromCelsius)
-        textField @"Degrees Fahrenheit" {} # projected fahrenheitText # updated (informed fromFahrenheit)
+        textField @"°C" {} # projected celsiusText # updated (informed fromCelsius)
+        textField @"°F" {} # projected fahrenheitText # updated (informed fromFahrenheit)
     ) # mvu roomTemperature

@@ -14,12 +14,12 @@ celsiusText { celsiusReading } = show celsiusReading
 fahrenheitText :: { fahrenheitReading :: Number } -> String
 fahrenheitText { fahrenheitReading } = show fahrenheitReading
 
-fromCelsius :: { "Degrees Celsius" :: String, celsiusReading :: Number, fahrenheitReading :: Number } -> { celsiusReading :: Number, fahrenheitReading :: Number }
-fromCelsius { "Degrees Celsius": typed, celsiusReading, fahrenheitReading } = case fromString typed of
+fromCelsius :: { "°C" :: String, celsiusReading :: Number, fahrenheitReading :: Number } -> { celsiusReading :: Number, fahrenheitReading :: Number }
+fromCelsius { "°C": typed, celsiusReading, fahrenheitReading } = case fromString typed of
   Just c -> { celsiusReading: c, fahrenheitReading: c * 9.0 / 5.0 + 32.0 }
   Nothing -> { celsiusReading, fahrenheitReading }
 
-fromFahrenheit :: { "Degrees Fahrenheit" :: String, celsiusReading :: Number, fahrenheitReading :: Number } -> { celsiusReading :: Number, fahrenheitReading :: Number }
-fromFahrenheit { "Degrees Fahrenheit": typed, celsiusReading, fahrenheitReading } = case fromString typed of
+fromFahrenheit :: { "°F" :: String, celsiusReading :: Number, fahrenheitReading :: Number } -> { celsiusReading :: Number, fahrenheitReading :: Number }
+fromFahrenheit { "°F": typed, celsiusReading, fahrenheitReading } = case fromString typed of
   Just f -> { fahrenheitReading: f, celsiusReading: (f - 32.0) * 5.0 / 9.0 }
   Nothing -> { celsiusReading, fahrenheitReading }

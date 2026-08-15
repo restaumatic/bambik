@@ -122,8 +122,10 @@ syntax (`r { "Name" = … }`) all work unchanged.
   face function via `# projected` with a distinct payload label, and
   **each of the three concepts takes its own name** so none shadows
   another in `informed`'s merged row: temperature-converter's payload
-  label/caption is `@"Degrees Celsius"`, its model quantity is
-  `celsiusReading`, and the reader between them is `celsiusText`.
+  label/caption is `@"°C"`, its model quantity is `celsiusReading`, and
+  the reader between them is `celsiusText`. A label is an arbitrary
+  string, so where a **symbol** is the conventional caption — `°C`, a
+  currency sign — write the symbol rather than spelling it out.
 
 **Oculars** (`card`, `dialog`, `layoutGrid`, `topAppBar`, typography,
 elevations, ...) are shape-preserving decorators — wrap freely; code
