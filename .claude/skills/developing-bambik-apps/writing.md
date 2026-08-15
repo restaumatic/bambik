@@ -119,9 +119,11 @@ syntax (`r { "Name" = … }`) all work unchanged.
   selection stay `provided`-gated until the user picks (meeting-booker
   is the no-defaults showcase). The one two-label case — an editor whose
   read field differs from its typed-text payload — reads through a named
-  face function via `# projected` with a distinct payload label
-  (temperature-converter's `@"celsiusText"` over `celsiusText`),
-  keeping the model field unshadowed in `informed`.
+  face function via `# projected` with a distinct payload label, and
+  **each of the three concepts takes its own name** so none shadows
+  another in `informed`'s merged row: temperature-converter's payload
+  label/caption is `@"Degrees Celsius"`, its model quantity is
+  `celsiusReading`, and the reader between them is `celsiusText`.
 
 **Oculars** (`card`, `dialog`, `layoutGrid`, `topAppBar`, typography,
 elevations, ...) are shape-preserving decorators — wrap freely; code

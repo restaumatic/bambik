@@ -13,6 +13,6 @@ temperatureConverterBootstrap :: Effect Unit
 temperatureConverterBootstrap =
   body $
     card { caption: "Temperature Converter" } $ ( Semigroupoid.do
-        textField @"Celsius" {} # projected celsiusText # updated (informed fromCelsius)
-        textField @"Fahrenheit" {} # projected fahrenheitText # updated (informed fromFahrenheit)
+        textField @"Degrees Celsius" {} # projected celsiusText # updated (informed fromCelsius)
+        textField @"Degrees Fahrenheit" {} # projected fahrenheitText # updated (informed fromFahrenheit)
     ) # mvu roomTemperature
