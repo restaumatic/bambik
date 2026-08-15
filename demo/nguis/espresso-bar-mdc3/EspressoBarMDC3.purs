@@ -8,6 +8,9 @@ import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
 import PUI (forCase, mvu, projected, required, tapped, updated, with)
+import PUI.Web (choices)
+import Data.Tuple.Nested ((/\))
+import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,27 +24,14 @@ espressoBarMDC3 =
           ( Semigroupoid.do
               RecordToRecord.do
                 tabBar @"drink"
-                  [ { value: .espresso {}, label: "Espresso" }
-                  , { value: .cappuccino {}, label: "Cappuccino" }
-                  , { value: .latte {}, label: "Latte" }
-                  ]
+                  (choices (Proxy @"Espresso" /\ Proxy @"Cappuccino" /\ Proxy @"Latte"))
                 filledTextField @"Your name" {}
                 segmentedButton @"Size"
-                  [ { value: .small {}, label: "Small" }
-                  , { value: .medium {}, label: "Medium" }
-                  , { value: .large {}, label: "Large" }
-                  ] # required
+                  (choices (Proxy @"Small" /\ Proxy @"Medium" /\ Proxy @"Large")) # required
                 select @"Milk" {}
-                  [ { value: .whole {}, label: "Whole" }
-                  , { value: .oat {}, label: "Oat" }
-                  , { value: .almond {}, label: "Almond" }
-                  , { value: .none {}, label: "None" }
-                  ] # required
+                  (choices (Proxy @"Whole" /\ Proxy @"Oat" /\ Proxy @"Almond" /\ Proxy @"None")) # required
                 radioButton @"Roast"
-                  [ { value: .light {}, label: "Light roast" }
-                  , { value: .medium {}, label: "Medium roast" }
-                  , { value: .dark {}, label: "Dark roast" }
-                  ] # required
+                  (choices (Proxy @"Light roast" /\ Proxy @"Medium roast" /\ Proxy @"Dark roast")) # required
                 sliderLive @"Sugar" {}
                 chipSet RecordToRecord.do
                   filterChip @"Extra shot" {}

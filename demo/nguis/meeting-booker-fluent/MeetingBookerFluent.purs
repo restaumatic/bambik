@@ -7,7 +7,10 @@ import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, durationText, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
 import PUI (completed, displayed, forCase, projection, informed, mvu, optional, projected, tapped, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
+import PUI.Web (choices)
 import PUI.Web.HTML (body, div, provided, staticText, text)
+import Data.Tuple.Nested ((/\))
+import Type.Proxy (Proxy(..))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 meetingBookerFluent :: Effect Unit
@@ -18,15 +21,9 @@ meetingBookerFluent =
           ( RecordToRecord.do
               textField @"Meeting title" {}
               dropdown @"Room" {}
-                [ { value: .focusPod {}, label: "Focus pod (4 seats)" }
-                , { value: .boardroom {}, label: "Boardroom (12 seats)" }
-                , { value: .auditorium {}, label: "Auditorium (40 seats)" }
-                ] # optional
+                (choices (Proxy @"Focus pod (4 seats)" /\ Proxy @"Boardroom (12 seats)" /\ Proxy @"Auditorium (40 seats)")) # optional
               radioGroup @"Duration" {}
-                [ { value: .quarter {}, label: "15 min" }
-                , { value: .half {}, label: "30 min" }
-                , { value: .hour {}, label: "60 min" }
-                ] # optional
+                (choices (Proxy @"15 min" /\ Proxy @"30 min" /\ Proxy @"60 min")) # optional
               toggleSwitch @"Include a Teams link" {}
               divider ) # completed
           (slider @"Attendees" {}) # provided seatsFor # updated (informed chooseSeats)

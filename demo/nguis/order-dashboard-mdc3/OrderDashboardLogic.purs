@@ -11,8 +11,8 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 
-openingDay :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ] }
-openingDay = { tick: 0, orders: mapMaybe arrival (range openingTick 0), "Showing": .lastQuarter {} }
+openingDay :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ] }
+openingDay = { tick: 0, orders: mapMaybe arrival (range openingTick 0), "Showing": ."Last 15 min" {} }
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
@@ -49,22 +49,22 @@ menu =
 openingTick :: Int
 openingTick = -900
 
-windowStart :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ] -> Int -> Int
-windowStart window tick = match { lastMinute: \_ -> tick - 60, lastQuarter: \_ -> tick - 900, sinceOpen: \_ -> openingTick } window
+windowStart :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ] -> Int -> Int
+windowStart window tick = match { "Last minute": \_ -> tick - 60, "Last 15 min": \_ -> tick - 900, "Since open": \_ -> openingTick } window
 
-inWindow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ], tick :: Int } -> Array { id :: Int, dish :: String, total :: Number, at :: Int }
+inWindow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array { id :: Int, dish :: String, total :: Number, at :: Int }
 inWindow { orders, "Showing": window, tick } = filter (\o -> o.at >= windowStart window tick) orders
 
-ordersCount :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ], tick :: Int } -> String
+ordersCount :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> String
 ordersCount m = show (length (inWindow m))
 
-revenue :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ], tick :: Int } -> String
+revenue :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> String
 revenue m = toStringWith (fixed 2) (sum (_.total <$> inWindow m))
 
 kitchenLoad :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, tick :: Int } -> Number
 kitchenLoad { orders, tick } = min 1.0 (toNumber (length (filter (\o -> o.at > tick - prepTime) orders)) / kitchenCapacity)
 
-orderFlow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ], tick :: Int } -> Array Number
+orderFlow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array Number
 orderFlow m@{ "Showing": window, tick } =
   let start = windowStart window tick
       width = max 1 ((tick - start) / trendBuckets)
@@ -72,7 +72,7 @@ orderFlow m@{ "Showing": window, tick } =
       bucket i = toNumber (length (filter (\o -> o.at >= start + i * width && o.at < start + (i + 1) * width) recent))
   in bucket <$> range 0 (trendBuckets - 1)
 
-topDishes :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ lastMinute :: {}, lastQuarter :: {}, sinceOpen :: {} ], tick :: Int } -> Array { name :: String, score :: String }
+topDishes :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array { name :: String, score :: String }
 topDishes m = take 5 ((\(Tuple name count) -> { name, score: show (count :: Int) }) <$> sortBy (\(Tuple _ a) (Tuple _ b) -> compare b a) (toUnfoldable (fromFoldableWith (+) ((\o -> Tuple o.dish 1) <$> inWindow m))))
 
 prepTime :: Int

@@ -7,6 +7,9 @@ import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText, rateText, totalInterestText)
 import PUI (forCase, mvu, projected, required, tapped)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
+import PUI.Web (choices)
+import Data.Tuple.Nested ((/\))
+import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (body, div, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -19,10 +22,7 @@ loanCalculatorBootstrap =
           sliderLive @"Amount (€)" {}
           sliderLive @"Term (years)" {}
           select @"Purpose" {}
-            [ { value: .car {}, label: "Car" }
-            , { value: .home {}, label: "Home improvement" }
-            , { value: .holiday {}, label: "Holiday" }
-            ] # required
+            (choices (Proxy @"Car" /\ Proxy @"Home improvement" /\ Proxy @"Holiday")) # required
           toggleSwitch @"Payment protection insurance" {}
       ) # mvu cityCarLoan
       listGroup ( RecordToRecord.do

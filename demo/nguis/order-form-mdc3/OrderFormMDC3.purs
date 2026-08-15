@@ -9,6 +9,9 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
 import PUI (action, armed, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, projection, informed, required, tapped, updated, with)
+import PUI.Web (choices)
+import Data.Tuple.Nested ((/\))
+import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,10 +34,7 @@ orderFormMDC3 =
         card { caption: "Fulfillment" }
           ( ( Semigroupoid.do
                 tabBar @"selected"
-                  [ { value: .dineIn {}, label: "Dine in" }
-                  , { value: .takeaway {}, label: "Takeaway" }
-                  , { value: .delivery {}, label: "Delivery" }
-                  ] # completed
+                  (choices (Proxy @"Dine in" /\ Proxy @"Takeaway" /\ Proxy @"Delivery")) # completed
                 filledTextField @"Table" {} # provided dineInPane # updated (informed setTable)
                 filledTextField @"Time" {} # provided takeawayPane # updated (informed setTime)
                 ( RecordToRecord.do
@@ -47,9 +47,7 @@ orderFormMDC3 =
         card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton @"Method"
-                [ { value: .cash {}, label: "Cash" }
-                , { value: .card {}, label: "Card" }
-                ] # required
+                (choices (Proxy @"Cash" /\ Proxy @"Card")) # required
               filledTextField @"Paid" {}
               bodyLarge ( RecordToRecord.do
                   staticText "Paying by "

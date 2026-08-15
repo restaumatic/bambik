@@ -13,6 +13,8 @@ module PUI.Web
   , Event
   , Node
   , OptCaption(..)
+  , class Choices
+  , choices
   , Web
   , addClass
   , addEventListener
@@ -57,6 +59,11 @@ import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple (Tuple(..))
+import Data.Variant (Variant, inj)
+import Prim.Row as Row
+import Type.Proxy (Proxy(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
@@ -286,3 +293,26 @@ data OptCaption = OptCaption
 
 instance ConvertOption OptCaption sym a a where
   convertOption _ _ = identity
+
+-- | Build a selector's options from an **ordered** list of case labels, so a
+-- | choice states its copy once — at the case — exactly as a captioned leaf
+-- | does:
+-- |
+-- | ```
+-- | dropdown @"Room" {} (choices (Proxy @"Focus pod" /\ Proxy @"Boardroom"))
+-- | ```
+-- |
+-- | The order is the **declaration** order, which is why the list is a nested
+-- | tuple of proxies rather than the variant row itself: a row is sorted
+-- | alphabetically by the compiler, and a selector's option order is a design
+-- | decision (rooms by size, durations by length), never alphabetical.
+-- | Each label becomes both the case injected and the text drawn, so the
+-- | `{ value, label }` echo disappears.
+class Choices t (r :: Row Type) where
+  choices :: t -> Array { value :: Variant r, label :: String }
+
+instance (IsSymbol l, Row.Cons l {} tail r) => Choices (Proxy l) r where
+  choices _ = [ { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Proxy l) } ]
+
+else instance (Choices head r, Choices tail r) => Choices (Tuple head tail) r where
+  choices (Tuple h t) = choices h <> choices t

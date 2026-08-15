@@ -6,6 +6,9 @@ import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserLogic (favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
 import PUI (completed, displayed, foreach, projection, informed, mvu, projected, toCase, updated)
+import PUI.Web (choices)
+import Data.Tuple.Nested ((/\))
+import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,11 +20,7 @@ movieBrowserMDC3 =
     elevation3 $
       card { caption: "Movie Browser" } $ ( Semigroupoid.do
           tabBar @"category"
-            [ { value: .all {}, label: "All" }
-            , { value: .action {}, label: "Action" }
-            , { value: .drama {}, label: "Drama" }
-            , { value: .comedy {}, label: "Comedy" }
-            ] # completed
+            (choices (Proxy @"All" /\ Proxy @"Action" /\ Proxy @"Drama" /\ Proxy @"Comedy")) # completed
           chipSet ( RecordToRecord.do
               filterChip @"Classic" {}
               filterChip @"Cult" {}

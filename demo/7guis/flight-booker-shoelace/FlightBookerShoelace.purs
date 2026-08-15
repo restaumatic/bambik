@@ -7,6 +7,9 @@ import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
 import PUI (action, completed, debounced, displayed, forCases, informed, mvu, pempty, required, updated)
+import PUI.Web (choices)
+import Data.Tuple.Nested ((/\))
+import Type.Proxy (Proxy(..))
 import PUI.Web.HTML (providedCase, body, p, provided, staticText, text)
 import PUI.Web.Shoelace (button, card, select, textField, toast)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,9 +21,7 @@ flightBookerShoelace =
       ( Semigroupoid.do
           ( RecordToRecord.do
               select @"Flight type" {}
-                [ { value: .oneWay {}, label: "one-way flight" }
-                , { value: .roundTrip {}, label: "return flight" }
-                ] # required
+                (choices (Proxy @"one-way flight" /\ Proxy @"return flight")) # required
               textField @"Start date (DD.MM.YYYY)" {}) # completed
           textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
@@ -30,12 +31,12 @@ flightBookerShoelace =
               text @"problem" ) # providedCase @"problem" bookingState # displayed
           p ( RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" ) # providedCase @"oneWay" bookingState # displayed
+              text @"date" ) # providedCase @"one-way flight" bookingState # displayed
           p ( RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # providedCase @"roundTrip" bookingState # displayed ) # debounced itinerarySettleTime
+              text @"back" ) # providedCase @"return flight" bookingState # displayed ) # debounced itinerarySettleTime
       button @"Book" {}
       pempty # action (match { "Book": submit })
       toast # forCases bookingLine

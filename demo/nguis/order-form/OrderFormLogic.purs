@@ -14,75 +14,75 @@ distanceKm address = show (length address)
 
 dineInDetail ::
   { fulfillment ::
-      [ dineIn :: { "Table" :: String }
-      , takeaway :: { "Time" :: String }
-      , delivery :: { "Address" :: String }
+      [ "Dine in" :: { "Table" :: String }
+      , "Takeaway" :: { "Time" :: String }
+      , "Delivery" :: { "Address" :: String }
       ]
   }
   -> Maybe { "Table" :: String }
-dineInDetail { fulfillment } = match { dineIn: Just, takeaway: const Nothing, delivery: const Nothing } fulfillment
+dineInDetail { fulfillment } = match { "Dine in": Just, "Takeaway": const Nothing, "Delivery": const Nothing } fulfillment
 
 takeawayDetail ::
   { fulfillment ::
-      [ dineIn :: { "Table" :: String }
-      , takeaway :: { "Time" :: String }
-      , delivery :: { "Address" :: String }
+      [ "Dine in" :: { "Table" :: String }
+      , "Takeaway" :: { "Time" :: String }
+      , "Delivery" :: { "Address" :: String }
       ]
   }
   -> Maybe { "Time" :: String }
-takeawayDetail { fulfillment } = match { dineIn: const Nothing, takeaway: Just, delivery: const Nothing } fulfillment
+takeawayDetail { fulfillment } = match { "Dine in": const Nothing, "Takeaway": Just, "Delivery": const Nothing } fulfillment
 
 deliveryDetail ::
   { fulfillment ::
-      [ dineIn :: { "Table" :: String }
-      , takeaway :: { "Time" :: String }
-      , delivery :: { "Address" :: String }
+      [ "Dine in" :: { "Table" :: String }
+      , "Takeaway" :: { "Time" :: String }
+      , "Delivery" :: { "Address" :: String }
       ]
   }
   -> Maybe { "Address" :: String }
-deliveryDetail { fulfillment } = match { dineIn: const Nothing, takeaway: const Nothing, delivery: Just } fulfillment
+deliveryDetail { fulfillment } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": Just } fulfillment
 
 methodText ::
-  [ cash :: {}
-  , card :: {}
+  [ "Cash" :: {}
+  , "Card" :: {}
   ]
   -> String
 methodText = match
-  { cash: const "cash"
-  , card: const "card"
+  { "Cash": const "cash"
+  , "Card": const "card"
   }
 
 fulfillmentState ::
-  [ dineIn :: { "Table" :: String }
-  , takeaway :: { "Time" :: String }
-  , delivery :: { "Address" :: String }
+  [ "Dine in" :: { "Table" :: String }
+  , "Takeaway" :: { "Time" :: String }
+  , "Delivery" :: { "Address" :: String }
   ]
-  -> { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], "Table" :: String, "Time" :: String, "Address" :: String }
+  -> { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String }
 fulfillmentState = match
-  { dineIn: \r -> { selected: .dineIn {}, "Table": r."Table", "Time": "12:00", "Address": "" }
-  , takeaway: \r -> { selected: .takeaway {}, "Table": "1", "Time": r."Time", "Address": "" }
-  , delivery: \r -> { selected: .delivery {}, "Table": "1", "Time": "12:00", "Address": r."Address" }
+  { "Dine in": \r -> { selected: ."Dine in" {}, "Table": r."Table", "Time": "12:00", "Address": "" }
+  , "Takeaway": \r -> { selected: ."Takeaway" {}, "Table": "1", "Time": r."Time", "Address": "" }
+  , "Delivery": \r -> { selected: ."Delivery" {}, "Table": "1", "Time": "12:00", "Address": r."Address" }
   }
 
-fulfillmentCase :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], "Table" :: String, "Time" :: String, "Address" :: String } ->
-  [ dineIn :: { "Table" :: String }
-  , takeaway :: { "Time" :: String }
-  , delivery :: { "Address" :: String }
+fulfillmentCase :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String } ->
+  [ "Dine in" :: { "Table" :: String }
+  , "Takeaway" :: { "Time" :: String }
+  , "Delivery" :: { "Address" :: String }
   ]
 fulfillmentCase { selected, "Table": table, "Time": time, "Address": address } = match
-  { dineIn: \_ -> .dineIn { "Table": table }
-  , takeaway: \_ -> .takeaway { "Time": time }
-  , delivery: \_ -> .delivery { "Address": address }
+  { "Dine in": \_ -> ."Dine in" { "Table": table }
+  , "Takeaway": \_ -> ."Takeaway" { "Time": time }
+  , "Delivery": \_ -> ."Delivery" { "Address": address }
   } selected
 
-dineInPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], "Table" :: String } -> Maybe { "Table" :: String }
-dineInPane { selected, "Table": table } = match { dineIn: \_ -> Just { "Table": table }, takeaway: const Nothing, delivery: const Nothing } selected
+dineInPane :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String } -> Maybe { "Table" :: String }
+dineInPane { selected, "Table": table } = match { "Dine in": \_ -> Just { "Table": table }, "Takeaway": const Nothing, "Delivery": const Nothing } selected
 
-takeawayPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], "Time" :: String } -> Maybe { "Time" :: String }
-takeawayPane { selected, "Time": time } = match { dineIn: const Nothing, takeaway: \_ -> Just { "Time": time }, delivery: const Nothing } selected
+takeawayPane :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Time" :: String } -> Maybe { "Time" :: String }
+takeawayPane { selected, "Time": time } = match { "Dine in": const Nothing, "Takeaway": \_ -> Just { "Time": time }, "Delivery": const Nothing } selected
 
-deliveryPane :: { selected :: [ dineIn :: {}, takeaway :: {}, delivery :: {} ], "Address" :: String } -> Maybe { "Address" :: String }
-deliveryPane { selected, "Address": address } = match { dineIn: const Nothing, takeaway: const Nothing, delivery: \_ -> Just { "Address": address } } selected
+deliveryPane :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Address" :: String } -> Maybe { "Address" :: String }
+deliveryPane { selected, "Address": address } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": \_ -> Just { "Address": address } } selected
 
 setTable :: { "Table" :: String } -> { "Table" :: String }
 setTable { "Table": table } = { "Table": table }
@@ -101,15 +101,15 @@ loadOrder :: {} -> Aff
       , "Last name" :: String
       }
   , fulfillment ::
-      [ dineIn :: { "Table" :: String }
-      , takeaway :: { "Time" :: String }
-      , delivery :: { "Address" :: String }
+      [ "Dine in" :: { "Table" :: String }
+      , "Takeaway" :: { "Time" :: String }
+      , "Delivery" :: { "Address" :: String }
       ]
   , "Total" :: String
   , payment ::
       { "Method" ::
-          [ cash :: {}
-          , card :: {}
+          [ "Cash" :: {}
+          , "Card" :: {}
           ]
       , "Paid" :: String
       }
@@ -126,10 +126,10 @@ loadOrder _ = do
         { "First name": "John"
         , "Last name": "Doe"
         }
-    , fulfillment: .takeaway { "Time": "8:30" }
+    , fulfillment: ."Takeaway" { "Time": "8:30" }
     , "Total": "12.30"
     , payment:
-        { "Method": .cash {}
+        { "Method": ."Cash" {}
         , "Paid": "0.00"
         }
     , "Remarks": "Very spicy, please!"

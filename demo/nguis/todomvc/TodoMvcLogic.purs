@@ -7,8 +7,8 @@ import Data.Maybe (fromMaybe)
 import Data.String (trim)
 import Data.Variant (match)
 
-emptyTodoList :: { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ all :: {}, active :: {}, completed :: {} ] }
-emptyTodoList = { "What needs to be done?": "", todos: [], "Visibility": .all {} }
+emptyTodoList :: { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ] }
+emptyTodoList = { "What needs to be done?": "", todos: [], "Visibility": ."All" {} }
 
 addTodo :: { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean } } -> { "What needs to be done?" :: String, todos :: Array { title :: String, done :: Boolean } }
 addTodo m@{ "What needs to be done?": entry, todos } =
@@ -29,7 +29,7 @@ remainingItems { todos } =
   let count = itemsLeft { todos }
   in if count == 1 then .sole { count } else .several { count }
 
-visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ all :: {}, active :: {}, completed :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
+visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ] } -> Array { key :: Int, title :: String, done :: Boolean }
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
   where
-  matches v t = match { all: const true, active: \_ -> not t.done, completed: \_ -> t.done } v
+  matches v t = match { "All": const true, "Active": \_ -> not t.done, "Completed": \_ -> t.done } v

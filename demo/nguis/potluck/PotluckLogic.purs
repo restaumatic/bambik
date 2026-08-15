@@ -6,7 +6,7 @@ import Data.Array (length)
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
-invitation :: { guests :: Array { name :: String, "Dish" :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } }
+invitation :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }
 invitation =
   { guests:
       [ { name: "Ada", "Dish": Nothing }
@@ -16,8 +16,8 @@ invitation =
       ]
   }
 
-guestCount :: { guests :: Array { name :: String, "Dish" :: Maybe [ salad :: {}, lasagna :: {}, pavlova :: {} ] } } -> String
+guestCount :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
 guestCount { guests } = show (length guests)
 
-dishText :: [ salad :: {}, lasagna :: {}, pavlova :: {} ] -> String
-dishText = match { salad: \_ -> "Salad", lasagna: \_ -> "Lasagna", pavlova: \_ -> "Pavlova" }
+dishText :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] -> String
+dishText = match { "Salad": \_ -> "Salad", "Lasagna": \_ -> "Lasagna", "Pavlova": \_ -> "Pavlova" }

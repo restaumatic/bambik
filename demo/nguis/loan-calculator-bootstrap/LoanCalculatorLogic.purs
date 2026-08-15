@@ -9,16 +9,16 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.String (trim)
 import Data.Variant (match)
 
-cityCarLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean }
+cityCarLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean }
 cityCarLoan =
   { "Applicant": ""
   , "Amount (€)": { current: 12000.0, min: smallestLoan, max: largestLoan, step: Just loanIncrement }
   , "Term (years)": { current: 5.0, min: shortestTerm, max: longestTerm, step: Just termIncrement }
-  , "Purpose": .car {}
+  , "Purpose": ."Car" {}
   , "Payment protection insurance": false
   }
 
-appliedLine :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> String
+appliedLine :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> String
 appliedLine loan =
   "Application received" <> forApplicant { "Applicant": loan."Applicant" }
     <> ": €" <> toStringWith (fixed 0) loan."Amount (€)".current
@@ -30,32 +30,32 @@ forApplicant { "Applicant": applicant } = case trim applicant of
   "" -> ""
   name -> ", " <> name
 
-monthlyText :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> String
+monthlyText :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> String
 monthlyText loan = "€" <> toStringWith (fixed 2) (monthlyPayment loan)
 
-rateText :: { "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> String
+rateText :: { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> String
 rateText { "Purpose": purpose, "Payment protection insurance": insured } = toStringWith (fixed 1) (annualRate { "Purpose": purpose, "Payment protection insurance": insured }) <> "% p.a."
 
-totalInterestText :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> String
+totalInterestText :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> String
 totalInterestText loan = "€" <> toStringWith (fixed 2) (totalInterest loan)
 
-monthlyPayment :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> Number
+monthlyPayment :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> Number
 monthlyPayment { "Amount (€)": amount, "Term (years)": years, "Purpose": purpose, "Payment protection insurance": insured } =
   let monthlyRate = annualRate { "Purpose": purpose, "Payment protection insurance": insured } / 100.0 / 12.0
       months = years.current * 12.0
   in amount.current * monthlyRate / (1.0 - pow (1.0 + monthlyRate) (-months))
 
-totalInterest :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> Number
+totalInterest :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> Number
 totalInterest loan = monthlyPayment loan * loan."Term (years)".current * 12.0 - loan."Amount (€)".current
 
-interestShare :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> Number
+interestShare :: { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> Number
 interestShare loan = totalInterest loan / (monthlyPayment loan * loan."Term (years)".current * 12.0)
 
-annualRate :: { "Purpose" :: [ car :: {}, home :: {}, holiday :: {} ], "Payment protection insurance" :: Boolean } -> Number
+annualRate :: { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean } -> Number
 annualRate { "Purpose": purpose, "Payment protection insurance": insured } = basePurposeRate purpose + (if insured then -0.3 else 0.0)
 
-basePurposeRate :: [ car :: {}, home :: {}, holiday :: {} ] -> Number
-basePurposeRate = match { car: \_ -> 7.4, home: \_ -> 4.9, holiday: \_ -> 9.9 }
+basePurposeRate :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ] -> Number
+basePurposeRate = match { "Car": \_ -> 7.4, "Home improvement": \_ -> 4.9, "Holiday": \_ -> 9.9 }
 
 smallestLoan :: Number
 smallestLoan = 1000.0

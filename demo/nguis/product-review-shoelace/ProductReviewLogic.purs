@@ -7,17 +7,17 @@ import Data.Monoid (power)
 import Data.String (trim)
 import Data.Variant (match)
 
-freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String }
+freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "Less than a month" :: {}, "1–12 months" :: {}, "More than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String }
 freshImpression =
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
   , "Your review": ""
-  , "How long have you owned it?": .underMonth {}
+  , "How long have you owned it?": ."Less than a month" {}
   , "I'd recommend it to a friend": false
   , "Nickname": ""
   }
 
-submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ underMonth :: {}, underYear :: {}, overYear :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String } -> String
+submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "Less than a month" :: {}, "1–12 months" :: {}, "More than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String } -> String
 submittedLine { "Overall rating": stars, "Nickname": nickname } =
   "Thanks" <> forReviewer { "Nickname": nickname } <> "! Your " <> starGlyphs stars <> " review is in."
 
@@ -37,8 +37,8 @@ headlineQuote headline = case trim headline of
 starGlyphs :: { current :: Number, max :: Int } -> String
 starGlyphs { current, max } = power "★" (round current) <> power "☆" (max - round current)
 
-ownedText :: [ underMonth :: {}, underYear :: {}, overYear :: {} ] -> String
-ownedText = match { underMonth: \_ -> "less than a month", underYear: \_ -> "1–12 months", overYear: \_ -> "more than a year" }
+ownedText :: [ "Less than a month" :: {}, "1–12 months" :: {}, "More than a year" :: {} ] -> String
+ownedText = match { "Less than a month": \_ -> "less than a month", "1–12 months": \_ -> "1–12 months", "More than a year": \_ -> "more than a year" }
 
 maxStars :: Int
 maxStars = 5
