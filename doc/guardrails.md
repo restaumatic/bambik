@@ -90,7 +90,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`) — and
   a caption that merely repeats what the label already says MUST move onto
   the label. Only copy a label genuinely cannot be (localized wording)
-  stays in config.
+  stays in config. A selector's **options** are its ordered case labels
+  (`choices`), never a hand-written `{ value, label }` array; the order
+  MUST come from a declaration-ordered structure, never from the variant
+  row, which the compiler sorts alphabetically.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 

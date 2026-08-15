@@ -70,9 +70,20 @@ syntax (`r { "Name" = … }`) all work unchanged.
   `sliderLive @"Amount (€)" {}`,
   `filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {}`. **No demo passes
   a caption config**, and a `label:` repeating what the label already
-  says is the smell. (Distinct from `select`/`segmentedButton` **option
-  lists**, whose `{ value, label }` entries are per-option display text,
-  not a leaf caption.)
+  says is the smell. **Selector options** obey it too, through `choices`:
+  each case states its copy once and the `{ value, label }` echo goes
+  away —
+
+  ```purescript
+  dropdown @"Room" {} (choices (Proxy @"Focus pod (4 seats)" /\ Proxy @"Boardroom (12 seats)"))
+  ```
+
+  The list is a nested tuple of proxies, **not** the variant row: a row
+  is sorted alphabetically by the compiler, and option order is a design
+  decision. Where a case needs a second, different rendering (a summary
+  line saying "focus pod" where the option says "Focus pod (4 seats)"),
+  that is an ordinary business function over the case — the case stays
+  the identity.
   A lone editor followed by `# completed` is a complete `×→×` stage on
   its own — no `RecordToRecord.do` for a single field.
 - **displays** state their field on the leaf: `text @"prompt"` reads it
