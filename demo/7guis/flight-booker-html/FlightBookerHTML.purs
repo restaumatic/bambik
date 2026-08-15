@@ -19,7 +19,7 @@ flightBookerHTML =
                 staticText "Flight type "
                 select @"Flight type"
                   [ { value: .oneWay {}, label: "one-way flight" }
-                  , { value: .return {}, label: "return flight" }
+                  , { value: .roundTrip {}, label: "return flight" }
                   ] ) # required
             p ( label $ RecordToRecord.do
                 staticText "Start date (DD.MM.YYYY) "
@@ -39,7 +39,7 @@ flightBookerHTML =
             staticText "A return flight: out "
             text @"out"
             staticText ", back "
-            text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+            text @"back" ) # providedCase @"roundTrip" bookingState # displayed ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     pempty # action (match { book: submit })
     output # forCases bookingLine

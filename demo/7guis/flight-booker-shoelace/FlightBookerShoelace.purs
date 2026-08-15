@@ -19,7 +19,7 @@ flightBookerShoelace =
           ( RecordToRecord.do
               select @"Flight type" {}
                 [ { value: .oneWay {}, label: "one-way flight" }
-                , { value: .return {}, label: "return flight" }
+                , { value: .roundTrip {}, label: "return flight" }
                 ] # required
               textField @"Start date (DD.MM.YYYY)" {}) # completed
           textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
@@ -35,7 +35,7 @@ flightBookerShoelace =
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+              text @"back" ) # providedCase @"roundTrip" bookingState # displayed ) # debounced itinerarySettleTime
       button @"Book" {}
       pempty # action (match { "Book": submit })
       toast # forCases bookingLine

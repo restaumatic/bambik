@@ -20,7 +20,7 @@ flightBookerMDC2 =
           ( RecordToRecord.do
               select @"Flight type" {}
                 [ { value: .oneWay {}, label: "one-way flight" }
-                , { value: .return {}, label: "return flight" }
+                , { value: .roundTrip {}, label: "return flight" }
                 ] # required
               filledTextField @"Start date (DD.MM.YYYY)" {}) # completed
           filledTextField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
@@ -36,7 +36,7 @@ flightBookerMDC2 =
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+              text @"back" ) # providedCase @"roundTrip" bookingState # displayed ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine
