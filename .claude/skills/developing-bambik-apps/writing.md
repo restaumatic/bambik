@@ -527,6 +527,19 @@ over a logic module, a single exported entry function.
   formatter, a time formatter), never *lines*. String-channel copy
   (toast lines) and shape-varying lines (case analysis, conditional
   fragments) are the exemptions.
+- **A label is read back, never restated.** A case label *is* the copy
+  it draws (`choice @l` states it once, at the case), so a `match`
+  whose branches merely echo their case labels — verbatim or re-cased —
+  is the label read in disguise: write the label as the exact copy the
+  line needs, casing, prefixes and units included
+  (`choice @"with oat milk"`, `choice @"less than a month"`,
+  `choice @"cash"`), and read it back with `caseText` from
+  `Data.Variant.Case` — a domain module, importable from logic and view
+  alike — verbatim at display positions
+  (`text @"Dish" # projection caseText`) and inside copy lines
+  (`caseText duration`). A map that does real work — shortening
+  (meeting-booker's `roomText`), glyphs, per-case sentences — stays a
+  named copy function; never keep one just to change case.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status adopter in place

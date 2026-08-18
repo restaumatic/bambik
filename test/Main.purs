@@ -28,6 +28,7 @@ import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, variantToVarian
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
+import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
@@ -114,6 +115,11 @@ main = do
   assertEqual "toCase"
     (.picked 7 :: [ picked :: Int ])
     (toCase @"picked" _.key identity { key: 7, label: "x" })
+
+  -- caseText (label-is-copy): caseText (inj @l a) = reflectSymbol (Proxy @l) —
+  -- the case label of a variant value, verbatim, whichever case is inhabited.
+  assertEqual "caseText" "Medium roast" (caseText (."Medium roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
+  assertEqual "caseText/other case" "Light roast" (caseText (."Light roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
 
   -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
   -- == nullary operator `pempty`. At record outputs the unit *announces* its ==

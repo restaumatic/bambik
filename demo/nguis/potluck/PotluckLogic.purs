@@ -1,10 +1,9 @@
-module PotluckLogic (dishText, guestCount, invitation) where
+module PotluckLogic (guestCount, invitation) where
 
 import Prelude (show)
 
 import Data.Array (length)
 import Data.Maybe (Maybe(..))
-import Data.Variant (match)
 
 invitation :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }
 invitation =
@@ -18,6 +17,3 @@ invitation =
 
 guestCount :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
 guestCount { guests } = show (length guests)
-
-dishText :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] -> String
-dishText = match { "Salad": \_ -> "Salad", "Lasagna": \_ -> "Lasagna", "Pavlova": \_ -> "Pavlova" }

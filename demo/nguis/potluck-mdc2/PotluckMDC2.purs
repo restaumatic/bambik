@@ -4,7 +4,8 @@ import Prelude (identity, (#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PotluckLogic (dishText, guestCount, invitation)
+import Data.Variant.Case (caseText)
+import PotluckLogic (guestCount, invitation)
 import PUI (acted, displayed, field, foreach, projection, projected, tapped, with)
 import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
@@ -30,6 +31,6 @@ potluckMDC2 =
             ( span $ RecordToRecord.do
                 text @"name"
                 staticText "’s "
-                text @"Dish" # projection dishText
+                text @"Dish" # projection caseText
                 staticText ", " ) # foreach @"name" identity # field @"guests"
       ) # with invitation

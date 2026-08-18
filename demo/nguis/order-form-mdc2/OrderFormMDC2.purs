@@ -6,8 +6,9 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Variant.Case (caseText)
 import Effect (Effect)
-import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
+import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
 import PUI (action, armed, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, projection, informed, required, tapped, updated, with)
 import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
@@ -46,11 +47,11 @@ orderFormMDC2 =
         card { caption: "Payment" }
           ( RecordToRecord.do
               segmentedButton @"Method"
-                [ choice @"Cash", choice @"Card" ] # required
+                [ choice @"cash", choice @"card" ] # required
               filledTextField @"Paid" {}
               body1 ( RecordToRecord.do
                   staticText "Paying by "
-                  text @"Method" # projection methodText )) # field @"payment"
+                  text @"Method" # projection caseText )) # field @"payment"
         card { caption: "Remarks" } $ filledTextArea @"Remarks" { columns: 80, rows: 3 }
       body1 ( Semigroupoid.do
           ( RecordToRecord.do
@@ -80,7 +81,7 @@ orderFormMDC2 =
               staticText ", paid "
               text @"Paid"
               staticText " by "
-              text @"Method" # projection methodText ) # field @"payment" # debounced summarySettleTime # tapped )
+              text @"Method" # projection caseText ) # field @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

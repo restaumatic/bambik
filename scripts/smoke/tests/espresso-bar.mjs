@@ -11,7 +11,7 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`!!customElements.get('md-filled-button')`), true, '@material/web elements registered')
 
   assertEq(
-    (await ev(summary)).includes('Medium cappuccino with whole milk, medium roast, 1 sugar — €3.50'),
+    (await ev(summary)).includes('Medium Cappuccino with whole milk, Medium roast, 1 sugar — €3.50'),
     true,
     'seed order summarized (' + await ev(summary) + ')'
   )
@@ -24,7 +24,7 @@ export const run = async ({ ev, assertEq, sleep }) => {
     'segmented button: pick Large'
   )
   await sleep(50)
-  assertEq((await ev(summary)).includes('Large cappuccino'), true, 'segmented emission reached the summary')
+  assertEq((await ev(summary)).includes('Large Cappuccino'), true, 'segmented emission reached the summary')
   assertEq((await ev(summary)).includes('€4.00'), true, 'size raised the price')
 
   await ev(`(() => { const chip = document.querySelector('md-filter-chip'); chip.selected = true; chip.click(); return true })()`)
@@ -37,11 +37,11 @@ export const run = async ({ ev, assertEq, sleep }) => {
 
   await ev(`(() => { const tabs = document.querySelector('md-tabs'); tabs.activeTabIndex = 0; tabs.dispatchEvent(new Event('change')); return true })()`)
   await sleep(50)
-  assertEq((await ev(summary)).includes('Large espresso'), true, 'tab bar emission reached the summary')
+  assertEq((await ev(summary)).includes('Large Espresso'), true, 'tab bar emission reached the summary')
 
   await ev(`(() => { const r = document.querySelectorAll('md-radio')[2]; r.checked = true; r.dispatchEvent(new Event('change')); return true })()`)
   await sleep(50)
-  assertEq((await ev(summary)).includes('dark roast'), true, 'radio emission reached the summary')
+  assertEq((await ev(summary)).includes('Dark roast'), true, 'radio emission reached the summary')
 
   await ev(`(() => { const sw = document.querySelector('md-switch'); sw.selected = true; sw.dispatchEvent(new Event('change')); return true })()`)
   await sleep(50)
@@ -78,7 +78,7 @@ export const run = async ({ ev, assertEq, sleep }) => {
   )
   await sleep(50)
   assertEq(
-    (await ev(summary)).includes('Small espresso, dark roast, to go — €2.70'),
+    (await ev(summary)).includes('Small Espresso no milk, Dark roast, to go — €2.70'),
     true,
     'preset folded via updates (' + await ev(summary) + ')'
   )
@@ -92,7 +92,7 @@ export const run = async ({ ev, assertEq, sleep }) => {
   )
   const toast = await ev(`document.querySelector('.md3-snackbar').textContent`)
   assertEq(
-    toast.includes('Coming right up, Ada: Small espresso, dark roast, to go — €2.70') && toast.includes('★'),
+    toast.includes('Coming right up, Ada: Small Espresso no milk, Dark roast, to go — €2.70') && toast.includes('★'),
     true,
     'order event dispatched into the snackbar (' + toast + ')'
   )

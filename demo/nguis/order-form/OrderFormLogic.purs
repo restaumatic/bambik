@@ -1,4 +1,4 @@
-module OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, methodText, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane) where
+module OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane) where
 
 import Prelude (($), (<>), (==), const, discard, pure, show)
 
@@ -41,16 +41,6 @@ deliveryDetail ::
   }
   -> Maybe { "Address" :: String }
 deliveryDetail { fulfillment } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": Just } fulfillment
-
-methodText ::
-  [ "Cash" :: {}
-  , "Card" :: {}
-  ]
-  -> String
-methodText = match
-  { "Cash": const "cash"
-  , "Card": const "card"
-  }
 
 fulfillmentState ::
   [ "Dine in" :: { "Table" :: String }
@@ -108,8 +98,8 @@ loadOrder :: {} -> Aff
   , "Total" :: String
   , payment ::
       { "Method" ::
-          [ "Cash" :: {}
-          , "Card" :: {}
+          [ "cash" :: {}
+          , "card" :: {}
           ]
       , "Paid" :: String
       }
@@ -129,7 +119,7 @@ loadOrder _ = do
     , fulfillment: ."Takeaway" { "Time": "8:30" }
     , "Total": "12.30"
     , payment:
-        { "Method": ."Cash" {}
+        { "Method": ."cash" {}
         , "Paid": "0.00"
         }
     , "Remarks": "Very spicy, please!"

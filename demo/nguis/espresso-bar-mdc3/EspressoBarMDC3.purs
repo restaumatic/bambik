@@ -28,7 +28,7 @@ espressoBarMDC3 =
                 segmentedButton @"Size"
                   [ choice @"Small", choice @"Medium", choice @"Large" ] # required
                 select @"Milk" {}
-                  [ choice @"Whole", choice @"Oat", choice @"Almond", choice @"None" ] # required
+                  [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
                 radioButton @"Roast"
                   [ choice @"Light roast", choice @"Medium roast", choice @"Dark roast" ] # required
                 sliderLive @"Sugar" {}

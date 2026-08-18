@@ -3,8 +3,9 @@ module MeetingBookerFluent (meetingBookerFluent) where
 import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Variant.Case (caseText)
 import Effect (Effect)
-import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, durationText, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
+import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
 import PUI (completed, displayed, forCase, projection, informed, mvu, optional, projected, tapped, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
@@ -40,7 +41,7 @@ meetingBookerFluent =
               staticText " in the "
               text @"Room" # projection roomText
               staticText ", "
-              text @"Duration" # projection durationText
+              text @"Duration" # projection caseText
               staticText ", "
               text @"attendees" # projection headcount
               staticText " attendees"

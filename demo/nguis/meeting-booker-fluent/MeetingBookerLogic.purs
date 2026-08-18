@@ -1,4 +1,4 @@
-module MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, durationText, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText) where
+module MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText) where
 
 import Prelude (show, (/), (<$>), (<*>), (<>))
 
@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.Ord (clamp)
 import Data.String (trim)
 import Data.Variant (match)
+import Data.Variant.Case (caseText)
 
 blankBooking :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration" :: Maybe [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
 blankBooking = { "Meeting title": "", "Room": Nothing, "Duration": Nothing, attendees: justTheOrganizer, "Include a Teams link": false }
@@ -26,7 +27,7 @@ completePlan { "Meeting title": title, "Room": room, "Duration": duration, atten
 
 bookedLine :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration" :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
 bookedLine { "Meeting title": title, "Room": room, "Duration": duration } =
-  "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> durationText duration
+  "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> caseText duration
 
 headcount :: Number -> String
 headcount attendees = show (round attendees)
@@ -41,9 +42,6 @@ titleText title = case trim title of
 
 roomText :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> String
 roomText = match { "Focus pod (4 seats)": \_ -> "focus pod", "Boardroom (12 seats)": \_ -> "boardroom", "Auditorium (40 seats)": \_ -> "auditorium" }
-
-durationText :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ] -> String
-durationText = match { "15 min": \_ -> "15 min", "30 min": \_ -> "30 min", "60 min": \_ -> "60 min" }
 
 ratedRoom :: { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] } -> Maybe { rating :: Number }
 ratedRoom { "Room": room } = (\r -> { rating: roomRating r }) <$> room

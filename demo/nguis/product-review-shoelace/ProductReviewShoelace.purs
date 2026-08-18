@@ -3,8 +3,9 @@ module ProductReviewShoelace (productReviewShoelace) where
 import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import Data.Variant.Case (caseText)
 import Effect (Effect)
-import ProductReviewLogic (freshImpression, headlineQuote, ownedText, recommendNote, starGlyphs, submittedLine)
+import ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine)
 import PUI (forCase, projection, mvu, projected, required, tapped)
 import PUI.Web (choice)
 import Data.Tuple.Nested ((/\))
@@ -21,7 +22,7 @@ productReviewShoelace =
           textField @"Headline" {}
           textArea @"Your review" { rows: 4 }
           select @"How long have you owned it?" {}
-            [ choice @"Less than a month", choice @"1–12 months", choice @"More than a year" ] # required
+            [ choice @"less than a month", choice @"1–12 months", choice @"more than a year" ] # required
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
           divider
@@ -31,7 +32,7 @@ productReviewShoelace =
           text @"Overall rating" # projection starGlyphs
           text @"Headline" # projection headlineQuote
           staticText " · owned "
-          text @"How long have you owned it?" # projection ownedText
+          text @"How long have you owned it?" # projection caseText
           text @"recommendNote" # projected recommendNote ) # tapped
       button @"Submit review" {}
       toast # forCase @"Submit review" submittedLine
