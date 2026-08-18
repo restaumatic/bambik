@@ -8,7 +8,6 @@ import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText
 import PUI (forCase, mvu, projected, required, tapped)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (body, div, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

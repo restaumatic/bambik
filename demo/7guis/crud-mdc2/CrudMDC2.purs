@@ -1,6 +1,6 @@
 module CrudMDC2 (crudMDC2) where
 
-import Prelude (identity, (#), ($), (<<<), Unit, bind, const)
+import Prelude (Unit, bind, const, (#), ($), (<<<))
 
 import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord

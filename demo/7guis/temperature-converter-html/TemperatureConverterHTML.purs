@@ -1,6 +1,6 @@
 module TemperatureConverterHTML (temperatureConverterHTML) where
 
-import Prelude ((#), ($), Unit, show)
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)

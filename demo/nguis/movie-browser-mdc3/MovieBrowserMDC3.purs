@@ -7,7 +7,6 @@ import Effect (Effect)
 import MovieBrowserLogic (favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
 import PUI (completed, displayed, foreach, projection, informed, mvu, projected, toCase, updated)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid

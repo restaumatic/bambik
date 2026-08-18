@@ -8,7 +8,6 @@ import Data.Variant.Case (caseText)
 import PotluckLogic (guestCount, invitation)
 import PUI (acted, displayed, field, foreach, projection, projected, tapped, with)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (body, span, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, headlineSmall, list, listItem, segmentedButton, titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid

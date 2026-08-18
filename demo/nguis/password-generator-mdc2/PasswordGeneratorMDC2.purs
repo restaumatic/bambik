@@ -1,6 +1,6 @@
 module PasswordGeneratorMDC2 (passwordGeneratorMDC2) where
 
-import Prelude (identity, (#), ($), (>>>), Unit)
+import Prelude (Unit, (#), ($), (>>>))
 
 import Data.Variant (match)
 import Effect (Effect)

@@ -7,7 +7,6 @@ import Effect (Effect)
 import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (completed, displayed, every, mvu, projected, required)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (body)
 import PUI.Web.MDC3 (elevation5, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid

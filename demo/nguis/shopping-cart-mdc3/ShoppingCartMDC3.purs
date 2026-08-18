@@ -1,6 +1,6 @@
 module ShoppingCartMDC3 (shoppingCartMDC3) where
 
-import Prelude (identity, (#), ($), Unit, const)
+import Prelude (Unit, const, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)

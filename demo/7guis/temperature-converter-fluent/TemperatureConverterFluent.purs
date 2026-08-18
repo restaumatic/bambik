@@ -1,6 +1,6 @@
 module TemperatureConverterFluent (temperatureConverterFluent) where
 
-import Prelude ((#), ($), Unit, show)
+import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (projected, informed, mvu, updated)

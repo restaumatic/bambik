@@ -1,6 +1,6 @@
 module StopwatchMDC3 (stopwatchMDC3) where
 
-import Prelude (Unit, const, identity, (#), ($))
+import Prelude (Unit, const, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant

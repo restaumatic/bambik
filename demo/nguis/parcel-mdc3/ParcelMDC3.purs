@@ -1,6 +1,6 @@
 module ParcelMDC3 (parcelMDC3) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)

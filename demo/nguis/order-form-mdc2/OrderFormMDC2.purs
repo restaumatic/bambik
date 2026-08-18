@@ -1,6 +1,6 @@
 module OrderFormMDC2 (orderFormMDC2) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -11,7 +11,6 @@ import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
 import PUI (action, armed, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, projection, informed, required, tapped, updated, with)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid

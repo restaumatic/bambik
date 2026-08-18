@@ -7,7 +7,6 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (completed, displayed, projection, forProperty, mvu, required, toCase, updated)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid

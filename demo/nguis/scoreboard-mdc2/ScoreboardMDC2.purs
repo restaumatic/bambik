@@ -1,6 +1,6 @@
 module ScoreboardMDC2 (scoreboardMDC2) where
 
-import Prelude (identity, (#), ($), Unit, show)
+import Prelude (Unit, show, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)

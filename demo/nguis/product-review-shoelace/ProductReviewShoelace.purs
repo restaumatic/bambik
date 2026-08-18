@@ -8,7 +8,6 @@ import Effect (Effect)
 import ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine)
 import PUI (forCase, projection, mvu, projected, required, tapped)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid

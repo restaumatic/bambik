@@ -1,6 +1,6 @@
 module TemperatureConverterMDC2 (temperatureConverterMDC2) where
 
-import Prelude ((#), ($), Unit, show)
+import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (projected, informed, mvu, updated)

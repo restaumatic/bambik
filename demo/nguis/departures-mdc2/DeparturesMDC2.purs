@@ -1,6 +1,6 @@
 module DeparturesMDC2 (departuresMDC2) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import DeparturesLogic (arrival, boardOpening, tick, tickPeriod, updatedFlight, updatedStatus)
