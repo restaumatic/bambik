@@ -8,7 +8,6 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
 import PUI (action, completed, debounced, displayed, field, forCases, informed, mvu, pempty, required, toCase, updated)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (providedCase, body, button, div, input, label, output, p, provided, select, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,7 +19,7 @@ flightBookerHTML =
             p ( label $ RecordToRecord.do
                 staticText "Flight type "
                 select @"Flight type"
-                  [ choice @"one-way flight", choice @"return flight" ] ) # required
+                  [ choice @"one-way", choice @"return" ] ) # required
             p ( label $ RecordToRecord.do
                 staticText "Start date (DD.MM.YYYY) "
                 input "text" # field @"Start date (DD.MM.YYYY)" )) # completed
@@ -34,12 +33,12 @@ flightBookerHTML =
             text @"problem" ) # providedCase @"problem" bookingState # displayed
         p ( RecordToRecord.do
             staticText "A one-way flight on "
-            text @"date" ) # providedCase @"one-way flight" bookingState # displayed
+            text @"date" ) # providedCase @"one-way" bookingState # displayed
         p ( RecordToRecord.do
             staticText "A return flight: out "
             text @"out"
             staticText ", back "
-            text @"back" ) # providedCase @"return flight" bookingState # displayed ) # debounced itinerarySettleTime
+            text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     pempty # action (match { book: submit })
     output # forCases bookingLine

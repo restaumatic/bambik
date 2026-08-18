@@ -9,8 +9,8 @@ import Data.String (trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
-blankBooking :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration" :: Maybe [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
-blankBooking = { "Meeting title": "", "Room": Nothing, "Duration": Nothing, attendees: justTheOrganizer, "Include a Teams link": false }
+blankBooking :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: Maybe [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
+blankBooking = { "Meeting title": "", "Room": Nothing, "Duration (min)": Nothing, attendees: justTheOrganizer, "Include a Teams link": false }
 
 seatsFor :: { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], attendees :: Number } -> Maybe { "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
 seatsFor { "Room": room, attendees } = (\r -> { "Attendees": { current: seatedIn r attendees, min: justTheOrganizer, max: roomCapacity r, step: Just 1.0 } }) <$> room
@@ -21,13 +21,13 @@ chooseSeats { "Attendees": seats } = { attendees: seats.current }
 seatedIn :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> Number -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
 
-completePlan :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration" :: Maybe [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> Maybe { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration" :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
-completePlan { "Meeting title": title, "Room": room, "Duration": duration, attendees, "Include a Teams link": online } =
-  (\r d -> { "Meeting title": title, "Room": r, "Duration": d, attendees: seatedIn r attendees, "Include a Teams link": online }) <$> room <*> duration
+completePlan :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: Maybe [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> Maybe { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
+completePlan { "Meeting title": title, "Room": room, "Duration (min)": duration, attendees, "Include a Teams link": online } =
+  (\r d -> { "Meeting title": title, "Room": r, "Duration (min)": d, attendees: seatedIn r attendees, "Include a Teams link": online }) <$> room <*> duration
 
-bookedLine :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration" :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
-bookedLine { "Meeting title": title, "Room": room, "Duration": duration } =
-  "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> caseText duration
+bookedLine :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
+bookedLine { "Meeting title": title, "Room": room, "Duration (min)": duration } =
+  "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> caseText duration <> " min"
 
 headcount :: Number -> String
 headcount attendees = show (round attendees)

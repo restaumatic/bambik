@@ -1,13 +1,12 @@
 module SignupFormMDC3 (signupFormMDC3) where
 
-import Prelude (Unit, identity, (#), ($))
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (displayed, forCase, mvu, required, toCases)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (providedCase, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +21,7 @@ signupFormMDC3 =
             headlineLarge $ staticText "Create account"
             debouncedTextField @"Username" { ms: usernameSettleTime }
             radioButton @"Plan"
-              [ choice @"Free plan", choice @"Pro plan", choice @"Team plan" ] # required
+              [ choice @"Free", choice @"Pro", choice @"Team" ] # required
             select @"Country" {}
               [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ] # required
             filledTextField @"Email" {}

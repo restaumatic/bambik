@@ -8,11 +8,11 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 
-newApplicant :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free plan" :: {}, "Pro plan" :: {}, "Team plan" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: Maybe {} }
+newApplicant :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: Maybe {} }
 newApplicant =
   { "Username": ""
   , "Email": ""
-  , "Plan": ."Free plan" {}
+  , "Plan": ."Free" {}
   , "Country": ."Poland" {}
   , "Terms": Nothing
   }
@@ -20,7 +20,7 @@ newApplicant =
 usernameSettleTime :: Number
 usernameSettleTime = 300.0
 
-register :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free plan" :: {}, "Pro plan" :: {}, "Team plan" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: Maybe {} } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
+register :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: Maybe {} } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
 register { "Username": username, "Email": email, "Terms": terms } = case validate { "Username": username, "Email": email, "Terms": terms } of
   Left problem -> .rejected problem
   Right name -> .registered name
@@ -49,7 +49,7 @@ validate applicant@{ "Email": email, "Terms": terms } =
     else if isJust terms == false then Left (.termsUnaccepted {})
     else Right username
 
-validation :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free plan" :: {}, "Pro plan" :: {}, "Team plan" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { "Username" :: String } ]
+validation :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: Maybe {} } -> [ invalid :: { problem :: String }, ready :: { "Username" :: String } ]
 validation { "Username": username, "Email": email, "Terms": terms } = either (\reason -> .invalid { problem: refusalText reason }) (\name -> .ready { "Username": name }) (validate { "Username": username, "Email": email, "Terms": terms })
 
 namedUsername :: { "Username" :: String } -> Maybe String

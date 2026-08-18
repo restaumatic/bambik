@@ -1,6 +1,6 @@
 module FlightBookerBootstrap (flightBookerBootstrap) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
@@ -9,7 +9,6 @@ import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, planne
 import PUI (action, completed, debounced, displayed, forCases, informed, mvu, pempty, required, updated)
 import PUI.Web.Bootstrap (button, card, select, textField, toast)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (providedCase, body, p, provided, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,7 +19,7 @@ flightBookerBootstrap =
       ( Semigroupoid.do
           ( RecordToRecord.do
               select @"Flight type" {}
-                [ choice @"one-way flight", choice @"return flight" ] # required
+                [ choice @"one-way", choice @"return" ] # required
               textField @"Start date (DD.MM.YYYY)" {}) # completed
           textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
@@ -30,12 +29,12 @@ flightBookerBootstrap =
               text @"problem" ) # providedCase @"problem" bookingState # displayed
           p ( RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" ) # providedCase @"one-way flight" bookingState # displayed
+              text @"date" ) # providedCase @"one-way" bookingState # displayed
           p ( RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # providedCase @"return flight" bookingState # displayed ) # debounced itinerarySettleTime
+              text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
       button @"Book" {}
       pempty # action (match { "Book": submit })
       toast # forCases bookingLine

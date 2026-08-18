@@ -9,7 +9,6 @@ import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
 import PUI (forCase, mvu, projected, required, tapped, updated, with)
 import PUI.Web (choice)
-import Data.Tuple.Nested ((/\))
 import PUI.Web.HTML (body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,7 +29,7 @@ espressoBarMDC3 =
                 select @"Milk" {}
                   [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
                 radioButton @"Roast"
-                  [ choice @"Light roast", choice @"Medium roast", choice @"Dark roast" ] # required
+                  [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
                 sliderLive @"Sugar" {}
                 chipSet RecordToRecord.do
                   filterChip @"Extra shot" {}

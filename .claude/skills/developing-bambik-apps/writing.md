@@ -539,7 +539,15 @@ over a logic module, a single exported entry function.
   (`text @"Dish" # projection caseText`) and inside copy lines
   (`caseText duration`). A map that does real work — shortening
   (meeting-booker's `roomText`), glyphs, per-case sentences — stays a
-  named copy function; never keep one just to change case.
+  named copy function; never keep one just to change case. A
+  **case-invariant affix is not part of the copy**: it factors out of
+  the labels, stated once — in the caption (`@"Duration (min)"` over
+  `choice @"15"`/`@"30"`/`@"60"`; `@"Roast"`, `@"Plan"`,
+  `@"Flight type"` likewise) or as line glue
+  (`caseText roast <> " roast"`) — while an affix that varies per case
+  stays in the labels (`"with whole milk"`/`"no milk"`, where the
+  `with` disappears at `no`). The test is mechanical: if factoring the
+  affix needs no conditional, factor it.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status adopter in place

@@ -8,13 +8,13 @@ import Data.String (trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
-usualOrder :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light roast" :: {}, "Medium roast" :: {}, "Dark roast" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} }
+usualOrder :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} }
 usualOrder =
   { "Your name": ""
   , drink: ."Cappuccino" {}
   , "Size": ."Medium" {}
   , "Milk": ."with whole milk" {}
-  , "Roast": ."Medium roast" {}
+  , "Roast": ."Medium" {}
   , "Sugar": sugars 1.0
   , "Extra shot": false
   , "Decaf": false
@@ -23,13 +23,13 @@ usualOrder =
   , "Loyalty": Nothing
   }
 
-theUsual :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light roast" :: {}, "Medium roast" :: {}, "Dark roast" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
-theUsual = { drink: ."Cappuccino" {}, "Size": ."Medium" {}, "Milk": ."with whole milk" {}, "Roast": ."Medium roast" {}, "Sugar": sugars 1.0, "Extra shot": false, "Decaf": false }
+theUsual :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
+theUsual = { drink: ."Cappuccino" {}, "Size": ."Medium" {}, "Milk": ."with whole milk" {}, "Roast": ."Medium" {}, "Sugar": sugars 1.0, "Extra shot": false, "Decaf": false }
 
-espressoNoFrills :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light roast" :: {}, "Medium roast" :: {}, "Dark roast" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean } -> { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light roast" :: {}, "Medium roast" :: {}, "Dark roast" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
+espressoNoFrills :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean } -> { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
 espressoNoFrills order = order { drink = ."Espresso" {}, "Size" = ."Small" {}, "Milk" = ."no milk" {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
 
-brewedLine :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light roast" :: {}, "Medium roast" :: {}, "Dark roast" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} } -> String
+brewedLine :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: Maybe {} } -> String
 brewedLine { "Your name": customer, drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Mark as favorite": favorite, "Loyalty": loyalty } =
   "Coming right up" <> forCustomer { "Your name": customer }
     <> ": " <> summaryText { drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty": loyalty }
@@ -40,11 +40,11 @@ forCustomer { "Your name": customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 
-summaryText :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light roast" :: {}, "Medium roast" :: {}, "Dark roast" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty" :: Maybe {} } -> String
+summaryText :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty" :: Maybe {} } -> String
 summaryText { drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty": loyalty } =
   caseText size <> " " <> caseText drink
     <> " " <> caseText milk
-    <> ", " <> caseText roast
+    <> ", " <> caseText roast <> " roast"
     <> (if extraShot then ", extra shot" else "")
     <> (if decaf then ", decaf" else "")
     <> sugarsText sugar.current
