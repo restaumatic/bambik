@@ -88,7 +88,7 @@ orderFormMDC2 =
               staticText ", paid "
               text @"Paid"
               staticText " by "
-              text @"Method" # projection caseText ) # field @"payment" # debounced summarySettleTime # tapped )
+              text @"Method" # projection caseText ) # atField @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

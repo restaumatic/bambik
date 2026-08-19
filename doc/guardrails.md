@@ -212,6 +212,18 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   duplicated label via `DisjointLabels`); named runtime watchdogs where they
   cannot (gate starvation names the gate and the missing fields). A
   blank screen with no diagnosis is a library bug, always.
+- **No silent information loss.** A combinator that discards the
+  emissions of the component it wraps MUST demand, in its type, that
+  those emissions carry nothing: `tapped` and `observed` accept only the
+  output `{}` — exactly what a display emits, and no new class to say so
+  — so an editor or emitter placed where a display belongs fails to
+  unify, never swallows an edit. Deliberate discarding is its own
+  visible word: `muted`, the counit (render and drop), written at the
+  call site (`# muted # tapped` over a `foreach` that forwards its
+  elements, or a packaged collection display echoing its array); an
+  adopted display keeps its `{}` through the input-side adopter
+  (`atField @l`, not `field @l`). Information may be lost only in
+  writing.
 
 ### L14. The library stays small by rule, not by accident.
 

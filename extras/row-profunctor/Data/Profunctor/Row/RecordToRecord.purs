@@ -64,6 +64,7 @@ module Data.Profunctor.Row.RecordToRecord
   , required
   , field
   , toField
+  , muted
   , pempty
   , subStrong
   , focusProperty
@@ -320,6 +321,20 @@ field = dimap (Record.get (Proxy @l)) (\v -> Record.insert (Proxy @l) v {})
 -- | eliminator.
 toField :: forall @l p i a b s. IsSymbol l => Profunctor p => Lacks l () => Cons l b () s => (a -> b) -> p i a -> p i { | s }
 toField f = rmap (\a -> Record.insert (Proxy @l) (f a) {})
+
+-- | The **counit**: render, and **deliberately discard** the component's
+-- | output — `rmap`-only, the explicit form of what no stage may ever do
+-- | silently. The duoidal reading (see `PUI`'s header and
+-- | doc/collections-profunctor-algebra.md §0): `tapped` equips a stage
+-- | with the comultiplication (render *and* forward), `muted` with only
+-- | the counit (render and drop). `tapped` accepts only the output `{}` —
+-- | what a display emits — so wherever a genuinely emitting assembly (a
+-- | `foreach` forwarding its elements, a packaged collection display
+-- | echoing its array) is used purely as a display, the discard is
+-- | written: `# muted # tapped`. Loss of information is legal only in
+-- | writing.
+muted :: forall p i o. Profunctor p => p i o -> p i {}
+muted = rmap (const {})
 
 -- | Settle a stage's emissions through a **total, type-preserving**
 -- | normalization — the round-trip rule's mechanism made a word: a lossy

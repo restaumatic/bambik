@@ -4,7 +4,7 @@ import Prelude (Unit, show, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, tapped, every, projection, foreach, mvu)
+import PUI (muted, accumulated, tapped, every, projection, foreach, mvu)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,5 +30,5 @@ scoreboardMDC3 =
                       staticText " ("
                       text @"points" # projection show
                       staticText ")" ) # provided leadingTeam # tapped
-                  staticText "—" # provided noLeader # tapped ) # foreach @"key" boardSummary ) # tapped
+                  staticText "—" # provided noLeader # tapped ) # foreach @"key" boardSummary # muted ) # tapped
       ) # mvu gameStart

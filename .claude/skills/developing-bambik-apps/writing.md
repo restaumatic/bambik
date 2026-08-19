@@ -156,9 +156,15 @@ interchangeable:
 - `# completed` widens a *row-shaped* stage's output to its full input
   row from the retained input — safe over editors and displays alike,
   the default inside record pipelines.
-- `# tapped` forwards the whole input value of *any* shape but is honest
-  only over displays: the display's echo triggers the forwarding, so an
-  editor inside would replay stale upstream values on every edit.
+- `# tapped` forwards the whole input value of *any* shape,
+  unconditionally at feed time, and the compiler holds it to displays:
+  the wrapped component's output must be `{}`, a display's output. An
+  editor or emitter inside fails to unify — fold its emissions with
+  `# updated`, or, where an emitting assembly really is used purely as
+  a display, discard them **in writing** with `# muted` before the tap.
+  An adopted display keeps its `{}` through the input-side adopter:
+  `# atField @l`, never `# field @l`, whose output half would wrap the
+  `{}` into `{ l :: {} }` (order-form's payment line).
 
 So: editor or record display stage → `# completed`; display over a
 non-record value (a `projected`-formatted readout) → `# tapped`. A live
@@ -173,7 +179,11 @@ closed row**, not an accessor: `tapped` widens a *closed* narrow row,
 so an open one leaves no `Union` instance and the error lands on
 `tapped`. This is the row-stating exception to the
 delete-the-one-field-projection rule. Stopwatch's laps list is the
-worked example.
+worked example. An element that is itself a pipeline of stages
+(alternating `provided` panes) forwards its row through the `foreach`;
+that forwarding carries nothing the tap keeps, so it is discarded in
+writing — `# foreach @l rowsOf # muted ) # tapped` (scoreboard's
+summary line).
 
 A fixed catalogue drives `listOf`/`foreach` through the mechanism's own
 projection argument (`# foreach @"key" (const keyPad)`) — never an

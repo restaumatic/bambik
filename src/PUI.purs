@@ -87,7 +87,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, projected, projection, required, settled, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -862,15 +862,21 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
 -- | component *does* emit re-emits the retained value rather than its own
 -- | payload — the tap's output is always the value that came in.)
 -- |
--- | Honest over *displays*: an editing UI component inside a tap would have
--- | its edits swallowed, since the tap forwards the fed value and never the
--- | component's. Editors belong in a merge or under `updated`.
+-- | Honest over *displays*, and the types enforce it: the wrapped
+-- | component's output must be `{}` — a display's output, nothing else's
+-- | — because the tap forwards the fed value and never the component's.
+-- | An editor or emitter inside would have its edits or events swallowed,
+-- | so it fails to unify: fold the emissions with `updated`, or discard
+-- | them deliberately and visibly with `muted` (`# muted # tapped` — a
+-- | `foreach` forwarding its elements, a packaged collection display
+-- | echoing its array). An adopted display keeps its `{}` by using the
+-- | input-side adopter (`atField @l`, not `field @l`).
 -- |
 -- | **Subsumption is built in**: the display may read a *narrower* row than
 -- | the stage carries (`text @"summary" # projected readout # tapped`, where
 -- | `readout` declares only the fields it formats), so a closed-row read
 -- | function needs no `widenRecordInput` at the tap.
-tapped :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
+tapped :: forall m narrow extra wider. Functor m => Union narrow extra wider => PUI m { | narrow } {} -> PUI m { | wider } { | wider }
 tapped w = mealy (\_ s -> s) (widenRecordInput w)
 
 -- | Make a status an **event pass-through stage** — `tapped`'s sibling on
@@ -881,15 +887,15 @@ tapped w = mealy (\_ s -> s) (widenRecordInput w)
 -- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
 -- | `Union` widening): the status may consume a *narrower* row than the
 -- | stage carries — its cases are contracted out and shown, background cases
--- | pass untouched. The status's own emissions are dropped, deliberately:
--- | entities are idempotent so a display echo may re-forward them
--- | (`tapped`), but events are one-shot — re-emitting the last event on an
--- | echo would duplicate it.
+-- | pass untouched. The status's own emissions are dropped, deliberately —
+-- | events are one-shot, so re-emitting the last event would duplicate it —
+-- | and the drop is lossless by type: like `tapped`, `observed` accepts
+-- | only a status whose output is `{}`.
 observed
-  :: forall m narrow wider e
+  :: forall m narrow wider
    . Functor m
   => Contractable wider narrow
-  => PUI m [ | narrow ] e
+  => PUI m [ | narrow ] {}
   -> PUI m [ | wider ] [ | wider ]
 observed status = wrap $ unwrap status <#> \st ->
   let mPropRef = unsafePerformEffect $ Ref.new Nothing
