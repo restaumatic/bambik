@@ -152,7 +152,7 @@ silence :: forall p i o. RecordToVariant p => p { | i } [ | o ]
 silence = dimap (const {}) case_ pempty
 
 -- | The **emit stage** of a record pipeline — the `× → +` member of the
--- | stage-subsumption family (`tapped`/`displayed`/`updated`/`settled` on
+-- | stage-subsumption family (`tapped`/`updated`/`settled` on
 -- | the `×`-diagonal, `observed` on `+`): feed an event ensemble the
 -- | sub-row its emitters replay, emissions passing on unchanged. Feeding
 -- | *arms* the replay values — hence the name. The wrapped stage's row is

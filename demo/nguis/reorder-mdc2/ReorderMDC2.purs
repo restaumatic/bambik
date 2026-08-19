@@ -17,7 +17,7 @@ reorderMDC2 :: Effect Unit
 reorderMDC2 =
   body $
     elevation20 $
-      card { caption: "Reorder" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( Semigroupoid.do
               cardActions $ RecordToVariant.do
                 button @"Rotate" { icon: "sync" }

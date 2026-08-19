@@ -15,7 +15,7 @@ passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
   body $
     elevation20 $
-      card { caption: "Password Generator" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( RecordToRecord.do
               slider @"Length" {}
               toggleSwitch @"Uppercase letters" {}

@@ -17,7 +17,7 @@ crudBootstrap :: Effect Unit
 crudBootstrap = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card { caption: "CRUD" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         pempty # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
             ( RecordToRecord.do

@@ -14,7 +14,7 @@ import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeri
 timerBootstrap :: Effect Unit
 timerBootstrap =
   body $
-    card { caption: "Timer" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         ( RecordToRecord.do
             progress @"fraction" # projected fraction
             p RecordToRecord.do

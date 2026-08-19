@@ -47,7 +47,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, projected)
-import PUI.Web.HTML (cl, clicked, div, el, h5, label, span, staticText, text, (:=))
+import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons, class Lacks)
@@ -302,15 +302,18 @@ toast = wrap do
 
 -- UIOculars
 
--- | A **card**: a surface holding one subject's content, captioned at the
--- | top. It stacks its children with even spacing, so a form or a summary
--- | can be dropped in without spacing each row by hand.
-card :: { caption :: String } -> Ocular (PUI Web)
-card config content =
-  (div $ (div $ wrap do
-      _ <- unwrap ((h5 $ staticText config.caption) # cl "card-title")
-      unwrap content
-    ) # cl "card-body" # cl "d-flex" # cl "flex-column" # cl "align-items-start" # cl "gap-3"
+-- | A **card**: a surface holding one subject's content. It stacks its
+-- | children with even spacing, so a form or a summary can be dropped in
+-- | without spacing each row by hand.
+-- |
+-- | A plain ocular, with no config of its own: a card is a *surface*, and a
+-- | heading of its own is ordinary typography placed in its content.
+-- | Bootstrap does document a `card-title` class for that heading — style a
+-- | content heading with it where a card wants one (`h5 … # cl "card-title"`).
+card :: Ocular (PUI Web)
+card content =
+  (div $ (div $ content)
+    # cl "card-body" # cl "d-flex" # cl "flex-column" # cl "align-items-start" # cl "gap-3"
   ) # cl "card"
 
 -- | A **list group**: rows of `listGroupItem`s sharing one bordered

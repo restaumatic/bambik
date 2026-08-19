@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 counterShoelace :: Effect Unit
 counterShoelace =
   body $
-    card { caption: "Counter" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         h4 (text @"count") # projection show # completed
         button @"Count" {} # updated (match { "Count": const <<< increment })
     ) # mvu freshCount

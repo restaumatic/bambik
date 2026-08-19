@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 productReviewShoelace :: Effect Unit
 productReviewShoelace =
   body $
-    card { caption: "Review: Astra Moka Espresso Machine" } $ Semigroupoid.do
+    card $ Semigroupoid.do
       ( RecordToRecord.do
           rating @"Overall rating" {}
           textField @"Headline" {}

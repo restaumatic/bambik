@@ -18,7 +18,7 @@ espressoBarMDC2 =
   body $
     elevation20 $
       topAppBar { title: "Espresso Bar" } $
-        card { caption: "Your order" } $ Semigroupoid.do
+        card $ Semigroupoid.do
           ( Semigroupoid.do
               RecordToRecord.do
                 tabBar @"drink"

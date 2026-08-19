@@ -16,7 +16,7 @@ paymentMDC2 :: Effect Unit
 paymentMDC2 =
   body $
     elevation20 $
-      card { caption: "Payment" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               staticText "Amount due: $"
               text @"amount" # projection show ) # tapped
@@ -25,5 +25,5 @@ paymentMDC2 =
               button @"Charge card" { icon: "credit_card" } # toCases startCharge
               ( Semigroupoid.do
                   indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
-                  snackbar # forCase @"charge" retryLine # observed ) # iterate) # updated (match { charged: const <<< recordCharged })
+                  snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder

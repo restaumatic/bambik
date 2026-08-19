@@ -15,7 +15,7 @@ timerMDC3 :: Effect Unit
 timerMDC3 =
   body $
     elevation5 $
-      card { caption: "Timer" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( RecordToRecord.do
               linearProgress @"fraction" # projected fraction
               bodyLarge RecordToRecord.do

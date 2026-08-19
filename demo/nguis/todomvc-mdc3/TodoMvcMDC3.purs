@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), (<<<), Unit, const, show)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, displayed, projection, forProperty, mvu, required, toCase, updated)
+import PUI (completed, tapped, projection, forProperty, mvu, required, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
@@ -16,7 +16,7 @@ todoMvcMDC3 :: Effect Unit
 todoMvcMDC3 =
   body $
     elevation5 $
-      card { caption: "TodoMVC" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           Semigroupoid.do
             filledTextField @"What needs to be done?" {} # completed
             button @"Add" {} # updated (match { "Add": const <<< addTodo })
@@ -26,9 +26,9 @@ todoMvcMDC3 =
           Semigroupoid.do
             bodySmall ( RecordToRecord.do
                 text @"count" # projection show
-                staticText " item left" ) # providedCase @"sole" remainingItems # displayed
+                staticText " item left" ) # providedCase @"sole" remainingItems # tapped
             bodySmall ( RecordToRecord.do
                 text @"count" # projection show
-                staticText " items left" ) # providedCase @"several" remainingItems # displayed
+                staticText " items left" ) # providedCase @"several" remainingItems # tapped
             button @"Clear completed" {} # updated (match { "Clear completed": const <<< clearCompleted })
       ) # mvu emptyTodoList

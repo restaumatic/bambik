@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cellsFluent :: Effect Unit
 cellsFluent =
   body $
-    card { caption: "Cells" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         ( RecordToRecord.do
             body1 ( RecordToRecord.do
                 staticText "Cell "

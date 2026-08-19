@@ -4,8 +4,8 @@
 export const demos = ['demo/7guis/counter-fluent']
 export const url = '/demo/7guis/counter-fluent/'
 
-// the card caption is also a size-500 fluent-text, so the count is the second
-const count = `document.querySelectorAll('fluent-text[size="500"]')[1].textContent`
+// the title3 readout is the page's only size-500 fluent-text
+const count = `document.querySelector('fluent-text[size="500"]').textContent`
 
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`!!customElements.get('fluent-button')`), true, 'Fluent elements registered')

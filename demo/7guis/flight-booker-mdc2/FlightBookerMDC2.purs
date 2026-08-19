@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, completed, debounced, displayed, forCases, informed, mvu, required, updated)
+import PUI (action, completed, debounced, tapped, forCases, informed, mvu, required, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (providedCase, body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
@@ -16,7 +16,7 @@ flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
   body $
     elevation20 $
-      card { caption: "Book Flight" } $ Semigroupoid.do
+      card $ Semigroupoid.do
       ( Semigroupoid.do
           ( RecordToRecord.do
               select @"Flight type" {}
@@ -27,15 +27,15 @@ flightBookerMDC2 =
       ( Semigroupoid.do
           body1 ( RecordToRecord.do
               staticText "⚠ "
-              text @"problem" ) # providedCase @"problem" bookingState # displayed
+              text @"problem" ) # providedCase @"problem" bookingState # tapped
           body1 ( RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" ) # providedCase @"one-way" bookingState # displayed
+              text @"date" ) # providedCase @"one-way" bookingState # tapped
           body1 ( RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+              text @"back" ) # providedCase @"return" bookingState # tapped ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine

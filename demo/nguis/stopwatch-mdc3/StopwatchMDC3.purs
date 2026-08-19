@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, displayed, every, projection, foreach, mvu, updated)
+import PUI (completed, tapped, every, projection, foreach, mvu, updated)
 import PUI.Web.HTML (providedCase, body, li, staticText, text, ul)
 import PUI.Web.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,7 +16,7 @@ stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $
     elevation5 $
-      card { caption: "Stopwatch" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           displaySmall (text @"elapsedTenths") # projection formatTime # completed
           every tickPeriod tick
           ( RecordToVariant.do
@@ -29,5 +29,5 @@ stopwatchMDC3 =
                    staticText "Lap "
                    text @"number"
                    staticText " — "
-                   text @"time" ) # foreach @"number" lapRows ) # displayed
+                   text @"time" ) # foreach @"number" lapRows ) # tapped
       ) # mvu zeroedStopwatch

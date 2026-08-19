@@ -13,7 +13,7 @@ temperatureConverterMDC3 :: Effect Unit
 temperatureConverterMDC3 =
   body $
     elevation5 $
-      card { caption: "Temperature Converter" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           filledTextField @"°C" {} # projected celsiusText # updated (informed fromCelsius)
           filledTextField @"°F" {} # projected fahrenheitText # updated (informed fromFahrenheit)
       ) # mvu roomTemperature

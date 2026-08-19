@@ -16,7 +16,7 @@ circleDrawerMDC3 :: Effect Unit
 circleDrawerMDC3 =
   body $
     elevation5 $
-      card { caption: "Circle Drawer" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           sliderLive @"Diameter" {} # provided selectedDiameter # updated (informed adjustDiameter)
           ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
               ( onClickedXY

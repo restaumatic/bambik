@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), Unit, const, show)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, displayed, projection, mvu, forProperty, projected, toCase, updated)
+import PUI (completed, tapped, projection, mvu, forProperty, projected, toCase, updated)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,7 +15,7 @@ quizMDC2 :: Effect Unit
 quizMDC2 =
   body $
     elevation20 $
-      card { caption: "Quiz" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( RecordToRecord.do
               linearProgress @"progress" # projected progressFraction
               body1 RecordToRecord.do
@@ -33,6 +33,6 @@ quizMDC2 =
                   staticText "Final score: "
                   text @"correct" # projection show
                   staticText " / "
-                  text @"total" # projection show) # displayed
+                  text @"total" # projection show) # tapped
               button @"Restart" { icon: "replay" }) # provided finalOutcome # updated (match { "Restart": const (const freshQuizRun) })
       ) # mvu freshQuizRun

@@ -194,7 +194,7 @@ import Type.Proxy (Proxy(..))
 
 -- Conversion tags scope which field names lift a bare value to `Just`, as
 -- in `PUI.Web.MDC2`: one tag per distinct optional-field set — `OptLabelIcon`
--- (buttons), `OptLabel` (fab, caption via card), `OptSelected` (listOf),
+-- (buttons), `OptLabel` (fab), `OptSelected` (listOf),
 -- `OptIcon` (tabBar options).
 -- | Marks `label` and `icon` as optional on the buttons — write either,
 -- | both or neither, as a plain string.
@@ -207,12 +207,10 @@ else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
 else instance ConvertOption OptLabelIcon sym a a where
   convertOption _ _ = identity
 
--- | Marks the `label` of a FAB and the `caption` of a card as optional.
+-- | Marks the `label` of a FAB as optional.
 data OptLabel = OptLabel
 
 instance ConvertOption OptLabel "label" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptLabel "caption" String (Maybe String) where
   convertOption _ _ = Just
 else instance ConvertOption OptLabel sym a a where
   convertOption _ _ = identity
@@ -989,21 +987,17 @@ elevationCss = """
 """
 
 -- | A **card**: a raised surface holding one subject's content and actions
--- | — an order, a product, a summary — with an optional caption at the top.
--- | `card {}` is captionless, `card { caption: "Your order" }` titles it.
--- | Takes any content; put a row of buttons in `cardActions`.
-card
-  :: forall provided
-   . ConvertOptionsWithDefaults OptLabel { caption :: Maybe String } { | provided } { caption :: Maybe String }
-  => { | provided }
-  -> Ocular (PUI Web)
-card provided content = wrap do
+-- | — an order, a product, a summary. Takes any content; put a row of
+-- | buttons in `cardActions`.
+-- |
+-- | A plain ocular, with no config of its own: MD3 defines a card as a
+-- | *surface* and gives it no title — `@material/web`'s own card element is
+-- | a bare `<slot>` with no properties — so a card's heading is ordinary
+-- | typography placed in its content (`titleMedium`, `headlineSmall`).
+card :: Ocular (PUI Web)
+card content = wrap do
   liftEffect $ ensureStyle "md3-card" cardCss
-  unwrap $ div >>> cl "md3-card" $ wrap do
-    for_ mCaption \c -> void $ unwrap (div >>> cl "md-typescale-title-medium" $ staticText c)
-    unwrap content
-  where
-  { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
+  unwrap $ div >>> cl "md3-card" $ content
 
 -- a flex column with a gap: MD3 custom elements carry no margins of their
 -- own, so the card supplies the vertical rhythm between its children

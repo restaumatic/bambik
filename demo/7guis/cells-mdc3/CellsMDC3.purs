@@ -15,7 +15,7 @@ cellsMDC3 :: Effect Unit
 cellsMDC3 =
   body $
     elevation5 $
-      card { caption: "Cells" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( RecordToRecord.do
               bodyLarge ( RecordToRecord.do
                   staticText "Cell "

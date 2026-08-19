@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
-import PUI (completed, displayed, forCase, mvu, observed, atCase, projected, tapped, toCase, updated)
+import PUI (completed, tapped, forCase, mvu, observed, atCase, projected, toCase, updated)
 import PUI.Web.HTML (body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,7 +17,7 @@ inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $
     elevation20 $
-      card { caption: "Inbox" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           caption ( RecordToRecord.do
               text @"unreadCount" # projected unreadCountText
               staticText " unread of "
@@ -25,11 +25,11 @@ inboxMDC2 =
               staticText " messages" ) # completed
           listOf { selected: _.attention } mailboxRows
             ( span $ Semigroupoid.do
-                staticText "● " # provided unreadMark # displayed
+                staticText "● " # provided unreadMark # tapped
                 ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
-                    text @"subject" ) # displayed ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text @"subject" ) # tapped ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
               ( RecordToRecord.do
                   headline6 (text @"subject")

@@ -9,10 +9,10 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (action, armed, atCase, atField, bracketed, completed, debounced, displayed, field, forCase, projection, informed, required, tapped, updated, with)
+import PUI (action, armed, atCase, atField, bracketed, completed, debounced, tapped, field, forCase, projection, informed, required, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (body, provided, staticText, text)
-import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
+import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC2 :: Effect Unit
@@ -23,35 +23,43 @@ orderFormMDC2 =
         headline6 ( RecordToRecord.do
             staticText "Order "
             text @"Short ID" )
-        card { caption: "Identifier" } $ RecordToRecord.do
+        card $ RecordToRecord.do
+          subtitle1 $ staticText "Identifier"
           filledTextField @"Short ID" {}
           filledTextField @"Unique ID" {}
-        card { caption: "Customer" }
-          ( RecordToRecord.do
-              filledTextField @"First name" {}
-              filledTextField @"Last name" {}) # field @"customer"
-        card { caption: "Fulfillment" }
-          ( ( Semigroupoid.do
-                tabBar @"selected"
-                  [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ] # completed
-                filledTextField @"Table" {} # provided dineInPane # updated (informed setTable)
-                filledTextField @"Time" {} # provided takeawayPane # updated (informed setTime)
-                ( RecordToRecord.do
-                    filledTextField @"Address" {}
-                    body1 ( RecordToRecord.do
-                        staticText "Distance "
-                        text @"Address" # projection distanceKm
-                        staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment"
-        card { caption: "Total" } $ filledTextField @"Total" {}
-        card { caption: "Payment" }
-          ( RecordToRecord.do
-              segmentedButton @"Method"
-                [ choice @"cash", choice @"card" ] # required
-              filledTextField @"Paid" {}
-              body1 ( RecordToRecord.do
-                  staticText "Paying by "
-                  text @"Method" # projection caseText )) # field @"payment"
-        card { caption: "Remarks" } $ filledTextArea @"Remarks" { columns: 80, rows: 3 }
+        card ( RecordToRecord.do
+            subtitle1 $ staticText "Customer"
+            ( RecordToRecord.do
+                filledTextField @"First name" {}
+                filledTextField @"Last name" {}) # field @"customer" )
+        card ( RecordToRecord.do
+            subtitle1 $ staticText "Fulfillment"
+            ( ( Semigroupoid.do
+                  tabBar @"selected"
+                    [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ] # completed
+                  filledTextField @"Table" {} # provided dineInPane # updated (informed setTable)
+                  filledTextField @"Time" {} # provided takeawayPane # updated (informed setTime)
+                  ( RecordToRecord.do
+                      filledTextField @"Address" {}
+                      body1 ( RecordToRecord.do
+                          staticText "Distance "
+                          text @"Address" # projection distanceKm
+                          staticText " km" )) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
+        card $ RecordToRecord.do
+          subtitle1 $ staticText "Total"
+          filledTextField @"Total" {}
+        card ( RecordToRecord.do
+            subtitle1 $ staticText "Payment"
+            ( RecordToRecord.do
+                segmentedButton @"Method"
+                  [ choice @"cash", choice @"card" ] # required
+                filledTextField @"Paid" {}
+                body1 ( RecordToRecord.do
+                    staticText "Paying by "
+                    text @"Method" # projection caseText )) # field @"payment" )
+        card $ RecordToRecord.do
+          subtitle1 $ staticText "Remarks"
+          filledTextArea @"Remarks" { columns: 80, rows: 3 }
       body1 ( Semigroupoid.do
           ( RecordToRecord.do
               staticText "Summary: Order "
@@ -66,21 +74,21 @@ orderFormMDC2 =
               staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
           ( RecordToRecord.do
               staticText "dine in at table "
-              text @"Table" ) # provided dineInDetail # displayed
+              text @"Table" ) # provided dineInDetail # tapped
           ( RecordToRecord.do
               staticText "takeaway at "
-              text @"Time" ) # provided takeawayDetail # displayed
+              text @"Time" ) # provided takeawayDetail # tapped
           ( RecordToRecord.do
               staticText "delivery to "
               text @"Address"
               staticText " ("
               text @"Address" # projection distanceKm
-              staticText " km away)" ) # provided deliveryDetail # displayed
+              staticText " km away)" ) # provided deliveryDetail # tapped
           ( RecordToRecord.do
               staticText ", paid "
               text @"Paid"
               staticText " by "
-              text @"Method" # projection caseText ) # field @"payment" # debounced summarySettleTime # tapped )
+              text @"Method" # projection caseText ) # atField @"payment" # debounced summarySettleTime # tapped )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

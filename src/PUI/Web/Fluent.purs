@@ -389,15 +389,17 @@ body1 w = el "fluent-text" >>> "size" := "300" >>> "block" := "" $ w
 caption1 :: Ocular (PUI Web)
 caption1 w = el "fluent-text" >>> "size" := "200" >>> "block" := "" $ w
 
--- | A **card**: a surface holding one subject's content, captioned at the
--- | top. It stacks its children with even spacing, so a form or a summary
--- | can be dropped in without spacing each row by hand.
-card :: { caption :: String } -> Ocular (PUI Web)
-card config content = wrap do
+-- | A **card**: a surface holding one subject's content. It stacks its
+-- | children with even spacing, so a form or a summary can be dropped in
+-- | without spacing each row by hand.
+-- |
+-- | A plain ocular, with no config of its own: a card is a *surface*, and a
+-- | heading of its own is ordinary typography placed in its content
+-- | (`title3`, `body1`).
+card :: Ocular (PUI Web)
+card content = wrap do
   liftEffect $ ensureStyle "fluent-card" cardCss
-  unwrap $ div >>> "class" := "fluent-card" $ wrap do
-    _ <- unwrap (el "fluent-text" >>> "size" := "500" >>> "weight" := "semibold" >>> "block" := "" $ staticText config.caption)
-    unwrap content
+  unwrap $ div >>> "class" := "fluent-card" $ content
 
 cardCss :: String
 cardCss = """

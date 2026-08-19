@@ -17,7 +17,7 @@ cashboxMDC2 :: Effect Unit
 cashboxMDC2 =
   body $
     elevation20 $
-      card { caption: "Cashbox" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               staticText "Till balance: €"
               text @"balance" # projection euros ) # tapped
@@ -34,5 +34,5 @@ cashboxMDC2 =
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ body1 ( RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " to the courier." ) # tapped ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, "Take a deposit": informed applyDeposit })
+                      staticText " to the courier." ) # tapped ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: informed applyRefund, paidOut: informed applyPayout, "Take a deposit": informed applyDeposit })
       ) # mvu openedTill

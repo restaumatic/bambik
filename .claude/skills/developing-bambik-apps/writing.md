@@ -156,9 +156,15 @@ interchangeable:
 - `# completed` widens a *row-shaped* stage's output to its full input
   row from the retained input — safe over editors and displays alike,
   the default inside record pipelines.
-- `# tapped` forwards the whole input value of *any* shape but is honest
-  only over displays: the display's echo triggers the forwarding, so an
-  editor inside would replay stale upstream values on every edit.
+- `# tapped` forwards the whole input value of *any* shape,
+  unconditionally at feed time, and the compiler holds it to displays:
+  the wrapped component's output must be `{}`, a display's output. An
+  editor or emitter inside fails to unify — fold its emissions with
+  `# updated`, or, where an emitting assembly really is used purely as
+  a display, discard them **in writing** with `# muted` before the tap.
+  An adopted display keeps its `{}` through the input-side adopter:
+  `# atField @l`, never `# field @l`, whose output half would wrap the
+  `{}` into `{ l :: {} }` (order-form's payment line).
 
 So: editor or record display stage → `# completed`; display over a
 non-record value (a `projected`-formatted readout) → `# tapped`. A live
@@ -167,13 +173,17 @@ readout as a pipeline stage is just a display made pass-through this way
 
 A terminal **collection display** — a projection rendered as a list or
 grid, passing the model through — is the keyed `foreach` inside its
-container ocular, trailed by `# displayed`, whose unconditional echo is
+container ocular, trailed by `# tapped`, whose unconditional forwarding is
 the collection's announcing unit (so an empty array never starves). Here the rows projection must be a **named projection with a
-closed row**, not an accessor: `displayed` widens a *closed* narrow row,
+closed row**, not an accessor: `tapped` widens a *closed* narrow row,
 so an open one leaves no `Union` instance and the error lands on
-`displayed`. This is the row-stating exception to the
+`tapped`. This is the row-stating exception to the
 delete-the-one-field-projection rule. Stopwatch's laps list is the
-worked example.
+worked example. An element that is itself a pipeline of stages
+(alternating `provided` panes) forwards its row through the `foreach`;
+that forwarding carries nothing the tap keeps, so it is discarded in
+writing — `# foreach @l rowsOf # muted ) # tapped` (scoreboard's
+summary line).
 
 A fixed catalogue drives `listOf`/`foreach` through the mechanism's own
 projection argument (`# foreach @"key" (const keyPad)`) — never an
@@ -218,7 +228,7 @@ Worked examples, by shape:
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
-  tree built by `displayed (dynamic …)`, because the structure genuinely
+  tree built by `tapped (dynamic …)`, because the structure genuinely
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
@@ -468,6 +478,10 @@ over a logic module, a single exported entry function.
   levels' closers and chains cascade onto that same final line. The one
   exception is the app-level closer: the last UI line stays
   `) # mvu seed` / `) # with seed` on its own.
+  **A cascading closer is spaced from the chain it closes over**, so each
+  level reads as one `) # chain` unit rather than the paren fusing onto
+  the previous level's last word:
+  `… ) # tapped ) # feedback noBids`, not `… ) # tapped) # feedback noBids`.
   **Precedence caveat:** `#` (`infixl 1`) binds tighter than `$`
   (`infixr 0`), so where the chain must apply to the *whole element* —
   `foreach` multiplying an ocular-wrapped UI component — the paren must open
@@ -560,7 +574,7 @@ over a logic module, a single exported entry function.
 
 - **Exact footprints.** Every business function states its footprint as
   a closed narrow row — what it reads ∪ writes, never the whole model.
-  The reading stages (`updated`/`tapped`/`displayed`/`edited`/`acted`/
+  The reading stages (`updated`/`tapped`/`edited`/`acted`/
   `completed`) absorb the widening, so rows are read narrow while
   payloads stay exact; never coerce a row at the call site. A handler
   that reads nothing is not a transformer but a **constant patch**
@@ -602,7 +616,7 @@ over a logic module, a single exported entry function.
   being a sibling's write; **disjoint footprints** mean the events or
   the model want redesign until the branches genuinely share. An
   **identity handler** is the smell at its purest: the event was never
-  model data, so the honest wiring is `# displayed`, a display
+  model data, so the honest wiring is `# tapped`, a display
   interaction, not an `updated` fold. Bounded quantities ride whole even
   where a handler replaces only `current`.
 - **Lossy conversions live in the model, not in leaf brackets.** An

@@ -18,7 +18,7 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (completed, feedback, focusProperty, subStrong, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (completed, feedback, focusProperty, muted, subStrong, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -34,7 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, displayed, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, dispatched, tapped, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -697,18 +697,34 @@ main = do
     m.toUser 3
     Ref.read outs >>= assertEqual "identity: the echo wire" [ 3 ]
 
-  -- displayed: unconditional pass-through (the trivial updates fold) — no
+  -- tapped: unconditional pass-through (the trivial updates fold) — no
   -- echo needed from the wrapped display, and any event it does emit
   -- re-emits the retained value.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
-    m <- unwrap (displayed (probe gProp :: PUI Effect { v :: Int } Unit))
+    m <- unwrap (tapped (probe gProp :: PUI Effect { v :: Int } {}))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 1 }
-    Ref.read outs >>= assertEqual "displayed: every value forwarded, no echo needed" [ { v: 1 } ]
-    fire gProp unit
-    Ref.read outs >>= assertEqual "displayed: an event re-emits the retained value" [ { v: 1 }, { v: 1 } ]
+    Ref.read outs >>= assertEqual "tapped: every value forwarded, no echo needed" [ { v: 1 } ]
+    fire gProp {}
+    Ref.read outs >>= assertEqual "tapped: an event re-emits the retained value" [ { v: 1 }, { v: 1 } ]
+
+  -- muted: the counit — render, discard the output deliberately. On (->):
+  -- muted g = const {}. On the PUI carrier it makes any emitting component
+  -- lawfully tappable: the emission arrives as {} (a display's output, all
+  -- the tap accepts), so the tap re-emits the retained value instead of
+  -- losing an edit silently.
+  do
+    assertEqual "muted on (->): the counit" {} (muted (\(x :: Int) -> x + 1) 5)
+  do
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { v :: Int })
+    m <- unwrap (tapped (muted (probe gProp :: PUI Effect { v :: Int } { edit :: Int })))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { v: 4 }
+    fire gProp { edit: 9 }
+    Ref.read outs >>= assertEqual "muted # tapped: a discarded emission re-emits the retained value, losing nothing that was not written off" [ { v: 4 }, { v: 4 } ]
 
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
