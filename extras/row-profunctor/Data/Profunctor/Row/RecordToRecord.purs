@@ -65,6 +65,7 @@ module Data.Profunctor.Row.RecordToRecord
   , field
   , toField
   , muted
+  , tapped
   , pempty
   , subStrong
   , focusProperty
@@ -79,6 +80,7 @@ import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Strong (class Strong, first)
+import Control.Category (class Category, identity)
 import Control.Semigroupoid (class Semigroupoid, (>>>))
 import Data.Function (const)
 import Data.Symbol (class IsSymbol)
@@ -335,6 +337,47 @@ toField f = rmap (\a -> Record.insert (Proxy @l) (f a) {})
 -- | writing.
 muted :: forall p i o. Profunctor p => p i o -> p i {}
 muted = rmap (const {})
+
+-- | A **display tap**: show the value flowing through a pipeline stage and
+-- | pass it on — every value fed is forwarded, whatever the wrapped display
+-- | does or does not emit. **Derived, not primitive**: the tap is the merge
+-- | with the echo wire,
+-- |
+-- | ```
+-- | tapped w = recordToRecord w identity
+-- | ```
+-- |
+-- | The display is the *first* operand deliberately: a merge feeds its
+-- | operands in order, so the display renders before the wire's echo
+-- | forwards — and the forward may re-enter the whole loop (`mvu`) at
+-- | registration, which must find the display already painted.
+-- |
+-- | — the duoidal comultiplication literally (render *and* forward; a bare
+-- | display is only the counit `muted`). The display's zero-field output
+-- | side can never gate the wire's echo (the merges' pre-satisfaction rule:
+-- | `{}` is the informationless record, always known), so a detached pane,
+-- | an empty collection or a pipeline tail never withholds.
+-- |
+-- | Honest over *displays*, and the types enforce it: the wrapped
+-- | component's output must be `{}` — a display's output, nothing else's.
+-- | An editor or emitter inside would have its edits or events swallowed,
+-- | so it fails to unify: fold the emissions with `updated`, or discard
+-- | them deliberately and visibly with `muted` (`# muted # tapped`). An
+-- | adopted display keeps its `{}` by using the input-side adopter
+-- | (`atField @l`, not `field @l`).
+-- |
+-- | **Subsumption is built in**: the display may read a *narrower* row than
+-- | the stage carries (`text @"summary" # projected readout # tapped`, where
+-- | `readout` declares only the fields it formats).
+tapped
+  :: forall p narrow wider i12 i1x i2x widerL
+   . RecordToRecord p
+  => Category p
+  => SharedRecordInputs narrow wider wider i12 i1x i2x
+  => OwnedRecordOutputs () wider wider RL.Nil widerL
+  => p { | narrow } {}
+  -> p { | wider } { | wider }
+tapped w = recordToRecord w identity
 
 -- | Settle a stage's emissions through a **total, type-preserving**
 -- | normalization — the round-trip rule's mechanism made a word: a lossy

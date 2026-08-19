@@ -118,7 +118,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 ### L6. Knowledge gates: nothing flows until it is genuinely known.
 
 - A gate MUST withhold until every field has a producer that has spoken,
-  and MUST retain last-known values thereafter. A gate MUST NOT be
+  and MUST retain last-known values thereafter. The vacuous case is
+  decided: an operand owning **zero fields is pre-satisfied** — its only
+  possible contribution is the informationless `{}`, which is always
+  known, so waiting for it is waiting for nothing and no invented data
+  can flow (the silence law in test/Main.purs). This is what makes a
+  display-side operand unable to starve its siblings, and `tapped` a
+  derived form rather than a carrier primitive. A gate MUST NOT be
   papered over with invented data. Three designs are permanently
   rejected:
   - **no `Initial`/`Default`-style type-derived seeds** — initial state

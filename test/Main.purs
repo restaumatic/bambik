@@ -146,6 +146,32 @@ main = do
     fire gProp { a: 2 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g pempty = g" [ { a: 2 } ]
 
+  -- ×→× silence law: an operand owning zero fields is **pre-satisfied** — its
+  -- only possible contribution is the informationless {}, so the gate must
+  -- not wait for it. Sharper than the unit law: this operand never emits at
+  -- all (a detached pane, an empty collection), where pempty announces.
+  -- This law is what makes `tapped` a derived form (the merge with the echo
+  -- wire) rather than a carrier primitive.
+  do
+    gProp <- Ref.new Nothing
+    silentProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int })
+    m <- unwrap (recordToRecord (probe silentProp :: PUI Effect {} {}) (probe gProp :: PUI Effect {} { a :: Int }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    fire gProp { a: 3 }
+    Ref.read outs >>= assertEqual "silence law ×→×: a zero-field operand never starves the gate" [ { a: 3 } ]
+
+  -- tapped inside feedback: the display renders the seed at registration —
+  -- pins tapped's operand order (display first, wire second: render before
+  -- forward, since the forward may re-enter the loop mid-registration)
+  do
+    shown <- Ref.new ([] :: Array { top :: Int })
+    outs <- Ref.new ([] :: Array {})
+    let display = PUI (pure { toUser: \s -> Ref.modify_ (_ <> [ s ]) shown, fromUser: \_ -> pure unit }) :: PUI Effect { top :: Int } {}
+    m <- unwrap (feedback { top: 0 } (tapped display) :: PUI Effect {} {})
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    Ref.read shown >>= assertEqual "feedback+tapped: the seed renders at registration" [ { top: 0 } ]
+
   -- ×→× runtime-exactness: the merge widens each operand's input by coercion,
   -- so an operand that echoes or lens-rebuilds its input emits an object
   -- runtime-carrying stale copies of *sibling* fields while typed at its own

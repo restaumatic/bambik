@@ -56,7 +56,6 @@ module PUI
   , accumulated
   , debounced
   , dispatched
-  , tapped
   , edited
   , every
   , foreach
@@ -72,6 +71,7 @@ module PUI
 
 import Prelude
 
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Lens (Optic)
@@ -87,7 +87,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, tapped, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -466,8 +466,8 @@ recordToRecordPUI p1 p2 = wrap ado
           p1'.toUser new
           p2'.toUser new
     , fromUser: gatedRecordOutputs "×→×"
-        (renderFieldNames (rowLabels (Proxy @o1l)))
-        (renderFieldNames (rowLabels (Proxy @o2l)))
+        (rowLabels (Proxy @o1l))
+        (rowLabels (Proxy @o2l))
         exactRow exactRow p1'.fromUser p2'.fromUser
     }
 
@@ -593,15 +593,15 @@ gatedRecordOutputs
    . Union o1 o2 o
   => Union o2 o1 o
   => String
-  -> String
-  -> String
+  -> Array String
+  -> Array String
   -> (e1 -> { | o1 })
   -> (e2 -> { | o2 })
   -> ((e1 -> Effect Unit) -> Effect Unit)
   -> ((e2 -> Effect Unit) -> Effect Unit)
   -> ({ | o } -> Effect Unit)
   -> Effect Unit
-gatedRecordOutputs direction fields1 fields2 exact1 exact2 sub1 sub2 prop = do
+gatedRecordOutputs direction labels1 labels2 exact1 exact2 sub1 sub2 prop = do
   sub1 \partial -> do
     let exact = exact1 partial
     let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
@@ -625,8 +625,16 @@ gatedRecordOutputs direction fields1 fields2 exact1 exact2 sub1 sub2 prop = do
         guard1.fed *> guard2.fed
         prop $ Record.union p1val exact
   where
-  p1Last = unsafePerformEffect $ Ref.new Nothing
-  p2Last = unsafePerformEffect $ Ref.new Nothing
+  fields1 = renderFieldNames labels1
+  fields2 = renderFieldNames labels2
+  -- a side that owns zero fields is pre-satisfied: `{}` is the
+  -- informationless record, always known (L6), so the gate never waits
+  -- for it — a display-side operand cannot starve its siblings whether or
+  -- not it has spoken (the silence law in test/Main.purs)
+  prime :: forall r. Array String -> Maybe { | r }
+  prime labels = if Array.null labels then Just (unsafeCoerce {}) else Nothing
+  p1Last = unsafePerformEffect $ Ref.new (prime labels1)
+  p2Last = unsafePerformEffect $ Ref.new (prime labels2)
   guard1 = unsafePerformEffect gateGuard
   guard2 = unsafePerformEffect gateGuard
   starving mine sibling = direction <> " merge: emissions dropped for 3s — the operand producing " <> mine
@@ -651,8 +659,8 @@ variantToRecordPUI p1 p2 = wrap ado
         for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
         for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
     , fromUser: gatedRecordOutputs "+→×"
-        (renderFieldNames (rowLabels (Proxy @o1l)))
-        (renderFieldNames (rowLabels (Proxy @o2l)))
+        (rowLabels (Proxy @o1l))
+        (rowLabels (Proxy @o2l))
         exactRow exactRow p1'.fromUser p2'.fromUser
     }
 
@@ -817,13 +825,7 @@ updated
   => (e -> { | small } -> { | small })
   -> PUI m { | narrow } e
   -> PUI m { | big } { | big }
-updated handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
-
--- | The type-agnostic Mealy stage `updated` and `tapped` are built from —
--- | private, because the vocabulary's stages carry rows (subsumption is
--- | stated in their signatures) while this one is exact at any type.
-mealy :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
-mealy handler events = wrap $ unwrap events <#> \evts ->
+updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
   let sRef = unsafePerformEffect $ Ref.new Nothing
       mPropRef = unsafePerformEffect $ Ref.new Nothing
       guard = unsafePerformEffect gateGuard
@@ -844,40 +846,10 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
               tr "updated: event withheld (no retained state yet)" e
             Just s -> do
               tr "updated: folding event" e
-              let s' = handler e s
+              let s' = Record.merge (handler e (unsafeCoerce s)) s
               Ref.write (Just s') sRef
               prop s'
     }
-
--- | A **display tap**: show the value flowing through a pipeline stage and
--- | pass it on — the comultiplication that makes a display a stage rather
--- | than a pipeline's end (see the duoidal reading in this module's header).
--- |
--- | Forwarding is **unconditional and at feed time**: every value fed is
--- | shown and forwarded exactly once, whatever the wrapped display does or
--- | does not emit. That totality is the whole contract, and it is what makes
--- | the tap honest over displays that cannot echo — a detached `provided`
--- | pane, a `foreach` collection over an empty array, a `mvu` pipeline's
--- | last stage. (The trivial `updated` fold, so an event the wrapped UI
--- | component *does* emit re-emits the retained value rather than its own
--- | payload — the tap's output is always the value that came in.)
--- |
--- | Honest over *displays*, and the types enforce it: the wrapped
--- | component's output must be `{}` — a display's output, nothing else's
--- | — because the tap forwards the fed value and never the component's.
--- | An editor or emitter inside would have its edits or events swallowed,
--- | so it fails to unify: fold the emissions with `updated`, or discard
--- | them deliberately and visibly with `muted` (`# muted # tapped` — a
--- | `foreach` forwarding its elements, a packaged collection display
--- | echoing its array). An adopted display keeps its `{}` by using the
--- | input-side adopter (`atField @l`, not `field @l`).
--- |
--- | **Subsumption is built in**: the display may read a *narrower* row than
--- | the stage carries (`text @"summary" # projected readout # tapped`, where
--- | `readout` declares only the fields it formats), so a closed-row read
--- | function needs no `widenRecordInput` at the tap.
-tapped :: forall m narrow extra wider. Functor m => Union narrow extra wider => PUI m { | narrow } {} -> PUI m { | wider } { | wider }
-tapped w = mealy (\_ s -> s) (widenRecordInput w)
 
 -- | Make a status an **event pass-through stage** — `tapped`'s sibling on
 -- | the `+`-diagonal: every event flowing
@@ -964,8 +936,8 @@ every
   -> PUI m { | big } { | big }
 every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
 
--- | The type-agnostic heartbeat `every` is built from — private for the same
--- | reason as `mealy`.
+-- | The type-agnostic heartbeat `every` is built from — private, because the
+-- | vocabulary's stages carry rows while this one is exact at any type.
 heartbeat :: forall m a. Applicative m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
 heartbeat interval step = wrap $ pure unit <#> \_ ->
   let lastRef = unsafePerformEffect $ Ref.new Nothing
