@@ -11,7 +11,8 @@
 -- |   * **direction class** — `RecordToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions** — over the strength: `subStrong` (sub-record
--- |     focus), `focusProperty` (the field lens), `tapped` (the display tap);
+-- |     focus), `focusProperty` (the field lens), `completed` (output
+-- |     completion);
 -- |     over the **unit**: `announce` (its `rmap`-closure — the announcing
 -- |     constant) and `with` (`announce a >>> w` over `Semigroupoid` —
 -- |     discharge the initial-state obligation), plus the subsuming
@@ -66,7 +67,6 @@ module Data.Profunctor.Row.RecordToRecord
   , pempty
   , subStrong
   , focusProperty
-  , tapped
   , completed
   )
   where
@@ -77,11 +77,11 @@ import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Seeding (class Seeding, seeded)
-import Data.Profunctor.Strong (class Strong, first, second)
+import Data.Profunctor.Strong (class Strong, first)
 import Control.Semigroupoid (class Semigroupoid, (>>>))
 import Data.Function (const)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Lacks, class Nub, class Union)
 import Prim.RowList (class RowToList)
@@ -261,7 +261,7 @@ required = lcmap (\r -> Record.insert (Proxy @l) (Just (Record.get (Proxy @l) r)
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
 -- | row) — the non-display sibling of `projection` (which formats a
 -- | display's field in place): a packaged collection reads its array
--- | (`… # atField @"entries" # displayed`, the packaged-collection-display
+-- | (`… # atField @"entries" # tapped`, the packaged-collection-display
 -- | protocol), nested chrome reads its sub-rows
 -- | (`… # foreach @"name" identity # atField @"dishes"`).
 atField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
@@ -374,19 +374,6 @@ informed
   -> { | small }
 informed g pay small = g (unsafeCoerce (Record.union pay small))
 
--- | A display **tap** on the `×`-diagonal: shows the value flowing through
--- | and passes it on — the pipeline-stage form of a live view. Pure `Strong`
--- | plus the leaf-echo protocol: `second` retains the value, and the
--- | display's echo triggers the forwarding. Honest only over *displays*
--- | (elements whose sole emission is the echo) — an editing UI component inside
--- | would replay the retained upstream value on every edit.
--- |
--- | **Subsumption is built in**: the display may read a *narrower* row than
--- | the stage carries (`text @"summary" # projected readout # tapped`, where `readout`
--- | declares only the fields it formats), so a closed-row read function needs
--- | no `widenRecordInput` at the tap.
-tapped :: forall p narrow extra wider x. Strong p => Union narrow extra wider => p { | narrow } x -> p { | wider } { | wider }
-tapped display = dimap (\s -> Tuple s s) fst (second (widenRecordInput display))
 
 -- | **Complete** a UI component's output to its full input row: fields the
 -- | UI component doesn't produce are carried from the retained input, so a merge

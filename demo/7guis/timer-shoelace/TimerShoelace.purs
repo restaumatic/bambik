@@ -14,7 +14,7 @@ import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeri
 timerShoelace :: Effect Unit
 timerShoelace =
   body $
-    card { caption: "Timer" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         ( RecordToRecord.do
             progressBar @"fraction" # projected fraction
             p RecordToRecord.do

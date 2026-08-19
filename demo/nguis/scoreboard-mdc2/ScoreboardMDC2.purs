@@ -4,7 +4,7 @@ import Prelude (Unit, show, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (accumulated, displayed, every, projection, foreach, mvu)
+import PUI (accumulated, tapped, every, projection, foreach, mvu)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,21 +14,21 @@ scoreboardMDC2 :: Effect Unit
 scoreboardMDC2 =
   body $
     elevation20 $
-      card { caption: "Scoreboard" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           every tickPeriod tick
           ( Semigroupoid.do
               list ( ( listItem $ RecordToRecord.do
                   text @"team"
                   staticText ": "
-                  text @"points" # projection show ) # displayed ) # accumulated goal
+                  text @"points" # projection show ) # tapped ) # accumulated goal
               ( body2 $ Semigroupoid.do
                   ( RecordToRecord.do
                       text @"teams"
-                      staticText " teams on the board — leading: " ) # displayed
+                      staticText " teams on the board — leading: " ) # tapped
                   ( RecordToRecord.do
                       text @"team"
                       staticText " ("
                       text @"points" # projection show
-                      staticText ")" ) # provided leadingTeam # displayed
-                  staticText "—" # provided noLeader # displayed ) # foreach @"key" boardSummary ) # displayed
+                      staticText ")" ) # provided leadingTeam # tapped
+                  staticText "—" # provided noLeader # tapped ) # foreach @"key" boardSummary ) # tapped
       ) # mvu gameStart

@@ -15,7 +15,7 @@ shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
   body $
     elevation5 $
-      card { caption: "Shopping Cart" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           listOf {} productCatalogue ( RecordToRecord.do
               text @"name"
               staticText " · $"

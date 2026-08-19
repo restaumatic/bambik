@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cellsBootstrap :: Effect Unit
 cellsBootstrap =
   body $
-    card { caption: "Cells" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         ( RecordToRecord.do
             p ( RecordToRecord.do
                 staticText "Cell "

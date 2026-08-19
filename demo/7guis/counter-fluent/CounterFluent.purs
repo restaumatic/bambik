@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 counterFluent :: Effect Unit
 counterFluent =
   body $
-    card { caption: "Counter" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         title3 (text @"count") # projection show # completed
         button @"Count" {} # updated (match { "Count": const <<< increment })
     ) # mvu freshCount

@@ -17,7 +17,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Lacks)
-import PUI (Ocular, PUI, asField, atField, blank, displayed, foreach, projected)
+import PUI (Ocular, PUI, asField, atField, blank, tapped, foreach, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -59,7 +59,7 @@ leaderboard config =
     list ( ( listItem $ RecordToRecord.do
         text @"name"
         staticText " — "
-        text @"score" ) # foreach @"name" identity ) # atField @"entries" # displayed
+        text @"score" ) # foreach @"name" identity ) # atField @"entries" # tapped
 
 rangePicker :: forall @l provided a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 rangePicker provided options =

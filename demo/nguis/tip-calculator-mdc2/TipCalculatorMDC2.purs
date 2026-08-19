@@ -14,7 +14,7 @@ tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
   body $
     elevation20 $
-      card { caption: "Tip Calculator" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           filledTextField @"Bill amount" {} # completed
           slider @"Tip percentage" {} # completed
           body2 ( RecordToRecord.do

@@ -5,11 +5,11 @@
 -- | (the row merges, `⊗` — the input broadcasts to every operand). The two
 -- | interact as in a duoidal category: a pipeline can only emulate a merge
 -- | through a **comonoid** — a stage that *duplicates* its input onward, not
--- | merely consumes it. `displayed` is exactly that comultiplication (render
+-- | merely consumes it. `tapped` is exactly that comultiplication (render
 -- | *and* forward); a bare display is only the counit (render and discard),
 -- | which is why undisplayed chrome ahead of a live stage starves it under
 -- | `⊳` while the same chrome inside a merge needs nothing — a display is
--- | made into a pass-through stage precisely by `displayed`. See
+-- | made into a pass-through stage precisely by `tapped`. See
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
@@ -56,7 +56,7 @@ module PUI
   , accumulated
   , debounced
   , dispatched
-  , displayed
+  , tapped
   , edited
   , every
   , foreach
@@ -87,11 +87,11 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, projected, projection, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, projected, projection, required, settled, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
--- into the stages that consume a row (`tapped`, `displayed`, `updated`,
+-- into the stages that consume a row (`tapped`, `updated`,
 -- `every`, `settled`, `armed`, `edited`, `acted`, `completed`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
@@ -819,7 +819,7 @@ updated
   -> PUI m { | big } { | big }
 updated handler w = mealy (\e big -> Record.merge (handler e (unsafeCoerce big)) big) (widenRecordInput w)
 
--- | The type-agnostic Mealy stage `updated` and `displayed` are built from —
+-- | The type-agnostic Mealy stage `updated` and `tapped` are built from —
 -- | private, because the vocabulary's stages carry rows (subsumption is
 -- | stated in their signatures) while this one is exact at any type.
 mealy :: forall m s e. Functor m => (e -> s -> s) -> PUI m s e -> PUI m s s
@@ -849,22 +849,32 @@ mealy handler events = wrap $ unwrap events <#> \evts ->
               prop s'
     }
 
--- | Make any display an **unconditional pass-through stage**: every value
--- | fed is shown and forwarded, no echo required. The honest wrapper for
--- | displays that cannot echo — `foreach`/`foreachWith` collections (silent on
--- | an empty array, so inside a gated merge they starve the gate, and as a
--- | `mvu` pipeline's last stage they kill the loop). `tapped` and `completed`
--- | both rely on the display's echo;
--- | `displayed` does not. (The trivial `updated` fold: any event the
--- | wrapped UI component does emit re-emits the retained value.)
--- | **Subsumption is built in** (like `tapped`): the display may read a
--- | *narrower* row than the stage carries, so a closed-row projection needs
--- | no `widenRecordInput` at the stage boundary.
-displayed :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
-displayed w = mealy (\_ s -> s) (widenRecordInput w)
+-- | A **display tap**: show the value flowing through a pipeline stage and
+-- | pass it on — the comultiplication that makes a display a stage rather
+-- | than a pipeline's end (see the duoidal reading in this module's header).
+-- |
+-- | Forwarding is **unconditional and at feed time**: every value fed is
+-- | shown and forwarded exactly once, whatever the wrapped display does or
+-- | does not emit. That totality is the whole contract, and it is what makes
+-- | the tap honest over displays that cannot echo — a detached `provided`
+-- | pane, a `foreach` collection over an empty array, a `mvu` pipeline's
+-- | last stage. (The trivial `updated` fold, so an event the wrapped UI
+-- | component *does* emit re-emits the retained value rather than its own
+-- | payload — the tap's output is always the value that came in.)
+-- |
+-- | Honest over *displays*: an editing UI component inside a tap would have
+-- | its edits swallowed, since the tap forwards the fed value and never the
+-- | component's. Editors belong in a merge or under `updated`.
+-- |
+-- | **Subsumption is built in**: the display may read a *narrower* row than
+-- | the stage carries (`text @"summary" # projected readout # tapped`, where
+-- | `readout` declares only the fields it formats), so a closed-row read
+-- | function needs no `widenRecordInput` at the tap.
+tapped :: forall m narrow extra wider e. Functor m => Union narrow extra wider => PUI m { | narrow } e -> PUI m { | wider } { | wider }
+tapped w = mealy (\_ s -> s) (widenRecordInput w)
 
--- | Make a status an **event pass-through stage** — `displayed`'s sibling on
--- | the `+`-diagonal, and the variant answer to `tapped`: every event flowing
+-- | Make a status an **event pass-through stage** — `tapped`'s sibling on
+-- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
 -- | status consumes are also shown — `status # forCase @"charge" retryLine
 -- | # observed` narrates a retry loop without interrupting it. Subsumption
@@ -1159,7 +1169,7 @@ instance Hosting m node => Acting (PUI m) where
 -- | sum-flavored sibling of `acted`'s gathered `Array b`), so it is ungated
 -- | and lawfully **silent on an empty array** (no `o` to fabricate) — as a
 -- | terminal display pass the carrier through with `# lcmap proj
--- | # displayed`, the comonoid a pipeline tail requires; when the aggregate
+-- | # tapped`, the comonoid a pipeline tail requires; when the aggregate
 -- | array itself is the output, use `acted` (gathered, knowledge-gated,
 -- | announces `[]`) or `edited` (input-primed, immediate). All share this
 -- | keyed reconciler.

@@ -15,7 +15,7 @@ auctionMDC2 :: Effect Unit
 auctionMDC2 =
   body $
     elevation20 $
-      card { caption: "Live Auction" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           body2 ( RecordToRecord.do
               staticText "Your current bid: $"
               text @"Your bid ($)" # projection (show <<< _.current) ) # tapped

@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $
-    card { caption: "Loan calculator" } $ Semigroupoid.do
+    card $ Semigroupoid.do
       ( RecordToRecord.do
           textField @"Applicant" {}
           sliderLive @"Amount (€)" {}

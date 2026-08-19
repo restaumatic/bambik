@@ -68,7 +68,7 @@
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
 -- | p {|a} {|b}  atField, atProperty, projection, subStrong, focusProperty    feedback
--- |              forProperty, projected,         tapped, completed
+-- |              forProperty, projected,         completed
 -- |              toField, field, asField,
 -- |              required
 -- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate

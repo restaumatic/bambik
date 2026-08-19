@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, completed, debounced, displayed, field, forCases, informed, mvu, pempty, required, toCase, updated)
+import PUI (action, completed, debounced, tapped, field, forCases, informed, mvu, pempty, required, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (providedCase, body, button, div, input, label, output, p, provided, select, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,15 +30,15 @@ flightBookerHTML =
     ( Semigroupoid.do
         p ( RecordToRecord.do
             staticText "⚠ "
-            text @"problem" ) # providedCase @"problem" bookingState # displayed
+            text @"problem" ) # providedCase @"problem" bookingState # tapped
         p ( RecordToRecord.do
             staticText "A one-way flight on "
-            text @"date" ) # providedCase @"one-way" bookingState # displayed
+            text @"date" ) # providedCase @"one-way" bookingState # tapped
         p ( RecordToRecord.do
             staticText "A return flight: out "
             text @"out"
             staticText ", back "
-            text @"back" ) # providedCase @"return" bookingState # displayed ) # debounced itinerarySettleTime
+            text @"back" ) # providedCase @"return" bookingState # tapped ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     pempty # action (match { book: submit })
     output # forCases bookingLine

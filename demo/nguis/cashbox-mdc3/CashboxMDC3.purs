@@ -17,7 +17,7 @@ cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
   body $
     elevation5 $
-      card { caption: "Cashbox" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           headlineSmall ( RecordToRecord.do
               staticText "Till balance: €"
               text @"balance" # projection euros ) # tapped

@@ -167,11 +167,11 @@ readout as a pipeline stage is just a display made pass-through this way
 
 A terminal **collection display** — a projection rendered as a list or
 grid, passing the model through — is the keyed `foreach` inside its
-container ocular, trailed by `# displayed`, whose unconditional echo is
+container ocular, trailed by `# tapped`, whose unconditional forwarding is
 the collection's announcing unit (so an empty array never starves). Here the rows projection must be a **named projection with a
-closed row**, not an accessor: `displayed` widens a *closed* narrow row,
+closed row**, not an accessor: `tapped` widens a *closed* narrow row,
 so an open one leaves no `Union` instance and the error lands on
-`displayed`. This is the row-stating exception to the
+`tapped`. This is the row-stating exception to the
 delete-the-one-field-projection rule. Stopwatch's laps list is the
 worked example.
 
@@ -218,7 +218,7 @@ Worked examples, by shape:
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
-  tree built by `displayed (dynamic …)`, because the structure genuinely
+  tree built by `tapped (dynamic …)`, because the structure genuinely
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
@@ -560,7 +560,7 @@ over a logic module, a single exported entry function.
 
 - **Exact footprints.** Every business function states its footprint as
   a closed narrow row — what it reads ∪ writes, never the whole model.
-  The reading stages (`updated`/`tapped`/`displayed`/`edited`/`acted`/
+  The reading stages (`updated`/`tapped`/`edited`/`acted`/
   `completed`) absorb the widening, so rows are read narrow while
   payloads stay exact; never coerce a row at the call site. A handler
   that reads nothing is not a transformer but a **constant patch**
@@ -602,7 +602,7 @@ over a logic module, a single exported entry function.
   being a sibling's write; **disjoint footprints** mean the events or
   the model want redesign until the branches genuinely share. An
   **identity handler** is the smell at its purest: the event was never
-  model data, so the honest wiring is `# displayed`, a display
+  model data, so the honest wiring is `# tapped`, a display
   interaction, not an `updated` fold. Bounded quantities ride whole even
   where a handler replaces only `current`.
 - **Lossy conversions live in the model, not in leaf brackets.** An

@@ -34,7 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, displayed, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, dispatched, tapped, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -697,18 +697,18 @@ main = do
     m.toUser 3
     Ref.read outs >>= assertEqual "identity: the echo wire" [ 3 ]
 
-  -- displayed: unconditional pass-through (the trivial updates fold) — no
+  -- tapped: unconditional pass-through (the trivial updates fold) — no
   -- echo needed from the wrapped display, and any event it does emit
   -- re-emits the retained value.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
-    m <- unwrap (displayed (probe gProp :: PUI Effect { v :: Int } Unit))
+    m <- unwrap (tapped (probe gProp :: PUI Effect { v :: Int } Unit))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 1 }
-    Ref.read outs >>= assertEqual "displayed: every value forwarded, no echo needed" [ { v: 1 } ]
+    Ref.read outs >>= assertEqual "tapped: every value forwarded, no echo needed" [ { v: 1 } ]
     fire gProp unit
-    Ref.read outs >>= assertEqual "displayed: an event re-emits the retained value" [ { v: 1 }, { v: 1 } ]
+    Ref.read outs >>= assertEqual "tapped: an event re-emits the retained value" [ { v: 1 }, { v: 1 } ]
 
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==

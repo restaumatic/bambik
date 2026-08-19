@@ -206,7 +206,7 @@ import Type.Proxy (Proxy(..))
 -- required on `slider`; `icon` is optional on `button`, required on `fab`
 -- — so the *tag*, not a global per-symbol instance, decides which fields
 -- are optional for a given UI component. One tag per distinct optional-field
--- set: `OptLabelIcon` (buttons), `OptLabel` (fab, caption via card),
+-- set: `OptLabelIcon` (buttons), `OptLabel` (fab),
 -- `OptSelected` (listOf), `OptIcon` (tabBar options).
 -- | Marks `label` and `icon` as optional on the buttons — write either,
 -- | both or neither, as a plain string.
@@ -219,12 +219,10 @@ else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
 else instance ConvertOption OptLabelIcon sym a a where
   convertOption _ _ = identity
 
--- | Marks the `label` of a FAB and the `caption` of a card as optional.
+-- | Marks the `label` of a FAB as optional.
 data OptLabel = OptLabel
 
 instance ConvertOption OptLabel "label" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptLabel "caption" String (Maybe String) where
   convertOption _ _ = Just
 else instance ConvertOption OptLabel sym a a where
   convertOption _ _ = identity
@@ -1147,20 +1145,17 @@ elevation20 :: Ocular (PUI Web)
 elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 
 -- | A **card**: a raised surface holding one subject's content and actions
--- | — an order, a product, a summary — with an optional caption at the top.
--- | `card {}` is captionless, `card { caption: "Your order" }` titles it.
--- | Takes any content; put a row of buttons in `cardActions`.
-card
-  :: forall provided
-   . ConvertOptionsWithDefaults OptLabel { caption :: Maybe String } { | provided } { caption :: Maybe String }
-  => { | provided }
-  -> Ocular (PUI Web)
-card provided content =
-  div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ wrap do
-    for_ mCaption \c -> void $ unwrap (caption $ staticText c)
-    unwrap content
-  where
-  { caption: mCaption } = convertOptionsWithDefaults OptLabel { caption: Nothing } provided :: { caption :: Maybe String }
+-- | — an order, a product, a summary. Takes any content; put a row of
+-- | buttons in `cardActions`.
+-- |
+-- | A plain ocular, with no config of its own: MD2 defines a card as a
+-- | *surface* and gives it no title (every `mdc-card__*` class in the spec
+-- | is optional structure, none of them a heading), so a card's heading is
+-- | ordinary typography placed in its content — `headline6`, `subtitle1`,
+-- | `caption` — exactly as MD2's own examples write it.
+card :: Ocular (PUI Web)
+card content =
+  div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ content
 
 -- | The card's **action row**: the buttons belonging to the card, side by
 -- | side at their natural width instead of stretched down its column.

@@ -15,7 +15,7 @@ colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =
   body $
     elevation20 $
-      card { caption: "Color Mixer" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           sliderLive @"Red" {} # completed
           sliderLive @"Green" {} # completed
           sliderLive @"Blue" {} # completed

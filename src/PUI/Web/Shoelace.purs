@@ -348,13 +348,16 @@ toast = wrap do
 
 -- UIOculars
 
--- | A **card**: a surface holding one subject's content, captioned in its
--- | header. The body stacks its children with even spacing, so a form or a
--- | summary can be dropped in without spacing each row by hand.
-card :: { caption :: String } -> Ocular (PUI Web)
-card config content = el "sl-card" $ wrap do
-  _ <- unwrap (div >>> "slot" := "header" >>> "style" := "font-weight: var(--sl-font-weight-semibold);" $ staticText config.caption)
-  unwrap (div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);" $ content)
+-- | A **card**: a surface holding one subject's content. The body stacks
+-- | its children with even spacing, so a form or a summary can be dropped
+-- | in without spacing each row by hand.
+-- |
+-- | A plain ocular, with no config of its own: a card is a *surface*, and a
+-- | heading of its own is ordinary typography placed in its content —
+-- | Shoelace styles plain HTML, so the HTML oculars are that type scale.
+card :: Ocular (PUI Web)
+card content = el "sl-card" $
+  div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);" $ content
 
 -- announcing statics ({} → {} chrome with a face)
 

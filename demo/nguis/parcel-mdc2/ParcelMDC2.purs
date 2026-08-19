@@ -15,7 +15,7 @@ parcelMDC2 :: Effect Unit
 parcelMDC2 =
   body $
     elevation20 $
-      card { caption: "Parcel" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           filledTextField @"Recipient" {} # completed
           addressForm # subStrong
           body1 ( RecordToRecord.do

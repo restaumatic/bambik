@@ -14,7 +14,7 @@ counterMDC2 :: Effect Unit
 counterMDC2 =
   body $
     elevation20 $
-      card { caption: "Counter" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           headline4 (text @"count") # projection show # completed
           button @"Count" {} # updated (match { "Count": const <<< increment })
       ) # mvu freshCount

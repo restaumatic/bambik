@@ -5,7 +5,7 @@ import Prelude (Unit, identity, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, displayed, informed, mvu, forProperty, atCase, projected, tapped, toCase, updated)
+import PUI (action, tapped, informed, mvu, forProperty, atCase, projected, toCase, updated)
 import PUI.Web.HTML (body, staticText, text)
 import PUI.Web.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,7 +15,7 @@ weatherMDC2 :: Effect Unit
 weatherMDC2 =
   body $
     elevation20 $
-      card { caption: "Weather Dashboard" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( Semigroupoid.do
               listOf { selected: _.shown } forecastRequests (text @"city" # forProperty identity) # toCase @"cityPicked" identity
               indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked") # updated (match { reportServed: informed rememberReport })
@@ -42,5 +42,5 @@ weatherMDC2 =
                 ( body1 ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text @"servedReports" # projected servedReportsText
-                    staticText "." )) # atCase @"About this dashboard") # displayed
+                    staticText "." )) # atCase @"About this dashboard") # tapped
       ) # mvu warsawBulletin

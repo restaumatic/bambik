@@ -12,7 +12,7 @@ import TemperatureConverterLogic (celsiusText, fahrenheitText, fromCelsius, from
 temperatureConverterFluent :: Effect Unit
 temperatureConverterFluent =
   body $
-    card { caption: "Temperature Converter" } $ ( Semigroupoid.do
+    card $ ( Semigroupoid.do
         textField @"°C" {} # projected celsiusText # updated (informed fromCelsius)
         textField @"°F" {} # projected fahrenheitText # updated (informed fromFahrenheit)
     ) # mvu roomTemperature

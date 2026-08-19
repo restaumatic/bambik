@@ -16,7 +16,7 @@ paymentMDC2 :: Effect Unit
 paymentMDC2 =
   body $
     elevation20 $
-      card { caption: "Payment" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           headline6 ( RecordToRecord.do
               staticText "Amount due: $"
               text @"amount" # projection show ) # tapped

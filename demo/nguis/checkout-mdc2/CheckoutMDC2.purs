@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (displayed, mvu, toCases, updated)
+import PUI (tapped, mvu, toCases, updated)
 import PUI.Web.HTML (body, provided, staticText, text)
 import PUI.Web.MDC2 (body2, button, card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,17 +17,17 @@ checkoutMDC2 :: Effect Unit
 checkoutMDC2 =
   body $
     elevation20 $
-      card { caption: "Checkout" } $ ( Semigroupoid.do
+      card $ ( Semigroupoid.do
           ( Semigroupoid.do
               body2 ( RecordToRecord.do
                   staticText "Step 1 of 3 — Cart: "
-                  text @"item" ) # provided atCart # displayed
+                  text @"item" ) # provided atCart # tapped
               body2 ( RecordToRecord.do
                   staticText "Step 2 of 3 — Shipping to "
-                  text @"address" ) # provided atShipping # displayed
+                  text @"address" ) # provided atShipping # tapped
               body2 ( RecordToRecord.do
                   staticText "Step 3 of 3 — Pay with card "
-                  text @"card" ) # provided atPayment # displayed
+                  text @"card" ) # provided atPayment # tapped
               RecordToVariant.do
                 button @"Next" {} # toCases goneOn # provided onwardFrom
                 button @"Back" {} # toCases goneBack # provided previousOf
@@ -39,5 +39,5 @@ checkoutMDC2 =
               text @"address"
               staticText " (card "
               text @"card"
-              staticText ")" ) # provided placedOrder # displayed
+              staticText ")" ) # provided placedOrder # tapped
       ) # mvu freshOrder
