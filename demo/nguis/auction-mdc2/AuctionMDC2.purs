@@ -24,5 +24,5 @@ auctionMDC2 =
               identity # settled raiseTop
               headline6 ( RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text @"top" # projection show ) # tapped) # feedback noBids
+                  text @"top" # projection show ) # tapped ) # feedback noBids
       ) # mvu openingBid

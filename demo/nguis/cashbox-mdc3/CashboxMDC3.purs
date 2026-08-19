@@ -34,5 +34,5 @@ cashboxMDC3 =
                   ( simpleDialog { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge ( RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " to the courier." ) # tapped ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice) # updated (match { "Refunded the customer": informed applyRefund, "Paid the courier": informed applyPayout, "Take a deposit": informed applyDeposit })
+                      staticText " to the courier." ) # tapped ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice ) # updated (match { "Refunded the customer": informed applyRefund, "Paid the courier": informed applyPayout, "Take a deposit": informed applyDeposit })
       ) # mvu openedTill

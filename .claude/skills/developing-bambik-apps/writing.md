@@ -468,6 +468,10 @@ over a logic module, a single exported entry function.
   levels' closers and chains cascade onto that same final line. The one
   exception is the app-level closer: the last UI line stays
   `) # mvu seed` / `) # with seed` on its own.
+  **A cascading closer is spaced from the chain it closes over**, so each
+  level reads as one `) # chain` unit rather than the paren fusing onto
+  the previous level's last word:
+  `… ) # tapped ) # feedback noBids`, not `… ) # tapped) # feedback noBids`.
   **Precedence caveat:** `#` (`infixl 1`) binds tighter than `$`
   (`infixr 0`), so where the chain must apply to the *whole element* —
   `foreach` multiplying an ocular-wrapped UI component — the paren must open

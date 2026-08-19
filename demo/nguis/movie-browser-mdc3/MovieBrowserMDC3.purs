@@ -37,5 +37,5 @@ movieBrowserMDC3 =
                     span ( RecordToRecord.do
                         staticText "★ "
                         text @"rating" # projected ratingText )
-                    iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" }) # completed) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
+                    iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" }) # completed ) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
       ) # mvu movieCatalogue
