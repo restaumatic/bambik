@@ -6,8 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesOpen, openAlbum)
-import PUI (muted, foreach, forProperty, mvu, toCase, updated)
-import PUI.Web.HTML (shownAs, body, span, staticText, text)
+import PUI (foreach, forProperty, mvu, toCase, updated)
+import PUI.Web.HTML (shownEach, shownAs, body, span, staticText, text)
 import PUI.Web.MDC2 (divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -31,5 +31,5 @@ photoGalleryMDC2 =
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
           ( Semigroupoid.do
               shownAs identity (headline2 (text @"album"))
-              shownAs identity ( imageList { columns: 3 } $ imagePane # foreach @"src" albumPhotos # muted ) )
+              imageList { columns: 3 } $ shownEach @"src" albumPhotos imagePane )
       ) # mvu landscapesOpen

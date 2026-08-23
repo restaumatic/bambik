@@ -17,7 +17,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Lacks)
-import PUI (muted, Ocular, PUI, asField, atField, blank, foreach, projected)
+import PUI (atField, muted, Ocular, PUI, asField, blank, foreach, projected)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
