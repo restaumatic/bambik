@@ -150,6 +150,17 @@ label surfaces as a `TypesDoNotUnify` on the config record.
 
 ## Pass-through stages
 
+**Choosing a display component is a business decision about assurance.**
+Being read is always the business's concern; each display is a policy for
+fulfilling it, and the type records the policy's evidence: `{}` output for
+unwitnessed fulfillment (readouts, toasts), an emission for a witness (a
+banner's dismiss, a dialog's confirm) — and the tap law permits discarding
+only the unwitnessed. Escalate assurance by escalating the component
+(readout → toast → banner → dialog), and route by assurance with
+`subChoice` where outcomes differ in weight (cashbox: outgoing money
+demands a dialog's witness, incoming posts straight to the fold). The
+full ladder and its laws: doc/displays-and-sources.md.
+
 Two wrappers make a stage pass-through, and they are not
 interchangeable:
 

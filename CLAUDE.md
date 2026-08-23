@@ -201,7 +201,9 @@ Five modules under **src/PUI/Web/** — `PUI.Web.MDC2`, `PUI.Web.MDC3`,
 design-system **umbrella**. What they share, stated once:
 
 - **Two sorts.** *Components* carry a model interface and are citizens of
-  exactly one direction: `×→×` editors (text fields, `checkbox`,
+  exactly one direction (the boundary reading — displays as assurance
+  policies, sources as the seed generalized, user input as occurrences —
+  is doc/displays-and-sources.md): `×→×` editors (text fields, `checkbox`,
   `toggleSwitch`, `slider`/`sliderLive`) and displays (progress/gauge), `×→+`
   events (`button` and its emphasis siblings, `fab`, `iconButton`, `menuItem`),
   `+→×` statuses (`snackbar`/`toast`/`messageBar`/`banner`), plus the
