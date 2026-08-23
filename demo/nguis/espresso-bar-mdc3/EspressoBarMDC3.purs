@@ -1,15 +1,15 @@
 module EspressoBarMDC3 (espressoBarMDC3) where
 
-import Prelude (Unit, const, (#), ($), (<<<))
+import Prelude (identity, Unit, const, (#), ($), (<<<))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
-import PUI (forCase, mvu, projected, required, tapped, updated, with)
+import PUI (forCase, mvu, projected, required, updated, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (body, div, staticText, text)
+import PUI.Web.HTML (shownAs, body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -42,11 +42,11 @@ espressoBarMDC3 =
                   menuItem @"The usual" {} # with theUsual
                   menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
           ) # mvu usualOrder
-          bodyMedium ( RecordToRecord.do
+          shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Your cup: "
-              text @"summary" # projected summaryText ) # tapped
-          ( div $ RecordToRecord.do
+              text @"summary" # projected summaryText )
+          shownAs identity ( ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
-              linearProgress @"caffeine" ) # projected caffeineFraction # tapped
+              linearProgress @"caffeine" ) # projected caffeineFraction )
           button @"Place order" { icon: "local_cafe" }
           snackbar # forCase @"Place order" brewedLine

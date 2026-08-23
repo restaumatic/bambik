@@ -5,8 +5,8 @@ import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (tapped, forProperty, foreach, mvu, toCase, updated, with)
-import PUI.Web.HTML (providedCase, attrWith, body, clicked, div, staticText, text, (:=))
+import PUI (forProperty, foreach, mvu, toCase, updated, with)
+import PUI.Web.HTML (shownCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TicTacToeLogic (cells, claimCell, gameOutcome, openingPosition)
@@ -16,13 +16,13 @@ ticTacToeMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          headline6 ( RecordToRecord.do
+          shownCase @"won" gameOutcome ( headline6 $ RecordToRecord.do
               text @"mark"
-              staticText " wins" ) # providedCase @"won" gameOutcome # tapped
-          headline6 (staticText "Draw") # providedCase @"drawn" gameOutcome # tapped
-          headline6 ( RecordToRecord.do
+              staticText " wins" )
+          shownCase @"drawn" gameOutcome (headline6 (staticText "Draw"))
+          shownCase @"toMove" gameOutcome ( headline6 $ RecordToRecord.do
               text @"mark"
-              staticText " to move" ) # providedCase @"toMove" gameOutcome # tapped
+              staticText " to move" )
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div

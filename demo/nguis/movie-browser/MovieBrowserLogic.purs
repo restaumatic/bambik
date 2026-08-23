@@ -1,6 +1,6 @@
-module MovieBrowserLogic (favorites, markFavorite, movieCatalogue, ratingText, visibleMovies) where
+module MovieBrowserLogic (favorites, markFavorite, movieCatalogue, movieRating, movieTitle, movieYear, ratingText, severalFavLine, soleFavLine, visibleMovies) where
 
-import Prelude ((&&), (||), (==), map, not)
+import Prelude (show, (<>), (&&), (||), (==), map, not)
 
 import Data.Array (any, filter, length)
 import Data.Number.Format (fixed, toStringWith)
@@ -49,3 +49,18 @@ favorites :: { movies :: Array { title :: String, year :: Int, category :: [ "Al
 favorites { movies } =
   let count = favoriteCount { movies }
   in if count == 1 then .sole { count } else .several { count }
+
+soleFavLine :: { count :: Int } -> String
+soleFavLine { count } = show count <> " favorite"
+
+severalFavLine :: { count :: Int } -> String
+severalFavLine { count } = show count <> " favorites"
+
+movieTitle :: { title :: String } -> String
+movieTitle { title } = title
+
+movieYear :: { year :: Int } -> String
+movieYear { year } = show year
+
+movieRating :: { rating :: Number } -> String
+movieRating movie = "\x2605 " <> ratingText movie

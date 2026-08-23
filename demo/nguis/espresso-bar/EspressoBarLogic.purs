@@ -1,4 +1,4 @@
-module EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder) where
+module EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, summaryText, theUsual, usualOrder) where
 
 import Prelude (min, otherwise, (*), (+), (<>), (==))
 
@@ -89,3 +89,6 @@ noSugar = 0.0
 
 maxSugar :: Number
 maxSugar = 4.0
+
+cupLine :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty" :: Maybe {} } -> String
+cupLine order = "Your cup: " <> summaryText order

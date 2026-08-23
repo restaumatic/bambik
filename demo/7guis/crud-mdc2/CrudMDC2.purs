@@ -1,6 +1,6 @@
 module CrudMDC2 (crudMDC2) where
 
-import Prelude (Unit, bind, const, (#), ($), (<<<))
+import Prelude (identity, Unit, bind, const, (#), ($), (<<<))
 
 import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -8,8 +8,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, completed, tapped, looped, atCase, toCase, updated, with)
-import PUI.Web.HTML (body, staticText, text)
+import PUI (action, completed, looped, atCase, toCase, updated, with)
+import PUI.Web.HTML (shownAs, body, staticText, text)
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -25,7 +25,7 @@ crudMDC2 = do
                   filledTextField @"Filter prefix (surname)" {}
                   filledTextField @"Name" {}
                   filledTextField @"Surname" {}) # completed
-              listOf { selected: _.selected } entries ( tapped $ RecordToRecord.do
+              listOf { selected: _.selected } entries ( shownAs identity $ RecordToRecord.do
                   text @"Surname"
                   staticText ", "
                   text @"Name" ) # toCase @"picked" _.key # updated (match { picked: pick })

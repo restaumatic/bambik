@@ -5,8 +5,8 @@ import Prelude (identity, (#), ($), Unit, const, show)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, tapped, projection, mvu, forProperty, projected, toCase, updated)
-import PUI.Web.HTML (body, provided, staticText, text)
+import PUI (completed, projection, mvu, forProperty, projected, toCase, updated)
+import PUI.Web.HTML (shownAs, body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import QuizLogic (answer, currentQuestion, finalOutcome, freshQuizRun, progressFraction, questionCountText, questionNumberText)
@@ -29,10 +29,10 @@ quizMDC3 =
               headlineMedium (text @"prompt") # completed
               listOf {} _.choices (text @"label" # forProperty identity) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
           ( Semigroupoid.do
-              headlineSmall ( RecordToRecord.do
+              shownAs identity ( headlineSmall $ RecordToRecord.do
                   staticText "Final score: "
                   text @"correct" # projection show
                   staticText " / "
-                  text @"total" # projection show) # tapped
+                  text @"total" # projection show)
               button @"Restart" { icon: "replay" }) # provided finalOutcome # updated (match { "Restart": const (const freshQuizRun) })
       ) # mvu freshQuizRun

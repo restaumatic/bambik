@@ -1,6 +1,6 @@
-module StopwatchLogic (beginTiming, clearStopwatch, formatTime, haltTiming, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch) where
+module StopwatchLogic (beginTiming, clearStopwatch, elapsedLine, formatTime, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch) where
 
-import Prelude ((+), (<), (<>), show)
+import Prelude ((<>), (+), (<), show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
@@ -45,3 +45,9 @@ formatTime tenths =
 
 pad2 :: Int -> String
 pad2 n = if n < 10 then "0" <> show n else show n
+
+elapsedLine :: { elapsedTenths :: Int } -> String
+elapsedLine { elapsedTenths } = formatTime elapsedTenths
+
+lapLine :: { number :: String, time :: String } -> String
+lapLine { number, time } = "Lap " <> number <> " \x2014 " <> time

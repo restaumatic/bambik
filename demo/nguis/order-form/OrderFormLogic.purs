@@ -1,6 +1,7 @@
-module OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane) where
+module OrderFormLogic (deliveryDetail, deliveryLine, deliveryPane, dineInDetail, dineInLine, dineInPane, distanceKm, distanceLine, fulfillmentCase, fulfillmentState, headerLine, loadOrder, payingLine, paymentLine, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summaryLead, summarySettleTime, takeawayDetail, takeawayLine, takeawayPane) where
 
-import Prelude (($), (<>), (==), const, discard, pure, show)
+import Data.Variant.Case (caseText)
+import Prelude ((<>), ($), (==), const, discard, pure, show)
 
 import Data.Maybe (Maybe(..))
 import Data.String (length)
@@ -167,3 +168,29 @@ receiptLine { "Short ID": shortId } = "Receipt for order " <> shortId <> " print
 
 summarySettleTime :: { ms :: Number }
 summarySettleTime = { ms: 300.0 }
+
+headerLine :: { "Short ID" :: String } -> String
+headerLine { "Short ID": shortId } = "Order " <> shortId
+
+distanceLine :: { "Address" :: String } -> String
+distanceLine { "Address": address } = "Distance " <> distanceKm address <> " km"
+
+payingLine :: { "Method" :: [ cash :: {}, card :: {} ] } -> String
+payingLine { "Method": method } = "Paying by " <> caseText method
+
+summaryLead :: { "Short ID" :: String, "Unique ID" :: String, customer :: { "First name" :: String, "Last name" :: String } } -> String
+summaryLead { "Short ID": shortId, "Unique ID": uniqueId, customer } =
+  "Summary: Order " <> shortId <> " (uniquely " <> uniqueId <> ") for "
+    <> customer."First name" <> " " <> customer."Last name" <> ", fulfilled as "
+
+dineInLine :: { "Table" :: String } -> String
+dineInLine { "Table": table } = "dine in at table " <> table
+
+takeawayLine :: { "Time" :: String } -> String
+takeawayLine { "Time": time } = "takeaway at " <> time
+
+deliveryLine :: { "Address" :: String } -> String
+deliveryLine { "Address": address } = "delivery to " <> address <> " (" <> distanceKm address <> " km away)"
+
+paymentLine :: { payment :: { "Method" :: [ cash :: {}, card :: {} ], "Paid" :: String } } -> String
+paymentLine { payment } = ", paid " <> payment."Paid" <> " by " <> caseText payment."Method"

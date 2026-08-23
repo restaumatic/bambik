@@ -976,7 +976,7 @@ indeterminateLinearProgress = wrap do
     { toUser: \r -> do
         if Record.get (Proxy @l) r then open comp else close comp
         -- display echo (like `text`): announce the `{}` per feed, so gated
-        -- merges and `tapped`/`completed` stages keep flowing
+        -- merges and `completed` stages keep flowing
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
     , fromUser: \prop -> do
@@ -1201,7 +1201,7 @@ confirmed = simpleDialog
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
 -- | needs no button of its own; a content that only displays needs a
--- | `# tapped` so there is something to confirm.
+-- | a gated display (`shownAs`) so there is something to confirm.
 -- | Not a full `Ocular`, deliberately: the confirm **replays** the
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the

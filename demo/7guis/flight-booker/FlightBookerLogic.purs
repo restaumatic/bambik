@@ -1,4 +1,4 @@
-module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit) where
+module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLeg, returnLine, setReturn, submit) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), bind, pure, show)
 
@@ -82,3 +82,12 @@ returnLeg { "Flight type": flightType, "Return date (DD.MM.YYYY)": back } = if f
 
 setReturn :: { "Return date (DD.MM.YYYY)" :: String } -> { "Return date (DD.MM.YYYY)" :: String }
 setReturn { "Return date (DD.MM.YYYY)": back } = { "Return date (DD.MM.YYYY)": back }
+
+problemLine :: { problem :: String } -> String
+problemLine { problem } = "\x26a0 " <> problem
+
+oneWayLine :: { date :: String } -> String
+oneWayLine { date } = "A one-way flight on " <> date
+
+returnLine :: { out :: String, back :: String } -> String
+returnLine { out, back } = "A return flight: out " <> out <> ", back " <> back

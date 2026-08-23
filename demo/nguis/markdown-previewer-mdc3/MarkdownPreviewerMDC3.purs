@@ -1,12 +1,12 @@
 module MarkdownPreviewerMDC3 (markdownPreviewerMDC3) where
 
-import Prelude (Unit, show, (#), ($), (<>), (>>>))
+import Prelude (identity, Unit, show, (#), ($), (<>), (>>>))
 
 import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
-import PUI (atField, completed, tapped, mvu)
-import PUI.Web.HTML (blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
+import PUI (muted, atField, completed, mvu)
+import PUI.Web.HTML (shownAs, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC3 (card, elevation5, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -17,7 +17,7 @@ markdownPreviewerMDC3 =
       card $
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 } # completed
-            layoutCell { span: 6 } $ tapped $ ( dynamic \source ->
+            layoutCell { span: 6 } $ shownAs identity $ muted $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->
                   let
                     inline = match

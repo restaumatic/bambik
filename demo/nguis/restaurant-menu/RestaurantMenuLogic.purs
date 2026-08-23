@@ -1,4 +1,6 @@
-module RestaurantMenuLogic (courses) where
+module RestaurantMenuLogic (courseTitle, courses, dishDescription, dishName, dishPrice, tagText) where
+
+import Prelude ((<>))
 
 courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
 courses =
@@ -24,3 +26,18 @@ courses =
         ]
     }
   ]
+
+courseTitle :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> String
+courseTitle { name } = name
+
+dishName :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishName { name } = name
+
+dishPrice :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishPrice { price } = "\x20ac" <> price
+
+dishDescription :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishDescription { description } = description
+
+tagText :: { tag :: String } -> String
+tagText { tag } = tag

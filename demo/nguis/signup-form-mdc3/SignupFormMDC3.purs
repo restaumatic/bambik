@@ -5,9 +5,9 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (tapped, forCase, mvu, required, toCases)
+import PUI (forCase, mvu, required, toCases)
 import PUI.Web (choice)
-import PUI.Web.HTML (providedCase, body, staticText, text)
+import PUI.Web.HTML (shownCase, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
@@ -27,21 +27,21 @@ signupFormMDC3 =
             filledTextField @"Email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"Terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
-        ( bodyMedium $ staticText "Pick a username to check its availability" ) # providedCase @"unnamed" usernameStatus # tapped
-        ( bodyMedium $ RecordToRecord.do
+        shownCase @"unnamed" usernameStatus ( bodyMedium $ staticText "Pick a username to check its availability" )
+        shownCase @"taken" usernameStatus ( bodyMedium $ RecordToRecord.do
             staticText "✗ "
             text @"Username"
-            staticText " is already taken" ) # providedCase @"taken" usernameStatus # tapped
-        ( bodyMedium $ RecordToRecord.do
+            staticText " is already taken" )
+        shownCase @"available" usernameStatus ( bodyMedium $ RecordToRecord.do
             staticText "✓ "
             text @"Username"
-            staticText " is available" ) # providedCase @"available" usernameStatus # tapped
-        ( titleSmall $ RecordToRecord.do
+            staticText " is available" )
+        shownCase @"invalid" validation ( titleSmall $ RecordToRecord.do
             staticText "⚠ "
-            text @"problem" ) # providedCase @"invalid" validation # tapped
-        ( titleSmall $ RecordToRecord.do
+            text @"problem" )
+        shownCase @"ready" validation ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text @"Username" ) # providedCase @"ready" validation # tapped
+            text @"Username" )
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
           snackbar # forCase @"registered" welcomeLine

@@ -1,6 +1,6 @@
-module TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds) where
+module TimerLogic (elapsedLine, fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds) where
 
-import Prelude ((+), (/), (<), (<=), min, show)
+import Prelude ((+), (/), (<), (<=), (<>), min, show)
 
 import Data.Maybe (Maybe(..))
 
@@ -23,3 +23,6 @@ fraction { "Duration": duration, elapsed } = if duration.current <= 0.0 then 1.0
 
 wholeSeconds :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } -> String
 wholeSeconds q = show q.current
+
+elapsedLine :: { "Duration" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, elapsed :: Number } -> String
+elapsedLine { "Duration": duration, elapsed } = show elapsed <> "s / " <> wholeSeconds duration <> "s"

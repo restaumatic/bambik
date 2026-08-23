@@ -1,12 +1,12 @@
 module ShoppingCartMDC3 (shoppingCartMDC3) where
 
-import Prelude (Unit, const, (#), ($))
+import Prelude (identity, Unit, const, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (projection, foreach, informed, mvu, projected, tapped, toCase, updated, with)
-import PUI.Web.HTML (body, clicked, staticText, text)
+import PUI (projection, foreach, informed, mvu, projected, toCase, updated, with)
+import PUI.Web.HTML (shownAs, body, clicked, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, dataCell, dataRow, dataTable, elevation5, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import ShoppingCartLogic (addUnit, cartLines, emptyCart, formatMoney, grandTotalText, productCatalogue, removeUnit)
@@ -27,8 +27,8 @@ shoppingCartMDC3 =
                   dataCell ( RecordToRecord.do
                       staticText "$"
                       text @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
-          bodyLarge ( RecordToRecord.do
+          shownAs identity ( bodyLarge $ RecordToRecord.do
               staticText "Total: $"
-              text @"grandTotal" # projected grandTotalText ) # tapped
+              text @"grandTotal" # projected grandTotalText )
           button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
       ) # mvu emptyCart

@@ -8,8 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
-import PUI (completed, tapped, forCase, mvu, observed, atCase, projected, toCase, updated)
-import PUI.Web.HTML (body, provided, span, staticText, text)
+import PUI (forCase, mvu, observed, atCase, projected, toCase, updated)
+import PUI.Web.HTML (shownWhen, shownAs, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,25 +18,25 @@ inboxMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          caption ( RecordToRecord.do
+          shownAs identity ( caption $ RecordToRecord.do
               text @"unreadCount" # projected unreadCountText
               staticText " unread of "
               text @"messageCount" # projected messageCountText
-              staticText " messages" ) # completed
+              staticText " messages" )
           listOf { selected: _.attention } mailboxRows
             ( span $ Semigroupoid.do
-                staticText "● " # provided unreadMark # tapped
-                ( RecordToRecord.do
+                shownWhen unreadMark (staticText "● ")
+                shownAs identity ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
-                    text @"subject" ) # tapped ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text @"subject" ) ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
-              ( RecordToRecord.do
+              shownAs identity ( RecordToRecord.do
                   headline6 (text @"subject")
                   body2 RecordToRecord.do
                     staticText "From: "
                     text @"sender"
-                  body1 (text @"body")) # tapped
+                  body1 (text @"body"))
               iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

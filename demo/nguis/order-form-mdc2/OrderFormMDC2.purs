@@ -1,6 +1,6 @@
 module OrderFormMDC2 (orderFormMDC2) where
 
-import Prelude (Unit, (#), ($))
+import Prelude (identity, Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -9,9 +9,9 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (action, armed, atCase, atField, bracketed, completed, debounced, tapped, field, forCase, projection, informed, required, updated, with)
+import PUI (action, armed, atCase, atField, bracketed, completed, debounced, field, forCase, projection, informed, required, updated, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (body, provided, staticText, text)
+import PUI.Web.HTML (shownWhen, shownAs, body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -61,7 +61,7 @@ orderFormMDC2 =
           subtitle1 $ staticText "Remarks"
           filledTextArea @"Remarks" { columns: 80, rows: 3 }
       body1 ( Semigroupoid.do
-          ( RecordToRecord.do
+          shownAs identity ( RecordToRecord.do
               staticText "Summary: Order "
               text @"Short ID"
               staticText " (uniquely "
@@ -71,24 +71,24 @@ orderFormMDC2 =
                   text @"First name"
                   staticText " "
                   text @"Last name" ) # atField @"customer"
-              staticText ", fulfilled as " ) # debounced summarySettleTime # tapped
-          ( RecordToRecord.do
+              staticText ", fulfilled as "  ) # debounced summarySettleTime
+          shownWhen dineInDetail ( RecordToRecord.do
               staticText "dine in at table "
-              text @"Table" ) # provided dineInDetail # tapped
-          ( RecordToRecord.do
+              text @"Table" )
+          shownWhen takeawayDetail ( RecordToRecord.do
               staticText "takeaway at "
-              text @"Time" ) # provided takeawayDetail # tapped
-          ( RecordToRecord.do
+              text @"Time" )
+          shownWhen deliveryDetail ( RecordToRecord.do
               staticText "delivery to "
               text @"Address"
               staticText " ("
               text @"Address" # projection distanceKm
-              staticText " km away)" ) # provided deliveryDetail # tapped
-          ( RecordToRecord.do
+              staticText " km away)" )
+          shownAs identity ( ( RecordToRecord.do
               staticText ", paid "
               text @"Paid"
               staticText " by "
-              text @"Method" # projection caseText ) # atField @"payment" # debounced summarySettleTime # tapped )
+              text @"Method" # projection caseText ) # atField @"payment" ) # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

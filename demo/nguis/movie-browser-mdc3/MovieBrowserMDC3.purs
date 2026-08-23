@@ -5,9 +5,9 @@ import Prelude (identity, (#), ($), Unit, show)
 import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserLogic (favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
-import PUI (completed, tapped, foreach, projection, informed, mvu, projected, toCase, updated)
+import PUI (completed, foreach, projection, informed, mvu, projected, toCase, updated)
 import PUI.Web (choice)
-import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
+import PUI.Web.HTML (shownCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -23,12 +23,12 @@ movieBrowserMDC3 =
               filterChip @"Classic" {}
               filterChip @"Cult" {}
               filterChip @"Oscar" {}) # completed
-          elevation1 ( titleMedium $ RecordToRecord.do
+          shownCase @"sole" favorites ( elevation1 $ titleMedium $ RecordToRecord.do
               text @"count" # projection show
-              staticText " favorite" ) # providedCase @"sole" favorites # tapped
-          elevation1 ( titleMedium $ RecordToRecord.do
+              staticText " favorite" )
+          shownCase @"several" favorites ( elevation1 $ titleMedium $ RecordToRecord.do
               text @"count" # projection show
-              staticText " favorites" ) # providedCase @"several" favorites # tapped
+              staticText " favorites" )
           list $
             ( clWhen _."Favorite" "mdc-deprecated-list-item--selected"
                 $ listItem $ ( RecordToRecord.do

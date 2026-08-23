@@ -2,11 +2,11 @@ module AuctionMDC2 (auctionMDC2) where
 
 import Prelude (identity, (#), ($), Unit)
 
-import AuctionLogic (bidText, noBids, openingBid, raiseTop, topText)
+import AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Effect (Effect)
 import PUI (mvu, settled)
-import PUI.Web.HTML (body, shown)
+import PUI.Web.HTML (body, told)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -15,9 +15,9 @@ auctionMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          body2 (shown @"Your bid ($)" bidText)
+          body2 (told bidLine)
           sliderLive @"Your bid ($)" {}
           ( Semigroupoid.do
               identity # settled raiseTop
-              headline6 (shown @"top" topText) ) # feedback noBids
+              headline6 (told topLine) ) # feedback noBids
       ) # mvu openingBid

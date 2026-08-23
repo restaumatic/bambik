@@ -1,15 +1,15 @@
 module MeetingBookerFluent (meetingBookerFluent) where
 
-import Prelude (Unit, ($), (#))
+import Prelude (identity, Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
-import PUI (completed, tapped, forCase, projection, informed, mvu, optional, projected, updated)
+import PUI (completed, forCase, projection, informed, mvu, optional, projected, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
-import PUI.Web.HTML (body, div, provided, staticText, text)
+import PUI.Web.HTML (shownWhen, shownAs, body, div, provided, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 meetingBookerFluent :: Effect Unit
@@ -27,14 +27,14 @@ meetingBookerFluent =
               divider ) # completed
           (slider @"Attendees" {}) # provided seatsFor # updated (informed chooseSeats)
       ) # mvu blankBooking
-      ( div $ RecordToRecord.do
+      shownWhen ratedRoom ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
-          ratingDisplay @"rating" ) # provided ratedRoom # tapped
-      ( div $ RecordToRecord.do
+          ratingDisplay @"rating" )
+      shownWhen seatsTaken ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
-          progressBar @"occupancy" ) # provided seatsTaken # tapped
+          progressBar @"occupancy" )
       ( Semigroupoid.do
-          body1 ( RecordToRecord.do
+          shownAs identity ( body1 $ RecordToRecord.do
               staticText "Plan: "
               text @"Meeting title" # projection titleText
               staticText " in the "
@@ -44,6 +44,6 @@ meetingBookerFluent =
               staticText " min, "
               text @"attendees" # projection headcount
               staticText " attendees"
-              text @"onlineNote" # projected onlineNote ) # tapped
+              text @"onlineNote" # projected onlineNote )
           button @"Book the room" {} ) # provided completePlan
       messageBar # forCase @"Book the room" bookedLine

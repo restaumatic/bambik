@@ -1,11 +1,11 @@
 module TipCalculatorMDC3 (tipCalculatorMDC3) where
 
-import Prelude ((#), ($), Unit)
+import Prelude (identity, (#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (completed, projection, mvu, projected, tapped)
-import PUI.Web.HTML (body, staticText, text)
+import PUI (completed, projection, mvu, projected)
+import PUI.Web.HTML (shownAs, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TipCalculatorLogic (dinnerBill, perPersonText, tipAmountText, totalText, whole)
@@ -17,22 +17,22 @@ tipCalculatorMDC3 =
       card $ ( Semigroupoid.do
           filledTextField @"Bill amount" {} # completed
           slider @"Tip percentage" {} # completed
-          bodyMedium ( RecordToRecord.do
+          shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole
-              staticText "%" ) # tapped
-          bodyMedium ( RecordToRecord.do
+              staticText "%" )
+          shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Split between: "
               text @"Split between" # projection whole
-              staticText " people" ) # tapped
+              staticText " people" )
           slider @"Split between" {} # completed
-          bodyMedium ( RecordToRecord.do
+          shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Tip amount: "
-              text @"tipAmount" # projected tipAmountText ) # tapped
-          bodyMedium ( RecordToRecord.do
+              text @"tipAmount" # projected tipAmountText )
+          shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Total: "
-              text @"total" # projected totalText ) # tapped
-          bodyMedium ( RecordToRecord.do
+              text @"total" # projected totalText )
+          shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Per person: "
-              text @"perPerson" # projected perPersonText ) # tapped
+              text @"perPerson" # projected perPersonText )
       ) # mvu dinnerBill

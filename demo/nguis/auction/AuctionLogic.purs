@@ -1,4 +1,4 @@
-module AuctionLogic (bidText, noBids, openingBid, raiseTop, topText) where
+module AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine) where
 
 import Prelude (max, show, (<>))
 
@@ -16,8 +16,8 @@ raiseTop { "Your bid ($)": bid, top } = { "Your bid ($)": bid, top: max bid.curr
 biddingRange :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
 biddingRange = { current: 0.0, min: 0.0, max: 1000.0, step: Just 10.0 }
 
-bidText :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } -> String
-bidText bid = "Your current bid: $" <> show bid.current
+bidLine :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+bidLine { "Your bid ($)": bid } = "Your current bid: $" <> show bid.current
 
-topText :: Number -> String
-topText top = "Highest bid so far: $" <> show top
+topLine :: { top :: Number } -> String
+topLine { top } = "Highest bid so far: $" <> show top

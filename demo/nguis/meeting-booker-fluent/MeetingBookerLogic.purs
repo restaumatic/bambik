@@ -1,6 +1,6 @@
-module MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText) where
+module MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, headcount, occupancyOf, onlineNote, planLine, ratedRoom, ratingOf, roomText, seatsFor, seatsTaken, titleText) where
 
-import Prelude (show, (/), (<$>), (<*>), (<>))
+import Prelude ((<>), show, (/), (<$>), (<*>))
 
 import Data.Int (round)
 import Data.Maybe (Maybe(..))
@@ -57,3 +57,14 @@ roomCapacity = match { "Focus pod (4 seats)": \_ -> 4.0, "Boardroom (12 seats)":
 
 justTheOrganizer :: Number
 justTheOrganizer = 1.0
+
+planLine :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
+planLine plan = "Plan: " <> titleText plan."Meeting title" <> " in the " <> roomText plan."Room"
+  <> ", " <> caseText plan."Duration (min)" <> " min, " <> headcount plan.attendees <> " attendees"
+  <> onlineNote { "Include a Teams link": plan."Include a Teams link" }
+
+ratingOf :: { rating :: Number } -> Number
+ratingOf { rating } = rating
+
+occupancyOf :: { occupancy :: Number } -> Number
+occupancyOf { occupancy } = occupancy

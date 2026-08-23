@@ -1,4 +1,4 @@
-module SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine) where
+module SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, register, rejectionLine, takenLine, usernameSettleTime, usernameStatus, validation, welcomeLine) where
 
 import Prelude ((<>), (==))
 
@@ -68,3 +68,15 @@ usernameTaken username = username `elem` takenUsernames
 
 takenUsernames :: Array String
 takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
+
+takenLine :: { "Username" :: String } -> String
+takenLine { "Username": username } = "\x2717 " <> username <> " is already taken"
+
+availableLine :: { "Username" :: String } -> String
+availableLine { "Username": username } = "\x2713 " <> username <> " is available"
+
+invalidLine :: { problem :: String } -> String
+invalidLine { problem } = "\x26a0 " <> problem
+
+readyLine :: { "Username" :: String } -> String
+readyLine { "Username": username } = "Ready to sign up as " <> username

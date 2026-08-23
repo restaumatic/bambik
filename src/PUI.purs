@@ -5,11 +5,12 @@
 -- | (the row merges, `⊗` — the input broadcasts to every operand). The two
 -- | interact as in a duoidal category: a pipeline can only emulate a merge
 -- | through a **comonoid** — a stage that *duplicates* its input onward, not
--- | merely consumes it. `tapped` is exactly that comultiplication (render
+-- | merely consumes it. A fulfillment-gated display is exactly that
+-- | comultiplication (render
 -- | *and* forward); a bare display is only the counit (render and discard),
 -- | which is why undisplayed chrome ahead of a live stage starves it under
 -- | `⊳` while the same chrome inside a merge needs nothing — a display is
--- | made into a pass-through stage precisely by `tapped`. See
+-- | made into a pass-through stage precisely by its gate. See
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
@@ -87,11 +88,11 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, tapped, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
--- into the stages that consume a row (`tapped`, `updated`,
+-- into the stages that consume a row (the gated displays, `updated`,
 -- `every`, `settled`, `armed`, `edited`, `acted`, `completed`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
@@ -851,7 +852,8 @@ updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
               prop s'
     }
 
--- | Make a status an **event pass-through stage** — `tapped`'s sibling on
+-- | Make a status an **event pass-through stage** — the gated displays'
+-- | sibling on
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
 -- | status consumes are also shown — `status # forCase @"charge" retryLine
@@ -861,7 +863,7 @@ updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
 -- | stage carries — its cases are contracted out and shown, background cases
 -- | pass untouched. The status's own emissions are dropped, deliberately —
 -- | events are one-shot, so re-emitting the last event would duplicate it —
--- | and the drop is lossless by type: like `tapped`, `observed` accepts
+-- | and the drop is lossless by type: like the gated displays, `observed` accepts
 -- | only a status whose output is `{}`.
 observed
   :: forall m narrow wider
@@ -1147,7 +1149,7 @@ instance Hosting m node => Acting (PUI m) where
 -- | sum-flavored sibling of `acted`'s gathered `Array b`), so it is ungated
 -- | and lawfully **silent on an empty array** (no `o` to fabricate) — as a
 -- | terminal display pass the carrier through with `# lcmap proj
--- | # tapped`, the comonoid a pipeline tail requires; when the aggregate
+-- | # muted` inside a gated stage, the comonoid a pipeline tail requires; when the aggregate
 -- | array itself is the output, use `acted` (gathered, knowledge-gated,
 -- | announces `[]`) or `edited` (input-primed, immediate). All share this
 -- | keyed reconciler.

@@ -167,15 +167,16 @@ interchangeable:
 - `# completed` widens a *row-shaped* stage's output to its full input
   row from the retained input — safe over editors and displays alike,
   the default inside record pipelines.
-- `# tapped` forwards the whole input value of *any* shape,
-  unconditionally at feed time, and the compiler holds it to displays:
-  the wrapped component's output must be `{}`, a display's output. An
-  editor or emitter inside fails to unify — fold its emissions with
-  `# updated`, or, where an emitting assembly really is used purely as
-  a display, discard them **in writing** with `# muted` before the tap.
-  An adopted display keeps its `{}` through the input-side adopter:
-  `# atField @l`, never `# field @l`, whose output half would wrap the
-  `{}` into `{ l :: {} }` (order-form's payment line).
+- A display **is a pipeline stage natively** (RESEARCH: gated displays —
+  `tapped` is deleted). Pick the rung whose fulfillment policy the
+  business wants: `shownAs proj content` for ambient structured content
+  (chrome + unit displays, registered at build, released per feed),
+  `shownWhen`/`shownCase` for panes (attached on relevance, released
+  always), `shownEach @l proj item` for keyed collections, `told line` /
+  `shown @l f` for bare lines, `confirmed cfg display` where the flow
+  must wait for the user's confirmation. Content slots accept only
+  `{}`-output components — an editor inside fails to unify; a genuinely
+  emitting assembly is discarded **in writing** with `# muted`.
 
 So: editor or record display stage → `# completed`; display over a
 non-record value (a `projected`-formatted readout) → `# tapped`. A live

@@ -1,6 +1,6 @@
-module PaymentLogic (chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder) where
+module PaymentLogic (chargeFlaky, dueLine, recordCharged, retryLine, startCharge, statusLine, unpaidOrder) where
 
-import Prelude (($), (+), (<), (<>), discard, pure, show)
+import Prelude (show, (<>), ($), (+), (<), discard, pure)
 
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, Milliseconds(..), delay)
@@ -31,3 +31,6 @@ statusLine :: { amount :: Number, approved :: Maybe { attempt :: Int } } -> Stri
 statusLine { amount, approved } = case approved of
   Nothing -> "Ready to charge — the gateway is flaky, so it retries automatically."
   Just { attempt } -> "Approved — $" <> show amount <> " charged on attempt " <> show attempt
+
+dueLine :: { amount :: Number } -> String
+dueLine { amount } = "Amount due: $" <> show amount

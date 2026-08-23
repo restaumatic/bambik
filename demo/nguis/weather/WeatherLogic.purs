@@ -1,6 +1,6 @@
-module WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, rememberReport, servedReportsText, temperatureText, warsawBulletin, windText) where
+module WeatherLogic (aboutLine, cityLabel, cityText, conditionText, condLine, fetchReport, forecastRequests, humidityLine, humidityText, rememberReport, servedLine, servedReportsText, temperatureText, tempLine, warsawBulletin, windText) where
 
-import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (==))
+import Prelude ((<>), discard, mod, pure, show, (*), (+), (-), (<#>), (==))
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
@@ -64,3 +64,21 @@ windText { report } = show report.wind
 
 servedReportsText :: { servedReports :: Int } -> String
 servedReportsText { servedReports } = show servedReports
+
+cityLabel :: { city :: String, sample :: Int, shown :: Boolean } -> String
+cityLabel { city } = city
+
+tempLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+tempLine bulletin = temperatureText bulletin <> " \x00b0C"
+
+condLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+condLine bulletin = conditionText bulletin <> " in " <> cityText bulletin
+
+humidityLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+humidityLine bulletin = "Humidity " <> humidityText bulletin <> "% \x00b7 Wind " <> windText bulletin <> " km/h"
+
+servedLine :: { servedReports :: Int } -> String
+servedLine served = "Simulated service \x00b7 " <> servedReportsText served <> " reports served"
+
+aboutLine :: { servedReports :: Int } -> String
+aboutLine served = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> servedReportsText served <> "."

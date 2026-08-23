@@ -1,6 +1,6 @@
-module CheckoutLogic (atCart, atPayment, atShipping, cartStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, placeAtPayment, placedOrder, previousOf) where
+module CheckoutLogic (atCart, atPayment, atShipping, cartLine, cartStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, placeAtPayment, placedLine, placedOrder, paymentLine, previousOf, shippingLine) where
 
-import Prelude ((==))
+import Prelude ((<>), (==))
 
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
@@ -58,3 +58,15 @@ orderPlaced = { status: .placed {} }
 placedOrder :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] } -> Maybe { item :: String, address :: String, card :: String }
 placedOrder { item, address, card, status } =
   match { placed: \_ -> Just { item, address, card }, pending: \_ -> Nothing } status
+
+cartLine :: { item :: String } -> String
+cartLine { item } = "Step 1 of 3 \x2014 Cart: " <> item
+
+shippingLine :: { address :: String } -> String
+shippingLine { address } = "Step 2 of 3 \x2014 Shipping to " <> address
+
+paymentLine :: { card :: String } -> String
+paymentLine { card } = "Step 3 of 3 \x2014 Pay with card " <> card
+
+placedLine :: { item :: String, address :: String, card :: String } -> String
+placedLine { item, address, card } = "Order placed: " <> item <> " \x2192 " <> address <> " (card " <> card <> ")"

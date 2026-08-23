@@ -74,6 +74,11 @@ module PUI.Web.HTML
   , select
   , span
   , shown
+  , shownAs
+  , shownCase
+  , shownEach
+  , shownWhen
+  , told
   , staticText
   , strong
   , table
@@ -101,19 +106,20 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (field)
-import Data.Profunctor.Row (widenRecordInput)
+import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
+import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, widenRecordInput)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons, class Lacks, class Union)
+import Prim.RowList (Nil) as RL
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, projected)
-import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI (Ocular, PUI, foreach, muted, projected)
 import Unsafe.Coerce (unsafeCoerce)
+import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
 -- UIs
 
@@ -122,7 +128,7 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | formatter, then release the whole fed row — the release *is* the
 -- | fulfillment witness, and for this component the gate opens
 -- | synchronously on render (assurance by visibility; see
--- | doc/displays-and-sources.md). A pipeline stage natively: no `tapped`.
+-- | doc/displays-and-sources.md). A pipeline stage natively — no wrapper.
 -- | Render-before-release, deliberately: the release may re-enter the loop
 -- | mid-registration, which must find the display already painted.
 shown :: forall @l a rest row. IsSymbol l => Cons l a rest row => (a -> String) -> PUI Web { | row } { | row }
@@ -142,6 +148,90 @@ shown f = wrap do
         for_ mProp \prop -> prop row
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
+
+-- | RESEARCH (gated displays): the **line rung** — a fulfillment-gated
+-- | display over a *narrow closed row*, read through a line function:
+-- | render the line, release the whole fed row — subsumption
+-- | fused into the leaf: the line reads `read`, the stage carries `row`.
+told :: forall read extra row. Union read extra row => ({ | read } -> String) -> PUI Web { | row } { | row }
+told line = wrap do
+  parentNode <- gets _.parent
+  newNode <- liftEffect $ do
+    node <- createTextNode ""
+    appendChild node parentNode
+    pure node
+  modify_ _ { sibling = newNode }
+  node <- gets _.sibling
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \row -> do
+        setTextNodeValue node (line (unsafeCoerce row))
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> prop row
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- | RESEARCH (gated displays): the **pane rung** — render the content when
+-- | the projection yields its payload, detach when it does not, and
+-- | **release the fed row always**: a hidden pane must never block the
+-- | pipe, so this rung's fulfillment is best-effort by construction.
+-- | Derived: the pane merged with the wire.
+shownWhen
+  :: forall read extra row a i12 i1x i2x rowL
+   . Union read extra row
+  => SharedRecordInputs row row row i12 i1x i2x
+  => OwnedRecordOutputs () row row RL.Nil rowL
+  => ({ | read } -> Maybe a) -> PUI Web a {} -> PUI Web { | row } { | row }
+shownWhen proj content = recordToRecord (provided (\(r :: { | row }) -> proj (unsafeCoerce r)) content) identity
+
+-- | RESEARCH (gated displays): the **ambient-content rung** — render
+-- | structured content (chrome merges, nested collections) from a
+-- | projection of the flow, release the fed row always. The projection
+-- | rides the mechanism, as everywhere (`shownAs identity` says verbatim).
+shownAs
+  :: forall read extra row a
+   . Union read extra row
+  => ({ | read } -> a) -> PUI Web a {} -> PUI Web { | row } { | row }
+shownAs proj content = wrap do
+  content' <- unwrap content
+  -- complete the content's wiring: its only possible emission is the
+  -- informationless {}, discarded lawfully (the content type says so)
+  liftEffect $ content'.fromUser \_ -> pure unit
+  propRef <- liftEffect $ Ref.new Nothing
+  -- the content registers at build (its chrome exists before any feed, like
+  -- every component's); feeding renders through the projection, then the
+  -- fed row is released — the ambient rung's gate opens instantly
+  pure
+    { toUser: \row -> do
+        content'.toUser (proj (unsafeCoerce row))
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> prop row
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- | RESEARCH (gated displays): the **case-pane rung** — `shownWhen` for a
+-- | classified variant: content attached and fed on case `l`, detached on
+-- | any other case, the fed row released always.
+shownCase
+  :: forall @l read extra row a b s i12 i1x i2x rowL
+   . IsSymbol l => Cons l a b s
+  => Union read extra row
+  => SharedRecordInputs row row row i12 i1x i2x
+  => OwnedRecordOutputs () row row RL.Nil rowL
+  => ({ | read } -> [ | s ]) -> PUI Web a {} -> PUI Web { | row } { | row }
+shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
+
+-- | RESEARCH (gated displays): the **collection rung** — render the keyed,
+-- | retained list from the projection, release the fed row per feed.
+-- | Derived: the collection, muted, merged with the wire.
+shownEach
+  :: forall @l read extra row k r a o i12 i1x i2x rowL
+   . IsSymbol l => Cons l k r a => Ord k
+  => Union read extra row
+  => SharedRecordInputs row row row i12 i1x i2x
+  => OwnedRecordOutputs () row row RL.Nil rowL
+  => ({ | read } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
+shownEach proj item = recordToRecord (muted (foreach @l (\(r :: { | row }) -> proj (unsafeCoerce r)) item)) identity
 
 -- | Show a string that changes — a readout, a total, a name in a list row.
 -- | (Wording that doesn't change is `staticText`.)

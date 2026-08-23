@@ -6,8 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, tapped, every, projection, foreach, mvu, updated)
-import PUI.Web.HTML (providedCase, body, li, staticText, text, ul)
+import PUI (completed, every, projection, mvu, updated)
+import PUI.Web.HTML (shownEach, providedCase, body, li, staticText, text, ul)
 import PUI.Web.MDC2 (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import StopwatchLogic (beginTiming, clearStopwatch, formatTime, haltTiming, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
@@ -25,9 +25,9 @@ stopwatchMDC2 =
           ( RecordToVariant.do
               button @"Lap" { icon: "flag" } # providedCase @"timing" stopwatchPhase
               button @"Reset" { icon: "replay" } # providedCase @"halted" stopwatchPhase) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
-          ul ( ( li $ RecordToRecord.do
+          ul $ shownEach @"number" lapRows ( li $ RecordToRecord.do
                    staticText "Lap "
                    text @"number"
                    staticText " — "
-                   text @"time" ) # foreach @"number" lapRows ) # tapped
+                   text @"time" )
       ) # mvu zeroedStopwatch

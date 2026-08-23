@@ -6,8 +6,8 @@ import CalculatorLogic (blankTally, conditionOf, currentEntry, keyPad, operatorK
 import Data.Array (elem)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (tapped, foreach, mvu, forProperty, toCase, updated)
-import PUI.Web.HTML (providedCase, attrWith, body, clicked, div, provided, staticText, text, (:=))
+import PUI (foreach, mvu, forProperty, toCase, updated)
+import PUI.Web.HTML (shownCase, attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.Web.MDC2 (card, elevation20)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,7 +21,7 @@ calculatorMDC2 =
                   := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-                    staticText "Error" # providedCase @"faulty" conditionOf # tapped
+                    shownCase @"faulty" conditionOf (staticText "Error")
                     text @"entry" # provided currentEntry
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
                   clicked ( div >>> attrWith "style" keyFace $ text @"key" # forProperty identity ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key

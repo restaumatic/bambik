@@ -1,6 +1,6 @@
-module TipCalculatorLogic (dinnerBill, perPersonText, tipAmountText, totalText, whole) where
+module TipCalculatorLogic (dinnerBill, perPersonLine, perPersonText, splitLine, tipAmountLine, tipAmountText, tipLine, totalLine, totalText, whole) where
 
-import Prelude ((*), (+), (/), (<$>))
+import Prelude ((<>), (*), (+), (/), (<$>))
 
 import Data.Maybe (Maybe(..), maybe)
 import Data.Number (fromString)
@@ -29,3 +29,18 @@ total { "Bill amount": amount, "Tip percentage": tipPercent } = (\a -> a * (1.0 
 
 money :: Maybe Number -> String
 money = maybe "—" (toStringWith (fixed 2))
+
+tipLine :: { "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+tipLine { "Tip percentage": tip } = "Tip: " <> whole tip <> "%"
+
+splitLine :: { "Split between" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+splitLine { "Split between": split } = "Split between: " <> whole split <> " people"
+
+tipAmountLine :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+tipAmountLine bill = "Tip amount: " <> tipAmountText bill
+
+totalLine :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+totalLine bill = "Total: " <> totalText bill
+
+perPersonLine :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Split between" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+perPersonLine bill = "Per person: " <> perPersonText bill

@@ -1,6 +1,6 @@
-module DeparturesLogic (arrival, boardOpening, tick, tickPeriod, updatedFlight, updatedStatus) where
+module DeparturesLogic (arrival, boardOpening, rowLine, tick, tickPeriod, updatedFlight, updatedStatus, updateLine) where
 
-import Prelude ((+), div, mod)
+import Prelude ((<>), (+), div, mod)
 
 import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -36,3 +36,9 @@ flights = [ "LH 441", "BA 902", "LO 331", "AF 118", "KL 605" ]
 
 statuses :: Array String
 statuses = [ "Scheduled", "Check-in", "Boarding", "Departed" ]
+
+rowLine :: { code :: String, status :: String } -> String
+rowLine { code, status } = code <> " \x2014 " <> status
+
+updateLine :: { key :: String, value :: { code :: String, status :: String } } -> String
+updateLine u = "Last update: " <> updatedFlight u <> " \x2192 " <> updatedStatus u

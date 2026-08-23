@@ -1,6 +1,6 @@
-module CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson) where
+module CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson) where
 
-import Prelude ((<$>), (==), bind, discard, pure)
+import Prelude ((<>), (<$>), (==), bind, discard, pure)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -66,3 +66,6 @@ entries { "Filter prefix (surname)": prefix, selected, people } =
   hasPrefix p s = case stripPrefix (Pattern p) s of
     Just _ -> true
     Nothing -> false
+
+personLine :: { "Name" :: String, "Surname" :: String } -> String
+personLine { "Name": name, "Surname": surname } = surname <> ", " <> name

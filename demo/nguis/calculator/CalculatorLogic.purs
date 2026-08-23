@@ -1,4 +1,4 @@
-module CalculatorLogic (blankTally, conditionOf, currentEntry, keyPad, operatorKeys, pressKey) where
+module CalculatorLogic (blankTally, conditionOf, currentEntry, entryLine, keyPad, keyText, operatorKeys, pressKey) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), show)
 
@@ -74,3 +74,9 @@ negated entry = case stripPrefix (Pattern "-") entry of
 
 format :: Number -> String
 format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
+
+entryLine :: { entry :: String } -> String
+entryLine { entry } = entry
+
+keyText :: { key :: String } -> String
+keyText { key } = key

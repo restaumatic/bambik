@@ -34,7 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, tapped, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -150,8 +150,8 @@ main = do
   -- only possible contribution is the informationless {}, so the gate must
   -- not wait for it. Sharper than the unit law: this operand never emits at
   -- all (a detached pane, an empty collection), where pempty announces.
-  -- This law is what makes `tapped` a derived form (the merge with the echo
-  -- wire) rather than a carrier primitive.
+  -- This law is what makes the display-as-stage a derived form (the merge
+  -- with the echo wire) rather than a carrier primitive.
   do
     gProp <- Ref.new Nothing
     silentProp <- Ref.new Nothing
@@ -161,16 +161,17 @@ main = do
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "silence law ×→×: a zero-field operand never starves the gate" [ { a: 3 } ]
 
-  -- tapped inside feedback: the display renders the seed at registration —
-  -- pins tapped's operand order (display first, wire second: render before
-  -- forward, since the forward may re-enter the loop mid-registration)
+  -- a gated display inside feedback: the display renders the seed at
+  -- registration — pins the merge-with-wire operand order (display first,
+  -- wire second: render before release, since the release may re-enter the
+  -- loop mid-registration)
   do
     shown <- Ref.new ([] :: Array { top :: Int })
     outs <- Ref.new ([] :: Array {})
     let display = PUI (pure { toUser: \s -> Ref.modify_ (_ <> [ s ]) shown, fromUser: \_ -> pure unit }) :: PUI Effect { top :: Int } {}
-    m <- unwrap (feedback { top: 0 } (tapped display) :: PUI Effect {} {})
+    m <- unwrap (feedback { top: 0 } (recordToRecord display identity) :: PUI Effect {} {})
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read shown >>= assertEqual "feedback+tapped: the seed renders at registration" [ { top: 0 } ]
+    Ref.read shown >>= assertEqual "feedback + display beside the wire: the seed renders at registration" [ { top: 0 } ]
 
   -- ×→× runtime-exactness: the merge widens each operand's input by coercion,
   -- so an operand that echoes or lens-rebuilds its input emits an object
@@ -723,34 +724,33 @@ main = do
     m.toUser 3
     Ref.read outs >>= assertEqual "identity: the echo wire" [ 3 ]
 
-  -- tapped: unconditional pass-through (the trivial updates fold) — no
-  -- echo needed from the wrapped display, and any event it does emit
-  -- re-emits the retained value.
+  -- display beside the wire: unconditional pass-through — no echo needed
+  -- from the wrapped display (its zero-field side is pre-satisfied), and
+  -- any {} it does emit re-emits the retained value.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
-    m <- unwrap (tapped (probe gProp :: PUI Effect { v :: Int } {}))
+    m <- unwrap (recordToRecord (probe gProp :: PUI Effect { v :: Int } {}) identity)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 1 }
-    Ref.read outs >>= assertEqual "tapped: every value forwarded, no echo needed" [ { v: 1 } ]
+    Ref.read outs >>= assertEqual "display beside the wire: every value forwarded, no echo needed" [ { v: 1 } ]
     fire gProp {}
-    Ref.read outs >>= assertEqual "tapped: an event re-emits the retained value" [ { v: 1 }, { v: 1 } ]
+    Ref.read outs >>= assertEqual "display beside the wire: a {} emission re-emits the retained value" [ { v: 1 }, { v: 1 } ]
 
   -- muted: the counit — render, discard the output deliberately. On (->):
   -- muted g = const {}. On the PUI carrier it makes any emitting component
-  -- lawfully tappable: the emission arrives as {} (a display's output, all
-  -- the tap accepts), so the tap re-emits the retained value instead of
-  -- losing an edit silently.
+  -- a lawful display ({} output), so the merge-with-wire re-emits the
+  -- retained value instead of losing an edit silently.
   do
     assertEqual "muted on (->): the counit" {} (muted (\(x :: Int) -> x + 1) 5)
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
-    m <- unwrap (tapped (muted (probe gProp :: PUI Effect { v :: Int } { edit :: Int })))
+    m <- unwrap (recordToRecord (muted (probe gProp :: PUI Effect { v :: Int } { edit :: Int })) identity)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 4 }
     fire gProp { edit: 9 }
-    Ref.read outs >>= assertEqual "muted # tapped: a discarded emission re-emits the retained value, losing nothing that was not written off" [ { v: 4 }, { v: 4 } ]
+    Ref.read outs >>= assertEqual "muted beside the wire: a discarded emission re-emits the retained value, losing nothing not written off" [ { v: 4 }, { v: 4 } ]
 
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==

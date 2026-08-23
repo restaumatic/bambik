@@ -1,6 +1,6 @@
-module PasswordGeneratorLogic (rememberPassword, samplePassword, strengthText, strongMixRecipe) where
+module PasswordGeneratorLogic (passwordLine, rememberPassword, samplePassword, strengthLine, strengthText, strongMixRecipe) where
 
-import Prelude ((*), (-), (/), (<), (<>), bind, otherwise, pure)
+import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure)
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
@@ -72,3 +72,9 @@ digitCharacters = toCharArray "0123456789"
 
 symbolCharacters :: Array Char
 symbolCharacters = toCharArray "!@#$%^&*()-_=+[]{};:,.<>?/"
+
+strengthLine :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> String
+strengthLine recipe = "Strength: " <> strengthText recipe
+
+passwordLine :: { password :: String } -> String
+passwordLine { password } = password

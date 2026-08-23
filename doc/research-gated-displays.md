@@ -79,12 +79,50 @@ dialog inside it is now a gated identity rather than a replayed tap.
 3. One incidental: the leaf name `shown` collided with local binders in
    `PUI.Web.HTML` (renamed to `fed`).
 
+## Round two — the full sweep: `tapped` is deleted
+
+All 157 remaining tap sites converted and the combinator removed from the
+vocabulary (definition, export, re-export, laws rewritten against the
+inline derivation `recordToRecord w identity`). The final gated family:
+
+  * `shown @l f` — field, instant (HTML)
+  * `told line` — narrow-row line, instant (HTML)
+  * `shownAs proj content` — ambient structured content: the content
+    (chrome merges, nested collections, adopted assemblies) registers at
+    **build time**, renders per feed through the projection, releases the
+    fed row always (HTML)
+  * `shownWhen proj content` / `shownCase @l f content` — the pane rungs:
+    content attached on relevance, row released always (HTML)
+  * `shownEach @l proj item` — the keyed collection rung (HTML)
+  * `confirmed cfg display` — the witness rung (MDC2/MDC3)
+
+Two implementation lessons the sweep taught, both now baked in:
+
+1. **Registration time is part of a rung's policy.** `shownAs` was first
+   derived from `provided` (attach-on-first-feed) and three demos broke
+   at t=0: potluck's gather-gated menu prefix vanished — the gate
+   lawfully withholds the feed, and chrome that used to exist at build
+   now waited for it. The ambient rung must register its content at
+   build and gate only the *release*; the pane rungs must defer — the
+   difference **is** the policy, not plumbing.
+2. **A content slot must complete its content's wiring.** Leaves finish
+   registration inside `fromUser`; a wrapper that never subscribes feeds
+   a half-wired leaf. `shownAs` subscribes with the lawful `{}`-discard.
+
+What was preserved, against expectation: **every A11 line survived.**
+The pane and ambient rungs take structured content, so the glued
+`staticText`/`text` merges converted as wrapper swaps — contents
+untouched. No line functions were needed at all (the `told` collapse
+prepared for never happened); the assurance ladder and A11 turned out to
+be compatible once the ambient rung carried content rather than a
+formatter.
+
 ## Standing of the three display architectures
 
 | | unit-typed (`p {|r} {}`, main line) | event-consuming (`p [|e] {}`) | fulfillment-gated (`p {o|r} {o|r}`) |
 | --- | --- | --- | --- |
 | merges (A11 lines, editor-beside-readout) | native | impossible | impossible |
-| pipeline stages | via `tapped` (derived, one word) | via emitter + `tapped` | **native — `tapped` dissolves** |
+| pipeline stages | via `tapped` (derived, one word) | via emitter + `tapped` | **native — `tapped` deleted on this branch** |
 | witnessed reading (dialogs) | separate protocol (`simpleDialog` + replay) | statuses | **the same type, stronger gate** |
 | user-knowledge in the flow | no | no | **yes — L6 extended to the user** |
 | re-display of a field | free (merges and taps) | one case per view | free in sequence |

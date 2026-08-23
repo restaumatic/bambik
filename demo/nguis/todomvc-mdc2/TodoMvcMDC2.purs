@@ -5,9 +5,9 @@ import Prelude (identity, (#), ($), (<<<), Unit, const, show)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, tapped, projection, forProperty, mvu, required, toCase, updated)
+import PUI (completed, projection, forProperty, mvu, required, toCase, updated)
 import PUI.Web (choice)
-import PUI.Web.HTML (providedCase, body, clWhen, span, staticText, text)
+import PUI.Web.HTML (shownCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, remainingItems, toggleTodo, visibleEntries)
@@ -24,11 +24,11 @@ todoMvcMDC2 =
           segmentedButton @"Visibility"
             [ choice @"All", choice @"Active", choice @"Completed" ] # required # completed
           Semigroupoid.do
-            caption ( RecordToRecord.do
+            shownCase @"sole" remainingItems ( caption $ RecordToRecord.do
                 text @"count" # projection show
-                staticText " item left" ) # providedCase @"sole" remainingItems # tapped
-            caption ( RecordToRecord.do
+                staticText " item left" )
+            shownCase @"several" remainingItems ( caption $ RecordToRecord.do
                 text @"count" # projection show
-                staticText " items left" ) # providedCase @"several" remainingItems # tapped
+                staticText " items left" )
             button @"Clear completed" {} # updated (match { "Clear completed": const <<< clearCompleted })
       ) # mvu emptyTodoList
