@@ -1,6 +1,6 @@
-module CashboxLogic (applyDeposit, applyPayout, applyRefund, courierFee, customerDeposit, euros, openedTill, standardRefund) where
+module CashboxLogic (applyDeposit, applyPayout, applyRefund, balanceText, courierFee, courierText, customerDeposit, euros, openedTill, refundText, standardRefund) where
 
-import Prelude ((+), (-), show)
+import Prelude ((<>), (+), (-), show)
 
 import Data.Maybe (fromMaybe)
 import Data.String (Pattern(..), stripSuffix)
@@ -28,3 +28,12 @@ applyDeposit { amount, balance } = { balance: balance + amount }
 
 euros :: Number -> String
 euros n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
+
+balanceText :: Number -> String
+balanceText balance = "Till balance: \x20ac" <> euros balance
+
+refundText :: Number -> String
+refundText amount = "Hand \x20ac" <> euros amount <> " back to the customer."
+
+courierText :: Number -> String
+courierText amount = "Hand \x20ac" <> euros amount <> " to the courier."

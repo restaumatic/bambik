@@ -73,6 +73,7 @@ module PUI.Web.HTML
   , section
   , select
   , span
+  , shown
   , staticText
   , strong
   , table
@@ -115,6 +116,32 @@ import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, app
 import Unsafe.Coerce (unsafeCoerce)
 
 -- UIs
+
+-- | RESEARCH (gated displays): the **fulfillment-gated display**, instant
+-- | rung. Type `p { l | rest } { l | rest }`: render field `l` through the
+-- | formatter, then release the whole fed row — the release *is* the
+-- | fulfillment witness, and for this component the gate opens
+-- | synchronously on render (assurance by visibility; see
+-- | doc/displays-and-sources.md). A pipeline stage natively: no `tapped`.
+-- | Render-before-release, deliberately: the release may re-enter the loop
+-- | mid-registration, which must find the display already painted.
+shown :: forall @l a rest row. IsSymbol l => Cons l a rest row => (a -> String) -> PUI Web { | row } { | row }
+shown f = wrap do
+  parentNode <- gets _.parent
+  newNode <- liftEffect $ do
+    node <- createTextNode ""
+    appendChild node parentNode
+    pure node
+  modify_ _ { sibling = newNode }
+  node <- gets _.sibling
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \row -> do
+        setTextNodeValue node (f (Record.get (Proxy @l) row))
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> prop row
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
 
 -- | Show a string that changes — a readout, a total, a name in a list row.
 -- | (Wording that doesn't change is `staticText`.)
@@ -403,9 +430,9 @@ button w = wrap do
         pure status
     , fromUser: \prop -> void $ addEventListener "click" node $ const do
         mA <- Ref.read mARef
-        for_ mA \shown -> do
+        for_ mA \fed -> do
           setAttribute node "disabled" "true" -- TODO re-think
-          prop shown
+          prop fed
     }
 
 -- | Fixed text: a caption, a unit, the literal words between two values on
@@ -702,7 +729,7 @@ transient ui = wrap do
 -- | answer, so two panes can never both be on screen — which separate
 -- | "should this be visible?" tests can always accidentally allow.
 providedCase :: forall @l i a b s o. IsSymbol l => Cons l a b s => (i -> [ | s ]) -> PUI Web a o -> PUI Web i o
-providedCase f = provided (\shown -> prj (Proxy @l) (f shown))
+providedCase f = provided (\fed -> prj (Proxy @l) (f fed))
 
 -- | Show the pane only when there is something to show. Visibility is the
 -- | presence of data, not a flag: the argument is a business function that
@@ -720,7 +747,7 @@ provided :: forall i a b. (i -> Maybe a) -> PUI Web a b -> PUI Web i b
 provided f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
-    { toUser: \shown -> case f shown of
+    { toUser: \fed -> case f fed of
       Nothing -> ensureDetached
       Just y -> do
         -- attach before feeding: a UI component that measures itself on toUser (the
@@ -744,9 +771,9 @@ clWhen pred name w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   pure
-    { toUser: \shown -> do
-        (if pred shown then addClass else removeClass) node name
-        w'.toUser shown
+    { toUser: \fed -> do
+        (if pred fed then addClass else removeClass) node name
+        w'.toUser fed
     , fromUser: w'.fromUser
     }
 
@@ -763,9 +790,9 @@ attrWith name valueOf w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
   pure
-    { toUser: \shown -> do
-        setAttribute node name (valueOf shown)
-        w'.toUser shown
+    { toUser: \fed -> do
+        setAttribute node name (valueOf fed)
+        w'.toUser fed
     , fromUser: w'.fromUser
     }
 
@@ -787,15 +814,15 @@ clicked w = wrap do
   node <- gets _.sibling
   iRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \shown -> do
-        Ref.write (Just shown) iRef
-        w'.toUser shown
+    { toUser: \fed -> do
+        Ref.write (Just fed) iRef
+        w'.toUser fed
     , fromUser: \prop -> do
         -- content is display-only: give its wiring a sink so echoes flow
         w'.fromUser \_ -> pure unit
         void $ addEventListener "click" node $ const do
           mi <- Ref.read iRef
-          for_ mi \shown -> prop shown
+          for_ mi \fed -> prop fed
     }
 
 -- | Report *where* the user clicked, in the container's own coordinates —

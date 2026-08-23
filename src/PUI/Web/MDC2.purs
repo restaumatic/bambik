@@ -88,6 +88,7 @@ module PUI.Web.MDC2
   , radioButton
   , segmentedButton
   , select
+  , confirmed
   , simpleDialog
   , slider
   , sliderLive
@@ -1183,6 +1184,19 @@ dialog { title } content = wrap do
           unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
     _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
     pure result
+
+-- | RESEARCH (gated displays): the **witness rung** of the assurance
+-- | ladder, baked in as a component. `confirmed cfg display` is a
+-- | fulfillment-gated pass-through `p { | row } { | row }`: feeding opens
+-- | the modal and feeds the display; the flow is **withheld until the user
+-- | confirms**, then the fed row is released — the release is the read
+-- | receipt. Derived entirely from existing machinery: `simpleDialog`'s
+-- | replay-on-confirm protocol over an instant-gated display (`shown`) —
+-- | the ladder composes, witness rung = instant rung inside the modal.
+-- | A dismiss without confirming releases nothing: a declined reading
+-- | withholds, honestly.
+confirmed :: forall row. { title :: String, confirm :: String } -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
+confirmed = simpleDialog
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
