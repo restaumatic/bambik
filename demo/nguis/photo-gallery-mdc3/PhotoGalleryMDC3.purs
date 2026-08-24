@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesOpen, openAlbum)
-import PUI (foreach, forProperty, mvu, toCase, updated)
+import PUI (forProperty, mvu, toCase, updated)
 import PUI.Web.HTML (shownEach, shownAs, body, span, staticText, text)
 import PUI.Web.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, imagePane, list, listItem, listOf, labelSmall, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
