@@ -123,7 +123,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   possible contribution is the informationless `{}`, which is always
   known, so waiting for it is waiting for nothing and no invented data
   can flow (the silence law in test/Main.purs). This is what makes a
-  display-side operand unable to starve its siblings, and `tapped` a
+  display-side operand unable to starve its siblings, and the
+  display-beside-the-wire construction (the gated displays' bodies) a
   derived form rather than a carrier primitive. A gate MUST NOT be
   papered over with invented data. Three designs are permanently
   rejected:

@@ -3,8 +3,10 @@
 The boundary of an application is where the flow meets the world. This
 note names the citizens that live on that boundary, the laws that follow
 from which side of it can hold state, and the business reading of the
-types they carry. It consolidates what the `tapped`/`{}` work
-(no-silent-information-loss, guardrails L13) made enforceable.
+types they carry. It consolidates what the no-silent-information-loss
+work (guardrails L13) made enforceable — and, on this branch, what the
+fulfillment-gated displays turned from contract into construction: a
+display is a stage whose **release is the witness**.
 
 ## Being read is always the business's concern
 
@@ -18,16 +20,20 @@ nothing more:
 
 > A `{}` output means **fulfilled without a witness** — assurance by
 > visibility or salience. An emission means **the witness itself**, and
-> the tap law (`tapped`/`observed` accept only `{}`) makes a witness
-> impossible to discard silently: choosing a witnessing component is
-> choosing to be unable to ignore its answer.
+> the content-slot law (the gated displays' content slots and `observed`
+> accept only `{}`) makes a witness impossible to discard silently:
+> choosing a witnessing component is choosing to be unable to ignore its
+> answer. In the gated family the witness is the **release**: `confirmed`
+> withholds the flow until the user answers; `shown`/`told`/`shownAs`
+> release instantly (the zero-certainty rung); the pane and collection
+> rungs release always and render on relevance.
 
 The vocabulary is an **assurance ladder**, and it matches Material's own
 interruption ranking (snackbar < banner < dialog):
 
 | Policy | Fulfillment | Witness | Citizens |
 | --- | --- | --- | --- |
-| ambient | stay visible, always current | none | `text`, `progress`, readouts, `# tapped` summaries |
+| ambient | stay visible, always current | none | `text`/`progress` (in merges), `shown`/`told`/`shownAs` (as stages) |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
 | persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output` |
 | modal-witnessed | block everything until confirmed | the confirm | `dialog`, `simpleDialog` — open on feed, close on emission |
@@ -56,12 +62,14 @@ Two structural facts follow from terminality, both already load-bearing:
 
 - **A map to `1` cannot be a pipeline stage** (everything after it would
   receive the unique `{}`), so a mid-pipeline display is integrated by
-  the merge's unit law — `tapped w = recordToRecord w identity`, the
-  display beside the wire. Dually, a map from `1` ignores everything
+  the merge's unit law — the display beside the wire,
+  `recordToRecord w identity`, which is what the gated displays' bodies
+  are (the standalone `tapped` combinator this construction once named is
+  deleted: the rungs carry it). Dually, a map from `1` ignores everything
   before it, so sources sit at pipeline heads — which is what
   `body :: PUI Web {} o` says about the app itself: an application
   begins at `1` (`mvu` = source, then loop).
-- **Why `tapped` is derived but `seeded` is primitive**: a display's `{}`
+- **Why the display-beside-the-wire is derived but `seeded` is primitive**: a display's `{}`
   output is disjoint from every row, so it merges beside the wire for
   free; a source's output row collides with the wire's own, so the
   pass-through-plus-emission wire cannot be a merge and must be carrier

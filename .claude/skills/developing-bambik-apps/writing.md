@@ -178,24 +178,23 @@ interchangeable:
   `{}`-output components — an editor inside fails to unify; a genuinely
   emitting assembly is discarded **in writing** with `# muted`.
 
-So: editor or record display stage → `# completed`; display over a
-non-record value (a `projected`-formatted readout) → `# tapped`. A live
-readout as a pipeline stage is just a display made pass-through this way
-(tip-calculator's money readouts).
+So: editor stage → `# completed`; display stage → the gated rung that
+states its policy (`shownAs identity (…)` for a structured line,
+tip-calculator's money readouts). A live readout as a pipeline stage is
+just a display whose gate opens instantly.
 
 A terminal **collection display** — a projection rendered as a list or
-grid, passing the model through — is the keyed `foreach` inside its
-container ocular, trailed by `# tapped`, whose unconditional forwarding is
-the collection's announcing unit (so an empty array never starves). Here the rows projection must be a **named projection with a
-closed row**, not an accessor: `tapped` widens a *closed* narrow row,
-so an open one leaves no `Union` instance and the error lands on
-`tapped`. This is the row-stating exception to the
-delete-the-one-field-projection rule. Stopwatch's laps list is the
-worked example. An element that is itself a pipeline of stages
-(alternating `provided` panes) forwards its row through the `foreach`;
-that forwarding carries nothing the tap keeps, so it is discarded in
-writing — `# foreach @l rowsOf # muted ) # tapped` (scoreboard's
-summary line).
+grid, passing the model through — is `shownEach @l rowsOf item` inside
+its container ocular: keyed, retained, releasing the fed row per feed
+(so an empty array never starves). The rows projection must be a
+**named projection with a closed row**, not an accessor: the gated
+rungs read a *closed* narrow row by `Union` subsumption, so an open one
+leaves no instance and the error lands on the rung. This is the
+row-stating exception to the delete-the-one-field-projection rule.
+Stopwatch's laps list is the worked example. Where a collection's
+forwarding must be written off inside a unit display (a packaged
+control's `foreach`, scoreboard's summary group), the discard is
+written — `# foreach @l rowsOf # muted` — never silent.
 
 A fixed catalogue drives `listOf`/`foreach` through the mechanism's own
 projection argument (`# foreach @"key" (const keyPad)`) — never an
@@ -240,7 +239,7 @@ Worked examples, by shape:
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
-  tree built by `tapped (dynamic …)`, because the structure genuinely
+  tree built by `shownAs identity (dynamic …)`, because the structure genuinely
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
@@ -493,7 +492,7 @@ over a logic module, a single exported entry function.
   **A cascading closer is spaced from the chain it closes over**, so each
   level reads as one `) # chain` unit rather than the paren fusing onto
   the previous level's last word:
-  `… ) # tapped ) # feedback noBids`, not `… ) # tapped) # feedback noBids`.
+  `… ) # completed ) # feedback noBids`, not `… ) # completed) # feedback noBids`.
   **Precedence caveat:** `#` (`infixl 1`) binds tighter than `$`
   (`infixr 0`), so where the chain must apply to the *whole element* —
   `foreach` multiplying an ocular-wrapped UI component — the paren must open
@@ -541,9 +540,9 @@ over a logic module, a single exported entry function.
   node, updated in place:
 
   ```purescript
-  headline6 ( RecordToRecord.do
+  shownAs identity ( headline6 $ RecordToRecord.do
       staticText "Till balance: €"
-      text @"balance" # projection euros ) # tapped
+      text @"balance" # projection euros )
   ```
 
   never `text @"balance" # projected balanceLine` over a
@@ -586,7 +585,7 @@ over a logic module, a single exported entry function.
 
 - **Exact footprints.** Every business function states its footprint as
   a closed narrow row — what it reads ∪ writes, never the whole model.
-  The reading stages (`updated`/`tapped`/`edited`/`acted`/
+  The reading stages (`updated`/the gated displays/`edited`/`acted`/
   `completed`) absorb the widening, so rows are read narrow while
   payloads stay exact; never coerce a row at the call site. A handler
   that reads nothing is not a transformer but a **constant patch**
@@ -628,7 +627,7 @@ over a logic module, a single exported entry function.
   being a sibling's write; **disjoint footprints** mean the events or
   the model want redesign until the branches genuinely share. An
   **identity handler** is the smell at its purest: the event was never
-  model data, so the honest wiring is `# tapped`, a display
+  model data, so the honest wiring is a gated display stage, a display
   interaction, not an `updated` fold. Bounded quantities ride whole even
   where a handler replaces only `current`.
 - **Lossy conversions live in the model, not in leaf brackets.** An
@@ -723,10 +722,12 @@ read them, not a summary. Paths are inside the fetched library,
 `.spago/bambik/<tag>/`:
 
 - `src/PUI.purs` — the core type, pipeline semantics, and the
-  combinators: `mvu`/`with`/`looped`/`updated`/`completed`/`action`/
-  `tapped`, the adopter family re-exports (`atCase` among them), and the collection
+  combinators: `mvu`/`with`/`looped`/`updated`/`completed`/`action`,
+  the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
-  `accumulated`.
+  `accumulated`. The gated display family lives in `PUI.Web.HTML`
+  (`shown`/`told`/`shownAs`/`shownWhen`/`shownCase`/`shownEach`) and the
+  design systems (`confirmed`).
 - `src/PUI/Web/HTML.purs` — HTML vocabulary, `body`, element oculars,
   `attrWith` for channel-fed structure-from-data, the builders
   `foreachWith`/`dynamic`/`each` for structure-from-value, and the

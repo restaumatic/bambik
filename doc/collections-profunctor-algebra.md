@@ -19,11 +19,11 @@ standard structure.
 
 One session bug becomes a theorem here. Broadcasting one input to two
 `⊳`-composed stages requires the first stage to be a **comonoid**: it must
-*duplicate* — pass its input through — not merely consume it. `tapped`
+*duplicate* — pass its input through — not merely consume it. A gated display
 equips a stage with exactly that comultiplication (render *and* forward);
 `muted` has only the counit (render and *discard*). That is the general
 reason `muted`-then-collection starved under `Semigroupoid.do` while
-`tapped`-then-collection worked: chrome in a pipeline needs
+display-beside-the-wire-then-collection worked: chrome in a pipeline needs
 comultiplication, chrome in a merge needs nothing (the merge broadcasts).
 Duoidal algebra names when `⊳` can emulate `⊗` — only through comonoids.
 
@@ -189,7 +189,7 @@ Instead of `Sequencing` (or a family of sequence directions), the general
 inventory is:
 
 1. **Duoidal skeleton** — `⊳` and the `(M, N)`-monoidal `⊗`s, with comonoids
-   (`tapped`) mediating interchange. Already implemented; rename nothing,
+   (the gated displays) mediating interchange. Already implemented; rename nothing,
    but *document* the units-are-forced and gates-are-laxity facts once, at
    this level.
 2. **Tambara modules per action** — `Strong`, `Choice` (ecosystem);
@@ -251,7 +251,7 @@ pure treatments never see.
   `demo/nguis/scoreboard-mdc2` (accumulated: the board grows to its key set,
   updates in place, the whole array drives the standings).
 - The two laws of §1 are stated once in `Data.Profunctor.Row`'s header; the
-  duoidal reading of §0 (tapped = comultiplication, muted = counit) in
+  duoidal reading of §0 (gated displays = comultiplication, muted = counit) in
   `PUI`'s header.
 - **Keys are labels** (a revision of §4's "or in the reconciler's private
   state" latitude): every ×-member is keyed by a **materialized identity
