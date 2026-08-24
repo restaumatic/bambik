@@ -119,7 +119,7 @@ import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI, foreach, muted, projected)
 import Unsafe.Coerce (unsafeCoerce)
-import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, appendRawHtml, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
 -- UIs
 

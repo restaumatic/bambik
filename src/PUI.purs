@@ -80,12 +80,12 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, with)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
 import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
