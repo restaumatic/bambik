@@ -1,11 +1,11 @@
 module TipCalculatorMDC2 (tipCalculatorMDC2) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude ((<>), identity, (#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (completed, projection, mvu, projected)
-import PUI.Web.HTML (shownAs, body, staticText, text)
+import PUI.Web.HTML (rangeInput, shownAs, body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TipCalculatorLogic (dinnerBill, perPersonText, tipAmountText, totalText, whole)
@@ -15,8 +15,9 @@ tipCalculatorMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          filledTextField @"Bill amount" {} # completed
-          slider @"Tip percentage" {} # completed
+          ( (filledTextField @"Bill amount" {} # completed)
+              <> (slider @"Tip percentage" {} # completed)
+              <> (rangeInput @"Tip percentage" # completed) )
           shownAs identity ( body2 $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole

@@ -360,6 +360,33 @@ instance Functor m => Coretaining (PUI m) where
             Ref.write false busyRef
       }
 
+-- | RESEARCH (open-row editors): the **joint merge** — the ungated ×→×
+-- | combination for whole-row citizens. Both operands are fed every input
+-- | (broadcast), and either operand's emission forwards unchanged: **last
+-- | writer wins**. No gate (nothing partial to await), no union (emissions
+-- | arrive whole), no ownership (everyone speaks the whole row) — the
+-- | shared-record sibling of `recordToVariant`'s ungated broadcast. Under
+-- | `mvu`'s synchronous loop the operands can never disagree for longer
+-- | than one turn: an emission re-feeds every sibling before the next DOM
+-- | event can fire. Two editors of the same field are therefore
+-- | **well-defined**: two synchronized views-with-write of one value (a
+-- | slider and a numeric input bound to one quantity) — a pattern the
+-- | owned merge rejects by `DisjointLabels` because its union requires
+-- | disjointness, a requirement this combination does not have.
+-- | Associative; registration order = code order = DOM order.
+instance Apply m => Semigroup (PUI m a b) where
+  append p1 p2 = wrap ado
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    in
+      { toUser: \a -> do
+          p1'.toUser a
+          p2'.toUser a
+      , fromUser: \prop -> do
+          p1'.fromUser prop
+          p2'.fromUser prop
+      }
+
 instance Apply m => Semigroupoid (PUI m) where
   compose p2 p1 = wrap ado
     p1' <- unwrap p1
