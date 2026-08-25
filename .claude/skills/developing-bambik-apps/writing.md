@@ -186,8 +186,11 @@ interchangeable:
   `tapped` is deleted). Pick the rung whose fulfillment policy the
   business wants: `content # shownAs proj` for ambient structured content
   (chrome + unit displays, registered at build, released per feed),
-  `# shownWhen`/`# shownCase` for panes (attached on relevance, released
-  always), `item # shownEach @l proj` for keyed collections, `told line` /
+  `# shownWhen`/`# shownCase` for display panes (attached on relevance,
+  released always), `# inCase @l classifier` for an **editor pane** — a
+  whole-row editor that exists only in one mode, its own `field @l` lift
+  carrying the rest of the row — `item # shownEach @l proj` for keyed
+  collections, `told line` /
   `shown @l f` for bare lines, `confirmed cfg display` where the flow
   must wait for the user's confirmation. Content slots accept only
   `{}`-output components — an editor inside fails to unify; a genuinely
@@ -287,10 +290,19 @@ Otherwise `provided` attaches and feeds its content on `Just`, detaches
 on `Nothing`. Pair it with a **named `Maybe`-valued projection** so the
 pane consumes the payload, not the whole model, and the visibility logic
 is a testable business function. A pane whose content only exists
-sometimes is exactly this. The mode-of-a-live-editor case — a variant
-editor's per-selection panes — is the same shape inside a `looped`
-pipeline: the selection component, then each pane
-`# provided <paneOf> # updated <setPane>`.
+sometimes is exactly this — for *displays*. An **editor** that exists
+only in one mode is not a payload to fold back by hand: it is a
+whole-row citizen with gated existence, `# inCase @l classifier`
+(`shownCase`'s editor sibling), and its lens already re-attaches the
+rest of the row — so `# provided paneOf # updated (informed setField)`
+with an identity `setField` is the smell this rung deletes. The
+mode-of-a-live-editor case — a variant editor's per-selection panes — is
+exactly that inside the `bracketed` loop: the selection component, then
+each pane `# inCase @l selectionOf` (order-form's three fulfillment
+panes over one `selection` classifier; flight-booker's return date
+`# inCase @"return" tripType`). `informed` keeps its job where the
+payload is *computed* (circle-drawer's diameter quantity, meeting-booker's
+seats) or the fold does real work (cashbox, movie-browser).
 
 `clWhen` stays predicate-driven: it toggles a class (styling), not
 visibility, and is deliberately last-element-only.

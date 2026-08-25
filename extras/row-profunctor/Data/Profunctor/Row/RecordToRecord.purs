@@ -386,6 +386,15 @@ settled f = rmap (\big -> Record.merge (f (unsafeCoerce big)) big)
 -- | payloads (a key, a fetched list) stay positional — they are not rows.
 -- | Pure record algebra — no profunctor in sight; it lives here because
 -- | its rows are this direction's.
+-- |
+-- | Its job is **genuine dispatch**: a payload that is *computed* (a
+-- | bounded quantity assembled for a pane) or a fold that does real work
+-- | (an undo transaction, a map over a collection). It is *not* for the
+-- | identity fold — a field that exists only in one mode is a whole-row
+-- | editor with gated existence (`PUI.Web.HTML.inCase`), whose `field @l`
+-- | lift already re-attaches the rest of the row; `# provided paneOf
+-- | # updated (informed setField)` with `setField` the identity was
+-- | completion rebuilt by hand, and that shape is gone.
 informed
   :: forall pay small u fed extra
    . Union pay small u

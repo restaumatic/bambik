@@ -154,3 +154,35 @@ interleave order, observational associativity) run on `PUI Effect`
 probes in `spago test`; tip-calculator's trio reads
 ``filledTextField @"Bill amount" {} `joint` slider @"Tip percentage" {}
 `joint` rangeInput @"Tip percentage"``.
+
+## The editor pane (fourth step)
+
+`informed` turned out to be two things. At nine sites it was the fusion's
+own smell in another coat: `# provided paneOf # updated (informed
+setField)` with `setField` the **identity** (`setTable { "Table": t } =
+{ "Table": t }`, `setReturn` likewise) — a pane pinning a whole-row
+editor down to its payload, then a retention `Ref`, a union and a
+do-nothing function rebuilding the completion its `field @l` lens would
+have done for free. The dissolution is `shownCase`'s editor sibling,
+`inCase @l classifier`: a whole-row citizen whose *existence* is gated
+on the case, derived as `joint (provided caseHolds w) identity` — the
+pane **`joint`** the wire, where `shownCase` is the pane owned-merged
+with it (its content emits `{}`; an editor's emits the row, which the
+owned merge's disjointness rejects, so the rung became derivable only
+once `Joining` existed). Order-form's three fulfillment panes and
+flight-booker's return date read `# inCase @l selection` /
+`# inCase @"return" tripType`; six setters and pane projections in
+order-form and two in flight-booker died, replaced by one row-stating
+classifier each. Two releases per feed while attached (the wire's and
+the editor's echo), idempotent under the loop.
+
+Where `informed` **survives** it is doing genuine dispatch — a payload
+that is computed (circle-drawer's diameter quantity, assembled from a
+scalar and constant bounds; meeting-booker's `seats` role-renamed over
+`attendees`) or a fold that does real work (undo-stack transactions,
+`markFavorite`'s map over the movies, cashbox's three branches) — and
+the 2026-08-13 rejection of fusing it into `updated` stands: per-branch
+merging inside `match` needs the row-walking class machinery that was
+judged too heavy, and the single-case `toCase @l … # updated (match
+{ l: informed f })` shape keeps its case because the label is what the
+emission trace prints.

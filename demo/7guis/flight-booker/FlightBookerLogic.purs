@@ -1,6 +1,6 @@
-module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLeg, returnLine, setReturn, submit) where
+module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType) where
 
-import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (==), (>=), (>>>), bind, pure, show)
+import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
@@ -77,11 +77,8 @@ formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
 dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
 dateKey { y, m, d } = y * 10000 + m * 100 + d
 
-returnLeg :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Return date (DD.MM.YYYY)" :: String } -> Maybe { "Return date (DD.MM.YYYY)" :: String }
-returnLeg { "Flight type": flightType, "Return date (DD.MM.YYYY)": back } = if flightType == ."return" {} then Just { "Return date (DD.MM.YYYY)": back } else Nothing
-
-setReturn :: { "Return date (DD.MM.YYYY)" :: String } -> { "Return date (DD.MM.YYYY)" :: String }
-setReturn { "Return date (DD.MM.YYYY)": back } = { "Return date (DD.MM.YYYY)": back }
+tripType :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] } -> [ "one-way" :: {}, "return" :: {} ]
+tripType = _."Flight type"
 
 problemLine :: { problem :: String } -> String
 problemLine { problem } = "\x26a0 " <> problem

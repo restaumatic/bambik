@@ -5,10 +5,10 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, debounced, forCases, informed, mvu, required, updated)
+import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
+import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownCase, body, provided, staticText, text)
+import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,7 +21,7 @@ flightBookerMDC2 =
           select @"Flight type" {}
             [ choice @"one-way", choice @"return" ] # required
           filledTextField @"Start date (DD.MM.YYYY)" {}
-          filledTextField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
+          filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
       ( Semigroupoid.do
           ( body1 $ RecordToRecord.do

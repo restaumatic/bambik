@@ -5,11 +5,11 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, debounced, forCases, informed, mvu, pempty, required, updated)
+import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
+import PUI (action, debounced, forCases, mvu, pempty, required)
 import PUI.Web.Fluent (body1, button, card, dropdown, messageBar, textField)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownCase, body, provided, staticText, text)
+import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerFluent :: Effect Unit
@@ -20,7 +20,7 @@ flightBookerFluent =
           dropdown @"Flight type" {}
             [ choice @"one-way", choice @"return" ] # required
           textField @"Start date (DD.MM.YYYY)" {}
-          textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
+          textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
       ( Semigroupoid.do
           ( body1 $ RecordToRecord.do

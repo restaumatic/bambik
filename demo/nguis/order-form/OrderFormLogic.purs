@@ -1,4 +1,4 @@
-module OrderFormLogic (deliveryDetail, deliveryLine, deliveryPane, dineInDetail, dineInLine, dineInPane, distanceKm, distanceLine, fulfillmentCase, fulfillmentState, headerLine, loadOrder, payingLine, paymentLine, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summaryLead, summarySettleTime, takeawayDetail, takeawayLine, takeawayPane) where
+module OrderFormLogic (deliveryDetail, deliveryLine, dineInDetail, dineInLine, distanceKm, distanceLine, fulfillmentCase, fulfillmentState, headerLine, loadOrder, payingLine, paymentLine, printReceipt, receiptLine, rejectionLine, selection, submitOrder, submittedLine, summaryLead, summarySettleTime, takeawayDetail, takeawayLine) where
 
 import Data.Variant.Case (caseText)
 import Prelude ((<>), ($), (==), const, discard, pure, show)
@@ -66,23 +66,8 @@ fulfillmentCase { selected, "Table": table, "Time": time, "Address": address } =
   , "Delivery": \_ -> ."Delivery" { "Address": address }
   } selected
 
-dineInPane :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String } -> Maybe { "Table" :: String }
-dineInPane { selected, "Table": table } = match { "Dine in": \_ -> Just { "Table": table }, "Takeaway": const Nothing, "Delivery": const Nothing } selected
-
-takeawayPane :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Time" :: String } -> Maybe { "Time" :: String }
-takeawayPane { selected, "Time": time } = match { "Dine in": const Nothing, "Takeaway": \_ -> Just { "Time": time }, "Delivery": const Nothing } selected
-
-deliveryPane :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Address" :: String } -> Maybe { "Address" :: String }
-deliveryPane { selected, "Address": address } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": \_ -> Just { "Address": address } } selected
-
-setTable :: { "Table" :: String } -> { "Table" :: String }
-setTable { "Table": table } = { "Table": table }
-
-setTime :: { "Time" :: String } -> { "Time" :: String }
-setTime { "Time": time } = { "Time": time }
-
-setAddress :: { "Address" :: String } -> { "Address" :: String }
-setAddress { "Address": address } = { "Address": address }
+selection :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ] } -> [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ]
+selection = _.selected
 
 loadOrder :: {} -> Aff
   { "Short ID" :: String

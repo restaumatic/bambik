@@ -76,6 +76,7 @@ module PUI.Web.HTML
   , shown
   , shownAs
   , shownCase
+  , inCase
   , shownEach
   , shownWhen
   , told
@@ -117,7 +118,7 @@ import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (Nil) as RL
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, foreach, muted, projected)
+import PUI (Ocular, PUI, foreach, joint, muted, projected)
 import Unsafe.Coerce (unsafeCoerce)
 import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
@@ -223,6 +224,34 @@ shownCase
   => OwnedRecordOutputs () row row RL.Nil rowL
   => ({ | read } -> [ | s ]) -> PUI Web a {} -> PUI Web { | row } { | row }
 shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
+
+-- | RESEARCH (open-row editors): the **editor pane** — `shownCase`'s
+-- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
+-- | that *exists* only while the classifier yields case `l`: attached and
+-- | fed the whole row on that case, detached on any other, the fed row
+-- | released always. Where `shownCase` is the pane owned-merged with the
+-- | wire (its content emits `{}`), this is the pane **`joint`** the wire —
+-- | the content emits the row, so the owned merge's disjointness rejects
+-- | it and only the joint merge admits it; the rung became derivable the
+-- | day `Joining` did. Derived: `joint (provided caseHolds w) identity`.
+-- |
+-- | It dissolves the identity fold: a field that exists only in one mode
+-- | is *not* a payload to fold back into the row by hand
+-- | (`# provided paneOf # updated (informed setField)` with `setField`
+-- | the identity) — it is a whole-row editor whose existence is gated, and
+-- | its `field @l` lift already re-attaches the rest of the row. The
+-- | classifier reads a closed narrow row (the row-stating exception:
+-- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
+-- | `shownCase`'s does. Two releases per feed while attached — the wire's
+-- | and the editor's own echo — idempotent under the loop, which swallows
+-- | the re-fed one; `informed` keeps its job where the payload is computed
+-- | or the fold does real work.
+inCase
+  :: forall @l read extra row a b s
+   . IsSymbol l => Cons l a b s
+  => Union read extra row
+  => ({ | read } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
+inCase f w = joint (provided (\(r :: { | row }) -> r <$ prj (Proxy @l) (f (unsafeCoerce r))) w) identity
 
 -- | RESEARCH (gated displays): the **collection rung** — render the keyed,
 -- | retained list from the projection, release the fed row per feed.

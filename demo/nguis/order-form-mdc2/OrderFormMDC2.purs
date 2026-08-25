@@ -8,10 +8,10 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant.Case (caseText)
 import Effect (Effect)
-import OrderFormLogic (deliveryDetail, deliveryPane, dineInDetail, dineInPane, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, setAddress, setTable, setTime, submitOrder, submittedLine, summarySettleTime, takeawayDetail, takeawayPane)
-import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, informed, looped, required, updated, with)
+import OrderFormLogic (deliveryDetail, dineInDetail, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, submitOrder, submittedLine, summarySettleTime, takeawayDetail)
+import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, looped, required, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownWhen, shownAs, body, provided, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, shownAs, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -37,14 +37,14 @@ orderFormMDC2 =
               ( ( Semigroupoid.do
                     tabBar @"selected"
                       [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
-                    filledTextField @"Table" {} # provided dineInPane # updated (informed setTable)
-                    filledTextField @"Time" {} # provided takeawayPane # updated (informed setTime)
+                    filledTextField @"Table" {} # inCase @"Dine in" selection
+                    filledTextField @"Time" {} # inCase @"Takeaway" selection
                     ( Semigroupoid.do
                         filledTextField @"Address" {}
                         ( body1 $ RecordToRecord.do
                             staticText "Distance "
                             text @"Address" # projection distanceKm
-                            staticText " km" ) # shownAs identity) # provided deliveryPane # updated (informed setAddress)) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
+                            staticText " km" ) # shownAs identity) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
           card $ Semigroupoid.do
             (subtitle1 $ staticText "Total") # shownAs identity
             filledTextField @"Total" {}
