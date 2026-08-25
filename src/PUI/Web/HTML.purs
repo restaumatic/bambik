@@ -435,7 +435,7 @@ select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
 -- | is never silently out of range, and a range nobody supplied is a
 -- | compile error rather than a wrong screen. A `step` makes it discrete,
 -- | no step continuous.
-rangeInput :: forall @l r. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => PUI Web { | r } { | r }
+rangeInput :: forall @l r rest. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => PUI Web { | r } { | r }
 rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling

@@ -165,7 +165,7 @@ armed :: forall p narrow extra wider o. Profunctor p => Union narrow extra wider
 armed = widenRecordInput
 
 -- | Single-field specialization of `resolve` — the `edit`-position combinator
--- | for this direction. Where `RecordToRecord.focusProperty` **refocuses** (background fixed, focus
+-- | for this direction. Where `RecordToRecord.field` **refocuses** (background fixed, focus
 -- | transformed), this **re-backgrounds**: the **focus** `f` at `l` is held
 -- | fixed and threaded across the boundary as **input field ↔ output case**,
 -- | while the wrapped profunctor transforms the **background** `b → b'`
@@ -192,7 +192,7 @@ backgroundProperty g =
     (resolve g)
 
 -- | The single-field **focus** for this direction — the `× → +` analogue of
--- | `RecordToRecord.focusProperty` (row-typed `first`), built on `resolve`
+-- | `RecordToRecord.field` (row-typed `first`), built on `resolve`
 -- | exactly as that one is built on `first`. The **focus** `f` at `l` of the input **shot** `s` is fed
 -- | to the wrapped `p f f'`; the **background** `{ | b }` cannot stay a record
 -- | inside the `Variant` output, so — as in `subResolving` — it is wrapped as a

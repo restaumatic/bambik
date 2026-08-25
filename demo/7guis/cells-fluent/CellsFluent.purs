@@ -6,20 +6,19 @@ import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedName)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, foreach, mvu, forProperty, projected, settled, toCase, updated)
+import PUI (foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.Web.Fluent (body1, card, textField)
-import PUI.Web.HTML (attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
+import PUI.Web.HTML (shownAs, attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsFluent :: Effect Unit
 cellsFluent =
   body $
     card $ ( Semigroupoid.do
-        ( RecordToRecord.do
-            body1 ( RecordToRecord.do
-                staticText "Cell "
-                text @"selectedName" # projected selectedName )
-            textField @"Formula (e.g. =SUM(A0:A5)*2)" {}) # completed # settled commit
+        shownAs identity ( body1 $ RecordToRecord.do
+            staticText "Cell "
+            text @"selectedName" # projected selectedName )
+        textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
         ( div >>> "style" := "overflow: auto; max-height: 420px;" $
             ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
                 ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })

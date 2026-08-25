@@ -16,7 +16,7 @@ productReviewShoelace :: Effect Unit
 productReviewShoelace =
   body $
     card $ Semigroupoid.do
-      ( RecordToRecord.do
+      ( Semigroupoid.do
           rating @"Overall rating" {}
           textField @"Headline" {}
           textArea @"Your review" { rows: 4 }
@@ -24,7 +24,7 @@ productReviewShoelace =
             [ choice @"less than a month", choice @"1–12 months", choice @"more than a year" ] # required
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
-          divider
+          shownAs identity divider
       ) # mvu freshImpression
       shownAs identity ( p $ RecordToRecord.do
           staticText "Preview: "

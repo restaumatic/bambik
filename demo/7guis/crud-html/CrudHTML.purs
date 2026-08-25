@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, completed, field, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, field, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.HTML (shownAs, attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,16 +18,15 @@ crudHTML = do
   body $ div $ ( Semigroupoid.do
       pempty # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
-          ( RecordToRecord.do
-              p ( label $ RecordToRecord.do
-                  staticText "Filter prefix (surname) "
-                  input "text" # field @"Filter prefix (surname)" )
-              p ( label $ RecordToRecord.do
-                  staticText "Name "
-                  input "text" # field @"Name" )
-              p ( label $ RecordToRecord.do
-                  staticText "Surname "
-                  input "text" # field @"Surname" )) # completed
+          p ( label $ Semigroupoid.do
+              shownAs identity (staticText "Filter prefix (surname) ")
+              input "text" # field @"Filter prefix (surname)" )
+          p ( label $ Semigroupoid.do
+              shownAs identity (staticText "Name ")
+              input "text" # field @"Name" )
+          p ( label $ Semigroupoid.do
+              shownAs identity (staticText "Surname ")
+              input "text" # field @"Surname" )
           ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
               ( clicked ( li >>> attrWith "style" entryFace $ shownAs identity $ RecordToRecord.do
                   text @"Surname"

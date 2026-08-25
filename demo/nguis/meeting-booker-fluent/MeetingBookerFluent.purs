@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, chooseSeats, completePlan, headcount, onlineNote, ratedRoom, roomText, seatsFor, seatsTaken, titleText)
-import PUI (completed, forCase, projection, informed, mvu, optional, projected, updated)
+import PUI (forCase, projection, informed, mvu, optional, projected, updated)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
 import PUI.Web.HTML (shownWhen, shownAs, body, div, provided, staticText, text)
@@ -17,14 +17,13 @@ meetingBookerFluent =
   body $
     card $ Semigroupoid.do
       ( Semigroupoid.do
-          ( RecordToRecord.do
-              textField @"Meeting title" {}
-              dropdown @"Room" {}
-                [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional
-              radioGroup @"Duration (min)" {}
-                [ choice @"15", choice @"30", choice @"60" ] # optional
-              toggleSwitch @"Include a Teams link" {}
-              divider ) # completed
+          textField @"Meeting title" {}
+          dropdown @"Room" {}
+            [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional
+          radioGroup @"Duration (min)" {}
+            [ choice @"15", choice @"30", choice @"60" ] # optional
+          toggleSwitch @"Include a Teams link" {}
+          shownAs identity divider
           (slider @"Attendees" {}) # provided seatsFor # updated (informed chooseSeats)
       ) # mvu blankBooking
       shownWhen ratedRoom ( div $ RecordToRecord.do

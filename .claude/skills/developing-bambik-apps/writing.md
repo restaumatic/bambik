@@ -23,7 +23,11 @@ matches the app's design system.
 The app is one profunctor pipeline, composed with `Semigroupoid.do`
 (data-flow stages) and the four qualified-do row merges:
 
-- `RecordToRecord.do` (×→×) — all-at-once: forms, editor groups
+- `RecordToRecord.do` (×→×) — all-at-once **content merges**: chrome
+  beside displays (a gated rung's structured content), and bare
+  type-changing selectors beside the displays that read them (potluck's
+  guest line). Editors are never its operands — an editor is a whole-row
+  pipeline stage (see *Component citizenship*)
 - `RecordToVariant.do` (×→+) — model in, events out: button rows
 - `VariantToVariant.do` (+→+) — event dispatch: backend actions
 - `VariantToRecord.do` (+→×) — events in, display out: status snackbars
@@ -84,8 +88,18 @@ syntax (`r { "Name" = … }`) all work unchanged.
   line saying "focus pod" where the option says "Focus pod (4 seats)"),
   that is an ordinary business function over the case — the case stays
   the identity.
-  A lone editor followed by `# completed` is a complete `×→×` stage on
-  its own — no `RecordToRecord.do` for a single field.
+  An editor is a **whole-row citizen** `p { l | rest } { l | rest }` — a
+  complete `×→×` stage on its own: fed the wide row it edits field `l`,
+  and every emission re-attaches the other fields from the background its
+  `field @l` lift retains. A form is therefore editors written as
+  successive pipeline stages — never `RecordToRecord.do` operands — and
+  two controls deliberately writing **one** field join with `<>` (the
+  joint merge: broadcast in, last writer wins — tip-calculator binds an
+  MDC slider and a native range to one quantity). The retained background
+  is only as fresh as the stage's last feed, so an editor ensemble lives
+  inside a loop — `mvu`, `looped`, or `bracketed` — whose re-broadcast
+  keeps every sibling current; a loop-free flow wraps its editor window
+  in `# looped` (order-form's form section, fed by its load action).
 - **displays** state their field on the leaf: `text @"prompt"` reads it
   verbatim; `text @"bid" # projection f` reads it through a formatter
   (label untouched); `text @"summary" # projected f` names what a
@@ -128,13 +142,13 @@ syntax (`r { "Name" = … }`) all work unchanged.
   `# optional` (both derive the label) — the model keeps the `Maybe`
   seeded `Nothing` (no default pick), and the stages demanding the bare
   selection stay `provided`-gated until the user picks (meeting-booker
-  is the no-defaults showcase). The one two-label case — an editor whose
-  read field differs from its typed-text payload — reads through a named
-  face function via `# projected` with a distinct payload label, and
-  **each of the three concepts takes its own name** so none shadows
-  another in `informed`'s merged row: temperature-converter's payload
-  label/caption is `@"°C"`, its model quantity is `celsiusReading`, and
-  the reader between them is `celsiusText`. A label is an arbitrary
+  is the no-defaults showcase). An editor whose text is *derived* from
+  sibling fields is a model concern, not an adopter's: keep the derived
+  texts as model fields and normalize them into each other with
+  `settled` (temperature-converter holds both `@"°C"` and `@"°F"` texts,
+  each field's stage running `# settled fromCelsius` /
+  `# settled fromFahrenheit`, so a failed parse leaves the sibling
+  untouched). A label is an arbitrary
   string, so where a **symbol** is the conventional caption — `°C`, a
   currency sign — write the symbol rather than spelling it out.
 
@@ -164,9 +178,9 @@ full ladder and its laws: doc/displays-and-sources.md.
 Two wrappers make a stage pass-through, and they are not
 interchangeable:
 
-- `# completed` widens a *row-shaped* stage's output to its full input
-  row from the retained input — safe over editors and displays alike,
-  the default inside record pipelines.
+- An **editor is pass-through natively**: it echoes each fed row and
+  completes each edit from its retained background, so it sits in a
+  record pipeline with no wrapper at all.
 - A display **is a pipeline stage natively** (RESEARCH: gated displays —
   `tapped` is deleted). Pick the rung whose fulfillment policy the
   business wants: `shownAs proj content` for ambient structured content
@@ -178,10 +192,12 @@ interchangeable:
   `{}`-output components — an editor inside fails to unify; a genuinely
   emitting assembly is discarded **in writing** with `# muted`.
 
-So: editor stage → `# completed`; display stage → the gated rung that
-states its policy (`shownAs identity (…)` for a structured line,
-tip-calculator's money readouts). A live readout as a pipeline stage is
-just a display whose gate opens instantly.
+So: an editor is a stage as it stands; a display stage is the gated rung
+that states its policy (`shownAs identity (…)` for a structured line,
+tip-calculator's money readouts — and for **pure chrome in a pipeline**:
+a card's caption is `shownAs identity (subtitle1 $ staticText "…")`,
+registered at build, releasing every fed row). A live readout as a
+pipeline stage is just a display whose gate opens instantly.
 
 A terminal **collection display** — a projection rendered as a list or
 grid, passing the model through — is `shownEach @l rowsOf item` inside
@@ -215,9 +231,11 @@ pure self-feeding loop reads `# mvu seed`, a loop-free flow reads
 Worked examples, by shape:
 
 - **smallest MVU** — counter.
-- **loop-free pipeline** — order-form (load action → form → events →
-  backend dispatch → statuses); it is also the
-  four-direction showcase.
+- **load-fed loop** — order-form (load action → `looped` form and
+  summary → events → backend dispatch → statuses); it is also the
+  four-direction showcase. The loop has no seed of its own — the load
+  action feeds it — and it is what keeps every editor's retained
+  background current.
 - **both combined** — crud (a load action feeding a `looped` form whose
   commands dispatch through write actions).
 - **channel-fed structure-from-data** — cells and circle-drawer (7guis),
@@ -268,7 +286,7 @@ pane consumes the payload, not the whole model, and the visibility logic
 is a testable business function. A pane whose content only exists
 sometimes is exactly this. The mode-of-a-live-editor case — a variant
 editor's per-selection panes — is the same shape inside a `looped`
-pipeline: selection component `# completed`, then each pane
+pipeline: the selection component, then each pane
 `# provided <paneOf> # updated <setPane>`.
 
 `clWhen` stays predicate-driven: it toggles a class (styling), not
@@ -289,8 +307,8 @@ in one `RecordToRecord.do`.
 
 ## Collections
 
-Collection items may hold stateful stages (`completed`, `updated`) —
-refs are per-instance.
+Collection items may hold stateful stages (whole-row editors,
+`updated`) — refs are per-instance.
 
 `foreach @l` (keyed by the row's materialized identity field; `listOf`
 index-keys internally) **retains** items: it reconciles *by key* —
@@ -315,7 +333,7 @@ address, so an element structurally cannot change its key.
 It folds every element emission back into the array by key, emitting the
 whole updated array immediately, input-primed. An element whose merge
 covers less than the full row simply subsumes — `edited` reads the
-element row narrow, so there is no `completed`-ing the id through and
+element row narrow, so the id is never passed through and there is
 no call-site widening. (The same rule at a linear pipeline's `×→+`
 polarity flip is `# armed`: the emit stage reads the sub-row its
 emitters replay.) The result is a first-class
@@ -492,7 +510,7 @@ over a logic module, a single exported entry function.
   **A cascading closer is spaced from the chain it closes over**, so each
   level reads as one `) # chain` unit rather than the paren fusing onto
   the previous level's last word:
-  `… ) # completed ) # feedback noBids`, not `… ) # completed) # feedback noBids`.
+  `… ) # settled commit ) # feedback noBids`, not `… ) # settled commit) # feedback noBids`.
   **Precedence caveat:** `#` (`infixl 1`) binds tighter than `$`
   (`infixr 0`), so where the chain must apply to the *whole element* —
   `foreach` multiplying an ocular-wrapped UI component — the paren must open
@@ -586,7 +604,7 @@ over a logic module, a single exported entry function.
 - **Exact footprints.** Every business function states its footprint as
   a closed narrow row — what it reads ∪ writes, never the whole model.
   The reading stages (`updated`/the gated displays/`edited`/`acted`/
-  `completed`) absorb the widening, so rows are read narrow while
+  `settled`) absorb the widening, so rows are read narrow while
   payloads stay exact; never coerce a row at the call site. A handler
   that reads nothing is not a transformer but a **constant patch**
   (`beginTiming :: { running :: Boolean }`, dispatched with
@@ -631,9 +649,11 @@ over a logic module, a single exported entry function.
   interaction, not an `updated` fold. Bounded quantities ride whole even
   where a handler replaces only `current`.
 - **Lossy conversions live in the model, not in leaf brackets.** An
-  editor's bracket must round-trip; a lossy normalization belongs after
-  `completed`, where the loop makes it a transaction — never hidden
-  inside a component's `dimap`.
+  editor's bracket must round-trip; a lossy normalization is `settled`
+  on the whole-row stage, where the loop makes it a transaction — never
+  hidden inside a component's `dimap` (cells'
+  `filledTextField @"Formula …" {} # settled commit`, and
+  temperature-converter's two text fields normalizing each other).
 
 ### Wiring
 
@@ -722,7 +742,7 @@ read them, not a summary. Paths are inside the fetched library,
 `.spago/bambik/<tag>/`:
 
 - `src/PUI.purs` — the core type, pipeline semantics, and the
-  combinators: `mvu`/`with`/`looped`/`updated`/`completed`/`action`,
+  combinators: `mvu`/`with`/`looped`/`updated`/`settled`/`action`,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`. The gated display family lives in `PUI.Web.HTML`

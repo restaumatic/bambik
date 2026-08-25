@@ -94,8 +94,8 @@ import Record (get) as Record
 --
 -- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
 -- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (`rmap` a total
--- `Model -> Model` after `completed`), not in a leaf bracket.
+-- that can fail or lose information belong in the model (a `settled`
+-- normalization on the whole-row stage), not in a leaf bracket.
 
 -- UIs
 
@@ -116,7 +116,7 @@ eventLeaf chrome = clicked chrome
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
@@ -140,7 +140,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
-textArea :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
+textArea :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
 textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
@@ -169,7 +169,7 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
 -- | stars there are comes from the data and can differ between contexts —
 -- | and a scale nobody supplied is a compile error rather than a wrong
 -- | screen. The label is drawn above the stars.
-rating :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, max :: Int } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+rating :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, max :: Int } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 rating provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
     _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
@@ -208,7 +208,7 @@ rating provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | It reports on **every change**, following the drag — so whatever it
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
-sliderLive :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-range" (pure unit)
   attribute "label" config.label
@@ -246,7 +246,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
-toggleSwitch :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-switch" (void $ unwrap (staticText config.label))
   node <- gets _.sibling

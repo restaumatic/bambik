@@ -83,3 +83,48 @@ editors) and multiplicity of writers is a feature (dual-bound controls).
 `completed` is the bridge from owned-world editors into joint-world
 citizens; fusing it into leaves would make the joint world self-standing
 at the cost of committing the vocabulary to it.
+
+## The fusion (second step, this branch)
+
+The deferred fusion is done: the vocabulary is committed to the joint
+world, and `completed` is **deleted** (L14 subsumption).
+
+  * **`field @l` became the `Strong` field lens** (absorbing
+    `focusProperty`, also deleted — one name for one thing, and the demo
+    word won). Every label-indexed editor was already `field @l`-lifted
+    internally, so the whole leaf catalogue went open-row by signature
+    alone: `Cons l T () r` became `Cons l T rest r`, in all six
+    vocabularies. An editor is now natively
+    `p { l | rest } { l | rest }` — fed the wide row, edits its field,
+    re-attaches the background the lens retains.
+  * **Selectors stay closed** (`{ l :: Maybe a } → { l :: a }`): they
+    remain owned-merge operands where the `Maybe` is load-bearing
+    (potluck's gather gate), and `required`/`optional` now *absorb* the
+    completion — each adopts a closed selector as a whole-row citizen,
+    deriving the label from the closed rows exactly as before. Label
+    derivation is why the closed leaf shape must survive somewhere:
+    `RowToList`'s fundep cannot read a label off an open row, which is
+    also why `projected`-over-an-editor died (see the demo note below).
+  * **The owned merge's remaining ground**: content merges — chrome
+    beside displays inside gated rungs — and bare type-changing
+    selectors beside the displays that read them. Editors are pipeline
+    stages; parallel writers of one field use `<>`.
+  * **The loop is now load-bearing for exactness** (the residual above,
+    made policy): an editor's background is as fresh as its last feed,
+    so editor ensembles live inside `mvu`/`looped`/`bracketed`, and the
+    one loop-free flow (order-form) wraps its form window in `# looped`,
+    fed by its load action — crud's shape, generalized.
+  * **Demo sweep** (all under L15's full stack, green: zero-warning
+    build, tests, 102 bundles, whole smoke suite): every
+    `# completed` dropped; owned merges of editors became pipeline
+    stages; pure chrome in pipelines is `shownAs identity (…)`;
+    counter-style `text @l # projection f # completed` display stages
+    became `shown @l f`; temperature-converter's two-label
+    `# projected`-editor pattern dissolved into a both-text model
+    normalized by `settled` (one shared logic edit for all six twins) —
+    the honest casualty: adopting an open-row editor under a different
+    model reading has no annotation-free encoding, and the `settled`
+    form is smaller anyway.
+  * **L4 stands amended as the first step recorded**: responsibility is
+    exclusive where the owned merge is used, temporal (last writer wins)
+    in the joint world — which is now the default world for editors.

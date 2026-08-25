@@ -5,7 +5,7 @@ import Prelude (identity, Unit, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ParcelLogic (draftParcel)
-import PUI (PUI, completed, subStrong, mvu)
+import PUI (PUI, subStrong, mvu)
 import PUI.Web.HTML (shownAs, body, staticText, text)
 import PUI.Web.MDC2 (body1, card, elevation20, filledTextField)
 import PUI.Web (Web)
@@ -16,7 +16,7 @@ parcelMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          filledTextField @"Recipient" {} # completed
+          filledTextField @"Recipient" {}
           addressForm # subStrong
           shownAs identity ( body1 $ RecordToRecord.do
               text @"Recipient"
@@ -27,6 +27,6 @@ parcelMDC2 =
       ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
-addressForm = RecordToRecord.do
+addressForm = Semigroupoid.do
   filledTextField @"Street" {}
   filledTextField @"City" {}

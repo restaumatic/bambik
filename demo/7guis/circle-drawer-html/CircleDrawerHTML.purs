@@ -3,20 +3,19 @@ module CircleDrawerHTML (circleDrawerHTML) where
 import Prelude (identity, (#), ($), (<<<), (>>>), Unit, const)
 
 import CircleDrawerLogic (adjustDiameter, canvasCircles, emptyCanvas, redo, selectOrAddCircle, selectedDiameter, undo)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, informed, mvu, toCase, updated)
-import PUI.Web.HTML (attrWith, body, button, div, label, onClickedXY, p, provided, rangeInput, staticText, (:=))
+import PUI.Web.HTML (shownAs, attrWith, body, button, div, label, onClickedXY, p, provided, rangeInput, staticText, (:=))
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerHTML :: Effect Unit
 circleDrawerHTML =
   body $ div $ ( Semigroupoid.do
-      p ( label $ RecordToRecord.do
-          staticText "Diameter "
+      p ( label $ Semigroupoid.do
+          shownAs identity (staticText "Diameter ")
           rangeInput @"Diameter" ) # provided selectedDiameter # updated (informed adjustDiameter)
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
           ( onClickedXY

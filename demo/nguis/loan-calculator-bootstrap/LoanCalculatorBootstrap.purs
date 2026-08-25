@@ -15,7 +15,7 @@ loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $
     card $ Semigroupoid.do
-      ( RecordToRecord.do
+      ( Semigroupoid.do
           textField @"Applicant" {}
           sliderLive @"Amount (€)" {}
           sliderLive @"Term (years)" {}

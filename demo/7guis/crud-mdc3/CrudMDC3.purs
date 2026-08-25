@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, completed, looped, atCase, toCase, updated, with)
+import PUI (action, looped, atCase, toCase, updated, with)
 import PUI.Web.HTML (shownAs, body, staticText, text)
 import PUI.Web.MDC3 (button, card, cardActions, elevation5, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,10 +21,9 @@ crudMDC3 = do
       card $ ( Semigroupoid.do
           indeterminateLinearProgress @"busy" # action (loadPeopleCatalogue catalogue)
           ( Semigroupoid.do
-              ( RecordToRecord.do
-                  filledTextField @"Filter prefix (surname)" {}
-                  filledTextField @"Name" {}
-                  filledTextField @"Surname" {}) # completed
+              filledTextField @"Filter prefix (surname)" {}
+              filledTextField @"Name" {}
+              filledTextField @"Surname" {}
               listOf { selected: _.selected } entries ( shownAs identity $ RecordToRecord.do
                   text @"Surname"
                   staticText ", "

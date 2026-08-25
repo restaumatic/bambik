@@ -6,25 +6,24 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, returnLeg, setReturn, submit)
-import PUI (action, completed, debounced, field, forCases, informed, mvu, pempty, required, toCase, updated)
+import PUI (action, debounced, field, forCases, informed, mvu, pempty, required, toCase, updated)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownCase, body, button, div, input, label, output, p, provided, select, staticText, text)
+import PUI.Web.HTML (shownAs, shownCase, body, button, div, input, label, output, p, provided, select, staticText, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerHTML :: Effect Unit
 flightBookerHTML =
   body $ div $ Semigroupoid.do
     ( Semigroupoid.do
-        ( RecordToRecord.do
-            p ( label $ RecordToRecord.do
-                staticText "Flight type "
-                select @"Flight type"
-                  [ choice @"one-way", choice @"return" ] ) # required
-            p ( label $ RecordToRecord.do
-                staticText "Start date (DD.MM.YYYY) "
-                input "text" # field @"Start date (DD.MM.YYYY)" )) # completed
         p ( label $ RecordToRecord.do
-            staticText "Return date (DD.MM.YYYY) "
+            staticText "Flight type "
+            select @"Flight type"
+              [ choice @"one-way", choice @"return" ] ) # required
+        p ( label $ Semigroupoid.do
+            shownAs identity (staticText "Start date (DD.MM.YYYY) ")
+            input "text" # field @"Start date (DD.MM.YYYY)" )
+        p ( label $ Semigroupoid.do
+            shownAs identity (staticText "Return date (DD.MM.YYYY) ")
             input "text" # field @"Return date (DD.MM.YYYY)" ) # provided returnLeg # updated (informed setReturn)
     ) # mvu plannedTrip
     ( Semigroupoid.do

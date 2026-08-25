@@ -6,8 +6,8 @@ import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedName)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, foreach, mvu, forProperty, projected, settled, toCase, updated)
-import PUI.Web.HTML (attrWith, body, clicked, div, p, staticText, table, td, text, tr, (:=))
+import PUI (foreach, mvu, forProperty, projected, settled, toCase, updated)
+import PUI.Web.HTML (shownAs, attrWith, body, clicked, div, p, staticText, table, td, text, tr, (:=))
 import PUI.Web.Shoelace (card, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -15,11 +15,10 @@ cellsShoelace :: Effect Unit
 cellsShoelace =
   body $
     card $ ( Semigroupoid.do
-        ( RecordToRecord.do
-            p ( RecordToRecord.do
-                staticText "Cell "
-                text @"selectedName" # projected selectedName )
-            textField @"Formula (e.g. =SUM(A0:A5)*2)" {}) # completed # settled commit
+        shownAs identity ( p $ RecordToRecord.do
+            staticText "Cell "
+            text @"selectedName" # projected selectedName )
+        textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
         ( div >>> "style" := "overflow: auto; max-height: 420px;" $
             ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
                 ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty identity ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })

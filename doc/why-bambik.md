@@ -179,9 +179,10 @@ A text field edits a `String`; your model is a whole order. **Strengths**
 are the unary operators that embed the small into the large — and this is
 where optics re-enter, now as UI combinators:
 
-- `Strong` (the `×` strength) gives `focusProperty @l` — the field lens — and its
-  closed-singleton form `field @l`, the merge-operand shape; `subStrong`
-  focuses a whole sub-record while the background row rides along.
+- `Strong` (the `×` strength) gives `field @l` — the field lens, and the
+  lift that makes every label-indexed editor a whole-row citizen;
+  `subStrong` focuses a whole sub-record while the background row rides
+  along.
 - `Choice` (the `+` strength) gives `focusCase @l` — the case prism: handle one
   case, pass the others through.
 

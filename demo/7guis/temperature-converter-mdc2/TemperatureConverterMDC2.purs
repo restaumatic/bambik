@@ -3,17 +3,17 @@ module TemperatureConverterMDC2 (temperatureConverterMDC2) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (projected, informed, mvu, updated)
+import PUI (mvu, settled)
 import PUI.Web.HTML (body)
 import PUI.Web.MDC2 (card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TemperatureConverterLogic (celsiusText, fahrenheitText, fromCelsius, fromFahrenheit, roomTemperature)
+import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 
 temperatureConverterMDC2 :: Effect Unit
 temperatureConverterMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          filledTextField @"°C" {} # projected celsiusText # updated (informed fromCelsius)
-          filledTextField @"°F" {} # projected fahrenheitText # updated (informed fromFahrenheit)
+          filledTextField @"°C" {} # settled fromCelsius
+          filledTextField @"°F" {} # settled fromFahrenheit
       ) # mvu roomTemperature

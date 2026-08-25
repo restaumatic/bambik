@@ -19,12 +19,12 @@
 -- | back to the top — so a stage placed *before* another is not "above" it
 -- | semantically; all stages see every model value on the next loop turn.
 -- |
--- | A trace of a counter (a display stage `# completed`, then an event
+-- | A trace of a counter (a `shown` display stage, then an event
 -- | emitter `# updated increment`, under `mvu { count: 0 }`):
 -- |
 -- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
--- |  2. the display shows `0` and echoes; `completed` widens the echo to
--- |     the full model, which flows on and arms the emitter's replay value
+-- |  2. the display shows `0` and releases the fed row, which flows on
+-- |     and arms the emitter's replay value
 -- |     and `updated`' retained state;
 -- |  3. the user acts: the emitter fires, `updated` folds `increment`
 -- |     into the retained model and emits `{ count: 1 }`;
@@ -88,12 +88,13 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, completed, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (the gated displays, `updated`,
--- `every`, `settled`, `armed`, `edited`, `acted`, `completed`), so a UI component's own row is always
+-- `every`, `settled`, `armed`, `edited`, `acted`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, bracketed, subChoice) as Adopters
@@ -922,27 +923,32 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | `Nothing` it announces `Nothing`; fed `Just` the leaf's own echo
 -- | speaks — exactly one echo per feed either way) and wraps every user
 -- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
--- | honest knowledge instead of starving the merge gate, and only a
+-- | honest knowledge instead of starving anything downstream, and only a
 -- | genuine pick can ever produce the bare value —
 -- | `dropdown @l config options # optional` seeds as `Nothing` (the label
 -- | is not repeated — `RowToList`'s fundep reads it from the leaf's row)
 -- | and the stages demanding the selection stay `provided`-gated until the
--- | user picks.
-optional :: forall l m a ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Functor m => PUI m { | ri } { | ro } -> PUI m { | ri } { | ri }
-optional p = wrap $ unwrap p <#> \p' ->
-  let mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
-    { toUser: \i -> do
-        p'.toUser i
-        case Record.get (Proxy @l) i of
-          Nothing -> do
-            mProp <- Ref.read mPropRef
-            for_ mProp \prop -> prop i
-          Just _ -> pure unit
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        p'.fromUser \o -> prop (Record.insert (Proxy @l) (Just (Record.get (Proxy @l) o)) {})
-    }
+-- | user picks. Like `required`, the result is a **whole-row citizen**
+-- | `p { l :: Maybe a | rest } { l :: Maybe a | rest }` — the echo-completed
+-- | selector lifted under `field @l`, background carried.
+optional :: forall l m a b s ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Cons l (Maybe a) b s => Functor m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
+optional p = field @l scalar
+  where
+  scalar :: PUI m (Maybe a) (Maybe a)
+  scalar = wrap $ unwrap p <#> \p' ->
+    let mPropRef = unsafePerformEffect $ Ref.new Nothing
+    in
+      { toUser: \i -> do
+          p'.toUser (Record.insert (Proxy @l) i {})
+          case i of
+            Nothing -> do
+              mProp <- Ref.read mPropRef
+              for_ mProp \prop -> prop Nothing
+            Just _ -> pure unit
+      , fromUser: \prop -> do
+          Ref.write (Just prop) mPropRef
+          p'.fromUser \o -> prop (Just (Record.get (Proxy @l) o))
+      }
 
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
 -- | Retains the last value flowing through; every `interval`, applies
@@ -1186,8 +1192,8 @@ foreach f w = lcmap f $ wrap do
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks
 
 -- | The **collection editor** — lift an element *editor* (`p a a`, emitting
--- | its own edited row with its key intact, the shape `field @l`/`asField @l
--- | … # completed` produces) over the array: every element emission is folded
+-- | its own edited row, the whole-row-citizen shape a `field @l`-lifted
+-- | leaf produces) over the array: every element emission is folded
 -- | back in **by key** and the whole updated array emits **immediately**.
 -- | It can afford immediacy because it is **input-primed** — the retained fed
 -- | array supplies every unedited slot (`a ≅ a`: the input is a valid
@@ -1206,7 +1212,7 @@ foreach f w = lcmap f $ wrap do
 -- | structurally *cannot* emit it, let alone change it. The carrier
 -- | re-attaches each emission's key itself (it knows which instance
 -- | emitted), completing `{ | r }` back to the full row — which also
--- | dissolves the old convention that the element must `# completed` its key
+-- | dissolves any need for the element to pass its key
 -- | field through. `Ord k` is the reconciler's indexing requirement;
 -- | identity semantics remain equality — keys must be unique.
 edited :: forall @l m node k r a narrow extra. Hosting m node => IsSymbol l => Cons l k r a => Lacks l r => Ord k => Union narrow extra a => PUI m { | narrow } { | r } -> PUI m (Array { | a }) (Array { | a })

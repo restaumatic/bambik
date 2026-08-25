@@ -18,7 +18,7 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (completed, feedback, focusProperty, muted, subStrong, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (feedback, field, muted, subStrong, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -99,10 +99,10 @@ main = do
     { a: 50, c: 2, b: "x" }
     (subStrong (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
 
-  -- focusProperty = the value-level single-field lens — get / set / over.
-  assertEqual "focusProperty/view" 7 (view (focusProperty @"foo") { foo: 7, bar: "x" })
-  assertEqual "focusProperty/set" { foo: 9, bar: "x" } (set (focusProperty @"foo") 9 { foo: 7, bar: "x" })
-  assertEqual "focusProperty/over" { foo: 14, bar: "x" } (over (focusProperty @"foo") (_ * 2) { foo: 7, bar: "x" })
+  -- field = the value-level single-field lens — get / set / over.
+  assertEqual "field/view" 7 (view (field @"foo") { foo: 7, bar: "x" })
+  assertEqual "field/set" { foo: 9, bar: "x" } (set (field @"foo") 9 { foo: 7, bar: "x" })
+  assertEqual "field/over" { foo: 14, bar: "x" } (over (field @"foo") (_ * 2) { foo: 7, bar: "x" })
 
   -- recordToCase (x -> +): whole record computes a value, emitted unconditionally
   -- as case l — the introduce-family member Choice can't have, free on any Profunctor.
@@ -479,22 +479,24 @@ main = do
     fire gProp 3
     Ref.read outs >>= assertEqual "updated: event folded into retained model" [ { n: 10 }, { n: 13 } ]
 
-  -- completed (output completion): fields the UI component doesn't produce are
-  -- carried from the retained input; emissions are trimmed first, so a fat
-  -- runtime emission cannot shadow carried fields.
+  -- field (the leaf lift): a scalar control lifted under a label is a
+  -- whole-row citizen — the background is retained by the Strong state
+  -- channel and re-attached to every emission, so the stage is
+  -- runtime-complete by construction and no output completion exists.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (completed (probe gProp :: PUI Effect { a :: Int, b :: String } { a :: Int }))
+    m <- unwrap (field @"a" (probe gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp { a: 1 }
-    Ref.read outs >>= assertEqual "completed: gated before input" []
+    fire gProp 1
+    Ref.read outs >>= assertEqual "field: gated before input" []
     m.toUser { a: 0, b: "kept" }
-    fire gProp { a: 9 }
-    Ref.read outs >>= assertEqual "completed: emission over carried input" [ { a: 9, b: "kept" } ]
-    fire gProp (unsafeCoerce { a: 7, b: "stale" } :: { a :: Int })
-    Ref.read outs >>= assertEqual "completed: fat emission trimmed, carried field kept"
-      [ { a: 9, b: "kept" }, { a: 7, b: "kept" } ]
+    fire gProp 9
+    Ref.read outs >>= assertEqual "field: emission over carried background" [ { a: 9, b: "kept" } ]
+    m.toUser { a: 2, b: "fresh" }
+    fire gProp 7
+    Ref.read outs >>= assertEqual "field: background follows the latest feed"
+      [ { a: 9, b: "kept" }, { a: 7, b: "fresh" } ]
 
   -- with (the discharge form, announce's composition closure): the wrapped
   -- stage receives its initial state at registration and the result is
@@ -687,7 +689,7 @@ main = do
         "coresolve∘resolve = debounced: only the last of the burst passes, after quiescence" [ "burst2" ]
 
   -- == focusCase (the value-level case prism) on (->): the Choice strength at ==
-  -- == row granularity, checked like subStrong/focusProperty above. ==
+  -- == row granularity, checked like subStrong/field above. ==
 
   assertEqual "focusCase/match"
     (.ok "5" :: [ ok :: String, err :: String ])

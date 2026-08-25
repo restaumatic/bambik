@@ -5,7 +5,7 @@ import Prelude (identity, Unit, ($), (#))
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
 import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
-import PUI (completed, every, mvu, projected, required)
+import PUI (every, mvu, projected, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shownAs, body)
 import PUI.Web.MDC3 (elevation5, topAppBar)
@@ -18,7 +18,7 @@ orderDashboardMDC3 =
       topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
           every tickPeriod ordersArrive
           rangePicker @"Showing" {}
-            [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required # completed
+            [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
           board $ Semigroupoid.do
             shownAs identity (statTile { label: "Orders", unit: "placed" } # projected ordersCount)
             shownAs identity (statTile { label: "Revenue", unit: "EUR" } # projected revenue)

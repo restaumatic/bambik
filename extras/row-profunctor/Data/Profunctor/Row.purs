@@ -67,10 +67,9 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  atField, atProperty, projection, subStrong, focusProperty    feedback
--- |              forProperty, projected,         completed
--- |              toField, field, asField,
--- |              required
+-- | p {|a} {|b}  atField, atProperty, projection, subStrong, field, required  feedback
+-- |              forProperty, projected,
+-- |              toField, asField
 -- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
 -- | p {|a} [|b]  toCase, recordToCase,           subResolving, focusProperty  folding
 -- |              toCases                         backgroundProperty
@@ -79,16 +78,17 @@
 -- | ```
 -- |
 -- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
--- | nothing threaded and no state — `field` wraps, `asField`/`forCase` rename
+-- | nothing threaded and no state — `atField` reads, `asField`/`forCase` rename
 -- | a canonical row, `toCase` introduces one. The **middle** column carries a
 -- | **background** the strength threads. The sub-row family is named for the
 -- | strength it stands on, so each name is the first constraint in its own
 -- | signature (`subStrong`/`subChoice`/`subResolving`/`subRetaining`) — a
 -- | strength names the carrier *pair*, so no side is privileged, where a
 -- | carrier word would be honest on the pure shapes and half-true on the
--- | mixed ones. The rest name a single label (`focusProperty`/`focusCase`)
--- | or that label's complement (`backgroundProperty`/`backgroundCase`), and
--- | `completed` completes the input from what the UI component did not produce. The
+-- | mixed ones. The rest name a single label (`field`/`focusCase`)
+-- | or that label's complement (`backgroundProperty`/`backgroundCase`);
+-- | `field` is also the leaf lift, making every label-indexed editor a
+-- | whole-row citizen, and `required` its selector sibling. The
 -- | **right** column ties a state channel off with
 -- | the co-strength — one trace row form per shape, each seeded but `iterate`
 -- | (entities pre-exist, events occur).
@@ -130,17 +130,17 @@
 -- | their input and share their output. So open-row adopters exist at
 -- | record-input and variant-output and nowhere else: a partial variant read
 -- | is not total, and a partial record build would have to invent the
--- | remaining fields, which is `completed`'s job over `Strong`.
+-- | remaining fields, which only `field @l`'s retained background can
+-- | supply over `Strong`.
 -- |
 -- | The output-`×` rename needs no entry of its own — it is
 -- | `toField @l`, exactly as a label-indexed emitter is `recordToCase @l`
--- | at the leaf. `field` and `asField` are the fused both-side forms
--- | packaged controls want (a fixed core row renamed at the surface):
--- | `field @l = atField @l <<< toField @l identity`, and the deliberately
+-- | at the leaf. `asField` is the fused both-side rename packaged controls
+-- | want (a fixed core row renamed at the surface), and the deliberately
 -- | absent `+ → +` fusion is `atCase @l # toCase @l' f`. The one entry
--- | outside the grid is `required` (a canonical-row adjustment, not a row
--- | reshaping; its dual `optional` needs the carrier and lives in `PUI`),
--- | plus `splitVariant`, a plain function rather than a placement.
+-- | outside the grid is `splitVariant`, a plain function rather than a
+-- | placement (`required`'s dual `optional` needs the carrier and lives in
+-- | `PUI`).
 -- |
 -- | The merge's two obligations are per-side and dual, and they are what the
 -- | constraint vocabulary below spells out: on an **input** side, where does

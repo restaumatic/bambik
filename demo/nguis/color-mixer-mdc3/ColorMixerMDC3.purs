@@ -6,7 +6,7 @@ import ColorMixerLogic (applyPreset, duskViolet, hexText, mixOf, palette, rgb, r
 import Data.Maybe (Maybe)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (blank, completed, foreach, mvu, projected, toCase, updated)
+import PUI (blank, foreach, mvu, projected, toCase, updated)
 import PUI.Web.HTML (shownAs, attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,9 +16,9 @@ colorMixerMDC3 =
   body $
     elevation5 $
       card $ ( Semigroupoid.do
-          sliderLive @"Red" {} # completed
-          sliderLive @"Green" {} # completed
-          sliderLive @"Blue" {} # completed
+          sliderLive @"Red" {}
+          sliderLive @"Green" {}
+          sliderLive @"Blue" {}
           ( div $ Semigroupoid.do
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $

@@ -188,8 +188,8 @@ import Type.Proxy (Proxy(..))
 --
 -- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
 -- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (`rmap` a total
--- `Model -> Model` after `completed`), not in a leaf bracket.
+-- that can fail or lose information belong in the model (a `settled`
+-- normalization on the whole-row stage), not in a leaf bracket.
 
 -- UIs
 
@@ -372,20 +372,20 @@ menuItem provided = recordToCase @l $ eventLeaf $
 -- | any, so the label is never lost while the field is filled in.
 -- |
 -- | Shows the string it is given and reports each edit; typing is never
--- | interrupted by values arriving from elsewhere. Attach it to a field of
--- | the model with `# asField @l`.
-filledTextField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
+-- | interrupted by values arriving from elsewhere. A whole-row citizen:
+-- | fed the wide row, it edits field `l` and carries the rest.
+filledTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
 filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
-outlinedTextField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
+outlinedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
 outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
-debouncedTextField :: forall @l r provided. IsSymbol l => Lacks l () => Cons l String () r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, ms :: Number } => { | provided } -> PUI Web { | r } { | r }
+debouncedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, ms :: Number } => { | provided } -> PUI Web { | r } { | r }
 debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just config.ms) config.floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
@@ -419,7 +419,7 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
 -- | The **multi-line text field**, sized in `rows` and `columns` of text —
 -- | a note, a description, a message. Otherwise `filledTextField`: shows a
 -- | string, reports each edit, never interrupts typing.
-filledTextArea :: forall @l r. IsSymbol l => Lacks l () => Cons l String () r => { columns :: Int, rows :: Int } -> PUI Web { | r } { | r }
+filledTextArea :: forall @l r rest. IsSymbol l => Cons l String rest r => { columns :: Int, rows :: Int } -> PUI Web { | r } { | r }
 filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "md-filled-text-field" (pure unit)
   attribute "type" "textarea"
@@ -454,7 +454,7 @@ filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l)
 -- | `ticked` is what the field holds once ticked, before the model has ever
 -- | supplied a value — stated by the caller (`{ ticked: {} }` for a plain
 -- | yes/no fact), never conjured from the type.
-checkbox :: forall @l a r. IsSymbol l => Lacks l () => Cons l (Maybe a) () r => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
+checkbox :: forall @l a r rest. IsSymbol l => Cons l (Maybe a) rest r => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
 checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l) $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     aRef <- liftEffect $ Ref.new ticked
@@ -526,7 +526,7 @@ radioLeaf options =
 -- | The Material **switch**: a setting that takes effect the moment it is
 -- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
 -- | to be submitted with the rest of a form; a switch acts immediately.)
-toggleSwitch :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
@@ -562,14 +562,14 @@ switchLeaf lbl =
 -- | It reports on **release**, once per adjustment, so one drag is one
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
-slider :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
-sliderLive :: forall @l r provided. IsSymbol l => Lacks l () => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
@@ -706,7 +706,7 @@ segmentedButtonCss = """
 -- | showing a checkmark while on. Chips come in sets where any number may
 -- | be active at once — dietary tags, categories, facets. Put them in a
 -- | `chipSet`.
-filterChip :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+filterChip :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 filterChip provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
 
 chipLeaf :: String -> PUI Web Boolean Boolean
@@ -735,7 +735,7 @@ chipLeaf lbl = wrap do
 -- | `label` is what assistive technology announces. The on glyph renders
 -- | filled, so the same glyph in both slots still reads as off and on. The
 -- | compact form of a `toggleSwitch`, for list rows and toolbars.
-iconToggle :: forall @l r provided. IsSymbol l => Lacks l () => Cons l Boolean () r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { onIcon :: String, offIcon :: String, label :: String } => { | provided } -> PUI Web { | r } { | r }
+iconToggle :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { onIcon :: String, offIcon :: String, label :: String } => { | provided } -> PUI Web { | r } { | r }
 iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
@@ -770,10 +770,9 @@ iconToggleLeaf config = wrap do
 -- | `provided` pane per section, each pane editing its own part of the
 -- | model.
 tabBar
-  :: forall @l provided a r
+  :: forall @l provided a r rest
    . IsSymbol l
-  => Lacks l ()
-  => Cons l a () r
+  => Cons l a rest r
   => Eq a
   => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String }
   => Array { | provided }
@@ -828,7 +827,7 @@ indeterminateLinearProgress = wrap do
     { toUser: \r -> do
         setAttribute node "style" (if Record.get (Proxy @l) r then visibleStyle else hiddenStyle)
         -- display echo (like `text`): announce the `{}` per feed, so gated
-        -- merges and `completed` stages keep flowing
+        -- merges and whole-row editor stages keep flowing
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
     , fromUser: \prop -> do

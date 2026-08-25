@@ -4,7 +4,7 @@ import Prelude (identity, (#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (completed, projection, mvu, projected)
+import PUI (projection, mvu, projected)
 import PUI.Web.HTML (shownAs, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,8 +15,8 @@ tipCalculatorMDC3 =
   body $
     elevation5 $
       card $ ( Semigroupoid.do
-          filledTextField @"Bill amount" {} # completed
-          slider @"Tip percentage" {} # completed
+          filledTextField @"Bill amount" {}
+          slider @"Tip percentage" {}
           shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole
@@ -25,7 +25,7 @@ tipCalculatorMDC3 =
               staticText "Split between: "
               text @"Split between" # projection whole
               staticText " people" )
-          slider @"Split between" {} # completed
+          slider @"Split between" {}
           shownAs identity ( bodyMedium $ RecordToRecord.do
               staticText "Tip amount: "
               text @"tipAmount" # projected tipAmountText )

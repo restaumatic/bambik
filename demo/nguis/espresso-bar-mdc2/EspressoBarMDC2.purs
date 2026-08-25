@@ -20,24 +20,23 @@ espressoBarMDC2 =
       topAppBar { title: "Espresso Bar" } $
         card $ Semigroupoid.do
           ( Semigroupoid.do
-              RecordToRecord.do
-                tabBar @"drink"
-                  [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
-                filledTextField @"Your name" {}
-                segmentedButton @"Size"
-                  [ choice @"Small", choice @"Medium", choice @"Large" ] # required
-                select @"Milk" {}
-                  [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
-                radioButton @"Roast"
-                  [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
-                sliderLive @"Sugar" {}
-                chipSet RecordToRecord.do
-                  filterChip @"Extra shot" {}
-                  filterChip @"Decaf" {}
-                toggleSwitch @"Takeaway cup" {}
-                iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
-                checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
-                divider
+              tabBar @"drink"
+                [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
+              filledTextField @"Your name" {}
+              segmentedButton @"Size"
+                [ choice @"Small", choice @"Medium", choice @"Large" ] # required
+              select @"Milk" {}
+                [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
+              radioButton @"Roast"
+                [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
+              sliderLive @"Sugar" {}
+              chipSet Semigroupoid.do
+                filterChip @"Extra shot" {}
+                filterChip @"Decaf" {}
+              toggleSwitch @"Takeaway cup" {}
+              iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
+              checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
+              shownAs identity divider
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem @"The usual" {} # with theUsual
                   menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })

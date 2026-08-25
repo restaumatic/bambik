@@ -5,8 +5,8 @@ import Prelude ((#), ($), (<<<), Unit, const, show)
 import CounterLogic (freshCount, increment)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (completed, projection, mvu, updated)
-import PUI.Web.HTML (body, h4, text)
+import PUI (mvu, updated)
+import PUI.Web.HTML (body, h4, shown)
 import PUI.Web.Shoelace (button, card)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -14,6 +14,6 @@ counterShoelace :: Effect Unit
 counterShoelace =
   body $
     card $ ( Semigroupoid.do
-        h4 (text @"count") # projection show # completed
+        h4 (shown @"count" show)
         button @"Count" {} # updated (match { "Count": const <<< increment })
     ) # mvu freshCount

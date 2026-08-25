@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, completed, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,10 +20,9 @@ crudBootstrap = do
     card $ ( Semigroupoid.do
         pempty # action (loadPeopleCatalogue catalogue)
         ( Semigroupoid.do
-            ( RecordToRecord.do
-                textField @"Filter prefix (surname)" {}
-                textField @"Name" {}
-                textField @"Surname" {}) # completed
+            textField @"Filter prefix (surname)" {}
+            textField @"Name" {}
+            textField @"Surname" {}
             ( "style" := "max-height: 200px; overflow: auto;" $ listGroup $
                 ( clicked ( ( listGroupItem $ RecordToRecord.do
                     text @"Surname"
