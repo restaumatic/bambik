@@ -65,6 +65,7 @@ module PUI
   , resolveFor
   , updated
   , module Adopters
+  , module Joining
   , module Looping
   , module Seeding
   )
@@ -99,6 +100,8 @@ import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, bracketed, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
+import Data.Profunctor.Joining (class Joining)
+import Data.Profunctor.Joining (class Joining, joint) as Joining
 import Data.Profunctor.Looping (class Looping)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
 import Data.Profunctor.Seeding (class Seeding, seeded)
@@ -374,29 +377,15 @@ instance Functor m => Coretaining (PUI m) where
 -- | slider and a numeric input bound to one quantity) — a pattern the
 -- | owned merge rejects by `DisjointLabels` because its union requires
 -- | disjointness, a requirement this combination does not have.
--- |
--- | **Why a `Semigroup` instance and not a class or combinator**: strip
--- | the row machinery from a ×→× combination and what remains is an
--- | associative binary operation at *fixed* types — the ecosystem's name
--- | for exactly that. The owned merge is a bespoke class because its
--- | constraints are load-bearing (they compute the merged row and carry
--- | the gates' ownership evidence); here there is nothing left for a
--- | class to say, and the operation isn't even row-specific — it is
--- | lawful at any `a b` (two displays of one value, two emitters of one
--- | event). Of the two candidate semigroups on the type, this
--- | constraint-free juxtaposition is the canonical one; the pointwise
--- | lift would demand `Semigroup b` and invent a combination of values,
--- | where last-writer-wins is a theorem of the synchronous loop rather
--- | than a policy in the instance. Deliberately **no `Monoid`**: a lawful
--- | unit must announce at record output and be silent at variant output
--- | (L5), and one polymorphic `mempty` cannot be both — the units stay
--- | per-direction (`pempty`, `silence`).
--- |
--- | Laws: associativity (both channels sequence left-to-right, so
--- | re-association changes nothing observable); registration order =
--- | code order = DOM order.
-instance Apply m => Semigroup (PUI m a b) where
-  append p1 p2 = wrap ado
+-- | The class (`Data.Profunctor.Joining`) is at the **profunctor kind**,
+-- | deliberately not `Semigroup (PUI m a b)`: PureScript has no
+-- | quantified constraints, so an instance on the saturated type could
+-- | never be carrier structure a signature abstracts over, and the
+-- | ecosystem's function-like `Semigroup` lifts pointwise — the class's
+-- | header carries the full argument, the laws, and the `ArrowPlus`
+-- | literature pointer.
+instance Apply m => Joining (PUI m) where
+  joint p1 p2 = wrap ado
     p1' <- unwrap p1
     p2' <- unwrap p2
     in

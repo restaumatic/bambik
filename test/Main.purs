@@ -34,7 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, dispatched, edited, foreach, joint, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -541,6 +541,35 @@ main = do
     Ref.read outs >>= assertEqual "×→× gating: completed record propagates" [ { a: 1, b: "s" } ]
     fire p1Prop { a: 2 }
     Ref.read outs >>= assertEqual "×→× gating: later emissions merge with retained side" [ { a: 1, b: "s" }, { a: 2, b: "s" } ]
+
+  -- the joint merge (Joining): broadcast in — every side is fed every
+  -- input — interleave out: either side's emission forwards unchanged,
+  -- and both groupings observe the same stream (associativity).
+  do
+    p1Ins <- Ref.new ([] :: Array Int)
+    p2Ins <- Ref.new ([] :: Array Int)
+    p3Ins <- Ref.new ([] :: Array Int)
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    p3Prop <- Ref.new Nothing
+    outsL <- Ref.new ([] :: Array String)
+    outsR <- Ref.new ([] :: Array String)
+    l <- unwrap (joint (joint (probeIO p1Ins p1Prop) (probeIO p2Ins p2Prop)) (probeIO p3Ins p3Prop) :: PUI Effect Int String)
+    l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
+    l.toUser 7
+    Ref.read p1Ins >>= assertEqual "joint: broadcast reaches the left side" [ 7 ]
+    Ref.read p2Ins >>= assertEqual "joint: broadcast reaches the middle side" [ 7 ]
+    Ref.read p3Ins >>= assertEqual "joint: broadcast reaches the right side" [ 7 ]
+    fire p2Prop "mid"
+    fire p3Prop "right"
+    fire p1Prop "left"
+    Ref.read outsL >>= assertEqual "joint: emissions interleave in firing order" [ "mid", "right", "left" ]
+    r <- unwrap (joint (probeIO p1Ins p1Prop) (joint (probeIO p2Ins p2Prop) (probeIO p3Ins p3Prop)) :: PUI Effect Int String)
+    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
+    fire p2Prop "mid"
+    fire p3Prop "right"
+    fire p1Prop "left"
+    Ref.read outsR >>= assertEqual "joint: re-association changes nothing observable" [ "mid", "right", "left" ]
 
   -- +→× unit law on the right: variantToRecord g pempty = g.
   do

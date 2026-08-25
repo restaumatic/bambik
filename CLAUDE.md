@@ -88,7 +88,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 - **src/PUI.purs** — the core profunctor and the carrier-independent algebra's
   hub. Instances: `Profunctor`, `Strong`, `Choice`, `Semigroupoid`, `Category`
-  (`identity` is the echo wire), the four row merges, the two mixed strengths
+  (`identity` is the echo wire), the four row merges, `Joining` (the ungated
+  joint merge — broadcast in, interleave out, last writer wins; the class is
+  at the profunctor kind, deliberately not `Semigroup (PUI m a b)`), the two mixed strengths
   (`Resolving`, `Retaining`), and the **trace quartet** — `Costrong`/`Cochoice`
   (ecosystem duals of `Strong`/`Choice`: state feedback and iteration;
   knowledge-gated) plus the coined `Coresolving`/`Coretaining` (terminating
@@ -116,6 +118,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | `mvu` | the named app shape, `with seed (looped w)`, closed to `{}` |
   | `seeded` | the seeded echo wire (`Seeding`'s method): pass-through plus one emission of the seed |
   | `looped` | the `×`-diagonal self-trace (`Looping`'s method), re-entrancy-guarded |
+  | `joint` | the ungated joint merge (`Joining`'s method, RESEARCH): two same-typed whole-row citizens over one channel pair — broadcast in, interleave out, last writer wins; for controls deliberately writing one field (tip-calculator's dual-bound slider + range) |
   | `settled` | `rmap`-only normalization over a stated sub-row footprint |
   | `updated` | the Mealy update stage: fold each event emission of a wrapped `×→+` component into the retained value; **both sides subsume** |
   | `informed` | the dispatch adapter: event payload laid over the retained model row, fresh knowledge wins (A12) |

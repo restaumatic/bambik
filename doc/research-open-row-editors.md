@@ -30,15 +30,17 @@ standard objections under scrutiny:
 
 ## What was built
 
-1. **The joint merge is a `Semigroup` instance** — the whole mechanism:
+1. **The joint merge** — the whole mechanism (first landed as
+   `instance Apply m => Semigroup (PUI m a b)`; revised in the third
+   step, see below):
 
    ```purescript
-   instance Apply m => Semigroup (PUI m a b)   -- broadcast in, interleave out
+   joint :: p a b -> p a b -> p a b   -- broadcast in, interleave out
    ```
 
    Associative, registration order = code order = DOM order, no gate, no
    trim, no ownership — the shared-record sibling of `recordToVariant`'s
-   ungated broadcast. Forms combine with `<>`.
+   ungated broadcast.
 
 2. **The open-row editor is `leaf # completed`** — the shape already
    existed; fusing it into leaves is mechanical (`completed`'s constraint
@@ -108,7 +110,7 @@ world, and `completed` is **deleted** (L14 subsumption).
   * **The owned merge's remaining ground**: content merges — chrome
     beside displays inside gated rungs — and bare type-changing
     selectors beside the displays that read them. Editors are pipeline
-    stages; parallel writers of one field use `<>`.
+    stages; parallel writers of one field use `joint`.
   * **The loop is now load-bearing for exactness** (the residual above,
     made policy): an editor's background is as fresh as its last feed,
     so editor ensembles live inside `mvu`/`looped`/`bracketed`, and the
@@ -128,3 +130,26 @@ world, and `completed` is **deleted** (L14 subsumption).
   * **L4 stands amended as the first step recorded**: responsibility is
     exclusive where the owned merge is used, temporal (last writer wins)
     in the joint world — which is now the default world for editors.
+
+## The class (third step)
+
+The joint merge moved from `instance Apply m => Semigroup (PUI m a b)`
+to a class at the **profunctor kind** — `Data.Profunctor.Joining`,
+beside `Seeding` and `Looping` (juxtaposition as carrier structure),
+method `joint`. The instance at the saturated type was structure at the
+wrong kind twice over: PureScript has no quantified constraints, so
+`forall a b. Semigroup (p a b)` is unstatable and the operation could
+never be carrier structure a signature abstracts over; and the
+ecosystem's function-like `Semigroup` lifts **pointwise**
+(`Semigroup b => Semigroup (a -> b)`), so claiming broadcast/interleave
+as *the* semigroup of `PUI m a b` would give `<>` a different algebra on
+different carriers. The literature pointer is `ArrowPlus`'s `<+>` (the
+arrows' monoid, minus `arr`); no unit member, deliberately — the lawful
+unit differs by output shape (L5), so the units stay per-direction. No
+`(->)` instance (a function cannot interleave two emission streams);
+`Semigroup r => Joining (Cont r)` runs both continuations and combines
+the answers, recorded in `Cont`'s exhaustive inventory. Laws (broadcast,
+interleave order, observational associativity) run on `PUI Effect`
+probes in `spago test`; tip-calculator's trio reads
+``filledTextField @"Bill amount" {} `joint` slider @"Tip percentage" {}
+`joint` rangeInput @"Tip percentage"``.
