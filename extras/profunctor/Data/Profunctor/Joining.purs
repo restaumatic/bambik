@@ -1,12 +1,18 @@
--- | **Juxtaposition as carrier structure** (`Seeding` and `Looping`'s
--- | sibling): two components of the *same* type run over one channel
--- | pair — both are fed every input (broadcast), and either one's
--- | emission forwards unchanged (interleave, **last writer wins** under
--- | a synchronous loop). The ungated joint merge: no gate (nothing
+-- | **Juxtaposition**: two components of the *same* type run over one
+-- | channel pair — both are fed every input (broadcast), and either
+-- | one's emission forwards unchanged (interleave, **last writer wins**
+-- | under a synchronous loop). The ungated joint merge: no gate (nothing
 -- | partial to await), no union (emissions arrive whole), no ownership
--- | (everyone speaks the whole value) — and therefore no row in sight,
--- | which is why it lives beside the carrier-structure classes rather
--- | than in `Data.Profunctor.Row.*`.
+-- | (everyone speaks the whole value).
+-- |
+-- | This module is a **complement of the ecosystem's own**, not
+-- | bambik's: it is `ArrowPlus`'s `<+>` — the arrows' monoid, minus
+-- | `arr` — at the profunctor kind, a class the ecosystem names but
+-- | never built at this kind. It claims a `Data.Profunctor.*` name
+-- | because it belongs in that family beside `Strong`/`Choice`, and it
+-- | lives under the separate `extras/profunctor` source root to say so —
+-- | nothing here mentions `PUI`, a row, or a carrier, so it could be
+-- | lifted into `purescript-profunctor` unchanged.
 -- |
 -- | Laws:
 -- |
@@ -17,21 +23,19 @@
 -- |   * dinaturality: `dimap f g (joint p q) = joint (dimap f g p) (dimap f g q)`
 -- |     (broadcast and interleave are label- and value-blind).
 -- |
--- | **Why a class at the profunctor kind and not
--- | `Semigroup (PUI m a b)`**: the operation is associative and binary at
+-- | **Why a class at the profunctor kind and not a `Semigroup` instance
+-- | at the saturated type `p a b`**: the operation is associative and
+-- | binary at
 -- | fixed types, but a `Semigroup` instance at the *saturated* type is
 -- | structure at the wrong kind twice over. PureScript has no quantified
 -- | constraints, so `forall a b. Semigroup (p a b)` is unstatable — an
 -- | instance on the application could never be *carrier structure* that a
 -- | derived form abstracts over, where `Joining p` can appear in any
--- | signature beside `Looping p` and the merges. And the ecosystem's
+-- | signature beside `Strong p` and its kin. And the ecosystem's
 -- | convention for function-like types is the **pointwise** semigroup
 -- | (`Semigroup b => Semigroup (a -> b)` combines outputs), so claiming
 -- | broadcast/interleave as *the* semigroup of the saturated type would
--- | give `<>` a different algebra on different carriers. The literature's
--- | name for this operation is `ArrowPlus`'s `<+>` (arrows' monoid,
--- | minus `arr`); the ecosystem carries no profunctor form of it, so the
--- | class is bambik's, with the pointer stated.
+-- | give `<>` a different algebra on different carriers.
 -- |
 -- | **No unit member, deliberately**: the lawful unit differs by output
 -- | shape — a record output must *announce* its `{}`, a variant output

@@ -7,7 +7,8 @@ description: How to devlop Profunctor User Interfaces Web applications featuring
 
 A bambik application is one profunctor pipeline: every UI component is a
 profunctor over its carrier, displaying an input and emitting an
-output, and the app composes them with qualified-do pipelines and the
+output, and the app composes them with qualified-do pipelines (editors
+are whole-row pipeline stages) and the
 four row merges. It is a pair of modules with a one-way dependency: a
 **view module** exporting a single entry function named after the
 application (never `main`), mounted at the document body, importing the

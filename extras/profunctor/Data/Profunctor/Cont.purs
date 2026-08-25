@@ -42,9 +42,10 @@
 -- |
 -- | The two lists below are **exhaustive** over every profunctor subclass in
 -- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
--- | plus `Wander`, the four coined strengths in `extras/profunctor`
--- | (`Resolving`/`Coresolving`/`Retaining`/`Coretaining`), and bambik's own
--- | `Acting`, `Seeding`, `Looping`, `Joining` and four row merges. Nothing is merely unwritten:
+-- | plus `Wander`, the `extras/profunctor` complements (the four coined
+-- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining` and the
+-- | juxtaposition `Joining`), and bambik's own
+-- | `Acting`, `Seeding`, `Looping` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
 -- | What it cannot inhabit, and why — the same reasons that shape the

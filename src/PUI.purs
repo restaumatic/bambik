@@ -2,7 +2,8 @@
 -- |
 -- | **The duoidal reading.** `PUI` composes two ways: sequentially
 -- | (`Semigroupoid.do`, `⊳` — emissions feed downstream) and in parallel
--- | (the row merges, `⊗` — the input broadcasts to every operand). The two
+-- | (the row merges, `⊗` — the input broadcasts to every operand; at
+-- | equal types, `joint`, the ungated juxtaposition). The two
 -- | interact as in a duoidal category: a pipeline can only emulate a merge
 -- | through a **comonoid** — a stage that *duplicates* its input onward, not
 -- | merely consumes it. A fulfillment-gated display is exactly that

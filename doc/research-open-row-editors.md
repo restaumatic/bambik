@@ -135,8 +135,9 @@ world, and `completed` is **deleted** (L14 subsumption).
 
 The joint merge moved from `instance Apply m => Semigroup (PUI m a b)`
 to a class at the **profunctor kind** — `Data.Profunctor.Joining`,
-beside `Seeding` and `Looping` (juxtaposition as carrier structure),
-method `joint`. The instance at the saturated type was structure at the
+method `joint`, homed in `extras/profunctor` beside the coined
+strengths: an ecosystem complement (no row, no carrier, liftable
+unchanged), not bambik's own. The instance at the saturated type was structure at the
 wrong kind twice over: PureScript has no quantified constraints, so
 `forall a b. Semigroup (p a b)` is unstatable and the operation could
 never be carrier structure a signature abstracts over; and the
