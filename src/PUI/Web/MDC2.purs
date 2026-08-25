@@ -178,9 +178,12 @@ import Type.Proxy (Proxy(..))
 -- bar, bottom navigation, date pickers, navigation rail, sheets) are
 -- absent here too.
 --
--- Internally the live leaf of a compound is `field @l`-lifted (the
--- closed-singleton form: `dimap`-only, and runtime-exact as the record
--- merges require) and its chrome is hand-fused in the `Web` monad
+-- Internally the live leaf of a compound is `field @l`-lifted — `field`
+-- is the `Strong` field lens, so every editor is a whole-row citizen
+-- `p { l | rest } { l | rest }`: fed the wide row it edits its field, and
+-- each emission re-attaches the background the lens retains (runtime
+-- completeness by construction; freshness rests on the enclosing loop's
+-- re-broadcast) — and its chrome is hand-fused in the `Web` monad
 -- (decoration as implementation technique — and a necessity: abstract
 -- labels cannot flow through the merges' `Nub`, so a skolem-labeled
 -- operand can't be merged); all-chrome groups (button content, progress
@@ -394,8 +397,8 @@ debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption
 -- variant plus an `MDCTextField` foundation, values written through the
 -- foundation's `value` property so the label float and line ripple stay
 -- foundation-managed. Focus-guarded like `Web.input`: model updates never
--- clobber the field being typed in, but still echo so merge gates keep
--- flowing. Debouncing sits at the DOM boundary (`Web.onInputDebounced`),
+-- clobber the field being typed in, but still echo so the channel stays
+-- live. Debouncing sits at the DOM boundary (`Web.onInputDebounced`),
 -- in front of the wire rather than on it, so the field stays loop-safe.
 textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
 textFieldLeaf variant mDebounce floatingLabel = wrap do
@@ -521,7 +524,8 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
           Just newa -> do
             setChecked parts.inputNode true
             Ref.write newa aRef
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop ma
     , fromUser: \prop -> do
@@ -607,7 +611,8 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
   pure
     { toUser: \b -> do
         setBoolProp "selected" comp b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -698,7 +703,8 @@ sliderLeaf live label = wrap do
         setSliderValue comp q.current
         -- construction may have happened before styles applied; re-measure
         layoutComponent comp
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -844,7 +850,8 @@ chipLeaf lbl = wrap do
     { toUser: \b -> do
         Ref.write b stateRef
         render b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -885,7 +892,8 @@ iconToggleLeaf config = wrap do
   pure
     { toUser: \b -> do
         setBoolProp "on" comp b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef

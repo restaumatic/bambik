@@ -131,7 +131,7 @@ textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => Co
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (Fluent keeps the real `<input>` in the light DOM, so
-  -- the guard checks containment), but still echo so merge gates flow
+  -- the guard checks containment), but still echo so the channel stays live
   element "fluent-text-input" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
@@ -164,7 +164,8 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
   pure
     { toUser: \b -> do
         setChecked node b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -218,7 +219,8 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
         setNumberProp "valueAsNumber" node q.current
         Ref.write false busyRef
         readout.toUser { readout: toString q.current }
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef

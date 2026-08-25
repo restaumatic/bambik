@@ -374,7 +374,27 @@ instance Functor m => Coretaining (PUI m) where
 -- | slider and a numeric input bound to one quantity) — a pattern the
 -- | owned merge rejects by `DisjointLabels` because its union requires
 -- | disjointness, a requirement this combination does not have.
--- | Associative; registration order = code order = DOM order.
+-- |
+-- | **Why a `Semigroup` instance and not a class or combinator**: strip
+-- | the row machinery from a ×→× combination and what remains is an
+-- | associative binary operation at *fixed* types — the ecosystem's name
+-- | for exactly that. The owned merge is a bespoke class because its
+-- | constraints are load-bearing (they compute the merged row and carry
+-- | the gates' ownership evidence); here there is nothing left for a
+-- | class to say, and the operation isn't even row-specific — it is
+-- | lawful at any `a b` (two displays of one value, two emitters of one
+-- | event). Of the two candidate semigroups on the type, this
+-- | constraint-free juxtaposition is the canonical one; the pointwise
+-- | lift would demand `Semigroup b` and invent a combination of values,
+-- | where last-writer-wins is a theorem of the synchronous loop rather
+-- | than a policy in the instance. Deliberately **no `Monoid`**: a lawful
+-- | unit must announce at record output and be silent at variant output
+-- | (L5), and one polymorphic `mempty` cannot be both — the units stay
+-- | per-direction (`pempty`, `silence`).
+-- |
+-- | Laws: associativity (both channels sequence left-to-right, so
+-- | re-association changes nothing observable); registration order =
+-- | code order = DOM order.
 instance Apply m => Semigroup (PUI m a b) where
   append p1 p2 = wrap ado
     p1' <- unwrap p1
@@ -448,7 +468,14 @@ instance Applicative m => Seeding (PUI m) where
 -- | supplies the sibling cross-feed the gated merge deliberately omits —
 -- | every operand sees every emission re-broadcast, and per-operand
 -- | *retention* falls out of the merge gates (each gate holds its side's
--- | last contribution). The instance is the primitive the class exists
+-- | last contribution). For **whole-row editor stages** the re-broadcast
+-- | is what keeps exactness honest: each editor's `field @l` lift
+-- | re-attaches the background it retained at its last feed, and the loop
+-- | re-feeds every stage on every emission, so no editor can emit a stale
+-- | sibling for longer than the turn in flight — which is why editor
+-- | ensembles live inside `mvu`/`looped`/`bracketed`, and a loop-free
+-- | flow wraps its editor window in `looped` (order-form). The instance
+-- | is the primitive the class exists
 -- | for: `Costrong`'s gated `unfirst` cannot self-feed, so the knot is
 -- | tied directly here.
 instance Functor m => Looping (PUI m) where

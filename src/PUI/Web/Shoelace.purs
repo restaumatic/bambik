@@ -120,7 +120,7 @@ textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => Co
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
-  -- but still echo so merge gates keep flowing
+  -- but still echo so the channel stays live
   element "sl-input" (pure unit)
   attribute "label" config.label
   node <- gets _.sibling
@@ -189,7 +189,8 @@ rating provided = let config = convertOptionsWithDefaults OptCaption { label: re
           Ref.write (Just q) qRef
           setAttribute node "max" (show q.max)
           setNumberProp "value" node q.current
-          -- leaf echo: announce what was received, so record-merge gates open
+          -- leaf echo: announce what was received, so the lifted stage releases
+          -- the row and any enclosing merge gate opens
           mProp <- Ref.read mPropRef
           for_ mProp \prop -> prop q
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -237,7 +238,8 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
           Nothing -> removeAttribute node "step"
         setNumberProp "value" node q.current
         Ref.write false busyRef
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -258,7 +260,8 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
   pure
     { toUser: \b -> do
         setChecked node b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef

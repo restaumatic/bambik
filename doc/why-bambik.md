@@ -91,12 +91,17 @@ load → form (×→×) → live summary → buttons (×→+) → backend (+→+
 Each direction has one binary **merge** — how two UI components of that direction
 sit side by side and become one:
 
-- `recordToRecord` — two editors merge; inputs may overlap (everyone may
+- `recordToRecord` — two record-direction components merge — chrome
+  beside displays, a selector beside the lines that read it; inputs may
+  overlap (everyone may
   *read* a field), outputs must be disjoint (every field has exactly one
   *producer*). The merge is **knowledge-gated**: when one operand emits its
   sub-record, the merge completes it with the other operand's last
   contribution — partial emissions become whole records, and nothing
-  propagates until every field is known.
+  propagates until every field is known. (Editors are not its operands:
+  an editor is a **whole-row citizen** and sits as a pipeline stage — see
+  the form below — and two controls deliberately writing *one* field join
+  with `<>`, the ungated joint merge, broadcast in and last writer out.)
 - `variantToVariant` — two dispatchers merge; inputs must be disjoint (every
   case has exactly one handler), outputs may overlap.
 - `recordToVariant` — ungated broadcast: everyone sees the record, anyone
@@ -138,21 +143,22 @@ count is an honest price sheet: `recordToVariant`, with no owned side, is
 the trivial broadcast; `variantToRecord`, doubly owned, both dispatches
 and gates.
 
-These merges are what the qualified-do sugar desugars to. A form is
-literally:
+These merges are what the qualified-do sugar desugars to. A form,
+meanwhile, is editors as successive pipeline stages:
 
 ```purescript
-RecordToRecord.do
-  filledTextField @"name"  { floatingLabel: "Name" }
-  filledTextField @"email" { floatingLabel: "Email" }
+Semigroupoid.do
+  filledTextField @"Name" {}
+  filledTextField @"Email" {}
 ```
 
-each line one more operand merged in — and code order is DOM order. Note
+each line one more whole-row stage — and code order is DOM order. Note
 there is no wrapping at the use site: every component carries its own
-label (`filledTextField @l` is already the closed-singleton editor at
-field `l`), so merge operands drop straight in. The general lifter
-`field @l` exists for the other cases — turning a raw scalar leaf into a
-singleton, or nesting a whole sub-composite as one field of a larger
+label (`filledTextField @l` is already the whole-row editor at field
+`l` — fed the wide row, it edits its field and re-attaches the rest from
+the background its lens retains). The general lifter
+`field @l` exists for the other cases — lifting a raw scalar leaf, or
+nesting a whole sub-composite as one field of a larger
 record.
 
 ## Nullary operators: the units
@@ -250,7 +256,12 @@ exist for. And one loop resists derivation entirely: `looped`, the
 — no state before the first emission, no emission before the first input.
 Wrapped around a record merge, `looped` gives the operands *cross-feed*:
 a tab bar and its panes become each other's audience, per-operand retention
-falling out of the merge gates. The library once had bespoke `synced` and
+falling out of the merge gates. For whole-row editor stages the same
+re-broadcast is what keeps their retained backgrounds current — every
+stage is re-fed on every emission, so no editor can emit a stale sibling
+for longer than the turn in flight, which is why editor ensembles live
+inside `mvu`/`looped`/`bracketed`. The library once had bespoke `synced`
+and
 `latch` combinators for this; they dissolved into `looped` — the algebra
 subsumed them, which is how you know a design is converging.
 

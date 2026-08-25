@@ -269,7 +269,7 @@ text = wrap do
 input :: String -> PUI Web String String
 input type_ = "type" := type_ $ wrap do
   -- focus guard: skip the write while the user is in the field, but still
-  -- echo, so merge gates and downstream stages keep flowing
+  -- echo, so downstream stages keep flowing
   element "input" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new $ Nothing
@@ -351,7 +351,8 @@ checkboxInput { ticked } = "disabled" :=> (\x -> if isNothing x then Just "true"
           Just newa -> do
             setChecked node true
             Ref.write newa aRef
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop ma
     , fromUser: \prop -> do
@@ -450,7 +451,8 @@ rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $
           Just s -> show s
           Nothing -> "any")
         setValue node (show q.current)
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
     , fromUser: \prop -> do

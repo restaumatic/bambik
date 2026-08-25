@@ -119,7 +119,7 @@ eventLeaf chrome = clicked chrome
 textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
-  -- being typed in, but still echo so merge gates keep flowing
+  -- being typed in, but still echo so the channel stays live
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "input" (pure unit)
   attribute "type" "text"
@@ -178,7 +178,8 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
           Nothing -> "any")
         setValue node (show q.current)
         readout.toUser { readout: toString q.current }
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
     , fromUser: \prop -> do
@@ -245,7 +246,8 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
   pure
     { toUser: \b -> do
         setChecked node b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef

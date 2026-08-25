@@ -392,7 +392,7 @@ debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
 -- Focus-guarded like `Web.input`: model updates never clobber the field
 -- being typed in (the element delegates focus, so the host is the
--- activeElement), but still echo so merge gates keep flowing. Debouncing
+-- activeElement), but still echo so the channel stays live. Debouncing
 -- sits at the DOM boundary (`Web.onInputDebounced`), in front of the wire
 -- rather than on it, so the field stays loop-safe.
 textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
@@ -470,7 +470,8 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
             Just newa -> do
               setChecked node true
               Ref.write newa aRef
-          -- leaf echo: announce what was received, so record-merge gates open
+          -- leaf echo: announce what was received, so the lifted stage releases
+          -- the row and any enclosing merge gate opens
           mProp <- Ref.read mPropRef
           for_ mProp \prop -> prop ma
       , fromUser: \prop -> do
@@ -543,7 +544,8 @@ switchLeaf lbl =
     pure
       { toUser: \b -> do
           setBoolProp "selected" node b
-          -- leaf echo: announce what was received, so record-merge gates open
+          -- leaf echo: announce what was received, so the lifted stage releases
+          -- the row and any enclosing merge gate opens
           mProp <- Ref.read mPropRef
           for_ mProp \prop -> prop b
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -609,7 +611,8 @@ bareSliderLeaf live label = wrap do
           Just s -> setNumberProp "step" node s
           Nothing -> removeAttribute node "step"
         setNumberProp "value" node q.current
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop q
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
@@ -718,7 +721,8 @@ chipLeaf lbl = wrap do
   pure
     { toUser: \b -> do
         setBoolProp "selected" node b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> do
@@ -754,7 +758,8 @@ iconToggleLeaf config = wrap do
   pure
     { toUser: \b -> do
         setBoolProp "selected" node b
-        -- leaf echo: announce what was received, so record-merge gates open
+        -- leaf echo: announce what was received, so the lifted stage releases
+        -- the row and any enclosing merge gate opens
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop b
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
