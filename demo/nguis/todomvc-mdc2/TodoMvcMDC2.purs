@@ -24,11 +24,11 @@ todoMvcMDC2 =
           segmentedButton @"Visibility"
             [ choice @"All", choice @"Active", choice @"Completed" ] # required
           Semigroupoid.do
-            shownCase @"sole" remainingItems ( caption $ RecordToRecord.do
+            ( caption $ RecordToRecord.do
                 text @"count" # projection show
-                staticText " item left" )
-            shownCase @"several" remainingItems ( caption $ RecordToRecord.do
+                staticText " item left" ) # shownCase @"sole" remainingItems
+            ( caption $ RecordToRecord.do
                 text @"count" # projection show
-                staticText " items left" )
+                staticText " items left" ) # shownCase @"several" remainingItems
             button @"Clear completed" {} # updated (match { "Clear completed": const <<< clearCompleted })
       ) # mvu emptyTodoList

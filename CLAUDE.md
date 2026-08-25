@@ -402,7 +402,7 @@ readouts), quiz (`provided` panes over `Maybe`-projected stages,
 `linearProgress`), tic-tac-toe / calculator (**channel-fed `foreach` grids** —
 cells built once, key emitted via `clicked` + `toCase`, folded by `updated`),
 markdown-previewer (`filledTextArea` + injection-proof preview as recursive
-`PUI Web`: `shownAs identity (dynamic …)` over element oculars, since structure
+`PUI Web`: `(dynamic …) # shownAs identity` over element oculars, since structure
 genuinely varies per block), stopwatch (`every` tick pausing via `Nothing` over
 a stored phase variant — a Boolean nobody edits as a Boolean is a phase — with
 `# providedCase` button panes and a `shownEach` lap list — whose

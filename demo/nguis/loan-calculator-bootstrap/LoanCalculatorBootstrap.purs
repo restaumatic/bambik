@@ -23,7 +23,7 @@ loanCalculatorBootstrap =
             [ choice @"Car", choice @"Home improvement", choice @"Holiday" ] # required
           toggleSwitch @"Payment protection insurance" {}
       ) # mvu cityCarLoan
-      shownAs identity ( listGroup $ RecordToRecord.do
+      ( listGroup $ RecordToRecord.do
           listGroupItem ( RecordToRecord.do
               staticText "Monthly payment "
               badge { variant: "primary" } (text @"monthly" # projected monthlyText) )
@@ -32,9 +32,9 @@ loanCalculatorBootstrap =
               text @"rate" # projected rateText )
           listGroupItem ( RecordToRecord.do
               staticText "Total interest "
-              text @"totalInterest" # projected totalInterestText ) )
-      shownAs identity ( ( div $ RecordToRecord.do
+              text @"totalInterest" # projected totalInterestText ) ) # shownAs identity
+      ( ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
-          progress @"interestShare" ) # projected interestShare )
+          progress @"interestShare" ) # projected interestShare ) # shownAs identity
       button @"Apply for this loan" {}
       toast # forCase @"Apply for this loan" appliedLine

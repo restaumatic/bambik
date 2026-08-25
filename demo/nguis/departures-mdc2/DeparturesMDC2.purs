@@ -16,14 +16,14 @@ departuresMDC2 =
     elevation20 $
       card $ ( Semigroupoid.do
           every tickPeriod tick
-          shownAs identity ( Semigroupoid.do
-              list ( shownAs identity ( listItem $ RecordToRecord.do
+          ( Semigroupoid.do
+              list ( ( listItem $ RecordToRecord.do
                   text @"code"
                   staticText " — "
-                  text @"status" ) ) # dispatched arrival
+                  text @"status" ) # shownAs identity ) # dispatched arrival
               body2 ( RecordToRecord.do
                   staticText "Last update: "
                   text @"updatedFlight" # projected updatedFlight
                   staticText " → "
-                  text @"updatedStatus" # projected updatedStatus ) )
+                  text @"updatedStatus" # projected updatedStatus ) ) # shownAs identity
       ) # mvu boardOpening

@@ -24,10 +24,10 @@ crudFluent = do
             textField @"Name" {}
             textField @"Surname" {}
             ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--colorNeutralStroke1, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
-                ( clicked ( li >>> attrWith "style" entryFace $ shownAs identity $ RecordToRecord.do
+                ( clicked ( li >>> attrWith "style" entryFace $ ( RecordToRecord.do
                     text @"Surname"
                     staticText ", "
-                    text @"Name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"Name" ) # shownAs identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Semigroupoid.do
                 div $ RecordToVariant.do
                   button @"Create" {}

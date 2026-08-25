@@ -16,13 +16,13 @@ ticTacToeMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          shownCase @"won" gameOutcome ( headline6 $ RecordToRecord.do
+          ( headline6 $ RecordToRecord.do
               text @"mark"
-              staticText " wins" )
-          shownCase @"drawn" gameOutcome (headline6 (staticText "Draw"))
-          shownCase @"toMove" gameOutcome ( headline6 $ RecordToRecord.do
+              staticText " wins" ) # shownCase @"won" gameOutcome
+          (headline6 (staticText "Draw")) # shownCase @"drawn" gameOutcome
+          ( headline6 $ RecordToRecord.do
               text @"mark"
-              staticText " to move" )
+              staticText " to move" ) # shownCase @"toMove" gameOutcome
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div

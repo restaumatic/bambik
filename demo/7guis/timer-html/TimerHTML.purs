@@ -13,15 +13,15 @@ import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeri
 timerHTML :: Effect Unit
 timerHTML =
   body $ div $ ( Semigroupoid.do
-      shownAs identity ( RecordToRecord.do
+      ( RecordToRecord.do
           progress @"fraction" # projected fraction
           p RecordToRecord.do
             text @"elapsed" # projection show
             staticText "s / "
             text @"Duration" # projection wholeSeconds
-            staticText "s" )
+            staticText "s" ) # shownAs identity
       p ( label $ Semigroupoid.do
-          shownAs identity (staticText "Duration ")
+          (staticText "Duration ") # shownAs identity
           rangeInput @"Duration" )
       every tickPeriod tick
       button (staticText "Reset") # with nothingElapsed # toCase @"reset" identity # updated (match { reset: const })

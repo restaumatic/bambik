@@ -23,17 +23,17 @@ meetingBookerFluent =
           radioGroup @"Duration (min)" {}
             [ choice @"15", choice @"30", choice @"60" ] # optional
           toggleSwitch @"Include a Teams link" {}
-          shownAs identity divider
+          divider # shownAs identity
           (slider @"Attendees" {}) # provided seatsFor # updated (informed chooseSeats)
       ) # mvu blankBooking
-      shownWhen ratedRoom ( div $ RecordToRecord.do
+      ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
-          ratingDisplay @"rating" )
-      shownWhen seatsTaken ( div $ RecordToRecord.do
+          ratingDisplay @"rating" ) # shownWhen ratedRoom
+      ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
-          progressBar @"occupancy" )
+          progressBar @"occupancy" ) # shownWhen seatsTaken
       ( Semigroupoid.do
-          shownAs identity ( body1 $ RecordToRecord.do
+          ( body1 $ RecordToRecord.do
               staticText "Plan: "
               text @"Meeting title" # projection titleText
               staticText " in the "
@@ -43,6 +43,6 @@ meetingBookerFluent =
               staticText " min, "
               text @"attendees" # projection headcount
               staticText " attendees"
-              text @"onlineNote" # projected onlineNote )
+              text @"onlineNote" # projected onlineNote ) # shownAs identity
           button @"Book the room" {} ) # provided completePlan
       messageBar # forCase @"Book the room" bookedLine

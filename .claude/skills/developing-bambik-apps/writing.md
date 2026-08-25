@@ -184,24 +184,26 @@ interchangeable:
   record pipeline with no wrapper at all.
 - A display **is a pipeline stage natively** (RESEARCH: gated displays —
   `tapped` is deleted). Pick the rung whose fulfillment policy the
-  business wants: `shownAs proj content` for ambient structured content
+  business wants: `content # shownAs proj` for ambient structured content
   (chrome + unit displays, registered at build, released per feed),
-  `shownWhen`/`shownCase` for panes (attached on relevance, released
-  always), `shownEach @l proj item` for keyed collections, `told line` /
+  `# shownWhen`/`# shownCase` for panes (attached on relevance, released
+  always), `item # shownEach @l proj` for keyed collections, `told line` /
   `shown @l f` for bare lines, `confirmed cfg display` where the flow
   must wait for the user's confirmation. Content slots accept only
   `{}`-output components — an editor inside fails to unify; a genuinely
   emitting assembly is discarded **in writing** with `# muted`.
 
 So: an editor is a stage as it stands; a display stage is the gated rung
-that states its policy (`shownAs identity (…)` for a structured line,
+that states its policy (`(…) # shownAs identity` for a structured line,
 tip-calculator's money readouts — and for **pure chrome in a pipeline**:
-a card's caption is `shownAs identity (subtitle1 $ staticText "…")`,
-registered at build, releasing every fed row). A live readout as a
+a card's caption is `(subtitle1 $ staticText "…") # shownAs identity`,
+registered at build, releasing every fed row). The rung trails like
+every data concern — the line leads with the visual content, the policy
+rides at its end with `#`. A live readout as a
 pipeline stage is just a display whose gate opens instantly.
 
 A terminal **collection display** — a projection rendered as a list or
-grid, passing the model through — is `shownEach @l rowsOf item` inside
+grid, passing the model through — is `item # shownEach @l rowsOf` inside
 its container ocular: keyed, retained, releasing the fed row per feed
 (so an empty array never starves). The rows projection must be a
 **named projection with a closed row**, not an accessor: the gated
@@ -258,7 +260,7 @@ Worked examples, by shape:
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
-  tree built by `shownAs identity (dynamic …)`, because the structure genuinely
+  tree built by `(dynamic …) # shownAs identity`, because the structure genuinely
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
@@ -559,9 +561,9 @@ over a logic module, a single exported entry function.
   node, updated in place:
 
   ```purescript
-  shownAs identity ( headline6 $ RecordToRecord.do
+  ( headline6 $ RecordToRecord.do
       staticText "Till balance: €"
-      text @"balance" # projection euros )
+      text @"balance" # projection euros ) # shownAs identity
   ```
 
   never `text @"balance" # projected balanceLine` over a

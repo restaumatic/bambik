@@ -24,17 +24,17 @@ flightBookerMDC2 =
           filledTextField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
       ( Semigroupoid.do
-          shownCase @"problem" bookingState ( body1 $ RecordToRecord.do
+          ( body1 $ RecordToRecord.do
               staticText "⚠ "
-              text @"problem" )
-          shownCase @"one-way" bookingState ( body1 $ RecordToRecord.do
+              text @"problem" ) # shownCase @"problem" bookingState
+          ( body1 $ RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" )
-          shownCase @"return" bookingState ( body1 $ RecordToRecord.do
+              text @"date" ) # shownCase @"one-way" bookingState
+          ( body1 $ RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) ) # debounced itinerarySettleTime
+              text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine

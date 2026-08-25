@@ -20,24 +20,24 @@ flightBookerHTML =
             select @"Flight type"
               [ choice @"one-way", choice @"return" ] ) # required
         p ( label $ Semigroupoid.do
-            shownAs identity (staticText "Start date (DD.MM.YYYY) ")
+            (staticText "Start date (DD.MM.YYYY) ") # shownAs identity
             input "text" # field @"Start date (DD.MM.YYYY)" )
         p ( label $ Semigroupoid.do
-            shownAs identity (staticText "Return date (DD.MM.YYYY) ")
+            (staticText "Return date (DD.MM.YYYY) ") # shownAs identity
             input "text" # field @"Return date (DD.MM.YYYY)" ) # provided returnLeg # updated (informed setReturn)
     ) # mvu plannedTrip
     ( Semigroupoid.do
-        shownCase @"problem" bookingState ( p $ RecordToRecord.do
+        ( p $ RecordToRecord.do
             staticText "⚠ "
-            text @"problem" )
-        shownCase @"one-way" bookingState ( p $ RecordToRecord.do
+            text @"problem" ) # shownCase @"problem" bookingState
+        ( p $ RecordToRecord.do
             staticText "A one-way flight on "
-            text @"date" )
-        shownCase @"return" bookingState ( p $ RecordToRecord.do
+            text @"date" ) # shownCase @"one-way" bookingState
+        ( p $ RecordToRecord.do
             staticText "A return flight: out "
             text @"out"
             staticText ", back "
-            text @"back" ) ) # debounced itinerarySettleTime
+            text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     pempty # action (match { book: submit })
     output # forCases bookingLine

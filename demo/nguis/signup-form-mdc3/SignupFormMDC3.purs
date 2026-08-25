@@ -18,7 +18,7 @@ signupFormMDC3 =
     elevation5 $
       card $ Semigroupoid.do
         ( Semigroupoid.do
-            shownAs identity (headlineLarge $ staticText "Create account")
+            (headlineLarge $ staticText "Create account") # shownAs identity
             debouncedTextField @"Username" { ms: usernameSettleTime }
             radioButton @"Plan"
               [ choice @"Free", choice @"Pro", choice @"Team" ] # required
@@ -27,21 +27,21 @@ signupFormMDC3 =
             filledTextField @"Email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"Terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
-        shownCase @"unnamed" usernameStatus ( bodyMedium $ staticText "Pick a username to check its availability" )
-        shownCase @"taken" usernameStatus ( bodyMedium $ RecordToRecord.do
+        ( bodyMedium $ staticText "Pick a username to check its availability" ) # shownCase @"unnamed" usernameStatus
+        ( bodyMedium $ RecordToRecord.do
             staticText "✗ "
             text @"Username"
-            staticText " is already taken" )
-        shownCase @"available" usernameStatus ( bodyMedium $ RecordToRecord.do
+            staticText " is already taken" ) # shownCase @"taken" usernameStatus
+        ( bodyMedium $ RecordToRecord.do
             staticText "✓ "
             text @"Username"
-            staticText " is available" )
-        shownCase @"invalid" validation ( titleSmall $ RecordToRecord.do
+            staticText " is available" ) # shownCase @"available" usernameStatus
+        ( titleSmall $ RecordToRecord.do
             staticText "⚠ "
-            text @"problem" )
-        shownCase @"ready" validation ( titleSmall $ RecordToRecord.do
+            text @"problem" ) # shownCase @"invalid" validation
+        ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text @"Username" )
+            text @"Username" ) # shownCase @"ready" validation
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
           snackbar # forCase @"registered" welcomeLine

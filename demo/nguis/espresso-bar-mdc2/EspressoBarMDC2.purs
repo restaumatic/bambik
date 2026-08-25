@@ -36,16 +36,16 @@ espressoBarMDC2 =
               toggleSwitch @"Takeaway cup" {}
               iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
               checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
-              shownAs identity divider
+              divider # shownAs identity
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem @"The usual" {} # with theUsual
                   menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
           ) # mvu usualOrder
-          shownAs identity ( body2 $ RecordToRecord.do
+          ( body2 $ RecordToRecord.do
               staticText "Your cup: "
-              text @"summary" # projected summaryText )
-          shownAs identity ( ( div $ RecordToRecord.do
+              text @"summary" # projected summaryText ) # shownAs identity
+          ( ( div $ RecordToRecord.do
               caption $ staticText "Caffeine"
-              linearProgress @"caffeine" ) # projected caffeineFraction )
+              linearProgress @"caffeine" ) # projected caffeineFraction ) # shownAs identity
           button @"Place order" { icon: "local_cafe" }
           snackbar # forCase @"Place order" brewedLine

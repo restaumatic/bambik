@@ -175,7 +175,8 @@ told line = wrap do
 -- | the projection yields its payload, detach when it does not, and
 -- | **release the fed row always**: a hidden pane must never block the
 -- | pipe, so this rung's fulfillment is best-effort by construction.
--- | Derived: the pane merged with the wire.
+-- | Derived: the pane merged with the wire. Trails its content:
+-- | `(…) # shownWhen proj`.
 shownWhen
   :: forall read extra row a i12 i1x i2x rowL
    . Union read extra row
@@ -187,7 +188,9 @@ shownWhen proj content = recordToRecord (provided (\(r :: { | row }) -> proj (un
 -- | RESEARCH (gated displays): the **ambient-content rung** — render
 -- | structured content (chrome merges, nested collections) from a
 -- | projection of the flow, release the fed row always. The projection
--- | rides the mechanism, as everywhere (`shownAs identity` says verbatim).
+-- | rides the mechanism, as everywhere (`shownAs identity` says verbatim),
+-- | and the rung trails its content like every data concern:
+-- | `(headline6 $ …) # shownAs identity`.
 shownAs
   :: forall read extra row a
    . Union read extra row
@@ -223,7 +226,8 @@ shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (u
 
 -- | RESEARCH (gated displays): the **collection rung** — render the keyed,
 -- | retained list from the projection, release the fed row per feed.
--- | Derived: the collection, muted, merged with the wire.
+-- | Derived: the collection, muted, merged with the wire. Trails its
+-- | item: `(li $ …) # shownEach @l proj`.
 shownEach
   :: forall @l read extra row k r a o i12 i1x i2x rowL
    . IsSymbol l => Cons l k r a => Ord k

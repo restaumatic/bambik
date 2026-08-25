@@ -23,20 +23,20 @@ movieBrowserMDC2 =
               filterChip @"Classic" {}
               filterChip @"Cult" {}
               filterChip @"Oscar" {})
-          shownCase @"sole" favorites ( elevation1 $ subtitle1 $ RecordToRecord.do
+          ( elevation1 $ subtitle1 $ RecordToRecord.do
               text @"count" # projection show
-              staticText " favorite" )
-          shownCase @"several" favorites ( elevation1 $ subtitle1 $ RecordToRecord.do
+              staticText " favorite" ) # shownCase @"sole" favorites
+          ( elevation1 $ subtitle1 $ RecordToRecord.do
               text @"count" # projection show
-              staticText " favorites" )
+              staticText " favorites" ) # shownCase @"several" favorites
           list $
             ( clWhen _."Favorite" "mdc-deprecated-list-item--selected"
                 $ listItem $ ( Semigroupoid.do
-                    shownAs identity ( RecordToRecord.do
+                    ( RecordToRecord.do
                         span (text @"title")
                         span (text @"year") # projection show
                         span ( RecordToRecord.do
                             staticText "★ "
-                            text @"rating" # projected ratingText ) )
+                            text @"rating" # projected ratingText ) ) # shownAs identity
                     iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) ) # foreach @"title" visibleMovies # toCase @"favored" identity # updated (match { favored: informed markFavorite })
       ) # mvu movieCatalogue

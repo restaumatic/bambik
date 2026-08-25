@@ -19,25 +19,25 @@ checkoutMDC3 =
     elevation5 $
       card $ ( Semigroupoid.do
           ( Semigroupoid.do
-              shownWhen atCart ( bodyMedium $ RecordToRecord.do
+              ( bodyMedium $ RecordToRecord.do
                   staticText "Step 1 of 3 — Cart: "
-                  text @"item" )
-              shownWhen atShipping ( bodyMedium $ RecordToRecord.do
+                  text @"item" ) # shownWhen atCart
+              ( bodyMedium $ RecordToRecord.do
                   staticText "Step 2 of 3 — Shipping to "
-                  text @"address" )
-              shownWhen atPayment ( bodyMedium $ RecordToRecord.do
+                  text @"address" ) # shownWhen atShipping
+              ( bodyMedium $ RecordToRecord.do
                   staticText "Step 3 of 3 — Pay with card "
-                  text @"card" )
+                  text @"card" ) # shownWhen atPayment
               RecordToVariant.do
                 button @"Next" {} # toCases goneOn # provided onwardFrom
                 button @"Back" {} # toCases goneBack # provided previousOf
                 button @"Place order" { icon: "shopping_cart_checkout" } # provided placeAtPayment) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
-          shownWhen placedOrder ( bodyMedium $ RecordToRecord.do
+          ( bodyMedium $ RecordToRecord.do
               staticText "Order placed: "
               text @"item"
               staticText " → "
               text @"address"
               staticText " (card "
               text @"card"
-              staticText ")" )
+              staticText ")" ) # shownWhen placedOrder
       ) # mvu freshOrder

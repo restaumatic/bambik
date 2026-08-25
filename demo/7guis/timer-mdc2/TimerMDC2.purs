@@ -16,13 +16,13 @@ timerMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          shownAs identity ( RecordToRecord.do
+          ( RecordToRecord.do
               linearProgress @"fraction" # projected fraction
               body1 RecordToRecord.do
                 text @"elapsed" # projection show
                 staticText "s / "
                 text @"Duration" # projection wholeSeconds
-                staticText "s" )
+                staticText "s" ) # shownAs identity
           sliderLive @"Duration" {}
           every tickPeriod tick
           button @"Reset" { icon: "replay" } # with nothingElapsed # updated (match { "Reset": const })

@@ -21,11 +21,11 @@ passwordGeneratorMDC3 =
           toggleSwitch @"Lowercase letters" {}
           toggleSwitch @"Digits" {}
           toggleSwitch @"Symbols" {}
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+          ( bodyMedium $ RecordToRecord.do
               staticText "Strength: "
-              text @"strength" # projected strengthText )
+              text @"strength" # projected strengthText ) # shownAs identity
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
-            shownAs identity (text @"password")
+            (text @"password") # shownAs identity
           ( Semigroupoid.do
               button @"Generate" {}
               indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate") # updated (match { generated: rememberPassword })

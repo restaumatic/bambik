@@ -27,8 +27,8 @@ shoppingCartMDC2 =
                   dataCell ( RecordToRecord.do
                       staticText "$"
                       text @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
-          shownAs identity ( body1 $ RecordToRecord.do
+          ( body1 $ RecordToRecord.do
               staticText "Total: $"
-              text @"grandTotal" # projected grandTotalText )
+              text @"grandTotal" # projected grandTotalText ) # shownAs identity
           button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
       ) # mvu emptyCart

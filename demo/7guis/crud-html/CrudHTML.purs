@@ -19,19 +19,19 @@ crudHTML = do
       pempty # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
           p ( label $ Semigroupoid.do
-              shownAs identity (staticText "Filter prefix (surname) ")
+              (staticText "Filter prefix (surname) ") # shownAs identity
               input "text" # field @"Filter prefix (surname)" )
           p ( label $ Semigroupoid.do
-              shownAs identity (staticText "Name ")
+              (staticText "Name ") # shownAs identity
               input "text" # field @"Name" )
           p ( label $ Semigroupoid.do
-              shownAs identity (staticText "Surname ")
+              (staticText "Surname ") # shownAs identity
               input "text" # field @"Surname" )
           ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
-              ( clicked ( li >>> attrWith "style" entryFace $ shownAs identity $ RecordToRecord.do
+              ( clicked ( li >>> attrWith "style" entryFace $ ( RecordToRecord.do
                   text @"Surname"
                   staticText ", "
-                  text @"Name" ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text @"Name" ) # shownAs identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
           ( Semigroupoid.do
               div $ RecordToVariant.do
                 button (staticText "Create") # toCase @"create" identity

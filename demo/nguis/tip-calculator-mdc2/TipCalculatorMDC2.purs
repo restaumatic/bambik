@@ -18,22 +18,22 @@ tipCalculatorMDC2 =
           ( filledTextField @"Bill amount" {}
               `joint` slider @"Tip percentage" {}
               `joint` rangeInput @"Tip percentage" )
-          shownAs identity ( body2 $ RecordToRecord.do
+          ( body2 $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole
-              staticText "%" )
-          shownAs identity ( body2 $ RecordToRecord.do
+              staticText "%" ) # shownAs identity
+          ( body2 $ RecordToRecord.do
               staticText "Split between: "
               text @"Split between" # projection whole
-              staticText " people" )
+              staticText " people" ) # shownAs identity
           slider @"Split between" {}
-          shownAs identity ( body2 $ RecordToRecord.do
+          ( body2 $ RecordToRecord.do
               staticText "Tip amount: "
-              text @"tipAmount" # projected tipAmountText )
-          shownAs identity ( body2 $ RecordToRecord.do
+              text @"tipAmount" # projected tipAmountText ) # shownAs identity
+          ( body2 $ RecordToRecord.do
               staticText "Total: "
-              text @"total" # projected totalText )
-          shownAs identity ( body2 $ RecordToRecord.do
+              text @"total" # projected totalText ) # shownAs identity
+          ( body2 $ RecordToRecord.do
               staticText "Per person: "
-              text @"perPerson" # projected perPersonText )
+              text @"perPerson" # projected perPersonText ) # shownAs identity
       ) # mvu dinnerBill

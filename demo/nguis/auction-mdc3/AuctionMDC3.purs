@@ -16,13 +16,13 @@ auctionMDC3 =
   body $
     elevation5 $
       card $ ( Semigroupoid.do
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+          ( bodyMedium $ RecordToRecord.do
               staticText "Your current bid: $"
-              text @"Your bid ($)" # projection (show <<< _.current) )
+              text @"Your bid ($)" # projection (show <<< _.current) ) # shownAs identity
           sliderLive @"Your bid ($)" {}
           ( Semigroupoid.do
               identity # settled raiseTop
-              shownAs identity ( headlineSmall $ RecordToRecord.do
+              ( headlineSmall $ RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text @"top" # projection show ) ) # feedback noBids
+                  text @"top" # projection show ) # shownAs identity ) # feedback noBids
       ) # mvu openingBid

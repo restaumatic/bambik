@@ -23,17 +23,17 @@ flightBookerShoelace =
           textField @"Return date (DD.MM.YYYY)" {} # provided returnLeg # updated (informed setReturn)
       ) # mvu plannedTrip
       ( Semigroupoid.do
-          shownCase @"problem" bookingState ( p $ RecordToRecord.do
+          ( p $ RecordToRecord.do
               staticText "⚠ "
-              text @"problem" )
-          shownCase @"one-way" bookingState ( p $ RecordToRecord.do
+              text @"problem" ) # shownCase @"problem" bookingState
+          ( p $ RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" )
-          shownCase @"return" bookingState ( p $ RecordToRecord.do
+              text @"date" ) # shownCase @"one-way" bookingState
+          ( p $ RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) ) # debounced itinerarySettleTime
+              text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
       pempty # action (match { "Book": submit })
       toast # forCases bookingLine

@@ -15,13 +15,13 @@ timerBootstrap :: Effect Unit
 timerBootstrap =
   body $
     card $ ( Semigroupoid.do
-        shownAs identity ( RecordToRecord.do
+        ( RecordToRecord.do
             progress @"fraction" # projected fraction
             p RecordToRecord.do
               text @"elapsed" # projection show
               staticText "s / "
               text @"Duration" # projection wholeSeconds
-              staticText "s" )
+              staticText "s" ) # shownAs identity
         sliderLive @"Duration" {}
         every tickPeriod tick
         button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })

@@ -17,10 +17,10 @@ paymentMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          shownAs identity ( headline6 $ RecordToRecord.do
+          ( headline6 $ RecordToRecord.do
               staticText "Amount due: $"
-              text @"amount" # projection show )
-          shownAs identity (body2 (text @"status") # projected statusLine)
+              text @"amount" # projection show ) # shownAs identity
+          (body2 (text @"status") # projected statusLine) # shownAs identity
           ( Semigroupoid.do
               button @"Charge card" { icon: "credit_card" } # toCases startCharge
               ( Semigroupoid.do

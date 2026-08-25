@@ -25,9 +25,9 @@ stopwatchMDC3 =
           ( RecordToVariant.do
               button @"Lap" { icon: "flag" } # providedCase @"timing" stopwatchPhase
               button @"Reset" { icon: "replay" } # providedCase @"halted" stopwatchPhase) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
-          ul $ shownEach @"number" lapRows ( li $ RecordToRecord.do
+          ul $ ( li $ RecordToRecord.do
                    staticText "Lap "
                    text @"number"
                    staticText " — "
-                   text @"time" )
+                   text @"time" ) # shownEach @"number" lapRows
       ) # mvu zeroedStopwatch

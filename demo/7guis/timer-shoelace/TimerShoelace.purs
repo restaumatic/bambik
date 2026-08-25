@@ -15,13 +15,13 @@ timerShoelace :: Effect Unit
 timerShoelace =
   body $
     card $ ( Semigroupoid.do
-        shownAs identity ( RecordToRecord.do
+        ( RecordToRecord.do
             progressBar @"fraction" # projected fraction
             p RecordToRecord.do
               text @"elapsed" # projection show
               staticText "s / "
               text @"Duration" # projection wholeSeconds
-              staticText "s" )
+              staticText "s" ) # shownAs identity
         sliderLive @"Duration" {}
         every tickPeriod tick
         button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })

@@ -17,7 +17,7 @@ markdownPreviewerMDC3 =
       card $
         layoutGrid $ ( Semigroupoid.do
             layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
-            layoutCell { span: 6 } $ shownAs identity $ ( dynamic \source ->
+            layoutCell { span: 6 } $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->
                   let
                     inline = match
@@ -32,5 +32,5 @@ markdownPreviewerMDC3 =
                     , paragraph: \is -> p (inlines is)
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
-                    } ) # atField @"Source"
+                    } ) # atField @"Source" # shownAs identity
         ) # mvu welcomeDocument

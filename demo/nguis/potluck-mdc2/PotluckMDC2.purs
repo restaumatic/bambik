@@ -17,16 +17,16 @@ potluckMDC2 =
   body $
     elevation20 $
       card $ ( Semigroupoid.do
-          shownAs identity ( body2 $ RecordToRecord.do
+          ( body2 $ RecordToRecord.do
               text @"guestCount" # projected guestCount
-              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." )
+              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." ) # shownAs identity
           ( list $
               ( listItem $ RecordToRecord.do
                   subtitle1 (text @"name")
                   segmentedButton @"Dish"
                     [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name" ) # field @"guests"
           headline6 $ Semigroupoid.do
-            shownAs identity (staticText "On the table: ")
+            (staticText "On the table: ") # shownAs identity
             ( span $ RecordToRecord.do
                 text @"name"
                 staticText "’s "

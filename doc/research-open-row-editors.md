@@ -119,7 +119,7 @@ world, and `completed` is **deleted** (L14 subsumption).
   * **Demo sweep** (all under L15's full stack, green: zero-warning
     build, tests, 102 bundles, whole smoke suite): every
     `# completed` dropped; owned merges of editors became pipeline
-    stages; pure chrome in pipelines is `shownAs identity (…)`;
+    stages; pure chrome in pipelines is `(…) # shownAs identity`;
     counter-style `text @l # projection f # completed` display stages
     became `shown @l f`; temperature-converter's two-label
     `# projected`-editor pattern dissolved into a both-text model

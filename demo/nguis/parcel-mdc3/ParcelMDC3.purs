@@ -18,12 +18,12 @@ parcelMDC3 =
       card $ ( Semigroupoid.do
           filledTextField @"Recipient" {}
           addressForm # subStrong
-          shownAs identity ( bodyLarge $ RecordToRecord.do
+          ( bodyLarge $ RecordToRecord.do
               text @"Recipient"
               staticText " · "
               text @"Street"
               staticText " · "
-              text @"City" )
+              text @"City" ) # shownAs identity
       ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }

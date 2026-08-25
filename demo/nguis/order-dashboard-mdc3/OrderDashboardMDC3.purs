@@ -20,9 +20,9 @@ orderDashboardMDC3 =
           rangePicker @"Showing" {}
             [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
           board $ Semigroupoid.do
-            shownAs identity (statTile { label: "Orders", unit: "placed" } # projected ordersCount)
-            shownAs identity (statTile { label: "Revenue", unit: "EUR" } # projected revenue)
-            shownAs identity (gauge { label: "Kitchen load" } # projected kitchenLoad)
-            shownAs identity (trendChart { label: "Order flow" } # projected orderFlow)
-            shownAs identity (leaderboard { label: "Top dishes" } # projected topDishes)
+            (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shownAs identity
+            (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shownAs identity
+            (gauge { label: "Kitchen load" } # projected kitchenLoad) # shownAs identity
+            (trendChart { label: "Order flow" } # projected orderFlow) # shownAs identity
+            (leaderboard { label: "Top dishes" } # projected topDishes) # shownAs identity
       ) # mvu openingDay

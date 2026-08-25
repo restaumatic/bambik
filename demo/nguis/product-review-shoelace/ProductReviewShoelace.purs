@@ -24,14 +24,14 @@ productReviewShoelace =
             [ choice @"less than a month", choice @"1–12 months", choice @"more than a year" ] # required
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
-          shownAs identity divider
+          divider # shownAs identity
       ) # mvu freshImpression
-      shownAs identity ( p $ RecordToRecord.do
+      ( p $ RecordToRecord.do
           staticText "Preview: "
           text @"Overall rating" # projection starGlyphs
           text @"Headline" # projection headlineQuote
           staticText " · owned "
           text @"How long have you owned it?" # projection caseText
-          text @"recommendNote" # projected recommendNote )
+          text @"recommendNote" # projected recommendNote ) # shownAs identity
       button @"Submit review" {}
       toast # forCase @"Submit review" submittedLine

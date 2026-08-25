@@ -18,16 +18,16 @@ ticketDispenserMDC3 =
     elevation5 $
       card $ ( Semigroupoid.do
           displaySmall ( Semigroupoid.do
-              shownCase @"waiting" displayOf (staticText "—")
-              shownCase @"serving" displayOf ( RecordToRecord.do
+              (staticText "—") # shownCase @"waiting" displayOf
+              ( RecordToRecord.do
                   staticText "#"
-                  text @"number" # projection show ) )
+                  text @"number" # projection show ) # shownCase @"serving" displayOf )
           bodyMedium ( Semigroupoid.do
-              shownCase @"waiting" displayOf (staticText "Press the button to draw the first ticket.")
-              shownCase @"serving" displayOf ( RecordToRecord.do
+              (staticText "Press the button to draw the first ticket.") # shownCase @"waiting" displayOf
+              ( RecordToRecord.do
                   staticText "Now serving ticket "
                   text @"number" # projection show
-                  staticText "." ) )
+                  staticText "." ) # shownCase @"serving" displayOf )
           ( Semigroupoid.do
               button @"Take a number" {}
               (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const

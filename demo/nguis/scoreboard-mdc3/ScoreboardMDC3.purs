@@ -16,19 +16,19 @@ scoreboardMDC3 =
     elevation5 $
       card $ ( Semigroupoid.do
           every tickPeriod tick
-          shownAs identity ( Semigroupoid.do
-              list ( shownAs identity ( listItem $ RecordToRecord.do
+          ( Semigroupoid.do
+              list ( ( listItem $ RecordToRecord.do
                   text @"team"
                   staticText ": "
-                  text @"points" # projection show ) ) # accumulated goal
+                  text @"points" # projection show ) # shownAs identity ) # accumulated goal
               ( bodyMedium $ Semigroupoid.do
-                  shownAs identity ( RecordToRecord.do
+                  ( RecordToRecord.do
                       text @"teams"
-                      staticText " teams on the board — leading: " )
-                  shownWhen leadingTeam ( RecordToRecord.do
+                      staticText " teams on the board — leading: " ) # shownAs identity
+                  ( RecordToRecord.do
                       text @"team"
                       staticText " ("
                       text @"points" # projection show
-                      staticText ")" )
-                  shownWhen noLeader (staticText "—") ) # foreach @"key" boardSummary # muted )
+                      staticText ")" ) # shownWhen leadingTeam
+                  (staticText "—") # shownWhen noLeader ) # foreach @"key" boardSummary # muted ) # shownAs identity
       ) # mvu gameStart

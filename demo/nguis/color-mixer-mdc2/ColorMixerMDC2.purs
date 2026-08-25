@@ -23,8 +23,8 @@ colorMixerMDC2 =
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          shownAs identity (body2 (text @"hex" # projected hexText))
-          shownAs identity (body2 (text @"rgb" # projected rgbText))
+          (body2 (text @"hex" # projected hexText)) # shownAs identity
+          (body2 (text @"rgb" # projected rgbText)) # shownAs identity
       ) # mvu duskViolet
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = chipStyle { mix }

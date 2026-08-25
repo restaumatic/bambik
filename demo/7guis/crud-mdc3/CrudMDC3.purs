@@ -24,10 +24,10 @@ crudMDC3 = do
               filledTextField @"Filter prefix (surname)" {}
               filledTextField @"Name" {}
               filledTextField @"Surname" {}
-              listOf { selected: _.selected } entries ( shownAs identity $ RecordToRecord.do
+              listOf { selected: _.selected } entries ( ( RecordToRecord.do
                   text @"Surname"
                   staticText ", "
-                  text @"Name" ) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text @"Name" ) # shownAs identity ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Semigroupoid.do
                   cardActions $ RecordToVariant.do
                     button @"Create" {}

@@ -18,7 +18,7 @@ signupFormMDC2 =
     elevation20 $
       card $ Semigroupoid.do
         ( Semigroupoid.do
-            shownAs identity (headline4 $ staticText "Create account")
+            (headline4 $ staticText "Create account") # shownAs identity
             debouncedTextField @"Username" { ms: usernameSettleTime }
             radioButton @"Plan"
               [ choice @"Free", choice @"Pro", choice @"Team" ] # required
@@ -27,21 +27,21 @@ signupFormMDC2 =
             filledTextField @"Email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"Terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
-        shownCase @"unnamed" usernameStatus ( body2 $ staticText "Pick a username to check its availability" )
-        shownCase @"taken" usernameStatus ( body2 $ RecordToRecord.do
+        ( body2 $ staticText "Pick a username to check its availability" ) # shownCase @"unnamed" usernameStatus
+        ( body2 $ RecordToRecord.do
             staticText "✗ "
             text @"Username"
-            staticText " is already taken" )
-        shownCase @"available" usernameStatus ( body2 $ RecordToRecord.do
+            staticText " is already taken" ) # shownCase @"taken" usernameStatus
+        ( body2 $ RecordToRecord.do
             staticText "✓ "
             text @"Username"
-            staticText " is available" )
-        shownCase @"invalid" validation ( subtitle2 $ RecordToRecord.do
+            staticText " is available" ) # shownCase @"available" usernameStatus
+        ( subtitle2 $ RecordToRecord.do
             staticText "⚠ "
-            text @"problem" )
-        shownCase @"ready" validation ( subtitle2 $ RecordToRecord.do
+            text @"problem" ) # shownCase @"invalid" validation
+        ( subtitle2 $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text @"Username" )
+            text @"Username" ) # shownCase @"ready" validation
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
           snackbar # forCase @"registered" welcomeLine

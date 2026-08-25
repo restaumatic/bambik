@@ -17,22 +17,22 @@ tipCalculatorMDC3 =
       card $ ( Semigroupoid.do
           filledTextField @"Bill amount" {}
           slider @"Tip percentage" {}
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+          ( bodyMedium $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole
-              staticText "%" )
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+              staticText "%" ) # shownAs identity
+          ( bodyMedium $ RecordToRecord.do
               staticText "Split between: "
               text @"Split between" # projection whole
-              staticText " people" )
+              staticText " people" ) # shownAs identity
           slider @"Split between" {}
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+          ( bodyMedium $ RecordToRecord.do
               staticText "Tip amount: "
-              text @"tipAmount" # projected tipAmountText )
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+              text @"tipAmount" # projected tipAmountText ) # shownAs identity
+          ( bodyMedium $ RecordToRecord.do
               staticText "Total: "
-              text @"total" # projected totalText )
-          shownAs identity ( bodyMedium $ RecordToRecord.do
+              text @"total" # projected totalText ) # shownAs identity
+          ( bodyMedium $ RecordToRecord.do
               staticText "Per person: "
-              text @"perPerson" # projected perPersonText )
+              text @"perPerson" # projected perPersonText ) # shownAs identity
       ) # mvu dinnerBill

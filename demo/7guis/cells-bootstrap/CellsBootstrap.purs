@@ -15,9 +15,9 @@ cellsBootstrap :: Effect Unit
 cellsBootstrap =
   body $
     card $ ( Semigroupoid.do
-        shownAs identity ( p $ RecordToRecord.do
+        ( p $ RecordToRecord.do
             staticText "Cell "
-            text @"selectedName" # projected selectedName )
+            text @"selectedName" # projected selectedName ) # shownAs identity
         textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
         ( div >>> "style" := "overflow: auto; max-height: 420px;" $
             ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $

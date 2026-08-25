@@ -15,7 +15,7 @@ circleDrawerHTML :: Effect Unit
 circleDrawerHTML =
   body $ div $ ( Semigroupoid.do
       p ( label $ Semigroupoid.do
-          shownAs identity (staticText "Diameter ")
+          (staticText "Diameter ") # shownAs identity
           rangeInput @"Diameter" ) # provided selectedDiameter # updated (informed adjustDiameter)
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
           ( onClickedXY

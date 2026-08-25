@@ -16,9 +16,9 @@ cellsMDC3 =
   body $
     elevation5 $
       card $ ( Semigroupoid.do
-          shownAs identity ( bodyLarge $ RecordToRecord.do
+          ( bodyLarge $ RecordToRecord.do
               staticText "Cell "
-              text @"selectedName" # projected selectedName )
+              text @"selectedName" # projected selectedName ) # shownAs identity
           filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $

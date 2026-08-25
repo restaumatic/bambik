@@ -12,9 +12,9 @@ temperatureConverterHTML :: Effect Unit
 temperatureConverterHTML =
   body $ div $ ( Semigroupoid.do
       p ( label $ Semigroupoid.do
-          shownAs identity (staticText "Celsius ")
+          (staticText "Celsius ") # shownAs identity
           input "text" # field @"°C" ) # settled fromCelsius
       p ( label $ Semigroupoid.do
-          shownAs identity (staticText "Fahrenheit ")
+          (staticText "Fahrenheit ") # shownAs identity
           input "text" # field @"°F" ) # settled fromFahrenheit
   ) # mvu roomTemperature

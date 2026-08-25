@@ -18,25 +18,25 @@ inboxMDC3 =
   body $
     elevation5 $
       card $ ( Semigroupoid.do
-          shownAs identity ( bodySmall $ RecordToRecord.do
+          ( bodySmall $ RecordToRecord.do
               text @"unreadCount" # projected unreadCountText
               staticText " unread of "
               text @"messageCount" # projected messageCountText
-              staticText " messages" )
+              staticText " messages" ) # shownAs identity
           listOf { selected: _.attention } mailboxRows
             ( span $ Semigroupoid.do
-                shownWhen unreadMark (staticText "● ")
-                shownAs identity ( RecordToRecord.do
+                (staticText "● ") # shownWhen unreadMark
+                ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
-                    text @"subject" ) ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text @"subject" ) # shownAs identity ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Semigroupoid.do
-              shownAs identity ( RecordToRecord.do
+              ( RecordToRecord.do
                   headlineSmall (text @"subject")
                   bodyMedium RecordToRecord.do
                     staticText "From: "
                     text @"sender"
-                  bodyLarge (text @"body"))
+                  bodyLarge (text @"body")) # shownAs identity
               iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
           ( Semigroupoid.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

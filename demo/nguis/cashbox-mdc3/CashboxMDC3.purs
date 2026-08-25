@@ -18,21 +18,21 @@ cashboxMDC3 =
   body $
     elevation5 $
       card $ ( Semigroupoid.do
-          shownAs identity ( headlineSmall $ RecordToRecord.do
+          ( headlineSmall $ RecordToRecord.do
               staticText "Till balance: €"
-              text @"balance" # projection euros )
+              text @"balance" # projection euros ) # shownAs identity
           ( Semigroupoid.do
               RecordToVariant.do
                 button @"Refund a customer" { icon: "undo" } # with standardRefund
                 button @"Pay the courier" { icon: "local_shipping" } # with courierFee
                 button @"Take a deposit" { icon: "savings" } # with customerDeposit
               ( VariantToVariant.do
-                  ( confirmed { title: "Refund the customer?", confirm: "Refund" } $ shownAs identity ( bodyLarge $ RecordToRecord.do
+                  ( ( bodyLarge $ RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " back to the customer." ) ) # atCase @"Refund a customer" # toCase @"Refunded the customer" identity
-                  ( confirmed { title: "Pay the courier?", confirm: "Pay" } $ shownAs identity ( bodyLarge $ RecordToRecord.do
+                      staticText " back to the customer." ) # shownAs identity # confirmed { title: "Refund the customer?", confirm: "Refund" } ) # atCase @"Refund a customer" # toCase @"Refunded the customer" identity
+                  ( ( bodyLarge $ RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " to the courier." ) ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice ) # updated (match { "Refunded the customer": informed applyRefund, "Paid the courier": informed applyPayout, "Take a deposit": informed applyDeposit })
+                      staticText " to the courier." ) # shownAs identity # confirmed { title: "Pay the courier?", confirm: "Pay" } ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice ) # updated (match { "Refunded the customer": informed applyRefund, "Paid the courier": informed applyPayout, "Take a deposit": informed applyDeposit })
       ) # mvu openedTill
