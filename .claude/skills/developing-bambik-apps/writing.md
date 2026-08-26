@@ -330,7 +330,14 @@ meeting-booker's `seatsInRoom` (a room never holds more than its capacity),
 circle-drawer's `resizeSelected` (the selected circle's radius is the
 slider's diameter; `undo`/`redo` clear the selection, so the invariant holds
 through them). An editor folded as an event with `updated` is the smell in
-both cases.
+both cases. And because an editor echoes every fed row, `settled f` runs
+on every loop turn, not only on the edit — so `f` must be **idempotent**, a
+statement true of every model value, never a reaction to the edit.
+Order-form's distance estimate shows the difference: "forget the
+estimate when the address is edited" would wipe it on the next
+re-broadcast; "an estimate belongs to the address it was made for"
+(`staleDistanceForgotten`, the estimate carrying its `to` address) is an
+invariant, and the edit drops the estimate as a consequence.
 
 `clWhen` stays predicate-driven: it toggles a class (styling), not
 visibility, and is deliberately last-element-only.

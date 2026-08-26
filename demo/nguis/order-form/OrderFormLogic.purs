@@ -1,23 +1,37 @@
-module OrderFormLogic (deliveryDetail, dineInDetail, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, submitOrder, submittedLine, summarySettleTime, takeawayDetail) where
+module OrderFormLogic (deliveryDetail, deliveryDistance, dineInDetail, estimateDistance, fulfillmentCase, fulfillmentState, knownDistance, loadOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime, takeawayDetail) where
 
-import Data.Variant.Case (caseText)
-import Prelude ((<>), ($), (==), const, discard, pure, show)
+import Prelude ((<>), (<$>), ($), (==), (/=), bind, const, discard, pure, show)
 
 import Data.Maybe (Maybe(..))
-import Data.String (length)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Effect.Random (randomInt)
 
-distanceKm :: String -> String
-distanceKm address = show (length address)
+estimateDistance :: { "Address" :: String } -> Aff [ estimated :: { km :: Int, to :: String } ]
+estimateDistance { "Address": address } = do
+  liftEffect $ log $ "estimating the distance to " <> address
+  delay (Milliseconds 700.0)
+  km <- liftEffect $ randomInt 1 6
+  liftEffect $ log $ "estimated " <> show km <> " km"
+  pure $ .estimated { km, to: address }
+
+setDistance :: { km :: Int, to :: String } -> { distance :: Maybe { km :: Int, to :: String } } -> { distance :: Maybe { km :: Int, to :: String } }
+setDistance estimate _ = { distance: Just estimate }
+
+staleDistanceForgotten :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } } -> { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
+staleDistanceForgotten r@{ "Address": address, distance: Just { to } } | to /= address = r { distance = Nothing }
+staleDistanceForgotten r = r
+
+knownDistance :: { distance :: Maybe { km :: Int, to :: String } } -> Maybe { km :: Int }
+knownDistance { distance } = (\e -> { km: e.km }) <$> distance
 
 dineInDetail ::
   { fulfillment ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String }
+      , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
       ]
   }
   -> Maybe { "Table" :: String }
@@ -27,7 +41,7 @@ takeawayDetail ::
   { fulfillment ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String }
+      , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
       ]
   }
   -> Maybe { "Time" :: String }
@@ -37,33 +51,43 @@ deliveryDetail ::
   { fulfillment ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String }
+      , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
       ]
   }
   -> Maybe { "Address" :: String }
-deliveryDetail { fulfillment } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": Just } fulfillment
+deliveryDetail { fulfillment } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": \r -> Just { "Address": r."Address" } } fulfillment
+
+deliveryDistance ::
+  { fulfillment ::
+      [ "Dine in" :: { "Table" :: String }
+      , "Takeaway" :: { "Time" :: String }
+      , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
+      ]
+  }
+  -> Maybe { km :: Int }
+deliveryDistance { fulfillment } = match { "Dine in": const Nothing, "Takeaway": const Nothing, "Delivery": \r -> (\e -> { km: e.km }) <$> r.distance } fulfillment
 
 fulfillmentState ::
   [ "Dine in" :: { "Table" :: String }
   , "Takeaway" :: { "Time" :: String }
-  , "Delivery" :: { "Address" :: String }
+  , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
   ]
-  -> { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String }
+  -> { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
 fulfillmentState = match
-  { "Dine in": \r -> { selected: ."Dine in" {}, "Table": r."Table", "Time": "12:00", "Address": "" }
-  , "Takeaway": \r -> { selected: ."Takeaway" {}, "Table": "1", "Time": r."Time", "Address": "" }
-  , "Delivery": \r -> { selected: ."Delivery" {}, "Table": "1", "Time": "12:00", "Address": r."Address" }
+  { "Dine in": \r -> { selected: ."Dine in" {}, "Table": r."Table", "Time": "12:00", "Address": "", distance: Nothing }
+  , "Takeaway": \r -> { selected: ."Takeaway" {}, "Table": "1", "Time": r."Time", "Address": "", distance: Nothing }
+  , "Delivery": \r -> { selected: ."Delivery" {}, "Table": "1", "Time": "12:00", "Address": r."Address", distance: r.distance }
   }
 
-fulfillmentCase :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String } ->
+fulfillmentCase :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: Maybe { km :: Int, to :: String } } ->
   [ "Dine in" :: { "Table" :: String }
   , "Takeaway" :: { "Time" :: String }
-  , "Delivery" :: { "Address" :: String }
+  , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
   ]
-fulfillmentCase { selected, "Table": table, "Time": time, "Address": address } = match
+fulfillmentCase { selected, "Table": table, "Time": time, "Address": address, distance } = match
   { "Dine in": \_ -> ."Dine in" { "Table": table }
   , "Takeaway": \_ -> ."Takeaway" { "Time": time }
-  , "Delivery": \_ -> ."Delivery" { "Address": address }
+  , "Delivery": \_ -> ."Delivery" { "Address": address, distance }
   } selected
 
 selection :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ] } -> [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ]
@@ -79,7 +103,7 @@ loadOrder :: {} -> Aff
   , fulfillment ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String }
+      , "Delivery" :: { "Address" :: String, distance :: Maybe { km :: Int, to :: String } }
       ]
   , "Total" :: String
   , payment ::

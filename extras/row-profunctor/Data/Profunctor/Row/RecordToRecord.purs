@@ -326,6 +326,11 @@ muted = rmap (const {})
 -- | makes it a transaction — `formula # settled commit`.
 -- | Type-preservation is the contract: `settled` normalizes, it cannot
 -- | re-shape. `rmap`-only.
+-- | Idempotence is the other half of the contract: an editor stage echoes
+-- | every fed row, so the normalizer runs on every loop turn, not only on
+-- | the edit — it states an invariant of the value (meeting-booker's
+-- | `seatsInRoom`, order-form's `staleDistanceForgotten`), never a reaction
+-- | to the edit, which the next re-broadcast would undo.
 -- |
 -- | The normalizer **subsumes** (like `PUI.updated`'s handler): it may read
 -- | and rebuild a sub-row of the emission, merged back over the full value,

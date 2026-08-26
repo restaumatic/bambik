@@ -1,15 +1,16 @@
 module OrderFormMDC3 (orderFormMDC3) where
 
-import Prelude (Unit, (#), ($))
+import Prelude (Unit, (#), ($), show)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
+import Data.Variant (match)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
-import OrderFormLogic (deliveryDetail, dineInDetail, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, submitOrder, submittedLine, summarySettleTime, takeawayDetail)
-import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, looped, required, with)
+import OrderFormLogic (deliveryDetail, deliveryDistance, dineInDetail, estimateDistance, fulfillmentCase, fulfillmentState, knownDistance, loadOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime, takeawayDetail)
+import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
@@ -40,11 +41,14 @@ orderFormMDC3 =
                     filledTextField @"Table" {} # inCase @"Dine in" selection
                     filledTextField @"Time" {} # inCase @"Takeaway" selection
                     ( Pipeline.do
-                        filledTextField @"Address" {}
+                        filledTextField @"Address" {} # settled staleDistanceForgotten
+                        ( Pipeline.do
+                            button @"Estimate distance" { icon: "near_me" }
+                            indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
                         ( bodyLarge $ RecordToRecord.do
                             staticText "Distance "
-                            text @"Address" # projection distanceKm
-                            staticText " km" ) # shown) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
+                            text @"km" # projection show
+                            staticText " km" ) # shownWhen knownDistance) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
           card $ Pipeline.do
             (titleMedium $ staticText "Total") # shown
             filledTextField @"Total" {}
@@ -81,10 +85,11 @@ orderFormMDC3 =
               text @"Time" ) # shownWhen takeawayDetail
           ( RecordToRecord.do
               staticText "delivery to "
-              text @"Address"
+              text @"Address" ) # shownWhen deliveryDetail
+          ( RecordToRecord.do
               staticText " ("
-              text @"Address" # projection distanceKm
-              staticText " km away)" ) # shownWhen deliveryDetail
+              text @"km" # projection show
+              staticText " km away)" ) # shownWhen deliveryDistance
           ( ( RecordToRecord.do
               staticText ", paid "
               text @"Paid"

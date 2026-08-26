@@ -372,8 +372,14 @@ merges, native `select` and `output`.
 ### nGUIs — one combinator each
 
 **Flagship.** order-form is the **four-direction showcase**: load action →
-`×→×` `looped` form (whole-row editor stages, sub-records nested via `field @l`; variant editors as `bracketed` pipelines of
-`tabBar`/`segmentedButton` + `provided` payload panes) → gated live summary
+`×→×` `looped` form (whole-row editor stages, sub-records nested via `field @l`;
+variant editors as `bracketed` pipelines of `tabBar`/`segmentedButton` +
+`inCase` editor panes; an **in-form Aff action** — the delivery distance is
+estimated on a button, `button @"Estimate distance" {}` →
+`action estimateDistance # atCase` → `updated`; the estimate records the
+address it was made for and `settled staleDistanceForgotten` keeps that
+invariant, so an address edit drops it — the effect runs on an occurrence,
+never on the loop's broadcast, and `settled` normalizes, never reacts) → gated live summary
 → `×→+` event buttons `# armed` → `+→+` backend dispatch → `+→×` status
 snackbars.
 
