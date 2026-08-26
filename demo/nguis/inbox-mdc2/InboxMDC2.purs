@@ -9,36 +9,36 @@ import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
 import PUI (forCase, mvu, observed, atCase, projected, toCase, updated)
-import PUI.Web.HTML (shownWhen, shownAs, body, provided, span, staticText, text)
+import PUI.Web.HTML (shownWhen, shownAlways, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $
     elevation20 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           ( caption $ RecordToRecord.do
               text @"unreadCount" # projected unreadCountText
               staticText " unread of "
               text @"messageCount" # projected messageCountText
-              staticText " messages" ) # shownAs identity
+              staticText " messages" ) # shownAlways
           listOf { selected: _.attention } mailboxRows
-            ( span $ Semigroupoid.do
+            ( span $ Pipeline.do
                 (staticText "● ") # shownWhen unreadMark
                 ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
-                    text @"subject" ) # shownAs identity ) # toCase @"opened" _.id # updated (match { opened: openMessage })
-          ( Semigroupoid.do
+                    text @"subject" ) # shownAlways ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+          ( Pipeline.do
               ( RecordToRecord.do
                   headline6 (text @"subject")
                   body2 RecordToRecord.do
                     staticText "From: "
                     text @"sender"
-                  body1 (text @"body")) # shownAs identity
+                  body1 (text @"body")) # shownAlways
               iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
-          ( Semigroupoid.do
+          ( Pipeline.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button @"Delete" {}
                   button @"Keep" {}) # provided confirmingDelete

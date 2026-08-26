@@ -1,6 +1,6 @@
 module TicTacToeMDC3 (ticTacToeMDC3) where
 
-import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
+import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (forProperty, foreach, mvu, toCase, updated, with)
 import PUI.Web.HTML (shownCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC3 (button, card, elevation5, headlineSmall)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 import TicTacToeLogic (cells, claimCell, gameOutcome, openingPosition)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
   body $
     elevation5 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           ( headlineSmall $ RecordToRecord.do
               text @"mark"
               staticText " wins" ) # shownCase @"won" gameOutcome
@@ -27,7 +27,7 @@ ticTacToeMDC3 =
                   ( clicked
                       ( div
                           >>> attrWith "style" cellFace
-                          $ text @"mark" # forProperty identity)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
+                          $ text @"mark" # forProperty)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
           button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
       ) # mvu openingPosition
 cellFace :: { mark :: String, win :: Boolean } -> String

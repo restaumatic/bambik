@@ -26,7 +26,7 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(valueOf(0)), '20.0', 'the seeded celsius reading renders')
   assertEq(await ev(valueOf(1)), '68.0', 'the seeded fahrenheit reading renders')
 
-  // the payload label carries the typed text; `informed` lays it over the model
+  // the field's label carries the typed text; the stage's `settled` normalization writes the sibling
   await ev(type(0, '100'))
   await sleep(80)
   assertEq(await ev(valueOf(1)), '212.0', 'typing celsius converts into fahrenheit')

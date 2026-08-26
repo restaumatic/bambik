@@ -9,14 +9,14 @@ import Effect (Effect)
 import PUI (every, mvu, updated)
 import PUI.Web.HTML (shown, shownEach, providedCase, body, li, staticText, text, ul)
 import PUI.Web.MDC2 (button, card, elevation20, headline3)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 import StopwatchLogic (beginTiming, clearStopwatch, formatTime, haltTiming, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
   body $
     elevation20 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           headline3 (shown @"elapsedTenths" formatTime)
           every tickPeriod tick
           ( RecordToVariant.do

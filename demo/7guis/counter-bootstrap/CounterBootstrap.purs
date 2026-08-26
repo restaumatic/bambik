@@ -8,12 +8,12 @@ import Effect (Effect)
 import PUI (mvu, updated)
 import PUI.Web.Bootstrap (button, card)
 import PUI.Web.HTML (body, h4, shown)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 counterBootstrap :: Effect Unit
 counterBootstrap =
   body $
-    card $ ( Semigroupoid.do
+    card $ ( Pipeline.do
         h4 (shown @"count" show)
         button @"Count" {} # updated (match { "Count": const <<< increment })
     ) # mvu freshCount

@@ -1,15 +1,15 @@
 module PhotoGalleryMDC2 (photoGalleryMDC2) where
 
-import Prelude (identity, (#), ($), (<<<), Unit, const)
+import Prelude ((#), ($), (<<<), Unit, const)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesOpen, openAlbum)
 import PUI (forProperty, mvu, toCase, updated)
-import PUI.Web.HTML (shownEach, shownAs, body, span, staticText, text)
+import PUI.Web.HTML (shownEach, shownAlways, body, span, staticText, text)
 import PUI.Web.MDC2 (divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 photoGalleryMDC2 :: Effect Unit
 photoGalleryMDC2 =
@@ -17,7 +17,7 @@ photoGalleryMDC2 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
           ( RecordToRecord.do
-              listOf { selected: _.current } albumChoices (span (text @"name") # forProperty identity) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
+              listOf { selected: _.current } albumChoices (span (text @"name") # forProperty) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
               divider
               list RecordToRecord.do
                 listItem $ staticText "Every photo is an SVG"
@@ -29,7 +29,7 @@ photoGalleryMDC2 =
                 imageListItem { src: developedPhoto "Half Smile", label: "Half Smile" }
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
-          ( Semigroupoid.do
-              (headline2 (text @"album")) # shownAs identity
+          ( Pipeline.do
+              (headline2 (text @"album")) # shownAlways
               imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
       ) # mvu landscapesOpen

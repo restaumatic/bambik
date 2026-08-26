@@ -1,6 +1,6 @@
 module LoanCalculatorBootstrap (loanCalculatorBootstrap) where
 
-import Prelude (identity, Unit, ($), (#))
+import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
@@ -8,14 +8,14 @@ import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText
 import PUI (forCase, mvu, projected, required)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAs, body, div, staticText, text)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import PUI.Web.HTML (shownAlways, body, div, staticText, text)
+import QualifiedDo.Semigroupoid as Pipeline
 
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $
-    card $ Semigroupoid.do
-      ( Semigroupoid.do
+    card $ Pipeline.do
+      ( Pipeline.do
           textField @"Applicant" {}
           sliderLive @"Amount (€)" {}
           sliderLive @"Term (years)" {}
@@ -32,9 +32,9 @@ loanCalculatorBootstrap =
               text @"rate" # projected rateText )
           listGroupItem ( RecordToRecord.do
               staticText "Total interest "
-              text @"totalInterest" # projected totalInterestText ) ) # shownAs identity
+              text @"totalInterest" # projected totalInterestText ) ) # shownAlways
       ( ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
-          progress @"interestShare" ) # projected interestShare ) # shownAs identity
+          progress @"interestShare" ) # projected interestShare ) # shownAlways
       button @"Apply for this loan" {}
       toast # forCase @"Apply for this loan" appliedLine

@@ -67,14 +67,14 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  atField, atProperty, projection, subStrong, field, required  feedback
+-- | p {|a} {|b}  atField, projection,             subStrong, field, required  feedback
 -- |              forProperty, projected,
--- |              toField, asField
+-- |              asField
 -- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
--- | p {|a} [|b]  toCase, recordToCase,           subResolving, focusProperty  folding
+-- | p {|a} [|b]  toCase, recordToCase,           subResolving,                folding
 -- |              toCases                         backgroundProperty
 -- | p [|a] {|b}  forCase, forCases               subRetaining, focusCase      unfolding
--- |                                              backgroundCase, reduceCase
+-- |                                              backgroundCase
 -- | ```
 -- |
 -- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
@@ -99,7 +99,7 @@
 -- | already one of them at the singleton complement. Only on the mixed shapes
 -- | do the two halves differ, because the escaping half must cross carriers,
 -- | and there are two ways to cross: wrapped whole at a synthetic label
--- | (`subResolving`/`focusProperty` send the background across as case `w`) or,
+-- | (`subResolving` sends the background across as case `w`) or,
 -- | when what escapes is a single label, injected under its own
 -- | (`backgroundProperty`/`backgroundCase`). So `background*` is not the
 -- | complement of `focus*` so much as the **label-preserving** crossing, and
@@ -112,8 +112,8 @@
 -- | ```
 -- |                          input ×      input +    output ×   output +
 -- | -----------------------  -----------  ---------  ---------  ------------
--- | bare, closed singleton   atField      atCase     toField    toCase
--- | bare, open row           atProperty   —          —          recordToCase
+-- | bare, closed singleton   atField      atCase     —          toCase
+-- | bare, open row           —            —          —          recordToCase
 -- | derived-label formatter  projection   forCase    —          —
 -- | whole row                projected    forCases   —          toCases
 -- | ```
@@ -133,9 +133,12 @@
 -- | remaining fields, which only `field @l`'s retained background can
 -- | supply over `Strong`.
 -- |
--- | The output-`×` rename needs no entry of its own — it is
--- | `toField @l`, exactly as a label-indexed emitter is `recordToCase @l`
--- | at the leaf. `asField` is the fused both-side rename packaged controls
+-- | The output-`×` bare-value cells are deliberately empty: a record output
+-- | is owned, so a bare value could become a field only as the whole row,
+-- | and a label-indexed leaf already emits its labelled row (`field @l`
+-- | lifts an editor into it) exactly as a label-indexed emitter is
+-- | `recordToCase @l` — the closed-singleton field build had nothing left
+-- | to do and was pruned (L14). `asField` is the fused both-side rename packaged controls
 -- | want (a fixed core row renamed at the surface), and the deliberately
 -- | absent `+ → +` fusion is `atCase @l # toCase @l' f`. The one entry
 -- | outside the grid is `splitVariant`, a plain function rather than a

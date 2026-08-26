@@ -1,38 +1,38 @@
 module TipCalculatorMDC3 (tipCalculatorMDC3) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (projection, mvu, projected)
-import PUI.Web.HTML (shownAs, body, staticText, text)
+import PUI.Web.HTML (shownAlways, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 import TipCalculatorLogic (dinnerBill, perPersonText, tipAmountText, totalText, whole)
 
 tipCalculatorMDC3 :: Effect Unit
 tipCalculatorMDC3 =
   body $
     elevation5 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           filledTextField @"Bill amount" {}
           slider @"Tip percentage" {}
           ( bodyMedium $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole
-              staticText "%" ) # shownAs identity
+              staticText "%" ) # shownAlways
           ( bodyMedium $ RecordToRecord.do
               staticText "Split between: "
               text @"Split between" # projection whole
-              staticText " people" ) # shownAs identity
+              staticText " people" ) # shownAlways
           slider @"Split between" {}
           ( bodyMedium $ RecordToRecord.do
               staticText "Tip amount: "
-              text @"tipAmount" # projected tipAmountText ) # shownAs identity
+              text @"tipAmount" # projected tipAmountText ) # shownAlways
           ( bodyMedium $ RecordToRecord.do
               staticText "Total: "
-              text @"total" # projected totalText ) # shownAs identity
+              text @"total" # projected totalText ) # shownAlways
           ( bodyMedium $ RecordToRecord.do
               staticText "Per person: "
-              text @"perPerson" # projected perPersonText ) # shownAs identity
+              text @"perPerson" # projected perPersonText ) # shownAlways
       ) # mvu dinnerBill

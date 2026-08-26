@@ -1,7 +1,6 @@
-module PotluckLogic (guestCount, guestLine, invitation, invitationLine, nameText) where
+module PotluckLogic (guestCount, invitation) where
 
-import Data.Variant.Case (caseText)
-import Prelude ((<>), show)
+import Prelude (show)
 
 import Data.Array (length)
 import Data.Maybe (Maybe(..))
@@ -18,12 +17,3 @@ invitation =
 
 guestCount :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
 guestCount { guests } = show (length guests)
-
-invitationLine :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
-invitationLine party = guestCount party <> " guests invited \x2014 everyone picks one dish; the menu prints once the table is complete."
-
-nameText :: { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } -> String
-nameText { name } = name
-
-guestLine :: { name :: String, "Dish" :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } -> String
-guestLine { name, "Dish": dish } = name <> "\x2019s " <> caseText dish <> ", "

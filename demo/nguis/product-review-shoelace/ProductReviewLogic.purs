@@ -1,6 +1,5 @@
-module ProductReviewLogic (freshImpression, headlineQuote, previewLine, recommendNote, starGlyphs, submittedLine) where
+module ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine) where
 
-import Data.Variant.Case (caseText)
 import Prelude ((<>), (-))
 
 import Data.Int (round)
@@ -39,7 +38,3 @@ starGlyphs { current, max } = power "★" (round current) <> power "☆" (max - 
 
 maxStars :: Int
 maxStars = 5
-
-previewLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean } -> String
-previewLine { "Overall rating": rating, "Headline": headline, "How long have you owned it?": owned, "I'd recommend it to a friend": recommend } =
-  "Preview: " <> starGlyphs rating <> headlineQuote headline <> " \x00b7 owned " <> caseText owned <> recommendNote { "I'd recommend it to a friend": recommend }

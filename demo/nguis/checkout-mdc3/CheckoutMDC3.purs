@@ -11,14 +11,14 @@ import Effect (Effect)
 import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 checkoutMDC3 :: Effect Unit
 checkoutMDC3 =
   body $
     elevation5 $
-      card $ ( Semigroupoid.do
-          ( Semigroupoid.do
+      card $ ( Pipeline.do
+          ( Pipeline.do
               ( bodyMedium $ RecordToRecord.do
                   staticText "Step 1 of 3 — Cart: "
                   text @"item" ) # shownWhen atCart

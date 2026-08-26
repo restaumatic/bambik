@@ -1,6 +1,6 @@
-module QuizLogic (answer, choiceLabel, currentQuestion, finalLine, finalOutcome, freshQuizRun, progressFraction, promptText, questionCountText, questionNumberText, scoreLine) where
+module QuizLogic (answer, currentQuestion, finalOutcome, freshQuizRun, progressFraction, questionCountText, questionNumberText) where
 
-import Prelude (show, (<>), (+), (/), (<), (<#>), (==), min)
+import Prelude (show, (+), (/), (<), (<#>), (==), min)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
@@ -40,15 +40,3 @@ questionNumberText { question } = show (min (question + 1) (length questionCatal
 
 questionCountText :: String
 questionCountText = show (length questionCatalogue)
-
-scoreLine :: { question :: Int, correct :: Int } -> String
-scoreLine { question, correct } = "Question " <> questionNumberText { question } <> " of " <> questionCountText <> " \x00b7 Score " <> show correct
-
-promptText :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> String
-promptText { prompt } = prompt
-
-choiceLabel :: { key :: Int, label :: String } -> String
-choiceLabel { label } = label
-
-finalLine :: { correct :: Int, total :: Int } -> String
-finalLine { correct, total } = "Final score: " <> show correct <> " / " <> show total

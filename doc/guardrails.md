@@ -181,8 +181,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   DOM order.
 - Structure computed from data stays in the algebra: fixed structure fed
   as data through the retaining collection members (build once, update
-  in place via `text`/`attrWith`); wholesale rebuild (`foreachWith`,
-  `dynamic`, `each`) is admitted only where structure genuinely varies
+  in place via `text`/`attrWith`); wholesale rebuild (`dynamic`,
+  `each`) is admitted only where structure genuinely varies
   with the data (markdown blocks), and each rebuild owns its container.
 - There MUST NOT be a markup DSL, a template language, or an HTML
   string surface in the public vocabulary (`staticHTML` is internal
@@ -305,7 +305,7 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
 rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
-copyOf`, `projection f`/`projected f`/`forProperty f`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
+copyOf`, `projection f`/`projected f`/`forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next `required` waiting to be coined — never a reason to import the

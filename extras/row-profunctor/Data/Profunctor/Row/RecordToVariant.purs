@@ -16,7 +16,7 @@
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
 -- |     *what the wrapped profunctor runs on*: `subResolving` (a sub-record),
--- |     `focusProperty` (one field), `backgroundProperty` (the background,
+-- |     `backgroundProperty` (the background,
 -- |     the focus escaping), `recordToCase` (introduce; mere
 -- |     `Profunctor`) — and over the co-strength `Coresolving`:
 -- |     `folding @w` (the terminating fold at row granularity, the
@@ -48,7 +48,6 @@ module Data.Profunctor.Row.RecordToVariant
   , silence
   , armed
   , recordToVariant
-  , focusProperty
   , recordToCase
   , toCase
   , toCases
@@ -189,34 +188,6 @@ backgroundProperty g =
     -- first-label convention `inj`/`on` follow.
     (\s -> Tuple (unsafeDelete (reflectSymbol (Proxy @l)) s) (get (Proxy @l) s))
     (either expand (inj (Proxy @l)))
-    (resolve g)
-
--- | The single-field **focus** for this direction — the `× → +` analogue of
--- | `RecordToRecord.field` (row-typed `first`), built on `resolve`
--- | exactly as that one is built on `first`. The **focus** `f` at `l` of the input **shot** `s` is fed
--- | to the wrapped `p f f'`; the **background** `{ | b }` cannot stay a record
--- | inside the `Variant` output, so — as in `subResolving` — it is wrapped as a
--- | single output case `w`: `Done` emits case `l :: f'`, the `Loop`/escape
--- | branch emits case `w` carrying the untouched background. The single-field
--- | form of `subResolving`; the transpose of `backgroundProperty`, which runs the
--- | wrapped profunctor on the *background* and lets the focus escape.
-focusProperty
-  :: forall @l @w p f f' b s lx wx s'
-   . Resolving p
-  => IsSymbol l
-  => IsSymbol w
-  => Cons l f b s
-  => Cons l f' lx s'
-  => Cons w { | b } wx s'
-  => p f f'
-  -> p { | s } [ | s' ]
-focusProperty g =
-  dimap
-    -- no `Lacks`: `unsafeDelete` realizes the layout `Cons l f b s` pins —
-    -- under a shadowed duplicate label the outer entry wins, the same
-    -- first-label convention `inj`/`on` follow.
-    (\s -> Tuple (get (Proxy @l) s) (unsafeDelete (reflectSymbol (Proxy @l)) s))
-    (either (inj (Proxy @l)) (inj (Proxy @w)))
     (resolve g)
 
 -- | The `× → +` member of the introduce family: the wrapped `p { | r } f` reads

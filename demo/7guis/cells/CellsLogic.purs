@@ -1,4 +1,4 @@
-module CellsLogic (cellText, commit, gridRows, orderSheet, selectCell, selectedLine, selectedName) where
+module CellsLogic (commit, gridRows, orderSheet, selectCell, selectedName) where
 
 import Prelude ((<>), bind, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -211,9 +211,3 @@ evalExpr cells visiting = go
 
 selectedName :: { selected :: Maybe String } -> String
 selectedName { selected } = fromMaybe "—" selected
-
-selectedLine :: { selected :: Maybe String } -> String
-selectedLine cell = "Cell " <> selectedName cell
-
-cellText :: { text :: String, header :: Boolean, sel :: Boolean } -> String
-cellText { text } = text

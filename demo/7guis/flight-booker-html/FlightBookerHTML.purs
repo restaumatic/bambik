@@ -8,25 +8,25 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, field, forCases, mvu, pempty, required, toCase)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownAs, shownCase, body, button, div, input, label, output, p, select, staticText, text)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import PUI.Web.HTML (inCase, shownAlways, shownCase, body, button, div, input, label, output, p, select, staticText, text)
+import QualifiedDo.Semigroupoid as Pipeline
 
 flightBookerHTML :: Effect Unit
 flightBookerHTML =
-  body $ div $ Semigroupoid.do
-    ( Semigroupoid.do
+  body $ div $ Pipeline.do
+    ( Pipeline.do
         p ( label $ RecordToRecord.do
             staticText "Flight type "
             select @"Flight type"
               [ choice @"one-way", choice @"return" ] ) # required
-        p ( label $ Semigroupoid.do
-            (staticText "Start date (DD.MM.YYYY) ") # shownAs identity
+        p ( label $ Pipeline.do
+            (staticText "Start date (DD.MM.YYYY) ") # shownAlways
             input "text" # field @"Start date (DD.MM.YYYY)" )
-        p ( label $ Semigroupoid.do
-            (staticText "Return date (DD.MM.YYYY) ") # shownAs identity
+        p ( label $ Pipeline.do
+            (staticText "Return date (DD.MM.YYYY) ") # shownAlways
             input "text" # field @"Return date (DD.MM.YYYY)" ) # inCase @"return" tripType
     ) # mvu plannedTrip
-    ( Semigroupoid.do
+    ( Pipeline.do
         ( p $ RecordToRecord.do
             staticText "⚠ "
             text @"problem" ) # shownCase @"problem" bookingState

@@ -19,10 +19,9 @@
 -- |     constant) and `with` (`announce a >>> w` over `Semigroupoid` —
 -- |     discharge the initial-state obligation), plus the subsuming
 -- |     `settled` (`rmap`-only normalization over a stated sub-row);
--- |     over bare `Profunctor`: the adopters `atField`/`atProperty` (read a
--- |     field, closed or open row), `projection`/`forProperty` (retype/read one into
--- |     the canonical display row), `projected` (read the whole), `toField`
--- |     (build a field, the transpose of `toCase`) and `asField` (the
+-- |     over bare `Profunctor`: the adopters `atField` (read a field, closed
+-- |     row), `projection`/`forProperty` (retype/read one into the canonical
+-- |     display row), `projected` (read the whole) and `asField` (the
 -- |     canonical-row rename for packaged controls);
 -- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
 -- |     granularity — a state sub-record loops from output to input, the
@@ -51,17 +50,14 @@ module Data.Profunctor.Row.RecordToRecord
   , with
   , mvu
   , settled
-  , informed
   , feedback
   , asField
   , atField
-  , atProperty
   , projection
   , forProperty
   , projected
   , required
   , field
-  , toField
   , muted
   , pempty
   , subStrong
@@ -132,8 +128,8 @@ discard first cont = bind first (\_ -> cont unit)
 -- | generalizing the unit's informationless `{}` announcement to a row of
 -- | fields. As a merge operand it seeds fields; composed in front of a
 -- | UI component it discharges the initial-state obligation (`with`'s
--- | implementation). Record-shaped like every `× → ×` built side (the
--- | `toField` convention) — a case is seeded by adopting an announcement
+-- | implementation). Record-shaped like every `× → ×` built side —
+-- | a case is seeded by adopting an announcement
 -- | (`announce { … } # toCase @l f`) or a `seeded` wire's `inj`, never by
 -- | a variant-typed constant: the `× → +` unit is silent, so no
 -- | case-announcer can close over it.
@@ -279,15 +275,6 @@ required w = field @l (dimap (\v -> Record.insert (Proxy @l) (Just v) {}) (Recor
 atField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
 atField = lcmap (Record.get (Proxy @l))
 
--- | `atField`'s **open-row** sibling, exactly as `forProperty` is
--- | `forProperty`'s: feed a structural UI component the bare field `l` of a *wider*
--- | row, the background labels untouched. `lcmap`-only. The open row is
--- | legal here because a record input is **shared** — every operand may read
--- | every field — which is the same law that permits `forProperty` and
--- | forbids an open-row read at `[ | s ]`.
-atProperty :: forall @l p a o t r. IsSymbol l => Profunctor p => Cons l a t r => p a o -> p { | r } o
-atProperty = lcmap (Record.get (Proxy @l))
-
 -- | Retype a display's field **through a formatter**, label untouched:
 -- | `text @"bid" # projection (show <<< _.current)` shows the quantity's
 -- | current value as field `bid`. The leaf states the business label once;
@@ -296,17 +283,20 @@ atProperty = lcmap (Record.get (Proxy @l))
 -- | no `projection` at all (`text @"prompt"`).
 -- |
 -- | `lcmap`-only; a display owns no output fields. Whole-value reads are
--- | `projected f`; context-pinned wider rows are `forProperty f`.
+-- | `projected f`; context-pinned wider rows are `forProperty`.
 projection :: forall l p a b ia ib o. RowToList ia (RL.Cons l a RL.Nil) => IsSymbol l => Lacks l () => Cons l a () ia => Cons l b () ib => Profunctor p => (b -> a) -> p { | ia } o -> p { | ib } o
 projection f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
 
 -- | `projection`'s **open-row** sibling (the display-side `field @l`: the
 -- | background is carried), for positions whose row the context already
 -- | pins — collection items, pane payloads. The label is the leaf's own,
--- | read back out of its row: `text @"label" # forProperty identity` on a
--- | collection element, `text @"score" # forProperty show`.
-forProperty :: forall l p a b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Cons l a t r => Profunctor p => (a -> b) -> p { | cr } o -> p { | r } o
-forProperty f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
+-- | read back out of its row, and the field passes verbatim:
+-- | `text @"label" # forProperty` on a collection element. A formatted
+-- | read is `projection`'s job, composed before it —
+-- | `text @"score" # projection show # forProperty` — which is why this
+-- | takes no function of its own.
+forProperty :: forall l p b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Cons l b t r => Profunctor p => p { | cr } o -> p { | r } o
+forProperty = lcmap (\r -> Record.insert (Proxy @l) (Record.get (Proxy @l) r) {})
 
 -- | Adopt a **canonically-labeled** component (`{ value :: a }` in and out,
 -- | the citizenship-carrying scalar interface) as business field `l`: a pure
@@ -317,24 +307,11 @@ forProperty f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) 
 asField :: forall @c @l p a b s t ci co. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c a () ci => Cons c b () co => Lacks l () => Cons l a () s => Cons l b () t => p { | ci } { | co } -> p { | s } { | t }
 asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\r -> Record.insert (Proxy @l) (Record.get (Proxy @c) r) {})
 
--- | Introduce a **bare** output as field `l` — `rmap`-only, the transpose of
--- | `RecordToVariant.toCase`, mirroring how the deliberately-absent
--- | `+ → +` case wrap is `atCase @l # toCase @l' f`.
--- | The closed singleton row is what a **record output** admits: the side is
--- | *owned*, so a field may be built alone only when it is the whole row —
--- | an open-row build would have to produce the other fields from nothing,
--- | which only `field @l`'s retained background can supply over `Strong`.
--- | The canonical-row rename on this side needs no combinator of its own: it
--- | is `toField @l _.value`, exactly as `asCase` is `toCase` at the canonical
--- | eliminator.
-toField :: forall @l p i a b s. IsSymbol l => Profunctor p => Lacks l () => Cons l b () s => (a -> b) -> p i a -> p i { | s }
-toField f = rmap (\a -> Record.insert (Proxy @l) (f a) {})
-
 -- | The **counit**: render, and **deliberately discard** the component's
 -- | output — `rmap`-only, the explicit form of what no stage may ever do
 -- | silently. The duoidal reading (see `PUI`'s header and
 -- | doc/collections-profunctor-algebra.md §0): a fulfillment-gated display
--- | (`shownAs` and its rungs) carries the comultiplication (render *and*
+-- | (`shownAlways` and its rungs) carries the comultiplication (render *and*
 -- | release), `muted` only the counit (render and drop). Wherever a
 -- | genuinely emitting assembly (a `foreach` forwarding its elements, a
 -- | packaged collection display echoing its array) is used purely as a
@@ -363,48 +340,6 @@ settled
   -> p i { | big }
   -> p i { | big }
 settled f = rmap (\big -> Record.merge (f (unsafeCoerce big)) big)
-
--- | The **dispatch adapter**: make a single-record business function a
--- | Mealy handler (`PUI.updated`, or a `match` branch of one). The
--- | handler's two records — the event's payload and the retained model
--- | row — travel together into every fold, so `informed` merges them and
--- | the business function sees **one row of facts**, the payload's fields
--- | laid over the model's (fresh knowledge wins — the union is
--- | left-biased, like the merges), returning the match row:
--- |
--- | ```
--- | # updated (match { refunded: informed applyRefund })
--- | applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
--- | ```
--- |
--- | Reads are **per-branch exact**: `fed` is the function's own closed row,
--- | read from the merged facts by subsumption, so a branch states precisely
--- | which payload and model fields it consumes — unused payload fields cost
--- | nothing, and a payload label shadowing a model label reads as the
--- | payload's (first-label convention). What A12 once exempted as
--- | "mechanism-dictated currying" dissolves here; only scalar and `Array`
--- | payloads (a key, a fetched list) stay positional — they are not rows.
--- | Pure record algebra — no profunctor in sight; it lives here because
--- | its rows are this direction's.
--- |
--- | Its job is **genuine dispatch**: a payload that is *computed* (a
--- | bounded quantity assembled for a pane) or a fold that does real work
--- | (an undo transaction, a map over a collection). It is *not* for the
--- | identity fold — a field that exists only in one mode is a whole-row
--- | editor with gated existence (`PUI.Web.HTML.inCase`), whose `field @l`
--- | lift already re-attaches the rest of the row; `# provided paneOf
--- | # updated (informed setField)` with `setField` the identity was
--- | completion rebuilt by hand, and that shape is gone.
-informed
-  :: forall pay small u fed extra
-   . Union pay small u
-  => Union fed extra u
-  => ({ | fed } -> { | small })
-  -> { | pay }
-  -> { | small }
-  -> { | small }
-informed g pay small = g (unsafeCoerce (Record.union pay small))
-
 
 -- | The `×`-diagonal **trace at row granularity**, over ecosystem
 -- | `Costrong`: the **state** sub-record `fb` of the output loops back into

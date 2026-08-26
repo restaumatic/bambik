@@ -20,8 +20,10 @@ matches the app's design system.
 
 ## The pipeline
 
-The app is one profunctor pipeline, composed with `Semigroupoid.do`
-(data-flow stages) and the four qualified-do row merges:
+The app is one profunctor pipeline, composed with `Pipeline.do`
+(data-flow stages: each stage's output is the next stage's input, so
+code order is DOM order *and* data order) and the four qualified-do row
+merges (operands over one shared row):
 
 - `RecordToRecord.do` (×→×) — all-at-once **content merges**: chrome
   beside displays (a gated rung's structured content), and bare
@@ -34,7 +36,17 @@ The app is one profunctor pipeline, composed with `Semigroupoid.do`
 
 The merges are imported from the row modules
 (`Data.Profunctor.Row.RecordToRecord` and its three siblings), not from
-`QualifiedDo` — only `Semigroupoid` lives there.
+`QualifiedDo` — only `Semigroupoid` lives there, and application code
+imports it `as Pipeline` (`import QualifiedDo.Semigroupoid as Pipeline`)
+so the block reads as what it is: neither `do` is a monad's.
+
+**The one runtime rule.** A record merge — and every stage built on one
+— emits only once every field of its row has been fed, then re-emits on
+each change; until then it withholds, and nothing downstream renders.
+Seeds (`mvu seed`, `with initial`, the trace forms' first argument) are
+how a row becomes known at registration. When a pane stays blank, this
+is why — *When it does not propagate* below has the watchdog that names
+the starving gate.
 
 ## Component citizenship
 
@@ -101,11 +113,21 @@ syntax (`r { "Name" = … }`) all work unchanged.
   inside a loop — `mvu`, `looped`, or `bracketed` — whose re-broadcast
   keeps every sibling current; a loop-free flow wraps its editor window
   in `# looped` (order-form's form section, fed by its load action).
+- **Localization.** A label is the copy in the language the application
+  is written in, and it is also the model's field name, so the two never
+  drift apart: a localized product keeps its rows as written and passes
+  the rendered copy through the caption config the vocabularies keep for
+  exactly this — `floatingLabel:` on the MDC text fields and `select`,
+  `label:` elsewhere — from its copy table, keyed by the label
+  (`filledTextField @"First name" { floatingLabel: t "First name" }`).
+  The honest gap: `choice @l` has no caption override, so an option's
+  localized copy is not yet expressible; the mechanism arrives with the
+  demo that needs it, not before.
 - **displays** state their field on the leaf: `text @"prompt"` reads it
   verbatim; `text @"bid" # projection f` reads it through a formatter
   (label untouched); `text @"summary" # projected f` names what a
   whole-value read shows; a one-field read of a context-pinned wider row
-  is `text @"label" # forProperty identity`. A named projection whose
+  is `text @"label" # forProperty`. A named projection whose
   body merely reads one field is a smell — put the label on the leaf and
   delete the function. The same applies to mechanism arguments: a feed
   projection that merely reads a field is the accessor. The exception is
@@ -184,7 +206,7 @@ interchangeable:
   record pipeline with no wrapper at all.
 - A display **is a pipeline stage natively** (RESEARCH: gated displays —
   `tapped` is deleted). Pick the rung whose fulfillment policy the
-  business wants: `content # shownAs proj` for ambient structured content
+  business wants: `content # shownAlways` for ambient structured content
   (chrome + unit displays, registered at build, released per feed),
   `# shownWhen`/`# shownCase` for display panes (attached on relevance,
   released always), `# inCase @l classifier` for an **editor pane** — a
@@ -197,9 +219,9 @@ interchangeable:
   emitting assembly is discarded **in writing** with `# muted`.
 
 So: an editor is a stage as it stands; a display stage is the gated rung
-that states its policy (`(…) # shownAs identity` for a structured line,
+that states its policy (`(…) # shownAlways` for a structured line,
 tip-calculator's money readouts — and for **pure chrome in a pipeline**:
-a card's caption is `(subtitle1 $ staticText "…") # shownAs identity`,
+a card's caption is `(subtitle1 $ staticText "…") # shownAlways`,
 registered at build, releasing every fed row). The rung trails like
 every data concern — the line leads with the visual content, the policy
 rides at its end with `#`. A live readout as a
@@ -263,7 +285,7 @@ Worked examples, by shape:
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
-  tree built by `(dynamic …) # shownAs identity`, because the structure genuinely
+  tree built by `(dynamic …) # shownAlways`, because the structure genuinely
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
@@ -294,15 +316,22 @@ sometimes is exactly this — for *displays*. An **editor** that exists
 only in one mode is not a payload to fold back by hand: it is a
 whole-row citizen with gated existence, `# inCase @l classifier`
 (`shownCase`'s editor sibling), and its lens already re-attaches the
-rest of the row — so `# provided paneOf # updated (informed setField)`
+rest of the row — so `# provided paneOf # updated setField`
 with an identity `setField` is the smell this rung deletes. The
 mode-of-a-live-editor case — a variant editor's per-selection panes — is
 exactly that inside the `bracketed` loop: the selection component, then
 each pane `# inCase @l selectionOf` (order-form's three fulfillment
 panes over one `selection` classifier; flight-booker's return date
-`# inCase @"return" tripType`). `informed` keeps its job where the
-payload is *computed* (circle-drawer's diameter quantity, meeting-booker's
-seats) or the fold does real work (cashbox, movie-browser).
+`# inCase @"return" tripType`; meeting-booker's attendees slider
+`# inCase @"chosen" roomChoice`, a bounded quantity living in the model
+whose bounds the room dropdown re-scopes with `# settled seatsInRoom`).
+What the edit *does to the rest of the row* is then a `settled`
+normalization on the same stage when it is an invariant of the state —
+meeting-booker's `seatsInRoom` (a room never holds more than its capacity),
+circle-drawer's `resizeSelected` (the selected circle's radius is the
+slider's diameter; `undo`/`redo` clear the selection, so the invariant holds
+through them). An editor folded as an event with `updated` is the smell in
+both cases.
 
 `clWhen` stays predicate-driven: it toggles a class (styling), not
 visibility, and is deliberately last-element-only.
@@ -333,7 +362,7 @@ and state across feeds. Fixed-key grids never rebuild, growing lists
 append, and a reordered list moves each node with its key, so focus and
 local state follow the item.
 
-The closure builders (`foreachWith`/`dynamic`/`each`) rebuild per value,
+The closure builders (`dynamic`/`each`) rebuild per value,
 since their content lives in the builder closure. Reach for them only
 when an element's *structure* genuinely varies with the data (markdown
 blocks); when only *values* change over a fixed structure, feed the
@@ -368,7 +397,7 @@ Organize the code (by inlining and extracting) until every function
 belongs to exactly one of two classes:
 
 1. **UI wiring** — lives inline in the entry function, or is unavoidably
-   standalone like a UI-component-builder function for `dynamic`/`foreachWith`.
+   standalone like a UI-component-builder function for `dynamic`/`each`.
    Anything that mentions PUI types, variants-as-events, DOM wiring.
 2. **Pure business** — standalone functions over the model and plain
    data: model transformers, formatters, parsers, evaluators, Aff
@@ -434,10 +463,9 @@ holds the business functions over the model, seed first.
 ### What to extract (name the business)
 
 Each case lambda inside the old dispatcher becomes a standalone pure
-function in the logic module, named for the business action, dispatched
-with `informed` so it takes one row (see
-[Code style](#business-functions)); `informed` itself is dispatch — it
-stays in the view. Existing model-to-model functions already belong to
+function in the logic module, named for the business action, in the
+Mealy step's own shape `payload -> state -> state` (see
+[Code style](#business-functions)). Existing model-to-model functions already belong to
 the business class — leave them standalone, in the logic module.
 
 The model row is spelled once, at the seed and the merges; every
@@ -465,7 +493,7 @@ in business language.
 
 ### Boundary cases
 
-- UI-component-builder functions (for `dynamic`/`foreachWith`) are UI but too
+- UI-component-builder functions (for `dynamic`/`each`) are UI but too
   large to inline — they stay standalone in the view module, and that is
   fine: they are *purely* UI-related.
 - Caption and validation formatters are pure business — keep them, in
@@ -506,7 +534,7 @@ over a logic module, a single exported entry function.
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
   UI component function earns its name only by genuinely spanning lines: a
-  `dynamic`/`foreachWith` builder, or a reusable sub-form lifted as a
+  `dynamic`/`each` builder, or a reusable sub-form lifted as a
   citizen (parcel's `addressForm`).
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
@@ -553,7 +581,11 @@ over a logic module, a single exported entry function.
   business function names, never on types. Nominal types belong below
   the UI — a directly recursive type (a formula AST) or an ecosystem API
   (`Aff`, `Either`, `Milliseconds`) — and enter only as rows projected
-  by business functions.
+  by business functions. The visible price is repetition: a row several
+  business functions share is spelled out in each signature
+  (flight-booker's itinerary variant, eight times), and it is paid
+  knowingly — the shape *is* the interface, and a name would hide it
+  from the reader who has to know it.
 - **Business literals never hide in UI code.** A component parameter is
   presentation config iff the design system owns it; if the business
   owns it, it is model data riding the canonical row. Sliders and
@@ -575,7 +607,7 @@ over a logic module, a single exported entry function.
   ```purescript
   ( headline6 $ RecordToRecord.do
       staticText "Till balance: €"
-      text @"balance" # projection euros ) # shownAs identity
+      text @"balance" # projection euros ) # shownAlways
   ```
 
   never `text @"balance" # projected balanceLine` over a
@@ -622,9 +654,9 @@ over a logic module, a single exported entry function.
   `settled`) absorb the widening, so rows are read narrow while
   payloads stay exact; never coerce a row at the call site. A handler
   that reads nothing is not a transformer but a **constant patch**
-  (`beginTiming :: { running :: Boolean }`, dispatched with
-  `const (const beginTiming)`, or announced to a bare button as
-  `announce reset >>> button { … } # updated (match { clicked: const })`).
+  (`beginTiming :: { phase :: [ halted :: {}, timing :: {} ] }`, dispatched
+  with `const (const beginTiming)`, or carried by the button itself:
+  `button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })`).
 - **One record of data per business function.** Several record
   parameters that travel together are one row in disguise — merge them
   and let the field labels name the roles that positional currying
@@ -635,20 +667,29 @@ over a logic module, a single exported entry function.
   returnBetween { out, back } = …            -- never  returnBetween out back
   ```
 
-  Fold handlers are no exemption: the payload and the retained model do
-  travel together into every fold, so dispatch with `informed`, which
-  lays the payload's fields over the model's (fresh knowledge wins) —
+  A **fold handler is the one carve-out**, because its two records are
+  not one row in disguise: the payload is an occurrence (`+`), the
+  retained state is knowledge (`×`), and `updated`'s Mealy step keeps
+  them apart — so a handler takes the step's own shape,
+  `payload -> state -> state`, each record exact:
 
   ```purescript
-  # updated (match { refunded: informed applyRefund })
-  applyRefund :: { amount :: Number, balance :: Number } -> { balance :: Number }
+  # updated (match { refunded: applyRefund })
+  applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
+  applyRefund { amount } { balance } = { balance: balance - amount }
   ```
 
-  — and reads become per-branch exact. Only scalar and `Array` payloads
-  (a key, an operator symbol, a fetched list) stay positional; they are
-  not rows. Where a payload label would shadow a model label of another
-  type, name the payload for its **role** (`{ seats }` over the model's
-  `attendees`).
+  The payload row is the case's exact payload — a collection element
+  emitting a wider row narrows it at `toCase` with a named projection
+  (movie-browser's `# toCase @"favored" favoriteMark`); the state row is
+  what the handler writes, read from the model by subsumption. The
+  degenerate shapes are spelled with `const`: payload-only
+  `const <<< f` (a button's replayed row: `const <<< undo`,
+  `const <<< addTodo`), state-only `const f`
+  (`const recordLap`), replace-with-payload `const` (`"Reset": const`),
+  neither `const (const patch)`. Scalar and `Array` payloads (a key, an
+  operator symbol, a fetched list) take the same shape positionally;
+  they are not rows.
 - **A handler carries no field it does not touch.** Its row is exactly
   its reads ∪ writes — a field that only rides through is a smell — and
   every field of a `match`'s shared row is written by *some* branch.
@@ -677,7 +718,7 @@ over a logic module, a single exported entry function.
   with their projection arguments — `provided paneOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
   `toCase @l payloadOf`, `forCase @l copyOf`, `projection f`, `projected f`,
-  `forProperty f`, `toCases outcomeOf`, `forCases lineOf`,
+  `toCases outcomeOf`, `forCases lineOf`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would
   write has one of those homes. A shape none of them fit is a
@@ -761,11 +802,11 @@ read them, not a summary. Paths are inside the fetched library,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`. The gated display family lives in `PUI.Web.HTML`
-  (`shown`/`told`/`shownAs`/`shownWhen`/`shownCase`/`shownEach`) and the
+  (`shown`/`told`/`shownAlways`/`shownWhen`/`shownCase`/`shownEach`) and the
   design systems (`confirmed`).
 - `src/PUI/Web/HTML.purs` — HTML vocabulary, `body`, element oculars,
   `attrWith` for channel-fed structure-from-data, the builders
-  `foreachWith`/`dynamic`/`each` for structure-from-value, and the
+  `dynamic`/`each` for structure-from-value, and the
   `clicked`/`onClickedXY` events. SVG oculars are in
   `src/PUI/Web/SVG.purs`.
 - `src/PUI/Web/MDC2.purs` — the MDC2 component and ocular catalog, plus
@@ -778,3 +819,7 @@ read them, not a summary. Paths are inside the fetched library,
   headers. (The library keeps its carrier-agnostic algebra outside `src/`
   under `extras/`, which is why the app's `spago.dhall` carries a second
   source glob — see bootstrap.md.)
+- [vocabulary.md](vocabulary.md) — the situation-indexed index into this
+  file and the headers: what the screen needs → the word → where its rule
+  is stated. [walkthrough.md](walkthrough.md) reads one mid-size demo
+  (flight-booker) line by line.

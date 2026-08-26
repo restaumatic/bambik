@@ -1,6 +1,6 @@
 module OrderFormMDC3 (orderFormMDC3) where
 
-import Prelude (identity, Unit, (#), ($))
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -11,57 +11,57 @@ import Effect (Effect)
 import OrderFormLogic (deliveryDetail, dineInDetail, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, submitOrder, submittedLine, summarySettleTime, takeawayDetail)
 import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, looped, required, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, shownAs, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, shownAlways, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
-  body $ ( elevation5 Semigroupoid.do
+  body $ ( elevation5 Pipeline.do
       indeterminateLinearProgress @"busy" # action loadOrder
-      ( Semigroupoid.do
+      ( Pipeline.do
           ( headlineSmall $ RecordToRecord.do
               staticText "Order "
-              text @"Short ID" ) # shownAs identity
-          card $ Semigroupoid.do
-            (titleMedium $ staticText "Identifier") # shownAs identity
+              text @"Short ID" ) # shownAlways
+          card $ Pipeline.do
+            (titleMedium $ staticText "Identifier") # shownAlways
             filledTextField @"Short ID" {}
             filledTextField @"Unique ID" {}
-          card ( Semigroupoid.do
-              (titleMedium $ staticText "Customer") # shownAs identity
-              ( Semigroupoid.do
+          card ( Pipeline.do
+              (titleMedium $ staticText "Customer") # shownAlways
+              ( Pipeline.do
                   filledTextField @"First name" {}
                   filledTextField @"Last name" {}) # field @"customer" )
-          card ( Semigroupoid.do
-              (titleMedium $ staticText "Fulfillment") # shownAs identity
-              ( ( Semigroupoid.do
+          card ( Pipeline.do
+              (titleMedium $ staticText "Fulfillment") # shownAlways
+              ( ( Pipeline.do
                     tabBar @"selected"
                       [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
                     filledTextField @"Table" {} # inCase @"Dine in" selection
                     filledTextField @"Time" {} # inCase @"Takeaway" selection
-                    ( Semigroupoid.do
+                    ( Pipeline.do
                         filledTextField @"Address" {}
                         ( bodyLarge $ RecordToRecord.do
                             staticText "Distance "
                             text @"Address" # projection distanceKm
-                            staticText " km" ) # shownAs identity) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
-          card $ Semigroupoid.do
-            (titleMedium $ staticText "Total") # shownAs identity
+                            staticText " km" ) # shownAlways) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
+          card $ Pipeline.do
+            (titleMedium $ staticText "Total") # shownAlways
             filledTextField @"Total" {}
-          card ( Semigroupoid.do
-              (titleMedium $ staticText "Payment") # shownAs identity
-              ( Semigroupoid.do
+          card ( Pipeline.do
+              (titleMedium $ staticText "Payment") # shownAlways
+              ( Pipeline.do
                   segmentedButton @"Method"
                     [ choice @"cash", choice @"card" ] # required
                   filledTextField @"Paid" {}
                   ( bodyLarge $ RecordToRecord.do
                       staticText "Paying by "
-                      text @"Method" # projection caseText ) # shownAs identity) # field @"payment" )
-          card $ Semigroupoid.do
-            (titleMedium $ staticText "Remarks") # shownAs identity
+                      text @"Method" # projection caseText ) # shownAlways) # field @"payment" )
+          card $ Pipeline.do
+            (titleMedium $ staticText "Remarks") # shownAlways
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
       ) # looped
-      bodyLarge ( Semigroupoid.do
+      bodyLarge ( Pipeline.do
           ( RecordToRecord.do
               staticText "Summary: Order "
               text @"Short ID"
@@ -72,7 +72,7 @@ orderFormMDC3 =
                   text @"First name"
                   staticText " "
                   text @"Last name" ) # atField @"customer"
-              staticText ", fulfilled as "  ) # shownAs identity # debounced summarySettleTime
+              staticText ", fulfilled as "  ) # shownAlways # debounced summarySettleTime
           ( RecordToRecord.do
               staticText "dine in at table "
               text @"Table" ) # shownWhen dineInDetail
@@ -89,7 +89,7 @@ orderFormMDC3 =
               staticText ", paid "
               text @"Paid"
               staticText " by "
-              text @"Method" # projection caseText ) # atField @"payment" ) # shownAs identity # debounced summarySettleTime )
+              text @"Method" # projection caseText ) # atField @"payment" ) # shownAlways # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

@@ -186,3 +186,129 @@ merging inside `match` needs the row-walking class machinery that was
 judged too heavy, and the single-case `toCase @l … # updated (match
 { l: informed f })` shape keeps its case because the label is what the
 emission trace prints.
+
+## The Mealy shape (fifth step)
+
+`informed` is gone, and no class replaced it — because it never was
+algebra. Its body was `\g pay small -> g (union pay small)` with a
+read-narrow coercion: `uncurry` over `Record.union`, written to serve
+one style rule (*one record of data per business function*) against the
+mechanism's own shape, `updated`'s handler `e -> { | small } -> { | small }`
+— the Mealy step, which a dozen scalar-payload handlers (`pick`,
+`selectCell`, `toggleTodo`, `refreshPeople`, `removeUnit`, …) already
+took as written. The class-free routes were weighed:
+
+- **Handlers take the Mealy shape** — chosen. `applyRefund :: { amount }
+  -> { balance } -> { balance }`; `adjustDiameter :: { "Diameter" :: qty }
+  -> { circles, selected, "Diameter" :: Number, … } -> …`. Expressivity is
+  identical: `informed`'s `Union fed extra (pay ∪ small)` already limited
+  reads to payload ∪ writes, exactly what the two arguments give. The
+  shadowing convention (a payload label over a model label of another
+  type) dissolves with it — `adjustDiameter`'s quantity and the model's
+  scalar are two visibly separate arguments.
+- **Structural**: meeting-booker's slider is a `×→×` value folded as if
+  an occurrence; with the bounded quantity in the model it would read
+  `# inCase @l roomChosen` + `# settled` and lose the fold entirely.
+  Circle-drawer's diameter is the same shape once `undo`/`redo` are seen
+  to clear the selection — the resize invariant survives them. Both done
+  as the sixth step below.
+- **Bake the record case into `updated`** — declined: variant-outcome
+  folds would need the Mealy form under a second name, and it is the
+  2026-08-13 fusion's motivation in another coat.
+- **Inline `Record.merge`** — types at four of nine sites, fails wherever
+  reads ⊊ payload ∪ writes. **Replay-protocol facts** — only emitters fed
+  the model get their facts for free; panes and collection items are fed
+  projections by design.
+
+The one cost bought: a payload row must be the case's exact payload —
+`informed`'s "unused payload fields cost nothing" is gone. Movie-browser's
+card row `{ title, year, rating, "Favorite" }` now narrows at the emitter,
+`# toCase @"favored" favoriteMark`, a named projection in the logic
+module; circle-drawer's canvas already emitted the exact `{ x, y }`. The
+rule as writing.md states it: a fold handler is the one-record rule's one
+carve-out, its two records being an occurrence and a retained state — two
+directions, not one row in disguise — with the degenerate shapes spelled
+by `const` (payload-only `const <<< f`, state-only `const f`, replace
+`const`, neither `const (const patch)`). Nine functions, 22 view lines,
+seven app families; the row layer lost one export and gained nothing.
+
+## The quantity in the model (sixth step)
+
+Meeting-booker's attendees slider was one of the last two `updated` folds
+over an editor:
+`(slider @"Attendees" {}) # provided seatsFor # updated (const <<< chooseSeats)`
+— a `×→×` value folded as an occurrence, with `seatsFor` assembling a
+bounded quantity from a scalar `attendees` and the room's capacity on
+every feed, and `chooseSeats` projecting it back. The doctrine already
+said where the quantity belongs (*bounded quantities ride one row
+everywhere, as model data from the seed, re-scopable at runtime*), so the
+model now holds `"Attendees" :: { current, min, max, step }`, born as just
+the organizer, and the two jobs the fold did become two words that were
+already there:
+
+- **existence** — `slider @"Attendees" {} # inCase @"chosen" roomChoice`,
+  the editor pane over a two-case classifier of the `Maybe` room;
+- **the invariant** — `dropdown @"Room" {} [ … ] # optional # settled
+  seatsInRoom`, on the room's own stage: a chosen room sets `max` to its
+  capacity and clamps `current`, exactly the temperature-converter shape
+  (`textField @"°C" {} # settled fromCelsius`). Re-picking a smaller room
+  re-scopes the slider in place through the loop; no handler, no fold.
+
+`seatsFor` and `chooseSeats` are deleted; `completePlan` and `seatsTaken`
+read `seats.current`. The demo has no `updated` left.
+
+Circle-drawer's diameter slider was the other one, and the fifth step had
+kept it a fold on the claim that resizing the selected circle is a
+transaction a `settled` invariant would clobber on undo. The claim was
+wrong: `undo` and `redo` clear the selection, so "the selected circle's
+radius is the slider's diameter" *is* an invariant of the state, holding
+through every history move. The model now holds `"Diameter" :: { current,
+min, max, step }` (born at 40 with the constant bounds), the six views read
+`sliderLive @"Diameter" {} # inCase @"chosen" selection # settled
+resizeSelected`, `selectOrAddCircle` writes `current` when a circle is
+picked, and `selectedDiameter`/`adjustDiameter` are gone. The `adjusting`
+flag still coalesces a drag into one undo transaction — inside the
+normalization, exactly as before. Rule: an editor folded as an event
+(`# provided paneOf # updated f`) is the smell; what the edit does to the
+rest of the row is `settled` on the editor's own stage.
+
+## The surface (seventh step)
+
+An outsider's read of the demos — a web/FP developer, no algebra — found
+the leaf-as-field idea and the small demos the strongest surface, and four
+costs: a vocabulary of near-synonyms with no situation-indexed entry; two
+`do`s that are not monads, taught nowhere before line one; recurring
+ceremony (`identity` arguments that were never anything else, the `const`
+handler spellings, long structural rows repeated verbatim); and semantics
+without a mainstream analogue (the gate, copy as record key, the forked
+compiler) explained from the algebra outward rather than from the screen.
+
+What changed:
+
+- **Two dead slots pruned (L14, applied to parameters).** `shownAs proj
+  content` had 135 demo sites, every one `proj = identity`; it is now
+  `shownAlways content`, the content reading its closed narrow row by
+  `Union` subsumption as `told` does, and the name joins the family's
+  grammar (`shownWhen`/`shownCase`/`shownEach`/`shownAlways`).
+  `forProperty f` had 22 sites, every one `identity`, and
+  `forProperty f = projection f >>> forProperty` — so it is now
+  `forProperty`, the widening alone; formatting stays `projection`'s.
+- **`Pipeline.do`.** Application code imports `QualifiedDo.Semigroupoid as
+  Pipeline`, so the block reads as what it is; the four merges keep their
+  direction names and the library still speaks `Semigroupoid`.
+- **86 dead logic exports deleted** — `*Line`/`*Text` formatters left over
+  from the `told line` era, exported by 29 logic modules and used by no
+  view (the sentences are `RecordToRecord.do` merges of
+  `staticText`/`text` now). `told` survives at its 7 sites (cashbox,
+  auction), for a sentence that *is* one business function.
+- **The newcomer path**: vocabulary.md (which word, when — an index into
+  writing.md and the headers), walkthrough.md (flight-booker line by
+  line), the gate stated up front in writing.md, a localization paragraph
+  with its honest gap (`choice @l` has no caption override), and the
+  fork's status in doc/variant-sugar.md.
+
+Kept by decision: no `type` synonyms in application code, logic modules
+included — the shape is the interface; the cost (rows repeated verbatim)
+is now stated in writing.md rather than left to be discovered.
+`toCase @l identity` (13 of 52 sites) and `foreach @l identity` (5 of 40)
+keep their slots, real projections being the majority.

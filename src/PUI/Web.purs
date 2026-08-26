@@ -28,7 +28,6 @@ module PUI.Web
   , adoptHostDiagnostics
   , documentBody
   , element
-  , elementsInRange
   , htmlNS
   , getChecked
   , getValue
@@ -42,10 +41,8 @@ module PUI.Web
   , removeAttribute
   , removeClass
   , runDomInNode
-  , selectedNode
   , setAttribute
   , setChecked
-  , setInnerHTML
   , staticHTML
   , setTextNodeValue
   , setValue
@@ -187,7 +184,6 @@ foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
 foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import documentBody :: Effect Node
-foreign import selectedNode :: String -> Effect Node
 foreign import createTextNode :: String -> Effect Node
 foreign import createDocumentFragment :: Effect Node
 foreign import createElement :: String -> Effect Node
@@ -211,8 +207,6 @@ foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
-foreign import elementsInRange :: Node -> Node -> Effect (Array Node)
-foreign import setInnerHTML :: Node -> String -> Effect Unit
 
 -- | Pointer-down emitter with coordinates mapped into the element's local
 -- | space (an SVG's viewBox units when present, CSS pixels otherwise) —

@@ -16,7 +16,7 @@
 -- | in place, so nothing loses focus, scroll position or a half-finished
 -- | gesture when a value changes. When the **shape itself depends on the data**
 -- | — a rendered markdown document, where one block is a heading and the next a
--- | list — `dynamic`, `foreachWith` and `each` build it from a function and
+-- | list — `dynamic` and `each` build it from a function and
 -- | redraw when it changes.
 -- |
 -- | The plumbing they are built over lives in the parent module, `PUI.Web`;
@@ -32,11 +32,9 @@ module PUI.Web.HTML
   , attrWith
   , body
   , button
-  , checkboxInput
   , cl
   , clWhen
   , clicked
-  , clDyn
   , blockquote
   , code
   , div
@@ -45,7 +43,6 @@ module PUI.Web.HTML
   , el
   , em
   , footer
-  , foreachWith
   , h1
   , h2
   , h3
@@ -58,7 +55,6 @@ module PUI.Web.HTML
   , img
   , init
   , input
-  , inputDebounced
   , label
   , li
   , ol
@@ -69,12 +65,11 @@ module PUI.Web.HTML
   , radioButton
   , rangeInput
   , runComponentInNode
-  , runComponentInSelectedNode
   , section
   , select
   , span
   , shown
-  , shownAs
+  , shownAlways
   , shownCase
   , inCase
   , shownEach
@@ -90,7 +85,6 @@ module PUI.Web.HTML
   , th
   , thead
   , tr
-  , transient
   , ul
   , providedCase
   , provided
@@ -120,7 +114,7 @@ import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI, foreach, joint, muted, projected)
 import Unsafe.Coerce (unsafeCoerce)
-import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getChecked, getValue, htmlNS, isFocused, onClickXY, onInputDebounced, removeAllChildren, removeAttribute, removeClass, runDomInNode, selectedNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
 -- UIs
 
@@ -186,28 +180,31 @@ shownWhen
   => ({ | read } -> Maybe a) -> PUI Web a {} -> PUI Web { | row } { | row }
 shownWhen proj content = recordToRecord (provided (\(r :: { | row }) -> proj (unsafeCoerce r)) content) identity
 
--- | RESEARCH (gated displays): the **ambient-content rung** — render
--- | structured content (chrome merges, nested collections) from a
--- | projection of the flow, release the fed row always. The projection
--- | rides the mechanism, as everywhere (`shownAs identity` says verbatim),
--- | and the rung trails its content like every data concern:
--- | `(headline6 $ …) # shownAs identity`.
-shownAs
-  :: forall read extra row a
+-- | RESEARCH (gated displays): the **ambient rung** — content that is
+-- | always there: registered at build (its chrome exists before any
+-- | feed), fed the row on every feed, the fed row released always. The
+-- | content reads its own *closed* narrow row by subsumption, as `told`'s
+-- | line does (`Union read extra row`), so a chrome merge states exactly
+-- | the fields it shows and a formatted read is `projection`'s job inside
+-- | it. The sibling of `shownWhen`/`shownCase`/`shownEach` whose policy is
+-- | no policy; the rung trails its content like every data concern:
+-- | `(headline6 $ …) # shownAlways`.
+shownAlways
+  :: forall read extra row
    . Union read extra row
-  => ({ | read } -> a) -> PUI Web a {} -> PUI Web { | row } { | row }
-shownAs proj content = wrap do
+  => PUI Web { | read } {} -> PUI Web { | row } { | row }
+shownAlways content = wrap do
   content' <- unwrap content
   -- complete the content's wiring: its only possible emission is the
   -- informationless {}, discarded lawfully (the content type says so)
   liftEffect $ content'.fromUser \_ -> pure unit
   propRef <- liftEffect $ Ref.new Nothing
   -- the content registers at build (its chrome exists before any feed, like
-  -- every component's); feeding renders through the projection, then the
+  -- every component's); feeding renders the narrow row it reads, then the
   -- fed row is released — the ambient rung's gate opens instantly
   pure
     { toUser: \row -> do
-        content'.toUser (proj (unsafeCoerce row))
+        content'.toUser (unsafeCoerce row)
         mProp <- Ref.read propRef
         for_ mProp \prop -> prop row
     , fromUser: \prop -> Ref.write (Just prop) propRef
@@ -237,15 +234,16 @@ shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (u
 -- |
 -- | It dissolves the identity fold: a field that exists only in one mode
 -- | is *not* a payload to fold back into the row by hand
--- | (`# provided paneOf # updated (informed setField)` with `setField`
+-- | (`# provided paneOf # updated setField` with `setField`
 -- | the identity) — it is a whole-row editor whose existence is gated, and
 -- | its `field @l` lift already re-attaches the rest of the row. The
 -- | classifier reads a closed narrow row (the row-stating exception:
 -- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
 -- | `shownCase`'s does. Two releases per feed while attached — the wire's
 -- | and the editor's own echo — idempotent under the loop, which swallows
--- | the re-fed one; `informed` keeps its job where the payload is computed
--- | or the fold does real work.
+-- | the re-fed one. What the edit does to the rest of the row is a `settled`
+-- | normalization on the same stage when it is a state invariant
+-- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
 inCase
   :: forall @l read extra row a b s
    . IsSymbol l => Cons l a b s
@@ -319,29 +317,6 @@ input type_ = "type" := type_ $ wrap do
         prop value
     }
 
--- | `input` that waits `ms` after the last keystroke before reporting —
--- | for a field driving expensive work (a search, a recomputed preview)
--- | that should not fire once per character.
-inputDebounced :: { ms :: Number } -> String -> PUI Web String String
-inputDebounced { ms: millis } type_ = "type" := type_ $ wrap do
-  -- debounced at the leaf, before the wire: keystrokes coalesce at the DOM
-  -- boundary so everything downstream of an emission stays synchronous and
-  -- `looped`'s re-entrancy guard still terminates loop cycles (wire-level
-  -- debouncing inside a loop turns refeeds into a standing async ping-pong)
-  element "input" (pure unit)
-  node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new $ Nothing
-  pure
-    { toUser: \newa -> do
-      focused <- isFocused node
-      unless focused $ setValue node newa
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-      Ref.write (Just prop) mPropRef
-      onInputDebounced node millis \value -> prop value
-    }
-
 -- | The multi-line `input` — same guarantee: typing is never interrupted by
 -- | values arriving from elsewhere.
 textArea :: PUI Web String String
@@ -360,40 +335,6 @@ textArea = wrap do
       void $ addEventListener "input" node $ const do
         value <- getValue node
         prop value
-    }
-
--- | A bare checkbox, with no design-system chrome and no label of its own
--- | (the design-system vocabularies dress this up). Ticked exactly while
--- | there is something to hold: ticking reports the value it held, clearing
--- | reports nothing-chosen — so an optional piece of the model *is* the
--- | box's state, with no separate flag to keep in step. It stays disabled
--- | until it has been given something to show.
--- |
--- | `ticked` is what the field holds once ticked, before the model has ever
--- | supplied a value — stated by the caller, never conjured from the type.
-checkboxInput :: forall a. { ticked :: a } -> PUI Web (Maybe a) (Maybe a)
-checkboxInput { ticked } = "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ "type" := "checkbox" $ wrap do
-  aRef <- liftEffect $ Ref.new ticked
-  mPropRef <- liftEffect $ Ref.new Nothing
-  element "input" (pure unit)
-  node <- gets _.sibling
-  pure
-    { toUser: \ma -> do
-        case ma of
-          Nothing -> setChecked node false
-          Just newa -> do
-            setChecked node true
-            Ref.write newa aRef
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop ma
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "input" node $ const do
-          checked <- getChecked node
-          held <- Ref.read aRef
-          prop (if checked then (Just held) else Nothing)
     }
 
 -- | A bare radio button, with no chrome and no label of its own: filled
@@ -810,39 +751,6 @@ attrDyn name valueFunction w = wrap do
 -- | computed rather than given.
 infixr 10 attrDyn as :=>
 
--- | `attrDyn`'s class sibling: the class is present or absent according to
--- | whether the element has been given anything yet — the "empty" or
--- | "loading" look before the first value arrives. For a class that follows
--- | the data itself, use `clWhen`.
-clDyn :: String -> (Maybe {} -> Boolean) -> Ocular (PUI Web)
-clDyn name pred w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  liftEffect $ (if pred Nothing then addClass else removeClass) node name
-  pure
-    { toUser: \mch -> do
-    (if pred (Just {}) then addClass else removeClass) node name
-    w'.toUser mch
-    , fromUser: w'.fromUser
-    }
-
--- | Content that comes and goes with the interaction: it appears when there
--- | is something to show and disappears the moment the user acts on it —
--- | the short-lived popover, inline confirmation or prompt, as opposed to
--- | anything that stays on the screen.
-transient :: Ocular (PUI Web)
-transient ui = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap ui
-  pure
-    { toUser: \new -> do
-        status <- toUser new
-        ensureAttached
-        pure status
-    , fromUser: \prop -> fromUser \x -> do
-        ensureDetached
-        prop x
-    }
-
 -- | Show the pane while the model is in state `l`, fed that state's own
 -- | data — `provided` for a model that names its states: a ticket counter
 -- | whose `display` is either `waiting` or `serving` shows its number pane
@@ -991,7 +899,7 @@ foreachWith build = wrap do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- | `foreachWith` for a single value: draw a UI component from a function and
+-- | Draw a UI component from a function for a single value and
 -- | redraw when the value changes — the scene whose whole composition
 -- | depends on the data. `div $ dynamic renderSwatch`. Owns the element it
 -- | sits in.
@@ -1025,16 +933,9 @@ body ui = do
     { fromUser } <- unwrap ui
     liftEffect $ fromUser \_ -> pure unit
 
--- | Mount a UI component into an existing element picked by CSS selector, rather
--- | than taking over the page — for embedding into a page bambik does not
--- | own. The starting value is given here, and the callback receives what
--- | the UI component reports.
-runComponentInSelectedNode :: forall a b. String -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
-runComponentInSelectedNode selector initial callback ui = do
-  node <- selectedNode selector
-  runComponentInNode node initial callback ui
-
--- | `runComponentInSelectedNode` with the host element already in hand.
+-- | Mount a UI component into an existing element rather than taking over the
+-- | page — for embedding into a page bambik does not own. The starting value
+-- | is given here, and the callback receives what the UI component reports.
 runComponentInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> PUI Web a b -> Effect Unit
 runComponentInNode node initial callback ui = do
   adoptHostDiagnostics

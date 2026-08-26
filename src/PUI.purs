@@ -1,7 +1,8 @@
 -- | The core profunctor UI type and its combinators.
 -- |
 -- | **The duoidal reading.** `PUI` composes two ways: sequentially
--- | (`Semigroupoid.do`, `⊳` — emissions feed downstream) and in parallel
+-- | (`Pipeline.do` — `QualifiedDo.Semigroupoid` as applications import it;
+-- | `⊳`, emissions feed downstream) and in parallel
 -- | (the row merges, `⊗` — the input broadcasts to every operand; at
 -- | equal types, `joint`, the ungated juxtaposition). The two
 -- | interact as in a duoidal category: a pipeline can only emulate a merge
@@ -15,7 +16,7 @@
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
--- | stages are composed with `Semigroupoid.do`, every emission travels
+-- | stages are composed with `Pipeline.do`, every emission travels
 -- | left-to-right through the stages, and `mvu` loops the final emission
 -- | back to the top — so a stage placed *before* another is not "above" it
 -- | semantically; all stages see every model value on the next loop turn.
@@ -87,11 +88,10 @@ import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, atProperty, blank, field, mvu, subStrong, forProperty, informed, pempty, muted, projected, projection, required, settled, toField, with) as Adopters
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, blank, field, mvu, subStrong, forProperty, pempty, muted, projected, projection, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -848,13 +848,19 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | cases, no pass-through `state` case in the event merge:
 -- |
 -- | ```
--- | looped Semigroupoid.do
+-- | looped Pipeline.do
 -- |   form                                   -- ×→× editors
 -- |   updates handle RecordToVariant.do ...  -- ×→+ events, bare payloads
 -- | ```
 -- |
 -- | is the model–view–update shape as two named stages. Events arriving
 -- | before a first value are withheld (the usual knowledge gate).
+-- |
+-- | The handler is the Mealy step's own shape, `payload -> state -> state`,
+-- | and applications write it as such: the payload is an occurrence, the
+-- | retained row is knowledge, and the two stay two records
+-- | (`applyRefund :: { amount } -> { balance } -> { balance }`); nothing lays
+-- | one over the other.
 -- |
 -- | **Both sides subsume** (the row layer's rule: a stated closed row may be
 -- | *read* from any wider row): the handler may touch a sub-row of the model,

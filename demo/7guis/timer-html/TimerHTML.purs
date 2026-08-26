@@ -6,22 +6,22 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, projection, mvu, projected, toCase, updated, with)
-import PUI.Web.HTML (shownAs, body, button, div, label, p, progress, rangeInput, staticText, text)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import PUI.Web.HTML (shownAlways, body, button, div, label, p, progress, rangeInput, staticText, text)
+import QualifiedDo.Semigroupoid as Pipeline
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
 
 timerHTML :: Effect Unit
 timerHTML =
-  body $ div $ ( Semigroupoid.do
+  body $ div $ ( Pipeline.do
       ( RecordToRecord.do
           progress @"fraction" # projected fraction
           p RecordToRecord.do
             text @"elapsed" # projection show
             staticText "s / "
             text @"Duration" # projection wholeSeconds
-            staticText "s" ) # shownAs identity
-      p ( label $ Semigroupoid.do
-          (staticText "Duration ") # shownAs identity
+            staticText "s" ) # shownAlways
+      p ( label $ Pipeline.do
+          (staticText "Duration ") # shownAlways
           rangeInput @"Duration" )
       every tickPeriod tick
       button (staticText "Reset") # with nothingElapsed # toCase @"reset" identity # updated (match { reset: const })

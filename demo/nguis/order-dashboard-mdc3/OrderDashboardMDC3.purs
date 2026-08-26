@@ -1,28 +1,28 @@
 module OrderDashboardMDC3 (orderDashboardMDC3) where
 
-import Prelude (identity, Unit, ($), (#))
+import Prelude (Unit, ($), (#))
 
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
 import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (every, mvu, projected, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAs, body)
+import PUI.Web.HTML (shownAlways, body)
 import PUI.Web.MDC3 (elevation5, topAppBar)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
     elevation5 $
-      topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
+      topAppBar { title: "Order Dashboard" } $ ( Pipeline.do
           every tickPeriod ordersArrive
           rangePicker @"Showing" {}
             [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
-          board $ Semigroupoid.do
-            (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shownAs identity
-            (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shownAs identity
-            (gauge { label: "Kitchen load" } # projected kitchenLoad) # shownAs identity
-            (trendChart { label: "Order flow" } # projected orderFlow) # shownAs identity
-            (leaderboard { label: "Top dishes" } # projected topDishes) # shownAs identity
+          board $ Pipeline.do
+            (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shownAlways
+            (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shownAlways
+            (gauge { label: "Kitchen load" } # projected kitchenLoad) # shownAlways
+            (trendChart { label: "Order flow" } # projected orderFlow) # shownAlways
+            (leaderboard { label: "Top dishes" } # projected topDishes) # shownAlways
       ) # mvu openingDay

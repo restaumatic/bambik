@@ -1,4 +1,4 @@
-module InboxLogic (composeMessage, confirmingDelete, countsLine, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openedBody, openedMessage, openedSender, openedSubject, openMessage, requestDelete, rowLine, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark) where
+module InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openedMessage, openMessage, requestDelete, rowLine, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark) where
 
 import Prelude ((<>), (#), (+), (==), (/=), (||), comparing, map, not, show)
 
@@ -75,17 +75,5 @@ sortBySubject m@{ messages } = m { messages = sortBy (comparing _.subject) messa
 sortUnreadFirst :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } }
 sortUnreadFirst m@{ messages } = m { messages = sortBy (comparing _.read) messages }
 
-countsLine :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> String
-countsLine inbox = unreadCountText inbox <> " unread of " <> messageCountText inbox <> " messages"
-
 rowLine :: { id :: Int, sender :: String, subject :: String, read :: Boolean, attention :: Boolean } -> String
 rowLine { sender, subject } = sender <> " \x2014 " <> subject
-
-openedSubject :: { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } -> String
-openedSubject { subject } = subject
-
-openedSender :: { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } -> String
-openedSender { sender } = "From: " <> sender
-
-openedBody :: { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } -> String
-openedBody { body } = body

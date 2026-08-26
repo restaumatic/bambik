@@ -8,20 +8,20 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (atCase, projection, informed, mvu, subChoice, toCase, updated, with)
-import PUI.Web.HTML (shownAs, body, staticText, text)
+import PUI (atCase, projection, mvu, subChoice, toCase, updated, with)
+import PUI.Web.HTML (shownAlways, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, headlineSmall, confirmed)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
   body $
     elevation5 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           ( headlineSmall $ RecordToRecord.do
               staticText "Till balance: €"
-              text @"balance" # projection euros ) # shownAs identity
-          ( Semigroupoid.do
+              text @"balance" # projection euros ) # shownAlways
+          ( Pipeline.do
               RecordToVariant.do
                 button @"Refund a customer" { icon: "undo" } # with standardRefund
                 button @"Pay the courier" { icon: "local_shipping" } # with courierFee
@@ -30,9 +30,9 @@ cashboxMDC3 =
                   ( ( bodyLarge $ RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " back to the customer." ) # shownAs identity # confirmed { title: "Refund the customer?", confirm: "Refund" } ) # atCase @"Refund a customer" # toCase @"Refunded the customer" identity
+                      staticText " back to the customer." ) # shownAlways # confirmed { title: "Refund the customer?", confirm: "Refund" } ) # atCase @"Refund a customer" # toCase @"Refunded the customer" identity
                   ( ( bodyLarge $ RecordToRecord.do
                       staticText "Hand €"
                       text @"amount" # projection euros
-                      staticText " to the courier." ) # shownAs identity # confirmed { title: "Pay the courier?", confirm: "Pay" } ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice ) # updated (match { "Refunded the customer": informed applyRefund, "Paid the courier": informed applyPayout, "Take a deposit": informed applyDeposit })
+                      staticText " to the courier." ) # shownAlways # confirmed { title: "Pay the courier?", confirm: "Pay" } ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice ) # updated (match { "Refunded the customer": applyRefund, "Paid the courier": applyPayout, "Take a deposit": applyDeposit })
       ) # mvu openedTill

@@ -31,6 +31,17 @@ Its source of truth is [.claude/skills/developing-bambik-apps/](/.claude/skills/
 [bootstrap.md](/.claude/skills/developing-bambik-apps/bootstrap.md) is readable on
 its own if you would rather follow the procedure by hand.
 
+# Start here
+
+Read the demos in this order — counter, temperature-converter, flight-booker,
+todomvc, checkout, order-form — each adding one idea to the last.
+[walkthrough.md](/.claude/skills/developing-bambik-apps/walkthrough.md) reads
+flight-booker line by line, and
+[vocabulary.md](/.claude/skills/developing-bambik-apps/vocabulary.md) is the
+lookup index from what the screen needs to the word for it. The toolchain is
+one command: `npm install` fetches the forked compiler as a pinned GitHub
+release together with the matching variant library — nothing is built locally.
+
 # Demo
 
 In order to run the demo:

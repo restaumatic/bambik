@@ -1,4 +1,4 @@
-module PhotoGalleryLogic (albumChoices, albumNameText, albumPhotos, albumTitle, developedPhoto, landscapesOpen, openAlbum, photoOf) where
+module PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesOpen, openAlbum) where
 
 import Prelude (($), (*), (+), (<#>), (<>), (==), mod, show)
 
@@ -62,12 +62,3 @@ developedPhoto caption =
       <> "' cy='" <> show ((grain * (i + 5) * 53) `mod` height)
       <> "' r='" <> show (18 + (grain * (i + 2)) `mod` 42)
       <> "' fill='hsl(" <> show ((hue + 40 + i * 55) `mod` 360) <> ",55%25,50%25)' fill-opacity='0.7'/>"
-
-albumTitle :: { album :: String } -> String
-albumTitle { album } = album
-
-albumNameText :: { name :: String, current :: Boolean } -> String
-albumNameText { name } = name
-
-photoOf :: { src :: String, label :: String } -> { src :: String, label :: String }
-photoOf { src, label } = { src, label }

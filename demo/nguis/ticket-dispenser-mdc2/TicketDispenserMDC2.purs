@@ -9,26 +9,26 @@ import Effect (Effect)
 import PUI (projection, mvu, updated)
 import PUI.Web.HTML (shownCase, body, staticText, text)
 import PUI.Web.MDC2 (body2, button, card, elevation20, headline3)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, issue, nextTicket)
 
 ticketDispenserMDC2 :: Effect Unit
 ticketDispenserMDC2 =
   body $
     elevation20 $
-      card $ ( Semigroupoid.do
-          headline3 ( Semigroupoid.do
+      card $ ( Pipeline.do
+          headline3 ( Pipeline.do
               (staticText "—") # shownCase @"waiting" displayOf
               ( RecordToRecord.do
                   staticText "#"
                   text @"number" # projection show ) # shownCase @"serving" displayOf )
-          body2 ( Semigroupoid.do
+          body2 ( Pipeline.do
               (staticText "Press the button to draw the first ticket.") # shownCase @"waiting" displayOf
               ( RecordToRecord.do
                   staticText "Now serving ticket "
                   text @"number" # projection show
                   staticText "." ) # shownCase @"serving" displayOf )
-          ( Semigroupoid.do
+          ( Pipeline.do
               button @"Take a number" {}
               (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const
       ) # mvu emptyQueue

@@ -1,6 +1,6 @@
 module CrudFluent (crudFluent) where
 
-import Prelude (identity, Unit, bind, const, (#), ($), (<<<), (<>), (>>>))
+import Prelude (Unit, bind, const, (#), ($), (<<<), (<>), (>>>))
 
 import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -10,16 +10,16 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Fluent (button, card, textField)
-import PUI.Web.HTML (shownAs, attrWith, body, clicked, div, li, staticText, text, ul, (:=))
-import QualifiedDo.Semigroupoid as Semigroupoid
+import PUI.Web.HTML (shownAlways, attrWith, body, clicked, div, li, staticText, text, ul, (:=))
+import QualifiedDo.Semigroupoid as Pipeline
 
 crudFluent :: Effect Unit
 crudFluent = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Semigroupoid.do
+    card $ ( Pipeline.do
         pempty # action (loadPeopleCatalogue catalogue)
-        ( Semigroupoid.do
+        ( Pipeline.do
             textField @"Filter prefix (surname)" {}
             textField @"Name" {}
             textField @"Surname" {}
@@ -27,8 +27,8 @@ crudFluent = do
                 ( clicked ( li >>> attrWith "style" entryFace $ ( RecordToRecord.do
                     text @"Surname"
                     staticText ", "
-                    text @"Name" ) # shownAs identity ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
-            ( Semigroupoid.do
+                    text @"Name" ) # shownAlways ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+            ( Pipeline.do
                 div $ RecordToVariant.do
                   button @"Create" {}
                   button @"Update" {}

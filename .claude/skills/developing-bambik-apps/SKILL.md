@@ -40,6 +40,12 @@ skill's directory:
    normative: the library's own documentation points at it rather than
    restating it, and the demos are its executable form.
 
+   Two companions ride with it: **[walkthrough.md](walkthrough.md)**,
+   one mid-size demo (flight-booker) read line by line — the first thing
+   to read after the counter — and **[vocabulary.md](vocabulary.md)**, the
+   lookup index from what the screen needs to the word for it and the
+   place its rule is stated. Neither states a rule of its own.
+
 3. **[building.md](building.md)** — build, run and verify. The npm
    scripts, the watch-mode agent loop, and browser verification.
 

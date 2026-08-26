@@ -1,4 +1,4 @@
-module DeparturesLogic (arrival, boardOpening, rowLine, tick, tickPeriod, updatedFlight, updatedStatus, updateLine) where
+module DeparturesLogic (arrival, boardOpening, rowLine, tick, tickPeriod, updatedFlight, updatedStatus) where
 
 import Prelude ((<>), (+), div, mod)
 
@@ -39,6 +39,3 @@ statuses = [ "Scheduled", "Check-in", "Boarding", "Departed" ]
 
 rowLine :: { code :: String, status :: String } -> String
 rowLine { code, status } = code <> " \x2014 " <> status
-
-updateLine :: { key :: String, value :: { code :: String, status :: String } } -> String
-updateLine u = "Last update: " <> updatedFlight u <> " \x2192 " <> updatedStatus u

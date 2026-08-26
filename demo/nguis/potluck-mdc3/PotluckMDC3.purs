@@ -8,25 +8,25 @@ import Data.Variant.Case (caseText)
 import PotluckLogic (guestCount, invitation)
 import PUI (acted, field, foreach, projection, projected, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAs, body, span, staticText, text)
+import PUI.Web.HTML (shownAlways, body, span, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, headlineSmall, list, listItem, segmentedButton, titleMedium)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 potluckMDC3 :: Effect Unit
 potluckMDC3 =
   body $
     elevation5 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           ( bodyMedium $ RecordToRecord.do
               text @"guestCount" # projected guestCount
-              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." ) # shownAs identity
+              staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." ) # shownAlways
           ( list $
               ( listItem $ RecordToRecord.do
                   titleMedium (text @"name")
                   segmentedButton @"Dish"
                     [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name" ) # field @"guests"
-          headlineSmall $ Semigroupoid.do
-            (staticText "On the table: ") # shownAs identity
+          headlineSmall $ Pipeline.do
+            (staticText "On the table: ") # shownAlways
             ( span $ RecordToRecord.do
                 text @"name"
                 staticText "’s "

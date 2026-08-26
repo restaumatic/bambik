@@ -1,30 +1,30 @@
 module ColorMixerMDC2 (colorMixerMDC2) where
 
-import Prelude (identity, (#), ($), (<>), (>>>), Unit, const)
+import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
 import ColorMixerLogic (applyPreset, duskViolet, hexText, mixOf, palette, rgb, rgbText)
 import Data.Maybe (Maybe)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, projected, toCase, updated)
-import PUI.Web.HTML (shownAs, attrWith, body, clicked, div, text, (:=))
+import PUI.Web.HTML (shownAlways, attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC2 (body2, card, elevation20, sliderLive)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =
   body $
     elevation20 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           sliderLive @"Red" {}
           sliderLive @"Green" {}
           sliderLive @"Blue" {}
-          ( div $ Semigroupoid.do
+          ( div $ Pipeline.do
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          (body2 (text @"hex" # projected hexText)) # shownAs identity
-          (body2 (text @"rgb" # projected rgbText)) # shownAs identity
+          (body2 (text @"hex" # projected hexText)) # shownAlways
+          (body2 (text @"rgb" # projected rgbText)) # shownAlways
       ) # mvu duskViolet
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = chipStyle { mix }

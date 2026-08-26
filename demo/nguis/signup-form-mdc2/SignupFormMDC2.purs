@@ -1,24 +1,24 @@
 module SignupFormMDC2 (signupFormMDC2) where
 
-import Prelude (Unit, identity, (#), ($))
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (forCase, mvu, required, toCases)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAs, shownCase, body, staticText, text)
+import PUI.Web.HTML (shownAlways, shownCase, body, staticText, text)
 import PUI.Web.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
 
 signupFormMDC2 :: Effect Unit
 signupFormMDC2 =
   body $
     elevation20 $
-      card $ Semigroupoid.do
-        ( Semigroupoid.do
-            (headline4 $ staticText "Create account") # shownAs identity
+      card $ Pipeline.do
+        ( Pipeline.do
+            (headline4 $ staticText "Create account") # shownAlways
             debouncedTextField @"Username" { ms: usernameSettleTime }
             radioButton @"Plan"
               [ choice @"Free", choice @"Pro", choice @"Team" ] # required

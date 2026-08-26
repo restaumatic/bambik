@@ -1,21 +1,21 @@
 module PasswordGeneratorMDC3 (passwordGeneratorMDC3) where
 
-import Prelude (identity, Unit, (#), ($), (>>>))
+import Prelude (Unit, (#), ($), (>>>))
 
 import Data.Variant (match)
 import Effect (Effect)
 import PasswordGeneratorLogic (rememberPassword, samplePassword, strengthText, strongMixRecipe)
 import PUI (action, mvu, atCase, projected, updated)
-import PUI.Web.HTML (shownAs, attr, body, div, staticText, text)
+import PUI.Web.HTML (shownAlways, attr, body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 passwordGeneratorMDC3 :: Effect Unit
 passwordGeneratorMDC3 =
   body $
     elevation5 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           slider @"Length" {}
           toggleSwitch @"Uppercase letters" {}
           toggleSwitch @"Lowercase letters" {}
@@ -23,10 +23,10 @@ passwordGeneratorMDC3 =
           toggleSwitch @"Symbols" {}
           ( bodyMedium $ RecordToRecord.do
               staticText "Strength: "
-              text @"strength" # projected strengthText ) # shownAs identity
+              text @"strength" # projected strengthText ) # shownAlways
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
-            (text @"password") # shownAs identity
-          ( Semigroupoid.do
+            (text @"password") # shownAlways
+          ( Pipeline.do
               button @"Generate" {}
               indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate") # updated (match { generated: rememberPassword })
       ) # mvu strongMixRecipe

@@ -36,12 +36,6 @@ export function documentBody() {
   return document.body;
 }
 
-export function selectedNode(selector) {
-  return function () {
-    return document.querySelector(selector);
-  }
-}
-
 // createTextNode :: String -> IOSync Node
 export function createTextNode(text) {
   return function () {
@@ -299,15 +293,6 @@ export function lastChild(node) {
   };
 }
 
-// setInnerHTML :: Node -> String -> Effect Unit
-export function setInnerHTML(node) {
-  return function (html) {
-    return function () {
-      node.innerHTML = html;
-    };
-  };
-}
-
 // onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
 export function onInputDebounced(node) {
   return function (millis) {
@@ -359,21 +344,3 @@ export function onClickXY(node) {
   };
 }
 
-// elementsInRange :: Node -> Node -> Effect (Array Node)
-// from-exclusive, to-inclusive sibling walk collecting element nodes only;
-// either end may be null (null from = start at to's parent's first child,
-// null to with null from = empty range).
-export function elementsInRange(from) {
-  return function (to) {
-    return function () {
-      const elements = [];
-      let node = from ? from.nextSibling : (to ? to.parentNode.firstChild : null);
-      while (node) {
-        if (node.nodeType === 1) elements.push(node);
-        if (node === to) break;
-        node = node.nextSibling;
-      }
-      return elements;
-    };
-  };
-}

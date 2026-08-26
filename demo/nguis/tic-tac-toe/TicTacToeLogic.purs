@@ -1,6 +1,6 @@
-module TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine) where
+module TicTacToeLogic (cells, claimCell, gameOutcome, openingPosition) where
 
-import Prelude ((<>), (&&), (/=), (<#>), (==), bind, mod, show)
+import Prelude ((&&), (/=), (<#>), (==), bind, mod, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
@@ -60,12 +60,3 @@ gameOutcome :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> [ won :: {
 gameOutcome { board } = case winner board of
   Just m -> .won { mark: markText m }
   Nothing -> if boardFull board then .drawn {} else .toMove { mark: markText (playerToMove board) }
-
-wonLine :: { mark :: String } -> String
-wonLine { mark } = mark <> " wins"
-
-toMoveLine :: { mark :: String } -> String
-toMoveLine { mark } = mark <> " to move"
-
-cellMark :: { mark :: String, win :: Boolean } -> String
-cellMark { mark } = mark

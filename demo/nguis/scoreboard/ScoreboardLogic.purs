@@ -1,6 +1,6 @@
-module ScoreboardLogic (boardSummary, gameStart, goal, leaderLine, leadingTeam, noLeader, standingLine, teamLine, tick, tickPeriod) where
+module ScoreboardLogic (boardSummary, gameStart, goal, leadingTeam, noLeader, tick, tickPeriod) where
 
-import Prelude (show, (<>), (+), (==), mod)
+import Prelude (show, (+), (==), mod)
 
 import Data.Array (filter, index, length, range)
 import Data.Foldable (maximumBy)
@@ -40,12 +40,3 @@ pick options i = fromMaybe "" (index options (i `mod` length options))
 
 teams :: Array String
 teams = [ "Owls", "Foxes", "Herons" ]
-
-teamLine :: { team :: String, points :: Int } -> String
-teamLine { team, points } = team <> ": " <> show points
-
-standingLine :: { teams :: String } -> String
-standingLine standing = standing.teams <> " teams on the board \x2014 leading: "
-
-leaderLine :: { team :: String, points :: Int } -> String
-leaderLine { team, points } = team <> " (" <> show points <> ")"

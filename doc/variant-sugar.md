@@ -17,6 +17,27 @@ interoperate freely with the sugar.
 The fork adds a new builtin `Prim.Variant.Variant :: Row Type -> Type` (the dual
 of `Prim.Record`), implicitly in scope, plus three sugar forms.
 
+## Status and installation
+
+The fork is a **pinned release, not a local build**: `package.json` depends on
+the `purescript` npm package by the URL of the release tarball
+(`erykciepiela/purescript` tag `v0.15.16-variant.6`, branch
+`variant-type-sugar` on the `0.15.16` development line), and `package-lock.json`
+pins its integrity hash — so `npm install` is the whole toolchain step: nothing
+else to install, nothing to compile, no checkout to keep beside the project.
+The `Prim.Variant`-aware variant library is an ordinary git package in
+`packages.dhall` (`erykciepiela/purescript-variant` tag `v8.0.0-prim-variant.1`,
+branch `prim-variant`: `Data.Variant` re-exports the compiler's builtin instead
+of declaring its own, so the sugar and `inj`/`on`/`match` share one type).
+
+What the fork adds is exactly the three forms below and the builtin they
+desugar to; everything else is the stock compiler. Stock `purs` cannot build
+bambik or an application on it — the library's own signatures use the `[ … ]`
+type sugar, and the first error a stock compiler reports is
+`Module Prim.Variant was not found`. A new compiler version means a new fork
+release, re-pinned in `package.json` here and in the authoring skill's
+[bootstrap.md](../.claude/skills/developing-bambik-apps/bootstrap.md).
+
 ## 1. Type sugar — `[ … ]`
 
 `[ … ]` is sugar for `Variant ( … )`, mirroring `{ … }` for `Record ( … )`. No

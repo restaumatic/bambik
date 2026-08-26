@@ -10,20 +10,20 @@ import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
   body $
     elevation20 $
-      card $ Semigroupoid.do
-      ( Semigroupoid.do
+      card $ Pipeline.do
+      ( Pipeline.do
           select @"Flight type" {}
             [ choice @"one-way", choice @"return" ] # required
           filledTextField @"Start date (DD.MM.YYYY)" {}
           filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
-      ( Semigroupoid.do
+      ( Pipeline.do
           ( body1 $ RecordToRecord.do
               staticText "⚠ "
               text @"problem" ) # shownCase @"problem" bookingState

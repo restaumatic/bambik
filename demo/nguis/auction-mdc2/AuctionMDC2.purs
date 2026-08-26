@@ -8,16 +8,16 @@ import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.HTML (body, told)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, sliderLive)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 auctionMDC2 :: Effect Unit
 auctionMDC2 =
   body $
     elevation20 $
-      card $ ( Semigroupoid.do
+      card $ ( Pipeline.do
           body2 (told bidLine)
           sliderLive @"Your bid ($)" {}
-          ( Semigroupoid.do
+          ( Pipeline.do
               identity # settled raiseTop
               headline6 (told topLine) ) # feedback noBids
       ) # mvu openingBid

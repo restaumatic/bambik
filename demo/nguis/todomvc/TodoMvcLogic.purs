@@ -1,6 +1,6 @@
-module TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, remainingItems, severalLine, soleLine, titleText, toggleTodo, visibleEntries) where
+module TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, remainingItems, titleText, toggleTodo, visibleEntries) where
 
-import Prelude (show, (<>), (==), const, not)
+import Prelude ((==), const, not)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe)
@@ -33,12 +33,6 @@ visibleEntries :: { todos :: Array { title :: String, done :: Boolean }, "Visibi
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, done: t.done }) todos)
   where
   matches v t = match { "All": const true, "Active": \_ -> not t.done, "Completed": \_ -> t.done } v
-
-soleLine :: { count :: Int } -> String
-soleLine { count } = show count <> " item left"
-
-severalLine :: { count :: Int } -> String
-severalLine { count } = show count <> " items left"
 
 titleText :: { key :: Int, title :: String, done :: Boolean } -> String
 titleText { title } = title

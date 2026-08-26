@@ -1,21 +1,21 @@
 module MarkdownPreviewerMDC2 (markdownPreviewerMDC2) where
 
-import Prelude (identity, Unit, show, (#), ($), (<>), (>>>))
+import Prelude (Unit, show, (#), ($), (<>), (>>>))
 
 import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (atField, mvu)
-import PUI.Web.HTML (shownAs, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
+import PUI.Web.HTML (shownAlways, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC2 (card, elevation20, filledTextArea, layoutCell, layoutGrid)
-import QualifiedDo.Semigroupoid as Semigroupoid
+import QualifiedDo.Semigroupoid as Pipeline
 
 markdownPreviewerMDC2 :: Effect Unit
 markdownPreviewerMDC2 =
   body $
     elevation20 $
       card $
-        layoutGrid $ ( Semigroupoid.do
+        layoutGrid $ ( Pipeline.do
             layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
             layoutCell { span: 6 } $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->
@@ -32,5 +32,5 @@ markdownPreviewerMDC2 =
                     , paragraph: \is -> p (inlines is)
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
-                    } ) # atField @"Source" # shownAs identity
+                    } ) # atField @"Source" # shownAlways
         ) # mvu welcomeDocument

@@ -1,4 +1,4 @@
-module ShoppingCartLogic (addUnit, cartLines, cellLineTotal, cellProduct, cellQuantity, emptyCart, formatMoney, grandLine, grandTotalText, productCatalogue, productLine, removeUnit) where
+module ShoppingCartLogic (addUnit, cartLines, emptyCart, formatMoney, grandTotalText, productCatalogue, removeUnit) where
 
 import Prelude ((<>), (*), (+), (-), (/), (<), (==), map, mod, otherwise, show)
 
@@ -18,8 +18,8 @@ productCatalogue _ =
   , { name: "Cheesecake", unitPrice: 550 }
   ]
 
-addUnit :: { product :: { name :: String, unitPrice :: Int }, order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-addUnit { product, order }
+addUnit :: { product :: { name :: String, unitPrice :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
+addUnit { product } { order }
   | any (\l -> l.product.name == product.name) order =
       { order: map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
   | otherwise = { order: snoc order { product, quantity: 1 } }
@@ -43,18 +43,3 @@ formatMoney :: Int -> String
 formatMoney cents = show (cents / 100) <> "." <> pad (mod cents 100)
   where
   pad r = if r < 10 then "0" <> show r else show r
-
-productLine :: { name :: String, unitPrice :: Int } -> String
-productLine { name, unitPrice } = name <> " \x00b7 $" <> formatMoney unitPrice
-
-cellProduct :: { product :: String, quantity :: String, lineTotal :: String } -> String
-cellProduct { product } = product
-
-cellQuantity :: { product :: String, quantity :: String, lineTotal :: String } -> String
-cellQuantity { quantity } = quantity
-
-cellLineTotal :: { product :: String, quantity :: String, lineTotal :: String } -> String
-cellLineTotal { lineTotal } = "$" <> lineTotal
-
-grandLine :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
-grandLine order = "Total: $" <> grandTotalText order

@@ -17,18 +17,19 @@
 -- |   * **free functions over the strength** — everything else, named for
 -- |     *what the wrapped profunctor runs on*: `subRetaining` (a sub-variant),
 -- |     `focusCase` (one case), `backgroundCase` (the background, the focus
--- |     threaded across), `reduceCase` (introduce/reduce) — and over the
+-- |     threaded across) — and over the
 -- |     co-strength `Coretaining`: `unfolding @w` (the productive unfold,
 -- |     the `Coreel` optic's row form).
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
 -- | any case and contributing no field (`PUI`'s parametric `silence` at that
--- | type; the unit `pempty` is its `b = ()` special case). The unary
--- | introduce operator is the **sink-pinned merge**,
+-- | type; the unit `pempty` is its `b = ()` special case). A unary
+-- | introduce operator — one case reducing into the record — is the
+-- | **sink-pinned merge**, derivable and therefore not exported (L14):
 -- |
 -- | ```
--- | reduceCase @l g = variantToRecord (lcmap unwrap g) silence
+-- | reduce @l g = variantToRecord (lcmap unwrap g) silence
 -- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
 -- | ```
 -- |
@@ -50,7 +51,6 @@ module Data.Profunctor.Row.VariantToRecord
   , focusCase
   , forCase
   , forCases
-  , reduceCase
   , backgroundCase
   , subRetaining
   , unfolding
@@ -62,7 +62,7 @@ import Data.Either (Either(..), either)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
@@ -220,27 +220,6 @@ focusCase g =
     -- first-label convention, as `inj`/`on`.
     (\(Tuple f' b) -> unsafeSet (reflectSymbol (Proxy @w)) b (unsafeSet (reflectSymbol (Proxy @l)) f' {}))
     (retain g)
-
--- | The `+ → ×` member of the introduce family. Not `recordToCase`'s mirror
--- | despite the shape: that one merely `rmap`s an injection into an output
--- | case (mere `Profunctor`), while this one *consumes* an input case and
--- | needs `Retaining` — hence the reducer name rather than a `…To…` one.
--- | The wrapped `p f { | r }` consumes the **focus** — case `l` of the input
--- | **shot** `s` — and produces the whole output record `r`. `r` is the
--- | **reality** the camera is pointed at: it never enters the shot, and here it
--- | must be *produced* without arriving — every **background** case must still
--- | yield a record, and a sum input can't supply one, so it is replayed from
--- | the carrier's retained state. That is why this member alone needs
--- | `Retaining`. A Mealy **reducer**: case `l` updates the record via `g`, the
--- | background cases leave it as it was.
-reduceCase
-  :: forall @l p b s f r
-   . Retaining p
-  => IsSymbol l
-  => Cons l f b s
-  => p f { | r }
-  -> p [ | s ] { | r }
-reduceCase g = dimap (on (Proxy @l) Left Right) fst (retain g)
 
 -- | Row existential `Reel` focusing a whole **sub-Variant** — the row-valued
 -- | **focus** `f` — of the input **shot** `s`; the residual is the **background**

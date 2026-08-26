@@ -1,4 +1,4 @@
-module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType) where
+module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 
@@ -79,12 +79,3 @@ dateKey { y, m, d } = y * 10000 + m * 100 + d
 
 tripType :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] } -> [ "one-way" :: {}, "return" :: {} ]
 tripType = _."Flight type"
-
-problemLine :: { problem :: String } -> String
-problemLine { problem } = "\x26a0 " <> problem
-
-oneWayLine :: { date :: String } -> String
-oneWayLine { date } = "A one-way flight on " <> date
-
-returnLine :: { out :: String, back :: String } -> String
-returnLine { out, back } = "A return flight: out " <> out <> ", back " <> back
