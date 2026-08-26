@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
-import PUI (forCase, mvu, observed, atCase, projected, toCase, updated)
+import PUI (applied, forCase, mvu, observed, atCase, projected, toCase, updated)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Pipeline
@@ -45,7 +45,7 @@ inboxMDC3 =
               VariantToVariant.do
                 snackbar # forCase @"Delete" (const inboxZeroLine) # observed
                 identity # atCase @"Keep" # toCase @"Keep" identity) # updated (match { "Delete": const <<< deleteOpened, "Keep": const <<< keepMessages })
-          fab @"Compose" { icon: "edit" } # updated (match { "Compose": const <<< composeMessage })
+          fab @"Compose" { icon: "edit" } # applied composeMessage
           ( menu { label: "Sort" } $ RecordToVariant.do
               menuItem @"By sender" {}
               menuItem @"By subject" {}

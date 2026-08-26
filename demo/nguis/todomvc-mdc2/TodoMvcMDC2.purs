@@ -1,11 +1,11 @@
 module TodoMvcMDC2 (todoMvcMDC2) where
 
-import Prelude ((#), ($), (<<<), Unit, const, show)
+import Prelude ((#), ($), Unit, show)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (projection, forProperty, mvu, required, toCase, updated)
+import PUI (applied, projection, forProperty, mvu, required, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shownCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
@@ -19,7 +19,7 @@ todoMvcMDC2 =
       card $ ( Pipeline.do
           Pipeline.do
             filledTextField @"What needs to be done?" {}
-            button @"Add" {} # updated (match { "Add": const <<< addTodo })
+            button @"Add" {} # applied addTodo
           listOf { selected: _.done } visibleEntries (span (text @"title") # forProperty # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
           segmentedButton @"Visibility"
             [ choice @"All", choice @"Active", choice @"Completed" ] # required
@@ -30,5 +30,5 @@ todoMvcMDC2 =
             ( caption $ RecordToRecord.do
                 text @"count" # projection show
                 staticText " items left" ) # shownCase @"several" remainingItems
-            button @"Clear completed" {} # updated (match { "Clear completed": const <<< clearCompleted })
+            button @"Clear completed" {} # applied clearCompleted
       ) # mvu emptyTodoList

@@ -1,11 +1,10 @@
 module CounterShoelace (counterShoelace) where
 
-import Prelude ((#), ($), (<<<), Unit, const, show)
+import Prelude ((#), ($), Unit, show)
 
 import CounterLogic (freshCount, increment)
-import Data.Variant (match)
 import Effect (Effect)
-import PUI (mvu, updated, projection)
+import PUI (applied, mvu, projection)
 import PUI.Web.HTML (body, h4, shown, text)
 import PUI.Web.Shoelace (button, card)
 import QualifiedDo.Semigroupoid as Pipeline
@@ -15,5 +14,5 @@ counterShoelace =
   body $
     card $ ( Pipeline.do
         h4 (text @"count" # projection show) # shown
-        button @"Count" {} # updated (match { "Count": const <<< increment })
+        button @"Count" {} # applied increment
     ) # mvu freshCount

@@ -34,7 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, dispatched, edited, foreach, joint, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, joint, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -478,6 +478,26 @@ main = do
     Ref.read outs >>= assertEqual "updated: value passes through" [ { n: 10 } ]
     fire gProp 3
     Ref.read outs >>= assertEqual "updated: event folded into retained model" [ { n: 10 }, { n: 13 } ]
+
+  -- applied (the occurrence stage): a state transformer over the retained
+  -- row, stepped on every emission — law: applied f ≡ updated (const f).
+  -- The emitter is fed the row it acts on; whatever it emits is discarded
+  -- for the retained row (fired here with a foreign payload to prove it).
+  do
+    gProp <- Ref.new Nothing
+    ins <- Ref.new ([] :: Array { n :: Int })
+    outs <- Ref.new ([] :: Array { n :: Int })
+    m <- unwrap (applied (\s -> { n: s.n + 1 }) (probeIO ins gProp :: PUI Effect { n :: Int } [ count :: { n :: Int } ]))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    fire gProp (.count { n: 99 })
+    Ref.read outs >>= assertEqual "applied: gated before a model" []
+    m.toUser { n: 10 }
+    Ref.read ins >>= assertEqual "applied: the emitter is fed the row it acts on" [ { n: 10 } ]
+    Ref.read outs >>= assertEqual "applied: value passes through" [ { n: 10 } ]
+    fire gProp (.count { n: 99 })
+    Ref.read outs >>= assertEqual "applied: the occurrence steps the retained row, the replay payload discarded" [ { n: 10 }, { n: 11 } ]
+    fire gProp (.count { n: 99 })
+    Ref.read outs >>= assertEqual "applied: each occurrence steps once more" [ { n: 10 }, { n: 11 }, { n: 12 } ]
 
   -- field (the leaf lift): a scalar control lifted under a label is a
   -- whole-row citizen — the background is retained by the Strong state

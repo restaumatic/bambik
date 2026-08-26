@@ -333,3 +333,47 @@ them the lawful way. The five became `staticText`/`text` merges `# shown`
 the logic modules, `told` reached zero sites and L14 pruned it; it was in
 any case `shown (text @l # projected line)` under a phantom label. The
 bottom rung is one word now: `shown`.
+
+## The occurrence stage (eighth step)
+
+The floor itself was carrying the fifth step's cost twice over.
+`button @"Add" {} # updated (match { "Add": const <<< addTodo })` states
+the label twice — the leaf's closed singleton row already says `"Add"`
+— and the model twice: `updated` feeds the emitter the row it retains,
+`clicked` replays it, so payload and state arrive as the same value and
+`const <<<` throws one away. vocabulary.md filed the shape under "the
+button carries no payload" while prescribing the *payload-only*
+spelling; the payload position was load-bearing only as the pin of the
+emitter's input row — `updated (const f)`, the honest state-only shape,
+leaves a button's row ambiguous.
+
+**`applied`** is that pin given a name: `applied f = updated (const f)`
+at the signature `({ | small } -> { | small }) -> PUI m { | small } [ | s ]
+-> PUI m { | big } { | big }`. The emitter is fed `f`'s footprint; its
+emissions are occurrences, their payload unread; `[ | s ]` keeps the
+wrapped component an emitter. A first cut derived the case label from
+the singleton row (`RowToList`, as `toCases`/`forCase` do) — seven
+constraints for a rung whose whole point is not looking at the payload;
+it lasted an hour. Law-tested on the probe carrier (gated, pass-through,
+replay payload discarded). It touches none of the standing decisions: no
+row-walking class (the 2026-08-13 rejection), `updated` keeps its name
+and Mealy shape for every real payload and every stage whose emitters
+mean different things (the "second name" decline), and the case stays
+for the trace to print — only its `match` restatement goes. Twelve sites
+in five families (counter ×6, todomvc's Add and Clear completed, inbox's
+Compose) read `# applied f`; six view modules lost their
+`const`/`(<<<)`/`match` imports. The multi-handler `const <<< f`
+branches (circle-drawer's undo/redo, inbox's sort menu and dialog
+outcomes, espresso-bar) stand: a `match` over emitters meaning different
+things is honest dispatch.
+
+The same pass simplified the **subsumption encoding**. `updated`,
+`every` and `settled` each stated "the footprint is a sub-row of the
+model" as `Union small big u => Nub u big` — two constraints and a
+phantom `u`, there only because `Record.merge` demands `Nub` — while the
+read side of `updated` stated the same fact as `Union narrow extra big`.
+`Record.merge` *is* `unsafeUnion` at runtime, so the three now write
+`unsafeUnion (f small) big :: { | big }` under the one constraint
+`Union small rest big`, which reads as the fact it is: the model is the
+footprint plus the rest. `Nub` left both modules' imports; `applied`
+needs exactly one constraint, and it is that one.

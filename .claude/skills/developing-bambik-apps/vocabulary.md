@@ -59,9 +59,10 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| a button that changes the model | `button @"Count" {} # updated (match { "Count": handler })` | counter | PUI.purs (`updated`) |
+| a button that changes the model | `button @"Count" {} # applied increment` — `increment :: state -> state`, the click's payload unread | counter; todomvc's Add | PUI.purs (`applied`) |
+| an event whose payload the model folds in | `… # toCase @"picked" _.key # updated (match { picked: handler })` | quiz, tic-tac-toe | PUI.purs (`updated`) |
 | the handler's shape | `payload -> state -> state`, both records exact | cashbox: `applyRefund :: { amount } -> { balance } -> { balance }` | writing.md *Code style → Business functions* |
-| … the button carries no payload | `const <<< f` | counter: `const <<< increment` | same |
+| … several payload-less buttons sharing one stage | `const <<< f` per branch | circle-drawer: `"Undo": const <<< undo, "Redo": const <<< redo` | same |
 | … the payload replaces the state | `const` | timer's Reset | same |
 | … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
 | … a constant patch | `const (const patch)`, or carried on the button: `button @l {} # with patch` and `const` | checkout; cashbox | same |

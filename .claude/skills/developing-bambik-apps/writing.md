@@ -455,7 +455,10 @@ holds the business functions over the model, seed first.
   becomes an inline `match { … }` at the update stage, each case's body
   extracted as its own business function. Applied point-free, `match`
   curries correctly: `updated` wants `payload -> model -> model`, which
-  is exactly what a `match` of such handlers gives.
+  is exactly what a `match` of such handlers gives. A `match` whose
+  branches all discard their payload over an emitter fed the row it
+  acts on is glue too: the stage is `# applied f`
+  (`button @"Add" {} # applied addTodo`), the label stated once.
 - **Event constructors.** A wrapper function that injects a payload into
   a case is unnecessary: a channel-fed cell replays its own value on
   click and `toCase @l` introduces the case, closing the row itself.
@@ -688,12 +691,20 @@ over a logic module, a single exported entry function.
   The payload row is the case's exact payload — a collection element
   emitting a wider row narrows it at `toCase` with a named projection
   (movie-browser's `# toCase @"favored" favoriteMark`); the state row is
-  what the handler writes, read from the model by subsumption. The
-  degenerate shapes are spelled with `const`: payload-only
-  `const <<< f` (a button's replayed row: `const <<< undo`,
-  `const <<< addTodo`), state-only `const f`
-  (`const recordLap`), replace-with-payload `const` (`"Reset": const`),
-  neither `const (const patch)`. Scalar and `Array` payloads (a key, an
+  what the handler writes, read from the model by subsumption. An
+  emitter that carries **no payload of its own** — a button, `fab` or
+  `menuItem` fed the row it acts on, replaying it on click — is not a
+  Mealy step but a state transformer, and takes the rung that says so:
+  `button @"Add" {} # applied addTodo` with `addTodo :: { … } -> { … }`,
+  the case untouched and unread (counter's `# applied increment`,
+  todomvc's `# applied clearCompleted`, inbox's
+  `fab @"Compose" { icon: "edit" } # applied composeMessage`). Inside a
+  `match`, `const <<< f` is that same transformer where several such
+  emitters share one stage (circle-drawer's `"Undo": const <<< undo,
+  "Redo": const <<< redo`). The remaining degenerate shapes are spelled
+  with `const`: state-only `const f` (`const recordLap`),
+  replace-with-payload `const` (`"Reset": const`), neither
+  `const (const patch)`. Scalar and `Array` payloads (a key, an
   operator symbol, a fetched list) take the same shape positionally;
   they are not rows.
 - **A handler carries no field it does not touch.** Its row is exactly
@@ -804,7 +815,7 @@ read them, not a summary. Paths are inside the fetched library,
 `.spago/bambik/<tag>/`:
 
 - `src/PUI.purs` — the core type, pipeline semantics, and the
-  combinators: `mvu`/`with`/`looped`/`joint`/`updated`/`settled`/`action`,
+  combinators: `mvu`/`with`/`looped`/`joint`/`updated`/`applied`/`settled`/`action`,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`. The gated display family lives in `PUI.Web.HTML`

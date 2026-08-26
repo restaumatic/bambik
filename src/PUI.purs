@@ -22,14 +22,14 @@
 -- | semantically; all stages see every model value on the next loop turn.
 -- |
 -- | A trace of a counter (a `shown` display stage, then an event
--- | emitter `# updated increment`, under `mvu { count: 0 }`):
+-- | emitter `# applied increment`, under `mvu { count: 0 }`):
 -- |
 -- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
 -- |  2. the display shows `0` and releases the fed row, which flows on
 -- |     and arms the emitter's replay value
--- |     and `updated`' retained state;
--- |  3. the user acts: the emitter fires, `updated` folds `increment`
--- |     into the retained model and emits `{ count: 1 }`;
+-- |     and `applied`'s retained state;
+-- |  3. the user acts: the emitter fires, `applied` steps the retained
+-- |     model by `increment` and emits `{ count: 1 }`;
 -- |  4. the loop re-feeds `{ count: 1 }` to the top; the display re-renders;
 -- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
 -- |     guard, so exactly one turn happens per event.
@@ -57,6 +57,7 @@ module PUI
   , setDiagnostics
   , action
   , accumulated
+  , applied
   , debounced
   , dispatched
   , edited
@@ -122,7 +123,7 @@ import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (class Contractable, contract)
-import Prim.Row (class Cons, class Lacks, class Nub, class Union)
+import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
@@ -133,7 +134,8 @@ import Effect.Aff (Aff, attempt, delay, error, forkAff, killFiber, launchAff_, m
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Record (get, insert, merge, union) as Record
+import Record (get, insert, union) as Record
+import Record.Unsafe.Union (unsafeUnion)
 
 --------------------------------------------------------------------------------
 -- The carrier
@@ -866,13 +868,15 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | *read* from any wider row): the handler may touch a sub-row of the model,
 -- | and the wrapped event UI component may be fed a sub-row of it — typically the
 -- | union of an event merge's operands — so neither side needs a
--- | `widenRecordInput` at the stage boundary. With `small ≡ big` and
--- | `narrow ≡ big` this is the plain diagonal stage.
+-- | `widenRecordInput` at the stage boundary. Each side is one constraint
+-- | reading as the fact it is: `Union small rest big` — the model is the
+-- | handler's footprint plus the rest — and `Union narrow extra big`
+-- | likewise for the fed row. With `small ≡ big` and `narrow ≡ big` this is
+-- | the plain diagonal stage.
 updated
-  :: forall m small u big narrow extra e
+  :: forall m small rest big narrow extra e
    . Functor m
-  => Union small big u
-  => Nub u big
+  => Union small rest big
   => Union narrow extra big
   => (e -> { | small } -> { | small })
   -> PUI m { | narrow } e
@@ -898,10 +902,51 @@ updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
               tr "updated: event withheld (no retained state yet)" e
             Just s -> do
               tr "updated: folding event" e
-              let s' = Record.merge (handler e (unsafeCoerce s)) s
+              let s' = unsafeUnion (handler e (unsafeCoerce s)) s :: { | big }
               Ref.write (Just s') sRef
               prop s'
     }
+
+-- | The **occurrence stage** — `updated` for an emitter that carries no
+-- | payload of its own. A `× → +` leaf fed the row it acts on (a button,
+-- | a `fab`, a `menuItem`, a `clicked` row `# toCase @l identity`)
+-- | replays that row on click, so its "payload" is the very row the stage
+-- | retains: the Mealy step degenerates to a state transformer, and this
+-- | rung takes it as one — `f :: { | small } -> { | small }` is applied to
+-- | the retained row on each emission, whatever the emission carries.
+-- | `button @"Add" {} # applied addTodo` states the label once and the
+-- | model once; the case is left alone (it is what the emission trace
+-- | prints), only its `match` restatement goes.
+-- |
+-- | Derivation, and the law:
+-- |
+-- | ```
+-- | applied f = updated (const f)
+-- | ```
+-- |
+-- | — the state-only handler shape, which at a bare `updated` leaves the
+-- | emitter's input row unpinned (nothing else states what a button is
+-- | fed); this signature pins it to `f`'s footprint, the one thing the
+-- | discarded payload was doing in `const <<< f`. The output row `[ | s ]`
+-- | keeps the wrapped component an emitter — an editor's edits are values,
+-- | not occurrences — and is otherwise unread. Everything else is
+-- | `updated`'s: a pass-through wire, gated before a first row, `f`'s
+-- | footprint read from the model by subsumption (`Union small rest big`:
+-- | the model is `f`'s row plus the rest).
+-- |
+-- | Not the Mealy form under a second name: an emitter whose payload is
+-- | real — a key from `toCase @l _.key`, an `action`'s outcome, a pane's
+-- | payload under `provided`, a seeded patch under `# with patch` — keeps
+-- | `updated (match { … })`, as does a stage whose emitters mean different
+-- | things.
+applied
+  :: forall m small rest big s
+   . Functor m
+  => Union small rest big
+  => ({ | small } -> { | small })
+  -> PUI m { | small } [ | s ]
+  -> PUI m { | big } { | big }
+applied f = updated (const f)
 
 -- | Make a status an **event pass-through stage** — the gated displays'
 -- | sibling on
@@ -985,14 +1030,13 @@ optional p = field @l scalar
 -- | a sub-row of the model, merged back over the last full value on each
 -- | tick, so the tick's footprint is stated once in the step's own signature.
 every
-  :: forall m small u big
+  :: forall m small rest big
    . Applicative m
-  => Union small big u
-  => Nub u big
+  => Union small rest big
   => { ms :: Number }
   -> ({ | small } -> Maybe { | small })
   -> PUI m { | big } { | big }
-every interval step = heartbeat interval \big -> (\s -> Record.merge s big) <$> step (unsafeCoerce big)
+every interval step = heartbeat interval \big -> (\s -> unsafeUnion s big :: { | big }) <$> step (unsafeCoerce big)
 
 -- | The type-agnostic heartbeat `every` is built from — private, because the
 -- | vocabulary's stages carry rows while this one is exact at any type.

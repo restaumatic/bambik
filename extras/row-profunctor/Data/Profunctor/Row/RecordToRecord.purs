@@ -76,10 +76,11 @@ import Data.Function (const)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Lacks, class Nub, class Union)
+import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
-import Record (get, insert, merge, union) as Record
+import Record (get, insert, union) as Record
+import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
 import Unsafe.Coerce (unsafeCoerce)
@@ -334,17 +335,17 @@ muted = rmap (const {})
 -- |
 -- | The normalizer **subsumes** (like `PUI.updated`'s handler): it may read
 -- | and rebuild a sub-row of the emission, merged back over the full value,
--- | so a normalization states its exact footprint in its own signature.
+-- | so a normalization states its exact footprint in its own signature
+-- | (`Union small rest big`: the emission is the footprint plus the rest).
 -- | With `small ≡ big` this is the plain whole-row form.
 settled
-  :: forall p small u big i
+  :: forall p small rest big i
    . Profunctor p
-  => Union small big u
-  => Nub u big
+  => Union small rest big
   => ({ | small } -> { | small })
   -> p i { | big }
   -> p i { | big }
-settled f = rmap (\big -> Record.merge (f (unsafeCoerce big)) big)
+settled f = rmap (\big -> unsafeUnion (f (unsafeCoerce big)) big :: { | big })
 
 -- | The `×`-diagonal **trace at row granularity**, over ecosystem
 -- | `Costrong`: the **state** sub-record `fb` of the output loops back into
