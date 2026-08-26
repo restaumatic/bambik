@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (projection, foreach, mvu, projected, toCase, updated, with)
-import PUI.Web.HTML (shownAlways, body, clicked, staticText, text)
+import PUI.Web.HTML (shown, body, clicked, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, dataCell, dataRow, dataTable, elevation5, listOf)
 import QualifiedDo.Semigroupoid as Pipeline
 import ShoppingCartLogic (addUnit, cartLines, emptyCart, formatMoney, grandTotalText, productCatalogue, removeUnit)
@@ -29,6 +29,6 @@ shoppingCartMDC3 =
                       text @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           ( bodyLarge $ RecordToRecord.do
               staticText "Total: $"
-              text @"grandTotal" # projected grandTotalText ) # shownAlways
+              text @"grandTotal" # projected grandTotalText ) # shown
           button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
       ) # mvu emptyCart

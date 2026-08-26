@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, updated)
+import PUI (every, mvu, updated, projection)
 import PUI.Web.HTML (shown, shownEach, providedCase, body, li, staticText, text, ul)
 import PUI.Web.MDC2 (button, card, elevation20, headline3)
 import QualifiedDo.Semigroupoid as Pipeline
@@ -17,7 +17,7 @@ stopwatchMDC2 =
   body $
     elevation20 $
       card $ ( Pipeline.do
-          headline3 (shown @"elapsedTenths" formatTime)
+          headline3 (text @"elapsedTenths" # projection formatTime) # shown
           every tickPeriod tick
           ( RecordToVariant.do
               button @"Start" { icon: "play_arrow" } # providedCase @"halted" stopwatchPhase

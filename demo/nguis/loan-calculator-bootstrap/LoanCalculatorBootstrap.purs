@@ -8,7 +8,7 @@ import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText
 import PUI (forCase, mvu, projected, required)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAlways, body, div, staticText, text)
+import PUI.Web.HTML (shown, body, div, staticText, text)
 import QualifiedDo.Semigroupoid as Pipeline
 
 loanCalculatorBootstrap :: Effect Unit
@@ -32,9 +32,9 @@ loanCalculatorBootstrap =
               text @"rate" # projected rateText )
           listGroupItem ( RecordToRecord.do
               staticText "Total interest "
-              text @"totalInterest" # projected totalInterestText ) ) # shownAlways
+              text @"totalInterest" # projected totalInterestText ) ) # shown
       ( ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
-          progress @"interestShare" ) # projected interestShare ) # shownAlways
+          progress @"interestShare" ) # projected interestShare ) # shown
       button @"Apply for this loan" {}
       toast # forCase @"Apply for this loan" appliedLine

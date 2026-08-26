@@ -311,7 +311,7 @@ asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\
 -- | output — `rmap`-only, the explicit form of what no stage may ever do
 -- | silently. The duoidal reading (see `PUI`'s header and
 -- | doc/collections-profunctor-algebra.md §0): a fulfillment-gated display
--- | (`shownAlways` and its rungs) carries the comultiplication (render *and*
+-- | (`shown` and its rungs) carries the comultiplication (render *and*
 -- | release), `muted` only the counit (render and drop). Wherever a
 -- | genuinely emitting assembly (a `foreach` forwarding its elements, a
 -- | packaged collection display echoing its array) is used purely as a

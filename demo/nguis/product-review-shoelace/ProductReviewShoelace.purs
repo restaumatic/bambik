@@ -8,7 +8,7 @@ import Effect (Effect)
 import ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine)
 import PUI (forCase, projection, mvu, projected, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAlways, body, p, staticText, text)
+import PUI.Web.HTML (shown, body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -24,7 +24,7 @@ productReviewShoelace =
             [ choice @"less than a month", choice @"1–12 months", choice @"more than a year" ] # required
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
-          divider # shownAlways
+          divider # shown
       ) # mvu freshImpression
       ( p $ RecordToRecord.do
           staticText "Preview: "
@@ -32,6 +32,6 @@ productReviewShoelace =
           text @"Headline" # projection headlineQuote
           staticText " · owned "
           text @"How long have you owned it?" # projection caseText
-          text @"recommendNote" # projected recommendNote ) # shownAlways
+          text @"recommendNote" # projected recommendNote ) # shown
       button @"Submit review" {}
       toast # forCase @"Submit review" submittedLine

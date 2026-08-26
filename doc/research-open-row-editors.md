@@ -288,7 +288,7 @@ What changed:
 - **Two dead slots pruned (L14, applied to parameters).** `shownAs proj
   content` had 135 demo sites, every one `proj = identity`; it is now
   `shownAlways content`, the content reading its closed narrow row by
-  `Union` subsumption as `told` does, and the name joins the family's
+  `Union` subsumption as `told` did, and the name joins the family's
   grammar (`shownWhen`/`shownCase`/`shownEach`/`shownAlways`).
   `forProperty f` had 22 sites, every one `identity`, and
   `forProperty f = projection f >>> forProperty` — so it is now
@@ -299,8 +299,7 @@ What changed:
 - **86 dead logic exports deleted** — `*Line`/`*Text` formatters left over
   from the `told line` era, exported by 29 logic modules and used by no
   view (the sentences are `RecordToRecord.do` merges of
-  `staticText`/`text` now). `told` survives at its 7 sites (cashbox,
-  auction), for a sentence that *is* one business function.
+  `staticText`/`text` now).
 - **The newcomer path**: vocabulary.md (which word, when — an index into
   writing.md and the headers), walkthrough.md (flight-booker line by
   line), the gate stated up front in writing.md, a localization paragraph
@@ -312,3 +311,25 @@ included — the shape is the interface; the cost (rows repeated verbatim)
 is now stated in writing.md rather than left to be discovered.
 `toCase @l identity` (13 of 52 sites) and `foreach @l identity` (5 of 40)
 keep their slots, real projections being the majority.
+
+`shownAlways` lasted a day. The adverb was a policy word on the one rung
+whose point is having no policy, and the bare name was free once the
+field rung `shown @l f` was seen to be derivable — one text node reading
+field `l` through `f`, then releasing the row, is exactly
+`text @l # projection f # <ambient rung>`. So the field rung is deleted
+(subsumption) and the ambient rung is **`shown`**: the family reads
+`shown` / `shownWhen` / `shownCase` / `shownEach`, and the ten former
+`shown @l f` sites read `headline4 (text @"count" # projection show) # shown`
+(two of them dropping an `identity` on the way).
+
+And then `told` went too. Every surviving `told line` site (cashbox's
+`balanceLine`, `refundLine`, `courierLine`; auction's `bidLine`, `topLine`)
+was a literal-plus-formatted-field sentence — the shape writing.md's
+*Business functions* section names as UI structure in disguise, with
+`balanceLine` as its own example — and the MDC3 twins had already written
+them the lawful way. The five became `staticText`/`text` merges `# shown`
+(`( headline6 $ RecordToRecord.do staticText "Till balance: €"; text
+@"balance" # projection euros ) # shown`), the five line functions left
+the logic modules, `told` reached zero sites and L14 pruned it; it was in
+any case `shown (text @l # projected line)` under a phantom label. The
+bottom rung is one word now: `shown`.

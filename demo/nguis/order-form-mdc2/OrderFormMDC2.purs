@@ -11,7 +11,7 @@ import Effect (Effect)
 import OrderFormLogic (deliveryDetail, dineInDetail, distanceKm, fulfillmentCase, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, submitOrder, submittedLine, summarySettleTime, takeawayDetail)
 import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, looped, required, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, shownAlways, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -22,18 +22,18 @@ orderFormMDC2 =
       ( Pipeline.do
           ( headline6 $ RecordToRecord.do
               staticText "Order "
-              text @"Short ID" ) # shownAlways
+              text @"Short ID" ) # shown
           card $ Pipeline.do
-            (subtitle1 $ staticText "Identifier") # shownAlways
+            (subtitle1 $ staticText "Identifier") # shown
             filledTextField @"Short ID" {}
             filledTextField @"Unique ID" {}
           card ( Pipeline.do
-              (subtitle1 $ staticText "Customer") # shownAlways
+              (subtitle1 $ staticText "Customer") # shown
               ( Pipeline.do
                   filledTextField @"First name" {}
                   filledTextField @"Last name" {}) # field @"customer" )
           card ( Pipeline.do
-              (subtitle1 $ staticText "Fulfillment") # shownAlways
+              (subtitle1 $ staticText "Fulfillment") # shown
               ( ( Pipeline.do
                     tabBar @"selected"
                       [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
@@ -44,21 +44,21 @@ orderFormMDC2 =
                         ( body1 $ RecordToRecord.do
                             staticText "Distance "
                             text @"Address" # projection distanceKm
-                            staticText " km" ) # shownAlways) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
+                            staticText " km" ) # shown) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
           card $ Pipeline.do
-            (subtitle1 $ staticText "Total") # shownAlways
+            (subtitle1 $ staticText "Total") # shown
             filledTextField @"Total" {}
           card ( Pipeline.do
-              (subtitle1 $ staticText "Payment") # shownAlways
+              (subtitle1 $ staticText "Payment") # shown
               ( Pipeline.do
                   segmentedButton @"Method"
                     [ choice @"cash", choice @"card" ] # required
                   filledTextField @"Paid" {}
                   ( body1 $ RecordToRecord.do
                       staticText "Paying by "
-                      text @"Method" # projection caseText ) # shownAlways) # field @"payment" )
+                      text @"Method" # projection caseText ) # shown) # field @"payment" )
           card $ Pipeline.do
-            (subtitle1 $ staticText "Remarks") # shownAlways
+            (subtitle1 $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
       ) # looped
       body1 ( Pipeline.do
@@ -72,7 +72,7 @@ orderFormMDC2 =
                   text @"First name"
                   staticText " "
                   text @"Last name" ) # atField @"customer"
-              staticText ", fulfilled as "  ) # shownAlways # debounced summarySettleTime
+              staticText ", fulfilled as "  ) # shown # debounced summarySettleTime
           ( RecordToRecord.do
               staticText "dine in at table "
               text @"Table" ) # shownWhen dineInDetail
@@ -89,7 +89,7 @@ orderFormMDC2 =
               staticText ", paid "
               text @"Paid"
               staticText " by "
-              text @"Method" # projection caseText ) # atField @"payment" ) # shownAlways # debounced summarySettleTime )
+              text @"Method" # projection caseText ) # atField @"payment" ) # shown # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" }) # armed

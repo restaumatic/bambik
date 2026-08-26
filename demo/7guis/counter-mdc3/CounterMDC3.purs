@@ -5,8 +5,8 @@ import Prelude ((#), ($), (<<<), Unit, const, show)
 import CounterLogic (freshCount, increment)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (mvu, updated)
-import PUI.Web.HTML (body, shown)
+import PUI (mvu, updated, projection)
+import PUI.Web.HTML (body, shown, text)
 import PUI.Web.MDC3 (button, card, elevation5, headlineLarge)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -15,6 +15,6 @@ counterMDC3 =
   body $
     elevation5 $
       card $ ( Pipeline.do
-          headlineLarge (shown @"count" show)
+          headlineLarge (text @"count" # projection show) # shown
           button @"Count" {} # updated (match { "Count": const <<< increment })
       ) # mvu freshCount

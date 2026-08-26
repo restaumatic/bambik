@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, looped, atCase, toCase, updated, with)
-import PUI.Web.HTML (shownAlways, body, staticText, text)
+import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC3 (button, card, cardActions, elevation5, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -27,7 +27,7 @@ crudMDC3 = do
               listOf { selected: _.selected } entries ( ( RecordToRecord.do
                   text @"Surname"
                   staticText ", "
-                  text @"Name" ) # shownAlways ) # toCase @"picked" _.key # updated (match { picked: pick })
+                  text @"Name" ) # shown ) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Pipeline.do
                   cardActions $ RecordToVariant.do
                     button @"Create" {}

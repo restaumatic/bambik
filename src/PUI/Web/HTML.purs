@@ -69,12 +69,10 @@ module PUI.Web.HTML
   , select
   , span
   , shown
-  , shownAlways
   , shownCase
   , inCase
   , shownEach
   , shownWhen
-  , told
   , staticText
   , strong
   , table
@@ -118,54 +116,6 @@ import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, app
 
 -- UIs
 
--- | RESEARCH (gated displays): the **fulfillment-gated display**, instant
--- | rung. Type `p { l | rest } { l | rest }`: render field `l` through the
--- | formatter, then release the whole fed row — the release *is* the
--- | fulfillment witness, and for this component the gate opens
--- | synchronously on render (assurance by visibility; see
--- | doc/displays-and-sources.md). A pipeline stage natively — no wrapper.
--- | Render-before-release, deliberately: the release may re-enter the loop
--- | mid-registration, which must find the display already painted.
-shown :: forall @l a rest row. IsSymbol l => Cons l a rest row => (a -> String) -> PUI Web { | row } { | row }
-shown f = wrap do
-  parentNode <- gets _.parent
-  newNode <- liftEffect $ do
-    node <- createTextNode ""
-    appendChild node parentNode
-    pure node
-  modify_ _ { sibling = newNode }
-  node <- gets _.sibling
-  propRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \row -> do
-        setTextNodeValue node (f (Record.get (Proxy @l) row))
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop row
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
--- | RESEARCH (gated displays): the **line rung** — a fulfillment-gated
--- | display over a *narrow closed row*, read through a line function:
--- | render the line, release the whole fed row — subsumption
--- | fused into the leaf: the line reads `read`, the stage carries `row`.
-told :: forall read extra row. Union read extra row => ({ | read } -> String) -> PUI Web { | row } { | row }
-told line = wrap do
-  parentNode <- gets _.parent
-  newNode <- liftEffect $ do
-    node <- createTextNode ""
-    appendChild node parentNode
-    pure node
-  modify_ _ { sibling = newNode }
-  node <- gets _.sibling
-  propRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \row -> do
-        setTextNodeValue node (line (unsafeCoerce row))
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop row
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
 -- | RESEARCH (gated displays): the **pane rung** — render the content when
 -- | the projection yields its payload, detach when it does not, and
 -- | **release the fed row always**: a hidden pane must never block the
@@ -183,17 +133,17 @@ shownWhen proj content = recordToRecord (provided (\(r :: { | row }) -> proj (un
 -- | RESEARCH (gated displays): the **ambient rung** — content that is
 -- | always there: registered at build (its chrome exists before any
 -- | feed), fed the row on every feed, the fed row released always. The
--- | content reads its own *closed* narrow row by subsumption, as `told`'s
--- | line does (`Union read extra row`), so a chrome merge states exactly
+-- | content reads its own *closed* narrow row by subsumption
+-- | (`Union read extra row`), so a chrome merge states exactly
 -- | the fields it shows and a formatted read is `projection`'s job inside
 -- | it. The sibling of `shownWhen`/`shownCase`/`shownEach` whose policy is
 -- | no policy; the rung trails its content like every data concern:
--- | `(headline6 $ …) # shownAlways`.
-shownAlways
+-- | `(headline6 $ …) # shown`.
+shown
   :: forall read extra row
    . Union read extra row
   => PUI Web { | read } {} -> PUI Web { | row } { | row }
-shownAlways content = wrap do
+shown content = wrap do
   content' <- unwrap content
   -- complete the content's wiring: its only possible emission is the
   -- informationless {}, discarded lawfully (the content type says so)

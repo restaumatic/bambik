@@ -206,22 +206,21 @@ interchangeable:
   record pipeline with no wrapper at all.
 - A display **is a pipeline stage natively** (RESEARCH: gated displays —
   `tapped` is deleted). Pick the rung whose fulfillment policy the
-  business wants: `content # shownAlways` for ambient structured content
+  business wants: `content # shown` for ambient structured content
   (chrome + unit displays, registered at build, released per feed),
   `# shownWhen`/`# shownCase` for display panes (attached on relevance,
   released always), `# inCase @l classifier` for an **editor pane** — a
   whole-row editor that exists only in one mode, its own `field @l` lift
   carrying the rest of the row — `item # shownEach @l proj` for keyed
-  collections, `told line` /
-  `shown @l f` for bare lines, `confirmed cfg display` where the flow
+  collections, `confirmed cfg display` where the flow
   must wait for the user's confirmation. Content slots accept only
   `{}`-output components — an editor inside fails to unify; a genuinely
   emitting assembly is discarded **in writing** with `# muted`.
 
 So: an editor is a stage as it stands; a display stage is the gated rung
-that states its policy (`(…) # shownAlways` for a structured line,
+that states its policy (`(…) # shown` for a structured line,
 tip-calculator's money readouts — and for **pure chrome in a pipeline**:
-a card's caption is `(subtitle1 $ staticText "…") # shownAlways`,
+a card's caption is `(subtitle1 $ staticText "…") # shown`,
 registered at build, releasing every fed row). The rung trails like
 every data concern — the line leads with the visual content, the policy
 rides at its end with `#`. A live readout as a
@@ -285,7 +284,7 @@ Worked examples, by shape:
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
   swatch).
 - **structure-from-value** — markdown-previewer: a recursive `PUI Web`
-  tree built by `(dynamic …) # shownAlways`, because the structure genuinely
+  tree built by `(dynamic …) # shown`, because the structure genuinely
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
@@ -607,7 +606,7 @@ over a logic module, a single exported entry function.
   ```purescript
   ( headline6 $ RecordToRecord.do
       staticText "Till balance: €"
-      text @"balance" # projection euros ) # shownAlways
+      text @"balance" # projection euros ) # shown
   ```
 
   never `text @"balance" # projected balanceLine` over a
@@ -802,7 +801,7 @@ read them, not a summary. Paths are inside the fetched library,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`. The gated display family lives in `PUI.Web.HTML`
-  (`shown`/`told`/`shownAlways`/`shownWhen`/`shownCase`/`shownEach`) and the
+  (`shown`/`shownWhen`/`shownCase`/`shownEach`) and the
   design systems (`confirmed`).
 - `src/PUI/Web/HTML.purs` — HTML vocabulary, `body`, element oculars,
   `attrWith` for channel-fed structure-from-data, the builders

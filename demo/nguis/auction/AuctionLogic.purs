@@ -1,6 +1,6 @@
-module AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine) where
+module AuctionLogic (noBids, openingBid, raiseTop) where
 
-import Prelude (max, show, (<>))
+import Prelude (max)
 
 import Data.Maybe (Maybe(..))
 
@@ -15,9 +15,3 @@ raiseTop { "Your bid ($)": bid, top } = { "Your bid ($)": bid, top: max bid.curr
 
 biddingRange :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
 biddingRange = { current: 0.0, min: 0.0, max: 1000.0, step: Just 10.0 }
-
-bidLine :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
-bidLine { "Your bid ($)": bid } = "Your current bid: $" <> show bid.current
-
-topLine :: { top :: Number } -> String
-topLine { top } = "Highest bid so far: $" <> show top

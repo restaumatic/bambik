@@ -7,7 +7,7 @@ import Effect (Effect)
 import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (every, mvu, projected, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAlways, body)
+import PUI.Web.HTML (shown, body)
 import PUI.Web.MDC3 (elevation5, topAppBar)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -20,9 +20,9 @@ orderDashboardMDC3 =
           rangePicker @"Showing" {}
             [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
           board $ Pipeline.do
-            (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shownAlways
-            (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shownAlways
-            (gauge { label: "Kitchen load" } # projected kitchenLoad) # shownAlways
-            (trendChart { label: "Order flow" } # projected orderFlow) # shownAlways
-            (leaderboard { label: "Top dishes" } # projected topDishes) # shownAlways
+            (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shown
+            (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shown
+            (gauge { label: "Kitchen load" } # projected kitchenLoad) # shown
+            (trendChart { label: "Order flow" } # projected orderFlow) # shown
+            (leaderboard { label: "Top dishes" } # projected topDishes) # shown
       ) # mvu openingDay

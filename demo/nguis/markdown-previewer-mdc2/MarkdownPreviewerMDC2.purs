@@ -6,7 +6,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (atField, mvu)
-import PUI.Web.HTML (shownAlways, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
+import PUI.Web.HTML (shown, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC2 (card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -32,5 +32,5 @@ markdownPreviewerMDC2 =
                     , paragraph: \is -> p (inlines is)
                     , bullets: \items -> ul (each items \is -> li (inlines is))
                     , quote: \is -> blockquote >>> "style" := "border-left: 4px solid #ccc; margin-left: 0; padding-left: 12px; color: #555;" $ inlines is
-                    } ) # atField @"Source" # shownAlways
+                    } ) # atField @"Source" # shown
         ) # mvu welcomeDocument

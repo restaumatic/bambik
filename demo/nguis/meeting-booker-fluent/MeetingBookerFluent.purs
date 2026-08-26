@@ -9,7 +9,7 @@ import MeetingBookerLogic (blankBooking, bookedLine, completePlan, headcount, on
 import PUI (forCase, projection, mvu, optional, projected, settled)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, shownAlways, body, div, provided, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, shown, body, div, provided, staticText, text)
 import QualifiedDo.Semigroupoid as Pipeline
 
 meetingBookerFluent :: Effect Unit
@@ -23,7 +23,7 @@ meetingBookerFluent =
           radioGroup @"Duration (min)" {}
             [ choice @"15", choice @"30", choice @"60" ] # optional
           toggleSwitch @"Include a Teams link" {}
-          divider # shownAlways
+          divider # shown
           slider @"Attendees" {} # inCase @"chosen" roomChoice
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
@@ -43,6 +43,6 @@ meetingBookerFluent =
               staticText " min, "
               text @"attendees" # projection headcount
               staticText " attendees"
-              text @"onlineNote" # projected onlineNote ) # shownAlways
+              text @"onlineNote" # projected onlineNote ) # shown
           button @"Book the room" {} ) # provided completePlan
       messageBar # forCase @"Book the room" bookedLine

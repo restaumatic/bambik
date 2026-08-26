@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (forCase, mvu, required, toCases)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAlways, shownCase, body, staticText, text)
+import PUI.Web.HTML (shown, shownCase, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Pipeline
 import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
@@ -18,7 +18,7 @@ signupFormMDC3 =
     elevation5 $
       card $ Pipeline.do
         ( Pipeline.do
-            (headlineLarge $ staticText "Create account") # shownAlways
+            (headlineLarge $ staticText "Create account") # shown
             debouncedTextField @"Username" { ms: usernameSettleTime }
             radioButton @"Plan"
               [ choice @"Free", choice @"Pro", choice @"Team" ] # required

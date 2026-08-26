@@ -24,7 +24,7 @@ nothing more:
 > accept only `{}`) makes a witness impossible to discard silently:
 > choosing a witnessing component is choosing to be unable to ignore its
 > answer. In the gated family the witness is the **release**: `confirmed`
-> withholds the flow until the user answers; `shown`/`told`/`shownAlways`
+> withholds the flow until the user answers; `shown`
 > release instantly (the zero-certainty rung); the pane and collection
 > rungs release always and render on relevance.
 
@@ -33,7 +33,7 @@ interruption ranking (snackbar < banner < dialog):
 
 | Policy | Fulfillment | Witness | Citizens |
 | --- | --- | --- | --- |
-| ambient | stay visible, always current | none | `text`/`progress` (in merges), `shown`/`told`/`shownAlways` (as stages) |
+| ambient | stay visible, always current | none | `text`/`progress` (in merges), `shown` (as stages) |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
 | persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output` |
 | modal-witnessed | block everything until confirmed | the confirm | `dialog`, `simpleDialog` — open on feed, close on emission |

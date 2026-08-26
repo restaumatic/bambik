@@ -9,7 +9,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
 import PUI (forCase, mvu, observed, atCase, projected, toCase, updated)
-import PUI.Web.HTML (shownWhen, shownAlways, body, provided, span, staticText, text)
+import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -22,21 +22,21 @@ inboxMDC2 =
               text @"unreadCount" # projected unreadCountText
               staticText " unread of "
               text @"messageCount" # projected messageCountText
-              staticText " messages" ) # shownAlways
+              staticText " messages" ) # shown
           listOf { selected: _.attention } mailboxRows
             ( span $ Pipeline.do
                 (staticText "● ") # shownWhen unreadMark
                 ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
-                    text @"subject" ) # shownAlways ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                    text @"subject" ) # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Pipeline.do
               ( RecordToRecord.do
                   headline6 (text @"subject")
                   body2 RecordToRecord.do
                     staticText "From: "
                     text @"sender"
-                  body1 (text @"body")) # shownAlways
+                  body1 (text @"body")) # shown
               iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
           ( Pipeline.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do

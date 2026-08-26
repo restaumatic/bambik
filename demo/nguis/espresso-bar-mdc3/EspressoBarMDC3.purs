@@ -9,7 +9,7 @@ import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder)
 import PUI (forCase, mvu, projected, required, updated, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownAlways, body, div, staticText, text)
+import PUI.Web.HTML (shown, body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -36,16 +36,16 @@ espressoBarMDC3 =
               toggleSwitch @"Takeaway cup" {}
               iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
               checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
-              divider # shownAlways
+              divider # shown
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem @"The usual" {} # with theUsual
                   menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
           ) # mvu usualOrder
           ( bodyMedium $ RecordToRecord.do
               staticText "Your cup: "
-              text @"summary" # projected summaryText ) # shownAlways
+              text @"summary" # projected summaryText ) # shown
           ( ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
-              linearProgress @"caffeine" ) # projected caffeineFraction ) # shownAlways
+              linearProgress @"caffeine" ) # projected caffeineFraction ) # shown
           button @"Place order" { icon: "local_cafe" }
           snackbar # forCase @"Place order" brewedLine

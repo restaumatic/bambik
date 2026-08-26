@@ -58,7 +58,7 @@ flightBookerMDC2 =
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
 that shape data flow (`mvu`, `required`, `debounced`, `action`, `forCases`),
-`PUI.Web.HTML` for the page and the display rungs (`body`, `shownCase`,
+`PUI.Web.HTML` for the page and the display stages (`body`, `shownCase`,
 `inCase`, `text`, `staticText`), and `PUI.Web.MDC2` for the design system.
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
@@ -106,7 +106,7 @@ under one `# debounced itinerarySettleTime`.
 - `# shownCase @"one-way" bookingState` — attach and feed this pane when
   `bookingState model` yields case `one-way`, with that case's payload;
   detach on any other case. Either way the fed model is released downstream:
-  a hidden pane never blocks the flow. Three rungs over one classifier make
+  a hidden pane never blocks the flow. Three such stages over one classifier make
   the three states exclusive by construction — exclusivity is computed in
   `bookingState`, not arranged in the view.
 - `# debounced { ms: 300.0 }` — redraw the whole line 300 ms after the last
@@ -250,7 +250,8 @@ the logic is the ordinary one.
 
 ## What to read next
 
-- **counter** — the floor: one display, one button, one fold (`updated`).
+- **counter** — the floor: one display (`text @l # projection show`, the
+  block `# shown`), one button, one fold (`updated`).
 - **temperature-converter** — two editors kept consistent with `settled`.
 - **flight-booker** — this file.
 - **todomvc** — a collection (`listOf`, `foreach`), a selectable list emitting

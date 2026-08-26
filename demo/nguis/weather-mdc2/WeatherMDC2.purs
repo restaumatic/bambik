@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, mvu, forProperty, atCase, projected, toCase, updated)
-import PUI.Web.HTML (shownAlways, body, staticText, text)
+import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Pipeline
 import WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, rememberReport, servedReportsText, temperatureText, warsawBulletin, windText)
@@ -21,26 +21,26 @@ weatherMDC2 =
               indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked") # updated (match { reportServed: rememberReport })
           ( headline1 $ RecordToRecord.do
               text @"temperature" # projected temperatureText
-              staticText " °C" ) # shownAlways
+              staticText " °C" ) # shown
           ( headline5 $ RecordToRecord.do
               text @"condition" # projected conditionText
               staticText " in "
-              text @"city" # projected cityText ) # shownAlways
+              text @"city" # projected cityText ) # shown
           ( body1 $ RecordToRecord.do
               staticText "Humidity "
               text @"humidity" # projected humidityText
               staticText "% · Wind "
               text @"wind" # projected windText
-              staticText " km/h" ) # shownAlways
+              staticText " km/h" ) # shown
           ( caption $ RecordToRecord.do
               staticText "Simulated service · "
               text @"servedReports" # projected servedReportsText
-              staticText " reports served" ) # shownAlways
+              staticText " reports served" ) # shown
           ( Pipeline.do
               iconButton @"About this dashboard" { icon: "info" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
                 ( body1 ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text @"servedReports" # projected servedReportsText
-                    staticText "." )) # atCase @"About this dashboard") # shownAlways
+                    staticText "." )) # atCase @"About this dashboard") # shown
       ) # mvu warsawBulletin

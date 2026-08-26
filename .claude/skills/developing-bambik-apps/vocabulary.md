@@ -27,10 +27,9 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one field, formatted | `shown @l f` | counter: `headline4 (shown @"count" show)` | HTML.purs (gated displays) |
-| a sentence one business function computes | `told line` | cashbox: `headline6 (told balanceLine)` | HTML.purs; writing.md *Pass-through stages* |
-| text mixed with typography, or several fields | an ocular over `RecordToRecord.do` of `staticText` and `text @l` (formatted: `text @l # projection f`), the block `# shownAlways` | checkout; order-form's summary | writing.md *Pass-through stages*; *Code style → Business functions* (which literals are UI) |
-| pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shownAlways` | order-form | writing.md *Pass-through stages* |
+| one field, formatted | `text @l # projection f`, the block `# shown` | counter: `headline4 (text @"count" # projection show) # shown` | HTML.purs (`shown`) |
+| a sentence, or text mixed with typography and several fields | an ocular over `RecordToRecord.do` of `staticText` and `text @l` (formatted: `text @l # projection f`), the block `# shown` | checkout; order-form's summary | writing.md *Pass-through stages*; *Code style → Business functions* (which literals are UI) |
+| pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
 | content that exists only sometimes | `content # shownWhen maybeOf` — a named `Maybe`-valued business function | checkout: `# shownWhen placedOrder` | writing.md *Conditional visibility* |
 | one of several exclusive states | `content # shownCase @l classifier` — a variant-returning business function | flight-booker's three `bookingState` panes | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
@@ -116,7 +115,7 @@ direction module headers.
 In a projection slot `identity` means "the whole value, verbatim": `toCase @l
 identity` (the emitter's whole payload is the case payload — cashbox),
 `foreach @l identity` (the fed value *is* the array — potluck), `projected
-identity` (the whole input is the field). `shownAlways` and `forProperty`
+identity` (the whole input is the field). `shown` and `forProperty`
 take no projection, so it never appears with them. Stated in: writing.md
 *Code style → Wiring*.
 

@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToRecord (feedback)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (projection, mvu, settled)
-import PUI.Web.HTML (shownAlways, body, staticText, text)
+import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, headlineSmall, sliderLive)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -18,11 +18,11 @@ auctionMDC3 =
       card $ ( Pipeline.do
           ( bodyMedium $ RecordToRecord.do
               staticText "Your current bid: $"
-              text @"Your bid ($)" # projection (show <<< _.current) ) # shownAlways
+              text @"Your bid ($)" # projection (show <<< _.current) ) # shown
           sliderLive @"Your bid ($)" {}
           ( Pipeline.do
               identity # settled raiseTop
               ( headlineSmall $ RecordToRecord.do
                   staticText "Highest bid so far: $"
-                  text @"top" # projection show ) # shownAlways ) # feedback noBids
+                  text @"top" # projection show ) # shown ) # feedback noBids
       ) # mvu openingBid

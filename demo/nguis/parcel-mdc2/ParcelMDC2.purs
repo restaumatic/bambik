@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ParcelLogic (draftParcel)
 import PUI (PUI, subStrong, mvu)
-import PUI.Web.HTML (shownAlways, body, staticText, text)
+import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, card, elevation20, filledTextField)
 import PUI.Web (Web)
 import QualifiedDo.Semigroupoid as Pipeline
@@ -23,7 +23,7 @@ parcelMDC2 =
               staticText " · "
               text @"Street"
               staticText " · "
-              text @"City" ) # shownAlways
+              text @"City" ) # shown
       ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }

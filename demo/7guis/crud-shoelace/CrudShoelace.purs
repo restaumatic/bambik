@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
-import PUI.Web.HTML (shownAlways, attrWith, body, clicked, div, li, staticText, text, ul, (:=))
+import PUI.Web.HTML (shown, attrWith, body, clicked, div, li, staticText, text, ul, (:=))
 import PUI.Web.Shoelace (button, card, textField)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -27,7 +27,7 @@ crudShoelace = do
                 ( clicked ( li >>> attrWith "style" entryFace $ ( RecordToRecord.do
                     text @"Surname"
                     staticText ", "
-                    text @"Name" ) # shownAlways ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"Name" ) # shown ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Pipeline.do
                 div $ RecordToVariant.do
                   button @"Create" {}

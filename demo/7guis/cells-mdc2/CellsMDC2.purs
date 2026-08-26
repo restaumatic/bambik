@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, forProperty, projected, settled, toCase, updated)
-import PUI.Web.HTML (shownAlways, attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
+import PUI.Web.HTML (shown, attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
 import PUI.Web.MDC2 (body1, card, elevation20, filledTextField)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -18,7 +18,7 @@ cellsMDC2 =
       card $ ( Pipeline.do
           ( body1 $ RecordToRecord.do
               staticText "Cell "
-              text @"selectedName" # projected selectedName ) # shownAlways
+              text @"selectedName" # projected selectedName ) # shown
           filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $

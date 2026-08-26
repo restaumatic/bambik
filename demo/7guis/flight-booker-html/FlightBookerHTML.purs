@@ -8,7 +8,7 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, field, forCases, mvu, pempty, required, toCase)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownAlways, shownCase, body, button, div, input, label, output, p, select, staticText, text)
+import PUI.Web.HTML (inCase, shown, shownCase, body, button, div, input, label, output, p, select, staticText, text)
 import QualifiedDo.Semigroupoid as Pipeline
 
 flightBookerHTML :: Effect Unit
@@ -20,10 +20,10 @@ flightBookerHTML =
             select @"Flight type"
               [ choice @"one-way", choice @"return" ] ) # required
         p ( label $ Pipeline.do
-            (staticText "Start date (DD.MM.YYYY) ") # shownAlways
+            (staticText "Start date (DD.MM.YYYY) ") # shown
             input "text" # field @"Start date (DD.MM.YYYY)" )
         p ( label $ Pipeline.do
-            (staticText "Return date (DD.MM.YYYY) ") # shownAlways
+            (staticText "Return date (DD.MM.YYYY) ") # shown
             input "text" # field @"Return date (DD.MM.YYYY)" ) # inCase @"return" tripType
     ) # mvu plannedTrip
     ( Pipeline.do

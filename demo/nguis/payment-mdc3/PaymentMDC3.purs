@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PaymentLogic (chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
 import PUI (action, forCase, projection, mvu, observed, atCase, projected, toCases, updated)
-import PUI.Web.HTML (shownAlways, body, staticText, text)
+import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Pipeline
 
@@ -19,8 +19,8 @@ paymentMDC3 =
       card $ ( Pipeline.do
           ( headlineSmall $ RecordToRecord.do
               staticText "Amount due: $"
-              text @"amount" # projection show ) # shownAlways
-          (bodyMedium (text @"status") # projected statusLine) # shownAlways
+              text @"amount" # projection show ) # shown
+          (bodyMedium (text @"status") # projected statusLine) # shown
           ( Pipeline.do
               button @"Charge card" { icon: "credit_card" } # toCases startCharge
               ( Pipeline.do
