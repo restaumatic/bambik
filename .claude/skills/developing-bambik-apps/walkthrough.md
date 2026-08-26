@@ -26,20 +26,20 @@ import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
   body $
     elevation20 $
-      card $ Pipeline.do
-      ( Pipeline.do
+      card $ Category.do
+      ( Category.do
           select @"Flight type" {}
             [ choice @"one-way", choice @"return" ] # required
           filledTextField @"Start date (DD.MM.YYYY)" {}
           filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
-      ( Pipeline.do
+      ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "⚠ "
               text @"problem" ) # shownCase @"problem" bookingState
@@ -63,19 +63,19 @@ that shape data flow (`mvu`, `required`, `debounced`, `action`, `forCases`),
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
 `RecordToRecord` is the one merge this screen needs — chrome and a field
-side by side. `QualifiedDo.Semigroupoid as Pipeline` gives `Pipeline.do`:
+side by side. `QualifiedDo.Category as Category` gives `Category.do`:
 sequential composition, not a monad.
 
-**`body $ elevation20 $ card $ Pipeline.do`.** Mount at the document body;
+**`body $ elevation20 $ card $ Category.do`.** Mount at the document body;
 `elevation20` and `card` are *oculars* — visual wrappers that touch no data,
 which is why they are applied with `$`, the visual plumbing, and never with
-`#`, the data plumbing. The outer `Pipeline.do` has five stages, and data
+`#`, the data plumbing. The outer `Category.do` has five stages, and data
 flows top to bottom exactly as the code reads: the form emits the model on
 every edit → the itinerary line shows it and passes it on → the button turns
 it into an event → the action turns the event into an outcome → the snackbar
 shows the outcome. Code order is DOM order *and* data order.
 
-**Stage 1 — the form.** An inner `Pipeline.do` of three editors, closed with
+**Stage 1 — the form.** An inner `Category.do` of three editors, closed with
 `# mvu plannedTrip`.
 
 - `select @"Flight type" {} [ choice @"one-way", choice @"return" ] # required`
@@ -245,7 +245,7 @@ times for the itinerary variant — deliberately: there are no `type`
 synonyms in application code, the shape *is* the interface, and the price
 of that is paid here in repetition (writing.md, *Types and values*). And
 `parseDate` has a real `do` — `Maybe`'s monad — which is the contrast to
-keep in mind: `Pipeline.do` in the view is composition of stages, `do` in
+keep in mind: `Category.do` in the view is composition of stages, `do` in
 the logic is the ordinary one.
 
 ## What to read next

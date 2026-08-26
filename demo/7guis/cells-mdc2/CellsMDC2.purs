@@ -9,13 +9,13 @@ import Effect (Effect)
 import PUI (foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
 import PUI.Web.MDC2 (body1, card, elevation20, filledTextField)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 cellsMDC2 :: Effect Unit
 cellsMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "Cell "
               text @"selectedName" # projected selectedName ) # shown

@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (every, projection, mvu, projected, updated, with)
 import PUI.Web.Fluent (body1, button, card, progressBar, slider)
 import PUI.Web.HTML (shown, body, staticText, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
 
 timerFluent :: Effect Unit
 timerFluent =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         ( RecordToRecord.do
             progressBar @"fraction" # projected fraction
             body1 RecordToRecord.do

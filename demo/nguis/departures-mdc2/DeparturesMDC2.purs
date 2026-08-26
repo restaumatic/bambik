@@ -8,15 +8,15 @@ import Effect (Effect)
 import PUI (dispatched, every, mvu, projected)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, list, listItem)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 departuresMDC2 :: Effect Unit
 departuresMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           every tickPeriod tick
-          ( Pipeline.do
+          ( Category.do
               list ( ( listItem $ RecordToRecord.do
                   text @"code"
                   staticText " — "

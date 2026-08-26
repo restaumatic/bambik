@@ -1,9 +1,9 @@
 # Research: fulfillment-gated displays
 
-**Branch: `research-gated-displays` (off the main line at the
-displays-and-sources doc). Status: green in full — clean build (the 3
-pre-existing warnings), tests, 102 bundles, the whole smoke suite — with
-two rungs implemented and three demos converted.**
+**Merged into main. Developed on branch `research-gated-displays` (off
+the main line at the displays-and-sources doc); landed green in full —
+clean build, tests, 102 bundles, the whole smoke suite — with two rungs
+implemented and three demos converted.**
 
 ## The design under test
 
@@ -122,13 +122,13 @@ formatter.
 | | unit-typed (`p {|r} {}`, main line) | event-consuming (`p [|e] {}`) | fulfillment-gated (`p {o|r} {o|r}`) |
 | --- | --- | --- | --- |
 | merges (A11 lines, editor-beside-readout) | native | impossible | impossible |
-| pipeline stages | via `tapped` (derived, one word) | via emitter + `tapped` | **native — `tapped` deleted on this branch** |
+| pipeline stages | via `tapped` (derived, one word) | via emitter + `tapped` | **native — `tapped` deleted** |
 | witnessed reading (dialogs) | separate protocol (`simpleDialog` + replay) | statuses | **the same type, stronger gate** |
 | user-knowledge in the flow | no | no | **yes — L6 extended to the user** |
 | re-display of a field | free (merges and taps) | one case per view | free in sequence |
 
 The gated form is the strongest *pipeline* display and the unit form the
-only *merge* display. They coexist on this branch — `shown`/`confirmed`
+only *merge* display. They coexisted at this step — `shown`/`confirmed`
 beside `text`/`tapped` — and the honest conclusion so far is that this
 coexistence may be the design: merges keep the unit-typed display (A11's
 per-field lines), pipelines take the gated one (no tap, witnesses typed),

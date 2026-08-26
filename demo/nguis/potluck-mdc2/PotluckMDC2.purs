@@ -10,13 +10,13 @@ import PUI (acted, field, foreach, projection, projected, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, span, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 potluckMDC2 :: Effect Unit
 potluckMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( body2 $ RecordToRecord.do
               text @"guestCount" # projected guestCount
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." ) # shown
@@ -25,7 +25,7 @@ potluckMDC2 =
                   subtitle1 (text @"name")
                   segmentedButton @"Dish"
                     [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name" ) # field @"guests"
-          headline6 $ Pipeline.do
+          headline6 $ Category.do
             (staticText "On the table: ") # shown
             ( span $ RecordToRecord.do
                 text @"name"

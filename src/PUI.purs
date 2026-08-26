@@ -1,7 +1,7 @@
 -- | The core profunctor UI type and its combinators.
 -- |
 -- | **The duoidal reading.** `PUI` composes two ways: sequentially
--- | (`Pipeline.do` — `QualifiedDo.Semigroupoid` as applications import it;
+-- | (`Category.do` — `QualifiedDo.Category` as applications import it;
 -- | `⊳`, emissions feed downstream) and in parallel
 -- | (the row merges, `⊗` — the input broadcasts to every operand; at
 -- | equal types, `joint`, the ungated juxtaposition). The two
@@ -16,7 +16,7 @@
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
--- | stages are composed with `Pipeline.do`, every emission travels
+-- | stages are composed with `Category.do`, every emission travels
 -- | left-to-right through the stages, and `mvu` loops the final emission
 -- | back to the top — so a stage placed *before* another is not "above" it
 -- | semantically; all stages see every model value on the next loop turn.
@@ -367,7 +367,7 @@ instance Functor m => Coretaining (PUI m) where
             Ref.write false busyRef
       }
 
--- | RESEARCH (open-row editors): the **joint merge** — the ungated ×→×
+-- | The **joint merge** — the ungated ×→×
 -- | combination for whole-row citizens. Both operands are fed every input
 -- | (broadcast), and either operand's emission forwards unchanged: **last
 -- | writer wins**. No gate (nothing partial to await), no union (emissions
@@ -639,7 +639,6 @@ instance Applicative m => VariantToRecord (PUI m) where
 gatedRecordOutputs
   :: forall e1 e2 o1 o2 o
    . Union o1 o2 o
-  => Union o2 o1 o
   => String
   -> Array String
   -> Array String
@@ -850,7 +849,7 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | cases, no pass-through `state` case in the event merge:
 -- |
 -- | ```
--- | looped Pipeline.do
+-- | looped Category.do
 -- |   form                                   -- ×→× editors
 -- |   updates handle RecordToVariant.do ...  -- ×→+ events, bare payloads
 -- | ```
@@ -999,7 +998,7 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | user picks. Like `required`, the result is a **whole-row citizen**
 -- | `p { l :: Maybe a | rest } { l :: Maybe a | rest }` — the echo-completed
 -- | selector lifted under `field @l`, background carried.
-optional :: forall l m a b s ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Cons l (Maybe a) b s => Functor m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
+optional :: forall l m a b s ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Cons l (Maybe a) b s => Functor m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
 optional p = field @l scalar
   where
   scalar :: PUI m (Maybe a) (Maybe a)

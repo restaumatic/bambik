@@ -76,10 +76,10 @@ import Data.Function (const)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Lacks, class Union)
+import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
-import Record (get, insert, union) as Record
+import Record (get, insert, modify, union) as Record
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
@@ -248,7 +248,7 @@ field = prop (Proxy @l)
 -- | own row, so whole-value reads name what they show:
 -- | `text @"summary" # projected summaryText` (`projected identity` for
 -- | verbatim). `lcmap`-only.
-projected :: forall l p a b o cr. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
+projected :: forall l p a b o cr. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Cons l b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
 projected f = lcmap \a -> Record.insert (Proxy @l) (f a) {}
 
 -- | Mark a type-changing selector (`{ l :: Maybe a } → { l :: a }`) as
@@ -264,7 +264,7 @@ projected f = lcmap \a -> Record.insert (Proxy @l) (f a) {}
 -- | Its dual — a selector left possibly-unselected, the model keeping the
 -- | `Maybe` — is `PUI.optional` (carrier-level: it must complete the leaf's
 -- | `Just`-only echo, which no `dimap` can).
-required :: forall l p a b s si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Lacks l () => Cons l (Maybe a) () si => Cons l a () so => Cons l a b s => Strong p => p { | si } { | so } -> p { | s } { | s }
+required :: forall l p a b s si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Cons l (Maybe a) () si => Cons l a () so => Cons l a b s => Strong p => p { | si } { | so } -> p { | s } { | s }
 required w = field @l (dimap (\v -> Record.insert (Proxy @l) (Just v) {}) (Record.get (Proxy @l)) w)
 
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
@@ -273,20 +273,20 @@ required w = field @l (dimap (\v -> Record.insert (Proxy @l) (Just v) {}) (Recor
 -- | (`… # muted # atField @"entries"`, the packaged-collection-display
 -- | protocol), nested chrome reads its sub-rows
 -- | (`… # foreach @"name" identity # atField @"dishes"`).
-atField :: forall @l p a o r. IsSymbol l => Profunctor p => Lacks l () => Cons l a () r => p a o -> p { | r } o
+atField :: forall @l p a o r. IsSymbol l => Profunctor p => Cons l a () r => p a o -> p { | r } o
 atField = lcmap (Record.get (Proxy @l))
 
 -- | Retype a display's field **through a formatter**, label untouched:
--- | `text @"bid" # projection (show <<< _.current)` shows the quantity's
--- | current value as field `bid`. The leaf states the business label once;
+-- | `text @"balance" # projection euros` shows the amount formatted as
+-- | field `balance`. The leaf states the business label once;
 -- | `RowToList`'s fundep reads it back out of the closed singleton row, so
 -- | no label is repeated and no canonical label exists. Verbatim reads need
 -- | no `projection` at all (`text @"prompt"`).
 -- |
 -- | `lcmap`-only; a display owns no output fields. Whole-value reads are
 -- | `projected f`; context-pinned wider rows are `forProperty`.
-projection :: forall l p a b ia ib o. RowToList ia (RL.Cons l a RL.Nil) => IsSymbol l => Lacks l () => Cons l a () ia => Cons l b () ib => Profunctor p => (b -> a) -> p { | ia } o -> p { | ib } o
-projection f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r)) {})
+projection :: forall l p a b ia ib o. RowToList ia (RL.Cons l a RL.Nil) => IsSymbol l => Cons l a () ia => Cons l b () ib => Profunctor p => (b -> a) -> p { | ia } o -> p { | ib } o
+projection f = lcmap (Record.modify (Proxy @l) f)
 
 -- | `projection`'s **open-row** sibling (the display-side `field @l`: the
 -- | background is carried), for positions whose row the context already
@@ -296,7 +296,7 @@ projection f = lcmap (\r -> Record.insert (Proxy @l) (f (Record.get (Proxy @l) r
 -- | read is `projection`'s job, composed before it —
 -- | `text @"score" # projection show # forProperty` — which is why this
 -- | takes no function of its own.
-forProperty :: forall l p b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Lacks l () => Cons l b () cr => Cons l b t r => Profunctor p => p { | cr } o -> p { | r } o
+forProperty :: forall l p b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Cons l b () cr => Cons l b t r => Profunctor p => p { | cr } o -> p { | r } o
 forProperty = lcmap (\r -> Record.insert (Proxy @l) (Record.get (Proxy @l) r) {})
 
 -- | Adopt a **canonically-labeled** component (`{ value :: a }` in and out,
@@ -305,7 +305,7 @@ forProperty = lcmap (\r -> Record.insert (Proxy @l) (Record.get (Proxy @l) r) {}
 -- | annotation-free as a merge operand (closed singleton rows on both
 -- | sides). Where `field @l` lifts a scalar under `l`, `asField` renames
 -- | the canonical `value` to `l` — the packaged-control rename.
-asField :: forall @c @l p a b s t ci co. IsSymbol c => IsSymbol l => Profunctor p => Lacks c () => Cons c a () ci => Cons c b () co => Lacks l () => Cons l a () s => Cons l b () t => p { | ci } { | co } -> p { | s } { | t }
+asField :: forall @c @l p a b s t ci co. IsSymbol c => IsSymbol l => Profunctor p => Cons c a () ci => Cons c b () co => Cons l a () s => Cons l b () t => p { | ci } { | co } -> p { | s } { | t }
 asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\r -> Record.insert (Proxy @l) (Record.get (Proxy @c) r) {})
 
 -- | The **counit**: render, and **deliberately discard** the component's

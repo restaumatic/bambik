@@ -9,17 +9,17 @@ import Effect (Effect)
 import PUI (blank, foreach, mvu, projected, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, sliderLive)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 colorMixerMDC3 :: Effect Unit
 colorMixerMDC3 =
   body $
     elevation5 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           sliderLive @"Red" {}
           sliderLive @"Green" {}
           sliderLive @"Blue" {}
-          ( div $ Pipeline.do
+          ( div $ Category.do
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })

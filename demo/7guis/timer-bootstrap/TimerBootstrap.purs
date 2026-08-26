@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (every, projection, mvu, projected, updated, with)
 import PUI.Web.Bootstrap (button, card, progress, sliderLive)
 import PUI.Web.HTML (shown, body, p, staticText, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
 
 timerBootstrap :: Effect Unit
 timerBootstrap =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         ( RecordToRecord.do
             progress @"fraction" # projected fraction
             p RecordToRecord.do

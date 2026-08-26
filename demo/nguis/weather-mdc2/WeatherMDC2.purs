@@ -8,15 +8,15 @@ import Effect (Effect)
 import PUI (action, mvu, forProperty, atCase, projected, toCase, updated)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, caption, card, elevation20, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, rememberReport, servedReportsText, temperatureText, warsawBulletin, windText)
 
 weatherMDC2 :: Effect Unit
 weatherMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
-          ( Pipeline.do
+      card $ ( Category.do
+          ( Category.do
               listOf { selected: _.shown } forecastRequests (text @"city" # forProperty) # toCase @"cityPicked" identity
               indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked") # updated (match { reportServed: rememberReport })
           ( headline1 $ RecordToRecord.do
@@ -36,7 +36,7 @@ weatherMDC2 =
               staticText "Simulated service · "
               text @"servedReports" # projected servedReportsText
               staticText " reports served" ) # shown
-          ( Pipeline.do
+          ( Category.do
               iconButton @"About this dashboard" { icon: "info" }
               simpleDialog { title: "About this dashboard", confirm: "Got it" }
                 ( body1 ( RecordToRecord.do

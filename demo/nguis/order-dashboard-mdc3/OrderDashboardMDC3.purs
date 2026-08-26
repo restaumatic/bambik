@@ -9,17 +9,17 @@ import PUI (every, mvu, projected, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body)
 import PUI.Web.MDC3 (elevation5, topAppBar)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
     elevation5 $
-      topAppBar { title: "Order Dashboard" } $ ( Pipeline.do
+      topAppBar { title: "Order Dashboard" } $ ( Category.do
           every tickPeriod ordersArrive
           rangePicker @"Showing" {}
             [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
-          board $ Pipeline.do
+          board $ Category.do
             (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shown
             (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shown
             (gauge { label: "Kitchen load" } # projected kitchenLoad) # shown

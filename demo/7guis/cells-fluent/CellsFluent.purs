@@ -9,12 +9,12 @@ import Effect (Effect)
 import PUI (foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.Web.Fluent (body1, card, textField)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 cellsFluent :: Effect Unit
 cellsFluent =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         ( body1 $ RecordToRecord.do
             staticText "Cell "
             text @"selectedName" # projected selectedName ) # shown

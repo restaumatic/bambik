@@ -121,10 +121,10 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach, pempty, projected)
-import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, span, staticText, table, tbody, td, text, th, thead, tr, ul, (:=))
+import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, shown, span, staticText, table, tbody, td, text, th, thead, tr, ul, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, clazz, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Prim.Row (class Cons, class Lacks, class Union)
+import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
@@ -546,7 +546,7 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
 -- | hidden until it exists) or `# required` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+radioButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 radioButton options = field @l $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf options)
 
 radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
@@ -731,7 +731,7 @@ sliderLeaf live label = wrap do
 -- | Same contract as `radioButton`: nothing to show until the user picks,
 -- | so say `# optional` or `# required`; the options are part of the
 -- | control, not of the model.
-select :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
 
 selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
@@ -794,7 +794,7 @@ selectLeaf config options = wrap do
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
 -- | hide the alternatives. Same picked/unpicked contract as `select`.
-segmentedButton :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+segmentedButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 segmentedButton options = field @l $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf options)
 
 segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
@@ -1192,23 +1192,26 @@ dialog { title } content = wrap do
     _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
     pure result
 
--- | RESEARCH (gated displays): the **witness rung** of the assurance
--- | ladder, baked in as a component. `confirmed cfg display` is a
--- | fulfillment-gated pass-through `p { | row } { | row }`: feeding opens
--- | the modal and feeds the display; the flow is **withheld until the user
--- | confirms**, then the fed row is released — the release is the read
--- | receipt. Derived entirely from existing machinery: `simpleDialog`'s
--- | replay-on-confirm protocol over an instant-gated display (`shown`) —
--- | the ladder composes, witness rung = instant rung inside the modal.
--- | A dismiss without confirming releases nothing: a declined reading
--- | withholds, honestly.
-confirmed :: forall row. { title :: String, confirm :: String } -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
-confirmed = simpleDialog
+-- | The **witness rung** of the assurance
+-- | ladder, baked in as a component. `confirmed cfg content` is a
+-- | fulfillment-gated pass-through `p { | row } { | row }` over a
+-- | `{}`-output display, like every content slot in the family: feeding
+-- | opens the modal and feeds the content (which reads a sub-row of the
+-- | fed row, the family's subsumption); the flow is **withheld until the
+-- | user confirms**, then the fed row is released — the release is the
+-- | read receipt. Derived entirely from existing machinery,
+-- | `simpleDialog cfg (shown content)`: the replay-on-confirm protocol
+-- | over the instant rung — the ladder composes, witness rung = instant
+-- | rung inside the modal. A dismiss without confirming releases nothing:
+-- | a declined reading withholds, honestly.
+confirmed :: forall read extra row. Union read extra row => { title :: String, confirm :: String } -> PUI Web { | read } {} -> PUI Web { | row } { | row }
+confirmed cfg content = simpleDialog cfg (shown content)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
 -- | needs no button of its own; a content that only displays needs a
--- | a gated display (`shown`) so there is something to confirm.
+-- | gated display (`shown`) so there is something to confirm — `confirmed`
+-- | is exactly that specialization.
 -- | Not a full `Ocular`, deliberately: the confirm **replays** the
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the

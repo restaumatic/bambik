@@ -10,21 +10,21 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, field, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.HTML (shown, attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 crudHTML :: Effect Unit
 crudHTML = do
   catalogue <- sharedPeopleCatalogue
-  body $ div $ ( Pipeline.do
+  body $ div $ ( Category.do
       pempty # action (loadPeopleCatalogue catalogue)
-      ( Pipeline.do
-          p ( label $ Pipeline.do
+      ( Category.do
+          p ( label $ Category.do
               (staticText "Filter prefix (surname) ") # shown
               input "text" # field @"Filter prefix (surname)" )
-          p ( label $ Pipeline.do
+          p ( label $ Category.do
               (staticText "Name ") # shown
               input "text" # field @"Name" )
-          p ( label $ Pipeline.do
+          p ( label $ Category.do
               (staticText "Surname ") # shown
               input "text" # field @"Surname" )
           ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
@@ -32,7 +32,7 @@ crudHTML = do
                   text @"Surname"
                   staticText ", "
                   text @"Name" ) # shown ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
-          ( Pipeline.do
+          ( Category.do
               div $ RecordToVariant.do
                 button (staticText "Create") # toCase @"create" identity
                 button (staticText "Update") # toCase @"update" identity

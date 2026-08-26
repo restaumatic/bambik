@@ -64,7 +64,7 @@ import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class
 -- | consistent. An adopter with a `+ → +` *result* — which is why it
 -- | lives here, like a label-indexed emitter lives at its `× → +` result. The demos'
 -- | variant editors read
--- | `(Pipeline.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
+-- | `(Category.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
 bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
 bracketed f g w = dimap f g (looped w)
 

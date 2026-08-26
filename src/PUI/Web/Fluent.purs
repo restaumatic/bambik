@@ -52,7 +52,7 @@ import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, staticText, text, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Record (get) as Record
@@ -232,7 +232,7 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | with `# optional` (nothing preselected, and whatever needs the choice
 -- | stays hidden until it exists) or `# required`. The options belong to
 -- | the control, not to the model.
-dropdown :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+dropdown :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 dropdown provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
   attribute "slot" "input"
@@ -266,7 +266,7 @@ dropdown provided options = let config = convertOptionsWithDefaults OptCaption {
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
 -- | Same picked/unpicked contract as `dropdown`.
-radioGroup :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+radioGroup :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 radioGroup provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do

@@ -50,7 +50,7 @@ import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Record (get) as Record
@@ -194,7 +194,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | user picks there is nothing to show, so the field arrives as "maybe a
 -- | choice" and leaves as the choice itself — say which with `# optional`
 -- | or `# required`. The options belong to the control, not to the model.
-select :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))

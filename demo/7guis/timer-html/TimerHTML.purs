@@ -7,12 +7,12 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, projection, mvu, projected, toCase, updated, with)
 import PUI.Web.HTML (shown, body, button, div, label, p, progress, rangeInput, staticText, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
 
 timerHTML :: Effect Unit
 timerHTML =
-  body $ div $ ( Pipeline.do
+  body $ div $ ( Category.do
       ( RecordToRecord.do
           progress @"fraction" # projected fraction
           p RecordToRecord.do
@@ -20,7 +20,7 @@ timerHTML =
             staticText "s / "
             text @"Duration" # projection wholeSeconds
             staticText "s" ) # shown
-      p ( label $ Pipeline.do
+      p ( label $ Category.do
           (staticText "Duration ") # shown
           rangeInput @"Duration" )
       every tickPeriod tick

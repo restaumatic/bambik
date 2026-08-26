@@ -9,13 +9,13 @@ import PUI (PUI, subStrong, mvu)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, card, elevation20, filledTextField)
 import PUI.Web (Web)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 parcelMDC2 :: Effect Unit
 parcelMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           filledTextField @"Recipient" {}
           addressForm # subStrong
           ( body1 $ RecordToRecord.do
@@ -27,6 +27,6 @@ parcelMDC2 =
       ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
-addressForm = Pipeline.do
+addressForm = Category.do
   filledTextField @"Street" {}
   filledTextField @"City" {}

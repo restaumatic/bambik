@@ -11,15 +11,15 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 crudBootstrap :: Effect Unit
 crudBootstrap = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         pempty # action (loadPeopleCatalogue catalogue)
-        ( Pipeline.do
+        ( Category.do
             textField @"Filter prefix (surname)" {}
             textField @"Name" {}
             textField @"Surname" {}
@@ -28,7 +28,7 @@ crudBootstrap = do
                     text @"Surname"
                     staticText ", "
                     text @"Name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
-            ( Pipeline.do
+            ( Category.do
                 ( div $ RecordToVariant.do
                     button @"Create" {}
                     button @"Update" {}

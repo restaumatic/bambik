@@ -1,4 +1,4 @@
-// RESEARCH (open-row editors): the joint merge and the dual-bound editor.
+// The joint merge and the dual-bound editor.
 // "Tip percentage" is edited by BOTH the MDC slider and a native range
 // input, combined with <> (broadcast in, last writer wins) — a pattern the
 // owned merge rejects. Moving the native range must update the model, the

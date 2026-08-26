@@ -9,17 +9,17 @@ import PUI (foreach, projection, mvu, projected, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, shownCase, body, clWhen, span, staticText, text)
 import PUI.Web.MDC2 (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 
 movieBrowserMDC2 :: Effect Unit
 movieBrowserMDC2 =
   body $
     elevation10 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           tabBar @"category"
             [ choice @"All", choice @"Action", choice @"Drama", choice @"Comedy" ]
-          chipSet ( Pipeline.do
+          chipSet ( Category.do
               filterChip @"Classic" {}
               filterChip @"Cult" {}
               filterChip @"Oscar" {})
@@ -31,7 +31,7 @@ movieBrowserMDC2 =
               staticText " favorites" ) # shownCase @"several" favorites
           list $
             ( clWhen _."Favorite" "mdc-deprecated-list-item--selected"
-                $ listItem $ ( Pipeline.do
+                $ listItem $ ( Category.do
                     ( RecordToRecord.do
                         span (text @"title")
                         span (text @"year") # projection show

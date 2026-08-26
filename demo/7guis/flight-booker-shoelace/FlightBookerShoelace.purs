@@ -10,19 +10,19 @@ import PUI (action, debounced, forCases, mvu, pempty, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownCase, body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, select, textField, toast)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 flightBookerShoelace :: Effect Unit
 flightBookerShoelace =
   body $
-    card $ Pipeline.do
-      ( Pipeline.do
+    card $ Category.do
+      ( Category.do
           select @"Flight type" {}
             [ choice @"one-way", choice @"return" ] # required
           textField @"Start date (DD.MM.YYYY)" {}
           textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
-      ( Pipeline.do
+      ( Category.do
           ( p $ RecordToRecord.do
               staticText "⚠ "
               text @"problem" ) # shownCase @"problem" bookingState

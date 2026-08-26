@@ -11,15 +11,15 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, li, staticText, text, ul, (:=))
 import PUI.Web.Shoelace (button, card, textField)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 crudShoelace :: Effect Unit
 crudShoelace = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         pempty # action (loadPeopleCatalogue catalogue)
-        ( Pipeline.do
+        ( Category.do
             textField @"Filter prefix (surname)" {}
             textField @"Name" {}
             textField @"Surname" {}
@@ -28,7 +28,7 @@ crudShoelace = do
                     text @"Surname"
                     staticText ", "
                     text @"Name" ) # shown ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
-            ( Pipeline.do
+            ( Category.do
                 div $ RecordToVariant.do
                   button @"Create" {}
                   button @"Update" {}

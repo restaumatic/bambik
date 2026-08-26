@@ -6,13 +6,13 @@ import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.HTML (body)
 import PUI.Web.Shoelace (card, textField)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 
 temperatureConverterShoelace :: Effect Unit
 temperatureConverterShoelace =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         textField @"°C" {} # settled fromCelsius
         textField @"°F" {} # settled fromFahrenheit
     ) # mvu roomTemperature

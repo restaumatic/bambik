@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (every, projection, mvu, projected, updated, with)
 import PUI.Web.HTML (shown, body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, progressBar, sliderLive)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
 
 timerShoelace :: Effect Unit
 timerShoelace =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         ( RecordToRecord.do
             progressBar @"fraction" # projected fraction
             p RecordToRecord.do

@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (projection, mvu, forProperty, projected, toCase, updated)
 import PUI.Web.HTML (shown, body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, headlineMedium, headlineSmall, linearProgress, listOf)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import QuizLogic (answer, currentQuestion, finalOutcome, freshQuizRun, progressFraction, questionCountText, questionNumberText)
 
 quizMDC3 :: Effect Unit
 quizMDC3 =
   body $
     elevation5 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( RecordToRecord.do
               linearProgress @"progress" # projected progressFraction
               bodyLarge RecordToRecord.do
@@ -25,10 +25,10 @@ quizMDC3 =
                 staticText questionCountText
                 staticText " · Score "
                 text @"correct" # projection show ) # shown
-          ( Pipeline.do
+          ( Category.do
               headlineMedium (text @"prompt") # shown
               listOf {} _.choices (text @"label" # forProperty) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
-          ( Pipeline.do
+          ( Category.do
               ( headlineSmall $ RecordToRecord.do
                   staticText "Final score: "
                   text @"correct" # projection show

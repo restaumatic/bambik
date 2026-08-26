@@ -234,6 +234,8 @@ those families, mentioning no `PUI`, no row and no carrier — outside its
 | `extras/profunctor/`     | `Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`, `Data.Profunctor.Cont` |
 | `extras/lenses/`          | `Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`, `Data.Lens.Prism.Existential` |
 | `extras/row-profunctor/` | `Data.Profunctor.Row` and `Data.Profunctor.Row.*` (the four merges), `Data.Profunctor.Acting`, `Data.Profunctor.Seeding` |
+| `extras/variant/`         | `Data.Variant.Case` (`caseText`, the value-level label read) |
+| `extras/qualified-do/`    | `QualifiedDo.Category` (the pipeline sugar — `import QualifiedDo.Category as Category`, `Category.do`) |
 
 The third root matters most in practice: **`Data.Profunctor.Row.RecordToRecord`
 and its three siblings are what an app imports to write a `.do` merge**, so

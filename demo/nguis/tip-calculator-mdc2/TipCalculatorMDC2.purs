@@ -7,14 +7,14 @@ import Effect (Effect)
 import PUI (joint, projection, mvu, projected)
 import PUI.Web.HTML (rangeInput, shown, body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, filledTextField, slider)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TipCalculatorLogic (dinnerBill, perPersonText, tipAmountText, totalText, whole)
 
 tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( filledTextField @"Bill amount" {}
               `joint` slider @"Tip percentage" {}
               `joint` rangeInput @"Tip percentage" )

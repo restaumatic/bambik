@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (projection, foreach, mvu, projected, toCase, updated, with)
 import PUI.Web.HTML (shown, body, clicked, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import ShoppingCartLogic (addUnit, cartLines, emptyCart, formatMoney, grandTotalText, productCatalogue, removeUnit)
 
 shoppingCartMDC2 :: Effect Unit
 shoppingCartMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           listOf {} productCatalogue ( RecordToRecord.do
               text @"name"
               staticText " · $"

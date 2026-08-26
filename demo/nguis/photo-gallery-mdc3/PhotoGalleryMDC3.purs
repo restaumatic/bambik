@@ -9,7 +9,7 @@ import PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesO
 import PUI (forProperty, mvu, toCase, updated)
 import PUI.Web.HTML (shownEach, shown, body, span, staticText, text)
 import PUI.Web.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, imagePane, list, listItem, listOf, labelSmall, topAppBar)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 photoGalleryMDC3 :: Effect Unit
 photoGalleryMDC3 =
@@ -29,7 +29,7 @@ photoGalleryMDC3 =
                 imageListItem { src: developedPhoto "Half Smile", label: "Half Smile" }
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
                 imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
-          ( Pipeline.do
+          ( Category.do
               (displayMedium (text @"album")) # shown
               imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
       ) # mvu landscapesOpen

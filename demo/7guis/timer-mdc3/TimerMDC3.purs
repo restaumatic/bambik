@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (every, projection, mvu, projected, updated, with)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, linearProgress, sliderLive)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
 
 timerMDC3 :: Effect Unit
 timerMDC3 =
   body $
     elevation5 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( RecordToRecord.do
               linearProgress @"fraction" # projected fraction
               bodyLarge RecordToRecord.do

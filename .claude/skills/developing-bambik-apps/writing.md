@@ -20,7 +20,7 @@ matches the app's design system.
 
 ## The pipeline
 
-The app is one profunctor pipeline, composed with `Pipeline.do`
+The app is one profunctor pipeline, composed with `Category.do`
 (data-flow stages: each stage's output is the next stage's input, so
 code order is DOM order *and* data order) and the four qualified-do row
 merges (operands over one shared row):
@@ -36,9 +36,11 @@ merges (operands over one shared row):
 
 The merges are imported from the row modules
 (`Data.Profunctor.Row.RecordToRecord` and its three siblings), not from
-`QualifiedDo` — only `Semigroupoid` lives there, and application code
-imports it `as Pipeline` (`import QualifiedDo.Semigroupoid as Pipeline`)
-so the block reads as what it is: neither `do` is a monad's.
+`QualifiedDo`. The pipeline's sugar is `QualifiedDo.Category` — bambik's
+complement of qualified-do, which stops at `Semigroupoid` — imported
+`as Category` (`import QualifiedDo.Category as Category`), so the block
+names the structure it composes in: a category whose unit is the wire,
+`identity`. Neither `do` is a monad's.
 
 **The one runtime rule.** A record merge — and every stage built on one
 — emits only once every field of its row has been fed, then re-emits on
@@ -204,15 +206,15 @@ interchangeable:
 - An **editor is pass-through natively**: it echoes each fed row and
   completes each edit from its retained background, so it sits in a
   record pipeline with no wrapper at all.
-- A display **is a pipeline stage natively** (RESEARCH: gated displays —
-  `tapped` is deleted). Pick the rung whose fulfillment policy the
-  business wants: `content # shown` for ambient structured content
-  (chrome + unit displays, registered at build, released per feed),
-  `# shownWhen`/`# shownCase` for display panes (attached on relevance,
-  released always), `# inCase @l classifier` for an **editor pane** — a
+- A display **is a pipeline stage natively**. Pick the rung whose
+  fulfillment policy the business wants: `content # shown` for ambient
+  structured content (chrome + unit displays, registered at build,
+  released per feed), `# shownWhen`/`# shownCase` for display panes
+  (attached on relevance, released always), `# inCase @l classifier`
+  for an **editor pane** — a
   whole-row editor that exists only in one mode, its own `field @l` lift
   carrying the rest of the row — `item # shownEach @l proj` for keyed
-  collections, `confirmed cfg display` where the flow
+  collections, `confirmed cfg $ content` where the flow
   must wait for the user's confirmation. Content slots accept only
   `{}`-output components — an editor inside fails to unify; a genuinely
   emitting assembly is discarded **in writing** with `# muted`.

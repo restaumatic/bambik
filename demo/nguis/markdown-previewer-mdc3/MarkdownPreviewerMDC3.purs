@@ -8,14 +8,14 @@ import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (atField, mvu)
 import PUI.Web.HTML (shown, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC3 (card, elevation5, filledTextArea, layoutCell, layoutGrid)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 markdownPreviewerMDC3 :: Effect Unit
 markdownPreviewerMDC3 =
   body $
     elevation5 $
       card $
-        layoutGrid $ ( Pipeline.do
+        layoutGrid $ ( Category.do
             layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
             layoutCell { span: 6 } $ ( dynamic \source ->
                 each (parseMarkdown source) \block ->

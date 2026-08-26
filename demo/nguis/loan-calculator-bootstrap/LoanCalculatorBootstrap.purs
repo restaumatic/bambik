@@ -9,13 +9,13 @@ import PUI (forCase, mvu, projected, required)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, div, staticText, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $
-    card $ Pipeline.do
-      ( Pipeline.do
+    card $ Category.do
+      ( Category.do
           textField @"Applicant" {}
           sliderLive @"Amount (€)" {}
           sliderLive @"Term (years)" {}

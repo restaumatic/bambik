@@ -9,12 +9,12 @@ import Effect (Effect)
 import PUI (foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.Web.Bootstrap (card, textField)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, p, staticText, table, td, text, tr, (:=))
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 cellsBootstrap :: Effect Unit
 cellsBootstrap =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         ( p $ RecordToRecord.do
             staticText "Cell "
             text @"selectedName" # projected selectedName ) # shown

@@ -10,13 +10,13 @@ import PUI (forCase, projection, mvu, optional, projected, settled)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, div, provided, staticText, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 meetingBookerFluent :: Effect Unit
 meetingBookerFluent =
   body $
-    card $ Pipeline.do
-      ( Pipeline.do
+    card $ Category.do
+      ( Category.do
           textField @"Meeting title" {}
           dropdown @"Room" {}
             [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional # settled seatsInRoom
@@ -32,7 +32,7 @@ meetingBookerFluent =
       ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
           progressBar @"occupancy" ) # shownWhen seatsTaken
-      ( Pipeline.do
+      ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "Plan: "
               text @"Meeting title" # projection titleText

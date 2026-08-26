@@ -4,7 +4,7 @@ The boundary of an application is where the flow meets the world. This
 note names the citizens that live on that boundary, the laws that follow
 from which side of it can hold state, and the business reading of the
 types they carry. It consolidates what the no-silent-information-loss
-work (guardrails L13) made enforceable — and, on this branch, what the
+work (guardrails L13) made enforceable — and what the
 fulfillment-gated displays turned from contract into construction: a
 display is a stage whose **release is the witness**.
 

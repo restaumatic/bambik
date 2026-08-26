@@ -7,12 +7,12 @@ import Effect (Effect)
 import PUI (applied, mvu, projection)
 import PUI.Web.Bootstrap (button, card)
 import PUI.Web.HTML (body, h4, shown, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 counterBootstrap :: Effect Unit
 counterBootstrap =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         h4 (text @"count" # projection show) # shown
         button @"Count" {} # applied increment
     ) # mvu freshCount

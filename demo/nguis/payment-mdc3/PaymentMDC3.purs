@@ -10,20 +10,20 @@ import PaymentLogic (chargeFlaky, recordCharged, retryLine, startCharge, statusL
 import PUI (action, forCase, projection, mvu, observed, atCase, projected, toCases, updated)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, headlineSmall, indeterminateCircularProgress, snackbar)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 paymentMDC3 :: Effect Unit
 paymentMDC3 =
   body $
     elevation5 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( headlineSmall $ RecordToRecord.do
               staticText "Amount due: $"
               text @"amount" # projection show ) # shown
           (bodyMedium (text @"status") # projected statusLine) # shown
-          ( Pipeline.do
+          ( Category.do
               button @"Charge card" { icon: "credit_card" } # toCases startCharge
-              ( Pipeline.do
+              ( Category.do
                   indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
                   snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
       ) # mvu unpaidOrder

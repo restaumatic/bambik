@@ -10,12 +10,12 @@ import PUI (blank, foreach, mvu, settled, toCase, updated)
 import PUI.Web.HTML (attrWith, body, div, onClickedXY, inCase, (:=))
 import PUI.Web.Shoelace (button, card, sliderLive)
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 circleDrawerShoelace :: Effect Unit
 circleDrawerShoelace =
   body $
-    card $ ( Pipeline.do
+    card $ ( Category.do
         sliderLive @"Diameter" {} # inCase @"chosen" selection # settled resizeSelected
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
             ( onClickedXY

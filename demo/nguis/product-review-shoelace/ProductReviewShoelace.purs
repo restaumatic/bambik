@@ -10,13 +10,13 @@ import PUI (forCase, projection, mvu, projected, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 productReviewShoelace :: Effect Unit
 productReviewShoelace =
   body $
-    card $ Pipeline.do
-      ( Pipeline.do
+    card $ Category.do
+      ( Category.do
           rating @"Overall rating" {}
           textField @"Headline" {}
           textArea @"Your review" { rows: 4 }

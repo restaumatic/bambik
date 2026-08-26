@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (forProperty, foreach, mvu, toCase, updated, with)
 import PUI.Web.HTML (shownCase, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC3 (button, card, elevation5, headlineSmall)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import TicTacToeLogic (cells, claimCell, gameOutcome, openingPosition)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
   body $
     elevation5 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( headlineSmall $ RecordToRecord.do
               text @"mark"
               staticText " wins" ) # shownCase @"won" gameOutcome

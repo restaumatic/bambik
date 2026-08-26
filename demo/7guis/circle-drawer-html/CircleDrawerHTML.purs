@@ -9,12 +9,12 @@ import Effect (Effect)
 import PUI (blank, foreach, mvu, settled, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, button, div, label, onClickedXY, p, inCase, rangeInput, staticText, (:=))
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 circleDrawerHTML :: Effect Unit
 circleDrawerHTML =
-  body $ div $ ( Pipeline.do
-      p ( label $ Pipeline.do
+  body $ div $ ( Category.do
+      p ( label $ Category.do
           (staticText "Diameter ") # shown
           rangeInput @"Diameter" ) # inCase @"chosen" selection # settled resizeSelected
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $

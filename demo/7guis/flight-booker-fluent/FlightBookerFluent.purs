@@ -10,19 +10,19 @@ import PUI (action, debounced, forCases, mvu, pempty, required)
 import PUI.Web.Fluent (body1, button, card, dropdown, messageBar, textField)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 flightBookerFluent :: Effect Unit
 flightBookerFluent =
   body $
-    card $ Pipeline.do
-      ( Pipeline.do
+    card $ Category.do
+      ( Category.do
           dropdown @"Flight type" {}
             [ choice @"one-way", choice @"return" ] # required
           textField @"Start date (DD.MM.YYYY)" {}
           textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
-      ( Pipeline.do
+      ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "⚠ "
               text @"problem" ) # shownCase @"problem" bookingState

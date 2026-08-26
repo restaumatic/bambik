@@ -9,15 +9,15 @@ import PUI (forCase, mvu, required, toCases)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, shownCase, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
 
 signupFormMDC3 :: Effect Unit
 signupFormMDC3 =
   body $
     elevation5 $
-      card $ Pipeline.do
-        ( Pipeline.do
+      card $ Category.do
+        ( Category.do
             (headlineLarge $ staticText "Create account") # shown
             debouncedTextField @"Username" { ms: usernameSettleTime }
             radioButton @"Plan"

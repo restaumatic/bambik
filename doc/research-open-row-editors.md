@@ -1,8 +1,9 @@
 # Research: open-row editors and the joint merge
 
-**Branch: `research-open-row-editors` (off main after the gated-display
-merge). Status: green in full — zero-warning build, tests, 102 bundles,
-the whole smoke suite including a new tip-calculator test.**
+**Merged into main. Developed on branch `research-open-row-editors` (off
+main after the gated-display merge); landed green in full — zero-warning
+build, tests, 102 bundles, the whole smoke suite including a new
+tip-calculator test.**
 
 ## The proposal under test
 
@@ -44,7 +45,7 @@ standard objections under scrutiny:
 
 2. **The open-row editor is `leaf # completed`** — the shape already
    existed; fusing it into leaves is mechanical (`completed`'s constraint
-   set moves into the leaf signature). The research uses the unfused
+   set moves into the leaf signature). This step uses the unfused
    form.
 
 3. **The decisive artifact** — tip-calculator-mdc2's tip percentage is
@@ -70,7 +71,7 @@ standard objections under scrutiny:
     where it is used.
   * **Exactness is carrier-scheduling-dependent** in the joint world. A
     concurrent carrier would need the owned merge's trim back; the joint
-    merge's laws should say so if this ever leaves research.
+    merge's laws should say so.
   * Per-editor retention (one full-row `Ref` per `# completed`) replaces
     the merge's single gate state — a consistency surface, kept honest by
     the same loop invariant.
@@ -86,7 +87,7 @@ editors) and multiplicity of writers is a feature (dual-bound controls).
 citizens; fusing it into leaves would make the joint world self-standing
 at the cost of committing the vocabulary to it.
 
-## The fusion (second step, this branch)
+## The fusion (second step)
 
 The deferred fusion is done: the vocabulary is committed to the joint
 world, and `completed` is **deleted** (L14 subsumption).
@@ -293,9 +294,11 @@ What changed:
   `forProperty f` had 22 sites, every one `identity`, and
   `forProperty f = projection f >>> forProperty` — so it is now
   `forProperty`, the widening alone; formatting stays `projection`'s.
-- **`Pipeline.do`.** Application code imports `QualifiedDo.Semigroupoid as
-  Pipeline`, so the block reads as what it is; the four merges keep their
-  direction names and the library still speaks `Semigroupoid`.
+- **`Category.do`.** First `Pipeline.do`, an alias over
+  `QualifiedDo.Semigroupoid`; then, `PUI` being a `Category` whose unit is
+  the wire, `QualifiedDo.Category as Category` — bambik's complement under
+  `extras/qualified-do/`, the ecosystem's sugar stopping at `Semigroupoid`.
+  The four merges keep their direction names.
 - **86 dead logic exports deleted** — `*Line`/`*Text` formatters left over
   from the `told line` era, exported by 29 logic modules and used by no
   view (the sentences are `RecordToRecord.do` merges of

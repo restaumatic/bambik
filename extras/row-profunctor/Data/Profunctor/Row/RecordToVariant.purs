@@ -177,7 +177,6 @@ backgroundProperty
   => IsSymbol l
   => Cons l f b s
   => Cons l f b' s'
-  => Cons l f () lf
   => Union b' lf s'
   => p { | b } [ | b' ]
   -> p { | s } [ | s' ]

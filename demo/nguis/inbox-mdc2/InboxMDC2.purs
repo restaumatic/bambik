@@ -11,26 +11,26 @@ import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine
 import PUI (applied, forCase, mvu, observed, atCase, projected, toCase, updated)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           ( caption $ RecordToRecord.do
               text @"unreadCount" # projected unreadCountText
               staticText " unread of "
               text @"messageCount" # projected messageCountText
               staticText " messages" ) # shown
           listOf { selected: _.attention } mailboxRows
-            ( span $ Pipeline.do
+            ( span $ Category.do
                 (staticText "● ") # shownWhen unreadMark
                 ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
                     text @"subject" ) # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
-          ( Pipeline.do
+          ( Category.do
               ( RecordToRecord.do
                   headline6 (text @"subject")
                   body2 RecordToRecord.do
@@ -38,7 +38,7 @@ inboxMDC2 =
                     text @"sender"
                   body1 (text @"body")) # shown
               iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
-          ( Pipeline.do
+          ( Category.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button @"Delete" {}
                   button @"Keep" {}) # provided confirmingDelete

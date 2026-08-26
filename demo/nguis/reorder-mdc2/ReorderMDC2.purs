@@ -10,15 +10,15 @@ import Effect (Effect)
 import PUI (action, atCase, edited, field, mvu, pempty, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, list, listItem)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
 
 reorderMDC2 :: Effect Unit
 reorderMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
-          ( Pipeline.do
+      card $ ( Category.do
+          ( Category.do
               cardActions $ RecordToVariant.do
                 button @"Rotate" { icon: "sync" }
                 button @"Shuffle" { icon: "shuffle" }

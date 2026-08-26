@@ -106,7 +106,7 @@ import Data.Variant (case_, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons, class Lacks, class Union)
+import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
@@ -116,7 +116,7 @@ import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, app
 
 -- UIs
 
--- | RESEARCH (gated displays): the **pane rung** — render the content when
+-- | The **pane rung** — render the content when
 -- | the projection yields its payload, detach when it does not, and
 -- | **release the fed row always**: a hidden pane must never block the
 -- | pipe, so this rung's fulfillment is best-effort by construction.
@@ -130,7 +130,7 @@ shownWhen
   => ({ | read } -> Maybe a) -> PUI Web a {} -> PUI Web { | row } { | row }
 shownWhen proj content = recordToRecord (provided (\(r :: { | row }) -> proj (unsafeCoerce r)) content) identity
 
--- | RESEARCH (gated displays): the **ambient rung** — content that is
+-- | The **ambient rung** — content that is
 -- | always there: registered at build (its chrome exists before any
 -- | feed), fed the row on every feed, the fed row released always. The
 -- | content reads its own *closed* narrow row by subsumption
@@ -160,7 +160,7 @@ shown content = wrap do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- | RESEARCH (gated displays): the **case-pane rung** — `shownWhen` for a
+-- | The **case-pane rung** — `shownWhen` for a
 -- | classified variant: content attached and fed on case `l`, detached on
 -- | any other case, the fed row released always.
 shownCase
@@ -172,7 +172,7 @@ shownCase
   => ({ | read } -> [ | s ]) -> PUI Web a {} -> PUI Web { | row } { | row }
 shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
 
--- | RESEARCH (open-row editors): the **editor pane** — `shownCase`'s
+-- | The **editor pane** — `shownCase`'s
 -- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
 -- | that *exists* only while the classifier yields case `l`: attached and
 -- | fed the whole row on that case, detached on any other, the fed row
@@ -201,7 +201,7 @@ inCase
   => ({ | read } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
 inCase f w = joint (provided (\(r :: { | row }) -> r <$ prj (Proxy @l) (f (unsafeCoerce r))) w) identity
 
--- | RESEARCH (gated displays): the **collection rung** — render the keyed,
+-- | The **collection rung** — render the keyed,
 -- | retained list from the projection, release the fed row per feed.
 -- | Derived: the collection, muted, merged with the wire. Trails its
 -- | item: `(li $ …) # shownEach @l proj`.
@@ -322,7 +322,7 @@ radioButton { picked } = "type" := "radio" $ wrap do
 -- | nothing to show, so the field arrives as "maybe a choice" and leaves as
 -- | the choice itself — say which with `# optional` or `# required`. The
 -- | options belong to the control, not to the model.
-select :: forall @l a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling

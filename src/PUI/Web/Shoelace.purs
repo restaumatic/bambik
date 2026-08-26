@@ -49,7 +49,7 @@ import PUI (Ocular, PUI, projected)
 import PUI.Web.HTML (clicked, div, el, span, staticText, text, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Record (get) as Record
@@ -272,7 +272,7 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
 -- | with `# optional` or `# required`. The options belong to the control,
 -- | not to the model.
-select :: forall @l a ri ro provided. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling

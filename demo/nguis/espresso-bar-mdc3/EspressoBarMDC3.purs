@@ -11,15 +11,15 @@ import PUI (forCase, mvu, projected, required, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 espressoBarMDC3 :: Effect Unit
 espressoBarMDC3 =
   body $
     elevation5 $
       topAppBar { title: "Espresso Bar" } $
-        card $ Pipeline.do
-          ( Pipeline.do
+        card $ Category.do
+          ( Category.do
               tabBar @"drink"
                 [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
               filledTextField @"Your name" {}
@@ -30,7 +30,7 @@ espressoBarMDC3 =
               radioButton @"Roast"
                 [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
               sliderLive @"Sugar" {}
-              chipSet Pipeline.do
+              chipSet Category.do
                 filterChip @"Extra shot" {}
                 filterChip @"Decaf" {}
               toggleSwitch @"Takeaway cup" {}

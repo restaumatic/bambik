@@ -12,13 +12,13 @@ modules are `extras/row-profunctor/Data/Profunctor/Row/*.purs`.
 
 | You are writing | Block | What flows | Demo |
 | --- | --- | --- | --- |
-| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Pipeline.do` (`import QualifiedDo.Semigroupoid as Pipeline`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
+| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Category.do` (`import QualifiedDo.Category as Category`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
 | chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; `staticText`/`text @l` only — never an editor | checkout's step lines |
 | several buttons over one record | `RecordToVariant.do` (×→+) | record in, one case out per emitter | cashbox |
 | one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions) | order-form's dispatch |
 | one status per outcome | `VariantToRecord.do` (+→×) | cases in, statuses out | order-form's snackbars |
 
-Rule of thumb: things that *follow* each other → `Pipeline.do`; things that
+Rule of thumb: things that *follow* each other → `Category.do`; things that
 *share one value* → a merge, named by the shape of what goes in and out
 (record `×`, variant `+`). Stated in: writing.md *The pipeline*; the four
 direction module headers.
@@ -37,7 +37,7 @@ direction module headers.
 | a display inside a collection item, reading the item's own field | `text @l # forProperty` | todomvc's title; cells | RecordToRecord.purs (`forProperty`) |
 | a display fed a whole value, not a record | `text @l # projected f` | inbox: `text @"unreadCount" # projected unreadCountText` | RecordToRecord.purs (`projected`) |
 | a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
-| the flow must wait for the user's confirmation | `display # confirmed cfg` (MDC2/MDC3) | cashbox | writing.md *Modals* |
+| the flow must wait for the user's confirmation | `confirmed cfg $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
 | a value-computed attribute (style, coordinates, colour) | `attrWith "style" f` on the element | calculator, cells, color-mixer | HTML.purs (`attrWith`) |
 | a class that depends on the value | `# clWhen predicate "class"` | todomvc | HTML.purs (`clWhen`) |
 | structure that genuinely varies with the value | the `dynamic` / `each` builders | markdown-previewer | HTML.purs; writing.md *Collections* |
@@ -47,13 +47,13 @@ direction module headers.
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | a field of the model, edited | the leaf with the field as its label: `filledTextField @"First name" {}`, `checkbox @l {}`, `slider @l {}` | every form | writing.md *Component citizenship* |
-| a group of fields editing a sub-record | `( Pipeline.do … ) # field @"customer"`; a reusable sub-form `# subStrong` | order-form; parcel | RecordToRecord.purs (`field`, `subStrong`) |
+| a group of fields editing a sub-record | `( Category.do … ) # field @"customer"`; a reusable sub-form `# subStrong` | order-form; parcel | RecordToRecord.purs (`field`, `subStrong`) |
 | an invariant between fields — editing one implies the other | `editor # settled normalize` | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *Conditional visibility* |
 | a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |
 | a selection that may still be unmade | `dropdown @l {} […] # optional` — the field is a `Maybe` | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
 | two controls editing **one** field | ``a `joint` b`` (infix) | tip-calculator | PUI.purs (`joint`) |
-| a variant with an editor per case | `( Pipeline.do selector; pane # inCase @l selection; … ) # bracketed stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; VariantToVariant.purs (`bracketed`) |
+| a variant with an editor per case | `( Category.do selector; pane # inCase @l selection; … ) # bracketed stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; VariantToVariant.purs (`bracketed`) |
 
 ## Events into state
 

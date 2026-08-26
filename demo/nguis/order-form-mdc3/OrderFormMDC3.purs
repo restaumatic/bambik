@@ -14,58 +14,58 @@ import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
-  body $ ( elevation5 Pipeline.do
+  body $ ( elevation5 Category.do
       indeterminateLinearProgress @"busy" # action loadOrder
-      ( Pipeline.do
+      ( Category.do
           ( headlineSmall $ RecordToRecord.do
               staticText "Order "
               text @"Short ID" ) # shown
-          card $ Pipeline.do
+          card $ Category.do
             (titleMedium $ staticText "Identifier") # shown
             filledTextField @"Short ID" {}
             filledTextField @"Unique ID" {}
-          card ( Pipeline.do
+          card ( Category.do
               (titleMedium $ staticText "Customer") # shown
-              ( Pipeline.do
+              ( Category.do
                   filledTextField @"First name" {}
                   filledTextField @"Last name" {}) # field @"customer" )
-          card ( Pipeline.do
+          card ( Category.do
               (titleMedium $ staticText "Fulfillment") # shown
-              ( ( Pipeline.do
+              ( ( Category.do
                     tabBar @"selected"
                       [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
                     filledTextField @"Table" {} # inCase @"Dine in" selection
                     filledTextField @"Time" {} # inCase @"Takeaway" selection
-                    ( Pipeline.do
+                    ( Category.do
                         filledTextField @"Address" {} # settled staleDistanceForgotten
-                        ( Pipeline.do
+                        ( Category.do
                             button @"Estimate distance" { icon: "near_me" }
                             indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
                         ( bodyLarge $ RecordToRecord.do
                             staticText "Distance "
                             text @"km" # projection show
                             staticText " km" ) # shownWhen knownDistance) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
-          card $ Pipeline.do
+          card $ Category.do
             (titleMedium $ staticText "Total") # shown
             filledTextField @"Total" {}
-          card ( Pipeline.do
+          card ( Category.do
               (titleMedium $ staticText "Payment") # shown
-              ( Pipeline.do
+              ( Category.do
                   segmentedButton @"Method"
                     [ choice @"cash", choice @"card" ] # required
                   filledTextField @"Paid" {}
                   ( bodyLarge $ RecordToRecord.do
                       staticText "Paying by "
                       text @"Method" # projection caseText ) # shown) # field @"payment" )
-          card $ Pipeline.do
+          card $ Category.do
             (titleMedium $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
       ) # looped
-      bodyLarge ( Pipeline.do
+      bodyLarge ( Category.do
           ( RecordToRecord.do
               staticText "Summary: Order "
               text @"Short ID"

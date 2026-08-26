@@ -9,13 +9,13 @@ import PUI (action, mvu, atCase, projected, updated)
 import PUI.Web.HTML (shown, attr, body, div, staticText, text)
 import PUI.Web.MDC2 (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
   body $
     elevation20 $
-      card $ ( Pipeline.do
+      card $ ( Category.do
           slider @"Length" {}
           toggleSwitch @"Uppercase letters" {}
           toggleSwitch @"Lowercase letters" {}
@@ -26,7 +26,7 @@ passwordGeneratorMDC2 =
               text @"strength" # projected strengthText ) # shown
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
             (text @"password") # shown
-          ( Pipeline.do
+          ( Category.do
               button @"Generate" {}
               indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate") # updated (match { generated: rememberPassword })
       ) # mvu strongMixRecipe

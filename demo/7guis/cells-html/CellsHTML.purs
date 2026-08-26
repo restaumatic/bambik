@@ -8,15 +8,15 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (field, foreach, mvu, forProperty, projected, settled, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, input, label, p, staticText, table, td, text, tr, (:=))
-import QualifiedDo.Semigroupoid as Pipeline
+import QualifiedDo.Category as Category
 
 cellsHTML :: Effect Unit
 cellsHTML =
-  body $ div $ ( Pipeline.do
+  body $ div $ ( Category.do
       ( p $ RecordToRecord.do
           staticText "Cell "
           text @"selectedName" # projected selectedName ) # shown
-      p ( label $ Pipeline.do
+      p ( label $ Category.do
           (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
           "size" := "32" $ input "text" # field @"Formula (e.g. =SUM(A0:A5)*2)" ) # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
