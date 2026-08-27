@@ -27,17 +27,14 @@ display-beside-the-wire-then-collection worked: chrome in a pipeline needs
 comultiplication, chrome in a merge needs nothing (the merge broadcasts).
 Duoidal algebra names when `⊳` can emulate `⊗` — only through comonoids.
 
-At **equal types** a third combination joins the skeleton: the ungated
-joint merge (`Data.Profunctor.Joining`, `joint`), the profunctor form of
-`ArrowPlus`'s `<+>` — input shared by the diagonal, outputs interleaved
-on one channel, associativity and dinaturality its laws. It is `⊗`'s
-shadow at the diagonal with no monoid on the outputs: where the four
-merges combine *contributions* (union of fields, dispatch of cases — the
-(M, N)-monoids of §1), `joint` combines nothing — a duplex temporal
-carrier lets both operands speak on one wire, so last-writer-wins is
-scheduling, not algebra. A timeless carrier has no such wire: `(->)` has
-no instance, and CPS (`Cont r`) needs `Semigroup r` to combine its two
-answers.
+At **equal types** no third combination is admitted. The ungated
+juxtaposition — `ArrowPlus`'s `<+>` at the profunctor kind, input shared
+by the diagonal, outputs interleaved on one channel — was carried for a
+while as `Joining`/`joint` and removed on 2026-08-27: it combined no
+*contributions* (no union of fields, no dispatch of cases — none of the
+(M, N)-monoids of §1), so last-writer-wins was carrier scheduling, not
+algebra, and every use was two whole-row citizens over one row, which
+compose *sequentially* — each is a wire that also edits.
 
 ## 1. The four merges are the four (M, N)-monoidal structures
 

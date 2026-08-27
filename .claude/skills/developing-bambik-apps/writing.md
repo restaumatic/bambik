@@ -107,10 +107,11 @@ syntax (`r { "Name" = … }`) all work unchanged.
   and every emission re-attaches the other fields from the background its
   `field @l` lift retains. A form is therefore editors written as
   successive pipeline stages — never `RecordToRecord.do` operands — and
-  two controls deliberately writing **one** field join with `joint` (the
-  joint merge, class `Joining`: broadcast in, last writer wins —
-  tip-calculator binds an
-  MDC slider and a native range to one quantity). The retained background
+  two controls deliberately writing **one** field are simply two such
+  stages in a row (tip-calculator binds an MDC slider and a native range to
+  one quantity: each echoes what it is fed, so the second shows what the
+  first set, and the loop's re-broadcast keeps the first current — no
+  merge, no last-writer rule). The retained background
   is only as fresh as the stage's last feed, so an editor ensemble lives
   inside a loop — `mvu`, `looped`, or `bracketed` — whose re-broadcast
   keeps every sibling current; a loop-free flow wraps its editor window
@@ -817,7 +818,7 @@ read them, not a summary. Paths are inside the fetched library,
 `.spago/bambik/<tag>/`:
 
 - `src/PUI.purs` — the core type, pipeline semantics, and the
-  combinators: `mvu`/`with`/`looped`/`joint`/`updated`/`applied`/`settled`/`action`,
+  combinators: `mvu`/`with`/`looped`/`updated`/`applied`/`settled`/`action`,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`. The gated display family lives in `PUI.Web.HTML`

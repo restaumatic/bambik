@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (joint, projection, mvu, projected)
+import PUI (projection, mvu, projected)
 import PUI.Web.HTML (rangeInput, shown, body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Category as Category
@@ -15,9 +15,9 @@ tipCalculatorMDC2 =
   body $
     elevation20 $
       card $ ( Category.do
-          ( filledTextField @"Bill amount" {}
-              `joint` slider @"Tip percentage" {}
-              `joint` rangeInput @"Tip percentage" )
+          filledTextField @"Bill amount" {}
+          slider @"Tip percentage" {}
+          rangeInput @"Tip percentage"
           ( body2 $ RecordToRecord.do
               staticText "Tip: "
               text @"Tip percentage" # projection whole

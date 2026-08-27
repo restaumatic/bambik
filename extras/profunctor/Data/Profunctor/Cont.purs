@@ -31,10 +31,6 @@
 -- |     no combining is needed
 -- |   * `RecordToVariant` — needs `Monoid r`: both operands are fed and both
 -- |     may emit, so two answers must combine, and `pempty` must be silence
--- |   * `Joining` — needs `Semigroup r`: the joint merge runs both
--- |     components on the same input and continuation, and the two
--- |     answers combine — CPS is duplex enough to interleave, where
--- |     `(->)` is not
 -- |
 -- | `Resolving`/`Coretaining` typecheck but are degenerate and stated here
 -- | only to record that: `resolve` can only ever take `Left` (without time
@@ -43,8 +39,7 @@
 -- | The two lists below are **exhaustive** over every profunctor subclass in
 -- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
 -- | plus `Wander`, the `extras/profunctor` complements (the four coined
--- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining` and the
--- | juxtaposition `Joining`), and bambik's own
+-- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining`), and bambik's own
 -- | `Acting`, `Seeding`, `Looping` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
@@ -78,7 +73,6 @@ import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Row (exactRow, splitVariant, widenRecordInput, widenVariantOutput)
-import Data.Profunctor.Joining (class Joining)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Resolving (class Resolving)
@@ -142,9 +136,6 @@ instance Wander (Cont r) where
 
 instance Acting (Cont r) where
   actedBy _ p = unstar (traverse (star p))
-
-instance Semigroup r => Joining (Cont r) where
-  joint p q = wrap \k a -> unwrap p k a <> unwrap q k a
 
 instance Cochoice (Cont r) where
   unleft p = wrap \k ->

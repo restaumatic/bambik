@@ -52,7 +52,7 @@ direction module headers.
 | a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |
 | a selection that may still be unmade | `dropdown @l {} […] # optional` — the field is a `Maybe` | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
-| two controls editing **one** field | ``a `joint` b`` (infix) | tip-calculator | PUI.purs (`joint`) |
+| two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
 | a variant with an editor per case | `( Category.do selector; pane # inCase @l selection; … ) # bracketed stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; VariantToVariant.purs (`bracketed`) |
 
 ## Events into state

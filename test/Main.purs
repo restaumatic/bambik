@@ -34,7 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, joint, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -562,35 +562,6 @@ main = do
     fire p1Prop { a: 2 }
     Ref.read outs >>= assertEqual "×→× gating: later emissions merge with retained side" [ { a: 1, b: "s" }, { a: 2, b: "s" } ]
 
-  -- the joint merge (Joining): broadcast in — every side is fed every
-  -- input — interleave out: either side's emission forwards unchanged,
-  -- and both groupings observe the same stream (associativity).
-  do
-    p1Ins <- Ref.new ([] :: Array Int)
-    p2Ins <- Ref.new ([] :: Array Int)
-    p3Ins <- Ref.new ([] :: Array Int)
-    p1Prop <- Ref.new Nothing
-    p2Prop <- Ref.new Nothing
-    p3Prop <- Ref.new Nothing
-    outsL <- Ref.new ([] :: Array String)
-    outsR <- Ref.new ([] :: Array String)
-    l <- unwrap (joint (joint (probeIO p1Ins p1Prop) (probeIO p2Ins p2Prop)) (probeIO p3Ins p3Prop) :: PUI Effect Int String)
-    l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
-    l.toUser 7
-    Ref.read p1Ins >>= assertEqual "joint: broadcast reaches the left side" [ 7 ]
-    Ref.read p2Ins >>= assertEqual "joint: broadcast reaches the middle side" [ 7 ]
-    Ref.read p3Ins >>= assertEqual "joint: broadcast reaches the right side" [ 7 ]
-    fire p2Prop "mid"
-    fire p3Prop "right"
-    fire p1Prop "left"
-    Ref.read outsL >>= assertEqual "joint: emissions interleave in firing order" [ "mid", "right", "left" ]
-    r <- unwrap (joint (probeIO p1Ins p1Prop) (joint (probeIO p2Ins p2Prop) (probeIO p3Ins p3Prop)) :: PUI Effect Int String)
-    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
-    fire p2Prop "mid"
-    fire p3Prop "right"
-    fire p1Prop "left"
-    Ref.read outsR >>= assertEqual "joint: re-association changes nothing observable" [ "mid", "right", "left" ]
-
   -- +→× unit law on the right: variantToRecord g pempty = g.
   do
     gProp <- Ref.new Nothing
@@ -774,6 +745,86 @@ main = do
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 3
     Ref.read outs >>= assertEqual "identity: the echo wire" [ 3 ]
+
+  -- == Category laws on the carrier: `identity` is a two-sided unit of ==
+  -- == `>>>` and `>>>` associates. Each law is an equality of the observed ==
+  -- == streams on both legs — what the stages were fed, what left the ==
+  -- == composite — under the registration protocol (register `fromUser` ==
+  -- == once, then feed). ==
+
+  -- left identity: identity >>> g = g
+  do
+    insG <- Ref.new ([] :: Array Int)
+    insL <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    lProp <- Ref.new Nothing
+    outsG <- Ref.new ([] :: Array String)
+    outsL <- Ref.new ([] :: Array String)
+    g <- unwrap (probeIO insG gProp :: PUI Effect Int String)
+    l <- unwrap (identity >>> probeIO insL lProp :: PUI Effect Int String)
+    g.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsG
+    l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
+    g.toUser 1 *> g.toUser 2
+    l.toUser 1 *> l.toUser 2
+    fire gProp "a" *> fire gProp "b"
+    fire lProp "a" *> fire lProp "b"
+    Ref.read insG >>= \expected -> Ref.read insL >>= assertEqual "Category/left identity: the stage is fed the same stream" expected
+    Ref.read outsG >>= \expected -> Ref.read outsL >>= assertEqual "Category/left identity: the composite emits the same stream" expected
+    Ref.read insL >>= assertEqual "Category/left identity: nothing lost on the way in" [ 1, 2 ]
+    Ref.read outsL >>= assertEqual "Category/left identity: nothing lost on the way out" [ "a", "b" ]
+
+  -- right identity: g >>> identity = g
+  do
+    insG <- Ref.new ([] :: Array Int)
+    insR <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    rProp <- Ref.new Nothing
+    outsG <- Ref.new ([] :: Array String)
+    outsR <- Ref.new ([] :: Array String)
+    g <- unwrap (probeIO insG gProp :: PUI Effect Int String)
+    r <- unwrap (probeIO insR rProp >>> identity :: PUI Effect Int String)
+    g.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsG
+    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
+    g.toUser 1 *> g.toUser 2
+    r.toUser 1 *> r.toUser 2
+    fire gProp "a" *> fire gProp "b"
+    fire rProp "a" *> fire rProp "b"
+    Ref.read insG >>= \expected -> Ref.read insR >>= assertEqual "Category/right identity: the stage is fed the same stream" expected
+    Ref.read outsG >>= \expected -> Ref.read outsR >>= assertEqual "Category/right identity: the composite emits the same stream" expected
+    Ref.read insR >>= assertEqual "Category/right identity: nothing lost on the way in" [ 1, 2 ]
+    Ref.read outsR >>= assertEqual "Category/right identity: nothing lost on the way out" [ "a", "b" ]
+
+  -- associativity: (f >>> g) >>> h = f >>> (g >>> h), observed at every
+  -- stage: each grouping is driven through the same script — feed the
+  -- composite, fire f (reaches g), fire g (reaches h), fire h (leaves).
+  do
+    let
+      run grouping = do
+        fIns <- Ref.new ([] :: Array Int)
+        gIns <- Ref.new ([] :: Array String)
+        hIns <- Ref.new ([] :: Array Boolean)
+        fProp <- Ref.new Nothing
+        gProp <- Ref.new Nothing
+        hProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array Number)
+        m <- unwrap (grouping (probeIO fIns fProp) (probeIO gIns gProp) (probeIO hIns hProp) :: PUI Effect Int Number)
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser 1 *> m.toUser 2
+        fire fProp "f1" *> fire fProp "f2"
+        fire gProp true *> fire gProp false
+        fire hProp 0.5 *> fire hProp 1.5
+        fs <- Ref.read fIns
+        gs <- Ref.read gIns
+        hs <- Ref.read hIns
+        os <- Ref.read outs
+        pure { fs, gs, hs, os }
+    left <- run \f g h -> (f >>> g) >>> h
+    right <- run \f g h -> f >>> (g >>> h)
+    assertEqual "Category/associativity: f fed alike" left.fs right.fs
+    assertEqual "Category/associativity: g fed alike" left.gs right.gs
+    assertEqual "Category/associativity: h fed alike" left.hs right.hs
+    assertEqual "Category/associativity: emits alike" left.os right.os
+    assertEqual "Category/associativity: the script reached every stage" { fs: [ 1, 2 ], gs: [ "f1", "f2" ], hs: [ true, false ], os: [ 0.5, 1.5 ] } left
 
   -- display beside the wire: unconditional pass-through — no echo needed
   -- from the wrapped display (its zero-field side is pre-satisfied), and

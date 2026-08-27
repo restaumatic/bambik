@@ -100,8 +100,8 @@ sit side by side and become one:
   contribution — partial emissions become whole records, and nothing
   propagates until every field is known. (Editors are not its operands:
   an editor is a **whole-row citizen** and sits as a pipeline stage — see
-  the form below — and two controls deliberately writing *one* field join
-  with `<>`, the ungated joint merge, broadcast in and last writer out.)
+  the form below — and two controls deliberately writing *one* field are
+  two such stages in a row.)
 - `variantToVariant` — two dispatchers merge; inputs must be disjoint (every
   case has exactly one handler), outputs may overlap.
 - `recordToVariant` — ungated broadcast: everyone sees the record, anyone

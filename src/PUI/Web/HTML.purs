@@ -110,7 +110,7 @@ import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, foreach, joint, muted, projected)
+import PUI (Ocular, PUI, foreach, muted, projected)
 import Unsafe.Coerce (unsafeCoerce)
 import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
@@ -177,10 +177,10 @@ shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (u
 -- | that *exists* only while the classifier yields case `l`: attached and
 -- | fed the whole row on that case, detached on any other, the fed row
 -- | released always. Where `shownCase` is the pane owned-merged with the
--- | wire (its content emits `{}`), this is the pane **`joint`** the wire —
--- | the content emits the row, so the owned merge's disjointness rejects
--- | it and only the joint merge admits it; the rung became derivable the
--- | day `Joining` did. Derived: `joint (provided caseHolds w) identity`.
+-- | wire (its content emits `{}`), this pane's content emits the **row**,
+-- | which the owned merge's disjointness rejects — so the rung is a
+-- | carrier primitive: the pane's channel and the wire's, side by side
+-- | over one input and one output.
 -- |
 -- | It dissolves the identity fold: a field that exists only in one mode
 -- | is *not* a payload to fold back into the row by hand
@@ -199,7 +199,21 @@ inCase
    . IsSymbol l => Cons l a b s
   => Union read extra row
   => ({ | read } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
-inCase f w = joint (provided (\(r :: { | row }) -> r <$ prj (Proxy @l) (f (unsafeCoerce r))) w) identity
+inCase f w = wrap do
+  { result: pane, ensureAttached, ensureDetached } <- attachable $ unwrap w
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \row -> do
+        case prj (Proxy @l) (f (unsafeCoerce row :: { | read })) of
+          Nothing -> ensureDetached
+          -- attach before feeding, as `provided` does
+          Just _ -> ensureAttached *> pane.toUser row
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> prop row
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        pane.fromUser prop
+    }
 
 -- | The **collection rung** — render the keyed,
 -- | retained list from the projection, release the fed row per feed.

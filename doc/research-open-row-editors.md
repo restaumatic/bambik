@@ -380,3 +380,31 @@ read side of `updated` stated the same fact as `Union narrow extra big`.
 `Union small rest big`, which reads as the fact it is: the model is the
 footprint plus the rest. `Nub` left both modules' imports; `applied`
 needs exactly one constraint, and it is that one.
+
+## Postscript (2026-08-27): the joint merge is removed
+
+`Joining`/`joint` is gone — class module, `PUI` and `Cont` instances,
+re-export, tests, and the vocabulary entry. Both of its uses turned out
+not to need it:
+
+* **Two controls writing one field** (tip-calculator's MDC slider and
+  native range on `"Tip percentage"`) are two whole-row citizens over one
+  row, and whole-row citizens compose *sequentially*: each echoes what it
+  is fed, so `slider @l {} >>> rangeInput @l` shows the seed in both, a
+  slider edit flows through the range, and a range edit reaches the
+  slider on the loop's re-broadcast. `Category.do` already is the
+  "broadcast in, last writer wins" of the joint world, one stage at a
+  time.
+* **`inCase`** was `joint (provided caseHolds w) identity`. It is now a
+  carrier primitive in `PUI.Web.HTML`, written directly over
+  `attachable`: the pane's channel beside the wire's, over one input and
+  one output — the same behaviour (row released always; two releases per
+  feed while attached, idempotent under the loop), with no algebra
+  claimed for it.
+
+What decided it: `joint` was the one binary operator on `PUI` that
+combined nothing — no union, no dispatch, no gate — so its laws
+(associativity, dinaturality) were laws of scheduling on a duplex
+carrier rather than of the row algebra, and `(->)` could not inhabit it.
+The duoidal reading in `PUI`'s header now names exactly two ways to
+compose: `Category.do` and the four merges.
