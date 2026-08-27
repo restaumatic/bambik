@@ -27,12 +27,12 @@ quizMDC2 =
                 text @"correct" # projection show ) # shown
           ( Category.do
               headline5 (text @"prompt") # shown
-              listOf {} _.choices (text @"label" # forProperty) # toCase @"picked" _.key) # provided currentQuestion # updated (match { picked: answer })
+              listOf {} _.choices (text @"label" # forProperty) # toCase @"picked" _.key ) # provided currentQuestion # updated (match { picked: answer })
           ( Category.do
               ( headline6 $ RecordToRecord.do
                   staticText "Final score: "
                   text @"correct" # projection show
                   staticText " / "
-                  text @"total" # projection show) # shown
-              button @"Restart" { icon: "replay" }) # provided finalOutcome # updated (match { "Restart": const (const freshQuizRun) })
+                  text @"total" # projection show ) # shown
+              button @"Restart" { icon: "replay" } ) # provided finalOutcome # updated (match { "Restart": const (const freshQuizRun) })
       ) # mvu freshQuizRun

@@ -36,5 +36,5 @@ crudMDC3 = do
                   VariantToVariant.do
                     indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"Create"
                     indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"Update"
-                    indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                    indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
       ) # with {}

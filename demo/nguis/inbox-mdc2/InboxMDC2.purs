@@ -37,17 +37,17 @@ inboxMDC2 =
                     staticText "From: "
                     text @"sender"
                   body1 (text @"body")) # shown
-              iconButton @"Delete message" { icon: "delete" }) # provided openedMessage # updated (match { "Delete message": const requestDelete })
+              iconButton @"Delete message" { icon: "delete" } ) # provided openedMessage # updated (match { "Delete message": const requestDelete })
           ( Category.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button @"Delete" {}
-                  button @"Keep" {}) # provided confirmingDelete
+                  button @"Keep" {} ) # provided confirmingDelete
               VariantToVariant.do
                 banner # forCase @"Delete" (const inboxZeroLine) # observed
-                identity # atCase @"Keep" # toCase @"Keep" identity) # updated (match { "Delete": const <<< deleteOpened, "Keep": const <<< keepMessages })
+                identity # atCase @"Keep" # toCase @"Keep" identity ) # updated (match { "Delete": const <<< deleteOpened, "Keep": const <<< keepMessages })
           fab @"Compose" { icon: "edit" } # applied composeMessage
           ( menu { label: "Sort" } $ RecordToVariant.do
               menuItem @"By sender" {}
               menuItem @"By subject" {}
-              menuItem @"Unread first" {}) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
+              menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
       ) # mvu mondayMail

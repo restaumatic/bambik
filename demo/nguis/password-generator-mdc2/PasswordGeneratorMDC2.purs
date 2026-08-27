@@ -28,5 +28,5 @@ passwordGeneratorMDC2 =
             (text @"password") # shown
           ( Category.do
               button @"Generate" {}
-              indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate") # updated (match { generated: rememberPassword })
+              indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
       ) # mvu strongMixRecipe

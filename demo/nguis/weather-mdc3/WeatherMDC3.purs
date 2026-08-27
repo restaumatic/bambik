@@ -18,7 +18,7 @@ weatherMDC3 =
       card $ ( Category.do
           ( Category.do
               listOf { selected: _.shown } forecastRequests (text @"city" # forProperty) # toCase @"cityPicked" identity
-              indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked") # updated (match { reportServed: rememberReport })
+              indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
           ( displayLarge $ RecordToRecord.do
               text @"temperature" # projected temperatureText
               staticText " °C" ) # shown
@@ -42,5 +42,5 @@ weatherMDC3 =
                 ( bodyLarge ( RecordToRecord.do
                     staticText "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: "
                     text @"servedReports" # projected servedReportsText
-                    staticText "." )) # atCase @"About this dashboard") # shown
+                    staticText "." )) # atCase @"About this dashboard" ) # shown
       ) # mvu warsawBulletin

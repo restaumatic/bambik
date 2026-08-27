@@ -31,7 +31,7 @@ checkoutMDC3 =
               RecordToVariant.do
                 button @"Next" {} # toCases goneOn # provided onwardFrom
                 button @"Back" {} # toCases goneBack # provided previousOf
-                button @"Place order" { icon: "shopping_cart_checkout" } # provided placeAtPayment) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
+                button @"Place order" { icon: "shopping_cart_checkout" } # provided placeAtPayment ) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
           ( bodyMedium $ RecordToRecord.do
               staticText "Order placed: "
               text @"item"

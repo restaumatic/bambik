@@ -32,7 +32,7 @@ orderFormMDC3 =
               (titleMedium $ staticText "Customer") # shown
               ( Category.do
                   filledTextField @"First name" {}
-                  filledTextField @"Last name" {}) # field @"customer" )
+                  filledTextField @"Last name" {} ) # field @"customer" )
           card ( Category.do
               (titleMedium $ staticText "Fulfillment") # shown
               ( ( Category.do
@@ -48,7 +48,7 @@ orderFormMDC3 =
                         ( bodyLarge $ RecordToRecord.do
                             staticText "Distance "
                             text @"km" # projection show
-                            staticText " km" ) # shownWhen knownDistance) # inCase @"Delivery" selection) # bracketed fulfillmentState fulfillmentCase) # field @"fulfillment" )
+                            staticText " km" ) # shownWhen knownDistance ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
           card $ Category.do
             (titleMedium $ staticText "Total") # shown
             filledTextField @"Total" {}
@@ -60,7 +60,7 @@ orderFormMDC3 =
                   filledTextField @"Paid" {}
                   ( bodyLarge $ RecordToRecord.do
                       staticText "Paying by "
-                      text @"Method" # projection caseText ) # shown) # field @"payment" )
+                      text @"Method" # projection caseText ) # shown ) # field @"payment" )
           card $ Category.do
             (titleMedium $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
@@ -97,7 +97,7 @@ orderFormMDC3 =
               text @"Method" # projection caseText ) # atField @"payment" ) # shown # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
-          button @"Receipt" { icon: "file" }) # armed
+          button @"Receipt" { icon: "file" } ) # armed
       VariantToVariant.do
         indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
         indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"

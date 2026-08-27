@@ -27,7 +27,7 @@ ticTacToeMDC2 =
                   ( clicked
                       ( div
                           >>> attrWith "style" cellFace
-                          $ text @"mark" # forProperty)) # foreach @"key" cells) # toCase @"cellPicked" _.key) # updated (match { cellPicked: claimCell })
+                          $ text @"mark" # forProperty )) # foreach @"key" cells ) # toCase @"cellPicked" _.key ) # updated (match { cellPicked: claimCell })
           button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
       ) # mvu openingPosition
 cellFace :: { mark :: String, win :: Boolean } -> String

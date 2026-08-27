@@ -21,7 +21,7 @@ cellsHTML =
           "size" := "32" $ input "text" # field @"Formula (e.g. =SUM(A0:A5)*2)" ) # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
           ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-              ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows) # toCase @"cellClicked" _.key) # updated (match { cellClicked: selectCell })
+              ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) # toCase @"cellClicked" _.key ) # updated (match { cellClicked: selectCell })
   ) # mvu orderSheet
 cellFace :: { text :: String, header :: Boolean, sel :: Boolean } -> String
 cellFace { header, sel } = cellStyle { header, sel }

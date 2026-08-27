@@ -26,7 +26,7 @@ shoppingCartMDC3 =
                   dataCell (text @"quantity")
                   dataCell ( RecordToRecord.do
                       staticText "$"
-                      text @"lineTotal" )) # foreach @"product" cartLines) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
+                      text @"lineTotal" )) # foreach @"product" cartLines ) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           ( bodyLarge $ RecordToRecord.do
               staticText "Total: $"
               text @"grandTotal" # projected grandTotalText ) # shown

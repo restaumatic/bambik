@@ -27,14 +27,14 @@ crudBootstrap = do
                 ( clicked ( ( listGroupItem $ RecordToRecord.do
                     text @"Surname"
                     staticText ", "
-                    text @"Name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"Name" ) # cl "list-group-item-action" ) # clWhen _.selected "active" ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Category.do
                 ( div $ RecordToVariant.do
                     button @"Create" {}
                     button @"Update" {}
-                    button @"Delete" {}) # cl "d-flex" # cl "gap-2"
+                    button @"Delete" {} ) # cl "d-flex" # cl "gap-2"
                 VariantToVariant.do
                   blank # action (createPerson catalogue) # atCase @"Create"
                   blank # action (updatePerson catalogue) # atCase @"Update"
-                  blank # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}

@@ -27,7 +27,7 @@ crudShoelace = do
                 ( clicked ( li >>> attrWith "style" entryFace $ ( RecordToRecord.do
                     text @"Surname"
                     staticText ", "
-                    text @"Name" ) # shown ) ) # foreach @"key" entries) # toCase @"picked" _.key # updated (match { picked: pick })
+                    text @"Name" ) # shown ) ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Category.do
                 div $ RecordToVariant.do
                   button @"Create" {}
@@ -36,7 +36,7 @@ crudShoelace = do
                 VariantToVariant.do
                   blank # action (createPerson catalogue) # atCase @"Create"
                   blank # action (updatePerson catalogue) # atCase @"Update"
-                  blank # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
 entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected

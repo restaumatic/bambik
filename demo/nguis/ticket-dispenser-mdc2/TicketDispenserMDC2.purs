@@ -30,5 +30,5 @@ ticketDispenserMDC2 =
                   staticText "." ) # shownCase @"serving" displayOf )
           ( Category.do
               button @"Take a number" {}
-              (reelE issue nextTicket identity) # unfolding @"resume" firstTicket) # updated const
+              (reelE issue nextTicket identity) # unfolding @"resume" firstTicket ) # updated const
       ) # mvu emptyQueue

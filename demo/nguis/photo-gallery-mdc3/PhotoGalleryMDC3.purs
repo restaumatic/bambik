@@ -28,7 +28,7 @@ photoGalleryMDC3 =
                 imageListItem { src: developedPhoto "Dawn Ridge", label: "Dawn Ridge" }
                 imageListItem { src: developedPhoto "Half Smile", label: "Half Smile" }
                 imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
-                imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" })
+                imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" } )
           ( Category.do
               (displayMedium (text @"album")) # shown
               imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )

@@ -24,9 +24,9 @@ reorderMDC3 =
                 button @"Shuffle" { icon: "shuffle" }
               VariantToVariant.do
                 blank # action rotateAction # atCase @"Rotate"
-                blank # action shuffleAction # atCase @"Shuffle") # updated (match { reordered: setOrder })
+                blank # action shuffleAction # atCase @"Shuffle" ) # updated (match { reordered: setOrder })
           list
             ( ( listItem $ ( RecordToRecord.do
                   static (el "input" >>> "type" := "checkbox")
-                  filledTextField @"Title" {})) # edited @"id") # field @"order"
+                  filledTextField @"Title" {} )) # edited @"id" ) # field @"order"
       ) # mvu openingSetlist

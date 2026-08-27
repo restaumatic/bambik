@@ -22,7 +22,7 @@ movieBrowserMDC3 =
           chipSet ( Category.do
               filterChip @"Classic" {}
               filterChip @"Cult" {}
-              filterChip @"Oscar" {})
+              filterChip @"Oscar" {} )
           ( elevation1 $ titleMedium $ RecordToRecord.do
               text @"count" # projection show
               staticText " favorite" ) # shownCase @"sole" favorites

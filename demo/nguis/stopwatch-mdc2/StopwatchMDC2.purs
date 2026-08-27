@@ -21,10 +21,10 @@ stopwatchMDC2 =
           every tickPeriod tick
           ( RecordToVariant.do
               button @"Start" { icon: "play_arrow" } # providedCase @"halted" stopwatchPhase
-              button @"Stop" { icon: "stop" } # providedCase @"timing" stopwatchPhase) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
+              button @"Stop" { icon: "stop" } # providedCase @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
           ( RecordToVariant.do
               button @"Lap" { icon: "flag" } # providedCase @"timing" stopwatchPhase
-              button @"Reset" { icon: "replay" } # providedCase @"halted" stopwatchPhase) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
+              button @"Reset" { icon: "replay" } # providedCase @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
           ul $ ( li $ RecordToRecord.do
                    staticText "Lap "
                    text @"number"
