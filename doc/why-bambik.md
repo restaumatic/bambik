@@ -163,21 +163,24 @@ record.
 
 ## Nullary operators: the units
 
-A binary operator wants a unit, and each merge has one: `pempty`, the UI component
-of type `{} → {}` — pure chrome. A divider, a heading, a spacer. It reads no
-fields and produces none, so merging it in changes nothing about the model:
-the monoid law, and the license to sprinkle decoration freely through a
-form.
+A binary operator wants a unit, and the merges borrow theirs from the
+category they live in: `identity` at the unit object — the wire `{} → {}`
+for records, the wire `Variant () → Variant ()` for variants. Pure chrome
+has that type: a divider, a heading, a spacer reads no fields and produces
+none, so merging it in changes nothing about the model — the monoid law,
+and the license to sprinkle decoration freely through a form.
 
-The subtlety worth savoring: units are not *silent*. `pempty` **announces**
-— it emits its informationless `{}` once at registration, so the merge gates
-never starve waiting for the side that has nothing to say. Parametricity
-makes this unavoidable: anything typed `forall a b. p a b` can never
-fabricate an output, so a lawful record-output unit must be per-carrier. The
-general forms of this insight are the other nullary leaves: `silence` (truly
-mute), `announce` (one registration-time emission of a constant — seeds
-fields, primes loops), and `seeded` (an echo wire that first announces a
-seed).
+The subtlety worth savoring: a unit carries no information, so it must not
+be able to *say* anything either. The record gates therefore treat a
+contribution of zero fields as no contribution: whether the chrome echoes
+its informationless `{}`, announces it once, or stays mute, the merge
+cannot tell, and `identity` is the unit exactly. What *does* speak at
+registration is the point — `announce a`, `Seeding`'s primitive, one
+emission of `a` out of the terminal record, which `with`/`mvu` use to
+supply an app its initial state, and from which the seeded echo wire
+`seeded a` is derived. The one merge whose unit no wire reaches is the
+event merge `×→+`: nothing maps the terminal `{}` into the initial
+`Variant ()`, so its unit is `silence` — truly mute, by parametricity.
 
 ## Unary operators: strengths, or the small UI component in the big world
 

@@ -24,27 +24,27 @@
 -- |
 -- | Law connecting the two classes: the mixed directions have no `identity` to
 -- | pin (nothing inhabits a mode-crossing diagonal), but they have the class's
--- | own **unit** `pempty :: p {} (Variant ())`, the silent source. The unary
+-- | own **unit** `silence`, the silent source (a class member, and the one
+-- | unit no wire reaches: `{}` is terminal, `Variant ()` initial). The unary
 -- | introduce operator is the **unit-pinned merge**,
 -- |
 -- | ```
--- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) pempty
+-- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) silence
 -- | ```
 -- |
 -- | and a pinned unit contributes nothing — which is why `recordToCase`
 -- | collapses to plain `rmap (inj l)` on any `Profunctor`.
 -- |
--- | As nullary operator, `pempty` is the empty merge:
--- | `recordToVariant pempty g = g`. Silence is forced on the output end (the
+-- | As nullary operator, `silence` is the empty merge:
+-- | `recordToVariant silence g = g`. Silence is forced on the output end (the
 -- | empty variant is uninhabited) and sufficient on the input end (the empty
 -- | record demands nothing), and parametricity extends both to arbitrary
--- | types — which is `silence` (below), the unit's `dimap`-closure.
+-- | rows — so the unit is stated at any rows, as `silence` itself.
 module Data.Profunctor.Row.RecordToVariant
   ( bind
   , class RecordToVariant
   , discard
   , folding
-  , pempty
   , silence
   , armed
   , recordToVariant
@@ -58,13 +58,12 @@ module Data.Profunctor.Row.RecordToVariant
 
 import Data.Either (Either(..), either)
 import Control.Semigroupoid ((>>>))
-import Data.Function (const)
 import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (Variant, case_, expand, inj, on)
+import Data.Variant (case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -116,12 +115,16 @@ class Profunctor p <= RecordToVariant p where
     SharedRecordInputs i1 i2 i i12 i1x i2x =>
     SharedVariantOutputs o1 o2 o o12 o1x o2x =>
     p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
-  -- | The **nullary** merge — the unit: reads nothing, emits no cases. The
-  -- | silent source of the header's law; silence is forced on the uninhabited
-  -- | variant output and sufficient on the empty record input, so any silent
-  -- | element implements it — this is the one direct silent body a carrier
-  -- | writes, and `silence` below generalizes it to any types.
-  pempty :: p {} (Variant ())
+  -- | The **nullary** merge — the unit: reads nothing, emits no cases, at
+  -- | any rows. The one unit no wire reaches (`{}` is terminal, `Variant ()`
+  -- | initial — nothing maps terminal → initial), so it is the one unit that
+  -- | stays a class member; parametric in both rows because silence is
+  -- | forced on any variant output and sufficient on any record input, so
+  -- | one silent body serves every type. The pinned trivial operand of the
+  -- | mixed introduce laws and the terminal sink of event pipelines. The
+  -- | lawful faceless leaf at *record* output is not silence but `blank`
+  -- | (the wire's `lcmap`-closure in `RecordToRecord`).
+  silence :: forall i o. p { | i } [ | o ]
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant p =>
@@ -137,18 +140,6 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   p { | i1 } [ | o1 ] -> (Unit -> p { | i2 } [ | o2 ]) -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | The **silent UI component**: shows nothing, captures nothing — at any
--- | rows, and necessarily so (parametricity survives the shaping:
--- | `forall i o. p { | i } [ | o ]` can neither inspect unknown fields nor
--- | fabricate a case of an unknown row). Shaped `× → +` like everything
--- | here — silence's citizenship is this direction's, since it is the
--- | `dimap`-closure of its unit. The pinned trivial operand of the mixed
--- | introduce laws and the terminal sink of event pipelines. The lawful
--- | faceless leaf at *record* output is not silence but `blank` (the
--- | unit's `lcmap`-closure in `RecordToRecord`) — record outputs must
--- | announce.
-silence :: forall p i o. RecordToVariant p => p { | i } [ | o ]
-silence = dimap (const {}) case_ pempty
 
 -- | The **emit stage** of a record pipeline — the `× → +` member of the
 -- | stage-subsumption family (`updated`/`settled` on

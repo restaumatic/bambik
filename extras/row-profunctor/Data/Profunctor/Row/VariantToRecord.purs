@@ -24,7 +24,7 @@
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
 -- | any case and contributing no field (`PUI`'s parametric `silence` at that
--- | type; the unit `pempty` is its `b = ()` special case). A unary
+-- | type; at `b = ()` it is the merge unit, `lcmap case_ identity`). A unary
 -- | introduce operator — one case reducing into the record — is the
 -- | **sink-pinned merge**, derivable and therefore not exported (L14):
 -- |
@@ -37,18 +37,18 @@
 -- | non-`l` events supplied, in the free-function form, by `Retaining`.
 -- |
 -- | Completing the arity ladder downward, the **nullary** operator is the
--- | class's own unit `pempty :: p (Variant ()) {}` — the empty merge:
--- | `variantToRecord pempty g = g = variantToRecord g pempty`. On a
--- | `Category` carrier it is the wire at the unit row entered from the
--- | empty variant, `lcmap case_ identity`: never fed, owning no field, so
--- | the gate is pre-satisfied on its side — which is why any silent element
--- | of that type serves equally, and `silence` at `b = ()` is one.
+-- | wire at the unit row entered from the empty variant,
+-- | `lcmap case_ identity :: p (Variant ()) {}` — no class member of its
+-- | own (`Category` is a superclass): `variantToRecord (lcmap case_
+-- | identity) g = g = variantToRecord g (lcmap case_ identity)`. Never fed,
+-- | owning no field, its side of the gate is pre-satisfied — which is why
+-- | any silent element of that type serves equally, and `silence` at
+-- | `b = ()` is one.
 module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord
   , class VariantToRecord
   , discard
-  , pempty
   , focusCase
   , forCase
   , forCases
@@ -60,12 +60,13 @@ module Data.Profunctor.Row.VariantToRecord
 
 import Control.Semigroupoid ((>>>))
 import Data.Either (Either(..), either)
+import Control.Category (class Category)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
+import Data.Variant (class Contractable, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -110,7 +111,7 @@ unfolding seed g =
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
       (seeded (inj (Proxy @w) seed) >>> g))
 
-class Profunctor p <= VariantToRecord p where
+class (Profunctor p, Category p) <= VariantToRecord p where
   -- | One constraint per side: `OwnedVariantInputs` (disjoint rows — one
   -- | handler per case — plus `DispatchableVariants`, the runtime tags
   -- | dispatch routes by) and `OwnedRecordOutputs` (disjoint rows — one
@@ -121,12 +122,6 @@ class Profunctor p <= VariantToRecord p where
     OwnedVariantInputs i1 i2 i i1l i2l =>
     OwnedRecordOutputs o1 o2 o o1l o2l =>
     p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 } -> p [ | i ] { | o }
-  -- | The **nullary** merge — the unit: handles no cases, contributes no
-  -- | fields. Genuinely per-carrier: the uninhabited input can never drive it,
-  -- | yet a lawful record-output unit must still *announce* its
-  -- | informationless `{}` so the merge machinery knows that side is complete
-  -- | — which the parametric, necessarily-silent `silence` cannot do.
-  pempty :: p (Variant ()) {}
 
 bind :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
   VariantToRecord p =>

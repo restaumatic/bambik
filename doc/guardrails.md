@@ -108,14 +108,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 ### L5. Units are forced, not designed.
 
-- A merge unit MUST be the wire at its unit object wherever a wire fits:
-  `RecordToRecord.pempty = identity @{}`, `VariantToVariant.pempty =
-  identity @(Variant ())`, `VariantToRecord.pempty = lcmap case_ identity`
-  — exactly, not up to an echo, because a record gate MUST treat a
-  contribution of zero fields as no contribution (L6). The one unit no
+- A merge unit MUST be `Category`'s wire at its unit object wherever a wire
+  fits — `identity @{}` for `×→×`, `identity @(Variant ())` for `+→+`,
+  `lcmap case_ identity` for `+→×` — and MUST NOT be a class member of its
+  own there: exactly, not up to an echo, because a record gate MUST treat
+  a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
-  maps terminal→initial), and it MUST be silence (parametricity, not
-  policy). Pointing — one emission at registration — is `Seeding`'s
+  maps terminal→initial), and it is the one class-member unit, `silence`
+  (parametricity, not policy). Pointing — one emission at registration — is `Seeding`'s
   `announce`, never a unit's: units carry no information and add none.
   No future combinator may invert this. Every starvation bug in the
   library's history was a `+`-behaviour where a `×`-behaviour was

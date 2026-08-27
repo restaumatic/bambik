@@ -19,7 +19,8 @@
 -- |   * **empty** — fed `[]`, emits `[]` (the inhabited nullary of the `μ`;
 -- |     no starvation). No emission *before* the first feed: `[]` is not the
 -- |     only `Array b`, so announcing it at registration would fabricate
--- |     knowledge (contrast `pempty`, whose `{}` is the only value there is).
+-- |     knowledge (contrast `{}`, the only value there is, which the wire
+-- |     `identity @{}` may echo freely — it says nothing).
 -- |   * **singleton retraction** — fed `[a]`, behaves as the element fed `a`
 -- |     and emits `[b]` per element emission `b` (yanking at the container).
 -- |   * **gather gate** — `Array b` is withheld until *every* element has

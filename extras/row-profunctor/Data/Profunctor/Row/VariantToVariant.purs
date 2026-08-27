@@ -11,12 +11,11 @@
 -- | focus/background dispatch `splitVariant` on the floor in
 -- | `Data.Profunctor.Row` — neither mentions a row profunctor.
 -- |
--- | The **nullary** operator is the merge **unit** — the class's own
--- | `pempty :: p (Variant ()) (Variant ())`: `variantToVariant pempty g = g`.
--- | Here silence is not merely lawful but forced — both empty-variant ends
--- | are uninhabited, so the unit can neither receive nor emit — and any
--- | silent element implements it (`PUI` writes a direct silent body: the
--- | variant *input* is outside `silence`'s `{ | i }` shape).
+-- | The **nullary** operator is `Category`'s own `identity` at the empty
+-- | variant — the merge has no unit of its own (`Category` is a
+-- | superclass): `variantToVariant identity g = g`. Both empty-variant ends
+-- | are uninhabited, so the wire there can neither receive nor emit: it is
+-- | silence, forced, and any silent element of that type is equal to it.
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
 -- | here: `field`'s
@@ -38,11 +37,10 @@ module Data.Profunctor.Row.VariantToVariant
   , iterate
   , atCase
   , bracketed
-  , pempty
   )
   where
 
-import Control.Category (identity)
+import Control.Category (class Category, identity)
 import Data.Either (Either(..), either)
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
@@ -50,7 +48,7 @@ import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice, unleft)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, Variant, case_, expand, inj, on)
+import Data.Variant (class Contractable, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
 import Data.Lens.Prism.Existential (prismE)
@@ -68,16 +66,11 @@ import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class
 bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
 bracketed f g w = dimap f g (looped w)
 
-class Profunctor p <= VariantToVariant p where
+class (Profunctor p, Category p) <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
     OwnedVariantInputs i1 i2 i i1l i2l =>
     SharedVariantOutputs o1 o2 o o12 o1x o2x =>
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
-  -- | The **nullary** merge — the unit: handles no cases, emits no cases.
-  -- | Both empty-variant ends are uninhabited, so silence is forced — any
-  -- | silent element implements it (`PUI` writes a direct silent body: the
-  -- | variant *input* is outside `silence`'s `{ | i }` shape).
-  pempty :: p (Variant ()) (Variant ())
 
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   VariantToVariant p =>

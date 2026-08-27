@@ -63,13 +63,18 @@ nesting parentheses and no reassociation lemmas. The row layer is not a fifth
 concept beside the monoidal one; it is the same monoidal algebra presented
 strictly.
 
-**Units are forced, not designed.** `1_× = {}` is *terminal and inhabited*:
-the unit `p {} {}` has a canonical global element to emit, so the lawful unit
-**announces** — `pempty = announce {}` is the only coherent choice, not a
-design decision. `1_+ = Variant ()` is *initial and uninhabited*: there is no
-value to emit, so the unit is **silence** — by parametricity, not by policy.
-Every starvation symptom in the library's history is a use of a `+`-output
-unit where a `×`-output unit was required.
+**Units are forced, not designed.** At the diagonal shapes the unit is
+`Category`'s `identity` at the unit object — `p {} {}` and
+`p (Variant ()) (Variant ())` — exactly, because a contribution of zero
+fields is no contribution and the record gates treat it so; `1_+ =
+Variant ()` is *initial and uninhabited*, so that wire can neither receive
+nor emit and is silence by parametricity. `1_× = {}` is *terminal and
+inhabited*: it has a canonical global element, which is what **pointing**
+emits — `announce a`, `Seeding`'s primitive, a map out of `1_×` — but
+pointing is not a unit's job, and the units carry no information. The one
+merge whose unit no wire reaches is `×→+` (terminal → initial), and its
+unit is `silence`. Every starvation symptom in the library's history is a
+use of a `+`-behaviour where a `×`-behaviour was required.
 
 **Gates are the cost of laxity over time.** In a pure synchronous carrier the
 laxator `p a b ⊗ p c d → p (a×c) (b×d)` is trivial. `PUI`'s channels are

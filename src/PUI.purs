@@ -118,7 +118,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract)
+import Data.Variant (class Contractable, contract)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -382,9 +382,11 @@ instance Apply m => Semigroupoid (PUI m) where
 
 -- | `identity` forwards its input straight to its output: a wire. The unit
 -- | of `compose`, the element the diagonal unary laws pin, and the unit of
--- | both diagonal merges at their unit object: `RecordToRecord.pempty` is
--- | `identity @{}` and `VariantToVariant.pempty` is `identity @(Variant ())`
--- | — exactly, since the record gates ignore a contribution of zero fields.
+-- | both diagonal merges at their unit object — `identity @{}` for `×→×`,
+-- | `identity @(Variant ())` for `+→+` — exactly, since the record gates
+-- | ignore a contribution of zero fields; those merges have no unit of their
+-- | own, and `VariantToRecord`'s is this wire entered from the empty
+-- | variant, `lcmap case_ identity`.
 instance Applicative m => Category (PUI m) where
   -- the ref is created per unwrap (inside the functor map), NOT in a
   -- top-level `let`: `identity` is a constant, and a constant's `let` is
@@ -446,9 +448,6 @@ instance Functor m => Looping (PUI m) where
       }
 
 instance Applicative m => RecordToRecord (PUI m) where
-  -- the unit is the wire at the unit row: it owns no field, so the gate
-  -- below is pre-satisfied on its side and ignores whatever it echoes
-  pempty = identity
   recordToRecord = recordToRecordPUI
 
 -- Hoisted so the merge's `RowList` variables are in scope: the starvation
@@ -474,9 +473,8 @@ recordToRecordPUI p1 p2 = wrap ado
     }
 
 instance Applicative m => RecordToVariant (PUI m) where
-  -- the one direct silent body: `silence` (in the row module) is this
-  -- unit's `dimap`-closure, so the primitive must live here, not there
-  pempty = wrap $ pure
+  -- the one unit no wire reaches (terminal → initial): silent at any rows
+  silence = wrap $ pure
     { toUser: mempty
     , fromUser: mempty
     }
@@ -568,10 +566,6 @@ instance Functor m => Retaining (PUI m) where
       }
 
 instance Applicative m => VariantToRecord (PUI m) where
-  -- the wire at the unit row, entered from the empty variant: never fed
-  -- (nothing inhabits its input), owning no field — the gate is
-  -- pre-satisfied on its side
-  pempty = lcmap case_ identity
   variantToRecord = variantToRecordPUI
 
 -- | The **output gate** both record-output merges run on, stated once.
@@ -670,12 +664,6 @@ variantToRecordPUI p1 p2 = wrap ado
     }
 
 instance Applicative m => VariantToVariant (PUI m) where
-  -- silent like the `×→+` unit, but at variant *input* — outside
-  -- `silence`'s `{ | i }` shape, so it carries its own direct body
-  pempty = wrap $ pure
-    { toUser: mempty
-    , fromUser: mempty
-    }
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
     p2' <- unwrap (widenVariantOutput p2)
@@ -1054,7 +1042,7 @@ type Ocular p = forall a b. Optic p a b a b
 -- | The progress slot is row-shaped like every component interface: the
 -- | UI component is a `{ busy :: Boolean } → {}` display citizen — and the
 -- | slot **subsumes** (a display reads narrow): a no-progress stage passes
--- | the unit directly, `pempty # action …`.
+-- | the wire pinned at `{}`, `pempty # action …`.
 -- |
 -- | A failing action is **reported, not swallowed**: the progress slot is
 -- | cleared whichever way the `Aff` ends — so a throw cannot strand the

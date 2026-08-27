@@ -19,23 +19,20 @@ import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
 import Data.Profunctor.Row.RecordToRecord (feedback, field, muted, subStrong, recordToRecord)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.RecordToVariant (folding, recordToCase, recordToVariant, toCase)
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, variantToVariant)
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
-import Data.Variant (Variant)
+import Data.Profunctor (lcmap)
+import Data.Variant (Variant, case_)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -123,34 +120,34 @@ main = do
   assertEqual "caseText/other case" "Light roast" (caseText (."Light roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
 
   -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
-  -- == nullary operator `pempty`. At the diagonal shapes it is the wire at ==
+  -- == nullary unit. At the diagonal shapes it is `Category`'s `identity` at ==
   -- == the unit object — `identity @{}` and `identity @(Variant ())` — ==
   -- == exactly: the record gates ignore a contribution of zero fields, so a ==
   -- == wire, a silent display and an announcing one are one operand. ==
 
-  -- ×→× unit law: recordToRecord pempty g = g (the output leg — g's emissions
+  -- ×→× unit law: recordToRecord identity g = g (the output leg — g's emissions
   -- must pass through undisturbed, not starve against the unit).
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord RecordToRecord.pempty (probe gProp :: PUI Effect {} { a :: Int }))
+    m <- unwrap (recordToRecord (identity :: PUI Effect {} {}) (probe gProp :: PUI Effect {} { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 1 }
-    Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord pempty g = g" [ { a: 1 } ]
+    Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord identity g = g" [ { a: 1 } ]
 
-  -- and on the right: recordToRecord g pempty = g.
+  -- and on the right: recordToRecord g identity = g.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) RecordToRecord.pempty)
+    m <- unwrap (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) (identity :: PUI Effect {} {}))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 2 }
-    Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g pempty = g" [ { a: 2 } ]
+    Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g identity = g" [ { a: 2 } ]
 
   -- ×→× silence law: an operand owning zero fields is **pre-satisfied** — its
   -- only possible contribution is the informationless {}, so the gate must
   -- not wait for it. Sharper than the unit law: this operand never emits at
-  -- all (a detached pane, an empty collection), where pempty announces.
+  -- all (a detached pane, an empty collection), where the wire echoes.
   -- This law is what makes the display-as-stage a derived form (the merge
   -- with the echo wire) rather than a carrier primitive.
   do
@@ -206,14 +203,14 @@ main = do
     fire p1Prop (unsafeCoerce { a: 4, b: "stale" } :: { a :: Int })
     Ref.read outs >>= assertEqual "+→× exactness: stale runtime sibling must not shadow" [ { a: 4, b: "fresh" } ]
 
-  -- +→× unit law: variantToRecord pempty g = g.
+  -- +→× unit law: variantToRecord (lcmap case_ identity) g = g.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord VariantToRecord.pempty (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
+    m <- unwrap (variantToRecord (lcmap case_ identity :: PUI Effect (Variant ()) {}) (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
-    Ref.read outs >>= assertEqual "unit law +→×: variantToRecord pempty g = g" [ { a: 3 } ]
+    Ref.read outs >>= assertEqual "unit law +→×: variantToRecord (lcmap case_ identity) g = g" [ { a: 3 } ]
 
   -- +→× knowledge-gating: with two non-empty operands, nothing propagates
   -- until every field of the merged record is known; then each emission
@@ -563,14 +560,14 @@ main = do
     fire p1Prop { a: 2 }
     Ref.read outs >>= assertEqual "×→× gating: later emissions merge with retained side" [ { a: 1, b: "s" }, { a: 2, b: "s" } ]
 
-  -- +→× unit law on the right: variantToRecord g pempty = g.
+  -- +→× unit law on the right: variantToRecord g (lcmap case_ identity) = g.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) VariantToRecord.pempty)
+    m <- unwrap (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) (lcmap case_ identity :: PUI Effect (Variant ()) {}))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
-    Ref.read outs >>= assertEqual "unit law +→×: variantToRecord g pempty = g" [ { a: 3 } ]
+    Ref.read outs >>= assertEqual "unit law +→×: variantToRecord g (lcmap case_ identity) = g" [ { a: 3 } ]
 
   -- ×→+ merge (ungated broadcast): every operand sees the record, either
   -- operand's case exits immediately — no gate on either side.
@@ -591,15 +588,15 @@ main = do
     fire p2Prop (.y "e")
     Ref.read outs >>= assertEqual "×→+ broadcast: either operand's case exits, ungated" [ .x 7, .y "e" ]
 
-  -- ×→+ unit law: recordToVariant pempty g = g (the unit is the silent
+  -- ×→+ unit law: recordToVariant silence g = g (the unit is the silent
   -- source — uninhabited variant output, so silence is forced).
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    m <- unwrap (recordToVariant RecordToVariant.pempty (probe gProp :: PUI Effect {} [ x :: Int ]))
+    m <- unwrap (recordToVariant (silence :: PUI Effect {} (Variant ())) (probe gProp :: PUI Effect {} [ x :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp (.x 1)
-    Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant pempty g = g" [ .x 1 ]
+    Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant silence g = g" [ .x 1 ]
 
   -- +→+ merge (dispatch): each input case is routed to exactly its one
   -- handler; outputs may overlap and both exit.
@@ -622,18 +619,18 @@ main = do
     fire p2Prop (.err "e")
     Ref.read outs >>= assertEqual "+→+ dispatch: outputs may overlap, both exit" [ .ok 1, .err "e" ]
 
-  -- +→+ unit law: variantToVariant pempty g = g (both unit ends uninhabited,
+  -- +→+ unit law: variantToVariant identity g = g (both unit ends uninhabited,
   -- so the unit neither receives nor emits).
   do
     ins <- Ref.new ([] :: Array [ x :: Unit ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ ok :: Int ])
-    m <- unwrap (variantToVariant VariantToVariant.pempty (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
+    m <- unwrap (variantToVariant (identity :: PUI Effect (Variant ()) (Variant ())) (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.x unit)
     Ref.read ins >>= assertEqual "unit law +→+: input reaches g" [ .x unit ]
     fire gProp (.ok 9)
-    Ref.read outs >>= assertEqual "unit law +→+: variantToVariant pempty g = g" [ .ok 9 ]
+    Ref.read outs >>= assertEqual "unit law +→+: variantToVariant identity g = g" [ .ok 9 ]
 
   -- == The hand-written ecosystem instances, tested directly, and the ==
   -- == retraction laws that hold outright (the ungated + channel). ==
@@ -842,7 +839,7 @@ main = do
 
   -- identity is the ×→× unit exactly: beside the wire at {}, an operand's
   -- observed stream is its own — in and out — and the wire's echo per feed
-  -- is not a contribution. The same for pempty, which IS that wire.
+  -- is not a contribution.
   do
     let
       run u = do
@@ -868,9 +865,7 @@ main = do
       o <- Ref.read outs
       pure { i, o }
     withIdentity <- run (identity :: PUI Effect {} {})
-    withUnit <- run RecordToRecord.pempty
     assertEqual "×→× unit is identity @{}: g beside the wire observes g's streams" bare withIdentity
-    assertEqual "×→× unit is identity @{}: pempty is that wire" bare withUnit
     assertEqual "×→× unit is identity @{}: the streams are the full script" { i: [ { a: 1 }, { a: 2 } ], o: [ { a: 3 }, { a: 4 } ] } bare
 
   -- and the +→+ unit exactly: identity at the empty variant is never fed and

@@ -28,21 +28,20 @@
 -- |     `Colens` optic's row form; the optic itself is in
 -- |     `Data.Lens.Colens`).
 -- |
--- | The **nullary** operator is the class's own unit `pempty :: p {} {}` —
--- | the empty merge:
+-- | The **nullary** operator is `Category`'s own `identity` at the unit row
+-- | — the merge has no unit of its own (`Category` is a superclass):
 -- |
 -- | ```
--- | recordToRecord pempty g = g = recordToRecord g pempty
--- | pempty = identity @{}                    -- on every Category carrier
+-- | recordToRecord identity g = g = recordToRecord g identity     -- identity :: p {} {}
 -- | ```
 -- |
--- | The unit is the **wire at the unit row**: it owns no field, so a
--- | lawful merge treats its side as known from the start and ignores
--- | whatever it emits — a contribution of zero fields is no contribution.
--- | That is what makes `identity @{}` the unit exactly (not up to an echo),
--- | and the same wire is `VariantToVariant`'s unit at `Variant ()`.
--- | Pointing (one emission at registration) is not the unit's job: it is
--- | `Seeding`'s `announce`, and `with`/`mvu` below close over that.
+-- | The wire at `{}` owns no field, so a lawful merge treats its side as
+-- | known from the start and ignores whatever it echoes — a contribution
+-- | of zero fields is no contribution. That is what makes `identity` the
+-- | unit exactly (not up to an echo), and the same wire is
+-- | `VariantToVariant`'s unit at `Variant ()`. Pointing (one emission at
+-- | registration) is not a unit's job: it is `Seeding`'s `announce`, and
+-- | `with`/`mvu` below close over that.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord
@@ -73,7 +72,7 @@ import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded)
 import Data.Profunctor.Strong (class Strong, first)
-import Control.Semigroupoid ((>>>))
+import Control.Category (class Category, identity, (>>>))
 import Data.Function (const)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
@@ -87,7 +86,7 @@ import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
 import Unsafe.Coerce (unsafeCoerce)
 
-class Profunctor p <= RecordToRecord p where
+class (Profunctor p, Category p) <= RecordToRecord p where
   -- | One constraint per side: `SharedRecordInputs` (rows may overlap,
   -- | label-blind broadcast) and `OwnedRecordOutputs` (disjoint rows —
   -- | one producer per field — plus `MergeableRecords`, the merge's
@@ -100,11 +99,6 @@ class Profunctor p <= RecordToRecord p where
     SharedRecordInputs i1 i2 i i12 i1x i2x =>
     OwnedRecordOutputs o1 o2 o o1l o2l =>
     p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
-  -- | The **nullary** merge — the unit: reads nothing, contributes no fields.
-  -- | On every `Category` carrier it is the wire at the unit row,
-  -- | `pempty = identity @{}`; it stays a class member so carriers without
-  -- | a `Category` can still state their unit.
-  pempty :: p {} {}
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   RecordToRecord p =>
@@ -122,20 +116,30 @@ discard first cont = bind first (\_ -> cont unit)
 
 -- | The **faceless leaf**: reads nothing — stated as subsumption in its
 -- | own signature, like the gated displays' — and contributes nothing. The
--- | unit's `lcmap`-closure,
+-- | wire's `lcmap`-closure,
 -- |
 -- | ```
--- | blank = lcmap (const {}) pempty    -- accept any record input
+-- | blank = lcmap (const {}) identity    -- accept any record input
 -- | ```
 -- |
 -- | The leaf for elements whose whole face is decorators — a channel-fed
 -- | SVG shape or styled `div` (`circle >>> attrWith "fill" f $ blank`):
 -- | the decorators read the fed row, the leaf under them reads `()` of it,
--- | which is always exact. Positions whose mechanism already subsumes
--- | (merge operands, `clicked` content, `action`'s progress slot) need no
--- | `blank` — `pempty` fits them directly.
-blank :: forall p i. RecordToRecord p => p { | i } {}
-blank = lcmap (const {}) pempty
+-- | which is always exact. Positions at `{} → {}` (chrome operands,
+-- | `action`'s progress slot when a vocabulary has no indicator) take
+-- | `pempty`, the wire pinned there.
+blank :: forall p i. Category p => Profunctor p => p { | i } {}
+blank = lcmap (const {}) identity
+
+-- | The **empty-record wire**: `identity` pinned at `{} → {}`. Not a class
+-- | member and not a unit of its own — the merge's unit *is* `identity`,
+-- | and this is that wire with its rows stated, for the positions where
+-- | inference cannot fix them: a chrome operand in a merge
+-- | (`span >>> cl "ripple" $ pempty`), a progress slot with nothing to
+-- | show (`pempty # action f`). Reads nothing, contributes nothing; its
+-- | echo of `{}` is ignored by every gate.
+pempty :: forall p. Category p => p {} {}
+pempty = identity
 
 -- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
 -- | `w`'s input its t=0 value — the entity `w` edits exists from the very

@@ -30,7 +30,7 @@
 -- |   * `VariantToVariant` — one input case reaches exactly one operand, so
 -- |     no combining is needed
 -- |   * `RecordToVariant` — needs `Monoid r`: both operands are fed and both
--- |     may emit, so two answers must combine, and `pempty` must be silence
+-- |     may emit, so two answers must combine, and the unit must be silent
 -- |
 -- | `Resolving`/`Coretaining` typecheck but are degenerate and stated here
 -- | only to record that: `resolve` can only ever take `Left` (without time
@@ -150,20 +150,18 @@ instance Cochoice (Cont r) where
     in go <<< Right
 
 instance RecordToRecord (Cont r) where
-  pempty = identity
   recordToRecord p1 p2 = wrap \k i ->
     unwrap (widenRecordInput p1)
       (\o1 -> unwrap (widenRecordInput p2)
         (\o2 -> k (Record.union (exactRow o1) (exactRow o2))) i) i
 
 instance VariantToVariant (Cont r) where
-  pempty = identity
   variantToVariant p1 p2 = wrap \k v -> case splitVariant v of
     Left v1 -> unwrap (widenVariantOutput p1) k v1
     Right v2 -> unwrap (widenVariantOutput p2) k v2
 
 instance Monoid r => RecordToVariant (Cont r) where
-  pempty = wrap \_ _ -> mempty
+  silence = wrap \_ _ -> mempty
   recordToVariant p1 p2 = wrap \k i ->
     unwrap (widenVariantOutput (widenRecordInput p1)) k i
       <> unwrap (widenVariantOutput (widenRecordInput p2)) k i

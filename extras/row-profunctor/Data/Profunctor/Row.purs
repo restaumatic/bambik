@@ -55,7 +55,7 @@
 -- | What makes such a profunctor a row profunctor is not its shape alone but
 -- | the structure that shape supports: for each shape, a **merge** combining
 -- | two profunctors over labelled rows into one over the
--- | combined row, and a **nullary unit** `pempty` for the empty row — so
+-- | combined row, with `Category`'s `identity` at the empty row as unit — so
 -- | every shape is a monoid on labelled rows, written with qualified-do
 -- | (`RecordToRecord.do`), and the labels of the merged row are exactly the
 -- | labels of the operands.
@@ -183,13 +183,15 @@
 -- | action in `Data.Profunctor.Acting` alike), both decided by the
 -- | **output side**:
 -- |
--- |   * **units are forced, not designed** — a shape's nullary merge
--- |     announces iff its output side is a product: `1_× = {}` (and `[]` at
--- |     runtime) is inhabited, so the unit announces its canonical value
--- |     (`pempty = announce {}`); `1_+ = Variant ()` (zero emitters) is
--- |     uninhabited, so the unit is silence, by parametricity. Every
--- |     starvation symptom is a sum-output unit standing where a
--- |     product-output unit was required.
+-- |   * **units are forced, not designed** — a shape's nullary merge is
+-- |     `Category`'s `identity` at the unit object wherever a wire fits
+-- |     (`1_× = {}`, `1_+ = Variant ()`; the record gates treat a
+-- |     contribution of zero fields as no contribution, so the wire is the
+-- |     unit exactly), and `silence` for the one shape no wire reaches,
+-- |     `×→+` (terminal → initial). Pointing — emitting the canonical
+-- |     value of the inhabited `1_×` — is `Seeding`'s `announce`, not a
+-- |     unit's. Every starvation symptom is a sum-behaviour standing where
+-- |     a product-behaviour was required.
 -- |   * **gates are the cost of laxity over streams** — pairing two output
 -- |     streams into one stream of pairs has one canonical implementation:
 -- |     retain each side's last value, withhold until every side has spoken.

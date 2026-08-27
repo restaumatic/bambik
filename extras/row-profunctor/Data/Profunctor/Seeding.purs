@@ -28,8 +28,8 @@
 -- | `unfolding` prime their state channels by composing a `seeded` into the
 -- | traced chain), while `with a w = announce a >>> w` is the discharge
 -- | form (`Data.Profunctor.Row.RecordToRecord`). The merge units are *not*
--- | pointed: `pempty` is the wire at the unit row (`identity @{}`), and the
--- | gates ignore a contribution of zero fields — pointing is this class's
+-- | pointed: they are `identity` at the unit object, and the record gates
+-- | ignore a contribution of zero fields — pointing is this class's
 -- | business alone. There is deliberately no `(->)` instance: a timeless
 -- | carrier has no registration moment to emit at — pointedness is exactly
 -- | what distinguishes a stateful carrier's record channels from bare
