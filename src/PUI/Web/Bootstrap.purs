@@ -42,7 +42,7 @@ import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
-import Data.Variant (case_, on) as Variant
+import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -146,15 +146,15 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 -- | `{ current, min, max, step }` travels together as one business datum, so
 -- | limits come from the data and can change while the app runs — a slider
 -- | is never silently out of range, and a range nobody supplied is a
--- | compile error rather than a wrong screen. A `step` makes it discrete,
--- | no step continuous.
+-- | compile error rather than a wrong screen. `step` is `.discrete n`
+-- | or `.continuous {}`, named like every other two-state field.
 -- |
 -- | It reports on **every drag step**, following the thumb — the plain
 -- | range input has no commit-only behaviour, hence the name — so whatever
 -- | it drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
-sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
@@ -173,9 +173,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
         Ref.write (Just q) qRef
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
-        setAttribute node "step" (case q.step of
-          Just s -> show s
-          Nothing -> "any")
+        setAttribute node "step" (Variant.match { discrete: show, continuous: \_ -> "any" } q.step)
         setValue node (show q.current)
         readout.toUser { readout: toString q.current }
         -- leaf echo: announce what was received, so the lifted stage releases

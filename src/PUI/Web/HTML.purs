@@ -100,7 +100,7 @@ import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, widenRecordInput)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (case_, on, prj)
+import Data.Variant (case_, match, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -359,9 +359,9 @@ select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
 -- | `{ current, min, max, step }` travels together as one business datum, so
 -- | limits come from the data and can change while the app runs — a slider
 -- | is never silently out of range, and a range nobody supplied is a
--- | compile error rather than a wrong screen. A `step` makes it discrete,
--- | no step continuous.
-rangeInput :: forall @l r rest. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => PUI Web { | r } { | r }
+-- | compile error rather than a wrong screen. `step` is `.discrete n`
+-- | or `.continuous {}`, named like every other two-state field.
+rangeInput :: forall @l r rest. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => PUI Web { | r } { | r }
 rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
@@ -372,9 +372,7 @@ rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $
         Ref.write (Just q) qRef
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
-        setAttribute node "step" (case q.step of
-          Just s -> show s
-          Nothing -> "any")
+        setAttribute node "step" (match { discrete: show, continuous: \_ -> "any" } q.step)
         setValue node (show q.current)
         -- leaf echo: announce what was received, so the lifted stage releases
         -- the row and any enclosing merge gate opens

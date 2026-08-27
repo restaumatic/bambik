@@ -10,13 +10,13 @@ const walk = (dir) => readdirSync(dir).flatMap((n) => {
   return statSync(p).isDirectory() ? walk(p) : p.endsWith(".purs") ? [p] : [];
 });
 
-// Boolean fields edited by a Boolean editor, and the library's own canonical
-// rows (the bounded quantity's `step`, the selector leaf protocol's `Maybe`
-// input, the checkbox's `Maybe` field) — each carries its reason.
+// Boolean fields edited by a Boolean editor, plus the one leaf-protocol
+// exception — each carries its reason.
 const allow = new Set([
-  "step :: Maybe",                       // bounded quantity: library canonical row
-  '"Terms" :: Maybe', '"Loyalty" :: Maybe', // checkbox: library leaf over Maybe
-  '"Dish" :: Maybe',                     // selector leaf protocol used bare inside `acted`
+  // potluck: the type-changing selector's *input protocol* (`Cons l (Maybe a)`)
+  // used bare inside `acted` — the gather gate must wait for a genuine pick,
+  // and `# optional`'s `unchosen` echo would open it early
+  '"Dish" :: Maybe',
   ...['"Favorite"', '"Payment protection insurance"', '"Extra shot"', '"Decaf"', '"Uppercase letters"',
       '"Symbols"', '"Lowercase letters"', '"Include a Teams link"', '"Digits"', '"Takeaway cup"',
       "\"I'd recommend it to a friend\"", '"Oscar"', '"Mark as favorite"', '"Cult"', '"Classic"']

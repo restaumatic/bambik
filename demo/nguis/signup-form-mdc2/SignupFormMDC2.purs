@@ -26,7 +26,7 @@ signupFormMDC2 =
               [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ] # required
             filledTextField @"Email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
-              checkbox @"Terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
+              checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
         ( body2 $ staticText "Pick a username to check its availability" ) # shownWhen @"unnamed" usernameStatus
         ( body2 $ RecordToRecord.do
             staticText "✗ "

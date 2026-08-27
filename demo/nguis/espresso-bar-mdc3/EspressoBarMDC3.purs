@@ -35,7 +35,7 @@ espressoBarMDC3 =
                 filterChip @"Decaf" {}
               toggleSwitch @"Takeaway cup" {}
               iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
-              checkbox @"Loyalty" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
+              checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }
               divider # shown
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem @"The usual" {} # with theUsual

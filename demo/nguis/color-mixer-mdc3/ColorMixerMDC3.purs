@@ -3,7 +3,6 @@ module ColorMixerMDC3 (colorMixerMDC3) where
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
 import ColorMixerLogic (applyPreset, duskViolet, hexText, mixOf, palette, rgb, rgbText)
-import Data.Maybe (Maybe)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, projected, toCase, updated)
@@ -32,5 +31,5 @@ chipFace { mix } = chipStyle { mix }
 chipStyle :: { mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipStyle p = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb p.mix <> ";"
 
-swatchStyle :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> String
+swatchStyle :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
 swatchStyle channels = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> rgb (mixOf channels) <> ";"

@@ -4,7 +4,7 @@ import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure)
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Number (log)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Traversable (sequence)
@@ -13,7 +13,7 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-strongMixRecipe :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String }
+strongMixRecipe :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String }
 strongMixRecipe =
   { "Length": passwordLengths 16.0
   , "Uppercase letters": true
@@ -23,10 +23,10 @@ strongMixRecipe =
   , password: ""
   }
 
-passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
-passwordLengths n = { current: n, min: 8.0, max: 64.0, step: Just 1.0 }
+passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+passwordLengths n = { current: n, min: 8.0, max: 64.0, step: .discrete 1.0 }
 
-samplePassword :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Aff [ generated :: String ]
+samplePassword :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Aff [ generated :: String ]
 samplePassword { "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = liftEffect do
   let alphabet = effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }
   chars <- sequence (replicate (round length.current) (randomCharacter alphabet))
@@ -48,10 +48,10 @@ effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowerca
             <> (if symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
-strengthText :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> String
+strengthText :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> String
 strengthText { "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = strengthGrade (entropyBits { "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols })
 
-entropyBits :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Number
+entropyBits :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Number
 entropyBits { "Length": len, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = len.current * log (toNumber (length (effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }))) / log 2.0
 
 strengthGrade :: Number -> String

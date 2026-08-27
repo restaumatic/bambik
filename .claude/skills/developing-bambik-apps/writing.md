@@ -343,8 +343,12 @@ with no `Maybe` anywhere in the booking; checkout's wizard buttons
 adopt `onward`/`back` off `onwardFrom`/`previousOf`. `Maybe` stays
 below the UI — an `index`/`find` lookup, an `Aff` result — and a
 classifier converts it at the boundary (inbox's `messageView` turns
-`find`'s `Maybe` into `reading`/`browsing`). The one `Maybe` a model row
-may still carry is one no pane is gated on (a slider's `step`).
+`find`'s `Maybe` into `reading`/`browsing`). The one `Maybe` a demo row
+still carries is potluck's `"Dish"`: the type-changing selector's *input
+protocol* (`Cons l (Maybe a)`) used bare inside `acted`, because the
+gather gate must wait for a genuine pick and `# optional`'s `unchosen`
+echo would open it — the leaf protocol showing through, not view-model
+state, and the allow-list of `scripts/check-view-model.mjs` names it.
 
 A pane whose content only exists sometimes is exactly this — for
 *displays*. An **editor** that exists only in one mode is not a payload
@@ -639,8 +643,11 @@ over a logic module, a single exported entry function.
   predicate (`clWhen isCompleted "todo-done"`, `listOf { selected:
   highlighted }`), never a bare accessor. The rule is mechanically
   checkable (`scripts/check-view-model.mjs`): `:: Maybe` and `:: Boolean`
-  may appear in a logic module only on the allow-list of Boolean-editor
-  labels and the library's own canonical rows. `Maybe` keeps its place
+  may appear as a field in a logic module only on the allow-list of
+  Boolean-editor labels (plus potluck's leaf-protocol exception). The
+  library's own rows obey it too: a bounded quantity's `step` is
+  `[ discrete :: Number, continuous :: {} ]`, and `checkbox @l @c @n`
+  edits a two-case variant the application names. `Maybe` keeps its place
   *below* the UI — `index`/`find`, parsers, `Aff` results — and a
   classifier converts it at the boundary. Role names
   live on **values** (`mvu plannedTrip`, `with emptyCanvas`) and on

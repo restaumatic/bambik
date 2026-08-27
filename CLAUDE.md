@@ -232,8 +232,9 @@ design-system **umbrella**. What they share, stated once:
   screen changes design system by changing one import. A catalogue's honest
   exclusives and honest gaps appear under their own names — the per-module
   deltas below. Bounded quantities ride one row everywhere:
-  `{ current, min, max, step }` as **model data from the seed**, re-scopable at
-  runtime, never UI config.
+  `{ current, min, max, step }` as **model data from the seed** (`step` is
+  `[ discrete :: Number, continuous :: {} ]` — a named two-state field, like every
+  other), re-scopable at runtime, never UI config.
 
 Per-catalogue deltas:
 

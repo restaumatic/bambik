@@ -44,7 +44,7 @@ import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.TraversableWithIndex (forWithIndex)
-import Data.Variant (case_, on) as Variant
+import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -178,14 +178,14 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | `{ current, min, max, step }` travels together as one business datum, so
 -- | limits come from the data and can change while the app runs — a slider
 -- | is never silently out of range, and a range nobody supplied is a
--- | compile error rather than a wrong screen. A `step` makes it discrete,
--- | no step continuous.
+-- | compile error rather than a wrong screen. `step` is `.discrete n`
+-- | or `.continuous {}`, named like every other two-state field.
 -- |
 -- | It reports on **every change**, following the drag — Fluent has no
 -- | commit-only slider — so whatever it drives should be cheap to redo, or
 -- | be `debounced` downstream. The current number is shown at the end of
 -- | the label line, since the control has no readout of its own.
-slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
       _ <- unwrap (staticText config.label)
@@ -213,9 +213,7 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
         Ref.write true busyRef
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
-        case q.step of
-          Just s -> setAttribute node "step" (show s)
-          Nothing -> removeAttribute node "step"
+        Variant.match { discrete: \s -> setAttribute node "step" (show s), continuous: \_ -> removeAttribute node "step" } q.step
         setNumberProp "valueAsNumber" node q.current
         Ref.write false busyRef
         readout.toUser { readout: toString q.current }

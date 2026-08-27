@@ -110,13 +110,13 @@ import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults
 import Data.Array (findIndex, mapWithIndex, (!!))
 import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
-import Data.Variant (case_, on) as Variant
+import Data.Variant (case_, inj, match, on, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -477,16 +477,19 @@ filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l)
 -- | clicking the words toggles the box and the whole line is a comfortable
 -- | target.
 -- |
--- | Ticked exactly while the field holds something — ticking reports the
--- | value, clearing reports nothing-chosen — so an optional part of the
--- | model *is* the box's state, with no second flag to keep in step. Use a
--- | checkbox for a fact the user states as part of a form; use
--- | `toggleSwitch` for a setting that takes effect at once.
+-- | The field is a **named two-case variant** the application spells:
+-- | `checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText …)`
+-- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
+-- | `.accepted ticked`, clearing reports `.declined {}` — so an optional part
+-- | of the model *is* the box's state under its own names, with no second
+-- | flag to keep in step and no `Maybe`. Use a checkbox for a fact the user
+-- | states as part of a form; use `toggleSwitch` for a setting that takes
+-- | effect at once.
 -- |
--- | `ticked` is what the field holds once ticked, before the model has ever
--- | supplied a value — stated by the caller (`{ ticked: {} }` for a plain
--- | yes/no fact), never conjured from the type.
-checkbox :: forall @l a r rest. IsSymbol l => Cons l (Maybe a) rest r => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
+-- | `ticked` is the ticked case's payload before the model has ever supplied
+-- | one — stated by the caller (`{ ticked: {} }` for a plain yes/no fact),
+-- | never conjured from the type.
+checkbox :: forall @l @c @n a r rest v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] rest r => Cons c a cr v => Cons n {} nr v => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
 checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   checkboxId <- liftEffect uniqueId
   aRef <- liftEffect $ Ref.new ticked
@@ -519,7 +522,7 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
   pure
     { toUser: \ma -> do
         parts.lbl.toUser {}
-        case ma of
+        case Variant.prj (Proxy @c) ma of
           Nothing -> setChecked parts.inputNode false
           Just newa -> do
             setChecked parts.inputNode true
@@ -533,7 +536,7 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
         listenNode parts.inputNode "change" do
           checked <- getChecked parts.inputNode
           a <- Ref.read aRef
-          prop (if checked then Just a else Nothing)
+          prop (if checked then Variant.inj (Proxy @c) a else Variant.inj (Proxy @n) {})
     }
 
 -- | The Material **radio group**: one choice among a handful, every option
@@ -644,26 +647,27 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | limits come from the data and can change while the app runs (a room's
 -- | capacity, a plan's ceiling) — a slider is never silently out of range,
 -- | and a range nobody supplied is a compile error rather than a wrong
--- | screen. A `step` makes it discrete, no step continuous.
+-- | screen. `step` is `.discrete n`
+-- | or `.continuous {}`, named like every other two-state field.
 -- |
 -- | It reports on **release**, once per adjustment, so one drag is one
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
-slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
-sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: Maybe Number } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
 
 -- `MDCSlider`'s value API is method-based (`getValue`/`setValue`), the one
 -- foundation here off the property-wiring convention; its bounds are
 -- read from the DOM at construction only, so a bounds change rewrites the
 -- input attributes and constructs a fresh foundation over the same markup
-sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: Maybe Number } { current :: Number, min :: Number, max :: Number, step :: Maybe Number }
+sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 sliderLeaf live label = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
@@ -687,7 +691,10 @@ sliderLeaf live label = wrap do
           pure s.comp
         _ -> do
           for_ st \s -> destroyComponent s.comp
-          configureMdcSlider node q.min q.max (fromMaybe 0.0 q.step) (isJust q.step) q.current
+          Variant.match
+            { discrete: \step -> configureMdcSlider node q.min q.max step true q.current
+            , continuous: \_ -> configureMdcSlider node q.min q.max 0.0 false q.current
+            } q.step
           comp <- newComponent material.slider."MDCSlider" node
           Ref.write (Just { comp, quantity: q }) stateRef
           pure comp
@@ -1447,7 +1454,7 @@ drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
+-- | `checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
 tooltip :: { text :: String } -> Ocular (PUI Web)
 tooltip config content = wrap do
   tipId <- liftEffect uniqueId
