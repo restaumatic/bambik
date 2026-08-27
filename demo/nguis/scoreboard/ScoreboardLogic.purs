@@ -24,13 +24,16 @@ goal { n } =
 scored :: String -> Int -> Int
 scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 
-boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: String, leader :: Maybe { team :: String, points :: Int } }
-boardSummary scores = [ { key: "summary", teams: show (length scores), leader: maximumBy (comparing _.points) scores } ]
+boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: String, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] }
+boardSummary scores = [ { key: "summary", teams: show (length scores), leader: leaderOf scores } ]
 
-standing :: { leader :: Maybe { team :: String, points :: Int } } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
-standing { leader } = case leader of
+leaderOf :: Array { team :: String, points :: Int } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
+leaderOf scores = case maximumBy (comparing _.points) scores of
   Just top -> .led top
   Nothing -> .unled {}
+
+standing :: { leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
+standing { leader } = leader
 
 pick :: Array String -> Int -> String
 pick options i = fromMaybe "" (index options (i `mod` length options))

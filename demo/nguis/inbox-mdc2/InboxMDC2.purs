@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import InboxLogic (composeMessage, deleteOpened, deletionOf, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, messageView, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText)
+import InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageCountText, messageView, mondayMail, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText)
 import PUI (applied, forCase, mvu, observed, atCase, projected, toCase, updated, with)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
@@ -23,7 +23,7 @@ inboxMDC2 =
               staticText " unread of "
               text @"messageCount" # projected messageCountText
               staticText " messages" ) # shown
-          listOf { selected: _.attention } mailboxRows
+          listOf { selected: highlighted } mailboxRows
             ( span $ Category.do
                 (staticText "● ") # shownWhen @"unread" readState
                 ( RecordToRecord.do

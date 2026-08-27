@@ -10,7 +10,7 @@ import PUI.Web (choice)
 import PUI.Web.HTML (shownWhen, body, clWhen, span, staticText, text)
 import PUI.Web.MDC2 (button, card, caption, elevation20, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Category as Category
-import TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, remainingItems, toggleTodo, visibleEntries)
+import TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, toggleTodo, visibleEntries)
 
 todoMvcMDC2 :: Effect Unit
 todoMvcMDC2 =
@@ -20,7 +20,7 @@ todoMvcMDC2 =
           Category.do
             filledTextField @"What needs to be done?" {}
             button @"Add" {} # applied addTodo
-          listOf { selected: _.done } visibleEntries (span (text @"title") # forProperty # clWhen _.done "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
+          listOf { selected: isCompleted } visibleEntries (span (text @"title") # forProperty # clWhen isCompleted "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
           segmentedButton @"Visibility"
             [ choice @"All", choice @"Active", choice @"Completed" ] # required
           Category.do

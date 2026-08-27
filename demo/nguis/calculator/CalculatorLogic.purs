@@ -8,8 +8,8 @@ import Data.Number (fromString)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 
-blankTally :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, condition :: [ sound :: {}, faulty :: {} ] }
-blankTally = { total: 0.0, operation: Nothing, entry: "0", entering: false, condition: .sound {} }
+blankTally :: { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] }
+blankTally = { total: 0.0, operation: .none {}, entry: "0", input: .settled {}, condition: .sound {} }
 
 keyPad :: Array { key :: String }
 keyPad = { key: _ } <$>
@@ -28,30 +28,34 @@ readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_
 
 pressKey
   :: String
-  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, condition :: [ sound :: {}, faulty :: {} ] }
-  -> { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean, condition :: [ sound :: {}, faulty :: {} ] }
-pressKey key tally@{ entry, entering, operation }
+  -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] }
+  -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] }
+pressKey key tally@{ entry, operation, input }
   | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey key blankTally
   | key == "C" = blankTally
   | key == "±" = tally { entry = negated entry }
-  | key == "." && entering =
+  | key == "." && typing input =
       if contains (Pattern ".") entry then tally else tally { entry = entry <> "." }
-  | key == "." = tally { entry = "0.", entering = true }
-  | key `elem` operatorKeys = case settle { total: tally.total, operation, entry, entering } of
+  | key == "." = tally { entry = "0.", input = .entering {} }
+  | key `elem` operatorKeys = case settle { total: tally.total, operation, entry, input } of
       Just total -> tally
         { total = total
-        , operation = if key == "=" then Nothing else Just key
+        , operation = if key == "=" then .none {} else .pending { key }
         , entry = format total
-        , entering = false
+        , input = .settled {}
         }
       Nothing -> blankTally { condition = .faulty {} }
-  | entering = tally { entry = if entry == "0" then key else entry <> key }
-  | true = tally { entry = key, entering = true }
+  | typing input = tally { entry = if entry == "0" then key else entry <> key }
+  | true = tally { entry = key, input = .entering {} }
 
-settle :: { total :: Number, operation :: Maybe String, entry :: String, entering :: Boolean } -> Maybe Number
-settle tally@{ entering, total, entry } = case tally.operation of
-  Just operation | entering -> compute operation total (entryValue { entry })
-  _ -> Just (entryValue { entry })
+typing :: [ entering :: {}, settled :: {} ] -> Boolean
+typing = match { entering: \_ -> true, settled: \_ -> false }
+
+settle :: { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ] } -> Maybe Number
+settle { operation, input, total, entry } = match
+  { pending: \p -> if typing input then compute p.key total (entryValue { entry }) else Just (entryValue { entry })
+  , none: \_ -> Just (entryValue { entry })
+  } operation
 
 compute :: String -> Number -> Number -> Maybe Number
 compute "+" a b = Just (a + b)

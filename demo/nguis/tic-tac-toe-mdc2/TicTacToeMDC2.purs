@@ -30,8 +30,8 @@ ticTacToeMDC2 =
                           $ text @"mark" # forProperty )) # foreach @"key" cells ) # toCase @"cellPicked" _.key ) # updated (match { cellPicked: claimCell })
           button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
       ) # mvu openingPosition
-cellFace :: { mark :: String, win :: Boolean } -> String
-cellFace { win } = cellStyle <> if win then "background: #a5d6a7;" else "background: #eceff1;"
+cellFace :: { mark :: String, line :: [ winning :: {}, plain :: {} ] } -> String
+cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line
 
 cellStyle :: String
 cellStyle =

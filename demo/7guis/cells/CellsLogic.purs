@@ -14,7 +14,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
-orderSheet :: { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+orderSheet :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 orderSheet =
   { cells: fromHomogeneous
       { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -22,7 +22,7 @@ orderSheet =
       , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
       , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
       }
-  , selected: Nothing
+  , selected: .none {}
   , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
 
@@ -32,31 +32,33 @@ cols = 26
 rows :: Int
 rows = 30
 
-gridRows :: { cells :: Object String, selected :: Maybe String } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, header :: Boolean, text :: String, sel :: Boolean } }
+gridRows :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ] } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, kind :: [ header :: {}, cell :: {} ], text :: String, status :: [ selected :: {}, unselected :: {} ] } }
 gridRows m =
   let
     values = evalSheet m.cells
     colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
     colIndices = range 0 (cols - 1)
     headerCells =
-      [ { domKey: "h", key: "", header: true, text: "", sel: false } ]
-        <> (colIndices <#> \c -> { domKey: "h" <> show c, key: "", header: true, text: colName c, sel: false })
+      [ { domKey: "h", key: "", kind: .header {}, text: "", status: .unselected {} } ]
+        <> (colIndices <#> \c -> { domKey: "h" <> show c, key: "", kind: .header {}, text: colName c, status: .unselected {} })
     rowCells r =
-      [ { domKey: "l" <> show r, key: "", header: true, text: show r, sel: false } ]
-        <> (colIndices <#> \c -> let key = colName c <> show r in { domKey: key, key, header: false, text: fromMaybe "" (lookup key values), sel: m.selected == Just key })
+      [ { domKey: "l" <> show r, key: "", kind: .header {}, text: show r, status: .unselected {} } ]
+        <> (colIndices <#> \c -> let key = colName c <> show r in { domKey: key, key, kind: .cell {}, text: fromMaybe "" (lookup key values), status: statusOf key })
+    statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
   in
     [ { rowKey: "header", cells: headerCells } ]
       <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
 
-selectCell :: String -> { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+selectCell :: String -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 selectCell "" m = m
-selectCell key m = m { selected = Just key, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
+selectCell key m = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
-commit :: { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: Maybe String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
-commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = case selected of
-  Just k | lookup k m.cells /= Just formula ->
-    m { cells = if formula == "" then delete k m.cells else insert k formula m.cells }
-  _ -> m
+commit :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match
+  { picked: \p ->
+      if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m
+  , none: \_ -> m
+  } selected
 
 evalSheet :: Object String -> Object String
 evalSheet cells = foldl insertVal empty keys
@@ -209,5 +211,5 @@ evalExpr cells visiting = go
       Right n -> .numV n
       Left e -> .errV e
 
-selectedName :: { selected :: Maybe String } -> String
-selectedName { selected } = fromMaybe "—" selected
+selectedName :: { selected :: [ picked :: { name :: String }, none :: {} ] } -> String
+selectedName { selected } = match { picked: _.name, none: \_ -> "—" } selected

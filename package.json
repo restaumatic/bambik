@@ -9,7 +9,8 @@
     "api-docs": "spago docs --format markdown",
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "bundle-demos": "spago build && node scripts/bundle.mjs",
-    "deploy-demos": "scp -r demo/index.html demo/page.js demo/7guis/ demo/nguis/ xyz:/var/www/html/bambik/demo/"
+    "deploy-demos": "scp -r demo/index.html demo/page.js demo/7guis/ demo/nguis/ xyz:/var/www/html/bambik/demo/",
+    "check-view-model": "node scripts/check-view-model.mjs"
   },
   "dependencies": {
     "@fluentui/web-components": "^3.0.2",

@@ -619,9 +619,30 @@ over a logic module, a single exported entry function.
 - **No nominal types in UI.** A view-model type is one-off and specific
   to this UI, so it earns no name: no `data`, no `newtype`, no `type`
   synonym for anything a UI component displays, emits, or is configured with.
-  Anonymous record rows for all-at-once, anonymous variant rows for
-  one-at-a-time, `{}` for unit payloads (never `Unit`), primitives at
-  the leaves, `Array`/`Maybe` as the only generic containers. Role names
+  **A view-model row consists of records, variants, primitives and
+  `Array` — nothing else.** Anonymous record rows for all-at-once,
+  anonymous variant rows for one-at-a-time, `{}` for unit payloads
+  (never `Unit`), `String`/`Number`/`Int` at the leaves, and `Array` as
+  the single container — the one recursion rows cannot express, which
+  the collection algebra (`foreach`/`acted`/`edited`) is built on. No
+  `Maybe`: it is `[ just :: a, nothing :: {} ]` with the cases unnamed,
+  and every one of them has a name the business already uses
+  (`selected :: [ picked { index }, none ]`, `opened :: [ message { id },
+  none ]`, `approval :: [ approved { attempt }, pending ]`,
+  `operation :: [ pending { key }, none ]`). No `Boolean` **unless a
+  Boolean editor edits it** — a `checkbox`/`toggleSwitch`/`filterChip`/
+  `iconToggle` over `"Decaf"` or `"Include a Teams link"` is honest; a
+  flag nobody edits as a Boolean is a phase with two unnamed states
+  (`status :: [ unread, read ]`, `[ active, completed ]`,
+  `kind :: [ header, cell ]`, `drag :: [ adjusting, settled ]`,
+  `line :: [ winning, plain ]`), and a styling test over it is a named
+  predicate (`clWhen isCompleted "todo-done"`, `listOf { selected:
+  highlighted }`), never a bare accessor. The rule is mechanically
+  checkable (`scripts/check-view-model.mjs`): `:: Maybe` and `:: Boolean`
+  may appear in a logic module only on the allow-list of Boolean-editor
+  labels and the library's own canonical rows. `Maybe` keeps its place
+  *below* the UI — `index`/`find`, parsers, `Aff` results — and a
+  classifier converts it at the boundary. Role names
   live on **values** (`mvu plannedTrip`, `with emptyCanvas`) and on
   business function names, never on types. Nominal types belong below
   the UI — a directly recursive type (a formula AST) or an ecosystem API

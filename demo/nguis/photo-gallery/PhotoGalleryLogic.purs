@@ -1,4 +1,4 @@
-module PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, landscapesOpen, openAlbum) where
+module PhotoGalleryLogic (albumChoices, albumPhotos, developedPhoto, isOpen, landscapesOpen, openAlbum) where
 
 import Prelude (($), (*), (+), (<#>), (<>), (==), mod, show)
 
@@ -8,6 +8,7 @@ import Data.Foldable (sum)
 import Data.Maybe (maybe)
 import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
+import Data.Variant (match)
 
 landscapesOpen :: { album :: String }
 landscapesOpen = { album: "Landscapes" }
@@ -35,8 +36,11 @@ albumCatalogue =
     }
   ]
 
-albumChoices :: { album :: String } -> Array { name :: String, current :: Boolean }
-albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, current: a.name == album }
+albumChoices :: { album :: String } -> Array { name :: String, state :: [ open :: {}, closed :: {} ] }
+albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, state: if a.name == album then .open {} else .closed {} }
+
+isOpen :: { name :: String, state :: [ open :: {}, closed :: {} ] } -> Boolean
+isOpen { state } = match { open: \_ -> true, closed: \_ -> false } state
 
 openAlbum :: String -> { album :: String }
 openAlbum album = { album }

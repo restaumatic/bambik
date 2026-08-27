@@ -38,8 +38,5 @@ crudShoelace = do
                   blank # action (updatePerson catalogue) # atCase @"Update"
                   blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
-entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
-entryFace { selected } = entryStyle selected
-
-entryStyle :: Boolean -> String
-entryStyle selected = "padding: 4px 8px; cursor: pointer;" <> (if selected then " background: var(--sl-color-primary-100, #cde);" else "")
+entryFace :: { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: var(--sl-color-primary-100, #cde);", unselected: \_ -> "" } status

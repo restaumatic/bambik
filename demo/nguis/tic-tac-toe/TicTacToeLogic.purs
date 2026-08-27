@@ -16,10 +16,10 @@ openingPosition =
       ]
   }
 
-cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: String, win :: Boolean }
+cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: String, line :: [ winning :: {}, plain :: {} ] }
 cells { board } =
   let winners = fromMaybe [] (winningLine board)
-  in range 0 8 <#> \i -> { key: show i, mark: maybe "" markText (index board i), win: i `elem` winners }
+  in range 0 8 <#> \i -> { key: show i, mark: maybe "" markText (index board i), line: if i `elem` winners then .winning {} else .plain {} }
 
 markText :: [ x :: {}, o :: {}, free :: {} ] -> String
 markText = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" }

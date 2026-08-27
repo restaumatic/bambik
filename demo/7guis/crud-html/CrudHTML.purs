@@ -42,8 +42,5 @@ crudHTML = do
                 blank # action (updatePerson catalogue) # atCase @"update"
                 blank # action (deletePerson catalogue) # atCase @"delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
   ) # with {}
-entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
-entryFace { selected } = entryStyle selected
-
-entryStyle :: Boolean -> String
-entryStyle selected = "padding: 4px 8px; cursor: pointer;" <> (if selected then " background: #cde;" else "")
+entryFace :: { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

@@ -9,7 +9,7 @@ import PUI (action, mvu, forProperty, atCase, projected, toCase, updated)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, bodySmall, card, elevation5, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Category as Category
-import WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, rememberReport, servedReportsText, temperatureText, warsawBulletin, windText)
+import WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, isCurrent, rememberReport, servedReportsText, temperatureText, warsawBulletin, windText)
 
 weatherMDC3 :: Effect Unit
 weatherMDC3 =
@@ -17,7 +17,7 @@ weatherMDC3 =
     elevation5 $
       card $ ( Category.do
           ( Category.do
-              listOf { selected: _.shown } forecastRequests (text @"city" # forProperty) # toCase @"cityPicked" identity
+              listOf { selected: isCurrent } forecastRequests (text @"city" # forProperty) # toCase @"cityPicked" identity
               indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
           ( displayLarge $ RecordToRecord.do
               text @"temperature" # projected temperatureText
