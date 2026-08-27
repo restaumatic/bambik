@@ -5,7 +5,7 @@ import Prelude (Unit, const, (#), ($))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (projection, foreach, mvu, projected, toCase, updated, with)
+import PUI (foreach, mvu, projection, toCase, updated, with)
 import PUI.Web.HTML (shown, body, clicked, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Category as Category
@@ -29,6 +29,6 @@ shoppingCartMDC2 =
                       text @"lineTotal" )) # foreach @"product" cartLines ) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
           ( body1 $ RecordToRecord.do
               staticText "Total: $"
-              text @"grandTotal" # projected grandTotalText ) # shown
+              text @"order" # projection grandTotalText ) # shown
           button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
       ) # mvu emptyCart

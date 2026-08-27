@@ -29,11 +29,11 @@ quizPhase { question, correct } = case index questionCatalogue question of
   Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
   Nothing -> .finished { correct, total: length questionCatalogue }
 
-progressFraction :: { question :: Int } -> Number
-progressFraction { question } = toNumber question / toNumber (length questionCatalogue)
+progressFraction :: Int -> Number
+progressFraction question = toNumber question / toNumber (length questionCatalogue)
 
-questionNumberText :: { question :: Int } -> String
-questionNumberText { question } = show (min (question + 1) (length questionCatalogue))
+questionNumberText :: Int -> String
+questionNumberText question = show (min (question + 1) (length questionCatalogue))
 
 questionCountText :: String
 questionCountText = show (length questionCatalogue)

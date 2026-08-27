@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import Data.Variant.Case (caseText)
 import PotluckLogic (guestCount, invitation)
-import PUI (acted, field, foreach, projection, projected, with)
+import PUI (acted, field, foreach, projection, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, span, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
@@ -18,7 +18,7 @@ potluckMDC2 =
     elevation20 $
       card $ ( Category.do
           ( body2 $ RecordToRecord.do
-              text @"guestCount" # projected guestCount
+              text @"guests" # projection guestCount
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." ) # shown
           ( list $
               ( listItem $ RecordToRecord.do

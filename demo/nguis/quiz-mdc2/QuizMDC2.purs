@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, const, show)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (projection, mvu, forProperty, projected, toCase, updated)
+import PUI (forProperty, mvu, projection, toCase, updated)
 import PUI.Web.HTML (shown, body, provided, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Category as Category
@@ -17,10 +17,10 @@ quizMDC2 =
     elevation20 $
       card $ ( Category.do
           ( RecordToRecord.do
-              linearProgress @"progress" # projected progressFraction
+              linearProgress @"question" # projection progressFraction
               body1 RecordToRecord.do
                 staticText "Question "
-                text @"questionNumber" # projected questionNumberText
+                text @"question" # projection questionNumberText
                 staticText " of "
                 staticText questionCountText
                 staticText " · Score "

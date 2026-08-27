@@ -211,5 +211,5 @@ evalExpr cells visiting = go
       Right n -> .numV n
       Left e -> .errV e
 
-selectedName :: { selected :: [ picked :: { name :: String }, none :: {} ] } -> String
-selectedName { selected } = match { picked: _.name, none: \_ -> "—" } selected
+selectedName :: [ picked :: { name :: String }, none :: {} ] -> String
+selectedName = match { picked: _.name, none: \_ -> "—" }

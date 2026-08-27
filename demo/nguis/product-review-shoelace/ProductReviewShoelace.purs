@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine)
-import PUI (forCase, projection, mvu, projected, required)
+import PUI (forCase, mvu, projection, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
@@ -32,6 +32,6 @@ productReviewShoelace =
           text @"Headline" # projection headlineQuote
           staticText " · owned "
           text @"How long have you owned it?" # projection caseText
-          text @"recommendNote" # projected recommendNote ) # shown
+          text @"I'd recommend it to a friend" # projection recommendNote ) # shown
       button @"Submit review" {}
       toast # forCase @"Submit review" submittedLine

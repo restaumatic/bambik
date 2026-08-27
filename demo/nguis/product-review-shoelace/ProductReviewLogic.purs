@@ -25,8 +25,8 @@ forReviewer { "Nickname": nickname } = case trim nickname of
   "" -> ""
   name -> ", " <> name
 
-recommendNote :: { "I'd recommend it to a friend" :: Boolean } -> String
-recommendNote { "I'd recommend it to a friend": recommend } = if recommend then " · would recommend" else ""
+recommendNote :: Boolean -> String
+recommendNote recommend = if recommend then " · would recommend" else ""
 
 headlineQuote :: String -> String
 headlineQuote headline = case trim headline of

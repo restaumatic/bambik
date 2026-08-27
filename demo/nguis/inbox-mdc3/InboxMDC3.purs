@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageCountText, messageView, mondayMail, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText)
-import PUI (applied, forCase, mvu, observed, atCase, projected, toCase, updated, with)
+import PUI (applied, atCase, forCase, mvu, observed, projection, toCase, updated, with)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
@@ -19,9 +19,9 @@ inboxMDC3 =
     elevation5 $
       card $ ( Category.do
           ( bodySmall $ RecordToRecord.do
-              text @"unreadCount" # projected unreadCountText
+              text @"messages" # projection unreadCountText
               staticText " unread of "
-              text @"messageCount" # projected messageCountText
+              text @"messages" # projection messageCountText
               staticText " messages" ) # shown
           listOf { selected: highlighted } mailboxRows
             ( span $ Category.do

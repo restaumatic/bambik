@@ -39,8 +39,8 @@ bookedLine { "Meeting title": title, "Room": room, "Duration (min)": duration } 
 headcount :: Number -> String
 headcount attendees = show (round attendees)
 
-onlineNote :: { "Include a Teams link" :: Boolean } -> String
-onlineNote { "Include a Teams link": online } = if online then ", with a Teams link" else ""
+onlineNote :: Boolean -> String
+onlineNote online = if online then ", with a Teams link" else ""
 
 titleText :: String -> String
 titleText title = case trim title of

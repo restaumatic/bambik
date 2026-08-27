@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, show)
 import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserLogic (favoriteMark, favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
-import PUI (foreach, projection, mvu, projected, toCase, updated)
+import PUI (foreach, mvu, projection, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, shownWhen, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
@@ -37,6 +37,6 @@ movieBrowserMDC3 =
                         span (text @"year") # projection show
                         span ( RecordToRecord.do
                             staticText "★ "
-                            text @"rating" # projected ratingText ) ) # shown
+                            text @"rating" # projection ratingText ) ) # shown
                     iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
       ) # mvu movieCatalogue

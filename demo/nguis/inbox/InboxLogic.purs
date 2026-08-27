@@ -18,11 +18,11 @@ mondayMail =
   , nextId: 4
   }
 
-unreadCountText :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> String
-unreadCountText { messages } = show (length (filter isUnread messages))
+unreadCountText :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } -> String
+unreadCountText messages = show (length (filter isUnread messages))
 
-messageCountText :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> String
-messageCountText { messages } = show (length messages)
+messageCountText :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } -> String
+messageCountText messages = show (length messages)
 
 mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> Array { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] }
 mailboxRows { messages, opened } = messages # map \g ->

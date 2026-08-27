@@ -15,5 +15,5 @@ invitation =
       ]
   }
 
-guestCount :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
-guestCount { guests } = show (length guests)
+guestCount :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } -> String
+guestCount guests = show (length guests)

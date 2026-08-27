@@ -36,8 +36,8 @@ cartLines { order } = map line order
   where
   line { product, quantity } = { product: product.name, quantity: show quantity, lineTotal: formatMoney (quantity * product.unitPrice) }
 
-grandTotalText :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
-grandTotalText { order } = formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 order)
+grandTotalText :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } -> String
+grandTotalText order = formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 order)
 
 formatMoney :: Int -> String
 formatMoney cents = show (cents / 100) <> "." <> pad (mod cents 100)

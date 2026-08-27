@@ -1,4 +1,4 @@
-module WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, isCurrent, rememberReport, servedReportsText, temperatureText, warsawBulletin, windText) where
+module WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, isCurrent, rememberReport, temperatureText, warsawBulletin, windText) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (==))
 
@@ -48,23 +48,20 @@ forecastRequests :: { report :: { city :: String, temperature :: Number, conditi
 forecastRequests { servedReports, report } = climateTable <#> \r ->
   { city: r.city, sample: servedReports, focus: if r.city == report.city then .current {} else .other {} }
 
-temperatureText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-temperatureText { report } = show report.temperature
-
-conditionText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-conditionText { report } = report.condition
-
-cityText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-cityText { report } = report.city
-
-humidityText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-humidityText { report } = show report.humidity
-
-windText :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
-windText { report } = show report.wind
-
-servedReportsText :: { servedReports :: Int } -> String
-servedReportsText { servedReports } = show servedReports
-
 isCurrent :: { city :: String, sample :: Int, focus :: [ current :: {}, other :: {} ] } -> Boolean
 isCurrent { focus } = match { current: \_ -> true, other: \_ -> false } focus
+
+temperatureText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
+temperatureText report = show report.temperature
+
+conditionText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
+conditionText report = report.condition
+
+cityText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
+cityText report = report.city
+
+humidityText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
+humidityText report = show report.humidity
+
+windText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
+windText report = show report.wind

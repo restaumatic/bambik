@@ -42,8 +42,8 @@ favoriteMark { title, "Favorite": favorite } = { title, "Favorite": favorite }
 markFavorite :: { title :: String, "Favorite" :: Boolean } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } }
 markFavorite { title, "Favorite": favorite } { movies } = { movies: map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) movies }
 
-ratingText :: { rating :: Number } -> String
-ratingText { rating } = toStringWith (fixed 1) rating
+ratingText :: Number -> String
+ratingText rating = toStringWith (fixed 1) rating
 
 favoriteCount :: { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> Int
 favoriteCount { movies } = length (filter _."Favorite" movies)
