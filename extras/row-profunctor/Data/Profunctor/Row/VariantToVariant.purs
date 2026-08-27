@@ -11,9 +11,10 @@
 -- | focus/background dispatch `splitVariant` on the floor in
 -- | `Data.Profunctor.Row` — neither mentions a row profunctor.
 -- |
--- | The **nullary** operator is `Category`'s own `identity` at the empty
--- | variant — the merge has no unit of its own (`Category` is a
--- | superclass): `variantToVariant identity g = g`. Both empty-variant ends
+-- | The merge has **no unit of its own**; its unit law is conditional on
+-- | the carrier: *if* `p` is also a `Category`, `identity` at the empty
+-- | variant must play well with it, `variantToVariant identity g = g =
+-- | variantToVariant g identity`. Both empty-variant ends
 -- | are uninhabited, so the wire there can neither receive nor emit: it is
 -- | silence, forced, and any silent element of that type is equal to it.
 -- |
@@ -40,7 +41,7 @@ module Data.Profunctor.Row.VariantToVariant
   )
   where
 
-import Control.Category (class Category, identity)
+import Control.Category (identity)
 import Data.Either (Either(..), either)
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
@@ -66,7 +67,7 @@ import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class
 bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
 bracketed f g w = dimap f g (looped w)
 
-class (Profunctor p, Category p) <= VariantToVariant p where
+class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
     OwnedVariantInputs i1 i2 i i1l i2l =>
     SharedVariantOutputs o1 o2 o o12 o1x o2x =>

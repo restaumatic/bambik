@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
-import PUI (action, debounced, forCases, mvu, pempty, required)
+import PUI (action, debounced, forCases, mvu, required, blank)
 import PUI.Web.Bootstrap (button, card, select, textField, toast)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownCase, body, p, staticText, text)
@@ -35,5 +35,5 @@ flightBookerBootstrap =
               staticText ", back "
               text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
-      pempty # action (match { "Book": submit })
+      blank # action (match { "Book": submit })
       toast # forCases bookingLine

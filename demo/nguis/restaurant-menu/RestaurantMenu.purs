@@ -4,7 +4,7 @@ import Prelude (identity, (#), ($), (>>>), Unit, map)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (atField, foreach, forProperty, pempty, with)
+import PUI (atField, foreach, forProperty, with, static)
 import PUI.Web.HTML (a, article, blockquote, body, cl, div, footer, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
 import PUI.Web.SVG as SVG
 import RestaurantMenuLogic (courses)
@@ -14,7 +14,7 @@ restaurantMenu =
   body $ ( article >>> cl "menu" $ RecordToRecord.do
     header >>> cl "menu-header" $ RecordToRecord.do
       SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
-        SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47" $ pempty
+        static (SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47")
         SVG.text >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
           >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
@@ -27,7 +27,7 @@ restaurantMenu =
             ( li >>> cl "dish" $ RecordToRecord.do
                 div >>> cl "dish-head" $ RecordToRecord.do
                   span >>> cl "dish-name" $ text @"name"
-                  span >>> cl "dish-dots" $ pempty
+                  static (span >>> cl "dish-dots")
                   span >>> cl "dish-price" $ RecordToRecord.do
                     staticText "€"
                     text @"price"

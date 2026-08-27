@@ -76,7 +76,7 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| an `Aff` action on an event, with a busy indicator | `indeterminateLinearProgress @"busy" # action (match { "Book": submit })`; `pempty # action …` where the vocabulary has no indicator | flight-booker; reorder; order-form's distance estimate (inside a `looped` form the button is the occurrence — an action fed by the broadcast would re-run on every turn) | PUI.purs (`action`) |
+| an `Aff` action on an event, with a busy indicator | `indeterminateLinearProgress @"busy" # action (match { "Book": submit })`; `blank # action …` where the vocabulary has no indicator | flight-booker; reorder; order-form's distance estimate (inside a `looped` form the button is the occurrence — an action fed by the broadcast would re-run on every turn) | PUI.purs (`action`) |
 | an action at load, before any input | `indeterminateLinearProgress @"busy" # action loadOrder` as the first stage, the app closed with `# with {}` | order-form | writing.md *App shape* |
 | a periodic step | `every tickPeriod tick` as a stage | stopwatch, scoreboard | PUI.purs (`every`) |
 | narrate an event as it passes, without consuming it | `status # observed` | payment's retry toast | PUI.purs (`observed`) |

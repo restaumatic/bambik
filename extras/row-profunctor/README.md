@@ -22,8 +22,9 @@ carrier dependency, but a `effect` package pin would ride along.) What this
 root defines is a general algebra:
 
 - **Four merge classes**, one per direction, each the label-strictified
-  `(M, N)`-monoidal structure for `M, N ∈ {×, +}` — with its nullary unit
-  `pempty`, so every direction is a monoid on labelled rows.
+  `(M, N)`-monoidal structure for `M, N ∈ {×, +}`; the units are borrowed
+  from `Category` (`identity` at the unit object) wherever a wire fits, so
+  every direction is a monoid on labelled rows.
 - **Row-granularity strengths and co-strengths**, the row forms of the optics
   in `extras/lenses`.
 - **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —

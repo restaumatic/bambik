@@ -390,7 +390,7 @@ It involves only:
   * design system basic building blocks and oculars
   * business lenses, prisms etc
   * composition of building blocks with `Endo.do`, `Sum.do`, `Semigroupoid.do` blocks
-  * `>>>`, `pempty`, `$`, `(` and `)`
+  * `>>>`, `static`, `$`, `(` and `)`
 
 as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/nguis/order-form-mdc2/) ([code](https://github.com/restaumatic/bambik/blob/main/demo/nguis/order-form-mdc2/OrderFormMDC2.purs)).
 

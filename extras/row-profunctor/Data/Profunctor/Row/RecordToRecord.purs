@@ -28,8 +28,9 @@
 -- |     `Colens` optic's row form; the optic itself is in
 -- |     `Data.Lens.Colens`).
 -- |
--- | The **nullary** operator is `Category`'s own `identity` at the unit row
--- | — the merge has no unit of its own (`Category` is a superclass):
+-- | The merge has **no unit of its own**. Its unit law is conditional on
+-- | the carrier: *if* `p` is also a `Category`, `identity` at the unit row
+-- | must play well with the merge —
 -- |
 -- | ```
 -- | recordToRecord identity g = g = recordToRecord g identity     -- identity :: p {} {}
@@ -60,7 +61,6 @@ module Data.Profunctor.Row.RecordToRecord
   , required
   , field
   , muted
-  , pempty
   , subStrong
   )
   where
@@ -86,7 +86,7 @@ import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
 import Unsafe.Coerce (unsafeCoerce)
 
-class (Profunctor p, Category p) <= RecordToRecord p where
+class Profunctor p <= RecordToRecord p where
   -- | One constraint per side: `SharedRecordInputs` (rows may overlap,
   -- | label-blind broadcast) and `OwnedRecordOutputs` (disjoint rows —
   -- | one producer per field — plus `MergeableRecords`, the merge's
@@ -116,7 +116,7 @@ discard first cont = bind first (\_ -> cont unit)
 
 -- | The **faceless leaf**: reads nothing — stated as subsumption in its
 -- | own signature, like the gated displays' — and contributes nothing. The
--- | wire's `lcmap`-closure,
+-- | wire's `lcmap`-closure (so a `Category` carrier),
 -- |
 -- | ```
 -- | blank = lcmap (const {}) identity    -- accept any record input
@@ -125,21 +125,12 @@ discard first cont = bind first (\_ -> cont unit)
 -- | The leaf for elements whose whole face is decorators — a channel-fed
 -- | SVG shape or styled `div` (`circle >>> attrWith "fill" f $ blank`):
 -- | the decorators read the fed row, the leaf under them reads `()` of it,
--- | which is always exact. Positions at `{} → {}` (chrome operands,
--- | `action`'s progress slot when a vocabulary has no indicator) take
--- | `pempty`, the wire pinned there.
+-- | which is always exact — `action`'s progress slot included, when a
+-- | vocabulary has no indicator (`blank # action f`). An *element* with
+-- | nothing in it is the other static, `PUI.static` (an ocular applied to
+-- | the wire at `{} → {}`).
 blank :: forall p i. Category p => Profunctor p => p { | i } {}
 blank = lcmap (const {}) identity
-
--- | The **empty-record wire**: `identity` pinned at `{} → {}`. Not a class
--- | member and not a unit of its own — the merge's unit *is* `identity`,
--- | and this is that wire with its rows stated, for the positions where
--- | inference cannot fix them: a chrome operand in a merge
--- | (`span >>> cl "ripple" $ pempty`), a progress slot with nothing to
--- | show (`pempty # action f`). Reads nothing, contributes nothing; its
--- | echo of `{}` is ignored by every gate.
-pempty :: forall p. Category p => p {} {}
-pempty = identity
 
 -- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
 -- | `w`'s input its t=0 value — the entity `w` edits exists from the very

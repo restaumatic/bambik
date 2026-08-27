@@ -110,7 +110,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | Word | What it is |
   | --- | --- |
   | `silence` | the silent UI component, `×→+` shaped `{ \| i } → [ \| o ]`; silence forced by parametricity |
-  | `blank` | the faceless *record*-output leaf `{ \| i } → {}`, the unit's `lcmap`-closure; for elements whose whole face is decorators |
+  | `blank` | the faceless *record*-output leaf `{ \| i } → {}`, the wire's `lcmap`-closure; for elements whose whole face is decorators, and `action`'s slot when there is no indicator |
+  | `static` | an element with nothing in it — an ocular applied to the wire, pinned `{} → {}` (`static (span >>> cl "ripple")`); with `staticText`/`staticHTML` the three statics |
   | `announce` | the **point**, `Seeding`'s one primitive: one registration emission of `a` out of the terminal record, feeds ignored — what `with`/`mvu` close over |
   | `with` | discharge the initial-state obligation, `announce a >>> w`; record-shaped on the **input** side only and output-polymorphic, so it closes record pipelines *and* seeds a `×→+` emitter's replay payload — `button @l {…} # with patch`, leaf leading the line |
   | `mvu` | the named app shape, `with seed (looped w)`, closed to `{}` |
@@ -130,7 +131,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `resolveFor`, `debouncedTextField`) — never `Milliseconds`.
   `synced`, `latch` and `constantly` are **deleted**: ensembles are `bracketed`
   record merges, and `constantly` was `()`-subsumption in disguise (positions
-  whose mechanism subsumes take `pempty` directly; constant catalogues enter
+  whose mechanism subsumes take `blank` directly; constant catalogues enter
   through the consuming mechanism's projection argument).
 - **src/PUI/Web.purs** - the carrier **and the root of the web layer**: DOM monad (`Web = StateT DOM Effect`), `Node`, DOM building blocks (`element`, `attachable`, `runDomInNode`) and FFI — no UI components. Everything browser-specific is a submodule of it: the element vocabularies `PUI.Web.HTML`/`PUI.Web.SVG` and one module per design system (`PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`, `PUI.Web.Fluent`, `PUI.Web.Bootstrap`), all under **src/PUI/Web/** — so the carrier-independent algebra (`PUI`, `Data.Profunctor.*`) stays visibly separate from the web specialization
 - **src/PUI/Web/HTML.purs** — the 1-1 HTML vocabulary over the carrier.
@@ -252,7 +253,7 @@ lens retains (runtime completeness by construction; freshness rests on the
 enclosing loop's re-broadcast) — with hand-fused chrome where abstract
 labels can't flow through the merges' `Nub`, while all-chrome groups have
 concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
-(`staticText`/`staticHTML`/`pempty` at `{} → {}`). Code order = DOM order.
+(`staticText`/`staticHTML`/`static` at `{} → {}`). Code order = DOM order.
 - **No canonical labels: leaves state business labels, adopters derive them** (L3).
 
   every canonical-row leaf is **label-indexed**: the business label is a visible type argument on the leaf itself — `text @"Total"`, `filledTextField @"First name" {}`, `select @"Milk" cfg opts`, `button @"Submit order" {}` — so a merge operand or emitter states its row once, at the leaf, and nothing in application code ever says `value`/`clicked`/`event`.
@@ -273,7 +274,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
   - **extras/qualified-do/QualifiedDo/Category.purs** — the pipeline sugar: `QualifiedDo.Semigroupoid` at `Category`, `bind`/`discard` verbatim, so `Category.do` names the structure a pipeline composes in (unit `identity`, the wire); qualified-do stops at `Semigroupoid`, so this is a liftable complement like the lens and profunctor roots. Every demo imports it `as Category`.
   - All five roots are covered by the single glob `extras/**/*.purs` in spago.dhall's `sources` beside `src/**/*.purs`, and watched by scripts/dev.mjs. **Downstream caveat**: spago globs a git dependency as `.spago/<pkg>/<ver>/src/**/*.purs` — hardcoded, ignoring the package's own `sources` (the same reason the bootstrap must spell out the dependency list) — so modules outside `src/` are invisible to a consuming app. A tag carrying this layout therefore needs the app's own `sources` to add `.spago/bambik/<tag>/extras/**/*.purs`, which is why bootstrap.md's spago.dhall step carries that second glob; one glob covers all four roots, and it is tag-pinned, so it moves with `bambik.version`. The row layer's combinators are these optics at row granularity (`feedback` a `Colens`, `iterate` a `Coprism`, `folding` a `Coshutter`, `unfolding` a `Coreel`, `subResolving`/`subRetaining` a `Shutter`/`Reel`)
 - **extras/row-profunctor/Data/Profunctor/** - `Seeding` (**pointedness as carrier structure**: `class (Category p, Choice p) <= Seeding p` with `announce :: a -> p {} a`, the point — one registration emission out of the terminal record, feeds ignored; `seeded a`, the pointed wire, is derived through `Choice`; `with`/`mvu` and the trace forms' seed arguments close over it; deliberately no `(->)` instance — a timeless carrier has no registration moment), `Looping` (**self-reference as carrier structure**, `Seeding`'s sibling: `class Profunctor p <= Looping p` with the row-shaped `looped :: p { | r } { | r } -> p { | r } { | r }`, the `×`-diagonal self-trace no ecosystem class reaches — gated `unfirst` deadlocks on self-feed; laws are the trace axioms at the diagonal (yanking, dinaturality, idempotence); no `(->)` instance — feedback on a timeless carrier is `fix`, a computation; carries `mvu` and `bracketed` as its carrier-agnostic derivations) + the `Row/` layer; everything else was dissolved or deleted
-- **extras/row-profunctor/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`: four direction modules, each carrying its **direction class** — the binary merge, the one genuine per-carrier primitive; the units are `Category`'s `identity` at the unit object (`×→×`, `+→+`; `pempty` is merely that wire pinned at `{} → {}` for inference at chrome sites) or that wire entered from the empty variant (`+→×`, `lcmap case_ identity`), and only `×→+` keeps a class-member unit, `silence`, the one no wire reaches — with qualified-do sugar (`bind`/`discard`). Everything kept is reached by a demo or a law test (L14); laws are stated in the module headers. Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
+- **extras/row-profunctor/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`: four direction modules, each carrying its **direction class** — the binary merge, the one genuine per-carrier primitive; no class carries a unit of its own: the unit laws are conditional on the carrier (*if* `p` is a `Category`, `identity` at the unit object must play well with the merge — `×→×`, `+→+` — and so must that wire entered from the empty variant for `+→×`, `lcmap case_ identity`), and only `×→+` keeps a class-member unit, `silence`, the one no wire reaches — with qualified-do sugar (`bind`/`discard`). Everything kept is reached by a demo or a law test (L14); laws are stated in the module headers. Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
   - **`RecordToRecord.purs`** (×→×) — merge `recordToRecord` (`SharedRecordInputs` + `OwnedRecordOutputs`; gated on `PUI`, zero-field sides pre-satisfied and inert — `{}` is always known and a contribution of zero fields is no contribution);
 
     over ecosystem `Strong`: `subStrong` (sub-record focus, background carried), `field` (the type-changing field lens — the leaf lift: an editor lifted with it is a whole-row citizen, background retained and re-attached per emission, which is what dissolved `completed`), `required` (adopt a type-changing selector as an always-selected whole-row citizen, label derived from its closed rows: `select @l config options # required`; its dual `optional` is carrier-level and lives in `PUI`);
@@ -344,7 +345,7 @@ the dev server). Two suites: **demo/7guis/** (the
   honest catalog mapping (typography renames per the Material migration guide;
   vocabularies lacking `listOf` build selectable lists as a keyed `foreach` of
   `clicked` rows; those lacking an indeterminate progress run Aff stages as
-  `pempty # action …`).
+  `blank # action …`).
 - **The app shape** is `pipeline # mvu seed` (or `# with seed`), closed to
   `PUI Web {} model`.
 - **Naming**: MDC2/MDC3 name the component vocabularies, modules, directories

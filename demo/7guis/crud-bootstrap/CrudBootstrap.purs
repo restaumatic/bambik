@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, foreach, looped, toCase, updated, with, blank)
 import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (body, cl, clWhen, clicked, div, staticText, text, (:=))
 import QualifiedDo.Category as Category
@@ -18,7 +18,7 @@ crudBootstrap = do
   catalogue <- sharedPeopleCatalogue
   body $
     card $ ( Category.do
-        pempty # action (loadPeopleCatalogue catalogue)
+        blank # action (loadPeopleCatalogue catalogue)
         ( Category.do
             textField @"Filter prefix (surname)" {}
             textField @"Name" {}
@@ -34,7 +34,7 @@ crudBootstrap = do
                     button @"Update" {}
                     button @"Delete" {}) # cl "d-flex" # cl "gap-2"
                 VariantToVariant.do
-                  pempty # action (createPerson catalogue) # atCase @"Create"
-                  pempty # action (updatePerson catalogue) # atCase @"Update"
-                  pempty # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  blank # action (createPerson catalogue) # atCase @"Create"
+                  blank # action (updatePerson catalogue) # atCase @"Update"
+                  blank # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}

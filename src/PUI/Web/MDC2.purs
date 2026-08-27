@@ -120,7 +120,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, blank, foreach, pempty, projected)
+import PUI (Ocular, PUI, blank, foreach, projected, static)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, shown, span, staticText, table, tbody, td, text, th, thead, tr, ul, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, clazz, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -188,7 +188,7 @@ import Type.Proxy (Proxy(..))
 -- labels cannot flow through the merges' `Nub`, so a skolem-labeled
 -- operand can't be merged); all-chrome groups (button content, progress
 -- bars) have concrete rows and stay literal `RecordToRecord.do` merges of
--- announcing chrome (`staticText`/`staticHTML`/`pempty` at `{} → {}`).
+-- announcing chrome (`staticText`/`staticHTML`/`static` at `{} → {}`).
 -- Code order = DOM order throughout.
 --
 -- **The `dimap` round-trip contract for editors.** An editor bracketed by
@@ -299,14 +299,14 @@ buttonOf
   -> PUI Web { | r } [ | cl ]
 buttonOf mModifier provided = recordToCase @l $ eventLeaf $
   el "button" >>> cl "mdc-button" >>> modifier >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
-    span >>> cl "mdc-button__ripple" $ pempty
-    span >>> cl "mdc-button__focus-ring" $ pempty
+    static (span >>> cl "mdc-button__ripple")
+    static (span >>> cl "mdc-button__focus-ring")
     case config.icon of
       Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon'
-      Nothing -> pempty
+      Nothing -> blank
     case config.label of
       Just label' -> span >>> cl "mdc-button__label" $ staticText label'
-      Nothing -> pempty
+      Nothing -> blank
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
   modifier = case mModifier of
@@ -334,12 +334,12 @@ fab
   -> PUI Web { | r } [ | cl ]
 fab provided = recordToCase @l $ eventLeaf $
   el "button" >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
-    div >>> cl "mdc-fab__ripple" $ pempty
-    span >>> cl "mdc-fab__focus-ring" $ pempty
+    static (div >>> cl "mdc-fab__ripple")
+    static (span >>> cl "mdc-fab__focus-ring")
     span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText config.icon
     case config.label of
       Just label' -> span >>> cl "mdc-fab__label" $ staticText label'
-      Nothing -> pempty
+      Nothing -> blank
   where
   config = convertOptionsWithDefaults OptLabel { label: Just (reflectSymbol (Proxy @l)) } provided :: { icon :: String, label :: Maybe String }
   extended = case config.label of
@@ -354,8 +354,8 @@ fab provided = recordToCase @l $ eventLeaf $
 iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
 iconButton provided = recordToCase @l $ eventLeaf $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
-    div >>> cl "mdc-icon-button__ripple" $ pempty
-    span >>> cl "mdc-icon-button__focus-ring" $ pempty
+    static (div >>> cl "mdc-icon-button__ripple")
+    static (span >>> cl "mdc-icon-button__focus-ring")
     staticText config.icon
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { icon :: String, label :: String }
@@ -366,7 +366,7 @@ iconButton provided = recordToCase @l $ eventLeaf $
 menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
 menuItem provided = recordToCase @l $ eventLeaf $
   li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" >>> "tabindex" := "-1" $ RecordToRecord.do
-    span >>> cl "mdc-deprecated-list-item__ripple" $ pempty
+    static (span >>> cl "mdc-deprecated-list-item__ripple")
     span >>> cl "mdc-deprecated-list-item__text" $ staticText config.label
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
@@ -406,12 +406,12 @@ textFieldLeaf variant mDebounce floatingLabel = wrap do
   inputNode <- element "label" do
     if variant == "outlined"
       then void $ unwrap $ span >>> cl "mdc-notched-outline" $ RecordToRecord.do
-        span >>> cl "mdc-notched-outline__leading" $ pempty
+        static (span >>> cl "mdc-notched-outline__leading")
         span >>> cl "mdc-notched-outline__notch" $
           span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel
-        span >>> cl "mdc-notched-outline__trailing" $ pempty
+        static (span >>> cl "mdc-notched-outline__trailing")
       else do
-        _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
+        _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
         void $ unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel)
     element "input" (pure unit)
     clazz "mdc-text-field__input"
@@ -419,7 +419,7 @@ textFieldLeaf variant mDebounce floatingLabel = wrap do
     attribute "aria-labelledby" labelId
     node <- gets _.sibling
     when (variant == "filled") $
-      void $ unwrap (span >>> cl "mdc-line-ripple" $ pempty)
+      void $ unwrap (static (span >>> cl "mdc-line-ripple"))
     pure node
   clazz "mdc-text-field"
   clazz ("mdc-text-field--" <> variant)
@@ -453,7 +453,7 @@ textFieldWiring comp inputNode mDebounce = do
 filledTextArea :: forall @l r rest. IsSymbol l => Cons l String rest r => { columns :: Int, rows :: Int } -> PUI Web { | r } { | r }
 filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   inputNode <- element "label" do
-    _ <- unwrap (span >>> cl "mdc-text-field__ripple" $ pempty)
+    _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
     node <- element "span" do
       element "textarea" (pure unit)
       clazz "mdc-text-field__input"
@@ -462,7 +462,7 @@ filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l)
       attribute "aria-label" "Label"
       gets _.sibling
     clazz "mdc-text-field__resizer"
-    _ <- unwrap (span >>> cl "mdc-line-ripple" $ pempty)
+    _ <- unwrap (static (span >>> cl "mdc-line-ripple"))
     pure node
   clazz "mdc-text-field"
   clazz "mdc-text-field--filled"
@@ -503,9 +503,9 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
-        div >>> cl "mdc-checkbox__mixedmark" $ pempty
-      _ <- unwrap (div >>> cl "mdc-checkbox__ripple" $ pempty)
-      _ <- unwrap (div >>> cl "mdc-checkbox__focus-ring" $ pempty)
+        static (div >>> cl "mdc-checkbox__mixedmark")
+      _ <- unwrap (static (div >>> cl "mdc-checkbox__ripple"))
+      _ <- unwrap (static (div >>> cl "mdc-checkbox__focus-ring"))
       pure node
     clazz "mdc-checkbox"
     cbNode <- gets _.sibling
@@ -1017,12 +1017,12 @@ linearProgress = wrap do
 linearProgressInnards :: PUI Web {} {}
 linearProgressInnards = RecordToRecord.do
   div >>> cl "mdc-linear-progress__buffer" $ RecordToRecord.do
-    div >>> cl "mdc-linear-progress__buffer-bar" $ pempty
-    div >>> cl "mdc-linear-progress__buffer-dots" $ pempty
+    static (div >>> cl "mdc-linear-progress__buffer-bar")
+    static (div >>> cl "mdc-linear-progress__buffer-dots")
   div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__primary-bar" $
-    span >>> cl "mdc-linear-progress__bar-inner" $ pempty
+    static (span >>> cl "mdc-linear-progress__bar-inner")
   div >>> cl "mdc-linear-progress__bar" >>> cl "mdc-linear-progress__secondary-bar" $
-    span >>> cl "mdc-linear-progress__bar-inner" $ pempty
+    static (span >>> cl "mdc-linear-progress__bar-inner")
 
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
@@ -1189,7 +1189,7 @@ dialog { title } content = wrap do
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ wrap do
           _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
           unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-    _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
+    _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
 -- | The **witness rung** of the assurance
@@ -1229,9 +1229,9 @@ simpleDialog { title, confirm } content = wrap do
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
           div >>> cl "mdc-dialog__actions" $ eventLeaf $
             el "button" >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
-              div >>> cl "mdc-button__ripple" $ pempty
+              static (div >>> cl "mdc-button__ripple")
               span >>> cl "mdc-button__label" $ staticText confirm
-    _ <- unwrap (div >>> cl "mdc-dialog__scrim" $ pempty)
+    _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
 -- | The **snackbar**: a brief message at the bottom of the screen,
@@ -1327,7 +1327,7 @@ list content = wrap do
 -- | looks exactly as before.
 listItem :: Ocular (PUI Web)
 listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: auto; min-height: 48px;" $ wrap do
-  _ <- unwrap (span >>> cl "mdc-deprecated-list-item__ripple" $ pempty)
+  _ <- unwrap (static (span >>> cl "mdc-deprecated-list-item__ripple"))
   unwrap (span >>> cl "mdc-deprecated-list-item__text" >>> "style" := "display: flex; align-items: center; gap: 16px; width: 100%; white-space: normal; overflow: visible;" $ content)
 
 -- | A **list built from data**: one row per element of the collection the

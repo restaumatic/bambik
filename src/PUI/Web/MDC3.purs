@@ -131,7 +131,7 @@ import Data.Variant (case_, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, blank, foreach, pempty, projected)
+import PUI (Ocular, PUI, blank, foreach, projected)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -310,10 +310,10 @@ buttonOf
 buttonOf tag provided = recordToCase @l $ eventLeaf $ el tag $ RecordToRecord.do
   case config.icon of
     Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticText icon'
-    Nothing -> pempty
+    Nothing -> blank
   case config.label of
     Just label' -> staticText label'
-    Nothing -> pempty
+    Nothing -> blank
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
 

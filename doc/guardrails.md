@@ -108,10 +108,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 ### L5. Units are forced, not designed.
 
-- A merge unit MUST be `Category`'s wire at its unit object wherever a wire
-  fits — `identity @{}` for `×→×`, `identity @(Variant ())` for `+→+`,
-  `lcmap case_ identity` for `+→×` — and MUST NOT be a class member of its
-  own there: exactly, not up to an echo, because a record gate MUST treat
+- A merge MUST NOT carry a unit of its own where a wire fits. Its unit law
+  is conditional on the carrier: *if* `p` is also a `Category`, the wire at
+  the unit object — `identity @{}` for `×→×`, `identity @(Variant ())` for
+  `+→+`, `lcmap case_ identity` for `+→×` — MUST play well with the merge,
+  exactly, not up to an echo, because a record gate MUST treat
   a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
   maps terminal→initial), and it is the one class-member unit, `silence`

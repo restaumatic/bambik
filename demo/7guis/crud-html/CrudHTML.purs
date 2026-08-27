@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, field, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, field, foreach, looped, toCase, updated, with, blank)
 import PUI.Web.HTML (shown, attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
 import QualifiedDo.Category as Category
 
@@ -16,7 +16,7 @@ crudHTML :: Effect Unit
 crudHTML = do
   catalogue <- sharedPeopleCatalogue
   body $ div $ ( Category.do
-      pempty # action (loadPeopleCatalogue catalogue)
+      blank # action (loadPeopleCatalogue catalogue)
       ( Category.do
           p ( label $ Category.do
               (staticText "Filter prefix (surname) ") # shown
@@ -38,9 +38,9 @@ crudHTML = do
                 button (staticText "Update") # toCase @"update" identity
                 button (staticText "Delete") # toCase @"delete" identity
               VariantToVariant.do
-                pempty # action (createPerson catalogue) # atCase @"create"
-                pempty # action (updatePerson catalogue) # atCase @"update"
-                pempty # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                blank # action (createPerson catalogue) # atCase @"create"
+                blank # action (updatePerson catalogue) # atCase @"update"
+                blank # action (deletePerson catalogue) # atCase @"delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
   ) # with {}
 entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected

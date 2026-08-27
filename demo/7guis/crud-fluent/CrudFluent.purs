@@ -8,7 +8,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, foreach, looped, pempty, toCase, updated, with)
+import PUI (action, atCase, foreach, looped, toCase, updated, with, blank)
 import PUI.Web.Fluent (button, card, textField)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, li, staticText, text, ul, (:=))
 import QualifiedDo.Category as Category
@@ -18,7 +18,7 @@ crudFluent = do
   catalogue <- sharedPeopleCatalogue
   body $
     card $ ( Category.do
-        pempty # action (loadPeopleCatalogue catalogue)
+        blank # action (loadPeopleCatalogue catalogue)
         ( Category.do
             textField @"Filter prefix (surname)" {}
             textField @"Name" {}
@@ -34,9 +34,9 @@ crudFluent = do
                   button @"Update" {}
                   button @"Delete" {}
                 VariantToVariant.do
-                  pempty # action (createPerson catalogue) # atCase @"Create"
-                  pempty # action (updatePerson catalogue) # atCase @"Update"
-                  pempty # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+                  blank # action (createPerson catalogue) # atCase @"Create"
+                  blank # action (updatePerson catalogue) # atCase @"Update"
+                  blank # action (deletePerson catalogue) # atCase @"Delete") # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
 entryFace :: { "Name" :: String, "Surname" :: String, selected :: Boolean } -> String
 entryFace { selected } = entryStyle selected

@@ -36,11 +36,12 @@
 -- | with the cross-operand **retention** the merge machinery performs on
 -- | non-`l` events supplied, in the free-function form, by `Retaining`.
 -- |
--- | Completing the arity ladder downward, the **nullary** operator is the
--- | wire at the unit row entered from the empty variant,
--- | `lcmap case_ identity :: p (Variant ()) {}` — no class member of its
--- | own (`Category` is a superclass): `variantToRecord (lcmap case_
--- | identity) g = g = variantToRecord g (lcmap case_ identity)`. Never fed,
+-- | Completing the arity ladder downward, the merge has **no unit of its
+-- | own**; conditionally on the carrier — *if* `p` is also a `Category` —
+-- | the wire at the unit row entered from the empty variant, `lcmap case_
+-- | identity :: p (Variant ()) {}`, must play well with it:
+-- | `variantToRecord (lcmap case_ identity) g = g = variantToRecord g
+-- | (lcmap case_ identity)`. Never fed,
 -- | owning no field, its side of the gate is pre-satisfied — which is why
 -- | any silent element of that type serves equally, and `silence` at
 -- | `b = ()` is one.
@@ -60,7 +61,6 @@ module Data.Profunctor.Row.VariantToRecord
 
 import Control.Semigroupoid ((>>>))
 import Data.Either (Either(..), either)
-import Control.Category (class Category)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -111,7 +111,7 @@ unfolding seed g =
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
       (seeded (inj (Proxy @w) seed) >>> g))
 
-class (Profunctor p, Category p) <= VariantToRecord p where
+class Profunctor p <= VariantToRecord p where
   -- | One constraint per side: `OwnedVariantInputs` (disjoint rows — one
   -- | handler per case — plus `DispatchableVariants`, the runtime tags
   -- | dispatch routes by) and `OwnedRecordOutputs` (disjoint rows — one

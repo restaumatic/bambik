@@ -837,49 +837,106 @@ main = do
     fire gProp {}
     Ref.read outs >>= assertEqual "display beside the wire: a {} emission contributes nothing" [ { v: 1 } ]
 
-  -- identity is the ×→× unit exactly: beside the wire at {}, an operand's
-  -- observed stream is its own — in and out — and the wire's echo per feed
-  -- is not a contribution.
+  -- == Unit laws with Category's identity, both legs observed. The classes ==
+  -- == carry no unit; the law is conditional on the carrier being a ==
+  -- == Category, which the PUI carrier is: the merge with the wire at the ==
+  -- == unit object, on either side, observes g's own streams — in and out. ==
+
+  -- ×→×: recordToRecord identity g = g = recordToRecord g identity
   do
     let
-      run u = do
+      run wrapper = do
         ins <- Ref.new ([] :: Array { a :: Int })
         gProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int })
-        m <- unwrap (recordToRecord (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int }) u)
+        m <- unwrap (wrapper (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { a: 1 } *> m.toUser { a: 2 }
         fire gProp { a: 3 } *> fire gProp { a: 4 }
         i <- Ref.read ins
         o <- Ref.read outs
         pure { i, o }
-    bare <- do
-      ins <- Ref.new ([] :: Array { a :: Int })
-      gProp <- Ref.new Nothing
-      outs <- Ref.new ([] :: Array { a :: Int })
-      m <- unwrap (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int })
-      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-      m.toUser { a: 1 } *> m.toUser { a: 2 }
-      fire gProp { a: 3 } *> fire gProp { a: 4 }
-      i <- Ref.read ins
-      o <- Ref.read outs
-      pure { i, o }
-    withIdentity <- run (identity :: PUI Effect {} {})
-    assertEqual "×→× unit is identity @{}: g beside the wire observes g's streams" bare withIdentity
-    assertEqual "×→× unit is identity @{}: the streams are the full script" { i: [ { a: 1 }, { a: 2 } ], o: [ { a: 3 }, { a: 4 } ] } bare
+    bare <- run \g -> g
+    onLeft <- run \g -> recordToRecord (identity :: PUI Effect {} {}) g
+    onRight <- run \g -> recordToRecord g (identity :: PUI Effect {} {})
+    assertEqual "×→× left unit: identity beside g observes g's streams" bare onLeft
+    assertEqual "×→× right unit: g beside identity observes g's streams" bare onRight
+    assertEqual "×→× unit laws: the streams are the full script" { i: [ { a: 1 }, { a: 2 } ], o: [ { a: 3 }, { a: 4 } ] } bare
 
-  -- and the +→+ unit exactly: identity at the empty variant is never fed and
-  -- never emits, so g beside it observes its own streams.
+  -- +→+: variantToVariant identity g = g = variantToVariant g identity
   do
-    ins <- Ref.new ([] :: Array [ x :: Int ])
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ ok :: Int ])
-    m <- unwrap (variantToVariant (probeIO ins gProp :: PUI Effect [ x :: Int ] [ ok :: Int ]) (identity :: PUI Effect (Variant ()) (Variant ())))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser (.x 1) *> m.toUser (.x 2)
-    fire gProp (.ok 3)
-    Ref.read ins >>= assertEqual "+→+ unit is identity @(Variant ()): every case reaches g" [ .x 1, .x 2 ]
-    Ref.read outs >>= assertEqual "+→+ unit is identity @(Variant ()): g's emissions pass" [ .ok 3 ]
+    let
+      run wrapper = do
+        ins <- Ref.new ([] :: Array [ x :: Int ])
+        gProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ ok :: Int ])
+        m <- unwrap (wrapper (probeIO ins gProp :: PUI Effect [ x :: Int ] [ ok :: Int ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser (.x 1) *> m.toUser (.x 2)
+        fire gProp (.ok 3) *> fire gProp (.ok 4)
+        i <- Ref.read ins
+        o <- Ref.read outs
+        pure { i, o }
+    bare <- run \g -> g
+    onLeft <- run \g -> variantToVariant (identity :: PUI Effect (Variant ()) (Variant ())) g
+    onRight <- run \g -> variantToVariant g (identity :: PUI Effect (Variant ()) (Variant ()))
+    assertEqual "+→+ left unit: identity beside g observes g's streams" bare onLeft
+    assertEqual "+→+ right unit: g beside identity observes g's streams" bare onRight
+    assertEqual "+→+ unit laws: the streams are the full script" { i: [ .x 1, .x 2 ], o: [ .ok 3, .ok 4 ] } bare
+
+  -- ×→× associativity: (a ⊗ b) ⊗ c = a ⊗ (b ⊗ c), observed at every operand
+  -- and at the gated output, under one script.
+  do
+    let
+      run grouping = do
+        aIns <- Ref.new ([] :: Array { s :: Int })
+        bIns <- Ref.new ([] :: Array { s :: Int })
+        cIns <- Ref.new ([] :: Array { s :: Int })
+        aProp <- Ref.new Nothing
+        bProp <- Ref.new Nothing
+        cProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
+        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect { s :: Int } { a :: Int }) (probeIO bIns bProp :: PUI Effect { s :: Int } { b :: String }) (probeIO cIns cProp :: PUI Effect { s :: Int } { c :: Boolean }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { s: 1 } *> m.toUser { s: 2 }
+        fire cProp { c: true } *> fire aProp { a: 1 } *> fire bProp { b: "x" } *> fire aProp { a: 2 } *> fire cProp { c: false }
+        as <- Ref.read aIns
+        bs <- Ref.read bIns
+        cs <- Ref.read cIns
+        os <- Ref.read outs
+        pure { as, bs, cs, os }
+    left <- run \a b c -> recordToRecord (recordToRecord a b) c
+    right <- run \a b c -> recordToRecord a (recordToRecord b c)
+    assertEqual "×→× associativity: operands fed alike and the gated output agrees" left right
+    assertEqual "×→× associativity: the script reached every operand and gated correctly"
+      { as: [ { s: 1 }, { s: 2 } ], bs: [ { s: 1 }, { s: 2 } ], cs: [ { s: 1 }, { s: 2 } ]
+      , os: [ { a: 1, b: "x", c: true }, { a: 2, b: "x", c: true }, { a: 2, b: "x", c: false } ] } left
+
+  -- +→+ associativity: dispatch and shared output agree under both groupings.
+  do
+    let
+      run grouping = do
+        aIns <- Ref.new ([] :: Array [ x :: Int ])
+        bIns <- Ref.new ([] :: Array [ y :: Int ])
+        cIns <- Ref.new ([] :: Array [ z :: Int ])
+        aProp <- Ref.new Nothing
+        bProp <- Ref.new Nothing
+        cProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ ok :: String ])
+        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] [ ok :: String ]) (probeIO bIns bProp :: PUI Effect [ y :: Int ] [ ok :: String ]) (probeIO cIns cProp :: PUI Effect [ z :: Int ] [ ok :: String ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser (.y 1) *> m.toUser (.x 2) *> m.toUser (.z 3) *> m.toUser (.x 4)
+        fire cProp (.ok "c") *> fire aProp (.ok "a") *> fire bProp (.ok "b")
+        as <- Ref.read aIns
+        bs <- Ref.read bIns
+        cs <- Ref.read cIns
+        os <- Ref.read outs
+        pure { as, bs, cs, os }
+    left <- run \a b c -> variantToVariant (variantToVariant a b) c
+    right <- run \a b c -> variantToVariant a (variantToVariant b c)
+    assertEqual "+→+ associativity: dispatch and output agree" left right
+    assertEqual "+→+ associativity: each case reached its handler, every emission left"
+      { as: [ .x 2, .x 4 ], bs: [ .y 1 ], cs: [ .z 3 ], os: [ .ok "c", .ok "a", .ok "b" ] } left
 
   -- muted: the counit — render, discard the output deliberately. On (->):
   -- muted g = const {}. On the PUI carrier it makes any emitting component

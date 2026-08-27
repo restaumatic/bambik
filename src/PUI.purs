@@ -55,6 +55,7 @@ module PUI
   , setTracing
   , setDiagnostics
   , action
+  , static
   , accumulated
   , applied
   , debounced
@@ -90,7 +91,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, pempty, muted, projected, projection, required, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, muted, projected, projection, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -1039,16 +1040,25 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- | but breaks these, and needs a stated protocol instead (a modal, say).
 type Ocular p = forall a b. Optic p a b a b
 
+-- | An element with **nothing in it**: an ocular applied to the wire, its
+-- | rows pinned at `{} → {}` — a ripple, a focus ring, a decorative
+-- | circle, an empty cell. Reads nothing, contributes nothing; the merge
+-- | gates ignore its echo (a zero-field side is pre-known and inert), so it
+-- | sits in any `RecordToRecord.do` beside `staticText` and `staticHTML`,
+-- | the other two statics. `static (span >>> cl "mdc-button__ripple")`.
+static :: forall p. Category p => Ocular p -> p {} {}
+static o = o identity
+
 -- | The progress slot is row-shaped like every component interface: the
 -- | UI component is a `{ busy :: Boolean } → {}` display citizen — and the
--- | slot **subsumes** (a display reads narrow): a no-progress stage passes
--- | the wire pinned at `{}`, `pempty # action …`.
+-- | slot is exactly that row, so a stage with no indicator passes `blank`,
+-- | the faceless leaf: `blank # action …`.
 -- |
 -- | A failing action is **reported, not swallowed**: the progress slot is
 -- | cleared whichever way the `Aff` ends — so a throw cannot strand the
 -- | spinner — and the error reaches the diagnostics sink by name. Nothing is
 -- | posted onward, since there is no output to post.
-action :: forall narrow extra s t. Union narrow extra (busy :: Boolean) => (s -> Aff t) -> Action s t { | narrow } {}
+action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
 action arr w = action'
   (\i pro post -> do
     liftEffect $ pro { busy: true }
@@ -1057,7 +1067,7 @@ action arr w = action'
     case result of
       Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
       Right o -> liftEffect $ post o)
-  (widenRecordInput w)
+  w
 
 action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
 action' arr w = wrap ado
