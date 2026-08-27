@@ -9,8 +9,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
-import OrderFormLogic (deliveryDetail, deliveryDistance, dineInDetail, estimateDistance, fulfillmentCase, fulfillmentState, knownDistance, loadOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime, takeawayDetail)
-import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, projection, looped, required, settled, updated, with)
+import OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime)
+import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, forProperty, projection, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
@@ -48,7 +48,7 @@ orderFormMDC3 =
                         ( bodyLarge $ RecordToRecord.do
                             staticText "Distance "
                             text @"km" # projection show
-                            staticText " km" ) # shownWhen knownDistance ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
+                            staticText " km" ) # forProperty # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
           card $ Category.do
             (titleMedium $ staticText "Total") # shown
             filledTextField @"Total" {}
@@ -79,17 +79,17 @@ orderFormMDC3 =
               staticText ", fulfilled as "  ) # shown # debounced summarySettleTime
           ( RecordToRecord.do
               staticText "dine in at table "
-              text @"Table" ) # shownWhen dineInDetail
+              text @"Table" ) # shownWhen @"Dine in" fulfillmentOf
           ( RecordToRecord.do
               staticText "takeaway at "
-              text @"Time" ) # shownWhen takeawayDetail
+              text @"Time" ) # shownWhen @"Takeaway" fulfillmentOf
           ( RecordToRecord.do
               staticText "delivery to "
-              text @"Address" ) # shownWhen deliveryDetail
+              text @"Address" ) # forProperty # shownWhen @"Delivery" fulfillmentOf
           ( RecordToRecord.do
               staticText " ("
               text @"km" # projection show
-              staticText " km away)" ) # shownWhen deliveryDistance
+              staticText " km away)" ) # forProperty # shownWhen @"estimated" deliveryDistance
           ( ( RecordToRecord.do
               staticText ", paid "
               text @"Paid"

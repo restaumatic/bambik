@@ -8,7 +8,7 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
@@ -26,15 +26,15 @@ flightBookerMDC2 =
       ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "⚠ "
-              text @"problem" ) # shownCase @"problem" bookingState
+              text @"problem" ) # shownWhen @"problem" bookingState
           ( body1 $ RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" ) # shownCase @"one-way" bookingState
+              text @"date" ) # shownWhen @"one-way" bookingState
           ( body1 $ RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
+              text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine

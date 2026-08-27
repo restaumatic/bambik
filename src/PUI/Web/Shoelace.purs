@@ -270,7 +270,8 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | The **dropdown**: one choice out of a list too long to lay out in the
 -- | open. Until the user picks there is nothing to show, so the field
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
--- | with `# optional` or `# required`. The options belong to the control,
+-- | with `# optional @"chosen" @"unchosen"` (the two states named by the
+-- | application) or `# required`. The options belong to the control,
 -- | not to the model.
 select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do

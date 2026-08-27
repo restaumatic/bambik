@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (forCase, mvu, required, toCases)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, shownCase, body, staticText, text)
+import PUI.Web.HTML (shown, shownWhen, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Category as Category
 import SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
@@ -27,21 +27,21 @@ signupFormMDC3 =
             filledTextField @"Email" {}
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"Terms" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
-        ( bodyMedium $ staticText "Pick a username to check its availability" ) # shownCase @"unnamed" usernameStatus
+        ( bodyMedium $ staticText "Pick a username to check its availability" ) # shownWhen @"unnamed" usernameStatus
         ( bodyMedium $ RecordToRecord.do
             staticText "✗ "
             text @"Username"
-            staticText " is already taken" ) # shownCase @"taken" usernameStatus
+            staticText " is already taken" ) # shownWhen @"taken" usernameStatus
         ( bodyMedium $ RecordToRecord.do
             staticText "✓ "
             text @"Username"
-            staticText " is available" ) # shownCase @"available" usernameStatus
+            staticText " is available" ) # shownWhen @"available" usernameStatus
         ( titleSmall $ RecordToRecord.do
             staticText "⚠ "
-            text @"problem" ) # shownCase @"invalid" validation
+            text @"problem" ) # shownWhen @"invalid" validation
         ( titleSmall $ RecordToRecord.do
             staticText "Ready to sign up as "
-            text @"Username" ) # shownCase @"ready" validation
+            text @"Username" ) # shownWhen @"ready" validation
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
           snackbar # forCase @"registered" welcomeLine

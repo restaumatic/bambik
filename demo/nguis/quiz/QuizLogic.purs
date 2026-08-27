@@ -1,6 +1,6 @@
-module QuizLogic (answer, currentQuestion, finalOutcome, freshQuizRun, progressFraction, questionCountText, questionNumberText) where
+module QuizLogic (answer, freshQuizRun, progressFraction, questionCountText, questionNumberText, quizPhase) where
 
-import Prelude (show, (+), (/), (<), (<#>), (==), min)
+import Prelude (show, (+), (/), (==), min)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
@@ -23,14 +23,11 @@ answer choice run@{ question, correct } = case index questionCatalogue question 
   Just q -> { question: question + 1, correct: correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-currentQuestion :: { question :: Int } -> Maybe { prompt :: String, choices :: Array { key :: Int, label :: String } }
-currentQuestion { question } = index questionCatalogue question <#> \q ->
-  { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
-
-finalOutcome :: { question :: Int, correct :: Int } -> Maybe { correct :: Int, total :: Int }
-finalOutcome { question, correct } =
-  if question < length questionCatalogue then Nothing
-  else Just { correct, total: length questionCatalogue }
+-- the run is asking while the catalogue has a question left, finished after
+quizPhase :: { question :: Int, correct :: Int } -> [ asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int, total :: Int } ]
+quizPhase { question, correct } = case index questionCatalogue question of
+  Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
+  Nothing -> .finished { correct, total: length questionCatalogue }
 
 progressFraction :: { question :: Int } -> Number
 progressFraction { question } = toNumber question / toNumber (length questionCatalogue)

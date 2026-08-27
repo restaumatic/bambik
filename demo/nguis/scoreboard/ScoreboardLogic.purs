@@ -1,4 +1,4 @@
-module ScoreboardLogic (boardSummary, gameStart, goal, leadingTeam, noLeader, tick, tickPeriod) where
+module ScoreboardLogic (boardSummary, gameStart, goal, standing, tick, tickPeriod) where
 
 import Prelude (show, (+), (==), mod)
 
@@ -27,13 +27,10 @@ scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: String, leader :: Maybe { team :: String, points :: Int } }
 boardSummary scores = [ { key: "summary", teams: show (length scores), leader: maximumBy (comparing _.points) scores } ]
 
-leadingTeam :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe { team :: String, points :: Int }
-leadingTeam { leader } = leader
-
-noLeader :: { leader :: Maybe { team :: String, points :: Int } } -> Maybe {}
-noLeader { leader } = case leader of
-  Just _ -> Nothing
-  Nothing -> Just {}
+standing :: { leader :: Maybe { team :: String, points :: Int } } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
+standing { leader } = case leader of
+  Just top -> .led top
+  Nothing -> .unled {}
 
 pick :: Array String -> Int -> String
 pick options i = fromMaybe "" (index options (i `mod` length options))

@@ -165,10 +165,13 @@ syntax (`r { "Name" = … }`) all work unchanged.
   `segmentedButton`) carry the business label through both rows
   (`select @"Milk" cfg opts :: { "Milk" :: Maybe _ } → { "Milk" :: _ }`);
   always-selected ones take `# required`, possibly-unselected ones
-  `# optional` (both derive the label) — the model keeps the `Maybe`
-  seeded `Nothing` (no default pick), and the stages demanding the bare
-  selection stay `provided`-gated until the user picks (meeting-booker
-  is the no-defaults showcase). An editor whose text is *derived* from
+  `# optional @"chosen" @"unchosen"` (both derive the label; `optional`
+  takes the two state names from the application) — the model keeps a
+  named two-case variant, never a `Maybe`, seeded at the unmade case
+  (`"Room": .unchosen {}`, no default pick), and the stages demanding
+  the bare selection adopt the made case (`# inCase @"chosen" roomOf`,
+  `# provided @"complete" plan`) until the user picks
+  (meeting-booker is the no-defaults showcase). An editor whose text is *derived* from
   sibling fields is a model concern, not an adopter's: keep the derived
   texts as model fields and normalize them into each other with
   `settled` (temperature-converter holds both `@"°C"` and `@"°F"` texts,
@@ -210,7 +213,7 @@ interchangeable:
 - A display **is a pipeline stage natively**. Pick the rung whose
   fulfillment policy the business wants: `content # shown` for ambient
   structured content (chrome + unit displays, registered at build,
-  released per feed), `# shownWhen`/`# shownCase` for display panes
+  released per feed), `# shownWhen @l classifier` for display panes
   (attached on relevance, released always), `# inCase @l classifier`
   for an **editor pane** — a
   whole-row editor that exists only in one mode, its own `field @l` lift
@@ -280,8 +283,8 @@ Worked examples, by shape:
   `foreach`, catalogue fed by `listOf`'s projection argument), reorder
   (keyed reconciliation and the `edited` collection editor), potluck
   (`acted`, the gather gate as UX).
-- **panes** — quiz (`provided` panes over multi-stage pipelines keyed on
-  `Maybe`-projected state).
+- **panes** — quiz (`provided` panes over multi-stage pipelines,
+  both adopting cases of one `quizPhase` classifier).
 - **effects and time** — password-generator (`button @l` →
   `action`/`atCase` → `updated`), stopwatch (`every` with
   pause-by-`Nothing`), color-mixer (`sliderLive` driving an `attrWith`
@@ -300,32 +303,62 @@ Worked examples, by shape:
 
 ## Conditional visibility
 
-Conditional visibility is view-model data, never an in-UI predicate.
+Conditional visibility is **case adoption**, never an in-UI predicate —
+and never a `Maybe`. The vocabulary has exactly one visibility
+primitive, `provided @l classifier` (its display rung
+`shownWhen @l classifier`, its editor rung `inCase @l classifier`): the
+argument is a business function classifying the situation into a
+variant, and the pane exists while the variant sits at case `l`, fed
+that case's payload.
 
-When the model field is a payload-carrying variant, case adoption *is*
-conditional existence — `# providedCase @l identity # atField @l'` shows the
-pane while the variant sits at that case, fed its payload
-(ticket-dispenser). Mutually exclusive derived states classify once into
-a variant-returning business function, each pane adopting its case
-(signup-form: two classifiers replaced five `Maybe` projections,
-exclusivity by construction).
+When the model field is itself a payload-carrying variant, the pane
+adopts it directly — `# provided @"serving" identity # atField
+@"display"` (ticket-dispenser), or through a closed accessor at a
+row-stating position (`# shownWhen @"Dine in" fulfillmentOf`;
+`_.fulfillment` would leave the rung's row unsolved there). When the
+state is *derived*, one classifier derives it: every case named, each
+case carrying exactly the payload its pane displays — checkout's
+`checkoutStep` (`cart { item }`, `shipping { address }`,
+`payment { card }`), calculator's `readout` (`sound { entry }` /
+`faulty {}`), scoreboard's `standing` (`led`/`unled`), quiz's
+`quizPhase` (`asking`/`finished`), inbox's `readState`
+(`unread`/`read`) and `messageView` (`reading`/`browsing`),
+signup-form's two classifiers (which replaced five `Maybe`
+projections). Two panes can then never both be on screen — which two
+separate "should this be visible?" tests can always accidentally allow
+— and each view line names the state it renders, not the business
+condition behind it.
 
-Otherwise `provided` attaches and feeds its content on `Just`, detaches
-on `Nothing`. Pair it with a **named `Maybe`-valued projection** so the
-pane consumes the payload, not the whole model, and the visibility logic
-is a testable business function. A pane whose content only exists
-sometimes is exactly this — for *displays*. An **editor** that exists
-only in one mode is not a payload to fold back by hand: it is a
-whole-row citizen with gated existence, `# inCase @l classifier`
-(`shownCase`'s editor sibling), and its lens already re-attaches the
-rest of the row — so `# provided paneOf # updated setField`
-with an identity `setField` is the smell this rung deletes. The
-mode-of-a-live-editor case — a variant editor's per-selection panes — is
-exactly that inside the `bracketed` loop: the selection component, then
-each pane `# inCase @l selectionOf` (order-form's three fulfillment
-panes over one `selection` classifier; flight-booker's return date
+**A `Maybe` a pane depends on is a two-case state with unnamed cases.**
+`if … then Just … else Nothing`, a `match` with `Nothing` on every other
+case, the negation of a sibling pane's `Maybe`, a stored `Maybe` field
+read out by a projection — each hides from the view line which state
+the pane shows. Name the cases: order-form's distance is
+`[ estimated :: { km, to }, unknown :: {} ]`, not `Maybe`, so
+`staleDistanceForgotten` is a `match` and the summary pane is
+`# shownWhen @"estimated" distanceOf`; a selector left unmade is
+`# optional @"chosen" @"unchosen"`, so meeting-booker's panes are
+`# shownWhen @"rated" ratedRoom` and `# provided @"complete" plan`
+with no `Maybe` anywhere in the booking; checkout's wizard buttons
+adopt `onward`/`back` off `onwardFrom`/`previousOf`. `Maybe` stays
+below the UI — an `index`/`find` lookup, an `Aff` result — and a
+classifier converts it at the boundary (inbox's `messageView` turns
+`find`'s `Maybe` into `reading`/`browsing`). The one `Maybe` a model row
+may still carry is one no pane is gated on (a slider's `step`).
+
+A pane whose content only exists sometimes is exactly this — for
+*displays*. An **editor** that exists only in one mode is not a payload
+to fold back by hand: it is a whole-row citizen with gated existence,
+`# inCase @l classifier` (`shownWhen`'s editor sibling), and its lens
+already re-attaches the rest of the row — so
+`# provided @l paneOf # updated setField` with an identity
+`setField` is the smell this rung deletes. The mode-of-a-live-editor
+case — a variant editor's per-selection panes — is exactly that inside
+the `bracketed` loop: the selection component, then each pane
+`# inCase @l selectionOf` (order-form's three fulfillment panes over one
+`selection` classifier; flight-booker's return date
 `# inCase @"return" tripType`; meeting-booker's attendees slider
-`# inCase @"chosen" roomChoice`, a bounded quantity living in the model
+`# inCase @"chosen" roomOf`, a bounded quantity living in the model
 whose bounds the room dropdown re-scopes with `# settled seatsInRoom`).
 What the edit *does to the rest of the row* is then a `settled`
 normalization on the same stage when it is an invariant of the state —
@@ -348,7 +381,7 @@ visibility, and is deliberately last-element-only.
 ## Modals
 
 `dialog`/`simpleDialog` open on feed and close on emission. Feed them
-selectively (`# provided` off a model flag, or behind an event case via
+selectively (`# provided @l` off a model state, or behind an event case via
 `atCase`), put the deciding emitters inside — their emission closes the
 dialog and flows on — and keep echoing displays off the content's final
 stage, since an echo would close the dialog on open. Cashbox is the
@@ -735,7 +768,7 @@ over a logic module, a single exported entry function.
 
 - **Application code never imports `Data.Profunctor`.** Speak the
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
-  with their projection arguments — `provided paneOf`, `foreach @l
+  with their projection arguments — `provided @l classifierOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
   `toCase @l payloadOf`, `forCase @l copyOf`, `projection f`, `projected f`,
   `toCases outcomeOf`, `forCases lineOf`,
@@ -745,17 +778,18 @@ over a logic module, a single exported entry function.
   missing-vocabulary signal to report — never a reason to import the
   module one floor down. Business optics (`Shutter`/`Reel`) in business
   code *below* the UI are exempt by location.
-- **Visibility is business logic.** Conditional visibility is a
-  `Maybe`-valued projection plus `provided`, or case adoption
-  (`providedCase @l`) on a payload-carrying variant field — never an in-UI
-  predicate. A projection that *derives* visibility is named, so the
-  rule lives in testable business code, and mutually exclusive derived
-  states classify once into a variant-returning function so exclusivity
-  holds by construction. Where the model field itself is the `Maybe`
-  **and the context pins the row**, the bare accessor says it; at
-  row-stating positions the named projection stays, its closed signature
-  being the footprint declaration. `clWhen` stays predicate-driven — it
-  toggles styling, not existence.
+- **Visibility is business logic.** Conditional visibility is case
+  adoption — `provided @l`/`shownWhen @l`/`inCase @l` over a stored
+  variant field or a classifier that derives one — never an in-UI
+  predicate, never a predicate hidden in a projection, and never a
+  `Maybe`: a state a pane depends on is a variant with every case named,
+  so exclusivity holds by construction and the view line names the state
+  it shows. Where the model field itself is the variant **and the context
+  pins the row**, the bare accessor says it (`# provided @"serving"
+  identity # atField @"display"`); at row-stating positions a closed
+  accessor or classifier stays, its signature being the footprint
+  declaration. `clWhen` stays predicate-driven — it toggles styling, not
+  existence.
 - **State lives in the model or in the algebra's loops. Nowhere else.**
   No FFI stashes, no module-level `Ref`s, no reading the DOM back as
   state, no window globals. The model under `mvu` holds the entity; a
@@ -822,7 +856,7 @@ read them, not a summary. Paths are inside the fetched library,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
   `accumulated`. The gated display family lives in `PUI.Web.HTML`
-  (`shown`/`shownWhen`/`shownCase`/`shownEach`) and the
+  (`shown`/`shownWhen`/`shownEach`) and the
   design systems (`confirmed`).
 - `src/PUI/Web/HTML.purs` — HTML vocabulary, `body`, element oculars,
   `attrWith` for channel-fed structure-from-data, the builders

@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant.Case (caseText)
 import Effect (Effect)
-import MeetingBookerLogic (blankBooking, bookedLine, completePlan, headcount, onlineNote, ratedRoom, roomChoice, roomText, seatsInRoom, seatsTaken, titleText)
+import MeetingBookerLogic (blankBooking, bookedLine, headcount, onlineNote, plan, ratedRoom, roomOf, roomText, seatsInRoom, seatsTaken, titleText)
 import PUI (forCase, projection, mvu, optional, projected, settled)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
@@ -19,19 +19,19 @@ meetingBookerFluent =
       ( Category.do
           textField @"Meeting title" {}
           dropdown @"Room" {}
-            [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional # settled seatsInRoom
+            [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional @"chosen" @"unchosen" # settled seatsInRoom
           radioGroup @"Duration (min)" {}
-            [ choice @"15", choice @"30", choice @"60" ] # optional
+            [ choice @"15", choice @"30", choice @"60" ] # optional @"chosen" @"unchosen"
           toggleSwitch @"Include a Teams link" {}
           divider # shown
-          slider @"Attendees" {} # inCase @"chosen" roomChoice
+          slider @"Attendees" {} # inCase @"chosen" roomOf
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
-          ratingDisplay @"rating" ) # shownWhen ratedRoom
+          ratingDisplay @"rating" ) # shownWhen @"rated" ratedRoom
       ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
-          progressBar @"occupancy" ) # shownWhen seatsTaken
+          progressBar @"occupancy" ) # shownWhen @"seated" seatsTaken
       ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "Plan: "
@@ -44,5 +44,5 @@ meetingBookerFluent =
               text @"attendees" # projection headcount
               staticText " attendees"
               text @"onlineNote" # projected onlineNote ) # shown
-          button @"Book the room" {} ) # provided completePlan
+          button @"Book the room" {} ) # provided @"complete" plan
       messageBar # forCase @"Book the room" bookedLine

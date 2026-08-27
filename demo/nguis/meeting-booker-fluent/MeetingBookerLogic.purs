@@ -1,6 +1,6 @@
-module MeetingBookerLogic (blankBooking, bookedLine, completePlan, headcount, onlineNote, ratedRoom, roomChoice, roomText, seatsInRoom, seatsTaken, titleText) where
+module MeetingBookerLogic (blankBooking, bookedLine, headcount, onlineNote, plan, ratedRoom, roomOf, roomText, seatsInRoom, seatsTaken, titleText) where
 
-import Prelude ((<>), show, (/), (<$>), (<*>))
+import Prelude ((<>), show, (/))
 
 import Data.Int (round)
 import Data.Maybe (Maybe(..))
@@ -9,23 +9,29 @@ import Data.String (trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
-blankBooking :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: Maybe [ "15" :: {}, "30" :: {}, "60" :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Include a Teams link" :: Boolean }
-blankBooking = { "Meeting title": "", "Room": Nothing, "Duration (min)": Nothing, "Attendees": { current: justTheOrganizer, min: justTheOrganizer, max: justTheOrganizer, step: Just 1.0 }, "Include a Teams link": false }
+blankBooking :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Include a Teams link" :: Boolean }
+blankBooking = { "Meeting title": "", "Room": .unchosen {}, "Duration (min)": .unchosen {}, "Attendees": { current: justTheOrganizer, min: justTheOrganizer, max: justTheOrganizer, step: Just 1.0 }, "Include a Teams link": false }
 
-roomChoice :: { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] } -> [ chosen :: {}, unchosen :: {} ]
-roomChoice { "Room": Just _ } = .chosen {}
-roomChoice { "Room": Nothing } = .unchosen {}
+roomOf :: { "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ] } -> [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
+roomOf { "Room": room } = room
 
-seatsInRoom :: { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
-seatsInRoom { "Room": Just room, "Attendees": seats } = { "Room": Just room, "Attendees": seats { current = seatedIn room seats.current, max = roomCapacity room } }
-seatsInRoom booking = booking
+seatsInRoom :: { "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> { "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } }
+seatsInRoom booking@{ "Room": room, "Attendees": seats } = match
+  { chosen: \r -> booking { "Attendees" = seats { current = seatedIn r seats.current, max = roomCapacity r } }
+  , unchosen: \_ -> booking
+  } room
 
 seatedIn :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> Number -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
 
-completePlan :: { "Meeting title" :: String, "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: Maybe [ "15" :: {}, "30" :: {}, "60" :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Include a Teams link" :: Boolean } -> Maybe { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }
-completePlan { "Meeting title": title, "Room": room, "Duration (min)": duration, "Attendees": seats, "Include a Teams link": online } =
-  (\r d -> { "Meeting title": title, "Room": r, "Duration (min)": d, attendees: seats.current, "Include a Teams link": online }) <$> room <*> duration
+plan :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number }, "Include a Teams link" :: Boolean } -> [ complete :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }, incomplete :: {} ]
+plan { "Meeting title": title, "Room": room, "Duration (min)": duration, "Attendees": seats, "Include a Teams link": online } = match
+  { chosen: \r -> match
+      { chosen: \d -> .complete { "Meeting title": title, "Room": r, "Duration (min)": d, attendees: seats.current, "Include a Teams link": online }
+      , unchosen: \_ -> .incomplete {}
+      } duration
+  , unchosen: \_ -> .incomplete {}
+  } room
 
 bookedLine :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
 bookedLine { "Meeting title": title, "Room": room, "Duration (min)": duration } =
@@ -45,14 +51,14 @@ titleText title = case trim title of
 roomText :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> String
 roomText = match { "Focus pod (4 seats)": \_ -> "focus pod", "Boardroom (12 seats)": \_ -> "boardroom", "Auditorium (40 seats)": \_ -> "auditorium" }
 
-ratedRoom :: { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] } -> Maybe { rating :: Number }
-ratedRoom { "Room": room } = (\r -> { rating: roomRating r }) <$> room
+ratedRoom :: { "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ] } -> [ rated :: { rating :: Number }, unrated :: {} ]
+ratedRoom { "Room": room } = match { chosen: \r -> .rated { rating: roomRating r }, unchosen: \_ -> .unrated {} } room
 
 roomRating :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> Number
 roomRating = match { "Focus pod (4 seats)": \_ -> 4.5, "Boardroom (12 seats)": \_ -> 3.5, "Auditorium (40 seats)": \_ -> 4.0 }
 
-seatsTaken :: { "Room" :: Maybe [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> Maybe { occupancy :: Number }
-seatsTaken { "Room": room, "Attendees": seats } = (\r -> { occupancy: seats.current / roomCapacity r }) <$> room
+seatsTaken :: { "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: Maybe Number } } -> [ seated :: { occupancy :: Number }, unseated :: {} ]
+seatsTaken { "Room": room, "Attendees": seats } = match { chosen: \r -> .seated { occupancy: seats.current / roomCapacity r }, unchosen: \_ -> .unseated {} } room
 
 roomCapacity :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> Number
 roomCapacity = match { "Focus pod (4 seats)": \_ -> 4.0, "Boardroom (12 seats)": \_ -> 12.0, "Auditorium (40 seats)": \_ -> 40.0 }

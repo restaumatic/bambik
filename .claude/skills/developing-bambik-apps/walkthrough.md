@@ -24,7 +24,7 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
@@ -42,15 +42,15 @@ flightBookerMDC2 =
       ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "⚠ "
-              text @"problem" ) # shownCase @"problem" bookingState
+              text @"problem" ) # shownWhen @"problem" bookingState
           ( body1 $ RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" ) # shownCase @"one-way" bookingState
+              text @"date" ) # shownWhen @"one-way" bookingState
           ( body1 $ RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
+              text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine
@@ -58,7 +58,7 @@ flightBookerMDC2 =
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
 that shape data flow (`mvu`, `required`, `debounced`, `action`, `forCases`),
-`PUI.Web.HTML` for the page and the display stages (`body`, `shownCase`,
+`PUI.Web.HTML` for the page and the display stages (`body`, `shownWhen`,
 `inCase`, `text`, `staticText`), and `PUI.Web.MDC2` for the design system.
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
@@ -103,7 +103,7 @@ under one `# debounced itinerarySettleTime`.
   — a *merge*: chrome and a field reading **one record**, the pane's payload
   `{ date :: String }`. Merges are for things that share a value; pipelines
   for things that follow each other.
-- `# shownCase @"one-way" bookingState` — attach and feed this pane when
+- `# shownWhen @"one-way" bookingState` — attach and feed this pane when
   `bookingState model` yields case `one-way`, with that case's payload;
   detach on any other case. Either way the fed model is released downstream:
   a hidden pane never blocks the flow. Three such stages over one classifier make
@@ -231,7 +231,7 @@ helper. It compiles and tests without a browser.
 - `tripType` — the classifier behind `# inCase @"return"`: a one-field read
   returning the variant, so "the return date exists in return trips" is a
   business statement, not a view condition.
-- `bookingState` — the classifier behind the three `shownCase` panes. It
+- `bookingState` — the classifier behind the three `shownWhen` panes. It
   turns the model into one of three exclusive display states, each carrying
   exactly the payload its pane shows (`{ date }`, `{ out, back }`,
   `{ problem }`), so a pane's `text @"date"` is typed against it.

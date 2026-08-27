@@ -30,8 +30,7 @@ direction module headers.
 | one field, formatted | `text @l # projection f`, the block `# shown` | counter: `headline4 (text @"count" # projection show) # shown` | HTML.purs (`shown`) |
 | a sentence, or text mixed with typography and several fields | an ocular over `RecordToRecord.do` of `staticText` and `text @l` (formatted: `text @l # projection f`), the block `# shown` | checkout; order-form's summary | writing.md *Pass-through stages*; *Code style → Business functions* (which literals are UI) |
 | pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
-| content that exists only sometimes | `content # shownWhen maybeOf` — a named `Maybe`-valued business function | checkout: `# shownWhen placedOrder` | writing.md *Conditional visibility* |
-| one of several exclusive states | `content # shownCase @l classifier` — a variant-returning business function | flight-booker's three `bookingState` panes | writing.md *Conditional visibility* |
+| content that exists only in one state | `content # shownWhen @l classifierOf` — the one visibility primitive: one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
 | a display inside a collection item, reading the item's own field | `text @l # forProperty` | todomvc's title; cells | RecordToRecord.purs (`forProperty`) |
@@ -50,7 +49,7 @@ direction module headers.
 | a group of fields editing a sub-record | `( Category.do … ) # field @"customer"`; a reusable sub-form `# subStrong` | order-form; parcel | RecordToRecord.purs (`field`, `subStrong`) |
 | an invariant between fields — editing one implies the other | `editor # settled normalize` | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *Conditional visibility* |
 | a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |
-| a selection that may still be unmade | `dropdown @l {} […] # optional` — the field is a `Maybe` | meeting-booker | PUI.purs (`optional`) |
+| a selection that may still be unmade | `dropdown @l {} […] # optional @"chosen" @"unchosen"` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
 | two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
 | a variant with an editor per case | `( Category.do selector; pane # inCase @l selection; … ) # bracketed stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; VariantToVariant.purs (`bracketed`) |

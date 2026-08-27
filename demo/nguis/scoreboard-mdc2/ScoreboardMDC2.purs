@@ -8,7 +8,7 @@ import PUI (muted, accumulated, every, projection, foreach, mvu)
 import PUI.Web.HTML (shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, list, listItem)
 import QualifiedDo.Category as Category
-import ScoreboardLogic (boardSummary, gameStart, goal, leadingTeam, noLeader, tick, tickPeriod)
+import ScoreboardLogic (boardSummary, gameStart, goal, standing, tick, tickPeriod)
 
 scoreboardMDC2 :: Effect Unit
 scoreboardMDC2 =
@@ -29,6 +29,6 @@ scoreboardMDC2 =
                       text @"team"
                       staticText " ("
                       text @"points" # projection show
-                      staticText ")" ) # shownWhen leadingTeam
-                  (staticText "—") # shownWhen noLeader ) # foreach @"key" boardSummary # muted ) # shown
+                      staticText ")" ) # shownWhen @"led" standing
+                  (staticText "—") # shownWhen @"unled" standing ) # foreach @"key" boardSummary # muted ) # shown
       ) # mvu gameStart

@@ -229,8 +229,9 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | The **dropdown**: one choice out of a list too long to lay out in the
 -- | open. Until the user picks there is nothing to show, so the field
 -- | arrives as "maybe a choice" and leaves as the choice itself — say which
--- | with `# optional` (nothing preselected, and whatever needs the choice
--- | stays hidden until it exists) or `# required`. The options belong to
+-- | with `# optional @"chosen" @"unchosen"` (the two states named by the
+-- | application; nothing preselected, and whatever needs the choice adopts
+-- | the made case) or `# required`. The options belong to
 -- | the control, not to the model.
 dropdown :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 dropdown provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do

@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (forProperty, foreach, mvu, toCase, updated, with)
-import PUI.Web.HTML (shownCase, attrWith, body, clicked, div, staticText, text, (:=))
+import PUI.Web.HTML (shownWhen, attrWith, body, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC2 (button, card, elevation20, headline6)
 import QualifiedDo.Category as Category
 import TicTacToeLogic (cells, claimCell, gameOutcome, openingPosition)
@@ -18,11 +18,11 @@ ticTacToeMDC2 =
       card $ ( Category.do
           ( headline6 $ RecordToRecord.do
               text @"mark"
-              staticText " wins" ) # shownCase @"won" gameOutcome
-          (headline6 (staticText "Draw")) # shownCase @"drawn" gameOutcome
+              staticText " wins" ) # shownWhen @"won" gameOutcome
+          (headline6 (staticText "Draw")) # shownWhen @"drawn" gameOutcome
           ( headline6 $ RecordToRecord.do
               text @"mark"
-              staticText " to move" ) # shownCase @"toMove" gameOutcome
+              staticText " to move" ) # shownWhen @"toMove" gameOutcome
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div

@@ -91,7 +91,7 @@ inline derivation `recordToRecord w identity`). The final gated family:
     (chrome merges, nested collections, adopted assemblies) registers at
     **build time**, renders per feed through the projection, releases the
     fed row always (HTML)
-  * `shownWhen proj content` / `shownCase @l f content` — the pane rungs:
+  * `shownWhen proj content` / `shownWhen @l f content` — the pane rungs:
     content attached on relevance, row released always (HTML)
   * `shownEach @l proj item` — the keyed collection rung (HTML)
   * `confirmed cfg display` — the witness rung (MDC2/MDC3)

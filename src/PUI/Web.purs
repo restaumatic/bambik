@@ -18,10 +18,8 @@ module PUI.Web
   , addClass
   , addEventListener
   , appendChild
-  , appendRawHtml
   , attachable
   , attribute
-  , childNS
   , clazz
   , createElementNS
   , createTextNode
@@ -32,12 +30,9 @@ module PUI.Web
   , getChecked
   , getValue
   , isFocused
-  , lastChild
-  , namespaceURI
   , onInputDebounced
   , onClickXY
   , removeAllChildren
-  , removeChild
   , removeAttribute
   , removeClass
   , runDomInNode
@@ -46,7 +41,6 @@ module PUI.Web
   , staticHTML
   , setTextNodeValue
   , setValue
-  , svgNS
   , uniqueId
   )
   where

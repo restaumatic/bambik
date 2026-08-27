@@ -69,10 +69,9 @@ module PUI.Web.HTML
   , select
   , span
   , shown
-  , shownCase
+  , shownWhen
   , inCase
   , shownEach
-  , shownWhen
   , staticText
   , strong
   , table
@@ -84,7 +83,6 @@ module PUI.Web.HTML
   , thead
   , tr
   , ul
-  , providedCase
   , provided
   )
   where
@@ -116,27 +114,13 @@ import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, app
 
 -- UIs
 
--- | The **pane rung** — render the content when
--- | the projection yields its payload, detach when it does not, and
--- | **release the fed row always**: a hidden pane must never block the
--- | pipe, so this rung's fulfillment is best-effort by construction.
--- | Derived: the pane merged with the wire. Trails its content:
--- | `(…) # shownWhen proj`.
-shownWhen
-  :: forall read extra row a i12 i1x i2x rowL
-   . Union read extra row
-  => SharedRecordInputs row row row i12 i1x i2x
-  => OwnedRecordOutputs () row row RL.Nil rowL
-  => ({ | read } -> Maybe a) -> PUI Web a {} -> PUI Web { | row } { | row }
-shownWhen proj content = recordToRecord (provided (\(r :: { | row }) -> proj (unsafeCoerce r)) content) identity
-
 -- | The **ambient rung** — content that is
 -- | always there: registered at build (its chrome exists before any
 -- | feed), fed the row on every feed, the fed row released always. The
 -- | content reads its own *closed* narrow row by subsumption
 -- | (`Union read extra row`), so a chrome merge states exactly
 -- | the fields it shows and a formatted read is `projection`'s job inside
--- | it. The sibling of `shownWhen`/`shownCase`/`shownEach` whose policy is
+-- | it. The sibling of `shownWhen`/`shownEach` whose policy is
 -- | no policy; the rung trails its content like every data concern:
 -- | `(headline6 $ …) # shown`.
 shown
@@ -160,23 +144,25 @@ shown content = wrap do
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- | The **case-pane rung** — `shownWhen` for a
--- | classified variant: content attached and fed on case `l`, detached on
--- | any other case, the fed row released always.
-shownCase
+-- | The **case-pane rung** — `provided` merged with the wire: content
+-- | attached and fed on case `l` of the classified variant, detached on
+-- | any other case, the fed row released always. A hidden pane must never
+-- | block the pipe, so this rung's fulfillment is best-effort by
+-- | construction. Trails its content: `(…) # shownWhen @l classifier`.
+shownWhen
   :: forall @l read extra row a b s i12 i1x i2x rowL
    . IsSymbol l => Cons l a b s
   => Union read extra row
   => SharedRecordInputs row row row i12 i1x i2x
   => OwnedRecordOutputs () row row RL.Nil rowL
   => ({ | read } -> [ | s ]) -> PUI Web a {} -> PUI Web { | row } { | row }
-shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
+shownWhen f content = recordToRecord (provided @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
 
--- | The **editor pane** — `shownCase`'s
+-- | The **editor pane** — `shownWhen`'s
 -- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
 -- | that *exists* only while the classifier yields case `l`: attached and
 -- | fed the whole row on that case, detached on any other, the fed row
--- | released always. Where `shownCase` is the pane owned-merged with the
+-- | released always. Where `shownWhen` is the pane owned-merged with the
 -- | wire (its content emits `{}`), this pane's content emits the **row**,
 -- | which the owned merge's disjointness rejects — so the rung is a
 -- | carrier primitive: the pane's channel and the wire's, side by side
@@ -184,12 +170,12 @@ shownCase f content = recordToRecord (providedCase @l (\(r :: { | row }) -> f (u
 -- |
 -- | It dissolves the identity fold: a field that exists only in one mode
 -- | is *not* a payload to fold back into the row by hand
--- | (`# provided paneOf # updated setField` with `setField`
+-- | (`# provided @l paneOf # updated setField` with `setField`
 -- | the identity) — it is a whole-row editor whose existence is gated, and
 -- | its `field @l` lift already re-attaches the rest of the row. The
 -- | classifier reads a closed narrow row (the row-stating exception:
 -- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
--- | `shownCase`'s does. Two releases per feed while attached — the wire's
+-- | `shownWhen`'s does. Two releases per feed while attached — the wire's
 -- | and the editor's own echo — idempotent under the loop, which swallows
 -- | the re-fed one. What the edit does to the rest of the row is a `settled`
 -- | normalization on the same stage when it is a state invariant
@@ -334,7 +320,8 @@ radioButton { picked } = "type" := "radio" $ wrap do
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
 -- | with no chrome and no label of its own. Until the user picks there is
 -- | nothing to show, so the field arrives as "maybe a choice" and leaves as
--- | the choice itself — say which with `# optional` or `# required`. The
+-- | the choice itself — say which with `# optional @"chosen" @"unchosen"` or
+-- | `# required`. The
 -- | options belong to the control, not to the model.
 select :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
@@ -717,35 +704,35 @@ attrDyn name valueFunction w = wrap do
 infixr 10 attrDyn as :=>
 
 -- | Show the pane while the model is in state `l`, fed that state's own
--- | data — `provided` for a model that names its states: a ticket counter
--- | whose `display` is either `waiting` or `serving` shows its number pane
--- | as `pane # providedCase @"serving" _.display`.
+-- | data — visibility is **case adoption**: the argument is a business
+-- | function classifying the situation into a variant, and the pane is
+-- | attached and fed the payload of case `l`, detached on every other
+-- | case. A ticket counter whose `display` is either `waiting` or `serving`
+-- | shows its number pane as `pane # provided @"serving" displayOf`;
+-- | checkout's wizard shows each step's pane off one `checkoutStep`
+-- | classifier whose cases carry what their panes review.
 -- |
--- | Where several states are **mutually exclusive**, this is the way to say
--- | so: one business function classifies the situation once
--- | (`# providedCase @"taken" usernameStatus`) and each pane adopts its own
--- | answer, so two panes can never both be on screen — which separate
--- | "should this be visible?" tests can always accidentally allow.
-providedCase :: forall @l i a b s o. IsSymbol l => Cons l a b s => (i -> [ | s ]) -> PUI Web a o -> PUI Web i o
-providedCase f = provided (\fed -> prj (Proxy @l) (f fed))
-
--- | Show the pane only when there is something to show. Visibility is the
--- | presence of data, not a flag: the argument is a business function that
--- | yields the pane's own data when the pane applies and nothing when it
--- | doesn't, so `pane # provided currentQuestion` reads "shown, provided
--- | there is a current question".
+-- | This is the one visibility primitive. A `Maybe`-gated pane is the same
+-- | thing with its two cases unnamed, so there is no `Maybe` form: a state a
+-- | pane depends on is a variant with **named** cases — `estimated`/`unknown`
+-- | for a distance, `reading`/`browsing` for an inbox, `chosen`/`unchosen`
+-- | for a selection — which is what makes the view line say which state it
+-- | renders. Where several states are **mutually exclusive**, one classifier
+-- | states it (`# provided @"taken" usernameStatus`) and each pane
+-- | adopts its own case, so two panes can never both be on screen — which
+-- | separate "should this be visible?" tests can always accidentally allow.
 -- |
--- | The pane is handed exactly that data and never the whole model, and it
--- | is removed from the page while there is none. Two things follow: the
--- | rule for *what is on screen when* lives in business code where it can
--- | be tested, and a pane that is absent contributes nothing — so anything
--- | downstream waiting on it waits, rather than showing a stale or
--- | invented value.
-provided :: forall i a b. (i -> Maybe a) -> PUI Web a b -> PUI Web i b
+-- | The pane is handed exactly the case payload and never the whole model,
+-- | and it is removed from the page while the model sits elsewhere. Two
+-- | things follow: the rule for *what is on screen when* lives in business
+-- | code where it can be tested, and a pane that is absent contributes
+-- | nothing — so anything downstream waiting on it waits, rather than
+-- | showing a stale or invented value.
+provided :: forall @l i a b s o. IsSymbol l => Cons l a b s => (i -> [ | s ]) -> PUI Web a o -> PUI Web i o
 provided f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
-    { toUser: \fed -> case f fed of
+    { toUser: \fed -> case prj (Proxy @l) (f fed) of
       Nothing -> ensureDetached
       Just y -> do
         -- attach before feeding: a UI component that measures itself on toUser (the
@@ -760,8 +747,8 @@ provided f w = wrap do
 -- | being shown — the strike-through on a done todo, the error colour on an
 -- | overdrawn amount, the highlight on the selected row.
 -- |
--- | Styling only. To make something *appear and disappear*, use `provided`
--- | or `providedCase`, which take the content away with the pane instead of
+-- | Styling only. To make something *appear and disappear*, use
+-- | `provided`, which takes the content away with the pane instead of
 -- | leaving it on the page in a different colour. Applies to the last
 -- | element built, not to a group of siblings.
 clWhen :: forall i o. (i -> Boolean) -> String -> PUI Web i o -> PUI Web i o

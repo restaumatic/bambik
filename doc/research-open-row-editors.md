@@ -164,10 +164,10 @@ setField)` with `setField` the **identity** (`setTable { "Table": t } =
 { "Table": t }`, `setReturn` likewise) — a pane pinning a whole-row
 editor down to its payload, then a retention `Ref`, a union and a
 do-nothing function rebuilding the completion its `field @l` lens would
-have done for free. The dissolution is `shownCase`'s editor sibling,
+have done for free. The dissolution is `shownWhen`'s editor sibling,
 `inCase @l classifier`: a whole-row citizen whose *existence* is gated
 on the case, derived as `joint (provided caseHolds w) identity` — the
-pane **`joint`** the wire, where `shownCase` is the pane owned-merged
+pane **`joint`** the wire, where `shownWhen` is the pane owned-merged
 with it (its content emits `{}`; an editor's emits the row, which the
 owned merge's disjointness rejects, so the rung became derivable only
 once `Joining` existed). Order-form's three fulfillment panes and
@@ -290,7 +290,7 @@ What changed:
   content` had 135 demo sites, every one `proj = identity`; it is now
   `shownAlways content`, the content reading its closed narrow row by
   `Union` subsumption as `told` did, and the name joins the family's
-  grammar (`shownWhen`/`shownCase`/`shownEach`/`shownAlways`).
+  grammar (`shownWhen`/`shownWhen`/`shownEach`/`shownAlways`).
   `forProperty f` had 22 sites, every one `identity`, and
   `forProperty f = projection f >>> forProperty` — so it is now
   `forProperty`, the widening alone; formatting stays `projection`'s.
@@ -321,7 +321,7 @@ field rung `shown @l f` was seen to be derivable — one text node reading
 field `l` through `f`, then releasing the row, is exactly
 `text @l # projection f # <ambient rung>`. So the field rung is deleted
 (subsumption) and the ambient rung is **`shown`**: the family reads
-`shown` / `shownWhen` / `shownCase` / `shownEach`, and the ten former
+`shown` / `shownWhen` / `shownWhen` / `shownEach`, and the ten former
 `shown @l f` sites read `headline4 (text @"count" # projection show) # shown`
 (two of them dropping an `identity` on the way).
 

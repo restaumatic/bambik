@@ -9,7 +9,7 @@ import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, planne
 import PUI (action, debounced, forCases, mvu, required, blank)
 import PUI.Web.Fluent (body1, button, card, dropdown, messageBar, textField)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownCase, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, body, staticText, text)
 import QualifiedDo.Category as Category
 
 flightBookerFluent :: Effect Unit
@@ -25,15 +25,15 @@ flightBookerFluent =
       ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "⚠ "
-              text @"problem" ) # shownCase @"problem" bookingState
+              text @"problem" ) # shownWhen @"problem" bookingState
           ( body1 $ RecordToRecord.do
               staticText "A one-way flight on "
-              text @"date" ) # shownCase @"one-way" bookingState
+              text @"date" ) # shownWhen @"one-way" bookingState
           ( body1 $ RecordToRecord.do
               staticText "A return flight: out "
               text @"out"
               staticText ", back "
-              text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
+              text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
       blank # action (match { "Book": submit })
       messageBar # forCases bookingLine

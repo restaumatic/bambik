@@ -9,7 +9,7 @@ import PUI (projection, mvu, forProperty, projected, toCase, updated)
 import PUI.Web.HTML (shown, body, provided, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Category as Category
-import QuizLogic (answer, currentQuestion, finalOutcome, freshQuizRun, progressFraction, questionCountText, questionNumberText)
+import QuizLogic (answer, freshQuizRun, progressFraction, questionCountText, questionNumberText, quizPhase)
 
 quizMDC3 :: Effect Unit
 quizMDC3 =
@@ -27,12 +27,12 @@ quizMDC3 =
                 text @"correct" # projection show ) # shown
           ( Category.do
               headlineMedium (text @"prompt") # shown
-              listOf {} _.choices (text @"label" # forProperty) # toCase @"picked" _.key ) # provided currentQuestion # updated (match { picked: answer })
+              listOf {} _.choices (text @"label" # forProperty) # toCase @"picked" _.key ) # provided @"asking" quizPhase # updated (match { picked: answer })
           ( Category.do
               ( headlineSmall $ RecordToRecord.do
                   staticText "Final score: "
                   text @"correct" # projection show
                   staticText " / "
                   text @"total" # projection show ) # shown
-              button @"Restart" { icon: "replay" } ) # provided finalOutcome # updated (match { "Restart": const (const freshQuizRun) })
+              button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase # updated (match { "Restart": const (const freshQuizRun) })
       ) # mvu freshQuizRun

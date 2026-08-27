@@ -7,7 +7,7 @@ import Effect (Effect)
 import MovieBrowserLogic (favoriteMark, favorites, markFavorite, movieCatalogue, ratingText, visibleMovies)
 import PUI (foreach, projection, mvu, projected, toCase, updated)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, shownCase, body, clWhen, span, staticText, text)
+import PUI.Web.HTML (shown, shownWhen, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Category as Category
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -25,10 +25,10 @@ movieBrowserMDC3 =
               filterChip @"Oscar" {} )
           ( elevation1 $ titleMedium $ RecordToRecord.do
               text @"count" # projection show
-              staticText " favorite" ) # shownCase @"sole" favorites
+              staticText " favorite" ) # shownWhen @"sole" favorites
           ( elevation1 $ titleMedium $ RecordToRecord.do
               text @"count" # projection show
-              staticText " favorites" ) # shownCase @"several" favorites
+              staticText " favorites" ) # shownWhen @"several" favorites
           list $
             ( clWhen _."Favorite" "mdc-deprecated-list-item--selected"
                 $ listItem $ ( Category.do

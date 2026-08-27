@@ -119,7 +119,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, contract)
+import Data.Variant (class Contractable, contract, inj, prj)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -933,35 +933,39 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | Mark a type-changing selector as **possibly unselected** — the dual of
 -- | `required`. The selection state is an entity always known from the
 -- | input, *including* "nothing picked yet", so `optional` completes the
--- | selector's `Just`-only leaf echo with the missing `Nothing` half (fed
--- | `Nothing` it announces `Nothing`; fed `Just` the leaf's own echo
+-- | selector's `Just`-only leaf echo with the missing half (fed the unmade
+-- | case it announces that case; fed the made case the leaf's own echo
 -- | speaks — exactly one echo per feed either way) and wraps every user
--- | pick in `Just`. The model keeps the `Maybe`: an unmade choice flows as
--- | honest knowledge instead of starving anything downstream, and only a
--- | genuine pick can ever produce the bare value —
--- | `dropdown @l config options # optional` seeds as `Nothing` (the label
--- | is not repeated — `RowToList`'s fundep reads it from the leaf's row)
--- | and the stages demanding the selection stay `provided`-gated until the
--- | user picks. Like `required`, the result is a **whole-row citizen**
--- | `p { l :: Maybe a | rest } { l :: Maybe a | rest }` — the echo-completed
--- | selector lifted under `field @l`, background carried.
-optional :: forall l m a b s ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Cons l (Maybe a) b s => Functor m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
+-- | pick in the made case. The model keeps a **named two-case variant**,
+-- | never a `Maybe`: the application names both states —
+-- | `dropdown @l config options # optional @"chosen" @"unchosen"` — and its
+-- | seed spells the unmade one (`"Room": .unchosen {}`), so an unmade choice
+-- | flows as honest knowledge instead of starving anything downstream, the
+-- | stages demanding the selection adopt the made case
+-- | (`# inCase @"chosen" roomOf`, `# provided @"complete" plan`), and
+-- | only a genuine pick can ever produce the bare value. The field label is
+-- | not repeated — `RowToList`'s fundep reads it from the leaf's row. Like
+-- | `required`, the result is a **whole-row citizen**
+-- | `p { l :: [ c :: a, n :: {} ] | rest } { l :: [ c :: a, n :: {} ] | rest }` —
+-- | the echo-completed selector lifted under `field @l`, background carried.
+optional :: forall @c @n l m a b s v cr nr ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => IsSymbol c => IsSymbol n => Cons l (Maybe a) () ri => Cons l a () ro => Cons c a cr v => Cons n {} nr v => Cons l [ | v ] b s => Functor m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
 optional p = field @l scalar
   where
-  scalar :: PUI m (Maybe a) (Maybe a)
+  scalar :: PUI m [ | v ] [ | v ]
   scalar = wrap $ unwrap p <#> \p' ->
     let mPropRef = unsafePerformEffect $ Ref.new Nothing
     in
       { toUser: \i -> do
-          p'.toUser (Record.insert (Proxy @l) i {})
-          case i of
+          let picked = prj (Proxy @c) i
+          p'.toUser (Record.insert (Proxy @l) picked {})
+          case picked of
             Nothing -> do
               mProp <- Ref.read mPropRef
-              for_ mProp \prop -> prop Nothing
+              for_ mProp \prop -> prop (inj (Proxy @n) {})
             Just _ -> pure unit
       , fromUser: \prop -> do
           Ref.write (Just prop) mPropRef
-          p'.fromUser \o -> prop (Just (Record.get (Proxy @l) o))
+          p'.fromUser \o -> prop (inj (Proxy @c) (Record.get (Proxy @l) o))
       }
 
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.

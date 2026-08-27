@@ -163,8 +163,8 @@ import Type.Proxy (Proxy(..))
 --     No scalar or polymorphic component interfaces. Variant *editing* has
 --     no `+→+` component citizens: it goes through record-shaped editor
 --     state (`dimap`-bracketed `looped` pipelines — a selection component
---     followed by payload-typed panes, each `# provided # lcmap <paneOf>`
---     shown by the presence of its `Maybe` payload — see the demos); `+→+`
+--     followed by editor panes, each `# inCase @l <selectionOf>` existing
+--     while the selection sits at its case — see the demos); `+→+`
 --     remains the dispatch direction (`VariantToVariant.do` of action stages).
 --   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
 --     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`,
@@ -542,8 +542,9 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
 -- |
 -- | Until the user picks there is no choice to show, so the field arrives as
 -- | "maybe a choice" and leaves as the choice itself — say which with
--- | `# optional` (nothing preselected, and whatever needs the choice stays
--- | hidden until it exists) or `# required` (the model always has one).
+-- | `# optional @"chosen" @"unchosen"` (the two states named by the
+-- | application; nothing preselected, and whatever needs the choice adopts
+-- | the made case) or `# required` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
 radioButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
@@ -729,7 +730,7 @@ sliderLeaf live label = wrap do
 -- | comparing side by side, prefer `radioButton` or `segmentedButton`.
 -- |
 -- | Same contract as `radioButton`: nothing to show until the user picks,
--- | so say `# optional` or `# required`; the options are part of the
+-- | so say `# optional @"chosen" @"unchosen"` or `# required`; the options are part of the
 -- | control, not of the model.
 select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
@@ -914,8 +915,8 @@ iconToggleLeaf config = wrap do
 -- | Unlike `segmentedButton` a tab bar is never in a "nothing picked"
 -- | state — some section is always open — which is what makes it the
 -- | selector to build a sectioned editor around: the tab bar beside one
--- | `provided` pane per section, each pane editing its own part of the
--- | model.
+-- | `inCase @l` editor pane per section, each pane editing its own part of
+-- | the model.
 tabBar
   :: forall @l provided a r rest
    . IsSymbol l

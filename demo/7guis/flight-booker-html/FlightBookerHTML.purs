@@ -8,7 +8,7 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, field, forCases, mvu, required, toCase, blank)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shown, shownCase, body, button, div, input, label, output, p, select, staticText, text)
+import PUI.Web.HTML (inCase, shown, shownWhen, body, button, div, input, label, output, p, select, staticText, text)
 import QualifiedDo.Category as Category
 
 flightBookerHTML :: Effect Unit
@@ -29,15 +29,15 @@ flightBookerHTML =
     ( Category.do
         ( p $ RecordToRecord.do
             staticText "⚠ "
-            text @"problem" ) # shownCase @"problem" bookingState
+            text @"problem" ) # shownWhen @"problem" bookingState
         ( p $ RecordToRecord.do
             staticText "A one-way flight on "
-            text @"date" ) # shownCase @"one-way" bookingState
+            text @"date" ) # shownWhen @"one-way" bookingState
         ( p $ RecordToRecord.do
             staticText "A return flight: out "
             text @"out"
             staticText ", back "
-            text @"back" ) # shownCase @"return" bookingState ) # debounced itinerarySettleTime
+            text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     blank # action (match { book: submit })
     output # forCases bookingLine

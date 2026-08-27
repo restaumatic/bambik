@@ -1,10 +1,9 @@
-module InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openedMessage, openMessage, requestDelete, rowLine, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark) where
+module InboxLogic (composeMessage, deleteOpened, deletionOf, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, messageView, openMessage, readState, requestDelete, rowLine, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText) where
 
 import Prelude ((<>), (#), (+), (==), (/=), (||), comparing, map, not, show)
 
 import Data.Array (filter, find, length, snoc, sortBy)
 import Data.Maybe (Maybe(..))
-import Data.Variant (match)
 
 mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int }
 mondayMail =
@@ -33,20 +32,22 @@ mailboxRows { messages, opened } = messages # map \g ->
   , attention: not g.read || opened == Just g.id
   }
 
-unreadMark :: { read :: Boolean } -> Maybe {}
-unreadMark { read } = if read then Nothing else Just {}
+readState :: { read :: Boolean } -> [ unread :: {}, read :: {} ]
+readState { read } = if read then .read {} else .unread {}
 
 openMessage :: Int -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int }
 openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g { read = true } else g) messages, opened = Just id }
 
-openedMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> Maybe { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }
-openedMessage { messages, opened } = find (\g -> Just g.id == opened) messages
+messageView :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int } -> [ reading :: { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, browsing :: {} ]
+messageView { messages, opened } = case find (\g -> Just g.id == opened) messages of
+  Just message -> .reading message
+  Nothing -> .browsing {}
 
 lastMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean } } -> Boolean
 lastMessage { messages } = length messages == 1
 
-confirmingDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> Maybe { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
-confirmingDelete m = match { confirming: \_ -> Just m, silent: \_ -> Nothing } m.deletion
+deletionOf :: { deletion :: [ silent :: {}, confirming :: {} ] } -> [ silent :: {}, confirming :: {} ]
+deletionOf { deletion } = deletion
 
 requestDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, read :: Boolean }, opened :: Maybe Int, deletion :: [ silent :: {}, confirming :: {} ] }
 requestDelete m@{ messages } = if lastMessage { messages } then m { deletion = .confirming {} } else deleteOpened m

@@ -314,7 +314,7 @@ The codebase is three floors, each greppable:
 
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
-`rmap` stage — `provided paneOf`, `foreach @l rowsOf`, `listOf opts
+`rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf opts
 rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
 copyOf`, `projection f`/`projected f`/`forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of

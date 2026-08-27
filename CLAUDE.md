@@ -120,10 +120,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | `settled` | `rmap`-only normalization over a stated sub-row footprint |
   | `updated` | the Mealy update stage: fold each event emission of a wrapped `×→+` component into the retained value; **both sides subsume** |
   | `applied` | the occurrence stage — `updated` for an emitter fed the row it acts on (a button replaying its row): `f :: state -> state` steps the retained row per emission, the emitter's input row pinned to `f`'s footprint by the signature, so `button @"Add" {} # applied addTodo` states label and model once each; law `applied f = updated (const f)`. The subsuming stages (`updated`/`applied`/`every`/`settled`) each state their footprint as one constraint, `Union small rest big` — the model is the footprint plus the rest |
-  | gated displays | displays are pipeline stages natively, typed `p { o \| rest } { o \| rest }` — a pass-through whose **release is the fulfillment witness**, gate policy baked into the component. The family (PUI.Web.HTML unless noted): `shown content` (ambient structured content — chrome registers at build, renders per feed, releases always), `shownWhen proj content` / `shownCase @l f content` (display panes: attach on relevance, release always), `inCase @l f editor` (the editor pane — `shownCase`'s editor sibling; a carrier primitive, the pane's channel beside the wire's, since its content emits the row the owned merge would reject), `shownEach @l proj item` (keyed collection), `confirmed cfg $ content` (MDC2/MDC3 — the witness rung: modal, flow withheld until the user confirms). Content slots accept only `{}`-output components, keeping the no-silent-loss law; `observed` unchanged |
+  | gated displays | displays are pipeline stages natively, typed `p { o \| rest } { o \| rest }` — a pass-through whose **release is the fulfillment witness**, gate policy baked into the component. The family (PUI.Web.HTML unless noted): `shown content` (ambient structured content — chrome registers at build, renders per feed, releases always), `shownWhen @l f content` (display pane: attach on relevance, release always), `inCase @l f editor` (the editor pane — `shownWhen`'s editor sibling; a carrier primitive, the pane's channel beside the wire's, since its content emits the row the owned merge would reject), `shownEach @l proj item` (keyed collection), `confirmed cfg $ content` (MDC2/MDC3 — the witness rung: modal, flow withheld until the user confirms). Content slots accept only `{}`-output components, keeping the no-silent-loss law; `observed` unchanged |
   | `muted` | the counit: render, and **deliberately discard** the component's output (`rmap (const {})`) — the visible form of what no stage may do silently; `# muted` writes off a genuinely emitting assembly (a `foreach` forwarding its elements inside a packaged control, scoreboard's summary group) so it can end at `{}` |
   | `observed` | the gated displays' `+`-diagonal sibling: every event forwards once at feed time; the status's own emissions are dropped (events are one-shot) |
-  | `required` / `optional` | adopt a type-changing selector as an always-selected / possibly-unselected **whole-row citizen** (label derived from the leaf's closed rows, background carried like `field @l`'s); `optional` keeps the `Maybe` and completes the `Just`-only echo, so an unmade choice is honest knowledge rather than a starved stage |
+  | `required` / `optional` | adopt a type-changing selector as an always-selected / possibly-unselected **whole-row citizen** (label derived from the leaf's closed rows, background carried like `field @l`'s); `optional @c @n` completes the `Just`-only echo and keeps the field as the **named two-case variant** `[ c :: a, n :: {} ]` the application spells (`# optional @"chosen" @"unchosen"`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case |
   | `every` | the heartbeat wire: pass-through plus a periodic step over a sub-row, merged back over the last value |
   | adopter family | `asField`/`projection`/`projected`/`forProperty`/`atField`/`field`/`subStrong`/`subChoice`/`toCase`/`toCases`/`atCase`/`forCase`/`forCases`, plus `acted`/`optioned` |
 
@@ -149,10 +149,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | --- | --- |
   | `attrWith` | value-computed attribute — the channel-fed counterpart of static `attr`/`:=`, so a cell's style/coord/colour updates in place through the channel rather than by rebuilding a closure |
   | `clicked` | click emitter for any element (`button`'s replay-last-value protocol); row-shaped, since replay is lawful over records only, and its **content subsumes** — a multi-reader content states its row once in a named closed *face* function |
-  | `provided` | the view-model conditional: its argument is a named `Maybe`-valued projection, content attached and fed on `Just`, detached on `Nothing`. The pane consumes the payload, never the whole model, so visibility logic lives in testable business code. It **detaches**, so it is a pipeline stage, not a gated-merge operand |
-  | `providedCase` | `provided`'s `+` sibling — case-gated existence over a stored variant field or a variant-returning classifier, so mutually exclusive states are exclusive by construction |
+  | `provided` | the **one visibility primitive**: case-gated existence — its argument is a classifier (a stored variant field via a closed accessor, or a variant-returning business function), content attached and fed the case payload on case `l`, detached on every other case. There is no `Maybe` form: a state a pane depends on is a variant with named cases, so mutually exclusive states are exclusive by construction and the view line names the state it shows. It **detaches**, so it is a pipeline stage, not a gated-merge operand |
   | `clWhen` | value-dependent class — styling, deliberately last-element-only |
-  | gated display rungs | `shown content` (ambient structured content, registered at build), `shownWhen proj content` / `shownCase @l f content` (display panes), `inCase @l f editor` (editor pane), `shownEach @l proj item` (keyed collection) — each `p { o \| rest } { o \| rest }`, releasing the fed row per its policy; `confirmed` (the witness rung) lives in the design systems |
+  | gated display rungs | `shown content` (ambient structured content, registered at build), `shownWhen @l f content` (display pane), `inCase @l f editor` (editor pane), `shownEach @l proj item` (keyed collection) — each `p { o \| rest } { o \| rest }`, releasing the fed row per its policy; `confirmed` (the witness rung) lives in the design systems |
   | `onClickedXY` | container-level pointer-down coordinates (local/viewBox `{ x, y }`) for canvases |
 
   Announcing statics are `staticText` and the void `hr` (`{} → {}` chrome); the
@@ -309,7 +308,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 - `RecordToRecord.do` / `RecordToVariant.do` / `VariantToVariant.do` / `VariantToRecord.do` (qualified-do) - the four row merges
 - label-indexed components - every MDC component is a citizen of one direction (`filledTextField @l` ×→×, `button @l` ×→+, `snackbar @l` +→×), so pipeline stages are written directly from components; `field`/`subStrong` nest sub-composites into larger aggregates
 - variant editing - **record-shaped editor state**: the model keeps the variant, the editor keeps every payload; `bracketed <stateOf> <caseOf>` wraps `Category.do { selection component; payload panes }` (the variant in via a state function seeding absent payloads, out via a projection on the selection, self-traced in between) — each pane a whole-row editor stage `# inCase @l <selectionOf>` (the editor pane: existence gated on the selection's case, the rest of the row carried by the leaf's own `field @l` lift — no fold, no setter); consistency via the self-trace re-broadcast; unit-payload variants need only the bracket around one selection component
-- conditional visibility - `provided <maybeOf>` with a named `Maybe`-valued projection (never an in-UI predicate), or `providedCase @l <variantOf>` for case-gated existence — a stored variant field (`# providedCase @"serving" identity # atField @"display"`) or, for **mutually exclusive derived states**, one variant-returning classifier per rule family (`# providedCase @"taken" usernameStatus`, signup-form: two classifiers replaced five `Maybe` projections, exclusivity by construction): conditional *data* (a pane whose content only exists sometimes) → `pane # provided <maybeOf>`; conditional *mode of a live editor* inside a `looped` ensemble → the editor pane `# inCase @l <classifier>` (order-form's fulfillment panes, flight-booker's return date, meeting-booker's attendees slider), never a payload pane folded back with an identity setter. `clWhen` stays predicate-driven — it toggles a class (styling), not visibility
+- conditional visibility - **case adoption, never a `Maybe`**: `provided @l <classifier>` for case-gated existence — a stored variant field (`# provided @"serving" identity # atField @"display"`) or, for **derived states**, one variant-returning classifier per rule family whose cases carry their panes' payloads (`# provided @"taken" usernameStatus`; checkout's `checkoutStep`, calculator's `readout`, inbox's `messageView` converting `find`'s `Maybe` at the boundary), exclusivity by construction: conditional *data* (a pane whose content only exists sometimes) → `pane # shownWhen @l <classifier>`; conditional *mode of a live editor* inside a `looped` ensemble → the editor pane `# inCase @l <classifier>` (order-form's fulfillment panes, flight-booker's return date, meeting-booker's attendees slider), never a payload pane folded back with an identity setter. `clWhen` stays predicate-driven — it toggles a class (styling), not visibility
 - gated displays - live views as pipeline stages (slider readouts, summary lines, data tables): each rung renders per its policy and releases the fed row; read functions are closed at their own footprints (the rungs subsume)
 
 ### Separation of Concerns
@@ -365,7 +364,7 @@ the dev server). Two suites: **demo/7guis/** (the
 | cells | **channel-fed 31×27 grid** — ~800 cells built once, `attrWith` + `text` in place, clicked key via `# toCase @l _.key`; hand-rolled formula evaluator over an `Expr` AST (nominal, since rows can't express μ) |
 
 The `-html` variants are the **plain-HTML floor**: one container `div` (so
-`provided` panes re-attach inside the demo's own DOM), scalar leaves labelled
+case panes re-attach inside the demo's own DOM), scalar leaves labelled
 in place (`input "text" # field @"Name"`), captions as `label`+`staticText`
 merges, native `select` and `output`.
 
@@ -391,7 +390,7 @@ focused demo apiece):
 | auction | `feedback` (`Costrong`) — a `top`-bid field loops output→input, seeded, invisible in the stage's outer type |
 | checkout | `folding @"next"` (`Coresolving`) — 3-step wizard, step state loops silently; Next/Back are **two business actions** each carrying its own caption-case into the loop case via `# toCases`, so no button needs a `label:` |
 | payment | `iterate` (`Cochoice`) — flaky charge retries with attempt+1; no seed (events occur, they don't pre-exist). Also the **`observed`** showcase: a retry toast narrates the loop inline while the event passes on |
-| ticket-dispenser | `unfolding @"resume"` + the `Reel` optic (`Coretaining`) — "take a number", counter seeded and resumed. Also the **`providedCase`** showcase: state is a payload-carrying variant field, so panes are pure case adoption |
+| ticket-dispenser | `unfolding @"resume"` + the `Reel` optic (`Coretaining`) — "take a number", counter seeded and resumed. Also the **`provided`** showcase: state is a payload-carrying variant field, so panes are pure case adoption |
 | parcel | `subStrong` — a reusable address sub-form as a citizen over its own closed row, background field threaded |
 | cashbox | `subChoice` — selective interception as UX: outgoing money detours through confirmation dialogs, incoming posts straight to the fold; every branch a two-record Mealy handler `{ amount } -> { balance } -> { balance }`; payloads via `button @l {…} # with patch` |
 | potluck | `acted` (the container action) — per-guest dish editors under one model; the menu summary is **withheld by the gather gate until every guest has chosen**, and shows `foreach` beside `acted` |
@@ -402,25 +401,25 @@ focused demo apiece):
 
 **The rest**, grouped by what they exercise: todomvc (`listOf` toggle, `clWhen`,
 `segmentedButton` filter), tip-calculator (all-`×→×`, sliders, gated money
-readouts), quiz (`provided` panes over `Maybe`-projected stages,
+readouts), quiz (`provided` panes over one `quizPhase` classifier,
 `linearProgress`), tic-tac-toe / calculator (**channel-fed `foreach` grids** —
 cells built once, key emitted via `clicked` + `toCase`, folded by `updated`),
 markdown-previewer (`filledTextArea` + injection-proof preview as recursive
 `PUI Web`: `(dynamic …) # shown` over element oculars, since structure
 genuinely varies per block), stopwatch (`every` tick pausing via `Nothing` over
 a stored phase variant — a Boolean nobody edits as a Boolean is a phase — with
-`# providedCase` button panes and a `shownEach` lap list — whose
+`# provided` button panes and a `shownEach` lap list — whose
 per-feed release *is* the sequence merge's announcing unit, so an empty
 lap list never starves the gate),
 shopping-cart (`dataTable` over `foreach`), password-generator (effectful
 `action` + `Effect.Random` → `updated`), color-mixer (`sliderLive` channels
 driving an `attrWith` swatch), signup-form (`debouncedTextField` username check plus two
-variant-returning classifiers via `providedCase`, replacing five `Maybe`
+variant-returning classifiers via `provided`, replacing five `Maybe`
 projections — exclusivity by construction), photo-gallery (`imagePane`, the
 channel-fed gallery: a retaining `foreach` over the pictures rather than a
 wholesale rebuild), inbox (`listOf` + `dialog` + `banner` — the demo whose
 MDC3 twin shows the honest catalog gap, MD3 having dropped `banner` for
-`snackbar`), movie-browser (Aff search `action` + `providedCase` result panes),
+`snackbar`), movie-browser (Aff search `action` + `provided` result panes),
 weather (Aff service with a canned per-city delay), helloworld
 (`body $ staticText` — the 5 kB bundle floor).
 
@@ -433,9 +432,10 @@ suffix naming the vocabulary rather than a twin (so a suffix means
 too, while only helloworld and restaurant-menu, which use no design system at
 all, carry no suffix): product-review (Shoelace's
 exclusive star `rating`), meeting-booker (Fluent; also the **no-defaults
-showcase** — nothing pre-picked, `# optional` selectors over `Maybe` fields, the
+showcase** — nothing pre-picked, `# optional @"chosen" @"unchosen"` selectors
+over named two-case fields seeded `.unchosen {}`, no `Maybe` in the booking, the
 attendees a bounded quantity *in the model*: the slider exists only once a
-room is chosen (`# inCase @"chosen" roomChoice`) and the room dropdown
+room is chosen (`# inCase @"chosen" roomOf`) and the room dropdown
 re-scopes its bounds as an invariant (`# settled seatsInRoom`), so an
 incomplete meeting is unbookable by construction), loan-calculator (Bootstrap, all
 `sliderLive`).

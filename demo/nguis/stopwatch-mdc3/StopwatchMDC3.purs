@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated, projection)
-import PUI.Web.HTML (shown, shownEach, providedCase, body, li, staticText, text, ul)
+import PUI.Web.HTML (shown, shownEach, provided, body, li, staticText, text, ul)
 import PUI.Web.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Category as Category
 import StopwatchLogic (beginTiming, clearStopwatch, formatTime, haltTiming, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
@@ -20,11 +20,11 @@ stopwatchMDC3 =
           displaySmall (text @"elapsedTenths" # projection formatTime) # shown
           every tickPeriod tick
           ( RecordToVariant.do
-              button @"Start" { icon: "play_arrow" } # providedCase @"halted" stopwatchPhase
-              button @"Stop" { icon: "stop" } # providedCase @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
+              button @"Start" { icon: "play_arrow" } # provided @"halted" stopwatchPhase
+              button @"Stop" { icon: "stop" } # provided @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
           ( RecordToVariant.do
-              button @"Lap" { icon: "flag" } # providedCase @"timing" stopwatchPhase
-              button @"Reset" { icon: "replay" } # providedCase @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
+              button @"Lap" { icon: "flag" } # provided @"timing" stopwatchPhase
+              button @"Reset" { icon: "replay" } # provided @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
           ul $ ( li $ RecordToRecord.do
                    staticText "Lap "
                    text @"number"

@@ -7,7 +7,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (applied, projection, forProperty, mvu, required, toCase, updated)
 import PUI.Web (choice)
-import PUI.Web.HTML (shownCase, body, clWhen, span, staticText, text)
+import PUI.Web.HTML (shownWhen, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Category as Category
 import TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, remainingItems, toggleTodo, visibleEntries)
@@ -26,9 +26,9 @@ todoMvcMDC3 =
           Category.do
             ( bodySmall $ RecordToRecord.do
                 text @"count" # projection show
-                staticText " item left" ) # shownCase @"sole" remainingItems
+                staticText " item left" ) # shownWhen @"sole" remainingItems
             ( bodySmall $ RecordToRecord.do
                 text @"count" # projection show
-                staticText " items left" ) # shownCase @"several" remainingItems
+                staticText " items left" ) # shownWhen @"several" remainingItems
             button @"Clear completed" {} # applied clearCompleted
       ) # mvu emptyTodoList

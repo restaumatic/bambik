@@ -7,8 +7,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import InboxLogic (composeMessage, confirmingDelete, deleteOpened, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, openMessage, openedMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText, unreadMark)
-import PUI (applied, forCase, mvu, observed, atCase, projected, toCase, updated)
+import InboxLogic (composeMessage, deleteOpened, deletionOf, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, messageView, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText)
+import PUI (applied, forCase, mvu, observed, atCase, projected, toCase, updated, with)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
@@ -25,7 +25,7 @@ inboxMDC2 =
               staticText " messages" ) # shown
           listOf { selected: _.attention } mailboxRows
             ( span $ Category.do
-                (staticText "● ") # shownWhen unreadMark
+                (staticText "● ") # shownWhen @"unread" readState
                 ( RecordToRecord.do
                     text @"sender"
                     staticText " — "
@@ -37,14 +37,14 @@ inboxMDC2 =
                     staticText "From: "
                     text @"sender"
                   body1 (text @"body")) # shown
-              iconButton @"Delete message" { icon: "delete" } ) # provided openedMessage # updated (match { "Delete message": const requestDelete })
+              iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
           ( Category.do
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
-                  button @"Delete" {}
-                  button @"Keep" {} ) # provided confirmingDelete
+                  button @"Delete" {} # with {}
+                  button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
               VariantToVariant.do
                 banner # forCase @"Delete" (const inboxZeroLine) # observed
-                identity # atCase @"Keep" # toCase @"Keep" identity ) # updated (match { "Delete": const <<< deleteOpened, "Keep": const <<< keepMessages })
+                identity # atCase @"Keep" # toCase @"Keep" identity ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
           fab @"Compose" { icon: "edit" } # applied composeMessage
           ( menu { label: "Sort" } $ RecordToVariant.do
               menuItem @"By sender" {}
