@@ -196,14 +196,12 @@ foreign import appendRawHtml :: String -> Node -> Effect Node
 foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
-foreign import setAttributes :: Node -> Object String -> Effect Unit
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
 foreign import removeAttribute :: Node -> String -> Effect Unit
 foreign import removeAllChildren :: Node -> Effect Unit
 foreign import removeChild :: Node -> Node -> Effect Unit
 foreign import addClass :: Node -> String -> Effect Unit
 foreign import removeClass :: Node -> String -> Effect Unit
-foreign import insertAsFirstChild :: Node -> Node -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node

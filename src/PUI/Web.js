@@ -87,16 +87,7 @@ export function insertBefore(newNode) {
   };
 }
 
-// insertAsFirstChild :: Node -> Node -> IOSync Unit
-export function insertAsFirstChild(newNode) {
-  return function (parentNode) {
-    return function () {
-      parentNode.insertBefore(newNode, parentNode.firstChild);
-    };
-  };
-}
-
-// appendChild :: Node -> Node -> IOSync Unit
+// appendChild :: Node -> Node -> Effect Unit
 export function appendChild(newNode) {
   return function (parent) {
     return function () {
@@ -227,20 +218,6 @@ export function setChecked(node) {
   };
 }
 
-// setAttributes :: Node -> Object String -> Effect Unit
-export function setAttributes(node) {
-  return function (attrs) {
-    return function () {
-      for (var k in attrs) {
-        if (attrs.hasOwnProperty(k)) {
-          node.setAttribute(k, attrs[k]);
-        }
-      }
-    }
-  }
-}
-
-// removeAttribute :: Node -> String -> Effect Unit
 export function removeAttribute(node) {
   return function (name) {
     return function () {
