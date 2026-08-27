@@ -250,7 +250,7 @@ decorators) states its row once, in a named closed **face** function
 (`attrWith "style" cellFace` with
 `cellFace :: { text :: String, header :: Boolean, sel :: Boolean } -> String`
 — the row-stating exception again). An element whose whole face is
-decorators sits on `blank`, the faceless announcing leaf.
+decorators sits on `blank`, the faceless leaf.
 
 ## App shape
 

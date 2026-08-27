@@ -90,7 +90,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (announce, asField, atField, blank, field, mvu, subStrong, forProperty, pempty, muted, projected, projection, required, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, pempty, muted, projected, projection, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -103,7 +103,7 @@ import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
 import Data.Profunctor.Seeding (class Seeding, seeded)
-import Data.Profunctor.Seeding (class Seeding, seeded) as Seeding
+import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
@@ -118,7 +118,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, contract)
+import Data.Variant (class Contractable, case_, contract)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -381,8 +381,10 @@ instance Apply m => Semigroupoid (PUI m) where
       }
 
 -- | `identity` forwards its input straight to its output: a wire. The unit
--- | of `compose` (up to effect timing), the element the diagonal unary laws
--- | pin, and — at `{}` — an alternative `RecordToRecord.pempty`.
+-- | of `compose`, the element the diagonal unary laws pin, and the unit of
+-- | both diagonal merges at their unit object: `RecordToRecord.pempty` is
+-- | `identity @{}` and `VariantToVariant.pempty` is `identity @(Variant ())`
+-- | — exactly, since the record gates ignore a contribution of zero fields.
 instance Applicative m => Category (PUI m) where
   -- the ref is created per unwrap (inside the functor map), NOT in a
   -- top-level `let`: `identity` is a constant, and a constant's `let` is
@@ -396,24 +398,16 @@ instance Applicative m => Category (PUI m) where
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The **seeded echo wire** (the `Seeding` instance): `identity`'s
--- | pass-through plus one emission of the seed at registration — the
--- | pointedness primitive the knot-tying row forms (`feedback`/`folding`/
--- | `unfolding`) compose into their traced chains to prime the state
--- | channel with its declared initial value.
+-- | The **point** (the `Seeding` instance): one emission of `a` at
+-- | registration, then nothing — the informationless `{}` it is fed is
+-- | ignored. The pointedness primitive; the seeded echo wire the knot-tying
+-- | row forms (`feedback`/`folding`/`unfolding`) prime their state channels
+-- | with is derived from it through `Choice` (`Data.Profunctor.Seeding`).
 instance Applicative m => Seeding (PUI m) where
-  seeded a = wrap $ pure unit <#> \_ ->
-    -- ref per unwrap, like `identity` (a shared `let` would wire all
-    -- instantiations together)
-    let mPropRef = unsafePerformEffect $ Ref.new Nothing
-    in
-      { toUser: \ch -> do
-          mProp <- Ref.read mPropRef
-          for_ mProp \prop -> prop ch
-      , fromUser: \prop -> do
-          Ref.write (Just prop) mPropRef
-          prop a
-      }
+  announce a = wrap $ pure
+    { toUser: mempty
+    , fromUser: \prop -> prop a
+    }
 
 -- | Self-reference as carrier structure (`Data.Profunctor.Looping`,
 -- | `Seeding`'s sibling): feed a UI component its own emissions,
@@ -452,12 +446,9 @@ instance Functor m => Looping (PUI m) where
       }
 
 instance Applicative m => RecordToRecord (PUI m) where
-  -- the unit announces its informationless {} once, so the merge gates below
-  -- never starve against it
-  pempty = wrap $ pure
-    { toUser: mempty
-    , fromUser: \prop -> prop {}
-    }
+  -- the unit is the wire at the unit row: it owns no field, so the gate
+  -- below is pre-satisfied on its side and ignores whatever it echoes
+  pempty = identity
   recordToRecord = recordToRecordPUI
 
 -- Hoisted so the merge's `RowList` variables are in scope: the starvation
@@ -577,10 +568,10 @@ instance Functor m => Retaining (PUI m) where
       }
 
 instance Applicative m => VariantToRecord (PUI m) where
-  pempty = wrap $ pure
-    { toUser: mempty
-    , fromUser: \prop -> prop {}
-    }
+  -- the wire at the unit row, entered from the empty variant: never fed
+  -- (nothing inhabits its input), owning no field — the gate is
+  -- pre-satisfied on its side
+  pempty = lcmap case_ identity
   variantToRecord = variantToRecordPUI
 
 -- | The **output gate** both record-output merges run on, stated once.
@@ -612,7 +603,11 @@ gatedRecordOutputs
   -> ({ | o } -> Effect Unit)
   -> Effect Unit
 gatedRecordOutputs direction labels1 labels2 exact1 exact2 sub1 sub2 prop = do
-  sub1 \partial -> do
+  -- a side owning zero fields contributes nothing: its only possible
+  -- emission is the informationless {}, pre-known below, so it neither
+  -- opens the gate nor re-fires it — `identity @{}`, a silent display and
+  -- an announcing one are indistinguishable as operands
+  sub1 \partial -> unless (Array.null labels1) do
     let exact = exact1 partial
     let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
     let mp2 = unsafePerformEffect $ Ref.read p2Last
@@ -623,7 +618,7 @@ gatedRecordOutputs direction labels1 labels2 exact1 exact2 sub1 sub2 prop = do
       Just p2val -> do
         guard1.fed *> guard2.fed
         prop $ Record.union exact p2val
-  sub2 \partial -> do
+  sub2 \partial -> unless (Array.null labels2) do
     let exact = exact2 partial
     let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
     let mp1 = unsafePerformEffect $ Ref.read p1Last

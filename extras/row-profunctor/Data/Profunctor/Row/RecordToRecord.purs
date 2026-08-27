@@ -33,19 +33,21 @@
 -- |
 -- | ```
 -- | recordToRecord pempty g = g = recordToRecord g pempty
+-- | pempty = identity @{}                    -- on every Category carrier
 -- | ```
 -- |
--- | It is a class member (not a parametric silent element like `PUI`'s
--- | `silence`) because a lawful record-output unit must *announce* its
--- | contribution — the informationless `{}` — to the merge machinery, and
--- | anything typed `forall a b. p a b` is silent by parametricity (it can
--- | never fabricate a `b`). For `Category` carriers, `pempty = identity @{}`.
+-- | The unit is the **wire at the unit row**: it owns no field, so a
+-- | lawful merge treats its side as known from the start and ignores
+-- | whatever it emits — a contribution of zero fields is no contribution.
+-- | That is what makes `identity @{}` the unit exactly (not up to an echo),
+-- | and the same wire is `VariantToVariant`'s unit at `Variant ()`.
+-- | Pointing (one emission at registration) is not the unit's job: it is
+-- | `Seeding`'s `announce`, and `with`/`mvu` below close over that.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord
   , class RecordToRecord
   , discard
-  , announce
   , blank
   , with
   , mvu
@@ -69,9 +71,9 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Looping (class Looping, looped)
-import Data.Profunctor.Seeding (class Seeding, seeded)
+import Data.Profunctor.Seeding (class Seeding, announce, seeded)
 import Data.Profunctor.Strong (class Strong, first)
-import Control.Semigroupoid (class Semigroupoid, (>>>))
+import Control.Semigroupoid ((>>>))
 import Data.Function (const)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
@@ -99,10 +101,9 @@ class Profunctor p <= RecordToRecord p where
     OwnedRecordOutputs o1 o2 o o1l o2l =>
     p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
   -- | The **nullary** merge — the unit: reads nothing, contributes no fields.
-  -- | Genuinely per-carrier: a parametric silent element cannot serve, because
-  -- | a record-output unit must *announce* its informationless `{}` so the
-  -- | merge machinery knows that side is complete. For `Category` carriers,
-  -- | `pempty = identity @{}`.
+  -- | On every `Category` carrier it is the wire at the unit row,
+  -- | `pempty = identity @{}`; it stays a class member so carriers without
+  -- | a `Category` can still state their unit.
   pempty :: p {} {}
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
@@ -119,32 +120,12 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   p { | i1 } { | o1 } -> (Unit -> p { | i2 } { | o2 }) -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 
--- | The **announcing constant**: silent except for one emission of `o` at
--- | registration — the `rmap`-closure of the unit,
+-- | The **faceless leaf**: reads nothing — stated as subsumption in its
+-- | own signature, like the gated displays' — and contributes nothing. The
+-- | unit's `lcmap`-closure,
 -- |
 -- | ```
--- | announce o = rmap (const o) pempty
--- | ```
--- |
--- | generalizing the unit's informationless `{}` announcement to a row of
--- | fields. As a merge operand it seeds fields; composed in front of a
--- | UI component it discharges the initial-state obligation (`with`'s
--- | implementation). Record-shaped like every `× → ×` built side —
--- | a case is seeded by adopting an announcement
--- | (`announce { … } # toCase @l f`) or a `seeded` wire's `inj`, never by
--- | a variant-typed constant: the `× → +` unit is silent, so no
--- | case-announcer can close over it.
-announce :: forall p r. RecordToRecord p => { | r } -> p {} { | r }
-announce o = rmap (const o) pempty
-
--- | The **faceless announcing leaf**: reads nothing — stated as
--- | subsumption in its own signature, like the gated displays' — and announces the
--- | informationless `{}` once at registration. The unit's `lcmap`-closure,
--- | `announce`'s exact twin on the other side:
--- |
--- | ```
--- | announce o = rmap (const o) pempty      -- build a constant output
--- | blank      = lcmap (const {}) pempty    -- accept any record input
+-- | blank = lcmap (const {}) pempty    -- accept any record input
 -- | ```
 -- |
 -- | The leaf for elements whose whole face is decorators — a channel-fed
@@ -159,8 +140,8 @@ blank = lcmap (const {}) pempty
 -- | **Discharge a UI component's initial-state obligation**: `with a w` supplies
 -- | `w`'s input its t=0 value — the entity `w` edits exists from the very
 -- | beginning, and `a` is its initial state — leaving nothing to feed
--- | (`with a w = announce a >>> w`, so `with a identity = announce a` on
--- | `Category` carriers). The residual input row of a pipeline is exactly
+-- | (`with a w = announce a >>> w`, so `with a identity = announce a`; the
+-- | point `announce` is `Seeding`'s primitive). The residual input row of a pipeline is exactly
 -- | what is *not yet known* at t=0; `with` (and `PUI.mvu`, its looping
 -- | sibling) turns that obligation into `{}`, the one self-pointed record.
 -- | For a pass-through seeding *stage* (feed once, then keep forwarding
@@ -169,7 +150,7 @@ blank = lcmap (const {}) pempty
 -- | fields); the output rides through untouched, so `with` closes a
 -- | record pipeline and seeds a `× → +` emitter's replay value alike —
 -- | the leaf leads, the plumbing trails: `button { … } # with patch`.
-with :: forall p a o. RecordToRecord p => Semigroupoid p => { | a } -> p { | a } o -> p {} o
+with :: forall p a o. Seeding p => { | a } -> p { | a } o -> p {} o
 with a w = announce a >>> w
 
 -- | The model–view–update shape, named: `mvu seed w = with seed (looped w)`.
@@ -183,7 +164,7 @@ with a w = announce a >>> w
 -- | The result is **closed** (input `{}`): supplying the seed discharges
 -- | the pipeline's initial-state obligation, which is what a mount entry
 -- | demands. The standalone app reads `body $ ... $ mvu seed pipeline`.
-mvu :: forall p model. Looping p => RecordToRecord p => Semigroupoid p => { | model } -> p { | model } { | model } -> p {} { | model }
+mvu :: forall p model. Looping p => Seeding p => { | model } -> p { | model } { | model } -> p {} { | model }
 mvu seed w = with seed (looped w)
 
 -- | Row-typed `Strong`: focus a whole **sub-record** — the row-valued **focus**

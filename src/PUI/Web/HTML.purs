@@ -472,8 +472,9 @@ button w = wrap do
 -- | own `text`.
 staticText :: String -> PUI Web {} {}
 staticText content = wrap do
-  -- decoration announces its informationless `{}` at registration, so it
-  -- composes as a merge operand without starving anything
+  -- decoration contributes nothing: the `{}` it announces is ignored by
+  -- the gates (a zero-field side is pre-known and inert), so this is the
+  -- chrome's own completeness, not a merge requirement
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode content

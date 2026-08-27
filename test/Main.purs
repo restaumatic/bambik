@@ -28,6 +28,7 @@ import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, variantToVarian
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Tuple (Tuple(..))
 import Data.Time.Duration (Milliseconds(..))
+import Data.Variant (Variant)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
@@ -122,10 +123,10 @@ main = do
   assertEqual "caseText/other case" "Light roast" (caseText (."Light roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
 
   -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
-  -- == nullary operator `pempty`. At record outputs the unit *announces* its ==
-  -- == informationless {} (the parametric `silence` couldn't), so the merge ==
-  -- == gates never starve against it; at variant outputs it coincides with ==
-  -- == `silence`. ==
+  -- == nullary operator `pempty`. At the diagonal shapes it is the wire at ==
+  -- == the unit object — `identity @{}` and `identity @(Variant ())` — ==
+  -- == exactly: the record gates ignore a contribution of zero fields, so a ==
+  -- == wire, a silent display and an announcing one are one operand. ==
 
   -- ×→× unit law: recordToRecord pempty g = g (the output leg — g's emissions
   -- must pass through undisturbed, not starve against the unit).
@@ -828,7 +829,7 @@ main = do
 
   -- display beside the wire: unconditional pass-through — no echo needed
   -- from the wrapped display (its zero-field side is pre-satisfied), and
-  -- any {} it does emit re-emits the retained value.
+  -- any {} it does emit is no contribution: nothing re-fires.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
@@ -837,12 +838,58 @@ main = do
     m.toUser { v: 1 }
     Ref.read outs >>= assertEqual "display beside the wire: every value forwarded, no echo needed" [ { v: 1 } ]
     fire gProp {}
-    Ref.read outs >>= assertEqual "display beside the wire: a {} emission re-emits the retained value" [ { v: 1 }, { v: 1 } ]
+    Ref.read outs >>= assertEqual "display beside the wire: a {} emission contributes nothing" [ { v: 1 } ]
+
+  -- identity is the ×→× unit exactly: beside the wire at {}, an operand's
+  -- observed stream is its own — in and out — and the wire's echo per feed
+  -- is not a contribution. The same for pempty, which IS that wire.
+  do
+    let
+      run u = do
+        ins <- Ref.new ([] :: Array { a :: Int })
+        gProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int })
+        m <- unwrap (recordToRecord (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int }) u)
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { a: 1 } *> m.toUser { a: 2 }
+        fire gProp { a: 3 } *> fire gProp { a: 4 }
+        i <- Ref.read ins
+        o <- Ref.read outs
+        pure { i, o }
+    bare <- do
+      ins <- Ref.new ([] :: Array { a :: Int })
+      gProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array { a :: Int })
+      m <- unwrap (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int })
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      m.toUser { a: 1 } *> m.toUser { a: 2 }
+      fire gProp { a: 3 } *> fire gProp { a: 4 }
+      i <- Ref.read ins
+      o <- Ref.read outs
+      pure { i, o }
+    withIdentity <- run (identity :: PUI Effect {} {})
+    withUnit <- run RecordToRecord.pempty
+    assertEqual "×→× unit is identity @{}: g beside the wire observes g's streams" bare withIdentity
+    assertEqual "×→× unit is identity @{}: pempty is that wire" bare withUnit
+    assertEqual "×→× unit is identity @{}: the streams are the full script" { i: [ { a: 1 }, { a: 2 } ], o: [ { a: 3 }, { a: 4 } ] } bare
+
+  -- and the +→+ unit exactly: identity at the empty variant is never fed and
+  -- never emits, so g beside it observes its own streams.
+  do
+    ins <- Ref.new ([] :: Array [ x :: Int ])
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ ok :: Int ])
+    m <- unwrap (variantToVariant (probeIO ins gProp :: PUI Effect [ x :: Int ] [ ok :: Int ]) (identity :: PUI Effect (Variant ()) (Variant ())))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (.x 1) *> m.toUser (.x 2)
+    fire gProp (.ok 3)
+    Ref.read ins >>= assertEqual "+→+ unit is identity @(Variant ()): every case reaches g" [ .x 1, .x 2 ]
+    Ref.read outs >>= assertEqual "+→+ unit is identity @(Variant ()): g's emissions pass" [ .ok 3 ]
 
   -- muted: the counit — render, discard the output deliberately. On (->):
   -- muted g = const {}. On the PUI carrier it makes any emitting component
-  -- a lawful display ({} output), so the merge-with-wire re-emits the
-  -- retained value instead of losing an edit silently.
+  -- a lawful display ({} output): beside the wire its emissions are no
+  -- contribution, and the type says the write-off was deliberate.
   do
     assertEqual "muted on (->): the counit" {} (muted (\(x :: Int) -> x + 1) 5)
   do
@@ -852,7 +899,7 @@ main = do
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 4 }
     fire gProp { edit: 9 }
-    Ref.read outs >>= assertEqual "muted beside the wire: a discarded emission re-emits the retained value, losing nothing not written off" [ { v: 4 }, { v: 4 } ]
+    Ref.read outs >>= assertEqual "muted beside the wire: a discarded emission contributes nothing — written off, and nothing else moves" [ { v: 4 } ]
 
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==

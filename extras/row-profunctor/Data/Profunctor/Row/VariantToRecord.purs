@@ -38,10 +38,11 @@
 -- |
 -- | Completing the arity ladder downward, the **nullary** operator is the
 -- | class's own unit `pempty :: p (Variant ()) {}` — the empty merge:
--- | `variantToRecord pempty g = g = variantToRecord g pempty`. It is a class
--- | member (not a parametric silent element like `silence`): a lawful
--- | record-output unit must *announce* its informationless `{}` so the merge
--- | knows that side is complete, and parametric silence cannot.
+-- | `variantToRecord pempty g = g = variantToRecord g pempty`. On a
+-- | `Category` carrier it is the wire at the unit row entered from the
+-- | empty variant, `lcmap case_ identity`: never fed, owning no field, so
+-- | the gate is pre-satisfied on its side — which is why any silent element
+-- | of that type serves equally, and `silence` at `b = ()` is one.
 module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord
