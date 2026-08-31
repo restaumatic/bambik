@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
 import PaymentLogic (chargeFlaky, presentPayment, recordCharged, retryLine, startCharge, unpaidOrder)
-import PUI (action, forCases, mvu, observed, atCase, settled, toCases, updated)
+import PUI (action, atCase, forCase, mvu, observed, settled, toCases, updated)
 import PUI.Web.HTML (shown, body, staticText, text)
 import PUI.Web.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Category as Category
@@ -25,5 +25,5 @@ paymentMDC2 =
               button @"Charge card" { icon: "credit_card" } # toCases startCharge
               ( Category.do
                   indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
-                  snackbar # forCases (match { charge: retryLine }) # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
+                  snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
       ) # settled presentPayment # mvu unpaidOrder

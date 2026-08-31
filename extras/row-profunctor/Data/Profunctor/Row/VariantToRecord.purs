@@ -7,11 +7,12 @@
 -- |     and their optics in `Data.Lens.Reel`/`Data.Lens.Coreel` — neither the
 -- |     classes nor the optics mention a row, so none of them lives here.
 -- |
--- | The adopter here (`forCases`) carries **no canonical label**:
--- | a status states its payload case once, in its own row, and the adopter
--- | reads it back out via `RowToList`'s fundep — application code writes only
--- | the business cases (`# forCases (match { booked: bookedLine })`), and no
--- | layer hard-codes a label.
+-- | The adopters here (`forCases` and its single-case convenience
+-- | `forCase @l`) carry **no canonical label**:
+-- | a status states its payload case once, in its own row, and the adopters
+-- | read it back out via `RowToList`'s fundep — application code writes only
+-- | the business cases (`# forCase @"booked" bookedLine`,
+-- | `# forCases bookingLine`), and no layer hard-codes a label.
 -- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
@@ -51,6 +52,7 @@ module Data.Profunctor.Row.VariantToRecord
   , class VariantToRecord
   , discard
   , focusCase
+  , forCase
   , forCases
   , backgroundCase
   , subRetaining
@@ -65,7 +67,7 @@ import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, expand, inj, on)
+import Data.Variant (class Contractable, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -144,7 +146,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | mutually exclusive outcomes — `status # forCases (match { booked: …,
 -- | rejected: … })` — and a **subset** `match { l: line }` adopts exactly one
 -- | business case, its variant being that singleton, sibling merge operands
--- | keeping theirs (the dissolved `forCase @l line` written as what it was).
+-- | keeping theirs. Its single-case convenience is `forCase @l` below.
 -- | The copy formatter is the mechanism's own argument (import-tower rule
 -- | L16): the adopted cases carry bare business payloads, rendered at the
 -- | adoption site; `identity` when the payload already is the copy.
@@ -153,6 +155,22 @@ discard first cont = bind first (\_ -> cont unit)
 -- | when outcomes share one status area.
 forCases :: forall c p a o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () cs => Profunctor p => ([ | s ] -> a) -> p [ | cs ] o -> p [ | s ] o
 forCases f = lcmap (\v -> inj (Proxy @c) (f v))
+
+-- | `forCases` at one business case — the derived single-case convenience,
+-- | keeping the adopter in the `@l` grammar (`atCase @l`/`toCase @l`/
+-- | `shownWhen @l`'s family) and the `match` off the call site, exactly as
+-- | `applied` keeps `const` off `updated`'s. Law (the defining equation, at
+-- | the singleton variant):
+-- |
+-- | ```
+-- | forCase @l f = forCases (match { l: f })
+-- | ```
+-- |
+-- | `status # forCase @"registered" welcomeLine`; a status owning several
+-- | cases of one variant stays one `forCases` classifier, and sibling
+-- | `forCase` operands each own exactly their case.
+forCase :: forall @l c p a b o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => IsSymbol l => Cons c a () cs => Cons l b () s => Profunctor p => (b -> a) -> p [ | cs ] o -> p [ | s ] o
+forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 
 -- | Single-case specialization of `retain` — the `edit`-position combinator
 -- | for this direction (the dual of `backgroundProperty`). Where `case_`

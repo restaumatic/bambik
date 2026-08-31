@@ -84,7 +84,7 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one status line per outcome case | `snackbar # forCases (match { orderSubmitted: submittedLine })` in `VariantToRecord.do` — the subset match keeps sibling operands' cases theirs | order-form | VariantToRecord.purs (`forCases`) |
+| one status line per outcome case | `snackbar # forCase @"orderSubmitted" submittedLine` in `VariantToRecord.do` — sibling operands each own their case | order-form | VariantToRecord.purs (`forCase`) |
 | one status for a whole classified variant | `snackbar # forCases bookingLine` | flight-booker | VariantToRecord.purs (`forCases`) |
 
 ## Collections

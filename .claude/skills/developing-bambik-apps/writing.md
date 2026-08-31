@@ -168,12 +168,12 @@ syntax (`r { "Name" = … }`) all work unchanged.
   payload — `f` returns a *variant* of results, which `toCases` emits
   directly, deriving the consumed case from the emitter's row.
 - **statuses** (`snackbar`, `banner`) derive their own payload case;
-  adopt with `# forCases` — a copy classifier over the cases the status
-  owns: `# forCases (match { registered: welcomeLine })` for one
-  business case (the match over a subset is that subset's variant, so
-  sibling operands keep their own cases), or a full
-  `# forCases (match { … })` when one status instance serves several
-  mutually exclusive outcomes (flight-booker's booking toast). A status
+  adopt with `# forCase @l copyOf` for one business case (sibling
+  operands each own exactly their case), or `# forCases classifier`
+  when one status instance serves several mutually exclusive outcomes
+  (flight-booker's booking toast). `forCase @l f` is the derived
+  single-case convenience — `forCases (match { l: f })` by law — kept
+  for the `@l` grammar and the `match`-free call site. A status
   mid-pipeline — showing events that must also flow on — wraps with
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
@@ -521,8 +521,8 @@ holds the business functions over the model, seed first.
   click and `toCase @l` introduces the case, closing the row itself.
 - **Named one-liner UI components.** A UI component function whose whole body is one
   pipeline expression — the named toast is the archetype
-  (`submittedToast = snackbar # forCases (match { orderSubmitted:
-  submittedLine })`) — is glue: inline the expression at its pipeline
+  (`submittedToast = snackbar # forCase @"orderSubmitted"
+  submittedLine`) — is glue: inline the expression at its pipeline
   position and delete the function (see the Layout rule). The copy
   function's business name already says what shows.
 
@@ -595,8 +595,8 @@ over a logic module, a single exported entry function.
 - **One-liner `PUI Web`-returning functions are inlined.** A named
   UI component function whose whole body is a single pipeline expression is
   indirection: write the expression at its use site —
-  `snackbar # forCases (match { orderSubmitted: submittedLine })` sits
-  directly in the status merge — and delete the function with its annotation. The
+  `snackbar # forCase @"orderSubmitted" submittedLine` sits directly in
+  the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
   UI component function earns its name only by genuinely spanning lines: a
@@ -734,7 +734,7 @@ over a logic module, a single exported entry function.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status adopter in place
-  (`snackbar # forCases (match { registered: welcomeLine })`); the event carries
+  (`snackbar # forCase @"registered" welcomeLine`); the event carries
   the order, the outcome, the reason — the data, not the sentence.
   Validation results are payloads, not strings destined for a particular
   UI component.
@@ -818,7 +818,7 @@ over a logic module, a single exported entry function.
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
   with their projection arguments — `provided @l classifierOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
-  `toCase @l payloadOf`,
+  `toCase @l payloadOf`, `forCase @l copyOf`,
   `toCases outcomeOf`, `forCases lineOf`, `forProperty`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would

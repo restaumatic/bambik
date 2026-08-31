@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, espressoNoFrills, presentEspressoBar, theUsual, usualOrder)
-import PUI (armed, forCases, mvu, required, settled, updated, with)
+import PUI (armed, forCase, mvu, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, div, staticText, text)
 import PUI.Web.MDC2 (body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -48,4 +48,4 @@ espressoBarMDC2 =
               caption $ staticText "Caffeine"
               linearProgress @"caffeine" ) # shown
           button @"Place order" { icon: "local_cafe" } # armed
-          snackbar # forCases (match { "Place order": brewedLine })
+          snackbar # forCase @"Place order" brewedLine

@@ -4,9 +4,8 @@ import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Variant (match)
 import Effect (Effect)
-import PUI (forCases, mvu, required, toCases)
+import PUI (forCase, mvu, required, toCases)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, shownWhen, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, debouncedTextField, elevation5, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
@@ -45,5 +44,5 @@ signupFormMDC3 =
             text @"Username" ) # shownWhen @"ready" validation
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
-          snackbar # forCases (match { registered: welcomeLine })
-          snackbar # forCases (match { rejected: rejectionLine })
+          snackbar # forCase @"registered" welcomeLine
+          snackbar # forCase @"rejected" rejectionLine

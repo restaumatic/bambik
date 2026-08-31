@@ -45,23 +45,24 @@ update in place instead of rebuilding.
 **Statics** — `staticText`, `staticHTML`, `static (ocular)`, void `hr`:
 chrome at `{} → {}`, no model data.
 
-## Output data plumbing — two words
+## Output data plumbing
 
 - `# forProperty` — the one read adopter: verbatim field **selection**
   from a context-pinned wider row (a collection item, a pane payload),
   arity-0, label derived from the leaf. It survived the compaction
   because it is selection, never formatting.
-- `# forCases classifier` — the whole status story. A full `match`
-  serves a classified variant with one status instance; a **subset**
-  `match { l: line }` adopts exactly one business case, its variant
-  being that singleton, sibling merge operands keeping theirs (the
-  dissolved `forCase @l line`, written as what it was).
+- `# forCase @l copyOf` — one status per business case, sibling merge
+  operands each owning exactly their case. A **derived** word:
+  `forCase @l f = forCases (match { l: f })` is its law — kept for the
+  `@l` adopter grammar and the `match`-free call site, exactly as
+  `applied` keeps `const` off `updated`'s.
+- `# forCases classifier` — one status instance for a whole classified
+  variant (flight-booker's `bookingLine`).
 
-Deleted (2026-08-31): `projection` (entirely), `forCase` (dissolved into
-subset `forCases`), `projected` (demoted to vocabulary-internal plumbing
-— the statuses' `text @"line" # projected eventText`; not re-exported
-from `PUI`). `npm run check-view-model` rejects all three anywhere in
-demo code.
+Deleted (2026-08-31): `projection` (entirely) and `projected` (demoted
+to vocabulary-internal plumbing — the statuses'
+`text @"line" # projected eventText`; not re-exported from `PUI`).
+`npm run check-view-model` rejects both anywhere in demo code.
 
 ## Where the formatting went: the presentation model
 

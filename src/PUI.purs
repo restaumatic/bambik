@@ -106,7 +106,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- modules only for the `.do` merges and the trace forms
 import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
-import Data.Profunctor.Row.VariantToRecord (forCases) as Adopters
+import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (the gated displays, `updated`,
 -- `every`, `settled`, `armed`, `edited`, `acted`), so a UI component's own row is always

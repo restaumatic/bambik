@@ -1,8 +1,10 @@
 # Research: the presentation model — verbatim displays
 
 Status: **EXECUTED** (2026-08-31) — all 26 demo families migrated,
-`projection`/`forCase` deleted, `projected` demoted to vocabulary
-plumbing, `check-view-model` extended, docs synced; full L15 stack green
+`projection` deleted, `projected` demoted to vocabulary plumbing,
+`forCase` re-admitted as a derived word after a brief dissolution (see
+the vocabulary table), `check-view-model` extended, docs synced; full
+L15 stack green
 (`spago build` 0 warnings, `spago test`, `bundle-demos`, `smoke`).
 Companion note: doc/thought-output-leaves-and-plumbing.md (the inventory
 this proposal compacts).
@@ -23,7 +25,7 @@ projection fields. The demos grew slightly on net — the migration is a
 modules (−15) for the unit-testable logic modules (+91, where every row
 is spelled structurally by the no-type-synonyms rule). The API surface
 is where the compaction landed: display plumbing is now `forProperty` +
-`forCases`, two words.
+`forCases` with its derived `forCase @l`.
 
 Execution notes (deviations the recipe absorbed): a copy line whose
 model grew keeps its exact footprint by reading the derived field with
@@ -86,7 +88,7 @@ function and one unit test.
 | --- | --- |
 | `projection`, `projected` leave the application vocabulary | formatting is no longer a view-side act; `projected` may survive as library plumbing for the statuses' internal reads, or dissolve there too |
 | `forProperty` **stays** — the one read adopter | it is *selection*, not formatting: a verbatim field read from a context-pinned wider row (`foreach` item, `provided` pane payload) that `settled` cannot reach because the row is not the model's |
-| `forCase @l` dissolves into `forCases` | the singular is `forCases` restricted to one case — same argument that deleted `forField`/`asCase`; one status story |
+| `forCase @l` dissolves into `forCases` — **revised same day**: restored as a *derived* word (`forCase @l f = forCases (match { l: f })` by law) | the dissolution made the dominant single-case sites (17 of 19) longer and broke the `@l` adopter grammar; the `applied = updated (const f)` precedent admits a derived convenience that keeps `match` off the call site |
 | the canonical `[ event :: String ]` row goes private | a status only ever appears behind its business classifier (`snackbar # forCases lineOf`); the last fixed display label stops being API |
 | `shownWhen` as a derivation of `provided` — **already holds** (since 2026-08-27, "Visibility is case adoption"): `shownWhen f content = recordToRecord (provided @l f content) identity` | one visibility primitive (`provided`), the display rung derived as the pane owned-merged with the wire; `inCase` is the honest primitive remainder — its content emits the *row*, which the owned merge's disjointness rejects, so it keeps a carrier body |
 

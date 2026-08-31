@@ -72,7 +72,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   label (`value`/`clicked`/`event`) appears in application code: adopters
   that need a leaf's label derive it from the closed singleton row via
   `RowToList`'s fundep (`forProperty`/`required`/
-  `optional`/`toCases`/`forCases`; the view-side read adopters
+  `optional`/`toCases`/`forCase`/`forCases`; the view-side read adopters
   `projection`/`projected` and the singular `forCase` are deleted —
   displays are verbatim under the presentation-model rule,
   doc/research-presentation-model.md). Statuses keep their
@@ -318,7 +318,7 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`,
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l copyOf`,
 `forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
@@ -345,9 +345,10 @@ code below the UI) are algebra-layer material and exempt by location.
   gain is the point: the screen's copy is a pure function under
   `spago test`, no browser. Checkable form: `npm run check-view-model`
   rejects `projection`/`projected`/`forCase` anywhere in `demo/`.
-- Statuses adopt through `forCases` alone (a subset `match` owns exactly
-  its cases); their canonical `[ event :: String ]` row stays private to
-  the vocabulary.
+- Statuses adopt through `forCases` (a whole classified variant) and its
+  derived single-case convenience `forCase @l`
+  (`forCase @l f = forCases (match { l: f })` by law); their canonical
+  `[ event :: String ]` row stays private to the vocabulary.
 - Rationale, laws and measurements: doc/research-presentation-model.md;
   the application-side statement is writing.md's *displays are
   verbatim*.

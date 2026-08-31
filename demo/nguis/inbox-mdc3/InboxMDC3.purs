@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageView, mondayMail, openMessage, presentInbox, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst)
-import PUI (applied, atCase, forCases, mvu, observed, settled, toCase, updated, with)
+import PUI (applied, atCase, forCase, mvu, observed, settled, toCase, updated, with)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC3 (snackbar, bodyLarge, bodyMedium, button, bodySmall, card, dialog, elevation5, fab, headlineSmall, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
@@ -43,7 +43,7 @@ inboxMDC3 =
                   button @"Delete" {} # with {}
                   button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
               VariantToVariant.do
-                snackbar # forCases (match { "Delete": const inboxZeroLine }) # observed
+                snackbar # forCase @"Delete" (const inboxZeroLine) # observed
                 identity # atCase @"Keep" # toCase @"Keep" identity ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
           fab @"Compose" { icon: "edit" } # applied composeMessage
           ( menu { label: "Sort" } $ RecordToVariant.do

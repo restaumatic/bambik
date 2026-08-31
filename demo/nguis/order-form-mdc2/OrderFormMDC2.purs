@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, presentOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime)
-import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCases, forProperty, looped, required, settled, updated, with)
+import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, forProperty, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
@@ -97,7 +97,7 @@ orderFormMDC2 =
         indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
         indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
       VariantToRecord.do
-        snackbar # forCases (match { orderSubmitted: submittedLine })
-        snackbar # forCases (match { submissionFailed: rejectionLine })
-        snackbar # forCases (match { receiptPrinted: receiptLine })
+        snackbar # forCase @"orderSubmitted" submittedLine
+        snackbar # forCase @"submissionFailed" rejectionLine
+        snackbar # forCase @"receiptPrinted" receiptLine
   ) # with {}

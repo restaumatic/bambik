@@ -3,10 +3,9 @@ module MeetingBookerFluent (meetingBookerFluent) where
 import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Variant (match)
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, plan, ratedRoom, roomOf, seatsInRoom, seatsTaken)
-import PUI (forCases, mvu, optional, settled)
+import PUI (forCase, mvu, optional, settled)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, div, provided, staticText, text)
@@ -45,4 +44,4 @@ meetingBookerFluent =
               staticText " attendees"
               text @"onlineNote" ) # shown
           button @"Book the room" {} ) # provided @"complete" plan
-      messageBar # forCases (match { "Book the room": bookedLine })
+      messageBar # forCase @"Book the room" bookedLine

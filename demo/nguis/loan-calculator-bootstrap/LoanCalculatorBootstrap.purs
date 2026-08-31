@@ -3,10 +3,9 @@ module LoanCalculatorBootstrap (loanCalculatorBootstrap) where
 import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Variant (match)
 import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, presentLoan)
-import PUI (armed, forCases, mvu, required, settled)
+import PUI (armed, forCase, mvu, required, settled)
 import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, div, staticText, text)
@@ -38,4 +37,4 @@ loanCalculatorBootstrap =
           staticText "Interest share of total repayment"
           progress @"interestShare" ) # shown
       button @"Apply for this loan" {} # armed
-      toast # forCases (match { "Apply for this loan": appliedLine })
+      toast # forCase @"Apply for this loan" appliedLine
