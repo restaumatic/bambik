@@ -1,4 +1,4 @@
-module InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageCountText, mondayMail, messageView, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText) where
+module InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, mondayMail, messageView, openMessage, presentInbox, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst) where
 
 import Prelude ((<>), (#), (+), (==), (||), comparing, map, not, show)
 
@@ -6,8 +6,8 @@ import Data.Array (filter, find, length, snoc, sortBy)
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
-mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int }
-mondayMail =
+mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int, unreadCountText :: String, messageCountText :: String }
+mondayMail = presentInbox
   { messages:
       [ { id: 1, sender: "Alice Kowalska", subject: "Quarterly report ready", body: "The Q2 numbers are in - revenue up 12%, see the attached sheet before Friday's review.", status: .unread {} }
       , { id: 2, sender: "Bob Nowak", subject: "Lunch on Thursday?", body: "The new ramen place near the office finally opened. Noon works for me.", status: .read {} }
@@ -16,13 +16,15 @@ mondayMail =
   , opened: .none {}
   , deletion: .silent {}
   , nextId: 4
+  , unreadCountText: ""
+  , messageCountText: ""
   }
 
-unreadCountText :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } -> String
-unreadCountText messages = show (length (filter isUnread messages))
-
-messageCountText :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } -> String
-messageCountText messages = show (length messages)
+presentInbox :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int, unreadCountText :: String, messageCountText :: String } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int, unreadCountText :: String, messageCountText :: String }
+presentInbox r = r
+  { unreadCountText = show (length (filter isUnread r.messages))
+  , messageCountText = show (length r.messages)
+  }
 
 mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> Array { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] }
 mailboxRows { messages, opened } = messages # map \g ->

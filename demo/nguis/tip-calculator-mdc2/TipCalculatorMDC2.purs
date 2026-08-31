@@ -4,11 +4,11 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (projection, mvu, projected)
+import PUI (mvu, settled)
 import PUI.Web.HTML (rangeInput, shown, body, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, filledTextField, slider)
 import QualifiedDo.Category as Category
-import TipCalculatorLogic (dinnerBill, perPersonText, tipAmountText, totalText, whole)
+import TipCalculatorLogic (dinnerBill, presentTips)
 
 tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
@@ -20,20 +20,20 @@ tipCalculatorMDC2 =
           rangeInput @"Tip percentage"
           ( body2 $ RecordToRecord.do
               staticText "Tip: "
-              text @"Tip percentage" # projection whole
+              text @"tipText"
               staticText "%" ) # shown
           ( body2 $ RecordToRecord.do
               staticText "Split between: "
-              text @"Split between" # projection whole
+              text @"splitText"
               staticText " people" ) # shown
           slider @"Split between" {}
           ( body2 $ RecordToRecord.do
               staticText "Tip amount: "
-              text @"tipAmount" # projected tipAmountText ) # shown
+              text @"tipAmountText" ) # shown
           ( body2 $ RecordToRecord.do
               staticText "Total: "
-              text @"total" # projected totalText ) # shown
+              text @"totalText" ) # shown
           ( body2 $ RecordToRecord.do
               staticText "Per person: "
-              text @"perPerson" # projected perPersonText ) # shown
-      ) # mvu dinnerBill
+              text @"perPersonText" ) # shown
+      ) # settled presentTips # mvu dinnerBill

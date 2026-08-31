@@ -91,9 +91,9 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, muted, projected, projection, required, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
-import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
+import Data.Profunctor.Row.VariantToRecord (forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (the gated displays, `updated`,
 -- `every`, `settled`, `armed`, `edited`, `acted`), so a UI component's own row is always
@@ -898,8 +898,8 @@ applied f = updated (const f)
 -- | sibling on
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `status # forCase @"charge" retryLine
--- | # observed` narrates a retry loop without interrupting it. Subsumption
+-- | status consumes are also shown — `status # forCases (match { charge:
+-- | retryLine }) # observed` narrates a retry loop without interrupting it. Subsumption
 -- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
 -- | `Union` widening): the status may consume a *narrower* row than the
 -- | stage carries — its cases are contracted out and shown, background cases
@@ -1016,7 +1016,8 @@ heartbeat interval step = wrap $ pure unit <#> \_ ->
 
 -- Optics
 
--- Optimized implementation. Not optimized would be `constant a = projection (const a)`.
+-- Optimized implementation. Not optimized would be an `lcmap` writing the
+-- constant over the field per feed.
 
 type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 
@@ -1029,7 +1030,7 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- |
 -- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`asField`, `field`, `toCase`, `projection`).
+-- | `dimap`-only adopters (`asField`, `field`, `toCase`, `forProperty`).
 -- | Commuting with the *strengths* is the extra law, and the admission test
 -- | for anything called an ocular:
 -- |

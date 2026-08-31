@@ -16,23 +16,24 @@ tickPeriod = { ms: 1000.0 }
 tick :: { n :: Int } -> Maybe { n :: Int }
 tick { n } = Just { n: n + 1 }
 
-goal :: { n :: Int } -> { key :: String, value :: { team :: String, points :: Int } }
+goal :: { n :: Int } -> { key :: String, value :: { team :: String, points :: Int, pointsText :: String } }
 goal { n } =
   let team = pick teams n
-  in { key: team, value: { team, points: scored team n } }
+      points = scored team n
+  in { key: team, value: { team, points, pointsText: show points } }
 
 scored :: String -> Int -> Int
 scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 
-boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: String, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] }
+boardSummary :: Array { team :: String, points :: Int, pointsText :: String } -> Array { key :: String, teams :: String, leader :: [ led :: { team :: String, pointsText :: String }, unled :: {} ] }
 boardSummary scores = [ { key: "summary", teams: show (length scores), leader: leaderOf scores } ]
 
-leaderOf :: Array { team :: String, points :: Int } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
+leaderOf :: Array { team :: String, points :: Int, pointsText :: String } -> [ led :: { team :: String, pointsText :: String }, unled :: {} ]
 leaderOf scores = case maximumBy (comparing _.points) scores of
-  Just top -> .led top
+  Just top -> .led { team: top.team, pointsText: top.pointsText }
   Nothing -> .unled {}
 
-standing :: { leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
+standing :: { leader :: [ led :: { team :: String, pointsText :: String }, unled :: {} ] } -> [ led :: { team :: String, pointsText :: String }, unled :: {} ]
 standing { leader } = leader
 
 pick :: Array String -> Int -> String

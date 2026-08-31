@@ -17,7 +17,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Lacks)
-import PUI (atField, muted, Ocular, PUI, asField, blank, foreach, projected)
+import PUI (atField, muted, Ocular, PUI, asField, blank, foreach)
 import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -36,12 +36,12 @@ statTile config =
         displaySmall (text @"stat")
         labelMedium $ staticText config.unit )
 
-gauge :: { label :: String } -> PUI Web { fraction :: Number } {}
+gauge :: { label :: String } -> PUI Web { fraction :: Number, percent :: String } {}
 gauge config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
     linearProgress @"fraction"
-    labelLarge $ text @"percent" # projected percentText
+    labelLarge $ text @"percent"
 
 trendChart :: { label :: String } -> PUI Web { trend :: Array Number } {}
 trendChart config =
@@ -71,9 +71,6 @@ rangePicker provided options =
 
 tile :: Ocular (PUI Web)
 tile = div >>> "style" := "display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; background: var(--md-sys-color-surface-container-low, #f7f2fa); flex: 1 1 200px; min-width: 200px; box-sizing: border-box;"
-
-percentText :: { fraction :: Number } -> String
-percentText { fraction } = show (round (fraction * 100.0)) <> "%"
 
 sparkline :: { trend :: Array Number } -> String
 sparkline { trend } = case length trend of

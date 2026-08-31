@@ -1,4 +1,4 @@
-module WeatherLogic (cityText, conditionText, fetchReport, forecastRequests, humidityText, isCurrent, rememberReport, temperatureText, warsawBulletin, windText) where
+module WeatherLogic (fetchReport, forecastRequests, isCurrent, presentWeather, rememberReport, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (==))
 
@@ -8,8 +8,18 @@ import Data.Maybe (fromMaybe)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Data.Variant (match)
 
-warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
-warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
+warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureText :: String, conditionText :: String, cityText :: String, humidityText :: String, windText :: String, servedReportsText :: String }
+warsawBulletin = presentWeather { report: conditionsFor "Warsaw" 0, servedReports: 1, temperatureText: "", conditionText: "", cityText: "", humidityText: "", windText: "", servedReportsText: "" }
+
+presentWeather :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureText :: String, conditionText :: String, cityText :: String, humidityText :: String, windText :: String, servedReportsText :: String } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureText :: String, conditionText :: String, cityText :: String, humidityText :: String, windText :: String, servedReportsText :: String }
+presentWeather r = r
+  { temperatureText = show r.report.temperature
+  , conditionText = r.report.condition
+  , cityText = r.report.city
+  , humidityText = show r.report.humidity
+  , windText = show r.report.wind
+  , servedReportsText = show r.servedReports
+  }
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 climateTable =
@@ -50,18 +60,3 @@ forecastRequests { servedReports, report } = climateTable <#> \r ->
 
 isCurrent :: { city :: String, sample :: Int, focus :: [ current :: {}, other :: {} ] } -> Boolean
 isCurrent { focus } = match { current: \_ -> true, other: \_ -> false } focus
-
-temperatureText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
-temperatureText report = show report.temperature
-
-conditionText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
-conditionText report = report.condition
-
-cityText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
-cityText report = report.city
-
-humidityText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
-humidityText report = show report.humidity
-
-windText :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } -> String
-windText report = show report.wind

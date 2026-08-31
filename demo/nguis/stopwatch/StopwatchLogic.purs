@@ -1,4 +1,4 @@
-module StopwatchLogic (beginTiming, clearStopwatch, elapsedLine, formatTime, haltTiming, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch) where
+module StopwatchLogic (beginTiming, clearStopwatch, haltTiming, lapRows, presentStopwatch, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch) where
 
 import Prelude ((<>), (+), (<), show)
 
@@ -7,8 +7,11 @@ import Data.Int (quot, rem)
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
-zeroedStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int }
-zeroedStopwatch = { phase: .halted {}, elapsedTenths: 0, laps: [] }
+zeroedStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int, elapsedText :: String }
+zeroedStopwatch = presentStopwatch { phase: .halted {}, elapsedTenths: 0, laps: [], elapsedText: "" }
+
+presentStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int, elapsedText :: String } -> { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int, elapsedText :: String }
+presentStopwatch r = r { elapsedText = formatTime r.elapsedTenths }
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
@@ -45,6 +48,3 @@ formatTime tenths =
 
 pad2 :: Int -> String
 pad2 n = if n < 10 then "0" <> show n else show n
-
-elapsedLine :: { elapsedTenths :: Int } -> String
-elapsedLine { elapsedTenths } = formatTime elapsedTenths

@@ -4,8 +4,8 @@ import Prelude (Unit, ($), (#))
 
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
-import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
-import PUI (every, mvu, projected, required)
+import OrderDashboardLogic (openingDay, ordersArrive, presentDashboard, tickPeriod)
+import PUI (atField, every, mvu, required, settled)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body)
 import PUI.Web.MDC3 (elevation5, topAppBar)
@@ -20,9 +20,9 @@ orderDashboardMDC3 =
           rangePicker @"Showing" {}
             [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
           board $ Category.do
-            (statTile { label: "Orders", unit: "placed" } # projected ordersCount) # shown
-            (statTile { label: "Revenue", unit: "EUR" } # projected revenue) # shown
-            (gauge { label: "Kitchen load" } # projected kitchenLoad) # shown
-            (trendChart { label: "Order flow" } # projected orderFlow) # shown
-            (leaderboard { label: "Top dishes" } # projected topDishes) # shown
-      ) # mvu openingDay
+            (statTile { label: "Orders", unit: "placed" } # atField @"ordersPlaced") # shown
+            (statTile { label: "Revenue", unit: "EUR" } # atField @"revenue") # shown
+            (gauge { label: "Kitchen load" } # atField @"kitchenLoad") # shown
+            (trendChart { label: "Order flow" } # atField @"orderFlow") # shown
+            (leaderboard { label: "Top dishes" } # atField @"topDishes") # shown
+      ) # settled presentDashboard # mvu openingDay

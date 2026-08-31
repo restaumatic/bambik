@@ -123,7 +123,7 @@ import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, projected)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -131,7 +131,7 @@ import Data.Variant (case_, inj, match, on, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, blank, foreach, projected)
+import PUI (Ocular, PUI, blank, foreach)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid

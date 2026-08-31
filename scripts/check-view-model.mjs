@@ -42,4 +42,23 @@ if (hits.length) {
   for (const h of hits) console.error("  " + h);
   process.exit(1);
 }
+
+// The presentation-model rule (doc/research-presentation-model.md): displays
+// are verbatim — formatting is a `settled` invariant in the logic module, so
+// the view-side read adopters `projection`/`projected` and the dissolved
+// `forCase` must not appear anywhere in demo code.
+const bannedRe = /\b(projection|projected|forCase)\b/;
+const banned = [];
+for (const file of walk("demo")) {
+  const src = readFileSync(file, "utf8");
+  src.split("\n").forEach((line, i) => {
+    const m = line.match(bannedRe);
+    if (m) banned.push(`${file}:${i + 1}: ${m[1]}`);
+  });
+}
+if (banned.length) {
+  console.error("presentation-model rule violations (view-side read adopter in demo code):");
+  for (const b of banned) console.error("  " + b);
+  process.exit(1);
+}
 console.log("view-model rule: clean");

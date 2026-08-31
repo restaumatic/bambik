@@ -1,18 +1,30 @@
-module OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes) where
+module OrderDashboardLogic (openingDay, ordersArrive, presentDashboard, tickPeriod) where
 
-import Prelude (compare, max, min, mod, negate, show, (&&), (*), (+), (-), (/), (<), (<$>), (>), (>=))
+import Prelude (compare, max, min, mod, negate, show, (&&), (*), (+), (-), (/), (<), (<$>), (<>), (>), (>=))
 
 import Data.Array (filter, index, length, mapMaybe, range, snoc, sortBy, take)
 import Data.Foldable (sum)
-import Data.Int (toNumber)
+import Data.Int (round, toNumber)
 import Data.Map (fromFoldableWith, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Tuple (Tuple(..))
 import Data.Variant (match)
 
-openingDay :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ] }
-openingDay = { tick: 0, orders: mapMaybe arrival (range openingTick 0), "Showing": ."Last 15 min" {} }
+openingDay :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], ordersPlaced :: { stat :: String }, revenue :: { stat :: String }, kitchenLoad :: { fraction :: Number, percent :: String }, orderFlow :: { trend :: Array Number }, topDishes :: { entries :: Array { name :: String, score :: String } } }
+openingDay = presentDashboard { tick: 0, orders: mapMaybe arrival (range openingTick 0), "Showing": ."Last 15 min" {}, ordersPlaced: { stat: "" }, revenue: { stat: "" }, kitchenLoad: { fraction: 0.0, percent: "" }, orderFlow: { trend: [] }, topDishes: { entries: [] } }
+
+presentDashboard :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], ordersPlaced :: { stat :: String }, revenue :: { stat :: String }, kitchenLoad :: { fraction :: Number, percent :: String }, orderFlow :: { trend :: Array Number }, topDishes :: { entries :: Array { name :: String, score :: String } } } -> { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], ordersPlaced :: { stat :: String }, revenue :: { stat :: String }, kitchenLoad :: { fraction :: Number, percent :: String }, orderFlow :: { trend :: Array Number }, topDishes :: { entries :: Array { name :: String, score :: String } } }
+presentDashboard r =
+  let m = { orders: r.orders, "Showing": r."Showing", tick: r.tick }
+      fraction = kitchenLoad { orders: r.orders, tick: r.tick }
+  in r
+    { ordersPlaced = { stat: ordersCount m }
+    , revenue = { stat: revenue m }
+    , kitchenLoad = { fraction, percent: percentText fraction }
+    , orderFlow = { trend: orderFlow m }
+    , topDishes = { entries: topDishes m }
+    }
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
@@ -63,6 +75,9 @@ revenue m = toStringWith (fixed 2) (sum (_.total <$> inWindow m))
 
 kitchenLoad :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, tick :: Int } -> Number
 kitchenLoad { orders, tick } = min 1.0 (toNumber (length (filter (\o -> o.at > tick - prepTime) orders)) / kitchenCapacity)
+
+percentText :: Number -> String
+percentText fraction = show (round (fraction * 100.0)) <> "%"
 
 orderFlow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array Number
 orderFlow m@{ "Showing": window, tick } =

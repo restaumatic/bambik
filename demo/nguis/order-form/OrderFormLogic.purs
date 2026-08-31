@@ -1,8 +1,9 @@
-module OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime) where
+module OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, presentOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime) where
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
 import Data.Variant (match)
+import Data.Variant.Case (caseText)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -25,8 +26,8 @@ staleDistanceForgotten r@{ "Address": address, distance } = match
   , unknown: \_ -> r
   } distance
 
-distanceOf :: { distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } -> [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-distanceOf { distance } = distance
+distanceOf :: { distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } -> [ estimated :: { kmText :: String }, unknown :: {} ]
+distanceOf { distance } = match { estimated: \e -> .estimated { kmText: show e.km }, unknown: const (.unknown {}) } distance
 
 fulfillmentOf ::
   { fulfillment ::
@@ -48,8 +49,8 @@ deliveryDistance ::
       , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
       ]
   }
-  -> [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-deliveryDistance { fulfillment } = match { "Dine in": const (.unknown {}), "Takeaway": const (.unknown {}), "Delivery": _.distance } fulfillment
+  -> [ estimated :: { kmText :: String }, unknown :: {} ]
+deliveryDistance { fulfillment } = match { "Dine in": const (.unknown {}), "Takeaway": const (.unknown {}), "Delivery": \d -> distanceOf { distance: d.distance } } fulfillment
 
 fulfillmentState ::
   [ "Dine in" :: { "Table" :: String }
@@ -77,6 +78,32 @@ fulfillmentCase { selected, "Table": table, "Time": time, "Address": address, di
 selection :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ] } -> [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ]
 selection = _.selected
 
+presentOrder ::
+  { payment ::
+      { "Method" ::
+          [ "cash" :: {}
+          , "card" :: {}
+          ]
+      , "Paid" :: String
+      , methodText :: String
+      }
+  , paidLine :: String
+  }
+  -> { payment ::
+         { "Method" ::
+             [ "cash" :: {}
+             , "card" :: {}
+             ]
+         , "Paid" :: String
+         , methodText :: String
+         }
+     , paidLine :: String
+     }
+presentOrder r = r
+  { payment = r.payment { methodText = caseText r.payment."Method" }
+  , paidLine = ", paid " <> r.payment."Paid" <> " by " <> caseText r.payment."Method"
+  }
+
 loadOrder :: {} -> Aff
   { "Short ID" :: String
   , "Unique ID" :: String
@@ -96,13 +123,16 @@ loadOrder :: {} -> Aff
           , "card" :: {}
           ]
       , "Paid" :: String
+      , methodText :: String
       }
   , "Remarks" :: String
+  , paidLine :: String
   }
 loadOrder _ = do
   liftEffect $ log "loading order"
   delay (Milliseconds 1000.0)
   liftEffect $ log "loaded order"
+  let presented = presentOrder { payment: { "Method": ."cash" {}, "Paid": "0.00", methodText: "" }, paidLine: "" }
   pure
     { "Short ID": "7"
     , "Unique ID": "4617821"
@@ -112,11 +142,9 @@ loadOrder _ = do
         }
     , fulfillment: ."Takeaway" { "Time": "8:30" }
     , "Total": "12.30"
-    , payment:
-        { "Method": ."cash" {}
-        , "Paid": "0.00"
-        }
+    , payment: presented.payment
     , "Remarks": "Very spicy, please!"
+    , paidLine: presented.paidLine
     }
 
 submitOrder ::

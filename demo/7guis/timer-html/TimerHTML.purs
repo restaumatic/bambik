@@ -1,28 +1,28 @@
 module TimerHTML (timerHTML) where
 
-import Prelude ((#), ($), Unit, const, identity, show)
+import Prelude ((#), ($), Unit, const, identity)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, projection, mvu, projected, toCase, updated, with)
+import PUI (every, mvu, settled, toCase, updated, with)
 import PUI.Web.HTML (shown, body, button, div, label, p, progress, rangeInput, staticText, text)
 import QualifiedDo.Category as Category
-import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
+import TimerLogic (nothingElapsed, presentTimer, tenSecondFreshTimer, tick, tickPeriod)
 
 timerHTML :: Effect Unit
 timerHTML =
   body $ div $ ( Category.do
       ( RecordToRecord.do
-          progress @"fraction" # projected fraction
+          progress @"fraction"
           p RecordToRecord.do
-            text @"elapsed" # projection show
+            text @"elapsedText"
             staticText "s / "
-            text @"Duration" # projection wholeSeconds
+            text @"durationText"
             staticText "s" ) # shown
       p ( label $ Category.do
           (staticText "Duration ") # shown
           rangeInput @"Duration" )
       every tickPeriod tick
       button (staticText "Reset") # with nothingElapsed # toCase @"reset" identity # updated (match { reset: const })
-  ) # mvu tenSecondFreshTimer
+  ) # settled presentTimer # mvu tenSecondFreshTimer

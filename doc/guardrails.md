@@ -71,8 +71,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `button @"Submit order" {}`, `select @"Milk" cfg opts`). No canonical
   label (`value`/`clicked`/`event`) appears in application code: adopters
   that need a leaf's label derive it from the closed singleton row via
-  `RowToList`'s fundep (`projection`/`projected`/`forProperty`/`required`/
-  `optional`/`toCases`/`forCase`/`forCases`). Statuses keep their
+  `RowToList`'s fundep (`forProperty`/`required`/
+  `optional`/`toCases`/`forCases`; the view-side read adopters
+  `projection`/`projected` and the singular `forCase` are deleted —
+  displays are verbatim under the presentation-model rule,
+  doc/research-presentation-model.md). Statuses keep their
   internal payload case private and derived. Components MUST NOT have
   scalar or polymorphic model interfaces; raw scalar leaves stay private
   or in optic positions.
@@ -315,8 +318,8 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l
-copyOf`, `projection f`/`projected f`/`forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`,
+`forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next `required` waiting to be coined — never a reason to import the

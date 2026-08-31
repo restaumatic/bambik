@@ -3,10 +3,10 @@ module MeetingBookerFluent (meetingBookerFluent) where
 import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Variant.Case (caseText)
+import Data.Variant (match)
 import Effect (Effect)
-import MeetingBookerLogic (blankBooking, bookedLine, headcount, onlineNote, plan, ratedRoom, roomOf, roomText, seatsInRoom, seatsTaken, titleText)
-import PUI (forCase, mvu, optional, projection, settled)
+import MeetingBookerLogic (blankBooking, bookedLine, plan, ratedRoom, roomOf, seatsInRoom, seatsTaken)
+import PUI (forCases, mvu, optional, settled)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, div, provided, staticText, text)
@@ -35,14 +35,14 @@ meetingBookerFluent =
       ( Category.do
           ( body1 $ RecordToRecord.do
               staticText "Plan: "
-              text @"Meeting title" # projection titleText
+              text @"titleText"
               staticText " in the "
-              text @"Room" # projection roomText
+              text @"roomText"
               staticText ", "
-              text @"Duration (min)" # projection caseText
+              text @"durationText"
               staticText " min, "
-              text @"attendees" # projection headcount
+              text @"attendeesText"
               staticText " attendees"
-              text @"Include a Teams link" # projection onlineNote ) # shown
+              text @"onlineNote" ) # shown
           button @"Book the room" {} ) # provided @"complete" plan
-      messageBar # forCase @"Book the room" bookedLine
+      messageBar # forCases (match { "Book the room": bookedLine })

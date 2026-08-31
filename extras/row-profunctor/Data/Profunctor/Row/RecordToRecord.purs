@@ -3,7 +3,7 @@
 -- |   * **strength** — `Strong` (ecosystem class, imported): the unary power,
 -- |     minimal and interop-friendly.
 -- |
--- | The adopters here (`projection`/`projected`/`forProperty`/`required`)
+-- | The adopters here (`forProperty`/`projected`/`required`)
 -- | carry **no canonical label at all**: the leaf states its business label
 -- | once, as its own type argument, and each adopter reads it back out of
 -- | the closed singleton row via `RowToList`'s fundep — so no layer
@@ -20,9 +20,13 @@
 -- |     discharge the initial-state obligation), plus the subsuming
 -- |     `settled` (`rmap`-only normalization over a stated sub-row);
 -- |     over bare `Profunctor`: the adopters `atField` (read a field, closed
--- |     row), `projection`/`forProperty` (retype/read one into the canonical
--- |     display row), `projected` (read the whole) and `asField` (the
--- |     canonical-row rename for packaged controls);
+-- |     row), `forProperty` (read one field of a context-pinned wider row —
+-- |     the one application-facing read adopter: selection, never
+-- |     formatting, since displays are verbatim under the
+-- |     presentation-model rule), `projected` (read the whole —
+-- |     **vocabulary plumbing only**, not re-exported from `PUI`: the
+-- |     statuses' internal `text @"line" # projected eventText` read) and
+-- |     `asField` (the canonical-row rename for packaged controls);
 -- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
 -- |     granularity — a state sub-record loops from output to input, the
 -- |     `Colens` optic's row form; the optic itself is in
@@ -55,7 +59,6 @@ module Data.Profunctor.Row.RecordToRecord
   , feedback
   , asField
   , atField
-  , projection
   , forProperty
   , projected
   , required
@@ -80,7 +83,7 @@ import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
-import Record (get, insert, modify, union) as Record
+import Record (get, insert, union) as Record
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
@@ -221,9 +224,11 @@ field = prop (Proxy @l)
 -- | Feed a canonically-labeled component a **function of the whole input**:
 -- | `projected f` turns a single-field component into one fed a bare `a`,
 -- | with `f a` flowing in as its field — the label derived from the leaf's
--- | own row, so whole-value reads name what they show:
--- | `text @"summary" # projected summaryText` (`projected identity` for
--- | verbatim). `lcmap`-only.
+-- | own row. **Vocabulary plumbing, not application vocabulary** (not
+-- | re-exported from `PUI`): the statuses' internal
+-- | `text @"line" # projected eventText` read. Application displays are
+-- | verbatim (the presentation-model rule) — a formatted read is a derived
+-- | field a `settled` normalization maintains. `lcmap`-only.
 projected :: forall l p a b o cr. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Cons l b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
 projected f = lcmap \a -> Record.insert (Proxy @l) (f a) {}
 
@@ -244,34 +249,21 @@ required :: forall l p a b s si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) =>
 required w = field @l (dimap (\v -> Record.insert (Proxy @l) (Just v) {}) (Record.get (Proxy @l)) w)
 
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
--- | row) — the non-display sibling of `projection` (which formats a
--- | display's field in place): a packaged collection reads its array
+-- | row) — the structural read (a display's field arrives ready to draw,
+-- | so there is nothing to format): a packaged collection reads its array
 -- | (`… # muted # atField @"entries"`, the packaged-collection-display
 -- | protocol), nested chrome reads its sub-rows
 -- | (`… # foreach @"name" identity # atField @"dishes"`).
 atField :: forall @l p a o r. IsSymbol l => Profunctor p => Cons l a () r => p a o -> p { | r } o
 atField = lcmap (Record.get (Proxy @l))
 
--- | Retype a display's field **through a formatter**, label untouched:
--- | `text @"balance" # projection euros` shows the amount formatted as
--- | field `balance`. The leaf states the business label once;
--- | `RowToList`'s fundep reads it back out of the closed singleton row, so
--- | no label is repeated and no canonical label exists. Verbatim reads need
--- | no `projection` at all (`text @"prompt"`).
--- |
--- | `lcmap`-only; a display owns no output fields. Whole-value reads are
--- | `projected f`; context-pinned wider rows are `forProperty`.
-projection :: forall l p a b ia ib o. RowToList ia (RL.Cons l a RL.Nil) => IsSymbol l => Cons l a () ia => Cons l b () ib => Profunctor p => (b -> a) -> p { | ia } o -> p { | ib } o
-projection f = lcmap (Record.modify (Proxy @l) f)
-
--- | `projection`'s **open-row** sibling (the display-side `field @l`: the
--- | background is carried), for positions whose row the context already
--- | pins — collection items, pane payloads. The label is the leaf's own,
--- | read back out of its row, and the field passes verbatim:
--- | `text @"label" # forProperty` on a collection element. A formatted
--- | read is `projection`'s job, composed before it —
--- | `text @"score" # projection show # forProperty` — which is why this
--- | takes no function of its own.
+-- | The display-side `field @l` (the background is carried), for positions
+-- | whose row the context already pins — collection items, pane payloads.
+-- | The label is the leaf's own, read back out of its row, and the field
+-- | passes **verbatim** — selection, never formatting: under the
+-- | presentation-model rule a formatted text is a field of the row the
+-- | producing business function writes — which is why this takes no
+-- | function of its own.
 forProperty :: forall l p b t r cr o. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Cons l b () cr => Cons l b t r => Profunctor p => p { | cr } o -> p { | r } o
 forProperty = lcmap (\r -> Record.insert (Proxy @l) (Record.get (Proxy @l) r) {})
 

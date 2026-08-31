@@ -456,7 +456,7 @@ instance
             (Beside (Beside (Beside (Beside (Text "One operand owns { ") (Text ownDoc)) (Text " }, the other { ")) (Text otherDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block.")))
+              (Text "Look for the duplicated `asField`/`field`/`atCase` label in this `do` block.")))
       )
   ) => LabelAbsentK EQ l rest own other
 instance LabelAbsent l rest own other => LabelAbsentK LT l rest own other
@@ -488,7 +488,7 @@ instance
             (Beside (Beside (Text "The row is { ") (Text origDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`field`/`forCase` label in this `do` block.")))
+              (Text "Look for the duplicated `asField`/`field`/`atCase` label in this `do` block.")))
       )
   ) => NoDuplicateLabelsK EQ l rest orig
 instance NoDuplicateLabels rest orig => NoDuplicateLabelsK LT l rest orig

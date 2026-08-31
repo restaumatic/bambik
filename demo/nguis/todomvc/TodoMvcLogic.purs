@@ -1,6 +1,6 @@
-module TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, titleText, toggleTodo, visibleEntries) where
+module TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, toggleTodo, visibleEntries) where
 
-import Prelude ((==), const, not)
+import Prelude ((==), const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe)
@@ -24,10 +24,10 @@ clearCompleted m@{ todos } = m { todos = filter (\t -> not (completed t.status))
 itemsLeft :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> Int
 itemsLeft { todos } = length (filter (\t -> not (completed t.status)) todos)
 
-remainingItems :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> [ sole :: { count :: Int }, several :: { count :: Int } ]
+remainingItems :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> [ sole :: { countText :: String }, several :: { countText :: String } ]
 remainingItems { todos } =
   let count = itemsLeft { todos }
-  in if count == 1 then .sole { count } else .several { count }
+  in if count == 1 then .sole { countText: show count } else .several { countText: show count }
 
 visibleEntries :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }, "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ] } -> Array { key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] }
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, status: t.status }) todos)
@@ -43,5 +43,3 @@ flipped = match { active: \_ -> .completed {}, completed: \_ -> .active {} }
 isCompleted :: { key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] } -> Boolean
 isCompleted { status } = completed status
 
-titleText :: { key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] } -> String
-titleText { title } = title

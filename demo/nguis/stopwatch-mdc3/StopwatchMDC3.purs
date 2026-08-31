@@ -6,18 +6,18 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, updated, projection)
+import PUI (every, mvu, settled, updated)
 import PUI.Web.HTML (shown, shownEach, provided, body, li, staticText, text, ul)
 import PUI.Web.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Category as Category
-import StopwatchLogic (beginTiming, clearStopwatch, formatTime, haltTiming, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
+import StopwatchLogic (beginTiming, clearStopwatch, haltTiming, lapRows, presentStopwatch, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $
     elevation5 $
       card $ ( Category.do
-          displaySmall (text @"elapsedTenths" # projection formatTime) # shown
+          displaySmall (text @"elapsedText") # shown
           every tickPeriod tick
           ( RecordToVariant.do
               button @"Start" { icon: "play_arrow" } # provided @"halted" stopwatchPhase
@@ -30,4 +30,4 @@ stopwatchMDC3 =
                    text @"number"
                    staticText " — "
                    text @"time" ) # shownEach @"number" lapRows
-      ) # mvu zeroedStopwatch
+      ) # settled presentStopwatch # mvu zeroedStopwatch

@@ -1,10 +1,10 @@
 module ScoreboardMDC3 (scoreboardMDC3) where
 
-import Prelude (Unit, show, (#), ($))
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (muted, accumulated, every, projection, foreach, mvu)
+import PUI (muted, accumulated, every, foreach, mvu)
 import PUI.Web.HTML (shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Category as Category
@@ -20,7 +20,7 @@ scoreboardMDC3 =
               list ( ( listItem $ RecordToRecord.do
                   text @"team"
                   staticText ": "
-                  text @"points" # projection show ) # shown ) # accumulated goal
+                  text @"pointsText" ) # shown ) # accumulated goal
               ( bodyMedium $ Category.do
                   ( RecordToRecord.do
                       text @"teams"
@@ -28,7 +28,7 @@ scoreboardMDC3 =
                   ( RecordToRecord.do
                       text @"team"
                       staticText " ("
-                      text @"points" # projection show
+                      text @"pointsText"
                       staticText ")" ) # shownWhen @"led" standing
                   (staticText "—") # shownWhen @"unled" standing ) # foreach @"key" boardSummary # muted ) # shown
       ) # mvu gameStart

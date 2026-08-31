@@ -1,24 +1,37 @@
-module ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine) where
+module ProductReviewLogic (freshImpression, presentReview, submittedLine) where
 
 import Prelude ((<>), (-))
 
 import Data.Int (round)
 import Data.Monoid (power)
 import Data.String (trim)
+import Data.Variant.Case (caseText)
 
-freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String }
-freshImpression =
+freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, quoteText :: String, ownedText :: String, recommendText :: String }
+freshImpression = presentReview
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
   , "Your review": ""
   , "How long have you owned it?": ."less than a month" {}
   , "I'd recommend it to a friend": false
   , "Nickname": ""
+  , starsText: ""
+  , quoteText: ""
+  , ownedText: ""
+  , recommendText: ""
   }
 
-submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String } -> String
-submittedLine { "Overall rating": stars, "Nickname": nickname } =
-  "Thanks" <> forReviewer { "Nickname": nickname } <> "! Your " <> starGlyphs stars <> " review is in."
+presentReview :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, quoteText :: String, ownedText :: String, recommendText :: String } -> { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, quoteText :: String, ownedText :: String, recommendText :: String }
+presentReview r = r
+  { starsText = starGlyphs r."Overall rating"
+  , quoteText = headlineQuote r."Headline"
+  , ownedText = caseText r."How long have you owned it?"
+  , recommendText = recommendNote r."I'd recommend it to a friend"
+  }
+
+submittedLine :: { starsText :: String, "Nickname" :: String } -> String
+submittedLine { starsText, "Nickname": nickname } =
+  "Thanks" <> forReviewer { "Nickname": nickname } <> "! Your " <> starsText <> " review is in."
 
 forReviewer :: { "Nickname" :: String } -> String
 forReviewer { "Nickname": nickname } = case trim nickname of

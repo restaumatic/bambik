@@ -1,4 +1,4 @@
-module CellsLogic (commit, gridRows, orderSheet, selectCell, selectedName) where
+module CellsLogic (commit, gridRows, orderSheet, presentCells, selectCell) where
 
 import Prelude ((<>), bind, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -14,8 +14,8 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
-orderSheet :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
-orderSheet =
+orderSheet :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedName :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+orderSheet = presentCells
   { cells: fromHomogeneous
       { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
       , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
@@ -23,8 +23,12 @@ orderSheet =
       , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
       }
   , selected: .none {}
+  , selectedName: ""
   , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
+
+presentCells :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedName :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedName :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+presentCells r = r { selectedName = match { picked: _.name, none: \_ -> "—" } r.selected }
 
 cols :: Int
 cols = 26
@@ -210,6 +214,3 @@ evalExpr cells visiting = go
     in case foldl step (Right 0.0) ks of
       Right n -> .numV n
       Left e -> .errV e
-
-selectedName :: [ picked :: { name :: String }, none :: {} ] -> String
-selectedName = match { picked: _.name, none: \_ -> "—" }

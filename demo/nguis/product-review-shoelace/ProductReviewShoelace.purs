@@ -3,10 +3,10 @@ module ProductReviewShoelace (productReviewShoelace) where
 import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Variant.Case (caseText)
+import Data.Variant (match)
 import Effect (Effect)
-import ProductReviewLogic (freshImpression, headlineQuote, recommendNote, starGlyphs, submittedLine)
-import PUI (forCase, mvu, projection, required)
+import ProductReviewLogic (freshImpression, presentReview, submittedLine)
+import PUI (armed, forCases, mvu, required, settled)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, p, staticText, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
@@ -25,13 +25,13 @@ productReviewShoelace =
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
           divider # shown
-      ) # mvu freshImpression
+      ) # settled presentReview # mvu freshImpression
       ( p $ RecordToRecord.do
           staticText "Preview: "
-          text @"Overall rating" # projection starGlyphs
-          text @"Headline" # projection headlineQuote
+          text @"starsText"
+          text @"quoteText"
           staticText " · owned "
-          text @"How long have you owned it?" # projection caseText
-          text @"I'd recommend it to a friend" # projection recommendNote ) # shown
-      button @"Submit review" {}
-      toast # forCase @"Submit review" submittedLine
+          text @"ownedText"
+          text @"recommendText" ) # shown
+      button @"Submit review" {} # armed
+      toast # forCases (match { "Submit review": submittedLine })

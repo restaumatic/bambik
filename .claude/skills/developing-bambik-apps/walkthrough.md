@@ -250,8 +250,9 @@ the logic is the ordinary one.
 
 ## What to read next
 
-- **counter** — the floor: one display (`text @l # projection show`, the
-  block `# shown`), one button, one fold (`updated`).
+- **counter** — the floor: one verbatim display (`text @"countText"`, the
+  block `# shown`, the field maintained by `# settled presentCounter`),
+  one button, one fold (`applied`).
 - **temperature-converter** — two editors kept consistent with `settled`.
 - **flight-booker** — this file.
 - **todomvc** — a collection (`listOf`, `foreach`), a selectable list emitting

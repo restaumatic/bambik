@@ -1,4 +1,4 @@
-module PasswordGeneratorLogic (rememberPassword, samplePassword, strengthText, strongMixRecipe) where
+module PasswordGeneratorLogic (presentPassword, rememberPassword, samplePassword, strongMixRecipe) where
 
 import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure)
 
@@ -13,15 +13,19 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-strongMixRecipe :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String }
-strongMixRecipe =
+strongMixRecipe :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String, strength :: String }
+strongMixRecipe = presentPassword
   { "Length": passwordLengths 16.0
   , "Uppercase letters": true
   , "Lowercase letters": true
   , "Digits": true
   , "Symbols": false
   , password: ""
+  , strength: ""
   }
+
+presentPassword :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String, strength :: String } -> { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String, strength :: String }
+presentPassword r = r { strength = strengthGrade (entropyBits { "Length": r."Length", "Uppercase letters": r."Uppercase letters", "Lowercase letters": r."Lowercase letters", "Digits": r."Digits", "Symbols": r."Symbols" }) }
 
 passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 passwordLengths n = { current: n, min: 8.0, max: 64.0, step: .discrete 1.0 }
@@ -47,9 +51,6 @@ effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowerca
             <> (if digits then digitCharacters else [])
             <> (if symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
-
-strengthText :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> String
-strengthText { "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = strengthGrade (entropyBits { "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols })
 
 entropyBits :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Number
 entropyBits { "Length": len, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = len.current * log (toNumber (length (effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }))) / log 2.0

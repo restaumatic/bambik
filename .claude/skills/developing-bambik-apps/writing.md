@@ -126,16 +126,30 @@ syntax (`r { "Name" = … }`) all work unchanged.
   The honest gap: `choice @l` has no caption override, so an option's
   localized copy is not yet expressible; the mechanism arrives with the
   demo that needs it, not before.
-- **displays** state their field on the leaf: `text @"prompt"` reads it
-  verbatim; `text @"bid" # projection f` reads it through a formatter
-  (label untouched); `text @"summary" # projected f` names what a
-  whole-value read shows; a one-field read of a context-pinned wider row
-  is `text @"label" # forProperty`. A named projection whose
-  body merely reads one field is a smell — put the label on the leaf and
-  delete the function. The same applies to mechanism arguments: a feed
-  projection that merely reads a field is the accessor. The exception is
-  row-stating positions, where the named function's closed signature
-  *is* the footprint declaration and stays.
+- **displays are verbatim** (the presentation-model rule,
+  doc/research-presentation-model.md): a display states its field on the
+  leaf and shows it as-is — `text @"prompt"`, `progress @"caffeine"` —
+  never through a formatter bracket. Everything the user reads is a
+  model field: a formatted readout, a unit-suffixed quantity, a sentence
+  composed from several sources (`"Hello, [first name] [last name]"`)
+  is a **derived presentation field**, written by one normalization
+  function `present<App> :: row -> row` in the logic module, run as
+  `# settled present<App>` trailing the pipeline, with the seed
+  pre-normalized (`seed = present<App> { …, tipText: "" }`) so the
+  initial feed already carries its copy. The gain is the point of the
+  rule: the screen's copy is unit-testable in `spago test` — one pure
+  function, no browser. For **context-pinned rows** (a collection
+  element, a pane payload) the same rule lands one step earlier: the
+  business function *producing* the row carries the derived text field,
+  and the view line selects it — `text @"price"`, or
+  `text @"label" # forProperty` when the row is wider than the
+  singleton. `forProperty` is the one read adopter left, and it
+  survives because it is selection, not formatting. A named projection
+  whose body merely reads one field is a smell — put the label on the
+  leaf and delete the function. The same applies to mechanism
+  arguments: a feed projection that merely reads a field is the
+  accessor. The exception is row-stating positions, where the named
+  function's closed signature *is* the footprint declaration and stays.
 - **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) are
   label-indexed at their case, and the case label **is the caption**,
   verbatim: `button @"Submit order" {}` emits `[ "Submit order" :: _ ]`
@@ -154,7 +168,10 @@ syntax (`r { "Name" = … }`) all work unchanged.
   payload — `f` returns a *variant* of results, which `toCases` emits
   directly, deriving the consumed case from the emitter's row.
 - **statuses** (`snackbar`, `banner`) derive their own payload case;
-  adopt with `# forCase @l copyOf` for one business case, or
+  adopt with `# forCases` — a copy classifier over the cases the status
+  owns: `# forCases (match { registered: welcomeLine })` for one
+  business case (the match over a subset is that subset's variant, so
+  sibling operands keep their own cases), or a full
   `# forCases (match { … })` when one status instance serves several
   mutually exclusive outcomes (flight-booker's booking toast). A status
   mid-pipeline — showing events that must also flow on — wraps with
@@ -504,8 +521,8 @@ holds the business functions over the model, seed first.
   click and `toCase @l` introduces the case, closing the row itself.
 - **Named one-liner UI components.** A UI component function whose whole body is one
   pipeline expression — the named toast is the archetype
-  (`submittedToast = snackbar # forCase @"orderSubmitted"
-  submittedLine`) — is glue: inline the expression at its pipeline
+  (`submittedToast = snackbar # forCases (match { orderSubmitted:
+  submittedLine })`) — is glue: inline the expression at its pipeline
   position and delete the function (see the Layout rule). The copy
   function's business name already says what shows.
 
@@ -578,8 +595,8 @@ over a logic module, a single exported entry function.
 - **One-liner `PUI Web`-returning functions are inlined.** A named
   UI component function whose whole body is a single pipeline expression is
   indirection: write the expression at its use site —
-  `snackbar # forCase @"orderSubmitted" submittedLine` sits directly in
-  the status merge — and delete the function with its annotation. The
+  `snackbar # forCases (match { orderSubmitted: submittedLine })` sits
+  directly in the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
   UI component function earns its name only by genuinely spanning lines: a
@@ -608,8 +625,8 @@ over a logic module, a single exported entry function.
   `foreach` multiplying an ocular-wrapped UI component — the paren must open
   *before* the ocular, never after its `$`, which would put the chain
   inside the element (one container around the collection instead of one
-  per item). `lcmap`-only adopters (`projection`, `projected`) are safe
-  either side of a shape-preserving ocular.
+  per item). The `lcmap`-only adopter (`forProperty`) is safe either
+  side of a shape-preserving ocular.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live
   summary → events (×→+) → dispatch (+→+) → statuses (+→×) — closed by
@@ -672,24 +689,27 @@ over a logic module, a single exported entry function.
   as is naming the entry function `main`. UI code keeps only
   presentation — labels, captions, icons, styles, structure; layout
   numerics (a textarea's `rows`, a grid's `columns`) stay UI.
-- **Simple text concatenation is UI structure.** A displayed line glued
-  from fields and literal separators or prefixes is a merge of
-  `staticText` pieces and per-field displays — each field its own text
-  node, updated in place:
+- **Composed lines split at the field boundary.** A displayed line glued
+  from literal chrome and a value is a merge of `staticText` pieces and
+  a verbatim per-field display — each field its own text node, updated
+  in place:
 
   ```purescript
   ( headline6 $ RecordToRecord.do
       staticText "Till balance: €"
-      text @"balance" # projection euros ) # shown
+      text @"balanceText" ) # shown
   ```
 
-  never `text @"balance" # projected balanceLine` over a
-  `balanceLine { balance } = "Till balance: €" <> euros balance`. If
-  deleting the literals would leave only field reads, the function is UI
-  structure in disguise. Business functions format *values* (a money
-  formatter, a time formatter), never *lines*. String-channel copy
-  (toast lines) and shape-varying lines (case analysis, conditional
-  fragments) are the exemptions.
+  with `balanceText` a presentation field the logic module's
+  `present<App>` maintains (the euros formatting is business logic; the
+  `"Till balance: €"` prefix is UI structure). A line whose text is
+  genuinely **composed from several fields** — a greeting
+  (`"Hello, [first name] [last name]"`), a summary sentence — is a
+  derived presentation field itself, written whole by `present<App>`:
+  the composition is a presentation-model concern, unit-tested in
+  `spago test`, and the view shows it verbatim. What stays view-side is
+  only case-invariant chrome around a single field; if the glue varies
+  with the data, the whole line is a derived field.
 - **A label is read back, never restated.** A case label *is* the copy
   it draws (`choice @l` states it once, at the case), so a `match`
   whose branches merely echo their case labels — verbatim or re-cased —
@@ -698,9 +718,9 @@ over a logic module, a single exported entry function.
   (`choice @"with oat milk"`, `choice @"less than a month"`,
   `choice @"cash"`), and read it back with `caseText` from
   `Data.Variant.Case` — a domain module, importable from logic and view
-  alike — verbatim at display positions
-  (`text @"Dish" # projection caseText`) and inside copy lines
-  (`caseText duration`). A map that does real work — shortening
+  alike — verbatim where the presentation field is derived
+  (`present<App>` writing `dishText = caseText r."Dish"`) and inside
+  copy lines (`caseText duration`). A map that does real work — shortening
   (meeting-booker's `roomText`), glyphs, per-case sentences — stays a
   named copy function; never keep one just to change case. A
   **case-invariant affix is not part of the copy**: it factors out of
@@ -714,7 +734,7 @@ over a logic module, a single exported entry function.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status adopter in place
-  (`snackbar # forCase @"registered" welcomeLine`); the event carries
+  (`snackbar # forCases (match { registered: welcomeLine })`); the event carries
   the order, the outcome, the reason — the data, not the sentence.
   Validation results are payloads, not strings destined for a particular
   UI component.
@@ -798,8 +818,8 @@ over a logic module, a single exported entry function.
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
   with their projection arguments — `provided @l classifierOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
-  `toCase @l payloadOf`, `forCase @l copyOf`, `projection f`, `projected f`,
-  `toCases outcomeOf`, `forCases lineOf`,
+  `toCase @l payloadOf`,
+  `toCases outcomeOf`, `forCases lineOf`, `forProperty`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would
   write has one of those homes. A shape none of them fit is a

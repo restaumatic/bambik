@@ -7,11 +7,11 @@
 -- |     and their optics in `Data.Lens.Reel`/`Data.Lens.Coreel` — neither the
 -- |     classes nor the optics mention a row, so none of them lives here.
 -- |
--- | The adopters here (`forCase`/`forCases`) carry **no canonical label**:
--- | a status states its payload case once, in its own row, and the adopters
--- | read it back out via `RowToList`'s fundep — application code writes only
--- | the business case (`# forCase @"booked" bookedLine`), and no layer
--- | hard-codes a label.
+-- | The adopter here (`forCases`) carries **no canonical label**:
+-- | a status states its payload case once, in its own row, and the adopter
+-- | reads it back out via `RowToList`'s fundep — application code writes only
+-- | the business cases (`# forCases (match { booked: bookedLine })`), and no
+-- | layer hard-codes a label.
 -- |   * **direction class** — `VariantToRecord`, the binary **merge**: the one
 -- |     genuine per-carrier primitive.
 -- |   * **free functions over the strength** — everything else, named for
@@ -51,7 +51,6 @@ module Data.Profunctor.Row.VariantToRecord
   , class VariantToRecord
   , discard
   , focusCase
-  , forCase
   , forCases
   , backgroundCase
   , subRetaining
@@ -66,7 +65,7 @@ import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, case_, expand, inj, on)
+import Data.Variant (class Contractable, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -138,26 +137,20 @@ discard :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l.
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Adopt a **canonically-labeled** status component (`[ event :: a ]` in,
--- | the citizenship-carrying interface) for business case `l`: renames the
--- | incoming case, output untouched — `lcmap`-only, the `asCase` twin at
--- | `+ → ×` (statuses receive; events emit).
+-- | the citizenship-carrying interface) for a **classified variant** — the
+-- | input dual of `RecordToVariant`'s `toCases`: one copy classifier renders
+-- | the cases the status owns into its own payload case (derived from its
+-- | row via `RowToList`'s fundep), so a single status instance serves
+-- | mutually exclusive outcomes — `status # forCases (match { booked: …,
+-- | rejected: … })` — and a **subset** `match { l: line }` adopts exactly one
+-- | business case, its variant being that singleton, sibling merge operands
+-- | keeping theirs (the dissolved `forCase @l line` written as what it was).
 -- | The copy formatter is the mechanism's own argument (import-tower rule
--- | L16): the adopted case carries the bare business payload, and `f`
--- | renders it into the status's own payload case at the adoption site —
--- | `status # forCase @"registered" welcomeLine`; `identity` when
--- | the payload already is the copy.
-forCase :: forall @l c p a b o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => IsSymbol l => Cons c a () cs => Cons l b () s => Profunctor p => (b -> a) -> p [ | cs ] o -> p [ | s ] o
-forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
-
--- | Adopt a status component for a **whole classified variant** — the input
--- | dual of `RecordToVariant`'s `toCases` and `forCase`'s plural: where
--- | `forCase @l` renders one business case into the canonical `event`
--- | payload, `forCases` renders every case through one copy classifier, so
--- | a single status instance serves mutually exclusive outcomes —
--- | `status # forCases (match { booked: …, rejected: … })`.
--- | One-at-a-time input means one classifier is total over the row; per-case
--- | copy stays a `match` branch, never a sibling operand, when outcomes share one
--- | status area.
+-- | L16): the adopted cases carry bare business payloads, rendered at the
+-- | adoption site; `identity` when the payload already is the copy.
+-- | One-at-a-time input means one classifier is total over the row it
+-- | states; per-case copy stays a `match` branch, never a sibling operand,
+-- | when outcomes share one status area.
 forCases :: forall c p a o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () cs => Profunctor p => ([ | s ] -> a) -> p [ | cs ] o -> p [ | s ] o
 forCases f = lcmap (\v -> inj (Proxy @c) (f v))
 

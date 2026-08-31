@@ -1,11 +1,11 @@
 module TodoMvcMDC3 (todoMvcMDC3) where
 
-import Prelude ((#), ($), Unit, show)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (applied, projection, forProperty, mvu, required, toCase, updated)
+import PUI (applied, forProperty, mvu, required, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shownWhen, body, clWhen, span, staticText, text)
 import PUI.Web.MDC3 (button, card, bodySmall, elevation5, filledTextField, listOf, segmentedButton)
@@ -25,10 +25,10 @@ todoMvcMDC3 =
             [ choice @"All", choice @"Active", choice @"Completed" ] # required
           Category.do
             ( bodySmall $ RecordToRecord.do
-                text @"count" # projection show
+                text @"countText"
                 staticText " item left" ) # shownWhen @"sole" remainingItems
             ( bodySmall $ RecordToRecord.do
-                text @"count" # projection show
+                text @"countText"
                 staticText " items left" ) # shownWhen @"several" remainingItems
             button @"Clear completed" {} # applied clearCompleted
       ) # mvu emptyTodoList

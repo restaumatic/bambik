@@ -1,4 +1,4 @@
-module EspressoBarLogic (brewedLine, caffeineFraction, espressoNoFrills, summaryText, theUsual, usualOrder) where
+module EspressoBarLogic (brewedLine, espressoNoFrills, presentEspressoBar, theUsual, usualOrder) where
 
 import Prelude (min, otherwise, (*), (+), (<>), (==))
 
@@ -7,8 +7,8 @@ import Data.String (trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
-usualOrder :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ] }
-usualOrder =
+usualOrder :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ], summary :: String, caffeine :: Number }
+usualOrder = presentEspressoBar
   { "Your name": ""
   , drink: ."Cappuccino" {}
   , "Size": ."Medium" {}
@@ -20,6 +20,14 @@ usualOrder =
   , "Takeaway cup": false
   , "Mark as favorite": false
   , "Loyalty": .guest {}
+  , summary: ""
+  , caffeine: 0.0
+  }
+
+presentEspressoBar :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ], summary :: String, caffeine :: Number } -> { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ], summary :: String, caffeine :: Number }
+presentEspressoBar r = r
+  { summary = summaryText { drink: r.drink, "Size": r."Size", "Milk": r."Milk", "Roast": r."Roast", "Sugar": r."Sugar", "Extra shot": r."Extra shot", "Decaf": r."Decaf", "Takeaway cup": r."Takeaway cup", "Loyalty": r."Loyalty" }
+  , caffeine = caffeineFraction { drink: r.drink, "Extra shot": r."Extra shot", "Decaf": r."Decaf" }
   }
 
 theUsual :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
@@ -28,10 +36,10 @@ theUsual = { drink: ."Cappuccino" {}, "Size": ."Medium" {}, "Milk": ."with whole
 espressoNoFrills :: { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean } -> { drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean }
 espressoNoFrills order = order { drink = ."Espresso" {}, "Size" = ."Small" {}, "Milk" = ."no milk" {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
 
-brewedLine :: { "Your name" :: String, drink :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Mark as favorite" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ] } -> String
-brewedLine { "Your name": customer, drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Mark as favorite": favorite, "Loyalty": loyalty } =
+brewedLine :: { "Your name" :: String, summary :: String, "Mark as favorite" :: Boolean } -> String
+brewedLine { "Your name": customer, summary, "Mark as favorite": favorite } =
   "Coming right up" <> forCustomer { "Your name": customer }
-    <> ": " <> summaryText { drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty": loyalty }
+    <> ": " <> summary
     <> (if favorite then " ★" else "")
 
 forCustomer :: { "Your name" :: String } -> String

@@ -1,12 +1,21 @@
-module PaymentLogic (chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder) where
+module PaymentLogic (chargeFlaky, presentPayment, recordCharged, retryLine, startCharge, unpaidOrder) where
 
 import Prelude (show, (<>), ($), (+), (<), discard, pure)
 
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
-unpaidOrder :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
-unpaidOrder = { amount: 42.0, approval: .pending {} }
+unpaidOrder :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ], amountText :: String, statusText :: String }
+unpaidOrder = presentPayment { amount: 42.0, approval: .pending {}, amountText: "", statusText: "" }
+
+presentPayment :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ], amountText :: String, statusText :: String } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ], amountText :: String, statusText :: String }
+presentPayment r = r
+  { amountText = show r.amount
+  , statusText = match
+      { pending: \_ -> "Ready to charge — the gateway is flaky, so it retries automatically."
+      , approved: \{ attempt } -> "Approved — $" <> show r.amount <> " charged on attempt " <> show attempt
+      } r.approval
+  }
 
 retryLine :: { amount :: Number, attempt :: Int } -> String
 retryLine { attempt } = "Charge declined — retrying (attempt " <> show attempt <> ")"
@@ -26,9 +35,3 @@ chargeFlaky r@{ attempt } = do
 
 recordCharged :: { attempt :: Int } -> { approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
 recordCharged approved = { approval: .approved approved }
-
-statusLine :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> String
-statusLine { amount, approval } = match
-  { pending: \_ -> "Ready to charge — the gateway is flaky, so it retries automatically."
-  , approved: \{ attempt } -> "Approved — $" <> show amount <> " charged on attempt " <> show attempt
-  } approval

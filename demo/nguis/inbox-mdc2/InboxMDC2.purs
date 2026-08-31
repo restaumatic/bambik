@@ -7,8 +7,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageCountText, messageView, mondayMail, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, unreadCountText)
-import PUI (applied, atCase, forCase, mvu, observed, projection, toCase, updated, with)
+import InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageView, mondayMail, openMessage, presentInbox, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst)
+import PUI (applied, atCase, forCases, mvu, observed, settled, toCase, updated, with)
 import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
@@ -19,9 +19,9 @@ inboxMDC2 =
     elevation20 $
       card $ ( Category.do
           ( caption $ RecordToRecord.do
-              text @"messages" # projection unreadCountText
+              text @"unreadCountText"
               staticText " unread of "
-              text @"messages" # projection messageCountText
+              text @"messageCountText"
               staticText " messages" ) # shown
           listOf { selected: highlighted } mailboxRows
             ( span $ Category.do
@@ -43,11 +43,11 @@ inboxMDC2 =
                   button @"Delete" {} # with {}
                   button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
               VariantToVariant.do
-                banner # forCase @"Delete" (const inboxZeroLine) # observed
+                banner # forCases (match { "Delete": const inboxZeroLine }) # observed
                 identity # atCase @"Keep" # toCase @"Keep" identity ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
           fab @"Compose" { icon: "edit" } # applied composeMessage
           ( menu { label: "Sort" } $ RecordToVariant.do
               menuItem @"By sender" {}
               menuItem @"By subject" {}
               menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
-      ) # mvu mondayMail
+      ) # settled presentInbox # mvu mondayMail

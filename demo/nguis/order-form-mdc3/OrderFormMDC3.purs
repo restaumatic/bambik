@@ -1,16 +1,15 @@
 module OrderFormMDC3 (orderFormMDC3) where
 
-import Prelude (Unit, (#), ($), show)
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
-import Data.Variant.Case (caseText)
 import Effect (Effect)
-import OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime)
-import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, forProperty, projection, looped, required, settled, updated, with)
+import OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, presentOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime)
+import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCases, forProperty, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
@@ -47,8 +46,8 @@ orderFormMDC3 =
                             indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
                         ( bodyLarge $ RecordToRecord.do
                             staticText "Distance "
-                            text @"km" # projection show
-                            staticText " km" ) # forProperty # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
+                            text @"kmText"
+                            staticText " km" ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
           card $ Category.do
             (titleMedium $ staticText "Total") # shown
             filledTextField @"Total" {}
@@ -60,11 +59,11 @@ orderFormMDC3 =
                   filledTextField @"Paid" {}
                   ( bodyLarge $ RecordToRecord.do
                       staticText "Paying by "
-                      text @"Method" # projection caseText ) # shown ) # field @"payment" )
+                      text @"methodText" ) # shown ) # field @"payment" )
           card $ Category.do
             (titleMedium $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
-      ) # looped
+      ) # settled presentOrder # looped
       bodyLarge ( Category.do
           ( RecordToRecord.do
               staticText "Summary: Order "
@@ -88,13 +87,9 @@ orderFormMDC3 =
               text @"Address" ) # forProperty # shownWhen @"Delivery" fulfillmentOf
           ( RecordToRecord.do
               staticText " ("
-              text @"km" # projection show
-              staticText " km away)" ) # forProperty # shownWhen @"estimated" deliveryDistance
-          ( ( RecordToRecord.do
-              staticText ", paid "
-              text @"Paid"
-              staticText " by "
-              text @"Method" # projection caseText ) # atField @"payment" ) # shown # debounced summarySettleTime )
+              text @"kmText"
+              staticText " km away)" ) # shownWhen @"estimated" deliveryDistance
+          text @"paidLine" # shown # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" } ) # armed
@@ -102,7 +97,7 @@ orderFormMDC3 =
         indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
         indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
       VariantToRecord.do
-        snackbar # forCase @"orderSubmitted" submittedLine
-        snackbar # forCase @"submissionFailed" rejectionLine
-        snackbar # forCase @"receiptPrinted" receiptLine
+        snackbar # forCases (match { orderSubmitted: submittedLine })
+        snackbar # forCases (match { submissionFailed: rejectionLine })
+        snackbar # forCases (match { receiptPrinted: receiptLine })
   ) # with {}

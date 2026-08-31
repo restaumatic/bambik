@@ -40,13 +40,13 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (field, projected)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, projected)
+import PUI (Ocular, PUI)
 import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, (:=))
 import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))

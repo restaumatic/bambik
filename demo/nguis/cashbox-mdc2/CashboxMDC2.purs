@@ -2,13 +2,13 @@ module CashboxMDC2 (cashboxMDC2) where
 
 import Prelude (identity, (#), ($), Unit)
 
-import CashboxLogic (applyDeposit, applyPayout, applyRefund, courierFee, customerDeposit, euros, openedTill, standardRefund)
+import CashboxLogic (applyDeposit, applyPayout, applyRefund, courierFee, customerDeposit, openedTill, presentCashbox, standardRefund)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (atCase, mvu, projection, subChoice, toCase, updated, with)
+import PUI (atCase, mvu, settled, subChoice, toCase, updated, with)
 import PUI.Web.HTML (body, shown, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, headline6, confirmed)
 import QualifiedDo.Category as Category
@@ -20,7 +20,7 @@ cashboxMDC2 =
       card $ ( Category.do
           ( headline6 $ RecordToRecord.do
               staticText "Till balance: €"
-              text @"balance" # projection euros ) # shown
+              text @"balanceText" ) # shown
           ( Category.do
               RecordToVariant.do
                 button @"Refund a customer" { icon: "undo" } # with standardRefund
@@ -29,10 +29,10 @@ cashboxMDC2 =
               ( VariantToVariant.do
                   ( confirmed { title: "Refund the customer?", confirm: "Refund" } $ body1 $ RecordToRecord.do
                       staticText "Hand €"
-                      text @"amount" # projection euros
+                      text @"amountText"
                       staticText " back to the customer." ) # atCase @"Refund a customer" # toCase @"refunded" identity
                   ( confirmed { title: "Pay the courier?", confirm: "Pay" } $ body1 $ RecordToRecord.do
                       staticText "Hand €"
-                      text @"amount" # projection euros
+                      text @"amountText"
                       staticText " to the courier." ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: applyRefund, paidOut: applyPayout, "Take a deposit": applyDeposit })
-      ) # mvu openedTill
+      ) # settled presentCashbox # mvu openedTill

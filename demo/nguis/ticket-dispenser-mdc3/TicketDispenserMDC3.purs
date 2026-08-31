@@ -1,12 +1,12 @@
 module TicketDispenserMDC3 (ticketDispenserMDC3) where
 
-import Prelude (Unit, const, identity, show, (#), ($))
+import Prelude (Unit, const, identity, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Lens.Reel (reelE)
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
-import PUI (projection, mvu, updated)
+import PUI (mvu, updated)
 import PUI.Web.HTML (shownWhen, body, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
 import QualifiedDo.Category as Category
@@ -21,12 +21,12 @@ ticketDispenserMDC3 =
               (staticText "—") # shownWhen @"waiting" displayOf
               ( RecordToRecord.do
                   staticText "#"
-                  text @"number" # projection show ) # shownWhen @"serving" displayOf )
+                  text @"ticketText" ) # shownWhen @"serving" displayOf )
           bodyMedium ( Category.do
               (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
               ( RecordToRecord.do
                   staticText "Now serving ticket "
-                  text @"number" # projection show
+                  text @"ticketText"
                   staticText "." ) # shownWhen @"serving" displayOf )
           ( Category.do
               button @"Take a number" {}

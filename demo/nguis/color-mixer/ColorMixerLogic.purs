@@ -1,4 +1,4 @@
-module ColorMixerLogic (applyPreset, duskViolet, hexText, mixOf, palette, rgb, rgbText) where
+module ColorMixerLogic (applyPreset, duskViolet, mixOf, palette, presentColorMixer, rgb) where
 
 import Prelude ((<>), (<<<), (==), max, min, show)
 
@@ -7,8 +7,11 @@ import Data.Int (hexadecimal, round, toStringAs)
 import Data.Maybe (maybe)
 import Data.String (length, toUpper)
 
-duskViolet :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
-duskViolet = let m = mix 96.0 64.0 160.0 in { "Red": channelRange m."Red", "Green": channelRange m."Green", "Blue": channelRange m."Blue" }
+duskViolet :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, hexText :: String, rgbText :: String }
+duskViolet = let m = mix 96.0 64.0 160.0 in presentColorMixer { "Red": channelRange m."Red", "Green": channelRange m."Green", "Blue": channelRange m."Blue", hexText: "", rgbText: "" }
+
+presentColorMixer :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, hexText :: String, rgbText :: String } -> { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, hexText :: String, rgbText :: String }
+presentColorMixer r = let m = mixOf { "Red": r."Red", "Green": r."Green", "Blue": r."Blue" } in r { hexText = hex m, rgbText = rgb m }
 
 applyPreset :: String -> { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
 applyPreset name channels = maybe channels
@@ -29,12 +32,6 @@ mix red green blue = { "Red": clampChannel red, "Green": clampChannel green, "Bl
 
 mixOf :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
 mixOf { "Red": red, "Green": green, "Blue": blue } = { "Red": red.current, "Green": green.current, "Blue": blue.current }
-
-hexText :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
-hexText = hex <<< mixOf
-
-rgbText :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
-rgbText = rgb <<< mixOf
 
 hex :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } -> String
 hex { "Red": red, "Green": green, "Blue": blue } = "#" <> channelHex red <> channelHex green <> channelHex blue

@@ -27,14 +27,14 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one field, formatted | `text @l # projection f`, the block `# shown` | counter: `headline4 (text @"count" # projection show) # shown` | HTML.purs (`shown`) |
-| a sentence, or text mixed with typography and several fields | an ocular over `RecordToRecord.do` of `staticText` and `text @l` (formatted: `text @l # projection f`), the block `# shown` | checkout; order-form's summary | writing.md *Pass-through stages*; *Code style → Business functions* (which literals are UI) |
+| one field, formatted | a derived presentation field (`present<App>` in logic, `# settled present<App>` trailing the pipeline), shown verbatim: `text @"countText"`, the block `# shown` | counter: `headline4 (text @"countText") # shown` | writing.md *displays are verbatim*; doc/research-presentation-model.md |
+| a sentence, or text mixed with typography and several fields | a derived sentence field, shown verbatim inside an ocular over `RecordToRecord.do` of `staticText` chrome and `text @l` | order-form's summary | writing.md *Composed lines split at the field boundary* |
 | pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
 | content that exists only in one state | `content # shownWhen @l classifierOf` — the one visibility primitive: one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
 | a display inside a collection item, reading the item's own field | `text @l # forProperty` | todomvc's title; cells | RecordToRecord.purs (`forProperty`) |
-| a display fed a whole value, not a record | `text @l # projected f` | inbox: `text @"unreadCount" # projected unreadCountText` | RecordToRecord.purs (`projected`) |
+| a display fed a whole value, not a record | a derived presentation field on that row, read verbatim (`text @l`, `# forProperty` when the row is wider) | inbox: `text @"unreadText"` | writing.md *displays are verbatim* |
 | a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
 | the flow must wait for the user's confirmation | `confirmed cfg $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
 | a value-computed attribute (style, coordinates, colour) | `attrWith "style" f` on the element | calculator, cells, color-mixer | HTML.purs (`attrWith`) |
@@ -84,7 +84,7 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one status line per outcome case | `snackbar # forCase @"orderSubmitted" submittedLine` in `VariantToRecord.do` | order-form | VariantToRecord.purs (`forCase`) |
+| one status line per outcome case | `snackbar # forCases (match { orderSubmitted: submittedLine })` in `VariantToRecord.do` — the subset match keeps sibling operands' cases theirs | order-form | VariantToRecord.purs (`forCases`) |
 | one status for a whole classified variant | `snackbar # forCases bookingLine` | flight-booker | VariantToRecord.purs (`forCases`) |
 
 ## Collections
@@ -114,10 +114,9 @@ direction module headers.
 
 In a projection slot `identity` means "the whole value, verbatim": `toCase @l
 identity` (the emitter's whole payload is the case payload — cashbox),
-`foreach @l identity` (the fed value *is* the array — potluck), `projected
-identity` (the whole input is the field). `shown` and `forProperty`
-take no projection, so it never appears with them. Stated in: writing.md
-*Code style → Wiring*.
+`foreach @l identity` (the fed value *is* the array — potluck). `shown` and
+`forProperty` take no projection, so it never appears with them. Stated in:
+writing.md *Code style → Wiring*.
 
 ## The one runtime rule
 

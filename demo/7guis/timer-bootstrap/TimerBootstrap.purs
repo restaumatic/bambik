@@ -1,28 +1,28 @@
 module TimerBootstrap (timerBootstrap) where
 
-import Prelude ((#), ($), Unit, const, show)
+import Prelude ((#), ($), Unit, const)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, projection, mvu, projected, updated, with)
+import PUI (every, mvu, settled, updated, with)
 import PUI.Web.Bootstrap (button, card, progress, sliderLive)
 import PUI.Web.HTML (shown, body, p, staticText, text)
 import QualifiedDo.Category as Category
-import TimerLogic (fraction, nothingElapsed, tenSecondFreshTimer, tick, tickPeriod, wholeSeconds)
+import TimerLogic (nothingElapsed, presentTimer, tenSecondFreshTimer, tick, tickPeriod)
 
 timerBootstrap :: Effect Unit
 timerBootstrap =
   body $
     card $ ( Category.do
         ( RecordToRecord.do
-            progress @"fraction" # projected fraction
+            progress @"fraction"
             p RecordToRecord.do
-              text @"elapsed" # projection show
+              text @"elapsedText"
               staticText "s / "
-              text @"Duration" # projection wholeSeconds
+              text @"durationText"
               staticText "s" ) # shown
         sliderLive @"Duration" {}
         every tickPeriod tick
         button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
-    ) # mvu tenSecondFreshTimer
+    ) # settled presentTimer # mvu tenSecondFreshTimer

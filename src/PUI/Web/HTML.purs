@@ -97,7 +97,7 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (field, recordToRecord, projected)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, widenRecordInput)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, match, on, prj)
@@ -108,7 +108,7 @@ import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, foreach, muted, projected)
+import PUI (Ocular, PUI, foreach, muted)
 import Unsafe.Coerce (unsafeCoerce)
 import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
@@ -119,8 +119,9 @@ import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, app
 -- | feed), fed the row on every feed, the fed row released always. The
 -- | content reads its own *closed* narrow row by subsumption
 -- | (`Union read extra row`), so a chrome merge states exactly
--- | the fields it shows and a formatted read is `projection`'s job inside
--- | it. The sibling of `shownWhen`/`shownEach` whose policy is
+-- | the fields it shows — verbatim: a formatted read is a derived field a
+-- | `settled` normalization maintains (the presentation-model rule).
+-- | The sibling of `shownWhen`/`shownEach` whose policy is
 -- | no policy; the rung trails its content like every data concern:
 -- | `(headline6 $ …) # shown`.
 shown

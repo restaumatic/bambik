@@ -1,12 +1,11 @@
 module PotluckMDC3 (potluckMDC3) where
 
-import Prelude (identity, (#), ($), Unit)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import Data.Variant.Case (caseText)
-import PotluckLogic (guestCount, invitation)
-import PUI (acted, field, foreach, projection, with)
+import PotluckLogic (invitation, menu)
+import PUI (acted, field, foreach, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, span, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, card, elevation5, headlineSmall, list, listItem, segmentedButton, titleMedium)
@@ -18,7 +17,7 @@ potluckMDC3 =
     elevation5 $
       card $ ( Category.do
           ( bodyMedium $ RecordToRecord.do
-              text @"guests" # projection guestCount
+              text @"guestCountText"
               staticText " guests invited — everyone picks one dish; the menu prints once the table is complete." ) # shown
           ( list $
               ( listItem $ RecordToRecord.do
@@ -30,6 +29,6 @@ potluckMDC3 =
             ( span $ RecordToRecord.do
                 text @"name"
                 staticText "’s "
-                text @"Dish" # projection caseText
-                staticText ", " ) # foreach @"name" identity # field @"guests"
+                text @"dish"
+                staticText ", " ) # foreach @"name" menu # field @"guests"
       ) # with invitation

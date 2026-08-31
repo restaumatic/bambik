@@ -1,4 +1,4 @@
-module MeetingBookerLogic (blankBooking, bookedLine, headcount, onlineNote, plan, ratedRoom, roomOf, roomText, seatsInRoom, seatsTaken, titleText) where
+module MeetingBookerLogic (blankBooking, bookedLine, plan, ratedRoom, roomOf, seatsInRoom, seatsTaken) where
 
 import Prelude ((<>), show, (/))
 
@@ -23,18 +23,18 @@ seatsInRoom booking@{ "Room": room, "Attendees": seats } = match
 seatedIn :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> Number -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
 
-plan :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean } -> [ complete :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }, incomplete :: {} ]
+plan :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean } -> [ complete :: { titleText :: String, roomText :: String, durationText :: String, attendeesText :: String, onlineNote :: String }, incomplete :: {} ]
 plan { "Meeting title": title, "Room": room, "Duration (min)": duration, "Attendees": seats, "Include a Teams link": online } = match
   { chosen: \r -> match
-      { chosen: \d -> .complete { "Meeting title": title, "Room": r, "Duration (min)": d, attendees: seats.current, "Include a Teams link": online }
+      { chosen: \d -> .complete { titleText: titleText title, roomText: roomText r, durationText: caseText d, attendeesText: headcount seats.current, onlineNote: onlineNote online }
       , unchosen: \_ -> .incomplete {}
       } duration
   , unchosen: \_ -> .incomplete {}
   } room
 
-bookedLine :: { "Meeting title" :: String, "Room" :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], "Duration (min)" :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean } -> String
-bookedLine { "Meeting title": title, "Room": room, "Duration (min)": duration } =
-  "Booked: " <> titleText title <> " — " <> roomText room <> " for " <> caseText duration <> " min"
+bookedLine :: { titleText :: String, roomText :: String, durationText :: String, attendeesText :: String, onlineNote :: String } -> String
+bookedLine { titleText: title, roomText: room, durationText: duration } =
+  "Booked: " <> title <> " — " <> room <> " for " <> duration <> " min"
 
 headcount :: Number -> String
 headcount attendees = show (round attendees)
