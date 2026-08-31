@@ -13,7 +13,12 @@ four row merges. It is a pair of modules with a one-way dependency: a
 **view module** exporting a single entry function named after the
 application (never `main`), mounted at the document body, importing the
 design system and the logic module; and a **logic module** of pure
-business functions and values, depending only on the domain. The
+business functions and values, depending only on the domain. The rows
+the pipeline operates over are a **presentation model**: displays are
+verbatim (no leaf takes a formatter), so everything the user reads —
+formatted readouts, composed sentence lines — is a model field the
+logic module writes and unit tests (writing.md, *displays are
+verbatim*). The
 smallest complete example is the helloworld demo (all view, so a single
 module); the counter demo is the smallest one with a model and a logic
 module.

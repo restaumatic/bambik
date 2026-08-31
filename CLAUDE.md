@@ -84,6 +84,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - `toUser` - pushes model updates to UI
 - `fromUser` - captures user interactions
 
+The rows a pipeline operates over are a **presentation model** (guardrails L17): source fields beside the derived fields they render as — displays are verbatim (no leaf takes a formatter), formatting is a `settled` invariant in the logic module (`present<App>`, seed pre-normalized), so the screen's copy is unit-testable in `spago test`. doc/research-presentation-model.md is the rationale.
+
 ### Key Source Files
 
 - **src/PUI.purs** — the core profunctor and the carrier-independent algebra's

@@ -326,6 +326,32 @@ the next `required` waiting to be coined — never a reason to import the
 module one floor down. Business optics (`Shutter`/`Reel` in business
 code below the UI) are algebra-layer material and exempt by location.
 
+### L17. The rows are a presentation model; displays are verbatim.
+
+- What a pipeline operates over is not the domain model but its
+  **presentation**: source fields and the derived fields they render as,
+  side by side in one row. A display leaf MUST show its field as fed —
+  no display takes a formatter, and the vocabulary re-exports no
+  view-side read adopter (`projection` and `forCase` are deleted;
+  `projected` is vocabulary plumbing for the statuses, not re-exported
+  from `PUI`). The one read adopter is `forProperty` — selection from a
+  context-pinned row, never formatting.
+- Everything the user reads is therefore a model field: a formatted
+  readout, a unit-suffixed quantity, a sentence composed from several
+  fields is a derived presentation field, written in the logic module by
+  one normalization per app and maintained as a `settled` invariant, the
+  seed pre-normalized; a context-pinned row (collection item, pane
+  payload) carries its copy from the business function producing it. The
+  gain is the point: the screen's copy is a pure function under
+  `spago test`, no browser. Checkable form: `npm run check-view-model`
+  rejects `projection`/`projected`/`forCase` anywhere in `demo/`.
+- Statuses adopt through `forCases` alone (a subset `match` owns exactly
+  its cases); their canonical `[ event :: String ]` row stays private to
+  the vocabulary.
+- Rationale, laws and measurements: doc/research-presentation-model.md;
+  the application-side statement is writing.md's *displays are
+  verbatim*.
+
 ---
 
 ## Part II — The approach (applications built on bambik)

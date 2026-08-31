@@ -33,6 +33,19 @@
 -- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
 -- |     guard, so exactly one turn happens per event.
 -- |
+-- | **The rows are a presentation model.** What a `PUI` pipeline operates
+-- | over is not the domain model but its presentation: source fields and
+-- | the derived fields they render as — formatted readouts, unit-suffixed
+-- | quantities, composed sentence lines — side by side in one row.
+-- | Displays are **verbatim** (no leaf takes a formatter); the derived
+-- | fields are written by one normalization per app
+-- | (`present<App> :: row -> row`, run as `# settled present<App>`, the
+-- | seed pre-normalized), so everything the user reads is a model field
+-- | and the screen's copy is a pure function under `spago test`, no
+-- | browser required. Context-pinned rows (collection items, pane
+-- | payloads) carry their copy from the business function producing them.
+-- | See doc/research-presentation-model.md.
+-- |
 -- | **No nominal types in UI.** A view-model
 -- | type is one-off and specific to its UI, so it earns no name: applications
 -- | write anonymous Record rows, anonymous Variant rows, and `{}` unit

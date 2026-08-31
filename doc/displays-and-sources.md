@@ -11,7 +11,14 @@ display is a stage whose **release is the witness**.
 ## Being read is always the business's concern
 
 A display exists because the business wants the user informed — there is
-no "display the business doesn't care about." What varies between display
+no "display the business doesn't care about." And what it informs with is
+**vouched for verbatim**: a display shows its field as fed, never through
+a formatter, because the rows a pipeline operates over are a
+**presentation model** (guardrails L17,
+doc/research-presentation-model.md) — the copy the user reads is itself
+a model field the business logic wrote, so the assurance a display gives
+is assurance about a value the logic module can be unit-tested on.
+What varies between display
 components is not the concern but the **fulfillment policy**: *how* the
 component discharges the obligation that its content be read. Each policy
 either produces a **witness** — an event establishing that reading
