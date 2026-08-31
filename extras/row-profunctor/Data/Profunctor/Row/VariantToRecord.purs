@@ -67,7 +67,7 @@ import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, case_, expand, inj, on)
+import Data.Variant (class Contractable, class VariantMatchCases, case_, expand, inj, match, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -143,27 +143,28 @@ discard first cont = bind first (\_ -> cont unit)
 -- | input dual of `RecordToVariant`'s `toCases`: one copy classifier renders
 -- | the cases the status owns into its own payload case (derived from its
 -- | row via `RowToList`'s fundep), so a single status instance serves
--- | mutually exclusive outcomes — `status # forCases (match { booked: …,
--- | rejected: … })` — and a **subset** `match { l: line }` adopts exactly one
--- | business case, its variant being that singleton, sibling merge operands
--- | keeping theirs. Its single-case convenience is `forCase @l` below.
--- | The copy formatter is the mechanism's own argument (import-tower rule
+-- | mutually exclusive outcomes — `status # forCases { booked: bookedLine,
+-- | rejected: rejectionLine }`. The classifier is the **record of per-case
+-- | copy functions** and the elimination is this mechanism's own (no
+-- | `match` at the call site): the record's totality over its own row is
+-- | the exhaustiveness guarantee, and the row it states is exactly what the
+-- | operand owns — a one-field record adopts one business case, sibling
+-- | merge operands keeping theirs.
+-- | The copy formatters are the mechanism's own argument (import-tower rule
 -- | L16): the adopted cases carry bare business payloads, rendered at the
--- | adoption site; `identity` when the payload already is the copy.
--- | One-at-a-time input means one classifier is total over the row it
--- | states; per-case copy stays a `match` branch, never a sibling operand,
--- | when outcomes share one status area.
-forCases :: forall c p a o s cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () cs => Profunctor p => ([ | s ] -> a) -> p [ | cs ] o -> p [ | s ] o
-forCases f = lcmap (\v -> inj (Proxy @c) (f v))
+-- | adoption site; `identity` branches when the payload already is the copy.
+-- | Per-case copy stays a record field, never a sibling operand, when
+-- | outcomes share one status area.
+forCases :: forall c p a o s1 s rl r cs. RowToList cs (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () cs => Profunctor p => RowToList r rl => VariantMatchCases rl s1 a => Union s1 () s => { | r } -> p [ | cs ] o -> p [ | s ] o
+forCases handlers = lcmap (\v -> inj (Proxy @c) (match handlers v))
 
 -- | `forCases` at one business case — the derived single-case convenience,
 -- | keeping the adopter in the `@l` grammar (`atCase @l`/`toCase @l`/
--- | `shownWhen @l`'s family) and the `match` off the call site, exactly as
--- | `applied` keeps `const` off `updated`'s. Law (the defining equation, at
--- | the singleton variant):
+-- | `shownWhen @l`'s family), exactly as `applied` keeps `const` off
+-- | `updated`'s. Law (the defining equation, at the singleton variant):
 -- |
 -- | ```
--- | forCase @l f = forCases (match { l: f })
+-- | forCase @l f = forCases { l: f }
 -- | ```
 -- |
 -- | `status # forCase @"registered" welcomeLine`; a status owning several

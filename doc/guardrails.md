@@ -345,9 +345,10 @@ code below the UI) are algebra-layer material and exempt by location.
   gain is the point: the screen's copy is a pure function under
   `spago test`, no browser. Checkable form: `npm run check-view-model`
   rejects `projection`/`projected`/`forCase` anywhere in `demo/`.
-- Statuses adopt through `forCases` (a whole classified variant) and its
-  derived single-case convenience `forCase @l`
-  (`forCase @l f = forCases (match { l: f })` by law); their canonical
+- Statuses adopt through `forCases` (a whole classified variant — the
+  classifier a record of per-case copy functions, the elimination the
+  mechanism's own) and its derived single-case convenience `forCase @l`
+  (`forCase @l f = forCases { l: f }` by law); their canonical
   `[ event :: String ]` row stays private to the vocabulary.
 - Rationale, laws and measurements: doc/research-presentation-model.md;
   the application-side statement is writing.md's *displays are

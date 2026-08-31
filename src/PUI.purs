@@ -911,8 +911,8 @@ applied f = updated (const f)
 -- | sibling on
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `status # forCases (match { charge:
--- | retryLine }) # observed` narrates a retry loop without interrupting it. Subsumption
+-- | status consumes are also shown — `status # forCase @"charge" retryLine
+-- | # observed` narrates a retry loop without interrupting it. Subsumption
 -- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
 -- | `Union` widening): the status may consume a *narrower* row than the
 -- | stage carries — its cases are contracted out and shown, background cases

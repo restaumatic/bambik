@@ -53,11 +53,12 @@ chrome at `{} → {}`, no model data.
   because it is selection, never formatting.
 - `# forCase @l copyOf` — one status per business case, sibling merge
   operands each owning exactly their case. A **derived** word:
-  `forCase @l f = forCases (match { l: f })` is its law — kept for the
-  `@l` adopter grammar and the `match`-free call site, exactly as
-  `applied` keeps `const` off `updated`'s.
+  `forCase @l f = forCases { l: f }` is its law — kept for the `@l`
+  adopter grammar, exactly as `applied` keeps `const` off `updated`'s.
 - `# forCases classifier` — one status instance for a whole classified
-  variant (flight-booker's `bookingLine`).
+  variant; the classifier is a **record of per-case copy functions**
+  (flight-booker's `bookingLine`), the elimination the mechanism's own —
+  no `match` anywhere in the status story.
 
 Deleted (2026-08-31): `projection` (entirely) and `projected` (demoted
 to vocabulary-internal plumbing — the statuses'

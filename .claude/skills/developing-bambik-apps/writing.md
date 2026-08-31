@@ -170,10 +170,11 @@ syntax (`r { "Name" = … }`) all work unchanged.
 - **statuses** (`snackbar`, `banner`) derive their own payload case;
   adopt with `# forCase @l copyOf` for one business case (sibling
   operands each own exactly their case), or `# forCases classifier`
-  when one status instance serves several mutually exclusive outcomes
-  (flight-booker's booking toast). `forCase @l f` is the derived
-  single-case convenience — `forCases (match { l: f })` by law — kept
-  for the `@l` grammar and the `match`-free call site. A status
+  when one status instance serves several mutually exclusive outcomes —
+  the classifier is a **record of per-case copy functions**
+  (flight-booker's `bookingLine`), the elimination being the mechanism's
+  own, so no `match` appears in the status story. `forCase @l f` is the
+  derived single-case convenience — `forCases { l: f }` by law. A status
   mid-pipeline — showing events that must also flow on — wraps with
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
