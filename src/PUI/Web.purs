@@ -61,7 +61,6 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Foreign.Object (Object)
 import PUI (class Hosting, PUI, Logged, setDiagnostics, setSink, setTracing)
 
 foreign import data Node :: Type
