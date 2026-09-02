@@ -2,7 +2,6 @@ module TicTacToeMDC3 (ticTacToeMDC3) where
 
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (forProperty, foreach, mvu, toCase, updated, with)
@@ -16,13 +15,9 @@ ticTacToeMDC3 =
   body $
     elevation5 $
       card $ ( Category.do
-          ( headlineSmall $ RecordToRecord.do
-              text @"mark"
-              staticText " wins" ) # shownWhen @"won" gameOutcome
+          headlineSmall (text @"wonLine") # shownWhen @"won" gameOutcome
           (headlineSmall (staticText "Draw")) # shownWhen @"drawn" gameOutcome
-          ( headlineSmall $ RecordToRecord.do
-              text @"mark"
-              staticText " to move" ) # shownWhen @"toMove" gameOutcome
+          headlineSmall (text @"toMoveLine") # shownWhen @"toMove" gameOutcome
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
                   ( clicked
                       ( div

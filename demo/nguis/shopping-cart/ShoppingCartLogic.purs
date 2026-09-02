@@ -5,11 +5,11 @@ import Prelude ((<>), (*), (+), (-), (/), (<), (==), map, mod, otherwise, show)
 import Data.Array (any, foldl, mapMaybe, snoc)
 import Data.Maybe (Maybe(..))
 
-emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int }, totalText :: String }
-emptyCart = presentCart { order: [], totalText: "" }
+emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int }, totalLine :: String }
+emptyCart = presentCart { order: [], totalLine: "" }
 
-presentCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int }, totalText :: String } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int }, totalText :: String }
-presentCart cart = cart { totalText = formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 cart.order) }
+presentCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int }, totalLine :: String } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int }, totalLine :: String }
+presentCart cart = cart { totalLine = "Total: $" <> formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 cart.order) }
 
 productCatalogue :: {} -> Array { product :: { name :: String, unitPrice :: Int }, catalogueLine :: String }
 productCatalogue _ = map catalogued
@@ -37,10 +37,10 @@ removeUnit name cart = cart { order = mapMaybe oneFewer cart.order }
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }
     | otherwise = Just l
 
-cartLines :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> Array { product :: String, quantity :: String, lineTotal :: String }
+cartLines :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> Array { product :: String, quantity :: String, lineTotalLine :: String }
 cartLines { order } = map line order
   where
-  line { product, quantity } = { product: product.name, quantity: show quantity, lineTotal: formatMoney (quantity * product.unitPrice) }
+  line { product, quantity } = { product: product.name, quantity: show quantity, lineTotalLine: "$" <> formatMoney (quantity * product.unitPrice) }
 
 formatMoney :: Int -> String
 formatMoney cents = show (cents / 100) <> "." <> pad (mod cents 100)

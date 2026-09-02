@@ -18,24 +18,15 @@ inboxMDC3 =
   body $
     elevation5 $
       card $ ( Category.do
-          ( bodySmall $ RecordToRecord.do
-              text @"unreadCountText"
-              staticText " unread of "
-              text @"messageCountText"
-              staticText " messages" ) # shown
+          ( bodySmall $ text @"unreadLine" ) # shown
           listOf { selected: highlighted } mailboxRows
             ( span $ Category.do
                 (staticText "● ") # shownWhen @"unread" readState
-                ( RecordToRecord.do
-                    text @"sender"
-                    staticText " — "
-                    text @"subject" ) # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+                text @"messageLine" # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Category.do
               ( RecordToRecord.do
                   headlineSmall (text @"subject")
-                  bodyMedium RecordToRecord.do
-                    staticText "From: "
-                    text @"sender"
+                  bodyMedium (text @"fromLine")
                   bodyLarge (text @"body")) # shown
               iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
           ( Category.do

@@ -23,16 +23,21 @@ seatsInRoom booking@{ "Room": room, "Attendees": seats } = match
 seatedIn :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ] -> Number -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
 
-plan :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean } -> [ complete :: { titleText :: String, roomText :: String, durationText :: String, attendeesText :: String, onlineNote :: String }, incomplete :: {} ]
+plan :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean } -> [ complete :: { planLine :: String, titleText :: String, roomText :: String, durationText :: String }, incomplete :: {} ]
 plan { "Meeting title": title, "Room": room, "Duration (min)": duration, "Attendees": seats, "Include a Teams link": online } = match
   { chosen: \r -> match
-      { chosen: \d -> .complete { titleText: titleText title, roomText: roomText r, durationText: caseText d, attendeesText: headcount seats.current, onlineNote: onlineNote online }
+      { chosen: \d -> .complete
+          { planLine: "Plan: " <> titleText title <> " in the " <> roomText r <> ", " <> caseText d <> " min, " <> headcount seats.current <> " attendees" <> onlineNote online
+          , titleText: titleText title
+          , roomText: roomText r
+          , durationText: caseText d
+          }
       , unchosen: \_ -> .incomplete {}
       } duration
   , unchosen: \_ -> .incomplete {}
   } room
 
-bookedLine :: { titleText :: String, roomText :: String, durationText :: String, attendeesText :: String, onlineNote :: String } -> String
+bookedLine :: { planLine :: String, titleText :: String, roomText :: String, durationText :: String } -> String
 bookedLine { titleText: title, roomText: room, durationText: duration } =
   "Booked: " <> title <> " — " <> room <> " for " <> duration <> " min"
 

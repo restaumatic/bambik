@@ -690,27 +690,27 @@ over a logic module, a single exported entry function.
   as is naming the entry function `main`. UI code keeps only
   presentation — labels, captions, icons, styles, structure; layout
   numerics (a textarea's `rows`, a grid's `columns`) stay UI.
-- **Composed lines split at the field boundary.** A displayed line glued
-  from literal chrome and a value is a merge of `staticText` pieces and
-  a verbatim per-field display — each field its own text node, updated
-  in place:
+- **A composed line is one derived field.** A displayed line that
+  concatenates any copy with any value — a prefix, a unit suffix, glue
+  between two fields — is **one** presentation field written whole by
+  the logic module, never a view-side merge of `staticText` pieces and
+  `text` leaves:
 
   ```purescript
-  ( headline6 $ RecordToRecord.do
-      staticText "Till balance: €"
-      text @"balanceText" ) # shown
+  headlineSmall (text @"balanceLine") # shown
   ```
 
-  with `balanceText` a presentation field the logic module's
-  `present<App>` maintains (the euros formatting is business logic; the
-  `"Till balance: €"` prefix is UI structure). A line whose text is
-  genuinely **composed from several fields** — a greeting
-  (`"Hello, [first name] [last name]"`), a summary sentence — is a
-  derived presentation field itself, written whole by `present<App>`:
-  the composition is a presentation-model concern, unit-tested in
-  `spago test`, and the view shows it verbatim. What stays view-side is
-  only case-invariant chrome around a single field; if the glue varies
-  with the data, the whole line is a derived field.
+  with `balanceLine = "Till balance: €" <> …` maintained by
+  `present<App>`. The copy around the value is part of the sentence the
+  user reads, and the sentence is the testable unit: composing it in the
+  view splits one assertion across a logic test and an untestable
+  markup run. So `staticText` never appears in the same text run as a
+  display leaf — it survives only for wholly static copy (a heading, a
+  standalone note, a caption merge labelling an editor at the plain-HTML
+  floor). For context-pinned rows (collection elements, pane payloads)
+  the line field rides the row the producing function builds, like every
+  other presentation field. Copy stays out of view code entirely except
+  where a leaf's label *is* the copy.
 - **A label is read back, never restated.** A case label *is* the copy
   it draws (`choice @l` states it once, at the case), so a `match`
   whose branches merely echo their case labels — verbatim or re-cased —

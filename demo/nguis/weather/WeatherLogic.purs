@@ -1,6 +1,6 @@
 module WeatherLogic (fetchReport, forecastRequests, isCurrent, presentWeather, rememberReport, warsawBulletin) where
 
-import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (==))
+import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
 import Data.Array (filter, index)
 import Data.Int (toNumber)
@@ -8,17 +8,16 @@ import Data.Maybe (fromMaybe)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Data.Variant (match)
 
-warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureText :: String, conditionText :: String, cityText :: String, humidityText :: String, windText :: String, servedReportsText :: String }
-warsawBulletin = presentWeather { report: conditionsFor "Warsaw" 0, servedReports: 1, temperatureText: "", conditionText: "", cityText: "", humidityText: "", windText: "", servedReportsText: "" }
+warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureLine :: String, conditionLine :: String, humidityWindLine :: String, servedLine :: String, aboutLine :: String }
+warsawBulletin = presentWeather { report: conditionsFor "Warsaw" 0, servedReports: 1, temperatureLine: "", conditionLine: "", humidityWindLine: "", servedLine: "", aboutLine: "" }
 
-presentWeather :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureText :: String, conditionText :: String, cityText :: String, humidityText :: String, windText :: String, servedReportsText :: String } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureText :: String, conditionText :: String, cityText :: String, humidityText :: String, windText :: String, servedReportsText :: String }
+presentWeather :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureLine :: String, conditionLine :: String, humidityWindLine :: String, servedLine :: String, aboutLine :: String } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureLine :: String, conditionLine :: String, humidityWindLine :: String, servedLine :: String, aboutLine :: String }
 presentWeather r = r
-  { temperatureText = show r.report.temperature
-  , conditionText = r.report.condition
-  , cityText = r.report.city
-  , humidityText = show r.report.humidity
-  , windText = show r.report.wind
-  , servedReportsText = show r.servedReports
+  { temperatureLine = show r.report.temperature <> " °C"
+  , conditionLine = r.report.condition <> " in " <> r.report.city
+  , humidityWindLine = "Humidity " <> show r.report.humidity <> "% · Wind " <> show r.report.wind <> " km/h"
+  , servedLine = "Simulated service · " <> show r.servedReports <> " reports served"
+  , aboutLine = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show r.servedReports <> "."
   }
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }

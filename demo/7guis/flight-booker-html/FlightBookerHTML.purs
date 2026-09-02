@@ -27,17 +27,9 @@ flightBookerHTML =
             input "text" # field @"Return date (DD.MM.YYYY)" ) # inCase @"return" tripType
     ) # mvu plannedTrip
     ( Category.do
-        ( p $ RecordToRecord.do
-            staticText "⚠ "
-            text @"problem" ) # shownWhen @"problem" bookingState
-        ( p $ RecordToRecord.do
-            staticText "A one-way flight on "
-            text @"date" ) # shownWhen @"one-way" bookingState
-        ( p $ RecordToRecord.do
-            staticText "A return flight: out "
-            text @"out"
-            staticText ", back "
-            text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+        p (text @"problemLine") # shownWhen @"problem" bookingState
+        p (text @"oneWayLine") # shownWhen @"one-way" bookingState
+        p (text @"returnLine") # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"book" identity
     blank # action (match { book: submit })
     output # forCases bookingLine

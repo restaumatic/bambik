@@ -14,7 +14,7 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
-orderSheet :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedName :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+orderSheet :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedLine :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 orderSheet = presentCells
   { cells: fromHomogeneous
       { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -23,12 +23,12 @@ orderSheet = presentCells
       , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
       }
   , selected: .none {}
-  , selectedName: ""
+  , selectedLine: ""
   , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
 
-presentCells :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedName :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedName :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
-presentCells r = r { selectedName = match { picked: _.name, none: \_ -> "—" } r.selected }
+presentCells :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedLine :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], selectedLine :: String, "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+presentCells r = r { selectedLine = "Cell " <> match { picked: _.name, none: \_ -> "—" } r.selected }
 
 cols :: Int
 cols = 26

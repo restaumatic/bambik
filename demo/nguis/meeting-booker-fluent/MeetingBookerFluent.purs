@@ -32,16 +32,6 @@ meetingBookerFluent =
           caption1 $ staticText "Seats taken"
           progressBar @"occupancy" ) # shownWhen @"seated" seatsTaken
       ( Category.do
-          ( body1 $ RecordToRecord.do
-              staticText "Plan: "
-              text @"titleText"
-              staticText " in the "
-              text @"roomText"
-              staticText ", "
-              text @"durationText"
-              staticText " min, "
-              text @"attendeesText"
-              staticText " attendees"
-              text @"onlineNote" ) # shown
+          body1 (text @"planLine") # shown
           button @"Book the room" {} ) # provided @"complete" plan
       messageBar # forCase @"Book the room" bookedLine

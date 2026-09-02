@@ -13,7 +13,7 @@ modules are `extras/row-profunctor/Data/Profunctor/Row/*.purs`.
 | You are writing | Block | What flows | Demo |
 | --- | --- | --- | --- |
 | stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Category.do` (`import QualifiedDo.Category as Category`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
-| chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; `staticText`/`text @l` only — never an editor | checkout's step lines |
+| chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; displays and static chrome only — never an editor, and never `staticText` glue in one text run with a `text @l` leaf (a composed line is one derived field) | order-form's summary stages |
 | several buttons over one record | `RecordToVariant.do` (×→+) | record in, one case out per emitter | cashbox |
 | one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions) | order-form's dispatch |
 | one status per outcome | `VariantToRecord.do` (+→×) | cases in, statuses out | order-form's snackbars |
@@ -28,7 +28,7 @@ direction module headers.
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | one field, formatted | a derived presentation field (`present<App>` in logic, `# settled present<App>` trailing the pipeline), shown verbatim: `text @"countText"`, the block `# shown` | counter: `headline4 (text @"countText") # shown` | writing.md *displays are verbatim*; doc/research-presentation-model.md |
-| a sentence, or text mixed with typography and several fields | a derived sentence field, shown verbatim inside an ocular over `RecordToRecord.do` of `staticText` chrome and `text @l` | order-form's summary | writing.md *Composed lines split at the field boundary* |
+| a sentence, a prefixed or unit-suffixed value, text composed from several fields | one derived line field written whole in logic, shown verbatim: `headlineSmall (text @"balanceLine")` | order-form's summary; cashbox's balance line | writing.md *A composed line is one derived field* |
 | pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
 | content that exists only in one state | `content # shownWhen @l classifierOf` — the one visibility primitive: one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |

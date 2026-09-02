@@ -15,11 +15,7 @@ timerHTML =
   body $ div $ ( Category.do
       ( RecordToRecord.do
           progress @"fraction"
-          p RecordToRecord.do
-            text @"elapsedText"
-            staticText "s / "
-            text @"durationText"
-            staticText "s" ) # shown
+          p (text @"progressLine") ) # shown
       p ( label $ Category.do
           (staticText "Duration ") # shown
           rangeInput @"Duration" )

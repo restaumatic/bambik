@@ -6,9 +6,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PasswordGeneratorLogic (presentPassword, rememberPassword, samplePassword, strongMixRecipe)
 import PUI (action, mvu, atCase, settled, updated)
-import PUI.Web.HTML (shown, attr, body, div, staticText, text)
+import PUI.Web.HTML (shown, attr, body, div, text)
 import PUI.Web.MDC2 (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import QualifiedDo.Category as Category
 
 passwordGeneratorMDC2 :: Effect Unit
@@ -21,9 +20,7 @@ passwordGeneratorMDC2 =
           toggleSwitch @"Lowercase letters" {}
           toggleSwitch @"Digits" {}
           toggleSwitch @"Symbols" {}
-          ( body2 $ RecordToRecord.do
-              staticText "Strength: "
-              text @"strength" ) # shown
+          body2 (text @"strengthLine") # shown
           div >>> attr "style" "font-family: monospace; word-break: break-all;" >>> attr "id" "password" $
             (text @"password") # shown
           ( Category.do

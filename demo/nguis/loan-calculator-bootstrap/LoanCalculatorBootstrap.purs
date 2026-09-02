@@ -27,12 +27,8 @@ loanCalculatorBootstrap =
           listGroupItem ( RecordToRecord.do
               staticText "Monthly payment "
               badge { variant: "primary" } (text @"monthlyText") )
-          listGroupItem ( RecordToRecord.do
-              staticText "Interest rate "
-              text @"rateText" )
-          listGroupItem ( RecordToRecord.do
-              staticText "Total interest "
-              text @"totalInterestText" ) ) # shown
+          listGroupItem (text @"rateLine")
+          listGroupItem (text @"totalInterestLine") ) # shown
       ( div $ RecordToRecord.do
           staticText "Interest share of total repayment"
           progress @"interestShare" ) # shown

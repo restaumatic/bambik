@@ -3,11 +3,10 @@ module CellsShoelace (cellsShoelace) where
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
 import CellsLogic (commit, gridRows, orderSheet, presentCells, selectCell)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, forProperty, mvu, settled, toCase, updated)
-import PUI.Web.HTML (shown, attrWith, body, clicked, div, p, staticText, table, td, text, tr, (:=))
+import PUI.Web.HTML (shown, attrWith, body, clicked, div, p, table, td, text, tr, (:=))
 import PUI.Web.Shoelace (card, textField)
 import QualifiedDo.Category as Category
 
@@ -15,9 +14,7 @@ cellsShoelace :: Effect Unit
 cellsShoelace =
   body $
     card $ ( Category.do
-        ( p $ RecordToRecord.do
-            staticText "Cell "
-            text @"selectedName" ) # shown
+        p (text @"selectedLine") # shown
         textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
         ( div >>> "style" := "overflow: auto; max-height: 420px;" $
             ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $

@@ -18,13 +18,12 @@ module FlightBookerMDC2 (flightBookerMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, body, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
@@ -40,17 +39,9 @@ flightBookerMDC2 =
           filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
       ( Category.do
-          ( body1 $ RecordToRecord.do
-              staticText "⚠ "
-              text @"problem" ) # shownWhen @"problem" bookingState
-          ( body1 $ RecordToRecord.do
-              staticText "A one-way flight on "
-              text @"date" ) # shownWhen @"one-way" bookingState
-          ( body1 $ RecordToRecord.do
-              staticText "A return flight: out "
-              text @"out"
-              staticText ", back "
-              text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+          body1 (text @"problemLine") # shownWhen @"problem" bookingState
+          body1 (text @"oneWayLine") # shownWhen @"one-way" bookingState
+          body1 (text @"returnLine") # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine
@@ -59,12 +50,12 @@ flightBookerMDC2 =
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
 that shape data flow (`mvu`, `required`, `debounced`, `action`, `forCases`),
 `PUI.Web.HTML` for the page and the display stages (`body`, `shownWhen`,
-`inCase`, `text`, `staticText`), and `PUI.Web.MDC2` for the design system.
+`inCase`, `text`), and `PUI.Web.MDC2` for the design system.
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
-`RecordToRecord` is the one merge this screen needs — chrome and a field
-side by side. `QualifiedDo.Category as Category` gives `Category.do`:
-sequential composition, not a monad.
+No merge block appears: every displayed line is one derived field, so no
+stage here reads more than one leaf. `QualifiedDo.Category as Category`
+gives `Category.do`: sequential composition, not a monad.
 
 **`body $ elevation20 $ card $ Category.do`.** Mount at the document body;
 `elevation20` and `card` are *oculars* — visual wrappers that touch no data,
@@ -99,16 +90,18 @@ compile-time proof that nothing here waits for a seed nobody supplies.
 **Stage 2 — the itinerary line.** Three panes, one visible at a time,
 under one `# debounced itinerarySettleTime`.
 
-- `( body1 $ RecordToRecord.do staticText "A one-way flight on "; text @"date" )`
-  — a *merge*: chrome and a field reading **one record**, the pane's payload
-  `{ date :: String }`. Merges are for things that share a value; pipelines
-  for things that follow each other.
+- `body1 (text @"oneWayLine")` — one verbatim leaf. The whole sentence
+  ("A one-way flight on 27.03.2026") is a **derived line field**, composed
+  in the logic module where the pane's payload is built (writing.md, *A
+  composed line is one derived field*): the copy is a pure function under
+  unit test, and the view holds no glue.
 - `# shownWhen @"one-way" bookingState` — attach and feed this pane when
-  `bookingState model` yields case `one-way`, with that case's payload;
-  detach on any other case. Either way the fed model is released downstream:
-  a hidden pane never blocks the flow. Three such stages over one classifier make
-  the three states exclusive by construction — exclusivity is computed in
-  `bookingState`, not arranged in the view.
+  `bookingState model` yields case `one-way`, with that case's payload
+  `{ oneWayLine :: String }`; detach on any other case. Either way the fed
+  model is released downstream: a hidden pane never blocks the flow. Three
+  such stages over one classifier make the three states exclusive by
+  construction — exclusivity is computed in `bookingState`, not arranged
+  in the view.
 - `# debounced { ms: 300.0 }` — redraw the whole line 300 ms after the last
   edit; the duration is model data (`itinerarySettleTime`), not a literal.
 
@@ -149,8 +142,8 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-bookingLine :: [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] -> String
-bookingLine = match
+bookingLine :: { booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String, rejected :: String -> String }
+bookingLine =
   { booked: \itinerary -> "You have booked: " <> summary itinerary
   , rejected: \problem -> "Cannot book: " <> problem
   }
@@ -171,11 +164,11 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { date :: String }, "return" :: { out :: String, back :: String } ]
-bookingState = parse >>> either (\problem -> .problem { problem })
+bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problemLine :: String }, "one-way" :: { oneWayLine :: String }, "return" :: { returnLine :: String } ]
+bookingState = parse >>> either (\problem -> .problem { problemLine: "⚠ " <> problem })
   (match
-    { oneWayOn: \out -> ."one-way" { date: formatDate out }
-    , returnBetween: \r -> ."return" { out: formatDate r.out, back: formatDate r.back }
+    { oneWayOn: \out -> ."one-way" { oneWayLine: summary (.oneWayOn out) }
+    , returnBetween: \r -> ."return" { returnLine: summary (.returnBetween r) }
     })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
@@ -233,12 +226,13 @@ helper. It compiles and tests without a browser.
   business statement, not a view condition.
 - `bookingState` — the classifier behind the three `shownWhen` panes. It
   turns the model into one of three exclusive display states, each carrying
-  exactly the payload its pane shows (`{ date }`, `{ out, back }`,
-  `{ problem }`), so a pane's `text @"date"` is typed against it.
+  exactly the line its pane shows (`{ oneWayLine }`, `{ returnLine }`,
+  `{ problemLine }`), composed here — glue, warning glyph and all — so a
+  pane's `text @"oneWayLine"` is typed against it and the copy is testable.
 - `submit` — the `Aff` boundary. `parse` is shared with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses.
-- `bookingLine` — the copy function behind `snackbar # forCases`: every
-  outcome case to its sentence.
+- `bookingLine` — the record of per-case copy functions behind
+  `snackbar # forCases`: every outcome case to its sentence.
 
 **Two things worth noticing.** The rows are spelled out in full, eight
 times for the itinerary variant — deliberately: there are no `type`

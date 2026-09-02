@@ -2,12 +2,11 @@ module ProductReviewShoelace (productReviewShoelace) where
 
 import Prelude (Unit, ($), (#))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, presentReview, submittedLine)
 import PUI (armed, forCase, mvu, required, settled)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body, p, staticText, text)
+import PUI.Web.HTML (shown, body, p, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Category as Category
 
@@ -25,12 +24,6 @@ productReviewShoelace =
           textField @"Nickname" {}
           divider # shown
       ) # settled presentReview # mvu freshImpression
-      ( p $ RecordToRecord.do
-          staticText "Preview: "
-          text @"starsText"
-          text @"quoteText"
-          staticText " · owned "
-          text @"ownedText"
-          text @"recommendText" ) # shown
+      p (text @"previewLine") # shown
       button @"Submit review" {} # armed
       toast # forCase @"Submit review" submittedLine

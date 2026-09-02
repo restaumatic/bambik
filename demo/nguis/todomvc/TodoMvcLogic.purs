@@ -1,6 +1,6 @@
 module TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, toggleTodo, visibleEntries) where
 
-import Prelude ((==), const, not, show)
+import Prelude ((<>), (==), const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe)
@@ -24,10 +24,10 @@ clearCompleted m@{ todos } = m { todos = filter (\t -> not (completed t.status))
 itemsLeft :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> Int
 itemsLeft { todos } = length (filter (\t -> not (completed t.status)) todos)
 
-remainingItems :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> [ sole :: { countText :: String }, several :: { countText :: String } ]
+remainingItems :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> [ sole :: { soleLine :: String }, several :: { severalLine :: String } ]
 remainingItems { todos } =
   let count = itemsLeft { todos }
-  in if count == 1 then .sole { countText: show count } else .several { countText: show count }
+  in if count == 1 then .sole { soleLine: show count <> " item left" } else .several { severalLine: show count <> " items left" }
 
 visibleEntries :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }, "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ] } -> Array { key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] }
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, status: t.status }) todos)

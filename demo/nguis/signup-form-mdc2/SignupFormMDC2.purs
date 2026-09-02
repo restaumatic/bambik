@@ -2,7 +2,6 @@ module SignupFormMDC2 (signupFormMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (forCase, mvu, required, toCases)
@@ -28,20 +27,10 @@ signupFormMDC2 =
             tooltip { text: "You must accept the terms of service to sign up" } $
               checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText "I accept the terms of service")) # mvu newApplicant
         ( body2 $ staticText "Pick a username to check its availability" ) # shownWhen @"unnamed" usernameStatus
-        ( body2 $ RecordToRecord.do
-            staticText "✗ "
-            text @"Username"
-            staticText " is already taken" ) # shownWhen @"taken" usernameStatus
-        ( body2 $ RecordToRecord.do
-            staticText "✓ "
-            text @"Username"
-            staticText " is available" ) # shownWhen @"available" usernameStatus
-        ( subtitle2 $ RecordToRecord.do
-            staticText "⚠ "
-            text @"problem" ) # shownWhen @"invalid" validation
-        ( subtitle2 $ RecordToRecord.do
-            staticText "Ready to sign up as "
-            text @"Username" ) # shownWhen @"ready" validation
+        ( body2 $ text @"takenLine" ) # shownWhen @"taken" usernameStatus
+        ( body2 $ text @"availableLine" ) # shownWhen @"available" usernameStatus
+        ( subtitle2 $ text @"invalidLine" ) # shownWhen @"invalid" validation
+        ( subtitle2 $ text @"readyLine" ) # shownWhen @"ready" validation
         button @"Sign up" { icon: "person_add" } # toCases register
         VariantToRecord.do
           snackbar # forCase @"registered" welcomeLine

@@ -2,14 +2,13 @@ module OrderFormMDC2 (orderFormMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, presentOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime)
-import PUI (action, armed, atCase, atField, bracketed, debounced, field, forCase, forProperty, looped, required, settled, updated, with)
+import PUI (action, armed, atCase, bracketed, debounced, field, forCase, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextArea, filledTextField, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
@@ -20,9 +19,7 @@ orderFormMDC2 =
   body $ ( elevation20 Category.do
       indeterminateLinearProgress @"busy" # action loadOrder
       ( Category.do
-          ( headline6 $ RecordToRecord.do
-              staticText "Order "
-              text @"Short ID" ) # shown
+          ( headline6 $ text @"orderLine" ) # shown
           card $ Category.do
             (subtitle1 $ staticText "Identifier") # shown
             filledTextField @"Short ID" {}
@@ -44,10 +41,7 @@ orderFormMDC2 =
                         ( Category.do
                             button @"Estimate distance" { icon: "near_me" }
                             indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-                        ( body1 $ RecordToRecord.do
-                            staticText "Distance "
-                            text @"kmText"
-                            staticText " km" ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
+                        ( body1 $ text @"distanceLine" ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
           card $ Category.do
             (subtitle1 $ staticText "Total") # shown
             filledTextField @"Total" {}
@@ -57,38 +51,17 @@ orderFormMDC2 =
                   segmentedButton @"Method"
                     [ choice @"cash", choice @"card" ] # required
                   filledTextField @"Paid" {}
-                  ( body1 $ RecordToRecord.do
-                      staticText "Paying by "
-                      text @"methodText" ) # shown ) # field @"payment" )
+                  ( body1 $ text @"payingLine" ) # shown ) # field @"payment" )
           card $ Category.do
             (subtitle1 $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
       ) # settled presentOrder # looped
       body1 ( Category.do
-          ( RecordToRecord.do
-              staticText "Summary: Order "
-              text @"Short ID"
-              staticText " (uniquely "
-              text @"Unique ID"
-              staticText ") for "
-              ( RecordToRecord.do
-                  text @"First name"
-                  staticText " "
-                  text @"Last name" ) # atField @"customer"
-              staticText ", fulfilled as "  ) # shown # debounced summarySettleTime
-          ( RecordToRecord.do
-              staticText "dine in at table "
-              text @"Table" ) # shownWhen @"Dine in" fulfillmentOf
-          ( RecordToRecord.do
-              staticText "takeaway at "
-              text @"Time" ) # shownWhen @"Takeaway" fulfillmentOf
-          ( RecordToRecord.do
-              staticText "delivery to "
-              text @"Address" ) # forProperty # shownWhen @"Delivery" fulfillmentOf
-          ( RecordToRecord.do
-              staticText " ("
-              text @"kmText"
-              staticText " km away)" ) # shownWhen @"estimated" deliveryDistance
+          text @"summaryLine" # shown # debounced summarySettleTime
+          text @"dineInLine" # shownWhen @"Dine in" fulfillmentOf
+          text @"takeawayLine" # shownWhen @"Takeaway" fulfillmentOf
+          text @"deliveryLine" # shownWhen @"Delivery" fulfillmentOf
+          text @"awayLine" # shownWhen @"estimated" deliveryDistance
           text @"paidLine" # shown # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }

@@ -41,9 +41,7 @@ espressoBarMDC2 =
                   menuItem @"The usual" {} # with theUsual
                   menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
           ) # settled presentEspressoBar # mvu usualOrder
-          ( body2 $ RecordToRecord.do
-              staticText "Your cup: "
-              text @"summary" ) # shown
+          body2 (text @"cupLine") # shown
           ( div $ RecordToRecord.do
               caption $ staticText "Caffeine"
               linearProgress @"caffeine" ) # shown

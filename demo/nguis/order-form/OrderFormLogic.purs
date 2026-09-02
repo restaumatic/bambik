@@ -26,8 +26,8 @@ staleDistanceForgotten r@{ "Address": address, distance } = match
   , unknown: \_ -> r
   } distance
 
-distanceOf :: { distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } -> [ estimated :: { kmText :: String }, unknown :: {} ]
-distanceOf { distance } = match { estimated: \e -> .estimated { kmText: show e.km }, unknown: const (.unknown {}) } distance
+distanceOf :: { distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } -> [ estimated :: { distanceLine :: String }, unknown :: {} ]
+distanceOf { distance } = match { estimated: \e -> .estimated { distanceLine: "Distance " <> show e.km <> " km" }, unknown: const (.unknown {}) } distance
 
 fulfillmentOf ::
   { fulfillment ::
@@ -36,11 +36,15 @@ fulfillmentOf ::
       , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
       ]
   }
-  -> [ "Dine in" :: { "Table" :: String }
-     , "Takeaway" :: { "Time" :: String }
-     , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+  -> [ "Dine in" :: { dineInLine :: String }
+     , "Takeaway" :: { takeawayLine :: String }
+     , "Delivery" :: { deliveryLine :: String }
      ]
-fulfillmentOf { fulfillment } = fulfillment
+fulfillmentOf { fulfillment } = match
+  { "Dine in": \r -> ."Dine in" { dineInLine: "dine in at table " <> r."Table" }
+  , "Takeaway": \r -> ."Takeaway" { takeawayLine: "takeaway at " <> r."Time" }
+  , "Delivery": \r -> ."Delivery" { deliveryLine: "delivery to " <> r."Address" }
+  } fulfillment
 
 deliveryDistance ::
   { fulfillment ::
@@ -49,8 +53,12 @@ deliveryDistance ::
       , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
       ]
   }
-  -> [ estimated :: { kmText :: String }, unknown :: {} ]
-deliveryDistance { fulfillment } = match { "Dine in": const (.unknown {}), "Takeaway": const (.unknown {}), "Delivery": \d -> distanceOf { distance: d.distance } } fulfillment
+  -> [ estimated :: { awayLine :: String }, unknown :: {} ]
+deliveryDistance { fulfillment } = match
+  { "Dine in": const (.unknown {})
+  , "Takeaway": const (.unknown {})
+  , "Delivery": \d -> match { estimated: \e -> .estimated { awayLine: " (" <> show e.km <> " km away)" }, unknown: const (.unknown {}) } d.distance
+  } fulfillment
 
 fulfillmentState ::
   [ "Dine in" :: { "Table" :: String }
@@ -79,28 +87,46 @@ selection :: { selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {}
 selection = _.selected
 
 presentOrder ::
-  { payment ::
+  { "Short ID" :: String
+  , "Unique ID" :: String
+  , customer ::
+      { "First name" :: String
+      , "Last name" :: String
+      }
+  , payment ::
       { "Method" ::
           [ "cash" :: {}
           , "card" :: {}
           ]
       , "Paid" :: String
-      , methodText :: String
+      , payingLine :: String
       }
+  , orderLine :: String
+  , summaryLine :: String
   , paidLine :: String
   }
-  -> { payment ::
+  -> { "Short ID" :: String
+     , "Unique ID" :: String
+     , customer ::
+         { "First name" :: String
+         , "Last name" :: String
+         }
+     , payment ::
          { "Method" ::
              [ "cash" :: {}
              , "card" :: {}
              ]
          , "Paid" :: String
-         , methodText :: String
+         , payingLine :: String
          }
+     , orderLine :: String
+     , summaryLine :: String
      , paidLine :: String
      }
 presentOrder r = r
-  { payment = r.payment { methodText = caseText r.payment."Method" }
+  { orderLine = "Order " <> r."Short ID"
+  , summaryLine = "Summary: Order " <> r."Short ID" <> " (uniquely " <> r."Unique ID" <> ") for " <> r.customer."First name" <> " " <> r.customer."Last name" <> ", fulfilled as "
+  , payment = r.payment { payingLine = "Paying by " <> caseText r.payment."Method" }
   , paidLine = ", paid " <> r.payment."Paid" <> " by " <> caseText r.payment."Method"
   }
 
@@ -123,27 +149,39 @@ loadOrder :: {} -> Aff
           , "card" :: {}
           ]
       , "Paid" :: String
-      , methodText :: String
+      , payingLine :: String
       }
   , "Remarks" :: String
+  , orderLine :: String
+  , summaryLine :: String
   , paidLine :: String
   }
 loadOrder _ = do
   liftEffect $ log "loading order"
   delay (Milliseconds 1000.0)
   liftEffect $ log "loaded order"
-  let presented = presentOrder { payment: { "Method": ."cash" {}, "Paid": "0.00", methodText: "" }, paidLine: "" }
-  pure
-    { "Short ID": "7"
-    , "Unique ID": "4617821"
-    , customer:
-        { "First name": "John"
-        , "Last name": "Doe"
+  let presented = presentOrder
+        { "Short ID": "7"
+        , "Unique ID": "4617821"
+        , customer:
+            { "First name": "John"
+            , "Last name": "Doe"
+            }
+        , payment: { "Method": ."cash" {}, "Paid": "0.00", payingLine: "" }
+        , orderLine: ""
+        , summaryLine: ""
+        , paidLine: ""
         }
+  pure
+    { "Short ID": presented."Short ID"
+    , "Unique ID": presented."Unique ID"
+    , customer: presented.customer
     , fulfillment: ."Takeaway" { "Time": "8:30" }
     , "Total": "12.30"
     , payment: presented.payment
     , "Remarks": "Very spicy, please!"
+    , orderLine: presented.orderLine
+    , summaryLine: presented.summaryLine
     , paidLine: presented.paidLine
     }
 

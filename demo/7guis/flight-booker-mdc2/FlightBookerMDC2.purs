@@ -2,13 +2,12 @@ module FlightBookerMDC2 (flightBookerMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
 import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, body, staticText, text)
+import PUI.Web.HTML (inCase, shownWhen, body, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
@@ -24,17 +23,9 @@ flightBookerMDC2 =
           filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
       ( Category.do
-          ( body1 $ RecordToRecord.do
-              staticText "⚠ "
-              text @"problem" ) # shownWhen @"problem" bookingState
-          ( body1 $ RecordToRecord.do
-              staticText "A one-way flight on "
-              text @"date" ) # shownWhen @"one-way" bookingState
-          ( body1 $ RecordToRecord.do
-              staticText "A return flight: out "
-              text @"out"
-              staticText ", back "
-              text @"back" ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+          body1 (text @"problemLine") # shownWhen @"problem" bookingState
+          body1 (text @"oneWayLine") # shownWhen @"one-way" bookingState
+          body1 (text @"returnLine") # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine

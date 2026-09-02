@@ -37,11 +37,11 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { date :: String }, "return" :: { out :: String, back :: String } ]
-bookingState = parse >>> either (\problem -> .problem { problem })
+bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problemLine :: String }, "one-way" :: { oneWayLine :: String }, "return" :: { returnLine :: String } ]
+bookingState = parse >>> either (\problem -> .problem { problemLine: "⚠ " <> problem })
   (match
-    { oneWayOn: \out -> ."one-way" { date: formatDate out }
-    , returnBetween: \r -> ."return" { out: formatDate r.out, back: formatDate r.back }
+    { oneWayOn: \out -> ."one-way" { oneWayLine: summary (.oneWayOn out) }
+    , returnBetween: \r -> ."return" { returnLine: summary (.returnBetween r) }
     })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String

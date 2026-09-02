@@ -3,21 +3,18 @@ module CellsFluent (cellsFluent) where
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
 import CellsLogic (commit, gridRows, orderSheet, presentCells, selectCell)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, forProperty, mvu, settled, toCase, updated)
 import PUI.Web.Fluent (body1, card, textField)
-import PUI.Web.HTML (shown, attrWith, body, clicked, div, staticText, table, td, text, tr, (:=))
+import PUI.Web.HTML (shown, attrWith, body, clicked, div, table, td, text, tr, (:=))
 import QualifiedDo.Category as Category
 
 cellsFluent :: Effect Unit
 cellsFluent =
   body $
     card $ ( Category.do
-        ( body1 $ RecordToRecord.do
-            staticText "Cell "
-            text @"selectedName" ) # shown
+        body1 (text @"selectedLine") # shown
         textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
         ( div >>> "style" := "overflow: auto; max-height: 420px;" $
             ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $

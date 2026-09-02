@@ -3,7 +3,6 @@ module CellsHTML (cellsHTML) where
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
 import CellsLogic (commit, gridRows, orderSheet, presentCells, selectCell)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (field, foreach, forProperty, mvu, settled, toCase, updated)
@@ -13,9 +12,7 @@ import QualifiedDo.Category as Category
 cellsHTML :: Effect Unit
 cellsHTML =
   body $ div $ ( Category.do
-      ( p $ RecordToRecord.do
-          staticText "Cell "
-          text @"selectedName" ) # shown
+      p (text @"selectedLine") # shown
       p ( label $ Category.do
           (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
           "size" := "32" $ input "text" # field @"Formula (e.g. =SUM(A0:A5)*2)" ) # settled commit

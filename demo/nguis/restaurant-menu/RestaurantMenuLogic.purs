@@ -1,5 +1,9 @@
-module RestaurantMenuLogic (courses) where
+module RestaurantMenuLogic (courses, dishLines) where
 
+import Prelude ((<>), map)
+
+dishLines :: Array { name :: String, price :: String, description :: String, tags :: Array String } -> Array { name :: String, priceLine :: String, description :: String, tags :: Array String }
+dishLines = map \dish -> { name: dish.name, priceLine: "€" <> dish.price, description: dish.description, tags: dish.tags }
 
 courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
 courses =

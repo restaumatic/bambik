@@ -7,7 +7,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, settled, updated, with)
 import PUI.Web.Fluent (body1, button, card, progressBar, slider)
-import PUI.Web.HTML (shown, body, staticText, text)
+import PUI.Web.HTML (shown, body, text)
 import QualifiedDo.Category as Category
 import TimerLogic (nothingElapsed, presentTimer, tenSecondFreshTimer, tick, tickPeriod)
 
@@ -17,11 +17,7 @@ timerFluent =
     card $ ( Category.do
         ( RecordToRecord.do
             progressBar @"fraction"
-            body1 RecordToRecord.do
-              text @"elapsedText"
-              staticText "s / "
-              text @"durationText"
-              staticText "s" ) # shown
+            body1 (text @"progressLine") ) # shown
         slider @"Duration" {}
         every tickPeriod tick
         button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })

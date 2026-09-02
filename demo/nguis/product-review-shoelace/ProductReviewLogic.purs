@@ -7,7 +7,7 @@ import Data.Monoid (power)
 import Data.String (trim)
 import Data.Variant.Case (caseText)
 
-freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, quoteText :: String, ownedText :: String, recommendText :: String }
+freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, previewLine :: String }
 freshImpression = presentReview
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
@@ -16,18 +16,16 @@ freshImpression = presentReview
   , "I'd recommend it to a friend": false
   , "Nickname": ""
   , starsText: ""
-  , quoteText: ""
-  , ownedText: ""
-  , recommendText: ""
+  , previewLine: ""
   }
 
-presentReview :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, quoteText :: String, ownedText :: String, recommendText :: String } -> { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, quoteText :: String, ownedText :: String, recommendText :: String }
+presentReview :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, previewLine :: String } -> { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, previewLine :: String }
 presentReview r = r
-  { starsText = starGlyphs r."Overall rating"
-  , quoteText = headlineQuote r."Headline"
-  , ownedText = caseText r."How long have you owned it?"
-  , recommendText = recommendNote r."I'd recommend it to a friend"
+  { starsText = stars
+  , previewLine = "Preview: " <> stars <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
   }
+  where
+  stars = starGlyphs r."Overall rating"
 
 submittedLine :: { starsText :: String, "Nickname" :: String } -> String
 submittedLine { starsText, "Nickname": nickname } =

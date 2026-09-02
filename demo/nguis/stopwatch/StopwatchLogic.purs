@@ -39,8 +39,8 @@ tick sw@{ phase, elapsedTenths } =
 stopwatchPhase :: { phase :: [ halted :: {}, timing :: {} ] } -> [ halted :: {}, timing :: {} ]
 stopwatchPhase { phase } = phase
 
-lapRows :: { laps :: Array Int } -> Array { number :: String, time :: String }
-lapRows { laps } = mapWithIndex (\i t -> { number: show (i + 1), time: formatTime t }) laps
+lapRows :: { laps :: Array Int } -> Array { number :: String, lapLine :: String }
+lapRows { laps } = mapWithIndex (\i t -> { number: show (i + 1), lapLine: "Lap " <> show (i + 1) <> " — " <> formatTime t }) laps
 
 formatTime :: Int -> String
 formatTime tenths =

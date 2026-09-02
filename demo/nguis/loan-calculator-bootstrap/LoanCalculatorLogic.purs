@@ -8,7 +8,7 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.String (trim)
 import Data.Variant (match)
 
-cityCarLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean, monthlyText :: String, rateText :: String, totalInterestText :: String, interestShare :: Number }
+cityCarLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean, monthlyText :: String, rateLine :: String, totalInterestLine :: String, interestShare :: Number }
 cityCarLoan = presentLoan
   { "Applicant": ""
   , "Amount (€)": { current: 12000.0, min: smallestLoan, max: largestLoan, step: .discrete loanIncrement }
@@ -16,16 +16,16 @@ cityCarLoan = presentLoan
   , "Purpose": ."Car" {}
   , "Payment protection insurance": false
   , monthlyText: ""
-  , rateText: ""
-  , totalInterestText: ""
+  , rateLine: ""
+  , totalInterestLine: ""
   , interestShare: 0.0
   }
 
-presentLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean, monthlyText :: String, rateText :: String, totalInterestText :: String, interestShare :: Number } -> { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean, monthlyText :: String, rateText :: String, totalInterestText :: String, interestShare :: Number }
+presentLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean, monthlyText :: String, rateLine :: String, totalInterestLine :: String, interestShare :: Number } -> { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean, monthlyText :: String, rateLine :: String, totalInterestLine :: String, interestShare :: Number }
 presentLoan r = r
   { monthlyText = monthlyText terms
-  , rateText = rateText { "Purpose": r."Purpose", "Payment protection insurance": r."Payment protection insurance" }
-  , totalInterestText = totalInterestText terms
+  , rateLine = "Interest rate " <> rateText { "Purpose": r."Purpose", "Payment protection insurance": r."Payment protection insurance" }
+  , totalInterestLine = "Total interest " <> totalInterestText terms
   , interestShare = interestShare terms
   }
   where

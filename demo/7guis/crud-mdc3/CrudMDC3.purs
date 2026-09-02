@@ -3,13 +3,12 @@ module CrudMDC3 (crudMDC3) where
 import Prelude (Unit, bind, const, (#), ($), (<<<))
 
 import CrudLogic (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, looped, atCase, toCase, updated, with)
-import PUI.Web.HTML (shown, body, staticText, text)
+import PUI.Web.HTML (shown, body, text)
 import PUI.Web.MDC3 (button, card, cardActions, elevation5, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Category as Category
 
@@ -24,10 +23,7 @@ crudMDC3 = do
               filledTextField @"Filter prefix (surname)" {}
               filledTextField @"Name" {}
               filledTextField @"Surname" {}
-              listOf { selected: isSelected } entries ( ( RecordToRecord.do
-                  text @"Surname"
-                  staticText ", "
-                  text @"Name" ) # shown ) # toCase @"picked" _.key # updated (match { picked: pick })
+              listOf { selected: isSelected } entries (text @"personLine" # shown) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Category.do
                   cardActions $ RecordToVariant.do
                     button @"Create" {}

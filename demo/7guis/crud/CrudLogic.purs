@@ -1,6 +1,6 @@
 module CrudLogic (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson) where
 
-import Prelude ((<$>), (==), bind, discard, pure)
+import Prelude ((<$>), (<>), (==), bind, discard, pure)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -61,9 +61,9 @@ sharedPeopleCatalogue = Ref.new
   , { "Name": "Roman", "Surname": "Tisch" }
   ]
 
-entries :: { "Filter prefix (surname)" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } -> Array { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] }
+entries :: { "Filter prefix (surname)" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } -> Array { key :: Int, personLine :: String, status :: [ selected :: {}, unselected :: {} ] }
 entries { "Filter prefix (surname)": prefix, selected, people } =
-  (\{ i, p } -> { key: i, "Name": p."Name", "Surname": p."Surname", status: statusOf i })
+  (\{ i, p } -> { key: i, personLine: p."Surname" <> ", " <> p."Name", status: statusOf i })
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where
   statusOf i = match { picked: \p -> if p.index == i then .selected {} else .unselected {}, none: \_ -> .unselected {} } selected
@@ -71,5 +71,5 @@ entries { "Filter prefix (surname)": prefix, selected, people } =
     Just _ -> true
     Nothing -> false
 
-isSelected :: { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> Boolean
+isSelected :: { key :: Int, personLine :: String, status :: [ selected :: {}, unselected :: {} ] } -> Boolean
 isSelected { status } = match { selected: \_ -> true, unselected: \_ -> false } status

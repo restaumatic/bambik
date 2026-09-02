@@ -1,6 +1,6 @@
 module TicTacToeLogic (cells, claimCell, gameOutcome, openingPosition) where
 
-import Prelude ((&&), (/=), (<#>), (==), bind, mod, show)
+import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
@@ -56,7 +56,7 @@ winner board = do
 boardFull :: Array [ x :: {}, o :: {}, free :: {} ] -> Boolean
 boardFull board = isNothing (findMap (\m -> if m == .free {} then Just m else Nothing) board)
 
-gameOutcome :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> [ won :: { mark :: String }, drawn :: {}, toMove :: { mark :: String } ]
+gameOutcome :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> [ won :: { wonLine :: String }, drawn :: {}, toMove :: { toMoveLine :: String } ]
 gameOutcome { board } = case winner board of
-  Just m -> .won { mark: markText m }
-  Nothing -> if boardFull board then .drawn {} else .toMove { mark: markText (playerToMove board) }
+  Just m -> .won { wonLine: markText m <> " wins" }
+  Nothing -> if boardFull board then .drawn {} else .toMove { toMoveLine: markText (playerToMove board) <> " to move" }

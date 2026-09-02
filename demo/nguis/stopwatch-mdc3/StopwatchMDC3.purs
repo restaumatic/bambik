@@ -2,12 +2,11 @@ module StopwatchMDC3 (stopwatchMDC3) where
 
 import Prelude (Unit, const, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, settled, updated)
-import PUI.Web.HTML (shown, shownEach, provided, body, li, staticText, text, ul)
+import PUI (every, forProperty, mvu, settled, updated)
+import PUI.Web.HTML (shown, shownEach, provided, body, li, text, ul)
 import PUI.Web.MDC3 (button, card, elevation5, displaySmall)
 import QualifiedDo.Category as Category
 import StopwatchLogic (beginTiming, clearStopwatch, haltTiming, lapRows, presentStopwatch, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
@@ -25,9 +24,5 @@ stopwatchMDC3 =
           ( RecordToVariant.do
               button @"Lap" { icon: "flag" } # provided @"timing" stopwatchPhase
               button @"Reset" { icon: "replay" } # provided @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
-          ul $ ( li $ RecordToRecord.do
-                   staticText "Lap "
-                   text @"number"
-                   staticText " — "
-                   text @"time" ) # shownEach @"number" lapRows
+          ul $ ( li $ text @"lapLine" # forProperty ) # shownEach @"number" lapRows
       ) # settled presentStopwatch # mvu zeroedStopwatch
