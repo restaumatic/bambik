@@ -23,6 +23,7 @@ module PUI.Web
   , clazz
   , createElementNS
   , createTextNode
+  , createCommentNode
   , adoptHostDiagnostics
   , documentBody
   , element
@@ -272,6 +273,14 @@ slotCounter = unsafePerformEffect $ Ref.new 0
 -- | identifier: real copy that the label cannot be — localized wording,
 -- | units — belongs in the config. The `ConvertOptionsWithDefaults` tag
 -- | the design systems' captioned leaves share.
+-- |
+-- | The stamp invariant, vocabulary-wide: **every label-indexed leaf
+-- | stamps its label on its host element** — `name` where the element is
+-- | a form citizen, `aria-label` where it is a display — so inspecting
+-- | any element answers which `@l` in the code it is. The one exception
+-- | is `PUI.Web.HTML.text`, whose host is a bare text node: under host
+-- | diagnostics it plants a `text @"l"` comment marker instead, and in
+-- | production carries nothing.
 data OptCaption = OptCaption
 
 instance ConvertOption OptCaption sym a a where

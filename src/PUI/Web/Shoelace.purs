@@ -312,6 +312,7 @@ select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap d
 progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progressBar = wrap do
   element "sl-progress-bar" (pure unit)
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" "width: 100%; min-width: 200px;"
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing

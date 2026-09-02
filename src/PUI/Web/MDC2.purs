@@ -448,18 +448,21 @@ textFieldWiring comp inputNode mDebounce = do
     }
 
 -- | The **multi-line text field**, sized in `rows` and `columns` of text —
--- | a note, a description, a message. Otherwise `filledTextField`: shows a
--- | string, reports each edit, never interrupts typing.
-filledTextArea :: forall @l r rest. IsSymbol l => Cons l String rest r => { columns :: Int, rows :: Int } -> PUI Web { | r } { | r }
-filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+-- | a note, a description, a message. Otherwise `filledTextField`: the label
+-- | floats (`floatingLabel` overrides it for real copy), shows a string,
+-- | reports each edit, never interrupts typing.
+filledTextArea :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+  labelId <- liftEffect uniqueId
   inputNode <- element "label" do
     _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
+    _ <- unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText config.floatingLabel)
     node <- element "span" do
       element "textarea" (pure unit)
       clazz "mdc-text-field__input"
-      attribute "rows" (show rows)
-      attribute "cols" (show columns)
-      attribute "aria-label" "Label"
+      attribute "rows" (show config.rows)
+      attribute "cols" (show config.columns)
+      attribute "aria-labelledby" labelId
       gets _.sibling
     clazz "mdc-text-field__resizer"
     _ <- unwrap (static (span >>> cl "mdc-line-ripple"))
@@ -467,7 +470,6 @@ filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l)
   clazz "mdc-text-field"
   clazz "mdc-text-field--filled"
   clazz "mdc-text-field--textarea"
-  clazz "mdc-text-field--no-label"
   fieldNode <- gets _.sibling
   comp <- liftEffect $ newComponent material.textField."MDCTextField" fieldNode
   liftEffect $ textFieldWiring comp inputNode Nothing
@@ -982,7 +984,7 @@ tabBarLeaf options = wrap do
 -- | notion of being busy rather than by a separate visibility flag.
 indeterminateLinearProgress :: forall @l r. IsSymbol l => Cons l Boolean () r => PUI Web { | r } {}
 indeterminateLinearProgress = wrap do
-  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-label" := "Progress Bar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
+  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ close comp
@@ -1006,7 +1008,7 @@ indeterminateLinearProgress = wrap do
 -- | deciding what the fraction means.
 linearProgress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 linearProgress = wrap do
-  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-label" := "Progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
+  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -1037,7 +1039,7 @@ linearProgressInnards = RecordToRecord.do
 -- | the width would be too much.
 indeterminateCircularProgress :: forall @l r. IsSymbol l => Cons l Boolean () r => PUI Web { | r } {}
 indeterminateCircularProgress = wrap do
-  _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-label" := "Progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
+  _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.circularProgress."MDCCircularProgress" node
   liftEffect $ close comp

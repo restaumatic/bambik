@@ -311,6 +311,7 @@ radioGroup provided options = let config = convertOptionsWithDefaults OptCaption
 progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progressBar = wrap do
   element "fluent-progress-bar" (pure unit)
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "max" "1"
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
@@ -333,6 +334,7 @@ progressBar = wrap do
 ratingDisplay :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 ratingDisplay = wrap do
   element "fluent-rating-display" (pure unit)
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure

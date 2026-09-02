@@ -417,14 +417,16 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
     }
 
 -- | The **multi-line text field**, sized in `rows` and `columns` of text —
--- | a note, a description, a message. Otherwise `filledTextField`: shows a
--- | string, reports each edit, never interrupts typing.
-filledTextArea :: forall @l r rest. IsSymbol l => Cons l String rest r => { columns :: Int, rows :: Int } -> PUI Web { | r } { | r }
-filledTextArea { columns, rows } = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+-- | a note, a description, a message. Otherwise `filledTextField`: the label
+-- | floats (`floatingLabel` overrides it for real copy), shows a string,
+-- | reports each edit, never interrupts typing.
+filledTextArea :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "md-filled-text-field" (pure unit)
   attribute "type" "textarea"
-  attribute "rows" (show rows)
-  attribute "style" ("width: " <> show columns <> "ch;")
+  attribute "label" config.floatingLabel
+  attribute "rows" (show config.rows)
+  attribute "style" ("width: " <> show config.columns <> "ch;")
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
@@ -827,7 +829,7 @@ indeterminateLinearProgress :: forall @l r. IsSymbol l => Cons l Boolean () r =>
 indeterminateLinearProgress = wrap do
   element "md-linear-progress" (pure unit)
   attribute "indeterminate" ""
-  attribute "aria-label" "Progress Bar"
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" hiddenStyle
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -854,7 +856,7 @@ indeterminateLinearProgress = wrap do
 linearProgress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 linearProgress = wrap do
   element "md-linear-progress" (pure unit)
-  attribute "aria-label" "Progress"
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -876,7 +878,7 @@ indeterminateCircularProgress :: forall @l r. IsSymbol l => Cons l Boolean () r 
 indeterminateCircularProgress = wrap do
   element "md-circular-progress" (pure unit)
   attribute "indeterminate" ""
-  attribute "aria-label" "Progress"
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" hiddenStyle
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing

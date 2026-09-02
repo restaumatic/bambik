@@ -108,9 +108,9 @@ import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, foreach, muted)
+import PUI (Ocular, PUI, diagnosticsOn, foreach, muted)
 import Unsafe.Coerce (unsafeCoerce)
-import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createCommentNode, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
 -- UIs
 
@@ -226,6 +226,12 @@ text :: forall @l r. IsSymbol l => Cons l String () r => PUI Web { | r } {}
 text = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
+    -- a text node cannot carry the label-stamp attribute the element-hosted
+    -- leaves get, so under host diagnostics a comment marker names it instead
+    diag <- diagnosticsOn
+    when diag do
+      marker <- createCommentNode ("text @" <> show (reflectSymbol (Proxy @l)))
+      appendChild marker parentNode
     node <- createTextNode ""
     appendChild node parentNode
     pure node
@@ -389,12 +395,14 @@ rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $
 
 -- | The native `<progress>` gauge, `value` running 0 to 1. As much a gauge
 -- | as a progress indicator — a quota, a share, a fraction elapsed —
--- | written as `progress # projected fraction`, with the business function
+-- | fed a model fraction maintained by `present<App>` (`progress @"fraction"`),
+-- | with the business function
 -- | deciding what the fraction means.
 progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
 progress = wrap do
   element "progress" (pure unit)
   attribute "max" "1"
+  attribute "aria-label" (reflectSymbol (Proxy @l))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure

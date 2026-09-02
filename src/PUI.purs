@@ -67,6 +67,7 @@ module PUI
   , setSink
   , setTracing
   , setDiagnostics
+  , diagnosticsOn
   , action
   , static
   , accumulated
@@ -746,6 +747,11 @@ setTracing on = Ref.write on tracingRef
 -- | silent.
 setDiagnostics :: Boolean -> Effect Unit
 setDiagnostics on = Ref.write on diagnosticsRef
+
+-- | Whether development diagnostics are on — for a carrier's own
+-- | dev-only annotations (`PUI.Web.HTML.text`'s comment marker).
+diagnosticsOn :: Effect Boolean
+diagnosticsOn = Ref.read diagnosticsRef
 
 -- | Dev-mode emission trace: with `setTracing true`, log every propagation
 -- | decision — values flowing between pipeline stages, loop re-feeds and

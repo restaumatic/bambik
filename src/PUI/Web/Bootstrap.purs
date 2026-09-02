@@ -267,6 +267,7 @@ progress = wrap do
   liftEffect do
     setAttribute node "class" "progress"
     setAttribute node "role" "progressbar"
+    setAttribute node "aria-label" (reflectSymbol (Proxy @l))
     setAttribute node "style" "width: 100%; min-width: 200px;"
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
