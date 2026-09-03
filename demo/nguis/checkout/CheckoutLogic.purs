@@ -1,4 +1,4 @@
-module CheckoutLogic (cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, previousOf) where
+module CheckoutLogic (cartLine, cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine) where
 
 import Prelude ((<>))
 
@@ -15,13 +15,22 @@ freshOrder =
 cartStep :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
 cartStep = { step: .cart {} }
 
--- the wizard's position, each step carrying the line its pane shows
-checkoutStep :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ cart :: { cartLine :: String }, shipping :: { shippingLine :: String }, payment :: { paymentLine :: String } ]
+-- the wizard's position, each step carrying the data its pane shows
+checkoutStep :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ]
 checkoutStep { item, address, card, step } = match
-  { cart: \_ -> .cart { cartLine: "Step 1 of 3 — Cart: " <> item }
-  , shipping: \_ -> .shipping { shippingLine: "Step 2 of 3 — Shipping to " <> address }
-  , payment: \_ -> .payment { paymentLine: "Step 3 of 3 — Pay with card " <> card }
+  { cart: \_ -> .cart { item }
+  , shipping: \_ -> .shipping { address }
+  , payment: \_ -> .payment { card }
   } step
+
+cartLine :: { item :: String } -> String
+cartLine { item } = "Step 1 of 3 — Cart: " <> item
+
+shippingLine :: { address :: String } -> String
+shippingLine { address } = "Step 2 of 3 — Shipping to " <> address
+
+paymentLine :: { card :: String } -> String
+paymentLine { card } = "Step 3 of 3 — Pay with card " <> card
 
 -- the step a wizard button leads to: onward while there is one ahead,
 -- back while there is one behind — the last and first steps have no button
@@ -50,6 +59,9 @@ goneBack resumed = .next resumed
 orderPlaced :: { status :: [ pending :: {}, placed :: {} ] }
 orderPlaced = { status: .placed {} }
 
--- the order's status, a placed order carrying its receipt line
-orderStatus :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] } -> [ pending :: {}, placed :: { placedLine :: String } ]
-orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}, placed: \_ -> .placed { placedLine: "Order placed: " <> item <> " → " <> address <> " (card " <> card <> ")" } } status
+-- the order's status, a placed order carrying its receipt data
+orderStatus :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] } -> [ pending :: {}, placed :: { item :: String, address :: String, card :: String } ]
+orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}, placed: \_ -> .placed { item, address, card } } status
+
+placedLine :: { item :: String, address :: String, card :: String } -> String
+placedLine { item, address, card } = "Order placed: " <> item <> " → " <> address <> " (card " <> card <> ")"

@@ -1,22 +1,23 @@
-module AuctionLogic (noBids, openingBid, presentAuction, raiseTop) where
+module AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine) where
 
 import Prelude (max, (<>))
 
 import Data.Number.Format (fixed, toStringWith)
 
-openingBid :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, bidLine :: String }
-openingBid = presentAuction { "Your bid ($)": biddingRange, bidLine: "" }
+openingBid :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
+openingBid = { "Your bid ($)": biddingRange }
 
-noBids :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, bidLine :: String, top :: Number, topLine :: String }
-noBids =
-  let standing = raiseTop { "Your bid ($)": biddingRange, top: 0.0, topLine: "" }
-  in { "Your bid ($)": biddingRange, bidLine: openingBid.bidLine, top: standing.top, topLine: standing.topLine }
+noBids :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number }
+noBids = { "Your bid ($)": biddingRange, top: 0.0 }
 
-presentAuction :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, bidLine :: String } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, bidLine :: String }
-presentAuction r = r { bidLine = "Your current bid: $" <> dollars r."Your bid ($)".current }
+bidLine :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
+bidLine r = "Your current bid: $" <> dollars r."Your bid ($)".current
 
-raiseTop :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number, topLine :: String } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number, topLine :: String }
-raiseTop r = let highest = max r."Your bid ($)".current r.top in r { top = highest, topLine = "Highest bid so far: $" <> dollars highest }
+topLine :: { top :: Number } -> String
+topLine r = "Highest bid so far: $" <> dollars r.top
+
+raiseTop :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number }
+raiseTop r = r { top = max r."Your bid ($)".current r.top }
 
 dollars :: Number -> String
 dollars = toStringWith (fixed 0)

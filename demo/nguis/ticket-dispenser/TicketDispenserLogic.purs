@@ -1,4 +1,4 @@
-module TicketDispenserLogic (displayOf, emptyQueue, firstTicket, issue, nextTicket) where
+module TicketDispenserLogic (displayOf, emptyQueue, firstTicket, issue, nextTicket, servingLine, ticketLine) where
 
 import Prelude ((+), (<>), show)
 
@@ -22,5 +22,11 @@ issue = match { "Take a number": Left, resume: Right }
 nextTicket :: forall a. Tuple a { next :: Int } -> { display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int }
 nextTicket (Tuple _ { next }) = { display: .serving { number: next }, next: next + 1 }
 
-displayOf :: { display :: [ waiting :: {}, serving :: { number :: Int } ] } -> [ waiting :: {}, serving :: { ticketLine :: String, servingLine :: String } ]
-displayOf { display } = match { waiting: \_ -> .waiting {}, serving: \{ number } -> .serving { ticketLine: "#" <> show number, servingLine: "Now serving ticket " <> show number <> "." } } display
+displayOf :: { display :: [ waiting :: {}, serving :: { number :: Int } ] } -> [ waiting :: {}, serving :: { number :: Int } ]
+displayOf { display } = display
+
+ticketLine :: { number :: Int } -> String
+ticketLine { number } = "#" <> show number
+
+servingLine :: { number :: Int } -> String
+servingLine { number } = "Now serving ticket " <> show number <> "."

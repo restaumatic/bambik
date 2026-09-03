@@ -1,4 +1,4 @@
-module QuizLogic (answer, freshQuizRun, presentQuiz, quizPhase) where
+module QuizLogic (answer, askedChoices, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
 
 import Prelude (show, (+), (/), (<>), (==), min)
 
@@ -6,14 +6,14 @@ import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 
-freshQuizRun :: { question :: Int, correct :: Int, progress :: Number, questionLine :: String }
-freshQuizRun = presentQuiz { question: 0, correct: 0, progress: 0.0, questionLine: "" }
+freshQuizRun :: { question :: Int, correct :: Int }
+freshQuizRun = { question: 0, correct: 0 }
 
-presentQuiz :: { question :: Int, correct :: Int, progress :: Number, questionLine :: String } -> { question :: Int, correct :: Int, progress :: Number, questionLine :: String }
-presentQuiz r = r
-  { progress = toNumber r.question / toNumber (length questionCatalogue)
-  , questionLine = "Question " <> show (min (r.question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show r.correct
-  }
+quizProgress :: { question :: Int, correct :: Int } -> Number
+quizProgress { question } = toNumber question / toNumber (length questionCatalogue)
+
+questionLine :: { question :: Int, correct :: Int } -> String
+questionLine { question, correct } = "Question " <> show (min (question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show correct
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }
 questionCatalogue =
@@ -30,7 +30,16 @@ answer choice run@{ question, correct } = case index questionCatalogue question 
   Nothing -> run
 
 -- the run is asking while the catalogue has a question left, finished after
-quizPhase :: { question :: Int, correct :: Int } -> [ asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { finalScoreLine :: String } ]
+quizPhase :: { question :: Int, correct :: Int } -> [ asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ]
 quizPhase { question, correct } = case index questionCatalogue question of
   Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
-  Nothing -> .finished { finalScoreLine: "Final score: " <> show correct <> " / " <> show (length questionCatalogue) }
+  Nothing -> .finished { correct }
+
+askedPrompt :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> String
+askedPrompt { prompt } = prompt
+
+askedChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
+askedChoices { choices } = choices
+
+finalScoreLine :: { correct :: Int } -> String
+finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)

@@ -126,30 +126,51 @@ syntax (`r { "Name" = … }`) all work unchanged.
   The honest gap: `choice @l` has no caption override, so an option's
   localized copy is not yet expressible; the mechanism arrives with the
   demo that needs it, not before.
-- **displays are verbatim** (the presentation-model rule,
-  doc/research-presentation-model.md): a display states its field on the
-  leaf and shows it as-is — `text @"prompt"`, `progress @"caffeine"` —
-  never through a formatter bracket. Everything the user reads is a
-  model field: a formatted readout, a unit-suffixed quantity, a sentence
-  composed from several sources (`"Hello, [first name] [last name]"`)
-  is a **derived presentation field**, written by one normalization
-  function `present<App> :: row -> row` in the logic module, run as
-  `# settled present<App>` trailing the pipeline, with the seed
-  pre-normalized (`seed = present<App> { …, tipText: "" }`) so the
-  initial feed already carries its copy. The gain is the point of the
-  rule: the screen's copy is unit-testable in `spago test` — one pure
-  function, no browser. For **context-pinned rows** (a collection
-  element, a pane payload) the same rule lands one step earlier: the
-  business function *producing* the row carries the derived text field,
-  and the view line selects it — `text @"price"`, or
-  `text @"label" # forProperty` when the row is wider than the
-  singleton. `forProperty` is the one read adopter left, and it
-  survives because it is selection, not formatting. A named projection
-  whose body merely reads one field is a smell — put the label on the
-  leaf and delete the function. The same applies to mechanism
-  arguments: a feed projection that merely reads a field is the
-  accessor. The exception is row-stating positions, where the named
-  function's closed signature *is* the footprint declaration and stays.
+- **copy is a function, not a field** (doc/research-copy-is-a-function.md):
+  a display whose content *is* copy takes the **read function** and no
+  label — `text progressLine`, `text _.title` — and that function lives
+  in the logic module, from the fields it needs to the words on the
+  screen. The function is named at the point of use, so the view line
+  answers *where is this computed* by itself, and the screen's copy is
+  unit-testable in `spago test`: one pure function, no browser
+  (`progressLine { "Duration": …, elapsed: 3.0 } == "3.0s / 10.0s"`).
+  A whole line is one function, glue included — a prefix, a unit
+  suffix, the words between two values — never several leaves with
+  `staticText` between them, and never a formatter bracket in the view.
+  A display that renders a **number** takes a read function too —
+  `progressBar @"Elapsed" elapsedFraction`,
+  `linearProgress @"Progress" quizProgress` — because a fraction is
+  *derived* (a ratio of source fields), and derivation is the same act
+  as formatting: `fraction = elapsed / duration.current` is no more
+  state than the sentence beside it. Its label survives as the
+  **accessible name only** — a bar showing 42% must announce *what* is
+  42% — so it is copy, like an editor's caption, never a field
+  reference. A number the model genuinely *holds* as state is still
+  read by the function (`_.rating`), which is where the distinction
+  lands: state is in the row, renderings are functions of it. The read function's
+  signature states its footprint as an exact closed row; the stage
+  hosting the display (`shown`/`shownWhen`/`shownEach`) widens it to
+  the fed row, so no call site coerces. For **context-pinned rows** (a
+  collection element, a pane payload) nothing changes: the row carries
+  the *source* fields the producing function built, and the read
+  function selects and formats them (`text _.title`,
+  `text lapLine`). A **`present<App>` normalization is not a
+  presentation device**: `settled` maintains invariants among *edited*
+  fields (temperature-converter's `°C`/`°F`, meeting-booker's
+  `seatsInRoom`, order-form's `staleDistanceForgotten`), and a model
+  field exists because the app's state needs it, never because a
+  display wanted a `String` — or a `Number`. Across the demos every
+  surviving `# settled` sits on an editor; not one feeds a display.
+  A `text` read is a **row-stating position**: the display's footprint
+  is checked against the fed row, so the read must state a closed row.
+  Where a sibling stage already pins it (a `clWhen` beside the leaf, a
+  `foreach`/`listOf` projection above it) a bare accessor infers and is
+  what to write — `text _.title`; where nothing else pins it, a display
+  whose copy *is* one field takes a named closed-row read
+  (`titleLine :: { title :: String, … } -> String`), and that function's
+  signature is the footprint declaration, not a wrapper to delete. The
+  same rule governs mechanism arguments: a feed projection that merely
+  reads a field is the accessor, except at row-stating positions.
 - **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) are
   label-indexed at their case, and the case label **is the caption**,
   verbatim: `button @"Submit order" {}` emits `[ "Submit order" :: _ ]`
@@ -582,6 +603,37 @@ that breaks one is wrong even if it compiles and behaves. They build on
 the structural rules above — anonymous view-model types, a view module
 over a logic module, a single exported entry function.
 
+**The anchor invariant.** Every view line names exactly one semantic
+anchor, and the anchor's kind says what the line is:
+
+- a **field** — the `@l` on an editor or selector: the label *is* the
+  model field the line edits (`filledTextField @"First name" {}`,
+  `dropdown @"Room" {} […]`, a sub-form's `# field @"customer"`);
+- a **case** — the `@l` on an emitter, pane or status adoption: the
+  label *is* the business case the line emits or shows
+  (`button @"Submit order" {}`, `# shownWhen @"estimated" distanceOf`,
+  `# forCase @"registered" welcomeLine`);
+- a **named read function or bare accessor** — a display's content,
+  living in the logic module (`text balanceLine`, `text _.title`);
+- **nothing** — chrome: statics and oculars write nothing, so they
+  name nothing (`card`, `(subtitle1 $ staticText "…") # shown`).
+
+The mapping is **line ↔ named symbol** — a field or case of the model,
+or a function of the logic module — deliberately not line ↔ field: a
+display's sentence is a function, never a field (*copy is a function,
+not a field*); an ocular has no model, so a label on it would name
+nothing (guardrail L3 keeps the vocabulary that way); and a trailing
+mechanism spans fields under the line's one anchor while naming its own
+business argument (`# settled seatsInRoom` riding the `@"Room"` line —
+the mechanism-argument doctrine, [Wiring](#wiring)), so nothing on a
+line is anonymous. Reading the view is then reading the model: an
+editor line answers *which state*, an emitter or pane line *which
+case*, a display line *where is this computed*, a chrome line *nothing
+to trace*. The rules below — and the citizenship rules above — are this
+invariant instantiated case by case, and the development loop it
+induces — view first, logic module written to its names — is
+[Writing order](#writing-order) below.
+
 ### Layout
 
 - **Comments are deliberately absent** — code should read on its own.
@@ -690,26 +742,24 @@ over a logic module, a single exported entry function.
   as is naming the entry function `main`. UI code keeps only
   presentation — labels, captions, icons, styles, structure; layout
   numerics (a textarea's `rows`, a grid's `columns`) stay UI.
-- **A composed line is one derived field.** A displayed line that
+- **A composed line is one function.** A displayed line that
   concatenates any copy with any value — a prefix, a unit suffix, glue
-  between two fields — is **one** presentation field written whole by
-  the logic module, never a view-side merge of `staticText` pieces and
-  `text` leaves:
+  between two fields — is **one** named function in the logic module,
+  read at the leaf, never a view-side merge of `staticText` pieces and
+  display leaves:
 
   ```purescript
-  headlineSmall (text @"balanceLine") # shown
+  headlineSmall (text balanceLine) # shown
   ```
 
-  with `balanceLine = "Till balance: €" <> …` maintained by
-  `present<App>`. The copy around the value is part of the sentence the
-  user reads, and the sentence is the testable unit: composing it in the
-  view splits one assertion across a logic test and an untestable
-  markup run. So `staticText` never appears in the same text run as a
-  display leaf — it survives only for wholly static copy (a heading, a
-  standalone note, a caption merge labelling an editor at the plain-HTML
-  floor). For context-pinned rows (collection elements, pane payloads)
-  the line field rides the row the producing function builds, like every
-  other presentation field. Copy stays out of view code entirely except
+  with `balanceLine :: { balance :: Number } -> String` beside the rest
+  of the business logic. The copy around the value is part of the
+  sentence the user reads, and the sentence is the testable unit:
+  composing it in the view splits one assertion across a logic test and
+  an untestable markup run. So `staticText` never appears in the same
+  text run as a display leaf — it survives only for wholly static copy
+  (a heading, a standalone note, a caption merge labelling an editor at
+  the plain-HTML floor). Copy stays out of view code entirely except
   where a leaf's label *is* the copy.
 - **A label is read back, never restated.** A case label *is* the copy
   it draws (`choice @l` states it once, at the case), so a `match`
@@ -854,6 +904,56 @@ over a logic module, a single exported entry function.
   data-driven graphics — an SVG canvas, a colour swatch — never for
   layout the design system already gives you. Every avoided style string
   is code you don't write.
+
+## Writing order
+
+The anchor invariant makes view-first the natural order: every view
+line names its obligations, so the view is written first and the logic
+module is written to its names. With the watch build running
+(`npm run watch`, [building.md](building.md)) the loop is:
+
+1. **Write the view as the compass walk**, each line naming its
+   anchors. Field and case anchors (`@l`) never fail — they are
+   type-level symbols that *define* the row as you write it. Every
+   term-level obligation — a read function, a handler, a classifier,
+   an action, the seed — enters as a typed hole (`text ?countLine`,
+   `# mvu ?start`) for the compiler to speak first.
+2. **Let the compiler type the pinned obligations.** A hole whose row
+   is pinned from outside reports its full inferred type, with
+   substitution suggestions. The **seed** is the showcase:
+   `# mvu ?start` reports the model row accumulated from every anchor
+   written so far — the view computes the model, and the hole spells
+   it out — and suggests any in-scope value of that row. Every
+   **exact-payload position** reports too:
+   `snackbar # forCase @"Book" ?line` comes back as
+   `{ name :: String } -> String`, suggesting `_.name`.
+3. **Decide the subsumed footprints yourself; the signature is the
+   decision.** At every subsuming position — a display read under
+   `shown`/`shownWhen`/`shownEach`, a handler under
+   `updated`/`applied`, a classifier, a `settled` normalizer — the
+   sub-row is deliberately the function's own statement, so a bare
+   hole there does not report: the stage fails with `NoInstanceFound`
+   on an ambiguous `Union`. Read that error rather than fight it: in
+   `Union t4 t5 ( count :: Int )` the third argument is the fed row,
+   and `t4` — your footprint — is the sub-row of it the compiler
+   refuses to pick, because what a function reads is a business
+   decision. State it: write the function in the logic module under
+   its closed-row signature (or annotate the hole in place,
+   `?line :: { count :: Int } -> String`) and the ambiguity
+   dissolves.
+4. **Keep one obligation in flight.** One ambiguity anywhere in the
+   module suppresses every hole report in it, so fill line by line —
+   footprint decisions as they arise, the seed hole last, when it
+   reports the finished model row and one business-named value
+   (`freshCount`, `plannedTrip`) closes the app. The *Type-inference
+   gotchas* above name two more places an ambiguity surfaces away
+   from its own line.
+5. **Compile-green is not done.** The knowledge gates are invisible
+   to the compiler — finish by running it (below).
+
+A vocabulary twin inverts the loop: its logic module already exists
+verbatim, so the view is written against known signatures and holes
+are rarely needed.
 
 ## When it does not propagate
 

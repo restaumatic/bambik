@@ -4,13 +4,12 @@ import Prelude ((#), ($), Unit)
 
 import Data.Variant (match)
 import Effect (Effect)
-import MovieBrowserLogic (favoriteMark, favorites, markFavorite, movieCatalogue, visibleMovies)
+import MovieBrowserLogic (favoriteMark, favorites, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (foreach, mvu, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, shownWhen, body, clWhen, span, text)
 import PUI.Web.MDC3 (card, chipSet, elevation1, elevation3, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Category as Category
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 
 movieBrowserMDC3 :: Effect Unit
 movieBrowserMDC3 =
@@ -23,14 +22,13 @@ movieBrowserMDC3 =
               filterChip @"Classic" {}
               filterChip @"Cult" {}
               filterChip @"Oscar" {} )
-          ( elevation1 $ titleMedium $ text @"favoritesLine" ) # shownWhen @"sole" favorites
-          ( elevation1 $ titleMedium $ text @"favoritesLine" ) # shownWhen @"several" favorites
+          ( elevation1 $ titleMedium $ text favoritesLine ) # shownWhen @"sole" favorites
+          ( elevation1 $ titleMedium $ text favoritesLine ) # shownWhen @"several" favorites
           list $
             ( clWhen _."Favorite" "mdc-deprecated-list-item--selected"
                 $ listItem $ ( Category.do
-                    ( RecordToRecord.do
-                        span (text @"title")
-                        span (text @"yearText")
-                        span (text @"ratingLine") ) # shown
+                    span (text titleLine) # shown
+                    span (text yearLine) # shown
+                    span (text ratingLine) # shown
                     iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
       ) # mvu movieCatalogue

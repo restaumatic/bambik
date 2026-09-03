@@ -1,4 +1,4 @@
-module MovieBrowserLogic (favoriteMark, favorites, markFavorite, movieCatalogue, visibleMovies) where
+module MovieBrowserLogic (favoriteMark, favorites, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine) where
 
 import Prelude ((&&), (||), (==), (<>), map, not, show)
 
@@ -28,27 +28,36 @@ movieCatalogue =
       ]
   }
 
-visibleMovies :: { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> Array { title :: String, yearText :: String, ratingLine :: String, "Favorite" :: Boolean }
+visibleMovies :: { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> Array { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean }
 visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map card (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
   where
   inCategory movie = category == ."All" {} || movie.category == category
   taggedAsChosen movie = not (classic || cult || oscar) || any chosenTag movie.tags
   chosenTag = match { "Classic": \_ -> classic, "Cult": \_ -> cult, "Oscar": \_ -> oscar }
-  card { title, year, rating, "Favorite": favorite } = { title, yearText: show year, ratingLine: "★ " <> ratingText rating, "Favorite": favorite }
+  card { title, year, rating, "Favorite": favorite } = { title, year, rating, "Favorite": favorite }
 
-favoriteMark :: { title :: String, yearText :: String, ratingLine :: String, "Favorite" :: Boolean } -> { title :: String, "Favorite" :: Boolean }
+favoriteMark :: { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } -> { title :: String, "Favorite" :: Boolean }
 favoriteMark { title, "Favorite": favorite } = { title, "Favorite": favorite }
 
 markFavorite :: { title :: String, "Favorite" :: Boolean } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } }
 markFavorite { title, "Favorite": favorite } { movies } = { movies: map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) movies }
 
-ratingText :: Number -> String
-ratingText rating = toStringWith (fixed 1) rating
+titleLine :: { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } -> String
+titleLine { title } = title
+
+yearLine :: { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } -> String
+yearLine { year } = show year
+
+ratingLine :: { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } -> String
+ratingLine { rating } = "★ " <> toStringWith (fixed 1) rating
+
+favoritesLine :: { count :: Int } -> String
+favoritesLine { count } = if count == 1 then show count <> " favorite" else show count <> " favorites"
 
 favoriteCount :: { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> Int
 favoriteCount { movies } = length (filter _."Favorite" movies)
 
-favorites :: { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> [ sole :: { favoritesLine :: String }, several :: { favoritesLine :: String } ]
+favorites :: { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> [ sole :: { count :: Int }, several :: { count :: Int } ]
 favorites { movies } =
   let count = favoriteCount { movies }
-  in if count == 1 then .sole { favoritesLine: show count <> " favorite" } else .several { favoritesLine: show count <> " favorites" }
+  in if count == 1 then .sole { count } else .several { count }

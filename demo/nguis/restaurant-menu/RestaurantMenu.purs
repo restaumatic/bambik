@@ -1,13 +1,13 @@
 module RestaurantMenu (restaurantMenu) where
 
-import Prelude (identity, (#), ($), (>>>), Unit, map)
+import Prelude ((#), ($), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (atField, foreach, forProperty, with, static)
+import PUI (foreach, with, static)
 import PUI.Web.HTML (a, article, blockquote, body, cl, div, footer, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
 import PUI.Web.SVG as SVG
-import RestaurantMenuLogic (courses, dishLines)
+import RestaurantMenuLogic (courseDishes, courseName, courses, dishDescription, dishName, dishTags, menuCourses, priceLine, tagText)
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
@@ -22,16 +22,16 @@ restaurantMenu =
       hr
     div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
-          h2 (text @"name")
+          h2 (text courseName)
           ul >>> cl "dishes" $
             ( li >>> cl "dish" $ RecordToRecord.do
                 div >>> cl "dish-head" $ RecordToRecord.do
-                  span >>> cl "dish-name" $ text @"name"
+                  span >>> cl "dish-name" $ text dishName
                   static (span >>> cl "dish-dots")
-                  span >>> cl "dish-price" $ text @"priceLine"
-                p >>> cl "dish-desc" $ text @"description"
+                  span >>> cl "dish-price" $ text priceLine
+                p >>> cl "dish-desc" $ text dishDescription
                 span >>> cl "tags" $
-                  ( span >>> cl "tag" $ text @"tag" # forProperty ) # foreach @"tag" (map { tag: _ }) # atField @"tags" ) # foreach @"name" dishLines # atField @"dishes" ) # foreach @"name" identity # atField @"courses"
+                  ( span >>> cl "tag" $ text tagText ) # foreach @"tag" dishTags ) # foreach @"name" courseDishes ) # foreach @"name" menuCourses
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"

@@ -67,13 +67,12 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  atField, projection,             subStrong, field, required  feedback
--- |              forProperty, projected,
+-- | p {|a} {|b}  atField, forProperty,           subStrong, field, required  feedback
 -- |              asField
 -- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
 -- | p {|a} [|b]  toCase, recordToCase,           subResolving,                folding
 -- |              toCases                         backgroundProperty
--- | p [|a] {|b}  forCase, forCases               subRetaining, focusCase      unfolding
+-- | p [|a] {|b}  forCase, forCases              subRetaining, focusCase      unfolding
 -- |                                              backgroundCase
 -- | ```
 -- |
@@ -114,14 +113,17 @@
 -- | -----------------------  -----------  ---------  ---------  ------------
 -- | bare, closed singleton   atField      atCase     —          toCase
 -- | bare, open row           —            —          —          recordToCase
--- | derived-label formatter  projection   forCase    —          —
--- | whole row                projected    forCases   —          toCases
+-- | one field of a wider row forProperty  forCase    —          —
+-- | whole row                —            forCases   —          toCases
 -- | ```
 -- |
--- | The derived-label row and the whole-row readers carry **no label
+-- | These readers carry **no label
 -- | argument**: the leaf states the business label once, as its own type
 -- | argument, and the adopter reads it back out of the closed singleton
--- | row via `RowToList`'s fundep. Renames (`asField`-style) survive only
+-- | row via `RowToList`'s fundep. There is no formatter cell: a display
+-- | whose content is copy takes its **read function** at the leaf
+-- | (`text lineOf`), never an adopter bracket
+-- | (doc/research-copy-is-a-function.md). Renames (`asField`-style) survive only
 -- | where a packaged control fuses a canonical core to a surface label.
 -- |
 -- | The blanks are the **merge law** restated one layer down. A *shared* side

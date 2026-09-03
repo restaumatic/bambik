@@ -1,0 +1,294 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/haskell.min.js"></script>
+    <title>Bambik · how an app is written</title>
+    <style>
+      body { font-family: Roboto, sans-serif; margin: 40px auto; max-width: 54em; padding: 0 16px; line-height: 1.55; color: #1c1c1c; background: #fff; }
+      h1 { font-size: 1.6rem; }
+      h2 { font-size: 1.15rem; margin-top: 40px; }
+      h3 { font-size: 0.95rem; color: #555; margin: 16px 0 4px; font-weight: 500; }
+      pre { overflow-x: auto; border-radius: 6px; }
+      pre code.hljs { padding: 12px 14px; font-size: 0.85rem; }
+      pre.compiler { background: #2b2b2b; color: #e8e8e8; padding: 12px 14px; font-size: 0.85rem; position: relative; }
+      pre.compiler mark { background: #6b5d1f; color: #fff8dc; padding: 0 2px; border-radius: 2px; }
+      pre.compiler::before { content: "compiler"; position: absolute; top: 6px; right: 10px; font-family: Roboto, sans-serif; font-size: 0.7rem; color: #999; letter-spacing: 0.08em; text-transform: uppercase; }
+      code mark { background: #fffbdd; border: 1px solid #f0e6a0; border-radius: 3px; padding: 0 1px; }
+      .aside { border-left: 3px solid #ccc; padding-left: 16px; margin-top: 40px; }
+      .note { color: #555; font-size: 0.9rem; }
+      footer { margin-top: 48px; border-top: 1px solid #ddd; padding-top: 12px; color: #555; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>How a bambik app is written</h1>
+
+    <p>Every demo page on this site shows a finished listing. This page shows what
+    a listing hides: the session that produces one — the order the code is
+    written in, and what the compiler says back after each step. The session
+    below is real: the app is the
+    <a href="7guis/counter-mdc3/">counter demo</a> in the two-module layout
+    every bambik app ships with (a view module and a logic module beside it),
+    and every compiler response is verbatim output of bambik's pinned
+    PureScript compiler (0.15.16, the variant fork), captured by replaying the
+    session.</p>
+
+    <p>The method rests on one rule, the <em>anchor invariant</em> (see the
+    <a href="./#code-style">code style</a> note): every view line names exactly
+    one semantic anchor — the model <strong>field</strong> it edits
+    (<code>@l</code> on an editor or selector), the business
+    <strong>case</strong> it emits or shows (<code>@l</code> on an emitter,
+    pane or status), the named <strong>read function</strong> it renders, or
+    <strong>nothing</strong> at all, chrome writing nothing. So the view is
+    written first, with typed holes (<code>?countLine</code> — a name the
+    compiler must type rather than resolve) standing in for the functions that
+    do not exist yet, and the logic module is written second, to the names and
+    types the view demanded.</p>
+
+    <h2>1 · The view, whole, before any logic exists</h2>
+
+    <p>You know what the screen is before you know what the model is: a
+    headline showing a count, a button that increments it. Write exactly that.
+    Three term obligations enter as holes — the display's read function, the
+    button's handler, the seed. Note what is <em>not</em> a hole: the field and
+    case anchors (<code>@"Count"</code>) and the chrome
+    (<code>elevation5</code>, <code>card</code>, <code>headlineLarge</code>)
+    are complete as written.</p>
+
+    <h3>src/Counter.purs</h3>
+<pre><code class="language-haskell">module Counter (counter) where
+
+import Prelude ((#), ($), Unit)
+
+import Effect (Effect)
+import PUI (applied, mvu)
+import PUI.Web.HTML (body, shown, text)
+import PUI.Web.MDC3 (button, card, elevation5, headlineLarge)
+import QualifiedDo.Category as Category
+
+counter :: Effect Unit
+counter =
+  body $
+    elevation5 $
+      card $ ( Category.do
+          headlineLarge (text ?countLine) # shown
+          button @"Count" {} # applied ?increment
+      ) # mvu ?freshCount
+</code></pre>
+
+    <p>The compiler answers with a refusal, and it points at <code>shown</code>:</p>
+
+<pre class="compiler">Error found:
+in module Counter
+at src/Counter.purs:16:45 - 16:50 (line 16, column 45 - line 16, column 50)
+
+  No type class instance was found for
+
+    Prim.Row.Union t2
+                   t3
+                   t4
+
+  The instance head contains unknown type variables. Consider adding a type annotation.
+
+while checking that type forall (read :: Row Type) (extra :: Row Type) (row :: Row Type). Union @Type read extra row =&gt; PUI Web (Record read) (Record ...) -&gt; PUI Web (Record row) (Record row)
+  is at least as general as type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
+while checking that expression shown
+  has type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
+in value declaration counter
+  ⋯</pre>
+
+    <p>This refusal is the design, not an obstacle. <code>shown</code> reads a
+    sub-row of the model (<code>Union read extra row</code>: what the line
+    reads, plus everything it doesn't, is the model) — and <em>which</em>
+    sub-row a display reads is a business decision, so the compiler declines to
+    make it. The first decision of the session: this line shows a count. Write
+    the read function down, its footprint stated as a closed row.</p>
+
+    <h2>2 · The first business function — and the model surfaces</h2>
+
+    <h3>src/CounterLogic.purs — the logic module begins</h3>
+<pre><code class="language-haskell">module CounterLogic (countLine) where
+
+import Prelude (show)
+
+countLine :: { count :: Int } -> String
+countLine { count } = show count
+</code></pre>
+
+    <h3>src/Counter.purs — the display line takes its name</h3>
+<pre><code class="language-haskell">import CounterLogic (countLine)
+          ⋮
+          headlineLarge (text countLine) # shown
+</code></pre>
+
+    <p>The same error family moves one line down — and this time it is worth
+    reading closely:</p>
+
+<pre class="compiler">Error found:
+in module Counter
+at src/Counter.purs:18:32 - 18:50 (line 18, column 32 - line 18, column 50)
+
+  No type class instance was found for
+
+    Prim.Row.Union t4
+                   t5
+                   <mark>( count :: Int</mark>
+                   <mark>| t8</mark>
+                   <mark>)</mark>
+
+  The instance head contains unknown type variables. Consider adding a type annotation.
+
+while applying a function applied
+  of type Functor t3 =&gt; Union @Type t4 t5 t6 =&gt; (Record t4 -&gt; Record t4) -&gt; PUI t3 (Record t4) (Variant t7) -&gt; PUI t3 (Record t6) (Record t6)
+  to argument ?increment
+  ⋯</pre>
+
+    <p>The <code>Union</code>'s third argument is the fed row, and it now shows
+    <code>( count :: Int | t8 )</code>: one read function in, the pipeline
+    already knows the model carries a count (the tail is open because the seed
+    is still a hole). What stays unknown is <code>t4</code> — the handler's own
+    footprint, again yours to state: <code>increment</code> reads and writes
+    the count.</p>
+
+    <h2>3 · The last hole is the seed — and the compiler spells the model</h2>
+
+    <h3>src/CounterLogic.purs — the handler joins</h3>
+<pre><code class="language-haskell">increment :: { count :: Int } -> { count :: Int }
+increment { count } = { count: count + 1 }
+</code></pre>
+
+    <h3>src/Counter.purs — the button line takes its name</h3>
+<pre><code class="language-haskell">          button @"Count" {} # applied increment
+</code></pre>
+
+<pre class="compiler">Error found:
+in module Counter
+at src/Counter.purs:19:15 - 19:26 (line 19, column 15 - line 19, column 26)
+
+  Hole 'freshCount' has the inferred type
+
+    <mark>{ count :: Int</mark>
+    <mark>| t0</mark>
+    <mark>}</mark>
+
+in value declaration counter
+  ⋯</pre>
+
+    <p>The view computed the model. Nothing anywhere declared
+    <code>{ count :: Int }</code> — it is the union of what the lines demanded:
+    the read function's footprint and the handler's row. The seed is that row's
+    value at t=0, and it is business data with a business name — never
+    <code>initial</code>.</p>
+
+    <h2>4 · Green</h2>
+
+    <h3>src/CounterLogic.purs</h3>
+<pre><code class="language-haskell">module CounterLogic (countLine, freshCount, increment) where
+
+import Prelude ((+), show)
+
+freshCount :: { count :: Int }
+freshCount = { count: 0 }
+
+countLine :: { count :: Int } -> String
+countLine { count } = show count
+
+increment :: { count :: Int } -> { count :: Int }
+increment { count } = { count: count + 1 }
+</code></pre>
+
+    <h3>src/Counter.purs</h3>
+<pre><code class="language-haskell">module Counter (counter) where
+
+import Prelude ((#), ($), Unit)
+
+import CounterLogic (countLine, freshCount, increment)
+import Effect (Effect)
+import PUI (applied, mvu)
+import PUI.Web.HTML (body, shown, text)
+import PUI.Web.MDC3 (button, card, elevation5, headlineLarge)
+import QualifiedDo.Category as Category
+
+counter :: Effect Unit
+counter =
+  body $
+    elevation5 $
+      card $ ( Category.do
+          headlineLarge (text countLine) # shown
+          button @"Count" {} # applied increment
+      ) # mvu freshCount
+</code></pre>
+
+<pre class="compiler">[1 of 2] Compiling CounterLogic
+[2 of 2] Compiling Counter</pre>
+
+    <p>Every anchor resolved: <code>countLine</code> and <code>increment</code>
+    are pure functions under unit test in the logic module, <code>@"Count"</code>
+    is both the button's caption and its event case, and the chrome names
+    nothing because it writes nothing. This is the app running as the
+    <a href="7guis/counter-mdc3/">counter demo</a> — same two modules, the view
+    in MDC3's vocabulary.</p>
+
+    <h2>5 · Compile-green is not done</h2>
+
+    <p class="note">The types prove the wiring, not that data reaches the
+    screen: a record merge withholds until every field of its row has been fed,
+    so the session ends by <em>running</em> the app. A pane that stays blank is
+    a knowledge gate withholding — and it is a named failure, not a mystery:
+    the 3-second starvation watchdog prints the gate and its missing fields to
+    the console, and the emission trace logs every propagation decision (see
+    the <a href="./#tracing">tracing</a> note). Here the seed feeds the one
+    gate, the headline renders <code>0</code>, and the session is over.</p>
+
+    <div class="aside">
+      <h2>Aside · where the compiler speaks first</h2>
+
+      <p>The session above had to decide every footprint itself, because its
+      holes sat at <em>subsuming</em> positions — stages that deliberately read
+      a sub-row of their pipeline's row. At <em>pinned</em> positions the roles
+      reverse and the hole reports its full type, suggestions included. A
+      status line over a payload the pipeline already fixed:</p>
+
+<pre><code class="language-haskell">booking =
+  body $
+    ( Category.do
+        button @"Book" {}
+        snackbar # forCase @"Book" ?bookedLine
+    ) # with { name: "Jo" }
+</code></pre>
+
+<pre class="compiler">at src/Booking.purs:16:36 - 16:47 (line 16, column 36 - line 16, column 47)
+
+  Hole 'bookedLine' has the inferred type
+
+    <mark>{ name :: String</mark>
+    <mark>}</mark>
+    <mark>-&gt; String</mark>
+
+  You could substitute the hole with one of these values:
+
+    <mark>_.name</mark>                      :: String
+    Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
+    Data.Show.show              :: forall @a. Show a =&gt; a -&gt; String
+    Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
+  ⋯</pre>
+
+      <p>The button replays the row it was fed, the seed pinned that row to
+      <code>{ name :: String }</code>, so the copy function's type is fully
+      known — and the first suggestion is the answer.</p>
+    </div>
+
+    <footer>
+      <p>The rules this session follows — the anchor invariant, the writing
+      order, and the full application code-style contract — are stated in the
+      <a href="https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/writing.md">authoring
+      skill's writing.md</a>, which ships with every bambik release.
+      <a href="./">Back to the demos.</a></p>
+    </footer>
+
+    <script>hljs.highlightAll()</script>
+  </body>
+</html>

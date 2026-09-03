@@ -43,11 +43,10 @@ if (hits.length) {
   process.exit(1);
 }
 
-// The presentation-model rule (doc/research-presentation-model.md): displays
-// are verbatim — formatting is a `settled` invariant in the logic module, so
-// the view-side read adopters `projection`/`projected` must not appear
-// anywhere in demo code (`forCase @l`/`forCases` are status adoption, not
-// reads, and stay).
+// Copy is a function, not a field (doc/research-copy-is-a-function.md): a
+// display's copy is a named logic function read at the leaf, so the old
+// view-side read adopters `projection`/`projected` must not appear anywhere in
+// demo code (`forCase @l`/`forCases` are status adoption, not reads, and stay).
 const bannedRe = /\b(projection|projected)\b/;
 const banned = [];
 for (const file of walk("demo")) {
@@ -60,6 +59,23 @@ for (const file of walk("demo")) {
 if (banned.length) {
   console.error("presentation-model rule violations (view-side read adopter in demo code):");
   for (const b of banned) console.error("  " + b);
+  process.exit(1);
+}
+// Copy is a function, not a field: the read `text` takes is a NAMED function
+// living in the logic module (or a bare accessor section), never a lambda
+// composing copy at the view site — that is the whole point of the rule.
+const lambdaRe = /\btext \(?\\/;
+const lambdas = [];
+for (const file of walk("demo")) {
+  if (file.endsWith("Logic.purs")) continue;
+  const src = readFileSync(file, "utf8");
+  src.split("\n").forEach((line, i) => {
+    if (lambdaRe.test(line)) lambdas.push(`${file}:${i + 1}: ${line.trim()}`);
+  });
+}
+if (lambdas.length) {
+  console.error("copy-is-a-function violations (lambda in a `text` read — name it in the logic module):");
+  for (const l of lambdas) console.error("  " + l);
   process.exit(1);
 }
 console.log("view-model rule: clean");

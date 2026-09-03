@@ -1,4 +1,4 @@
-module ScoreboardLogic (boardSummary, gameStart, goal, standing, tick, tickPeriod) where
+module ScoreboardLogic (boardSummary, gameStart, goal, leaderLine, scoreLine, standing, teamsLine, tick, tickPeriod) where
 
 import Prelude (show, (+), (<>), (==), mod)
 
@@ -16,24 +16,33 @@ tickPeriod = { ms: 1000.0 }
 tick :: { n :: Int } -> Maybe { n :: Int }
 tick { n } = Just { n: n + 1 }
 
-goal :: { n :: Int } -> { key :: String, value :: { team :: String, points :: Int, scoreLine :: String } }
+goal :: { n :: Int } -> { key :: String, value :: { team :: String, points :: Int } }
 goal { n } =
   let team = pick teams n
       points = scored team n
-  in { key: team, value: { team, points, scoreLine: team <> ": " <> show points } }
+  in { key: team, value: { team, points } }
+
+scoreLine :: { team :: String, points :: Int } -> String
+scoreLine { team, points } = team <> ": " <> show points
 
 scored :: String -> Int -> Int
 scored team n = length (filter (\i -> pick teams i == team) (range 0 n))
 
-boardSummary :: Array { team :: String, points :: Int, scoreLine :: String } -> Array { key :: String, teamsLine :: String, leader :: [ led :: { leaderLine :: String }, unled :: {} ] }
-boardSummary scores = [ { key: "summary", teamsLine: show (length scores) <> " teams on the board — leading: ", leader: leaderOf scores } ]
+boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: Int, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] }
+boardSummary scores = [ { key: "summary", teams: length scores, leader: leaderOf scores } ]
 
-leaderOf :: Array { team :: String, points :: Int, scoreLine :: String } -> [ led :: { leaderLine :: String }, unled :: {} ]
+teamsLine :: { teams :: Int } -> String
+teamsLine r = show r.teams <> " teams on the board — leading: "
+
+leaderLine :: { team :: String, points :: Int } -> String
+leaderLine { team, points } = team <> " (" <> show points <> ")"
+
+leaderOf :: Array { team :: String, points :: Int } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
 leaderOf scores = case maximumBy (comparing _.points) scores of
-  Just top -> .led { leaderLine: top.team <> " (" <> show top.points <> ")" }
+  Just top -> .led { team: top.team, points: top.points }
   Nothing -> .unled {}
 
-standing :: { leader :: [ led :: { leaderLine :: String }, unled :: {} ] } -> [ led :: { leaderLine :: String }, unled :: {} ]
+standing :: { leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
 standing { leader } = leader
 
 pick :: Array String -> Int -> String

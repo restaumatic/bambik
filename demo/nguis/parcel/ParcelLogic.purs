@@ -1,9 +1,9 @@
-module ParcelLogic (draftParcel, presentParcel) where
+module ParcelLogic (draftParcel, parcelLine) where
 
 import Prelude ((<>))
 
-draftParcel :: { "Recipient" :: String, "Street" :: String, "City" :: String, parcelLine :: String }
-draftParcel = presentParcel { "Recipient": "Ada Lovelace", "Street": "12 Analytical Row", "City": "London", parcelLine: "" }
+draftParcel :: { "Recipient" :: String, "Street" :: String, "City" :: String }
+draftParcel = { "Recipient": "Ada Lovelace", "Street": "12 Analytical Row", "City": "London" }
 
-presentParcel :: { "Recipient" :: String, "Street" :: String, "City" :: String, parcelLine :: String } -> { "Recipient" :: String, "Street" :: String, "City" :: String, parcelLine :: String }
-presentParcel r = r { parcelLine = r."Recipient" <> " · " <> r."Street" <> " · " <> r."City" }
+parcelLine :: { "Recipient" :: String, "Street" :: String, "City" :: String } -> String
+parcelLine r = r."Recipient" <> " · " <> r."Street" <> " · " <> r."City"

@@ -277,10 +277,10 @@ slotCounter = unsafePerformEffect $ Ref.new 0
 -- | The stamp invariant, vocabulary-wide: **every label-indexed leaf
 -- | stamps its label on its host element** — `name` where the element is
 -- | a form citizen, `aria-label` where it is a display — so inspecting
--- | any element answers which `@l` in the code it is. The one exception
--- | is `PUI.Web.HTML.text`, whose host is a bare text node: under host
--- | diagnostics it plants a `text @"l"` comment marker instead, and in
--- | production carries nothing.
+-- | any element answers which `@l` in the code it is.
+-- | `PUI.Web.HTML.text` is outside the family: copy is a function, not a
+-- | field, so it carries no label to stamp — under host diagnostics it
+-- | plants a bare `text` comment marker, and in production nothing.
 data OptCaption = OptCaption
 
 instance ConvertOption OptCaption sym a a where

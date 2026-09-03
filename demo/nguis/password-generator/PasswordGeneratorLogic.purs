@@ -1,4 +1,4 @@
-module PasswordGeneratorLogic (presentPassword, rememberPassword, samplePassword, strongMixRecipe) where
+module PasswordGeneratorLogic (passwordText, rememberPassword, samplePassword, strengthLine, strongMixRecipe) where
 
 import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure)
 
@@ -13,19 +13,18 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-strongMixRecipe :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String, strengthLine :: String }
-strongMixRecipe = presentPassword
+strongMixRecipe :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String }
+strongMixRecipe =
   { "Length": passwordLengths 16.0
   , "Uppercase letters": true
   , "Lowercase letters": true
   , "Digits": true
   , "Symbols": false
   , password: ""
-  , strengthLine: ""
   }
 
-presentPassword :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String, strengthLine :: String } -> { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean, password :: String, strengthLine :: String }
-presentPassword r = r { strengthLine = "Strength: " <> strengthGrade (entropyBits { "Length": r."Length", "Uppercase letters": r."Uppercase letters", "Lowercase letters": r."Lowercase letters", "Digits": r."Digits", "Symbols": r."Symbols" }) }
+strengthLine :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> String
+strengthLine r = "Strength: " <> strengthGrade (entropyBits r)
 
 passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 passwordLengths n = { current: n, min: 8.0, max: 64.0, step: .discrete 1.0 }
@@ -40,6 +39,9 @@ randomCharacter :: Array Char -> Effect Char
 randomCharacter alphabet = do
   i <- randomInt 0 (length alphabet - 1)
   pure (fromMaybe 'a' (index alphabet i))
+
+passwordText :: { password :: String } -> String
+passwordText { password } = password
 
 rememberPassword :: String -> { password :: String } -> { password :: String }
 rememberPassword password recipe = recipe { password = password }

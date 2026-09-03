@@ -2,9 +2,9 @@ module CounterMDC2 (counterMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import CounterLogic (freshCount, increment, presentCounter)
+import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (applied, mvu, settled)
+import PUI (applied, mvu)
 import PUI.Web.HTML (body, shown, text)
 import PUI.Web.MDC2 (button, card, elevation20, headline4)
 import QualifiedDo.Category as Category
@@ -14,6 +14,6 @@ counterMDC2 =
   body $
     elevation20 $
       card $ ( Category.do
-          headline4 (text @"countText") # shown
+          headline4 (text countLine) # shown
           button @"Count" {} # applied increment
-      ) # settled presentCounter # mvu freshCount
+      ) # mvu freshCount

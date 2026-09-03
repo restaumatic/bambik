@@ -2,10 +2,10 @@ module ColorMixerMDC2 (colorMixerMDC2) where
 
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
-import ColorMixerLogic (applyPreset, duskViolet, mixOf, palette, presentColorMixer, rgb)
+import ColorMixerLogic (applyPreset, duskViolet, hexLine, mixOf, palette, rgb, rgbLine)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (blank, foreach, mvu, settled, toCase, updated)
+import PUI (blank, foreach, mvu, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, text, (:=))
 import PUI.Web.MDC2 (body2, card, elevation20, sliderLive)
 import QualifiedDo.Category as Category
@@ -22,9 +22,9 @@ colorMixerMDC2 =
               attrWith "style" swatchStyle $ div $ blank
               div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
                 ( clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) ) # foreach @"name" (const palette)) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          (body2 (text @"hexText")) # shown
-          (body2 (text @"rgbText")) # shown
-      ) # settled presentColorMixer # mvu duskViolet
+          (body2 (text hexLine)) # shown
+          (body2 (text rgbLine)) # shown
+      ) # mvu duskViolet
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = chipStyle { mix }
 

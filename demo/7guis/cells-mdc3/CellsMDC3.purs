@@ -2,10 +2,10 @@ module CellsMDC3 (cellsMDC3) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsLogic (commit, gridRows, orderSheet, presentCells, selectCell)
+import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, forProperty, mvu, settled, toCase, updated)
+import PUI (foreach, mvu, settled, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, table, td, text, tr, (:=))
 import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import QualifiedDo.Category as Category
@@ -15,12 +15,12 @@ cellsMDC3 =
   body $
     elevation5 $
       card $ ( Category.do
-          bodyLarge (text @"selectedLine") # shown
+          bodyLarge (text selectedLine) # shown
           filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
           ( div >>> "style" := "overflow: auto; max-height: 420px;" $
               ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-                  ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text @"text" # forProperty ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) # toCase @"cellClicked" _.key ) # updated (match { cellClicked: selectCell })
-      ) # settled presentCells # mvu orderSheet
+                  ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) # toCase @"cellClicked" _.key ) # updated (match { cellClicked: selectCell })
+      ) # mvu orderSheet
 cellFace :: { text :: String, kind :: [ header :: {}, cell :: {} ], status :: [ selected :: {}, unselected :: {} ] } -> String
 cellFace { kind, status } = match
   { header: \_ -> "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"

@@ -4,7 +4,7 @@ import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import MeetingBookerLogic (blankBooking, bookedLine, plan, ratedRoom, roomOf, seatsInRoom, seatsTaken)
+import MeetingBookerLogic (blankBooking, bookedLine, plan, planLine, ratedRoom, roomOf, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
 import PUI (forCase, mvu, optional, settled)
 import PUI.Web.Fluent (body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web (choice)
@@ -27,11 +27,11 @@ meetingBookerFluent =
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
           caption1 $ staticText "How attendees rated this room"
-          ratingDisplay @"rating" ) # shownWhen @"rated" ratedRoom
+          ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" ratedRoom
       ( div $ RecordToRecord.do
           caption1 $ staticText "Seats taken"
-          progressBar @"occupancy" ) # shownWhen @"seated" seatsTaken
+          progressBar @"Seats taken" seatOccupancy ) # shownWhen @"seated" seatsTaken
       ( Category.do
-          body1 (text @"planLine") # shown
+          body1 (text planLine) # shown
           button @"Book the room" {} ) # provided @"complete" plan
       messageBar # forCase @"Book the room" bookedLine

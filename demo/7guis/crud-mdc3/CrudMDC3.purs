@@ -2,7 +2,7 @@ module CrudMDC3 (crudMDC3) where
 
 import Prelude (Unit, bind, const, (#), ($), (<<<))
 
-import CrudLogic (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
+import CrudLogic (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
@@ -23,7 +23,7 @@ crudMDC3 = do
               filledTextField @"Filter prefix (surname)" {}
               filledTextField @"Name" {}
               filledTextField @"Surname" {}
-              listOf { selected: isSelected } entries (text @"personLine" # shown) # toCase @"picked" _.key # updated (match { picked: pick })
+              listOf { selected: isSelected } entries (text personLine # shown) # toCase @"picked" _.key # updated (match { picked: pick })
               ( Category.do
                   cardActions $ RecordToVariant.do
                     button @"Create" {}

@@ -1,4 +1,4 @@
-module SignupFormLogic (newApplicant, register, rejectionLine, usernameSettleTime, usernameStatus, validation, welcomeLine) where
+module SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, register, rejectionLine, takenLine, usernameSettleTime, usernameStatus, validation, welcomeLine) where
 
 import Prelude ((<>), (==))
 
@@ -49,19 +49,31 @@ validate applicant@{ "Email": email, "Terms": terms } =
     else if declined terms then Left (.termsUnaccepted {})
     else Right username
 
-validation :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ] } -> [ invalid :: { invalidLine :: String }, ready :: { readyLine :: String } ]
-validation { "Username": username, "Email": email, "Terms": terms } = either (\reason -> .invalid { invalidLine: "⚠ " <> refusalText reason }) (\name -> .ready { readyLine: "Ready to sign up as " <> name }) (validate { "Username": username, "Email": email, "Terms": terms })
+validation :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ] } -> [ invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }, ready :: { "Username" :: String } ]
+validation { "Username": username, "Email": email, "Terms": terms } = either (\reason -> .invalid { reason }) (\name -> .ready { "Username": name }) (validate { "Username": username, "Email": email, "Terms": terms })
+
+invalidLine :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] } -> String
+invalidLine { reason } = "⚠ " <> refusalText reason
+
+readyLine :: { "Username" :: String } -> String
+readyLine { "Username": username } = "Ready to sign up as " <> username
 
 namedUsername :: { "Username" :: String } -> Maybe String
 namedUsername { "Username": username } = case trim username of
   "" -> Nothing
   name -> Just name
 
-usernameStatus :: { "Username" :: String } -> [ unnamed :: {}, taken :: { takenLine :: String }, available :: { availableLine :: String } ]
+usernameStatus :: { "Username" :: String } -> [ unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ]
 usernameStatus { "Username": username } = case namedUsername { "Username": username } of
   Nothing -> .unnamed {}
-  Just name | usernameTaken name -> .taken { takenLine: "✗ " <> name <> " is already taken" }
-  Just name -> .available { availableLine: "✓ " <> name <> " is available" }
+  Just name | usernameTaken name -> .taken { "Username": name }
+  Just name -> .available { "Username": name }
+
+takenLine :: { "Username" :: String } -> String
+takenLine { "Username": username } = "✗ " <> username <> " is already taken"
+
+availableLine :: { "Username" :: String } -> String
+availableLine { "Username": username } = "✓ " <> username <> " is available"
 
 usernameTaken :: String -> Boolean
 usernameTaken username = username `elem` takenUsernames

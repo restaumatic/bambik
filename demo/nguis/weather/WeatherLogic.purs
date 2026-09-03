@@ -1,4 +1,4 @@
-module WeatherLogic (fetchReport, forecastRequests, isCurrent, presentWeather, rememberReport, warsawBulletin) where
+module WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
@@ -8,17 +8,23 @@ import Data.Maybe (fromMaybe)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Data.Variant (match)
 
-warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureLine :: String, conditionLine :: String, humidityWindLine :: String, servedLine :: String, aboutLine :: String }
-warsawBulletin = presentWeather { report: conditionsFor "Warsaw" 0, servedReports: 1, temperatureLine: "", conditionLine: "", humidityWindLine: "", servedLine: "", aboutLine: "" }
+warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
+warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
 
-presentWeather :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureLine :: String, conditionLine :: String, humidityWindLine :: String, servedLine :: String, aboutLine :: String } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int, temperatureLine :: String, conditionLine :: String, humidityWindLine :: String, servedLine :: String, aboutLine :: String }
-presentWeather r = r
-  { temperatureLine = show r.report.temperature <> " °C"
-  , conditionLine = r.report.condition <> " in " <> r.report.city
-  , humidityWindLine = "Humidity " <> show r.report.humidity <> "% · Wind " <> show r.report.wind <> " km/h"
-  , servedLine = "Simulated service · " <> show r.servedReports <> " reports served"
-  , aboutLine = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show r.servedReports <> "."
-  }
+temperatureLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+temperatureLine { report } = show report.temperature <> " °C"
+
+conditionLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+conditionLine { report } = report.condition <> " in " <> report.city
+
+humidityWindLine :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> String
+humidityWindLine { report } = "Humidity " <> show report.humidity <> "% · Wind " <> show report.wind <> " km/h"
+
+servedLine :: { servedReports :: Int } -> String
+servedLine { servedReports } = "Simulated service · " <> show servedReports <> " reports served"
+
+aboutLine :: { servedReports :: Int } -> String
+aboutLine { servedReports } = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show servedReports <> "."
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 climateTable =

@@ -1,4 +1,4 @@
-module DeparturesLogic (arrival, boardOpening, tick, tickPeriod) where
+module DeparturesLogic (arrival, boardOpening, flightLine, tick, tickPeriod, updateLine) where
 
 import Prelude ((+), (<>), div, mod)
 
@@ -14,13 +14,19 @@ tickPeriod = { ms: 1000.0 }
 tick :: { n :: Int } -> Maybe { n :: Int }
 tick { n } = Just { n: n + 1 }
 
-arrival :: { n :: Int } -> { key :: String, value :: { flightLine :: String, updateLine :: String } }
+arrival :: { n :: Int } -> { key :: String, value :: { code :: String, status :: String } }
 arrival { n } =
   let
     code = pick flights n
     status = pick statuses (n + n `div` length flights)
   in
-    { key: code, value: { flightLine: code <> " — " <> status, updateLine: "Last update: " <> code <> " → " <> status } }
+    { key: code, value: { code, status } }
+
+flightLine :: { code :: String, status :: String } -> String
+flightLine { code, status } = code <> " — " <> status
+
+updateLine :: { key :: String, value :: { code :: String, status :: String } } -> String
+updateLine { value: { code, status } } = "Last update: " <> code <> " → " <> status
 
 pick :: Array String -> Int -> String
 pick options i = fromMaybe "" (index options (i `mod` length options))

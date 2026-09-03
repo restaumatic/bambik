@@ -18,10 +18,11 @@ import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Lacks)
 import PUI (atField, muted, Ocular, PUI, asField, blank, foreach)
-import PUI.Web.HTML (attrWith, div, staticText, text, (:=))
+import PUI.Web.HTML (attrWith, div, shown, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
 import PUI.Web (OptCaption(..), Web)
+import QualifiedDo.Category as Category
 import Type.Proxy (Proxy(..))
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -30,18 +31,27 @@ board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-ite
 
 statTile :: { label :: String, unit :: String } -> PUI Web { stat :: String } {}
 statTile config =
-  tile $ RecordToRecord.do
-    labelMedium $ staticText config.label
-    ( div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ RecordToRecord.do
-        displaySmall (text @"stat")
-        labelMedium $ staticText config.unit )
+  tile ( Category.do
+      (labelMedium $ staticText config.label) # shown
+      statReadout config # shown ) # muted
 
-gauge :: { label :: String } -> PUI Web { fraction :: Number, percent :: String } {}
+statReadout :: { label :: String, unit :: String } -> PUI Web { stat :: String } {}
+statReadout config =
+  div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ RecordToRecord.do
+    displaySmall (text statText)
+    labelMedium $ staticText config.unit
+
+statText :: { stat :: String } -> String
+statText { stat } = stat
+
+gauge :: { label :: String } -> PUI Web { fraction :: Number } {}
 gauge config =
-  tile $ RecordToRecord.do
-    labelMedium $ staticText config.label
-    linearProgress @"fraction"
-    labelLarge $ text @"percent"
+  tile ( Category.do
+      (labelMedium $ staticText config.label) # shown
+      -- the visible caption above the bar is this tile's name; the bar's own
+      -- label is the generic accessible name a screen reader falls back to
+      linearProgress @"Share" gaugeFraction # shown
+      (labelLarge $ text percentText) # shown ) # muted
 
 trendChart :: { label :: String } -> PUI Web { trend :: Array Number } {}
 trendChart config =
@@ -56,10 +66,7 @@ leaderboard :: { label :: String } -> PUI Web { entries :: Array { name :: Strin
 leaderboard config =
   tile $ RecordToRecord.do
     labelMedium $ staticText config.label
-    ( list ( ( listItem $ RecordToRecord.do
-        text @"name"
-        staticText " — "
-        text @"score" ) # foreach @"name" identity ) # muted ) # atField @"entries"
+    ( list ( ( listItem $ text entryLine ) # foreach @"name" identity ) # muted ) # atField @"entries"
 
 rangePicker :: forall @l provided a ri ro. IsSymbol l => Lacks l () => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 rangePicker provided options =
@@ -68,6 +75,15 @@ rangePicker provided options =
       segmentedButton @"Picked" options ) # asField @"Picked" @l
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
+
+gaugeFraction :: { fraction :: Number } -> Number
+gaugeFraction = _.fraction
+
+percentText :: { fraction :: Number } -> String
+percentText { fraction } = show (round (fraction * 100.0)) <> "%"
+
+entryLine :: { name :: String, score :: String } -> String
+entryLine { name, score } = name <> " — " <> score
 
 tile :: Ocular (PUI Web)
 tile = div >>> "style" := "display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; background: var(--md-sys-color-surface-container-low, #f7f2fa); flex: 1 1 200px; min-width: 200px; box-sizing: border-box;"

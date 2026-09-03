@@ -57,5 +57,5 @@ main :: Effect Unit
 main = body $ announce "Hello, " >>> Semigroupoid.do
   greet
   confirm
-  lcmap (\v -> { greeting: v }) (text @"greeting")
+  lcmap (\v -> { greeting: v }) (text _.greeting)
   silence

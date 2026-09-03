@@ -4,8 +4,8 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PotluckLogic (invitation, menu)
-import PUI (acted, field, foreach, forProperty, with)
+import PotluckLogic (guestCountLine, guestName, invitation, menuLine)
+import PUI (acted, field, foreach, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, span, staticText, text)
 import PUI.Web.MDC2 (body2, card, elevation20, headline6, list, listItem, segmentedButton, subtitle1)
@@ -16,13 +16,13 @@ potluckMDC2 =
   body $
     elevation20 $
       card $ ( Category.do
-          body2 (text @"guestCountLine") # shown
+          body2 (text guestCountLine) # shown
           ( list $
               ( listItem $ RecordToRecord.do
-                  subtitle1 (text @"name")
+                  subtitle1 (text guestName)
                   segmentedButton @"Dish"
                     [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name" ) # field @"guests"
           headline6 $ Category.do
             (staticText "On the table: ") # shown
-            ( span $ text @"menuLine" # forProperty ) # foreach @"name" menu # field @"guests"
+            ( span $ text menuLine ) # foreach @"name" _.guests
       ) # with invitation

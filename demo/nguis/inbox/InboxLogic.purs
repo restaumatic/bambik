@@ -1,4 +1,4 @@
-module InboxLogic (composeMessage, deleteOpened, deletionOf, highlighted, inboxZeroLine, keepMessages, mailboxRows, mondayMail, messageView, openMessage, presentInbox, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst) where
+module InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, mondayMail, messageView, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine) where
 
 import Prelude ((<>), (#), (+), (==), (||), comparing, map, not, show)
 
@@ -6,8 +6,8 @@ import Data.Array (filter, find, length, snoc, sortBy)
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
-mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int, unreadLine :: String }
-mondayMail = presentInbox
+mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int }
+mondayMail =
   { messages:
       [ { id: 1, sender: "Alice Kowalska", subject: "Quarterly report ready", body: "The Q2 numbers are in - revenue up 12%, see the attached sheet before Friday's review.", status: .unread {} }
       , { id: 2, sender: "Bob Nowak", subject: "Lunch on Thursday?", body: "The new ramen place near the office finally opened. Noon works for me.", status: .read {} }
@@ -16,21 +16,31 @@ mondayMail = presentInbox
   , opened: .none {}
   , deletion: .silent {}
   , nextId: 4
-  , unreadLine: ""
   }
 
-presentInbox :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int, unreadLine :: String } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int, unreadLine :: String }
-presentInbox r = r
-  { unreadLine = show (length (filter isUnread r.messages)) <> " unread of " <> show (length r.messages) <> " messages"
-  }
+unreadLine :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> String
+unreadLine { messages } = show (length (filter isUnread messages)) <> " unread of " <> show (length messages) <> " messages"
 
-mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> Array { id :: Int, messageLine :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] }
+mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> Array { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] }
 mailboxRows { messages, opened } = messages # map \g ->
   { id: g.id
-  , messageLine: g.sender <> " — " <> g.subject
+  , sender: g.sender
+  , subject: g.subject
   , status: g.status
   , emphasis: if isUnread g || isOpened g.id opened then .highlighted {} else .plain {}
   }
+
+messageLine :: { sender :: String, subject :: String } -> String
+messageLine { sender, subject } = sender <> " — " <> subject
+
+fromLine :: { sender :: String, subject :: String, body :: String } -> String
+fromLine { sender } = "From: " <> sender
+
+subjectLine :: { sender :: String, subject :: String, body :: String } -> String
+subjectLine { subject } = subject
+
+bodyText :: { sender :: String, subject :: String, body :: String } -> String
+bodyText { body } = body
 
 isUnread :: { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } -> Boolean
 isUnread { status } = match { unread: \_ -> true, read: \_ -> false } status
@@ -38,7 +48,7 @@ isUnread { status } = match { unread: \_ -> true, read: \_ -> false } status
 isOpened :: Int -> [ message :: { id :: Int }, none :: {} ] -> Boolean
 isOpened id = match { message: \m -> m.id == id, none: \_ -> false }
 
-highlighted :: { id :: Int, messageLine :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] } -> Boolean
+highlighted :: { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] } -> Boolean
 highlighted { emphasis } = match { highlighted: \_ -> true, plain: \_ -> false } emphasis
 
 readState :: { status :: [ unread :: {}, read :: {} ] } -> [ unread :: {}, read :: {} ]
@@ -47,10 +57,10 @@ readState { status } = status
 openMessage :: Int -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] }
 openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g { status = .read {} } else g) messages, opened = .message { id } }
 
-messageView :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> [ reading :: { subject :: String, fromLine :: String, body :: String }, browsing :: {} ]
+messageView :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> [ reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ]
 messageView { messages, opened } = match
   { message: \m -> case find (\g -> g.id == m.id) messages of
-      Just message -> .reading { subject: message.subject, fromLine: "From: " <> message.sender, body: message.body }
+      Just message -> .reading { sender: message.sender, subject: message.subject, body: message.body }
       Nothing -> .browsing {}
   , none: \_ -> .browsing {}
   } opened

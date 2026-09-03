@@ -2,7 +2,7 @@ module CrudShoelace (crudShoelace) where
 
 import Prelude (Unit, bind, const, (#), ($), (<<<), (<>), (>>>))
 
-import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
+import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
@@ -23,7 +23,7 @@ crudShoelace = do
             textField @"Name" {}
             textField @"Surname" {}
             ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--sl-color-neutral-300, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
-                ( clicked ( li >>> attrWith "style" entryFace $ text @"personLine" # shown ) ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
+                ( clicked ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
             ( Category.do
                 div $ RecordToVariant.do
                   button @"Create" {}
@@ -34,5 +34,5 @@ crudShoelace = do
                   blank # action (updatePerson catalogue) # atCase @"Update"
                   blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
     ) # with {}
-entryFace :: { personLine :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+entryFace :: { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: var(--sl-color-primary-100, #cde);", unselected: \_ -> "" } status

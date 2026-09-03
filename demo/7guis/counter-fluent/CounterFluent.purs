@@ -2,9 +2,9 @@ module CounterFluent (counterFluent) where
 
 import Prelude ((#), ($), Unit)
 
-import CounterLogic (freshCount, increment, presentCounter)
+import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (applied, mvu, settled)
+import PUI (applied, mvu)
 import PUI.Web.Fluent (button, card, title3)
 import PUI.Web.HTML (body, shown, text)
 import QualifiedDo.Category as Category
@@ -13,6 +13,6 @@ counterFluent :: Effect Unit
 counterFluent =
   body $
     card $ ( Category.do
-        title3 (text @"countText") # shown
+        title3 (text countLine) # shown
         button @"Count" {} # applied increment
-    ) # settled presentCounter # mvu freshCount
+    ) # mvu freshCount

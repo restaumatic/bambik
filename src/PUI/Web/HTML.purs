@@ -78,6 +78,7 @@ module PUI.Web.HTML
   , tbody
   , td
   , text
+  , textOf
   , textArea
   , th
   , thead
@@ -97,7 +98,7 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (field, recordToRecord, projected)
+import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, widenRecordInput)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, match, on, prj)
@@ -106,7 +107,6 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
-import Record (get) as Record
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI, diagnosticsOn, foreach, muted)
 import Unsafe.Coerce (unsafeCoerce)
@@ -215,22 +215,41 @@ shownEach
   => ({ | read } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
 shownEach proj item = recordToRecord (muted (foreach @l (\(r :: { | row }) -> proj (unsafeCoerce r)) item)) identity
 
--- | Show a string that changes — a readout, a total, a name in a list row.
--- | (Wording that doesn't change is `staticText`.)
+-- | Show a string that changes — a readout, a total, a sentence, a name in
+-- | a list row. (Wording that doesn't change is `staticText`.)
 -- |
--- | A line glued together from several values is several `text` leaves side
--- | by side, with `staticText` for the literal words between them: each
--- | value is its own text node and updates on its own, and the sentence is
--- | assembled where it is read rather than in the business code behind it.
-text :: forall @l r. IsSymbol l => Cons l String () r => PUI Web { | r } {}
-text = wrap do
+-- | **Copy is a function, not a field**: the argument is the read — a named
+-- | function from the fields it needs to the words on the screen, living in
+-- | the logic module where it is one pure function and one unit test
+-- | (`text progressLineOf`, `text _.title`). The read function's own
+-- | signature states the footprint, and the stage that hosts the display
+-- | (`shown`/`shownWhen`/`shownEach`) widens it to the fed row, so no call
+-- | site coerces. This is why `text` takes no label:
+-- | its content *is* the copy, so there is no field to name and nothing to
+-- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
+-- | column header). A leaf that renders a *number* keeps its label and
+-- | reads its field verbatim (`progressBar @"fraction"`): numbers need no
+-- | formatting.
+-- |
+-- | A whole line is one function, glue included — never several leaves with
+-- | `staticText` between them, and never a formatter in the view.
+-- | doc/research-copy-is-a-function.md is the rationale.
+text :: forall reads. ({ | reads } -> String) -> PUI Web { | reads } {}
+text = textOf
+
+-- | `text` freed of the record shape: the read runs on whatever the position
+-- | feeds, so a status can render its own variant payload
+-- | (`textOf eventText`). Vocabulary-internal — application code shows copy
+-- | with `text`, whose row-shaped read states its footprint.
+textOf :: forall a. (a -> String) -> PUI Web a {}
+textOf f = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
-    -- a text node cannot carry the label-stamp attribute the element-hosted
-    -- leaves get, so under host diagnostics a comment marker names it instead
+    -- a text node carries no attributes, so under host diagnostics a bare
+    -- comment marks it (the leaf has no label to stamp: copy is a function)
     diag <- diagnosticsOn
     when diag do
-      marker <- createCommentNode ("text @" <> show (reflectSymbol (Proxy @l)))
+      marker <- createCommentNode "text"
       appendChild marker parentNode
     node <- createTextNode ""
     appendChild node parentNode
@@ -240,7 +259,7 @@ text = wrap do
   propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
   pure
     { toUser: \s -> do
-        setTextNodeValue node (Record.get (Proxy @l) s)
+        setTextNodeValue node (f s)
         prop <- Ref.read propRef
         prop {}
     , fromUser: \prop -> Ref.write prop propRef
@@ -395,11 +414,16 @@ rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $
 
 -- | The native `<progress>` gauge, `value` running 0 to 1. As much a gauge
 -- | as a progress indicator — a quota, a share, a fraction elapsed —
--- | fed a model fraction maintained by `present<App>` (`progress @"fraction"`),
--- | with the business function
--- | deciding what the fraction means.
-progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-progress = wrap do
+-- | `progress @"Progress" progressFraction`: the value is a **read
+-- | function** like every display's, since a fraction is derived (a ratio
+-- | of source fields), not state. The label is the accessible name only —
+-- | a bar showing 42% must announce *what* is 42% — so it is copy, never a
+-- | field reference.
+progress
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+progress f = wrap do
   element "progress" (pure unit)
   attribute "max" "1"
   attribute "aria-label" (reflectSymbol (Proxy @l))
@@ -407,7 +431,7 @@ progress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setAttribute node "value" (show (Record.get (Proxy @l) r))
+        setAttribute node "value" (show (f r))
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -425,7 +449,7 @@ progress = wrap do
 -- | the output is built — `output # forCase @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output :: PUI Web [ event :: String ] {}
-output = el "output" $ text @"line" # projected eventText
+output = el "output" $ textOf eventText
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

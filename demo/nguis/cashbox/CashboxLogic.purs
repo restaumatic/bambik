@@ -1,30 +1,30 @@
-module CashboxLogic (applyDeposit, applyPayout, applyRefund, courierFee, customerDeposit, openedTill, payoutSum, presentCashbox, refundSum, standardRefund) where
+module CashboxLogic (applyDeposit, applyPayout, applyRefund, balanceLine, courierFee, customerDeposit, openedTill, payoutLine, refundLine, standardRefund) where
 
 import Prelude ((+), (-), (<>), show)
 
 import Data.Maybe (fromMaybe)
 import Data.String (Pattern(..), stripSuffix)
 
-openedTill :: { balance :: Number, balanceLine :: String }
-openedTill = presentCashbox { balance: 200.0, balanceLine: "" }
+openedTill :: { balance :: Number }
+openedTill = { balance: 200.0 }
 
-presentCashbox :: { balance :: Number, balanceLine :: String } -> { balance :: Number, balanceLine :: String }
-presentCashbox r = r { balanceLine = "Till balance: €" <> euros r.balance }
+balanceLine :: { balance :: Number } -> String
+balanceLine { balance } = "Till balance: €" <> euros balance
 
-standardRefund :: { amount :: Number, refundLine :: String }
-standardRefund = { amount: 25.0, refundLine: "Hand €" <> euros 25.0 <> " back to the customer." }
+standardRefund :: { amount :: Number }
+standardRefund = { amount: 25.0 }
 
-courierFee :: { amount :: Number, payoutLine :: String }
-courierFee = { amount: 10.0, payoutLine: "Hand €" <> euros 10.0 <> " to the courier." }
+courierFee :: { amount :: Number }
+courierFee = { amount: 10.0 }
 
 customerDeposit :: { amount :: Number }
 customerDeposit = { amount: 50.0 }
 
-refundSum :: { amount :: Number, refundLine :: String } -> { amount :: Number }
-refundSum { amount } = { amount }
+refundLine :: { amount :: Number } -> String
+refundLine { amount } = "Hand €" <> euros amount <> " back to the customer."
 
-payoutSum :: { amount :: Number, payoutLine :: String } -> { amount :: Number }
-payoutSum { amount } = { amount }
+payoutLine :: { amount :: Number } -> String
+payoutLine { amount } = "Hand €" <> euros amount <> " to the courier."
 
 applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
 applyRefund { amount } { balance } = { balance: balance - amount }

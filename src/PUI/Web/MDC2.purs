@@ -112,7 +112,7 @@ import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -121,7 +121,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach, static)
-import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, shown, span, staticText, table, tbody, td, text, th, thead, tr, ul, (:=))
+import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, shown, span, staticText, table, tbody, td, textOf, th, thead, tr, ul, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, clazz, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
@@ -1004,17 +1004,23 @@ indeterminateLinearProgress = wrap do
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
 -- | position, a budget's use, a quota — written as
--- | `linearProgress # projected fraction`, with the business function
--- | deciding what the fraction means.
-linearProgress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-linearProgress = wrap do
+-- | `linearProgress @"Progress" progressFraction`: the value is a **read
+-- | function** like every display's, since a fraction is derived (a ratio
+-- | of source fields), not state. The label is the accessible name only —
+-- | a bar showing 42% must announce *what* is 42% — so it is copy, never a
+-- | field reference.
+linearProgress
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+linearProgress f = wrap do
   _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "progress" comp (Record.get (Proxy @l) r)
+        setNumberProp "progress" comp (f r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -1254,7 +1260,7 @@ simpleDialog { title, confirm } content = wrap do
 -- | and let the event carry the bare facts. One snackbar can serve several
 -- | mutually exclusive outcomes with `forCases`.
 snackbar :: PUI Web [ event :: String ] {}
-snackbar = snackbarContainer $ text @"line" # projected eventText
+snackbar = snackbarContainer $ textOf eventText
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -1275,7 +1281,7 @@ snackbarContainer content =
 -- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
 -- | none.
 banner :: PUI Web [ event :: String ] {}
-banner = bannerContainer $ text @"line" # projected eventText
+banner = bannerContainer $ textOf eventText
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String
 eventText = Variant.on (Proxy @"event") identity Variant.case_
@@ -1493,7 +1499,7 @@ imagePane :: PUI Web { src :: String, label :: String } {}
 imagePane =
   li >>> cl "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
     imageFace
-    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ text @"label"
+    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ (textOf _.label :: PUI Web { src :: String, label :: String } {})
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

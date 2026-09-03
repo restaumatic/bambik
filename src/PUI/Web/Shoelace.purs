@@ -39,20 +39,19 @@ import Data.Foldable (for_)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (clicked, div, el, span, staticText, text, (:=))
+import PUI.Web.HTML (clicked, div, el, span, staticText, textOf, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
 --
@@ -307,10 +306,16 @@ select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap d
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — written as `progressBar # projected fraction`,
--- | with the business function deciding what the fraction means.
-progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-progressBar = wrap do
+-- | rating out of five — `progressBar @"Progress" progressFraction`: the
+-- | value is a **read function** like every display's, since a fraction is
+-- | derived (a ratio of source fields), not state. The label is the
+-- | accessible name only — a bar showing 42% must announce *what* is 42% —
+-- | so it is copy, never a field reference.
+progressBar
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+progressBar f = wrap do
   element "sl-progress-bar" (pure unit)
   attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" "width: 100%; min-width: 200px;"
@@ -319,7 +324,7 @@ progressBar = wrap do
   pure
     { toUser: \r -> do
         -- sl-progress-bar runs 0–100
-        setNumberProp "value" node (Record.get (Proxy @l) r * 100.0)
+        setNumberProp "value" node (f r * 100.0)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -340,7 +345,7 @@ toast = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (text @"line" # projected eventText)
+    unwrap (textOf eventText)
   node <- gets _.sibling
   pure
     { toUser: \i -> do

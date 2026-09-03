@@ -2,7 +2,7 @@ module CheckoutMDC3 (checkoutMDC3) where
 
 import Prelude ((#), ($), Unit, const)
 
-import CheckoutLogic (cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, previousOf)
+import CheckoutLogic (cartLine, cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine)
 import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
@@ -18,12 +18,12 @@ checkoutMDC3 =
     elevation5 $
       card $ ( Category.do
           ( Category.do
-              ( bodyMedium $ text @"cartLine" ) # shownWhen @"cart" checkoutStep
-              ( bodyMedium $ text @"shippingLine" ) # shownWhen @"shipping" checkoutStep
-              ( bodyMedium $ text @"paymentLine" ) # shownWhen @"payment" checkoutStep
+              ( bodyMedium $ text cartLine ) # shownWhen @"cart" checkoutStep
+              ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
+              ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
               RecordToVariant.do
                 button @"Next" {} # toCases goneOn # provided @"onward" onwardFrom
                 button @"Back" {} # toCases goneBack # provided @"back" previousOf
                 button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
-          ( bodyMedium $ text @"placedLine" ) # shownWhen @"placed" orderStatus
+          ( bodyMedium $ text placedLine ) # shownWhen @"placed" orderStatus
       ) # mvu freshOrder

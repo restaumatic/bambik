@@ -123,7 +123,7 @@ import Data.Foldable (foldMap, for_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
@@ -132,7 +132,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach)
-import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, text, th, thead, tr, (:=))
+import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, textOf, th, thead, tr, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
@@ -851,10 +851,15 @@ indeterminateLinearProgress = wrap do
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
 -- | position, a budget's use, a quota — written as
--- | `linearProgress # projected fraction`, with the business function
--- | deciding what the fraction means.
-linearProgress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-linearProgress = wrap do
+-- | `linearProgress @"Progress" progressFraction`: the value is a **read
+-- | function** like every display's, since a fraction is derived (a ratio
+-- | of source fields), not state. The label is the accessible name only,
+-- | so it is copy, never a field reference.
+linearProgress
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+linearProgress f = wrap do
   element "md-linear-progress" (pure unit)
   attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" "min-width: 200px;"
@@ -862,7 +867,7 @@ linearProgress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "value" node (Record.get (Proxy @l) r)
+        setNumberProp "value" node (f r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -1071,7 +1076,7 @@ snackbar :: PUI Web [ event :: String ] {}
 snackbar = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    text @"line" # projected eventText
+    textOf eventText
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -1308,7 +1313,7 @@ imagePane = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
     imageFace
-    span >>> cl "md3-image-list__label" $ text @"label"
+    span >>> cl "md3-image-list__label" $ (textOf _.label :: PUI Web { src :: String, label :: String } {})
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

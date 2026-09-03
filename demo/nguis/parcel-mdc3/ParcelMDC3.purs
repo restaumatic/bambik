@@ -3,8 +3,8 @@ module ParcelMDC3 (parcelMDC3) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import ParcelLogic (draftParcel, presentParcel)
-import PUI (PUI, subStrong, mvu, settled)
+import ParcelLogic (draftParcel, parcelLine)
+import PUI (PUI, subStrong, mvu)
 import PUI.Web.HTML (shown, body, text)
 import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import PUI.Web (Web)
@@ -17,8 +17,8 @@ parcelMDC3 =
       card $ ( Category.do
           filledTextField @"Recipient" {}
           addressForm # subStrong
-          ( bodyLarge $ text @"parcelLine" ) # shown
-      ) # settled presentParcel # mvu draftParcel
+          ( bodyLarge $ text parcelLine ) # shown
+      ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = Category.do

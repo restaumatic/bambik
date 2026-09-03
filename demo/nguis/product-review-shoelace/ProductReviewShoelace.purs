@@ -3,8 +3,8 @@ module ProductReviewShoelace (productReviewShoelace) where
 import Prelude (Unit, ($), (#))
 
 import Effect (Effect)
-import ProductReviewLogic (freshImpression, presentReview, submittedLine)
-import PUI (armed, forCase, mvu, required, settled)
+import ProductReviewLogic (freshImpression, previewLine, submittedLine)
+import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, p, text)
 import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
@@ -23,7 +23,7 @@ productReviewShoelace =
           toggleSwitch @"I'd recommend it to a friend" {}
           textField @"Nickname" {}
           divider # shown
-      ) # settled presentReview # mvu freshImpression
-      p (text @"previewLine") # shown
+      ) # mvu freshImpression
+      p (text previewLine) # shown
       button @"Submit review" {} # armed
       toast # forCase @"Submit review" submittedLine

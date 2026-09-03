@@ -6,7 +6,7 @@ import CalculatorLogic (blankTally, keyPad, operatorKeys, pressKey, readout)
 import Data.Array (elem)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, forProperty, toCase, updated)
+import PUI (foreach, mvu, toCase, updated)
 import PUI.Web.HTML (shownWhen, attrWith, body, clicked, div, provided, staticText, text, (:=))
 import PUI.Web.MDC2 (card, elevation20)
 import QualifiedDo.Category as Category
@@ -22,9 +22,9 @@ calculatorMDC2 =
                         <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
                         <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Category.do
                     (staticText "Error") # shownWhen @"faulty" readout
-                    text @"entry" # provided @"sound" readout
+                    text _.entry # provided @"sound" readout
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" keyFace $ text @"key" # forProperty ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
+                  clicked ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
         ) # updated (match { keyPressed: pressKey }) # mvu blankTally
 keyFace :: { key :: String } -> String
 keyFace = keyStyle <<< _.key

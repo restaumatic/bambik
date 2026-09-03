@@ -40,20 +40,19 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, (:=))
+import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, textOf, (:=))
 import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
 --
@@ -158,7 +157,7 @@ sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Numbe
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
-      unwrap ((span $ text @"readout") # cl "text-body-secondary")
+      unwrap ((span $ text _.readout) # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -254,10 +253,15 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a share, a quota, a
--- | ratio — written as `progress # projected fraction`, with the business
--- | function deciding what the fraction means.
-progress :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-progress = wrap do
+-- | ratio — `progress @"Progress" progressFraction`: the value is a **read
+-- | function** like every display's, since a fraction is derived (a ratio
+-- | of source fields), not state. The label is the accessible name only,
+-- | so it is copy, never a field reference.
+progress
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+progress f = wrap do
   barNode <- element "div" do
     element "div" (pure unit)
     bar <- gets _.sibling
@@ -272,7 +276,7 @@ progress = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setAttribute barNode "style" ("width: " <> show (round (Record.get (Proxy @l) r * 100.0)) <> "%;")
+        setAttribute barNode "style" ("width: " <> show (round (f r * 100.0)) <> "%;")
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -292,7 +296,7 @@ toast :: PUI Web [ event :: String ] {}
 toast = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ text @"line" # projected eventText) # cl "toast-body")
+      (div $ textOf eventText) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

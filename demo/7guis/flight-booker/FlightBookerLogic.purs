@@ -1,4 +1,4 @@
-module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType) where
+module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 
@@ -37,12 +37,21 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problemLine :: String }, "one-way" :: { oneWayLine :: String }, "return" :: { returnLine :: String } ]
-bookingState = parse >>> either (\problem -> .problem { problemLine: "⚠ " <> problem })
+bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+bookingState = parse >>> either (\problem -> .problem { problem })
   (match
-    { oneWayOn: \out -> ."one-way" { oneWayLine: summary (.oneWayOn out) }
-    , returnBetween: \r -> ."return" { returnLine: summary (.returnBetween r) }
+    { oneWayOn: \out -> ."one-way" { out }
+    , returnBetween: \r -> ."return" r
     })
+
+problemLine :: { problem :: String } -> String
+problemLine { problem } = "⚠ " <> problem
+
+oneWayLine :: { out :: { y :: Int, m :: Int, d :: Int } } -> String
+oneWayLine { out } = summary (.oneWayOn out)
+
+returnLine :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> String
+returnLine r = summary (.returnBetween r)
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match

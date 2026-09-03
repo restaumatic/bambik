@@ -20,7 +20,7 @@ import Prelude (Unit, (#), ($))
 
 import Data.Variant (match)
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType)
+import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
 import PUI (action, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, body, text)
@@ -39,9 +39,9 @@ flightBookerMDC2 =
           filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
       ( Category.do
-          body1 (text @"problemLine") # shownWhen @"problem" bookingState
-          body1 (text @"oneWayLine") # shownWhen @"one-way" bookingState
-          body1 (text @"returnLine") # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+          body1 (text problemLine) # shownWhen @"problem" bookingState
+          body1 (text oneWayLine) # shownWhen @"one-way" bookingState
+          body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress @"busy" # action (match { "Book": submit })
       snackbar # forCases bookingLine
@@ -53,8 +53,8 @@ that shape data flow (`mvu`, `required`, `debounced`, `action`, `forCases`),
 `inCase`, `text`), and `PUI.Web.MDC2` for the design system.
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
-No merge block appears: every displayed line is one derived field, so no
-stage here reads more than one leaf. `QualifiedDo.Category as Category`
+No merge block appears: each displayed line is one read function at one
+leaf, so no stage here reads more than one leaf. `QualifiedDo.Category as Category`
 gives `Category.do`: sequential composition, not a monad.
 
 **`body $ elevation20 $ card $ Category.do`.** Mount at the document body;
@@ -90,14 +90,16 @@ compile-time proof that nothing here waits for a seed nobody supplies.
 **Stage 2 — the itinerary line.** Three panes, one visible at a time,
 under one `# debounced itinerarySettleTime`.
 
-- `body1 (text @"oneWayLine")` — one verbatim leaf. The whole sentence
-  ("A one-way flight on 27.03.2026") is a **derived line field**, composed
-  in the logic module where the pane's payload is built (writing.md, *A
-  composed line is one derived field*): the copy is a pure function under
-  unit test, and the view holds no glue.
+- `body1 (text oneWayLine)` — the leaf takes the **read function**, not a
+  label: its content *is* the copy, so there is no field to name. The whole
+  sentence ("A one-way flight on 27.03.2026") is `oneWayLine`, one pure
+  function in the logic module (writing.md, *copy is a function, not a
+  field*): the copy is under unit test, the view holds no glue, and the line
+  names its own writer.
 - `# shownWhen @"one-way" bookingState` — attach and feed this pane when
   `bookingState model` yields case `one-way`, with that case's payload
-  `{ oneWayLine :: String }`; detach on any other case. Either way the fed
+  `{ out :: { y, m, d } }` — the **source** data the line is computed from,
+  not a rendering of it; detach on any other case. Either way the fed
   model is released downstream: a hidden pane never blocks the flow. Three
   such stages over one classifier make the three states exclusive by
   construction — exclusivity is computed in `bookingState`, not arranged
@@ -125,7 +127,7 @@ ever dropped silently.
 ## The logic
 
 ```purescript
-module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit, tripType) where
+module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 
@@ -164,12 +166,21 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
           Nothing -> Left "the return date is before the start date"
           Just itinerary -> Right itinerary
 
-bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problemLine :: String }, "one-way" :: { oneWayLine :: String }, "return" :: { returnLine :: String } ]
-bookingState = parse >>> either (\problem -> .problem { problemLine: "⚠ " <> problem })
+bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+bookingState = parse >>> either (\problem -> .problem { problem })
   (match
-    { oneWayOn: \out -> ."one-way" { oneWayLine: summary (.oneWayOn out) }
-    , returnBetween: \r -> ."return" { returnLine: summary (.returnBetween r) }
+    { oneWayOn: \out -> ."one-way" { out }
+    , returnBetween: \r -> ."return" r
     })
+
+problemLine :: { problem :: String } -> String
+problemLine { problem } = "⚠ " <> problem
+
+oneWayLine :: { out :: { y :: Int, m :: Int, d :: Int } } -> String
+oneWayLine { out } = summary (.oneWayOn out)
+
+returnLine :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> String
+returnLine r = summary (.returnBetween r)
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match
@@ -244,10 +255,15 @@ the logic is the ordinary one.
 
 ## What to read next
 
-- **counter** — the floor: one verbatim display (`text @"countText"`, the
-  block `# shown`, the field maintained by `# settled presentCounter`),
-  one button, one fold (`applied`).
-- **temperature-converter** — two editors kept consistent with `settled`.
+- **counter** — the floor: one display reading one function
+  (`headline4 (text countLine) # shown`), one button, one fold (`applied`).
+  Its whole model is `{ count :: Int }` — every display is a function, so
+  nothing in the row exists for the screen's benefit.
+- **timer** — the same at two displays of different kinds:
+  `progressBar @"Elapsed" elapsedFraction` and `text progressLine` over a
+  model of `{ "Duration", elapsed }`, both derived, neither stored.
+- **temperature-converter** — two editors kept consistent with `settled`:
+  the surviving job of `settled`, an invariant among *edited* fields.
 - **flight-booker** — this file.
 - **todomvc** — a collection (`listOf`, `foreach`), a selectable list emitting
   its key with `toCase @l _.key`, a filter selector.

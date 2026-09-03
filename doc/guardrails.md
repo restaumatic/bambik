@@ -97,6 +97,23 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   (`choice @l` per option), never a hand-written `{ value, label }` array;
   the order MUST be the order written, never the variant row's, which the
   compiler sorts alphabetically.
+- The closure of the discipline is the **anchor invariant**
+  (application-side statement: writing.md's *The anchor invariant*):
+  every view line names exactly one semantic anchor — a model **field**
+  (`@l` on an editor or selector), a business **case** (`@l` on an
+  emitter, pane or status), a **named read function** (a display's
+  content, L17), or **nothing** (chrome — statics and oculars write
+  nothing and so name nothing). The vocabulary MUST keep every line's
+  anchor expressible and singular: an ocular MUST NOT take a label or
+  copy config (no model interface, nothing to anchor — a card's heading
+  is typography in its content), a display MUST NOT carry a label except
+  as an accessible name (L17), and no mechanism may leave a line's
+  meaning in an anonymous position. The stronger rule — *every line a
+  field*, oculars included — was considered and rejected (2026-09-03):
+  a label on an ocular is a parameter that does nothing (gate 4),
+  line ↔ field is no bijection (one `settled` spans fields, two lines
+  may read one field, `+`-side lines anchor at cases), and making
+  display lines fields would move copy back into state, reversing L17.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 
@@ -326,33 +343,53 @@ the next `required` waiting to be coined — never a reason to import the
 module one floor down. Business optics (`Shutter`/`Reel` in business
 code below the UI) are algebra-layer material and exempt by location.
 
-### L17. The rows are a presentation model; displays are verbatim.
+### L17. Copy is a function, not a field.
 
-- What a pipeline operates over is not the domain model but its
-  **presentation**: source fields and the derived fields they render as,
-  side by side in one row. A display leaf MUST show its field as fed —
-  no display takes a formatter, and the vocabulary re-exports no
-  view-side read adopter (`projection` and `forCase` are deleted;
-  `projected` is vocabulary plumbing for the statuses, not re-exported
-  from `PUI`). The one read adopter is `forProperty` — selection from a
-  context-pinned row, never formatting.
-- Everything the user reads is therefore a model field: a formatted
-  readout, a unit-suffixed quantity, a sentence composed from several
-  fields is a derived presentation field, written in the logic module by
-  one normalization per app and maintained as a `settled` invariant, the
-  seed pre-normalized; a context-pinned row (collection item, pane
-  payload) carries its copy from the business function producing it. The
-  gain is the point: the screen's copy is a pure function under
-  `spago test`, no browser. Checkable form: `npm run check-view-model`
-  rejects `projection`/`projected`/`forCase` anywhere in `demo/`.
+- What a pipeline operates over is the app's **state**, never its
+  rendering. A display leaf whose content *is* copy MUST take the
+  **read function** — `text :: ({ | reads } -> String) -> PUI Web
+  { | reads } {}` — and MUST carry no label: its content is the copy,
+  so there is no field to name and nothing to caption (a caption is
+  surrounding chrome). The function MUST be a named function of the
+  logic module or a bare accessor section; a formatter bracket, a
+  view-side lambda and a `staticText`-plus-leaf text run are all
+  forbidden. `projection` (2026-08-31) and `projected` (2026-09-02) are
+  deleted; the vocabulary-internal `textOf` serves the statuses' own
+  variant payload.
+- A display that renders a **number** — `progressBar`,
+  `linearProgress`, `progress`, `gauge`, `ratingDisplay` — MUST take a
+  read function too: a fraction is *derived* (a ratio of source
+  fields), and derivation is the same act as formatting. Its label
+  survives as the **accessible name only** (a bar showing 42% must
+  announce *what* is 42%), so it is copy like an editor's caption, not
+  a field reference: `progressBar @"Elapsed" elapsedFraction`.
+  Quantity *editors* are untouched — a slider genuinely edits a field,
+  so `sliderLive @l` keeps label-as-field. `forProperty` survives for a
+  *labelled* leaf reading one field of a context-pinned wider row —
+  selection, never formatting.
+- A model field MUST exist because the app's state needs it, never
+  because a display wanted a `String` — or a `Number`. `settled`
+  therefore maintains invariants among **edited** fields only (two
+  writers inherent, type preservation the point); a `present<App>`
+  normalization that feeds a display, of either kind, is a violation.
+  Checkable form: every `# settled` in `demo/` sits on an editor
+  stage. A context-pinned row (collection item, pane payload)
+  carries the **source** fields its producing function built, and the
+  read function formats them.
+- The gain is the point: the screen's copy is a pure function under
+  `spago test`, no browser, and the view line names its own writer.
+  Checkable form: `npm run check-view-model` rejects
+  `projection`/`projected` anywhere in `demo/` and any lambda in a
+  `text` read.
 - Statuses adopt through `forCases` (a whole classified variant — the
   classifier a record of per-case copy functions, the elimination the
   mechanism's own) and its derived single-case convenience `forCase @l`
   (`forCase @l f = forCases { l: f }` by law); their canonical
   `[ event :: String ]` row stays private to the vocabulary.
-- Rationale, laws and measurements: doc/research-presentation-model.md;
-  the application-side statement is writing.md's *displays are
-  verbatim*.
+- Rationale, census and laws: doc/research-copy-is-a-function.md, which
+  partially reverses doc/research-presentation-model.md (keeping its
+  testability motivation and its `settled` half); the application-side
+  statement is writing.md's *copy is a function, not a field*.
 
 ---
 
@@ -417,9 +454,12 @@ these gates in order:
    [writing.md](../.claude/skills/developing-bambik-apps/writing.md).
    A change that alters how applications are written edits writing.md
    and the demos — not a second copy of the rule here or in CLAUDE.md,
-   which carry pointers. The demo pages' code-style note is the one
-   deliberate restatement (deployed HTML cannot read the skill file);
-   re-read it against writing.md when the contract changes.
+   which carry pointers. The deployed restatements are exactly two,
+   both deliberate (deployed HTML cannot read the skill file): the demo
+   pages' code-style note, and the demo site's workflow page
+   (demo/workflow.html — *Writing order* replayed as a session, its
+   compiler responses captured verbatim from the pinned compiler);
+   re-read both against writing.md when the contract changes.
 
 The historical record is the proof this process works: every rejected
 design (the type-derived seed, the `Sequencing` class, the `New` wrapper,

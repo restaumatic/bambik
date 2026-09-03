@@ -41,7 +41,7 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field, projected)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, match, on) as Variant
@@ -49,13 +49,12 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (cl, clicked, div, el, staticText, text, (:=))
+import PUI.Web.HTML (cl, clicked, div, el, staticText, text, textOf, (:=))
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import Record (get) as Record
 
 -- Implementation notes — the reference above is the contract.
 --
@@ -189,7 +188,7 @@ slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, m
 slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
       _ <- unwrap (staticText config.label)
-      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text @"readout"))
+      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
   element "fluent-slider" (pure unit)
@@ -306,10 +305,15 @@ radioGroup provided options = let config = convertOptionsWithDefaults OptCaption
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — written as `progressBar # projected fraction`,
--- | with the business function deciding what the fraction means.
-progressBar :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-progressBar = wrap do
+-- | rating out of five — `progressBar @"Progress" progressFraction`: the
+-- | value is a **read function** like every display's, since a fraction is
+-- | derived (a ratio of source fields), not state. The label is the
+-- | accessible name only, so it is copy, never a field reference.
+progressBar
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+progressBar f = wrap do
   element "fluent-progress-bar" (pure unit)
   attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "max" "1"
@@ -318,7 +322,7 @@ progressBar = wrap do
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "value" node (Record.get (Proxy @l) r)
+        setNumberProp "value" node (f r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -331,15 +335,18 @@ progressBar = wrap do
 -- | editable — Fluent's catalog has the display and not the editor, so
 -- | there is deliberately no star *editor* here (Shoelace's `rating` is
 -- | the one).
-ratingDisplay :: forall @l r. IsSymbol l => Cons l Number () r => PUI Web { | r } {}
-ratingDisplay = wrap do
+ratingDisplay
+  :: forall @l reads
+   . IsSymbol l
+  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+ratingDisplay f = wrap do
   element "fluent-rating-display" (pure unit)
   attribute "aria-label" (reflectSymbol (Proxy @l))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> do
-        setNumberProp "value" node (Record.get (Proxy @l) r)
+        setNumberProp "value" node (f r)
         -- display echo (like `text`)
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
@@ -359,7 +366,7 @@ messageBar :: PUI Web [ event :: String ] {}
 messageBar = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    text @"line" # projected eventText) # cl "fluent-toast"
+    textOf eventText) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

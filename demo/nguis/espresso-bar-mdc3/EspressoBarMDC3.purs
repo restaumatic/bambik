@@ -6,8 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import EspressoBarLogic (brewedLine, espressoNoFrills, presentEspressoBar, theUsual, usualOrder)
-import PUI (armed, forCase, mvu, required, settled, updated, with)
+import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, theUsual, usualOrder)
+import PUI (armed, forCase, mvu, required, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, body, div, staticText, text)
 import PUI.Web.MDC3 (bodyMedium, button, card, checkbox, chipSet, divider, elevation5, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -40,10 +40,10 @@ espressoBarMDC3 =
               menu { label: "Presets" } ( RecordToVariant.do
                   menuItem @"The usual" {} # with theUsual
                   menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
-          ) # settled presentEspressoBar # mvu usualOrder
-          bodyMedium (text @"cupLine") # shown
+          ) # mvu usualOrder
+          bodyMedium (text cupLine) # shown
           ( div $ RecordToRecord.do
               labelMedium $ staticText "Caffeine"
-              linearProgress @"caffeine" ) # shown
+              linearProgress @"Caffeine" caffeineFraction ) # shown
           button @"Place order" { icon: "local_cafe" } # armed
           snackbar # forCase @"Place order" brewedLine

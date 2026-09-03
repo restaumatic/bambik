@@ -1,4 +1,4 @@
-module StopwatchLogic (beginTiming, clearStopwatch, haltTiming, lapRows, presentStopwatch, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch) where
+module StopwatchLogic (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch) where
 
 import Prelude ((<>), (+), (<), show)
 
@@ -7,11 +7,11 @@ import Data.Int (quot, rem)
 import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
-zeroedStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int, elapsedText :: String }
-zeroedStopwatch = presentStopwatch { phase: .halted {}, elapsedTenths: 0, laps: [], elapsedText: "" }
+zeroedStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int }
+zeroedStopwatch = { phase: .halted {}, elapsedTenths: 0, laps: [] }
 
-presentStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int, elapsedText :: String } -> { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int, elapsedText :: String }
-presentStopwatch r = r { elapsedText = formatTime r.elapsedTenths }
+elapsedText :: { elapsedTenths :: Int } -> String
+elapsedText { elapsedTenths } = formatTime elapsedTenths
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
@@ -39,8 +39,11 @@ tick sw@{ phase, elapsedTenths } =
 stopwatchPhase :: { phase :: [ halted :: {}, timing :: {} ] } -> [ halted :: {}, timing :: {} ]
 stopwatchPhase { phase } = phase
 
-lapRows :: { laps :: Array Int } -> Array { number :: String, lapLine :: String }
-lapRows { laps } = mapWithIndex (\i t -> { number: show (i + 1), lapLine: "Lap " <> show (i + 1) <> " — " <> formatTime t }) laps
+lapRows :: { laps :: Array Int } -> Array { number :: Int, tenths :: Int }
+lapRows { laps } = mapWithIndex (\i t -> { number: i + 1, tenths: t }) laps
+
+lapLine :: { number :: Int, tenths :: Int } -> String
+lapLine { number, tenths } = "Lap " <> show number <> " — " <> formatTime tenths
 
 formatTime :: Int -> String
 formatTime tenths =

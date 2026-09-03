@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import OrderFormLogic (deliveryDistance, estimateDistance, fulfillmentCase, distanceOf, fulfillmentOf, fulfillmentState, loadOrder, presentOrder, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summarySettleTime)
+import OrderFormLogic (awayLine, deliveryDistance, deliveryLine, dineInLine, distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentOf, fulfillmentState, loadOrder, orderLine, paidLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime, takeawayLine)
 import PUI (action, armed, atCase, bracketed, debounced, field, forCase, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
@@ -19,7 +19,7 @@ orderFormMDC3 =
   body $ ( elevation5 Category.do
       indeterminateLinearProgress @"busy" # action loadOrder
       ( Category.do
-          ( headlineSmall $ text @"orderLine" ) # shown
+          ( headlineSmall $ text orderLine ) # shown
           card $ Category.do
             (titleMedium $ staticText "Identifier") # shown
             filledTextField @"Short ID" {}
@@ -41,7 +41,7 @@ orderFormMDC3 =
                         ( Category.do
                             button @"Estimate distance" { icon: "near_me" }
                             indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-                        ( bodyLarge $ text @"distanceLine" ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
+                        ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # field @"fulfillment" )
           card $ Category.do
             (titleMedium $ staticText "Total") # shown
             filledTextField @"Total" {}
@@ -51,18 +51,18 @@ orderFormMDC3 =
                   segmentedButton @"Method"
                     [ choice @"cash", choice @"card" ] # required
                   filledTextField @"Paid" {}
-                  ( bodyLarge $ text @"payingLine" ) # shown ) # field @"payment" )
+                  ( bodyLarge $ text payingLine ) # shown ) # field @"payment" )
           card $ Category.do
             (titleMedium $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }
-      ) # settled presentOrder # looped
+      ) # looped
       bodyLarge ( Category.do
-          text @"summaryLine" # shown # debounced summarySettleTime
-          text @"dineInLine" # shownWhen @"Dine in" fulfillmentOf
-          text @"takeawayLine" # shownWhen @"Takeaway" fulfillmentOf
-          text @"deliveryLine" # shownWhen @"Delivery" fulfillmentOf
-          text @"awayLine" # shownWhen @"estimated" deliveryDistance
-          text @"paidLine" # shown # debounced summarySettleTime )
+          text summaryLine # shown # debounced summarySettleTime
+          text dineInLine # shownWhen @"Dine in" fulfillmentOf
+          text takeawayLine # shownWhen @"Takeaway" fulfillmentOf
+          text deliveryLine # shownWhen @"Delivery" fulfillmentOf
+          text awayLine # shownWhen @"estimated" deliveryDistance
+          text paidLine # shown # debounced summarySettleTime )
       ( RecordToVariant.do
           button @"Submit order" { icon: "save" }
           button @"Receipt" { icon: "file" } ) # armed

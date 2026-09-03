@@ -2,23 +2,21 @@ module TimerShoelace (timerShoelace) where
 
 import Prelude ((#), ($), Unit, const)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, settled, updated, with)
+import PUI (every, mvu, updated, with)
 import PUI.Web.HTML (shown, body, p, text)
 import PUI.Web.Shoelace (button, card, progressBar, sliderLive)
 import QualifiedDo.Category as Category
-import TimerLogic (nothingElapsed, presentTimer, tenSecondFreshTimer, tick, tickPeriod)
+import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerShoelace :: Effect Unit
 timerShoelace =
   body $
     card $ ( Category.do
-        ( RecordToRecord.do
-            progressBar @"fraction"
-            p (text @"progressLine") ) # shown
+        progressBar @"Elapsed" elapsedFraction # shown
+        (p $ text progressLine) # shown
         sliderLive @"Duration" {}
         every tickPeriod tick
         button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
-    ) # settled presentTimer # mvu tenSecondFreshTimer
+    ) # mvu tenSecondFreshTimer

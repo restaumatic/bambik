@@ -1,4 +1,4 @@
-module ProductReviewLogic (freshImpression, presentReview, submittedLine) where
+module ProductReviewLogic (freshImpression, previewLine, starsText, submittedLine) where
 
 import Prelude ((<>), (-))
 
@@ -7,29 +7,26 @@ import Data.Monoid (power)
 import Data.String (trim)
 import Data.Variant.Case (caseText)
 
-freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, previewLine :: String }
-freshImpression = presentReview
+freshImpression :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String }
+freshImpression =
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
   , "Your review": ""
   , "How long have you owned it?": ."less than a month" {}
   , "I'd recommend it to a friend": false
   , "Nickname": ""
-  , starsText: ""
-  , previewLine: ""
   }
 
-presentReview :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, previewLine :: String } -> { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "Your review" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean, "Nickname" :: String, starsText :: String, previewLine :: String }
-presentReview r = r
-  { starsText = stars
-  , previewLine = "Preview: " <> stars <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
-  }
-  where
-  stars = starGlyphs r."Overall rating"
+starsText :: { "Overall rating" :: { current :: Number, max :: Int } } -> String
+starsText r = starGlyphs r."Overall rating"
 
-submittedLine :: { starsText :: String, "Nickname" :: String } -> String
-submittedLine { starsText, "Nickname": nickname } =
-  "Thanks" <> forReviewer { "Nickname": nickname } <> "! Your " <> starsText <> " review is in."
+previewLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean } -> String
+previewLine r =
+  "Preview: " <> starsText { "Overall rating": r."Overall rating" } <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
+
+submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Nickname" :: String } -> String
+submittedLine r =
+  "Thanks" <> forReviewer { "Nickname": r."Nickname" } <> "! Your " <> starsText { "Overall rating": r."Overall rating" } <> " review is in."
 
 forReviewer :: { "Nickname" :: String } -> String
 forReviewer { "Nickname": nickname } = case trim nickname of

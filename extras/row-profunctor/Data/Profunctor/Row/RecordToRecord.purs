@@ -3,7 +3,7 @@
 -- |   * **strength** — `Strong` (ecosystem class, imported): the unary power,
 -- |     minimal and interop-friendly.
 -- |
--- | The adopters here (`forProperty`/`projected`/`required`)
+-- | The adopters here (`forProperty`/`required`)
 -- | carry **no canonical label at all**: the leaf states its business label
 -- | once, as its own type argument, and each adopter reads it back out of
 -- | the closed singleton row via `RowToList`'s fundep — so no layer
@@ -20,12 +20,9 @@
 -- |     discharge the initial-state obligation), plus the subsuming
 -- |     `settled` (`rmap`-only normalization over a stated sub-row);
 -- |     over bare `Profunctor`: the adopters `atField` (read a field, closed
--- |     row), `forProperty` (read one field of a context-pinned wider row —
--- |     the one application-facing read adopter: selection, never
--- |     formatting, since displays are verbatim under the
--- |     presentation-model rule), `projected` (read the whole —
--- |     **vocabulary plumbing only**, not re-exported from `PUI`: the
--- |     statuses' internal `text @"line" # projected eventText` read) and
+-- |     row), `forProperty` (read one field of a context-pinned wider row
+-- |     into a label-indexed leaf: selection, never formatting — copy is a
+-- |     read function at the leaf, doc/research-copy-is-a-function.md) and
 -- |     `asField` (the canonical-row rename for packaged controls);
 -- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
 -- |     granularity — a state sub-record loops from output to input, the
@@ -60,7 +57,6 @@ module Data.Profunctor.Row.RecordToRecord
   , asField
   , atField
   , forProperty
-  , projected
   , required
   , field
   , muted
@@ -220,17 +216,6 @@ field
   => Strong p
   => p f f' -> p { | s } { | s' }
 field = prop (Proxy @l)
-
--- | Feed a canonically-labeled component a **function of the whole input**:
--- | `projected f` turns a single-field component into one fed a bare `a`,
--- | with `f a` flowing in as its field — the label derived from the leaf's
--- | own row. **Vocabulary plumbing, not application vocabulary** (not
--- | re-exported from `PUI`): the statuses' internal
--- | `text @"line" # projected eventText` read. Application displays are
--- | verbatim (the presentation-model rule) — a formatted read is a derived
--- | field a `settled` normalization maintains. `lcmap`-only.
-projected :: forall l p a b o cr. RowToList cr (RL.Cons l b RL.Nil) => IsSymbol l => Cons l b () cr => Profunctor p => (a -> b) -> p { | cr } o -> p a o
-projected f = lcmap \a -> Record.insert (Proxy @l) (f a) {}
 
 -- | Mark a type-changing selector (`{ l :: Maybe a } → { l :: a }`) as
 -- | **always selected**: the `Maybe` input exists for the unselected

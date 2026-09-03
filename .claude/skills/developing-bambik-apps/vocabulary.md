@@ -8,6 +8,12 @@ are inside the fetched library, `.spago/bambik/<tag>/` — `HTML.purs` is
 `src/PUI/Web/HTML.purs`, `PUI.purs` is `src/PUI.purs`, and the four direction
 modules are `extras/row-profunctor/Data/Profunctor/Row/*.purs`.
 
+One invariant spans every table: a view line names exactly one anchor —
+the **field** it edits, the **case** it emits or shows, the **read
+function** it renders, or **nothing** (chrome) — so each *Write* cell
+below leads with that anchor. Stated in writing.md *The anchor
+invariant*.
+
 ## The two kinds of `do` — neither is a monad's
 
 | You are writing | Block | What flows | Demo |
@@ -27,14 +33,16 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one field, formatted | a derived presentation field (`present<App>` in logic, `# settled present<App>` trailing the pipeline), shown verbatim: `text @"countText"`, the block `# shown` | counter: `headline4 (text @"countText") # shown` | writing.md *displays are verbatim*; doc/research-presentation-model.md |
-| a sentence, a prefixed or unit-suffixed value, text composed from several fields | one derived line field written whole in logic, shown verbatim: `headlineSmall (text @"balanceLine")` | order-form's summary; cashbox's balance line | writing.md *A composed line is one derived field* |
+| one value, formatted | `text f` — the read function, named in the logic module: `headline4 (text countLine) # shown` | counter | writing.md *copy is a function, not a field*; doc/research-copy-is-a-function.md |
+| one field verbatim (already copy) | `text _.title` — an accessor section, no named function for a bare read | todomvc, inbox | same |
+| a sentence, a prefixed or unit-suffixed value, text composed from several fields | one named function, glue included: `headlineSmall (text balanceLine) # shown` | order-form's summary; cashbox's balance line | writing.md *A composed line is one function* |
+| a **number** as a bar, gauge or stars | the quantity leaf: label = accessible name, value = read function — `progressBar @"Elapsed" elapsedFraction` | timer, quiz, meeting-booker | writing.md *copy is a function, not a field* |
 | pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
 | content that exists only in one state | `content # shownWhen @l classifierOf` — the one visibility primitive: one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
-| a display inside a collection item, reading the item's own field | `text @l # forProperty` | todomvc's title; cells | RecordToRecord.purs (`forProperty`) |
-| a display fed a whole value, not a record | a derived presentation field on that row, read verbatim (`text @l`, `# forProperty` when the row is wider) | inbox: `text @"unreadText"` | writing.md *displays are verbatim* |
+| a labelled leaf reading one field of a wider row | `# forProperty` (selection, never formatting) | packaged controls | RecordToRecord.purs (`forProperty`) |
+| a display inside a collection item or pane payload | `text f` over the item/payload row — the row carries the *source* fields, the function formats them | stopwatch's laps; flight-booker's panes | writing.md *copy is a function, not a field* |
 | a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
 | the flow must wait for the user's confirmation | `confirmed cfg $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
 | a value-computed attribute (style, coordinates, colour) | `attrWith "style" f` on the element | calculator, cells, color-mixer | HTML.purs (`attrWith`) |
@@ -47,7 +55,7 @@ direction module headers.
 | --- | --- | --- | --- |
 | a field of the model, edited | the leaf with the field as its label: `filledTextField @"First name" {}`, `checkbox @l {}`, `slider @l {}` | every form | writing.md *Component citizenship* |
 | a group of fields editing a sub-record | `( Category.do … ) # field @"customer"`; a reusable sub-form `# subStrong` | order-form; parcel | RecordToRecord.purs (`field`, `subStrong`) |
-| an invariant between fields — editing one implies the other | `editor # settled normalize` | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *Conditional visibility* |
+| an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
 | a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |
 | a selection that may still be unmade | `dropdown @l {} […] # optional @"chosen" @"unchosen"` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |

@@ -1,9 +1,27 @@
-module RestaurantMenuLogic (courses, dishLines) where
+module RestaurantMenuLogic (courseDishes, courseName, courses, dishDescription, dishName, dishTags, menuCourses, priceLine, tagText) where
 
 import Prelude ((<>), map)
 
-dishLines :: Array { name :: String, price :: String, description :: String, tags :: Array String } -> Array { name :: String, priceLine :: String, description :: String, tags :: Array String }
-dishLines = map \dish -> { name: dish.name, priceLine: "€" <> dish.price, description: dish.description, tags: dish.tags }
+menuCourses :: { courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } } -> Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
+menuCourses = _.courses
+
+courseName :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> String
+courseName = _.name
+
+courseDishes :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> Array { name :: String, price :: String, description :: String, tags :: Array String }
+courseDishes = _.dishes
+
+dishDescription :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishDescription = _.description
+
+dishName :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishName = _.name
+
+priceLine :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+priceLine { price } = "€" <> price
+
+dishTags :: { name :: String, price :: String, description :: String, tags :: Array String } -> Array { tag :: String }
+dishTags { tags } = map { tag: _ } tags
 
 courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
 courses =
@@ -29,3 +47,6 @@ courses =
         ]
     }
   ]
+
+tagText :: { tag :: String } -> String
+tagText = _.tag
