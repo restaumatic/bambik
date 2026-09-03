@@ -15,7 +15,7 @@ git package. All three resolve on the first `npm install` / `spago build`.
   the tarball itself):
 
   ```json
-  "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.6/purescript-0.15.16-variant.6.tgz"
+  "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.7/purescript-0.15.16-variant.7.tgz"
   ```
 
   The same release carries the bare binary as asset `purs`, for use without
@@ -150,7 +150,7 @@ before it.
   },
   "devDependencies": {
     "esbuild": "0.25.1",
-    "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.6/purescript-0.15.16-variant.6.tgz",
+    "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.7/purescript-0.15.16-variant.7.tgz",
     "spago": "^0.21.0"
   }
 }

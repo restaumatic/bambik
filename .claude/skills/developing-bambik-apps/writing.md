@@ -931,20 +931,34 @@ module is written to its names. With the watch build running
    decision.** At every subsuming position — a display read under
    `shown`/`shownWhen`/`shownEach`, a handler under
    `updated`/`applied`, a classifier, a `settled` normalizer — the
-   sub-row is deliberately the function's own statement, so a bare
-   hole there does not report: the stage fails with `NoInstanceFound`
-   on an ambiguous `Union`. Read that error rather than fight it: in
-   `Union t4 t5 ( count :: Int )` the third argument is the fed row,
-   and `t4` — your footprint — is the sub-row of it the compiler
-   refuses to pick, because what a function reads is a business
-   decision. State it: write the function in the logic module under
-   its closed-row signature (or annotate the hole in place,
-   `?line :: { count :: Int } -> String`) and the ambiguity
-   dissolves.
-4. **Keep one obligation in flight.** One ambiguity anywhere in the
-   module suppresses every hole report in it, so fill line by line —
-   footprint decisions as they arise, the seed hole last, when it
-   reports the finished model row and one business-named value
+   sub-row is deliberately the function's own statement, so the
+   compiler cannot fill the hole: the stage reports an ambiguous
+   `Union`, and the hole reports beside it (compiler
+   `0.15.16-variant.7` and later), its type wrapped in the unsolved
+   constraint it shares unknowns with:
+
+   ```
+   Hole 'increment' has the inferred type
+
+     Union t0 t1
+       ( count :: Int
+       | t2
+       )
+      => Record t0 -> Record t0
+   ```
+
+   Read it as: your function is `Record t0 -> Record t0` for a
+   sub-row `t0` of the fed row `( count :: Int | t2 )` — *which*
+   fields is a business decision the compiler refuses to make. State
+   it: write the function in the logic module under its closed-row
+   signature and both messages dissolve together.
+4. **Work one declaration at a time.** Module checking stops at the
+   first failing declaration, so holes in a later top level wait
+   their turn — but a bambik app is one pipeline in one declaration,
+   and within it every hole reports together with the ambiguities:
+   the app's whole obligation list is one compile away. Fill the
+   footprint decisions as they arise, the seed hole last — it then
+   reports the finished model row, and one business-named value
    (`freshCount`, `plannedTrip`) closes the app. The *Type-inference
    gotchas* above name two more places an ambiguity surfaces away
    from its own line.

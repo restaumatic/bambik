@@ -2,7 +2,7 @@
 
 bambik does **not** build with a stock PureScript compiler. It pins a **fork of
 `purs`** — the `purescript` dependency in [`package.json`](../package.json),
-version `0.15.16-variant.6` — which adds first-class syntactic sugar for
+version `0.15.16-variant.7` — which adds first-class syntactic sugar for
 **Variants**, the exact dual of the record sugar (`{ … }`, `_.label`) that stock
 PureScript already gives products.
 
@@ -21,7 +21,7 @@ of `Prim.Record`), implicitly in scope, plus three sugar forms.
 
 The fork is a **pinned release, not a local build**: `package.json` depends on
 the `purescript` npm package by the URL of the release tarball
-(`erykciepiela/purescript` tag `v0.15.16-variant.6`, branch
+(`erykciepiela/purescript` tag `v0.15.16-variant.7`, branch
 `variant-type-sugar` on the `0.15.16` development line), and `package-lock.json`
 pins its integrity hash — so `npm install` is the whole toolchain step: nothing
 else to install, nothing to compile, no checkout to keep beside the project.
