@@ -18,7 +18,10 @@
       pre.compiler mark { background: #6b5d1f; color: #fff8dc; padding: 0 2px; border-radius: 2px; }
       pre.compiler::before { content: "compiler"; position: absolute; top: 6px; right: 10px; font-family: Roboto, sans-serif; font-size: 0.7rem; color: #999; letter-spacing: 0.08em; text-transform: uppercase; }
       code mark { background: #fffbdd; border: 1px solid #f0e6a0; border-radius: 3px; padding: 0 1px; }
-      .aside { border-left: 3px solid #ccc; padding-left: 16px; margin-top: 40px; }
+      .shots { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
+      .shots figure { flex: 1 1 260px; margin: 0; }
+      .shots img { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; }
+      .shots figcaption { color: #555; font-size: 0.85rem; margin-top: 6px; }
       .note { color: #555; font-size: 0.9rem; }
       footer { margin-top: 48px; border-top: 1px solid #ddd; padding-top: 12px; color: #555; font-size: 0.9rem; }
     </style>
@@ -26,16 +29,17 @@
   <body>
     <h1>How a bambik app is written</h1>
 
-    <p>Every demo page on this site shows a finished listing. This page shows what
-    a listing hides: the session that produces one — the order the code is
+    <p>Every demo page on this site shows a finished listing. This page shows
+    what a listing hides: the session that produces one — the order the code is
     written in, and what the compiler says back after each step. The session
-    below is real: the app is the
-    <a href="7guis/counter-mdc3/">counter demo</a> in the two-module layout
-    every bambik app ships with (a view module and a logic module beside it),
-    and every compiler response is verbatim output of bambik's pinned
-    PureScript compiler (0.15.16-variant.7, the variant fork — whose
-    hole reporting through constraint failures this very workflow
-    motivated), captured by replaying the session.</p>
+    below is real: the app is a small pizza-order form — a text field, a live
+    line, an <em>Order</em> button, a confirmation snackbar — in the two-module
+    layout every bambik app ships with (a view module and a logic module beside
+    it), and every compiler response is verbatim output of bambik's pinned
+    PureScript compiler (0.15.16-variant.7, the variant fork — whose hole
+    reporting through constraint failures this very workflow motivated),
+    captured by replaying the session. The screenshots at the end are the
+    session's own app, running.</p>
 
     <p>The method rests on one rule, the <em>anchor invariant</em> (see the
     <a href="./#code-style">code style</a> note): every view line names exactly
@@ -44,280 +48,276 @@
     <strong>case</strong> it emits or shows (<code>@l</code> on an emitter,
     pane or status), the named <strong>read function</strong> it renders, or
     <strong>nothing</strong> at all, chrome writing nothing. So the view is
-    written first, with typed holes (<code>?countLine</code> — a name the
+    written first, with typed holes (<code>?orderLine</code> — a name the
     compiler must type rather than resolve) standing in for the functions that
     do not exist yet, and the logic module is written second, to the names and
     types the view demanded.</p>
 
     <h2>1 · The view, whole, before any logic exists</h2>
 
-    <p>You know what the screen is before you know what the model is: a
-    headline showing a count, a button that increments it. Write exactly that.
-    Three term obligations enter as holes — the display's read function, the
-    button's handler, the seed. Note what is <em>not</em> a hole: the field and
-    case anchors (<code>@"Count"</code>) and the chrome
-    (<code>elevation5</code>, <code>card</code>, <code>headlineLarge</code>)
-    are complete as written.</p>
+    <p>You know what the screen is before you know what the model is: a field
+    for the pizza, a line showing what's in the oven, a button that orders, a
+    toast that confirms. Write exactly that. Three term obligations enter as
+    holes — the display's read, the confirmation copy, the seed. Note what is
+    <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>), the case
+    anchor (<code>@"Order"</code>, stated once on the button and adopted once
+    by the snackbar), and the chrome (<code>elevation5</code>, <code>card</code>,
+    <code>headlineSmall</code>) are complete as written.</p>
 
-    <h3>src/Counter.purs</h3>
-<pre><code class="language-haskell">module Counter (counter) where
+    <h3>src/Order.purs</h3>
+<pre><code class="language-haskell">module Order (orderApp) where
 
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import PUI (applied, mvu)
+import PUI (forCase, with)
 import PUI.Web.HTML (body, shown, text)
-import PUI.Web.MDC3 (button, card, elevation5, headlineLarge)
+import PUI.Web.MDC3 (button, card, elevation5, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Category as Category
 
-counter :: Effect Unit
-counter =
+orderApp :: Effect Unit
+orderApp =
   body $
     elevation5 $
       card $ ( Category.do
-          headlineLarge (text ?countLine) # shown
-          button @"Count" {} # applied ?increment
-      ) # mvu ?freshCount
+          filledTextField @"Pizza" {}
+          headlineSmall (text ?orderLine) # shown
+          button @"Order" {}
+          snackbar # forCase @"Order" ?confirmedLine
+      ) # with ?start
 </code></pre>
 
-    <p>The compiler answers with four messages: a refusal pointing at
-    <code>shown</code>, then the shape of every hole.</p>
+    <p>The compiler answers with four messages. The first is a refusal at
+    <code>shown</code> — and it already knows something no logic line has said
+    yet:</p>
 
 <pre class="compiler">Error 1 of 4:
 
-in module Counter
-at src/Counter.purs:16:45 - 16:50 (line 16, column 45 - line 16, column 50)
+  in module Order
+  at src/Order.purs:17:45 - 17:50 (line 17, column 45 - line 17, column 50)
 
-  No type class instance was found for
+    No type class instance was found for
 
-    Prim.Row.Union t2
-                   t3
-                   t4
+      Prim.Row.Union t2
+                     t3
+                     <mark>( "Pizza" :: String</mark>
+                     <mark>| t4</mark>
+                     <mark>)</mark>
 
-  The instance head contains unknown type variables. Consider adding a type annotation.
+    The instance head contains unknown type variables. Consider adding a type annotation.
 
-while checking that type forall (read :: Row Type) (extra :: Row Type) (row :: Row Type). Union @Type read extra row =&gt; PUI Web (Record read) (Record ...) -&gt; PUI Web (Record row) (Record row)
-  is at least as general as type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
-while checking that expression shown
-  has type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
-in value declaration counter
+  while checking that type forall (read :: Row Type) (extra :: Row Type) (row :: Row Type). Union @Type read extra row =&gt; PUI Web (Record read) (Record ...) -&gt; PUI Web (Record row) (Record row)
+    is at least as general as type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
+  while checking that expression shown
+    has type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
+  in value declaration orderApp
   ⋯</pre>
 
 <pre class="compiler">Error 2 of 4:
-  ⋯
-  Hole 'countLine' has the inferred type
 
-    <mark>Union t0 t1 t2 =&gt; Record t0 -&gt; String</mark>
+  at src/Order.purs:17:31 - 17:41 (line 17, column 31 - line 17, column 41)
+
+    Hole 'orderLine' has the inferred type
+
+      <mark>Union t0 t1</mark>
+        <mark>( "Pizza" :: String</mark>
+        <mark>| t2</mark>
+        <mark>)</mark>
+       <mark>=&gt; Record t0 -&gt; String</mark>
+  ⋯
 
 Error 3 of 4:
-  ⋯
-  Hole 'increment' has the inferred type
 
-    <mark>Record t0 -&gt; Record t0</mark>
+  at src/Order.purs:19:39 - 19:53 (line 19, column 39 - line 19, column 53)
+
+    Hole 'confirmedLine' has the inferred type
+
+      t0 -&gt; t1
+  ⋯
 
 Error 4 of 4:
-  ⋯
-  Hole 'freshCount' has the inferred type
 
-    <mark>Union t0 t1 t2 =&gt; Record t2</mark></pre>
+  at src/Order.purs:20:16 - 20:22 (line 20, column 16 - line 20, column 22)
+
+    Hole 'start' has the inferred type
+
+      Record t0
+  ⋯</pre>
 
     <p>The refusal is the design, not an obstacle. <code>shown</code> reads a
     sub-row of the model (<code>Union read extra row</code>: what the line
     reads, plus everything it doesn't, is the model) — and <em>which</em>
     sub-row a display reads is a business decision, so the compiler declines to
-    make it. What it can say, it says: each hole reports its shape, wrapped in
-    the constraint it takes part in — the display wants a <em>read</em>
-    (<code>Record t0 -&gt; String</code>), the button wants a
-    <em>transformer</em> (<code>Record t0 -&gt; Record t0</code>), the seed is
-    a <em>record to close</em> (<code>Record t2</code>). The rows themselves
-    are the decisions still to make. The first one: this line shows a count.
-    Write the read function down, its footprint stated as a closed row.</p>
+    make it. But the fed row it prints already carries
+    <code>( "Pizza" :: String | t4 )</code>: the editor's field anchor taught
+    the pipeline the model's first field before any logic exists. The display
+    hole reports the same contract from its side — a read
+    <code>Record t0 -&gt; String</code> over a sub-row of that row. The two
+    holes further down are still shapeless: constraint solving stops at the
+    first refusal, so each decision you land sharpens the next report. The
+    first decision: this line shows the pizza. Write the read function down,
+    its footprint stated as a closed row.</p>
 
-    <h2>2 · The first business function — and the model surfaces</h2>
+    <h2>2 · One decision in — every refusal gone</h2>
 
-    <h3>src/CounterLogic.purs — the logic module begins</h3>
-<pre><code class="language-haskell">module CounterLogic (countLine) where
+    <h3>src/OrderLogic.purs — the logic module begins</h3>
+<pre><code class="language-haskell">module OrderLogic (orderLine) where
 
-import Prelude (show)
+import Prelude ((&lt;&gt;))
 
-countLine :: { count :: Int } -> String
-countLine { count } = show count
+orderLine :: { "Pizza" :: String } -> String
+orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 </code></pre>
 
-    <h3>src/Counter.purs — the display line takes its name</h3>
-<pre><code class="language-haskell">import CounterLogic (countLine)
+    <h3>src/Order.purs — the display line takes its name</h3>
+<pre><code class="language-haskell">import OrderLogic (orderLine)
           ⋮
-          headlineLarge (text countLine) # shown
+          headlineSmall (text orderLine) # shown
 </code></pre>
 
-    <p>The same refusal moves one line down — and this time the hole beside it
-    is worth reading closely:</p>
+    <p>One closed-row signature in, and the next compile has no refusal left at
+    all — just the two remaining holes, both now fully typed:</p>
 
-<pre class="compiler">Error 1 of 3:
+<pre class="compiler">Error 1 of 2:
 
-in module Counter
-at src/Counter.purs:18:32 - 18:50 (line 18, column 32 - line 18, column 50)
+  in module Order
+  at src/Order.purs:20:39 - 20:53 (line 20, column 39 - line 20, column 53)
 
-  No type class instance was found for
+    Hole 'confirmedLine' has the inferred type
 
-    Prim.Row.Union t4
-                   t5
-                   <mark>( count :: Int</mark>
-                   <mark>| t8</mark>
-                   <mark>)</mark>
+      <mark>{ "Pizza" :: String</mark>
+      <mark>| t0</mark>
+      <mark>}</mark>
+      <mark>-&gt; String</mark>
 
-  The instance head contains unknown type variables. Consider adding a type annotation.
+    You could substitute the hole with one of these values:
 
-while applying a function applied
-  of type Functor t3 =&gt; Union @Type t4 t5 t6 =&gt; (Record t4 -&gt; Record t4) -&gt; PUI t3 (Record t4) (Variant t7) -&gt; PUI t3 (Record t6) (Record t6)
-  to argument ?increment
+      <mark>_."Pizza"</mark>                   :: String
+      Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
+      <mark>OrderLogic.orderLine</mark>        :: { "Pizza" :: String
+                                     }
+                                     -&gt; String
+      Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
+  ⋯
+
+Error 2 of 2:
+
+  at src/Order.purs:21:16 - 21:22 (line 21, column 16 - line 21, column 22)
+
+    Hole 'start' has the inferred type
+
+      { "Pizza" :: String
+      | t0
+      }
   ⋯</pre>
 
-<pre class="compiler">Error 2 of 3:
-  ⋯
-  Hole 'increment' has the inferred type
+    <p>This is the other side of the workflow. The confirmation copy sits at a
+    <em>pinned</em> position — the button replays the row it is fed, so the
+    payload of case <code>"Order"</code> is exactly the pipeline's row, and the
+    hole comes back complete, suggestions included: <code>_."Pizza"</code>
+    would do, and the compiler even offers <code>OrderLogic.orderLine</code>,
+    the function written thirty seconds earlier. At pinned positions the
+    compiler speaks first; at subsuming positions (the display read above) the
+    footprint is yours to state — the signature is the decision.</p>
 
-    <mark>Union t0 t1</mark>
-      <mark>( count :: Int</mark>
-      <mark>| t2</mark>
-      <mark>)</mark>
-     <mark>=&gt; Record t0 -&gt; Record t0</mark></pre>
+    <h2>3 · The last hole is the seed — and the model is closed</h2>
 
-    <p>One read function in, and the hole states the whole contract: the
-    handler is a transformer <code>Record t0 -&gt; Record t0</code> over a
-    sub-row <code>t0</code> of the fed row <code>( count :: Int | t2 )</code> —
-    the display's footprint already taught the pipeline the model (the tail is
-    open because the seed is still a hole), and the hole hands it back.
-    <em>Which</em> fields the handler touches is again yours to state:
-    <code>increment</code> reads and writes the count.</p>
-
-    <h2>3 · The last hole is the seed — and the compiler spells the model</h2>
-
-    <h3>src/CounterLogic.purs — the handler joins</h3>
-<pre><code class="language-haskell">increment :: { count :: Int } -> { count :: Int }
-increment { count } = { count: count + 1 }
-</code></pre>
-
-    <h3>src/Counter.purs — the button line takes its name</h3>
-<pre><code class="language-haskell">          button @"Count" {} # applied increment
+    <h3>src/OrderLogic.purs — the confirmation copy joins</h3>
+<pre><code class="language-haskell">confirmedLine :: { "Pizza" :: String } -> String
+confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 </code></pre>
 
 <pre class="compiler">Error found:
-in module Counter
-at src/Counter.purs:19:15 - 19:26 (line 19, column 15 - line 19, column 26)
+in module Order
+at src/Order.purs:21:16 - 21:22 (line 21, column 16 - line 21, column 22)
 
-  Hole 'freshCount' has the inferred type
+  Hole 'start' has the inferred type
 
-    <mark>{ count :: Int</mark>
-    <mark>| t0</mark>
+    <mark>{ "Pizza" :: String</mark>
     <mark>}</mark>
-
-in value declaration counter
   ⋯</pre>
 
-    <p>The view computed the model. Nothing anywhere declared
-    <code>{ count :: Int }</code> — it is the union of what the lines demanded:
-    the read function's footprint and the handler's row. The seed is that row's
-    value at t=0, and it is business data with a business name — never
-    <code>initial</code>.</p>
+    <p>The view computed the model — and with both read functions stating
+    closed footprints, the row is now <em>closed</em>: the app's state is
+    exactly <code>{ "Pizza" :: String }</code>, derived from what the lines
+    demanded, declared nowhere. The seed is that row's value at t=0, business
+    data under a business name — never <code>initial</code>.</p>
 
     <h2>4 · Green</h2>
 
-    <h3>src/CounterLogic.purs</h3>
-<pre><code class="language-haskell">module CounterLogic (countLine, freshCount, increment) where
+    <h3>src/OrderLogic.purs</h3>
+<pre><code class="language-haskell">module OrderLogic (confirmedLine, orderLine, plainMargherita) where
 
-import Prelude ((+), show)
+import Prelude ((&lt;&gt;))
 
-freshCount :: { count :: Int }
-freshCount = { count: 0 }
+plainMargherita :: { "Pizza" :: String }
+plainMargherita = { "Pizza": "Margherita" }
 
-countLine :: { count :: Int } -> String
-countLine { count } = show count
+orderLine :: { "Pizza" :: String } -> String
+orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
-increment :: { count :: Int } -> { count :: Int }
-increment { count } = { count: count + 1 }
+confirmedLine :: { "Pizza" :: String } -> String
+confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 </code></pre>
 
-    <h3>src/Counter.purs</h3>
-<pre><code class="language-haskell">module Counter (counter) where
+    <h3>src/Order.purs</h3>
+<pre><code class="language-haskell">module Order (orderApp) where
 
 import Prelude ((#), ($), Unit)
 
-import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (applied, mvu)
+import OrderLogic (confirmedLine, orderLine, plainMargherita)
+import PUI (forCase, with)
 import PUI.Web.HTML (body, shown, text)
-import PUI.Web.MDC3 (button, card, elevation5, headlineLarge)
+import PUI.Web.MDC3 (button, card, elevation5, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Category as Category
 
-counter :: Effect Unit
-counter =
+orderApp :: Effect Unit
+orderApp =
   body $
     elevation5 $
       card $ ( Category.do
-          headlineLarge (text countLine) # shown
-          button @"Count" {} # applied increment
-      ) # mvu freshCount
+          filledTextField @"Pizza" {}
+          headlineSmall (text orderLine) # shown
+          button @"Order" {}
+          snackbar # forCase @"Order" confirmedLine
+      ) # with plainMargherita
 </code></pre>
 
-<pre class="compiler">[1 of 2] Compiling CounterLogic
-[2 of 2] Compiling Counter</pre>
+<pre class="compiler">[1 of 2] Compiling OrderLogic
+[2 of 2] Compiling Order</pre>
 
-    <p>Every anchor resolved: <code>countLine</code> and <code>increment</code>
-    are pure functions under unit test in the logic module, <code>@"Count"</code>
-    is both the button's caption and its event case, and the chrome names
-    nothing because it writes nothing. This is the app running as the
-    <a href="7guis/counter-mdc3/">counter demo</a> — same two modules, the view
-    in MDC3's vocabulary.</p>
+    <p>Every anchor resolved: <code>orderLine</code> and
+    <code>confirmedLine</code> are pure functions under unit test in the logic
+    module, <code>@"Pizza"</code> is both the field's caption and its name in
+    the model, <code>@"Order"</code> is both the button's caption and the case
+    the snackbar adopts, and the chrome names nothing because it writes
+    nothing.</p>
 
-    <h2>5 · Compile-green is not done</h2>
+    <h2>5 · Compile-green is not done — run it</h2>
 
     <p class="note">The types prove the wiring, not that data reaches the
     screen: a record merge withholds until every field of its row has been fed,
     so the session ends by <em>running</em> the app. A pane that stays blank is
-    a knowledge gate withholding — and it is a named failure, not a mystery:
-    the 3-second starvation watchdog prints the gate and its missing fields to
-    the console, and the emission trace logs every propagation decision (see
-    the <a href="./#tracing">tracing</a> note). Here the seed feeds the one
-    gate, the headline renders <code>0</code>, and the session is over.</p>
+    a knowledge gate withholding — a named failure, not a mystery: the
+    3-second starvation watchdog prints the gate and its missing fields to the
+    console, and the emission trace logs every propagation decision (see the
+    <a href="./#tracing">tracing</a> note). Here the seed feeds the one gate
+    and the page renders at once — these are the session's own screenshots,
+    taken headlessly (the second after a scripted click on
+    <em>Order</em>):</p>
 
-    <div class="aside">
-      <h2>Aside · where the compiler speaks first</h2>
-
-      <p>The session above had to decide every footprint itself, because its
-      holes sat at <em>subsuming</em> positions — stages that deliberately read
-      a sub-row of their pipeline's row, so each hole reported a shape with the
-      row left as your decision. At <em>pinned</em> positions the roles
-      reverse: the type comes back complete, and the first suggestion is the
-      answer. A status line over a payload the pipeline already fixed:</p>
-
-<pre><code class="language-haskell">booking =
-  body $
-    ( Category.do
-        button @"Book" {}
-        snackbar # forCase @"Book" ?bookedLine
-    ) # with { name: "Jo" }
-</code></pre>
-
-<pre class="compiler">at src/Booking.purs:16:36 - 16:47 (line 16, column 36 - line 16, column 47)
-
-  Hole 'bookedLine' has the inferred type
-
-    <mark>{ name :: String</mark>
-    <mark>}</mark>
-    <mark>-&gt; String</mark>
-
-  You could substitute the hole with one of these values:
-
-    <mark>_.name</mark>                      :: String
-    Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
-    Data.Show.show              :: forall @a. Show a =&gt; a -&gt; String
-    Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
-  ⋯</pre>
-
-      <p>The button replays the row it was fed, the seed pinned that row to
-      <code>{ name :: String }</code>, so the copy function's type is fully
-      known — and the first suggestion is the answer.</p>
+    <div class="shots">
+      <figure>
+        <img src="data:image/png;base64,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AKA43wpJtJ9MwqePrrtFkqEHCeGbLu2FkN8cIpMAQH0Gf6cQ+c0e90LRizQSPQskXXulku9CQSABQF/TXiCJDisn0aMoanlib+LBb8x03EdHGgFAX+E7f83zjt8E6nEaiV4Gkq696odxIwAIGp3GT2+iqGUNAUmLrsygI5YAoC9qb95dx0t6sqHA5oTftRFFANDX+Y2cgOTQ12u7QGlBCAFAsApsDrl1+0oNXeS7u0QUAPRFFyh+fF2oQPL1jR0SAKAvChMAACiAQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACiBQAIAKIFAAgAogUACACjh/wMAAP//wmUs9wAAAAZJREFUAwAECfoYy+5W1wAAAABJRU5ErkJggg==" alt="The seeded render: the Pizza field holds Margherita, the line reads In the oven: Margherita, and the Order button waits." />
+        <figcaption>The seeded render — <code>plainMargherita</code> fed the
+        gate, the field and the line show it.</figcaption>
+      </figure>
+      <figure>
+        <img src="data:image/png;base64,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" alt="After clicking Order: a snackbar reads Margherita is on its way!" />
+        <figcaption>After <em>Order</em> — the button replays the row it was
+        fed, <code>confirmedLine</code> renders it.</figcaption>
+      </figure>
     </div>
 
     <footer>
