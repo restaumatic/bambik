@@ -114,6 +114,25 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   line ↔ field is no bijection (one `settled` spans fields, two lines
   may read one field, `+`-side lines anchor at cases), and making
   display lines fields would move copy back into state, reversing L17.
+- The **labelled group** `group @l` (MDC2/MDC3, admitted 2026-09-04) is
+  the boundary confirmed, not breached: it is a component, not an
+  ocular — its label is the sub-record field it nests (`field @l` fused
+  with the card surface), doubling as the heading copy verbatim and the
+  accessible group name (`role="group"`), so the label is an anchor
+  doing work, never a dead parameter. The criterion it instantiates is
+  the **leaf-fusion criterion**: `@l` fuses onto a wrapper exactly where
+  the label does work a trailing `# field @l` cannot. Chrome that gains
+  a label this way is *renamed into the component sort* — the blind
+  `card` stays for surfaces grouping no model, as `subStrong` stays for
+  flat sub-row focus. The criterion's closure (2026-09-05): the
+  plain-HTML floor's `input @l`/`textArea @l` fused too (the `name`
+  stamp was always work the bracket could not do), and with every public
+  editor lifted inside its vocabulary and sub-model nesting carried by
+  `group @l`, **`field` left the application surface** — it is no longer
+  re-exported from `PUI`, living as design-system plumbing beside
+  `widenRecordInput`; a nesting no mechanism fits is a
+  missing-vocabulary signal (L16), never a reason to reach for the
+  lens. Checkable form: `grep "field @" demo/` is empty, always.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 

@@ -61,6 +61,7 @@ module PUI.Web.MDC2
   , filledTextArea
   , filledTextField
   , filterChip
+  , group
   , headline1
   , headline2
   , headline3
@@ -1176,7 +1177,9 @@ elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 -- | *surface* and gives it no title (every `mdc-card__*` class in the spec
 -- | is optional structure, none of them a heading), so a card's heading is
 -- | ordinary typography placed in its content — `headline6`, `subtitle1`,
--- | `caption` — exactly as MD2's own examples write it.
+-- | `caption` — exactly as MD2's own examples write it. A card whose
+-- | content is one model sub-record is not chrome but the labelled group,
+-- | `group @l`.
 card :: Ocular (PUI Web)
 card content =
   div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ content
@@ -1185,6 +1188,45 @@ card content =
 -- | side at their natural width instead of stretched down its column.
 cardActions :: Ocular (PUI Web)
 cardActions = div >>> cl "mdc-card__actions"
+
+-- | A **labelled model group** — the card as visual wrapper *and*
+-- | presentation-model wrapper, one word. `group @l w` renders `w` on a
+-- | `card` headed by the label verbatim (`subtitle1`) and nests `w`'s model
+-- | under field `l`, stamping the label as the accessible group name
+-- | (`role="group"`, `aria-labelledby` the heading) — so the group's view
+-- | line anchors at its field like every labelled leaf, and the words
+-- | appear once. Without it a labelled group is three hand-aligned
+-- | spellings — the `card`, a `staticText` heading, a trailing `# field @l`
+-- | — free to drift apart.
+-- |
+-- | Derived, not primitive:
+-- |
+-- | ```
+-- | group @l w = card (heading >>> field @l w)      -- + the a11y stamp
+-- | ```
+-- |
+-- | well-defined because chrome commutes with the strengths (`Ocular`'s
+-- | admission law): `card w # field @l = card (w # field @l)`, so fusing
+-- | surface and lens loses nothing. The focus is any type `field @l`
+-- | accepts — an editor ensemble (`# group @"Customer"`), a `bracketed`
+-- | variant editor (`# group @"Fulfillment"`), a collection's array
+-- | (potluck's `# group @"Guests"` over `acted`, reorder's
+-- | `# group @"Setlist"` over `edited`). Fusion is earned by the
+-- | leaf criterion — the label does work a trailing `# field @l` cannot
+-- | (heading copy, accessible name) — so a card grouping no model (a
+-- | display card, a button row) stays the blind `card`, and a flat
+-- | sub-row focus stays `subStrong` under caller-chosen chrome.
+group
+  :: forall @l f f' b s t
+   . IsSymbol l
+  => Cons l f b s
+  => Cons l f' b t
+  => PUI Web f f'
+  -> PUI Web { | s } { | t }
+group w = wrap do
+  headingId <- liftEffect uniqueId
+  unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
+    shown ("id" := headingId $ subtitle1 $ staticText (reflectSymbol (Proxy @l))) >>> field @l w
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
 -- | the decision that must be made before anything else continues.

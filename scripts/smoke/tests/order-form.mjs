@@ -13,8 +13,12 @@ export const run = async ({ ev, assertEq, sleep }) => {
     })()`)
 
   await sleep(1500) // loadOrder delays 1s before the model arrives
+  assertEq(await ev(`JSON.stringify([...document.querySelectorAll('[role="group"]')].map(g =>
+    document.getElementById(g.getAttribute('aria-labelledby'))?.textContent))`),
+    '["Customer","Fulfillment","Payment"]',
+    'each labelled group stamps its label as heading and accessible group name (group @l)')
   assertEq(await fieldValue('Short ID'), '7', 'the load action fed the form')
-  assertEq(await fieldValue('First name'), 'John', 'nested customer record fed through field @"customer"')
+  assertEq(await fieldValue('First name'), 'John', 'nested Customer record fed through group @"Customer"')
   assertEq(await ev(`document.querySelector('textarea').value`), 'Very spicy, please!', 'the remarks textarea is fed')
 
   assertEq(await fieldValue('Time'), '8:30', 'the takeaway pane is shown with its payload')

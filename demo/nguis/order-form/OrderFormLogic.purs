@@ -33,7 +33,7 @@ distanceLine :: { km :: Int } -> String
 distanceLine { km } = "Distance " <> show km <> " km"
 
 fulfillmentOf ::
-  { fulfillment ::
+  { "Fulfillment" ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
       , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
@@ -43,7 +43,7 @@ fulfillmentOf ::
      , "Takeaway" :: { "Time" :: String }
      , "Delivery" :: { "Address" :: String }
      ]
-fulfillmentOf { fulfillment } = match
+fulfillmentOf { "Fulfillment": fulfillment } = match
   { "Dine in": \r -> ."Dine in" { "Table": r."Table" }
   , "Takeaway": \r -> ."Takeaway" { "Time": r."Time" }
   , "Delivery": \r -> ."Delivery" { "Address": r."Address" }
@@ -59,14 +59,14 @@ deliveryLine :: { "Address" :: String } -> String
 deliveryLine r = "delivery to " <> r."Address"
 
 deliveryDistance ::
-  { fulfillment ::
+  { "Fulfillment" ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
       , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
       ]
   }
   -> [ estimated :: { km :: Int }, unknown :: {} ]
-deliveryDistance { fulfillment } = match
+deliveryDistance { "Fulfillment": fulfillment } = match
   { "Dine in": const (.unknown {})
   , "Takeaway": const (.unknown {})
   , "Delivery": \d -> match { estimated: \e -> .estimated { km: e.km }, unknown: const (.unknown {}) } d.distance
@@ -104,29 +104,29 @@ selection = _.selected
 orderLine :: { "Short ID" :: String } -> String
 orderLine r = "Order " <> r."Short ID"
 
-summaryLine :: { "Short ID" :: String, "Unique ID" :: String, customer :: { "First name" :: String, "Last name" :: String } } -> String
-summaryLine r = "Summary: Order " <> r."Short ID" <> " (uniquely " <> r."Unique ID" <> ") for " <> r.customer."First name" <> " " <> r.customer."Last name" <> ", fulfilled as "
+summaryLine :: { "Short ID" :: String, "Unique ID" :: String, "Customer" :: { "First name" :: String, "Last name" :: String } } -> String
+summaryLine r = "Summary: Order " <> r."Short ID" <> " (uniquely " <> r."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as "
 
 payingLine :: { "Method" :: [ "cash" :: {}, "card" :: {} ] } -> String
 payingLine r = "Paying by " <> caseText r."Method"
 
-paidLine :: { payment :: { "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String } } -> String
-paidLine r = ", paid " <> r.payment."Paid" <> " by " <> caseText r.payment."Method"
+paidLine :: { "Payment" :: { "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String } } -> String
+paidLine r = ", paid " <> r."Payment"."Paid" <> " by " <> caseText r."Payment"."Method"
 
 loadOrder :: {} -> Aff
   { "Short ID" :: String
   , "Unique ID" :: String
-  , customer ::
+  , "Customer" ::
       { "First name" :: String
       , "Last name" :: String
       }
-  , fulfillment ::
+  , "Fulfillment" ::
       [ "Dine in" :: { "Table" :: String }
       , "Takeaway" :: { "Time" :: String }
       , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
       ]
   , "Total" :: String
-  , payment ::
+  , "Payment" ::
       { "Method" ::
           [ "cash" :: {}
           , "card" :: {}
@@ -142,13 +142,13 @@ loadOrder _ = do
   pure
     { "Short ID": "7"
     , "Unique ID": "4617821"
-    , customer:
+    , "Customer":
         { "First name": "John"
         , "Last name": "Doe"
         }
-    , fulfillment: ."Takeaway" { "Time": "8:30" }
+    , "Fulfillment": ."Takeaway" { "Time": "8:30" }
     , "Total": "12.30"
-    , payment: { "Method": ."cash" {}, "Paid": "0.00" }
+    , "Payment": { "Method": ."cash" {}, "Paid": "0.00" }
     , "Remarks": "Very spicy, please!"
     }
 

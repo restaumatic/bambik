@@ -105,7 +105,11 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
-import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, field, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
+-- `field` is deliberately absent: the leaf lift is design-system plumbing —
+-- every vocabulary editor is `field @l`-lifted inside, the labelled group
+-- (`group @l`) carries sub-model nesting, so application code never lifts a
+-- focus itself (the `widenRecordInput` precedent, one adopter later).
+import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked

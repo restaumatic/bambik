@@ -206,8 +206,10 @@ subStrong g =
 -- | background is as fresh as the last feed: whole-row editors live inside
 -- | a loop (`mvu`/`looped`/`bracketed`), whose re-broadcast keeps every
 -- | sibling's background current within the turn. It also nests
--- | sub-composites: a closed group under a record-valued field is
--- | `group # field @l`, the background carried like any leaf's.
+-- | sub-composites: a closed sub-form under a record-valued field is
+-- | `subForm # field @l`, the background carried like any leaf's — and the
+-- | MDC vocabularies fuse this nesting with the card surface and heading
+-- | as the labelled group, `group @l` (`PUI.Web.MDC2`/`.MDC3`).
 field
   :: forall @l p f f' b s s'
    . IsSymbol l

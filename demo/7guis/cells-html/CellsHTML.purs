@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($), (<>), (>>>))
 import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (field, foreach, mvu, settled, toCase, updated)
+import PUI (foreach, mvu, settled, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, input, label, p, staticText, table, td, text, tr, (:=))
 import QualifiedDo.Category as Category
 
@@ -15,7 +15,7 @@ cellsHTML =
       p (text selectedLine) # shown
       p ( label $ Category.do
           (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
-          "size" := "32" $ input "text" # field @"Formula (e.g. =SUM(A0:A5)*2)" ) # settled commit
+          "size" := "32" $ input @"Formula (e.g. =SUM(A0:A5)*2)" "text" ) # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
           ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
               ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) # toCase @"cellClicked" _.key ) # updated (match { cellClicked: selectCell })

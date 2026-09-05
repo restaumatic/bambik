@@ -265,16 +265,20 @@ textOf f = wrap do
     , fromUser: \prop -> Ref.write prop propRef
     }
 
--- | A bare single-line input of the given `type` ("text", "number",
--- | "email", ...): shows the string it is given and reports every
--- | keystroke.
+-- | A single-line input of the given `type` ("text", "number",
+-- | "email", ...), label-indexed at the `String` field it edits (L3):
+-- | shows the string it is given, reports every keystroke, and stamps its
+-- | label as the host `name`. The floor has no caption chrome of its own,
+-- | so a caption stays a sibling `label`+`staticText` merge — and the
+-- | `field @l` lift is fused in here as in every vocabulary's editors, so
+-- | application code never lifts a scalar leaf itself.
 -- |
 -- | Typing is never interrupted — while the field has focus, values
 -- | arriving from elsewhere are not written into it, so an update can't
 -- | swallow a half-typed word; the field picks the model up again the
 -- | moment it loses focus.
-input :: String -> PUI Web String String
-input type_ = "type" := type_ $ wrap do
+input :: forall @l r rest. IsSymbol l => Cons l String rest r => String -> PUI Web { | r } { | r }
+input type_ = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
   -- focus guard: skip the write while the user is in the field, but still
   -- echo, so downstream stages keep flowing
   element "input" (pure unit)
@@ -293,10 +297,11 @@ input type_ = "type" := type_ $ wrap do
         prop value
     }
 
--- | The multi-line `input` — same guarantee: typing is never interrupted by
--- | values arriving from elsewhere.
-textArea :: PUI Web String String
-textArea = wrap do
+-- | The multi-line `input` — same citizenship (label-indexed, `name`
+-- | stamped) and same guarantee: typing is never interrupted by values
+-- | arriving from elsewhere.
+textArea :: forall @l r rest. IsSymbol l => Cons l String rest r => PUI Web { | r } { | r }
+textArea = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing

@@ -11,9 +11,9 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-openingSetlist :: { order :: Array { id :: String, "Title" :: String } }
+openingSetlist :: { "Setlist" :: Array { id :: String, "Title" :: String } }
 openingSetlist =
-  { order:
+  { "Setlist":
       [ { id: "t1", "Title": "Track 1" }
       , { id: "t2", "Title": "Track 2" }
       , { id: "t3", "Title": "Track 3" }
@@ -22,23 +22,23 @@ openingSetlist =
   }
 
 rotateAction
-  :: { order :: Array { id :: String, "Title" :: String } }
+  :: { "Setlist" :: Array { id :: String, "Title" :: String } }
   -> Aff [ reordered :: Array { id :: String, "Title" :: String } ]
-rotateAction { order } = pure (.reordered (rotate { order }))
+rotateAction { "Setlist": tracks } = pure (.reordered (rotate tracks))
 
 shuffleAction
-  :: { order :: Array { id :: String, "Title" :: String } }
+  :: { "Setlist" :: Array { id :: String, "Title" :: String } }
   -> Aff [ reordered :: Array { id :: String, "Title" :: String } ]
-shuffleAction { order } = liftEffect (.reordered <$> shuffleOrder order)
+shuffleAction { "Setlist": tracks } = liftEffect (.reordered <$> shuffleOrder tracks)
 
-rotate :: { order :: Array { id :: String, "Title" :: String } } -> Array { id :: String, "Title" :: String }
-rotate { order } = maybe order (\{ head, tail } -> snoc tail head) (uncons order)
+rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
+rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)
 
 setOrder
   :: Array { id :: String, "Title" :: String }
-  -> { order :: Array { id :: String, "Title" :: String } }
-  -> { order :: Array { id :: String, "Title" :: String } }
-setOrder order pl = pl { order = order }
+  -> { "Setlist" :: Array { id :: String, "Title" :: String } }
+  -> { "Setlist" :: Array { id :: String, "Title" :: String } }
+setOrder tracks pl = pl { "Setlist" = tracks }
 
 shuffleOrder :: Array { id :: String, "Title" :: String } -> Effect (Array { id :: String, "Title" :: String })
 shuffleOrder tracks = do

@@ -6,9 +6,9 @@ import Data.Array (length)
 import Data.Maybe (Maybe(..))
 import Data.Variant.Case (caseText)
 
-invitation :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }
+invitation :: { "Guests" :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }
 invitation =
-  { guests:
+  { "Guests":
       [ { name: "Ada", "Dish": Nothing }
       , { name: "Grace", "Dish": Nothing }
       , { name: "Edsger", "Dish": Nothing }
@@ -16,8 +16,8 @@ invitation =
       ]
   }
 
-guestCountLine :: { guests :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
-guestCountLine { guests } = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
+guestCountLine :: { "Guests" :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
+guestCountLine { "Guests": guests } = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
 
 guestName :: { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } -> String
 guestName { name } = name

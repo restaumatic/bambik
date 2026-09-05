@@ -127,7 +127,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | `observed` | the gated displays' `+`-diagonal sibling: every event forwards once at feed time; the status's own emissions are dropped (events are one-shot) |
   | `required` / `optional` | adopt a type-changing selector as an always-selected / possibly-unselected **whole-row citizen** (label derived from the leaf's closed rows, background carried like `field @l`'s); `optional @c @n` completes the `Just`-only echo and keeps the field as the **named two-case variant** `[ c :: a, n :: {} ]` the application spells (`# optional @"chosen" @"unchosen"`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case |
   | `every` | the heartbeat wire: pass-through plus a periodic step over a sub-row, merged back over the last value |
-  | adopter family | `asField`/`forProperty`/`atField`/`field`/`subStrong`/`subChoice`/`toCase`/`toCases`/`atCase`/`forCase`/`forCases`, plus `acted`/`optioned` — the view-side read adopters `projection` (2026-08-31) and `projected` (2026-09-02) are both DELETED: copy is a read function at the leaf (`text lineOf`), never an adopter bracket — doc/research-copy-is-a-function.md. `forCase @l f` is the derived single-case status convenience, `forCases { l: f }` by law — kept for the `@l` grammar (restored same day after a brief dissolution); `forCases` takes the record of per-case copy functions directly, no `match` at the call site |
+  | adopter family | `asField`/`forProperty`/`atField`/`subStrong`/`subChoice`/`toCase`/`toCases`/`atCase`/`forCase`/`forCases`, plus `acted`/`optioned` — `field` is deliberately **not** re-exported (2026-09-05): the leaf lift is design-system plumbing (every vocabulary editor is `field @l`-lifted inside, `group @l` carries sub-model nesting), living beside `widenRecordInput`; `grep "field @" demo/` is empty — the view-side read adopters `projection` (2026-08-31) and `projected` (2026-09-02) are both DELETED: copy is a read function at the leaf (`text lineOf`), never an adopter bracket — doc/research-copy-is-a-function.md. `forCase @l f` is the derived single-case status convenience, `forCases { l: f }` by law — kept for the `@l` grammar (restored same day after a brief dissolution); `forCases` takes the record of per-case copy functions directly, no `match` at the call site |
 
   Durations are structural `{ ms :: Number }` throughout (`every`, `debounced`,
   `resolveFor`, `debouncedTextField`) — never `Milliseconds`.
@@ -179,9 +179,13 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   (`Cons l Number`, fraction 0–1) and the `output` status (the one fixed
   canonical row here, `[ event :: String ] → {}` — HTML's element for the
   result of a user action, shown in place since plain HTML has nothing
-  self-dismissing). `radioButton` stays a scalar optic-position
-  leaves. Scalar editors take their business label in app code via `field @l`
-  (`input "text" # field @"Name"`).
+  self-dismissing), joined 2026-09-05 by `input @l` and `textArea @l` (the
+  focus-guarded text editors, `Cons l String` — no caption chrome of their
+  own, a caption staying a sibling `label`+`staticText` merge). With that,
+  **`field` left the application surface entirely** (no longer re-exported
+  from `PUI`): the leaf lift is design-system plumbing in every vocabulary,
+  the plain-HTML floor included, and `radioButton` stays a scalar
+  optic-position leaf.
 
   **Structure computed from data is `PUI Web` all the way down** — no markup
   DSL — in two regimes:
@@ -214,10 +218,16 @@ design-system **umbrella**. What they share, stated once:
   (`card`/`cardActions`, dialogs, lists, typography, elevations) — and a
   **surface ocular carries no copy config**: MD2 gives a card twelve optional
   structure classes and no heading, MD3's card element is a bare `<slot>`, so
-  `card` is a plain `Ocular` in all five vocabularies and a card's heading is
-  ordinary typography placed in its content (order-form's sections lead with
-  `subtitle1`/`titleMedium`). Config on an ocular would put one child of the
-  surface in config position and the rest in content position.
+  `card` is a plain `Ocular` in all five vocabularies and a blind card's
+  heading is ordinary typography placed in its content (order-form's
+  Identifier/Total cards lead with `subtitle1`/`titleMedium`). Config on an
+  ocular would put one child of the surface in config position and the rest
+  in content position. A card whose content is one model sub-record is not
+  chrome but the **labelled group** `group @l` (MDC2/MDC3, admitted
+  2026-09-04 — guardrails L3): `field @l` fused with the card surface, the
+  label the field, the heading verbatim and the accessible group name
+  (`role="group"`); the fusion criterion (a label fuses exactly where it
+  does work `# field @l` alone cannot) is recorded at L3.
 - **Every leaf is label-indexed** (L3) and captions itself from that label
   verbatim; editors also stamp it as the host `name`. Config overrides carry
   real copy the label cannot be — the key is `floatingLabel:` on the MDC text
@@ -242,7 +252,7 @@ Per-catalogue deltas:
 
 | Module | Basis | Deltas worth knowing |
 | --- | --- | --- |
-| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `listOf` (a **dynamic collection component**, `{ \\| provided } -> (i -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web i { \\| r }` — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav and content are sibling stages over the same types), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**) |
+| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `listOf` (a **dynamic collection component**, `{ \\| provided } -> (i -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web i { \\| r }` — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav and content are sibling stages over the same types), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `field @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
 | `PUI.Web.MDC3` | Google's `@material/web` custom elements — a leaf is `element "md-…"` plus property/event wiring: no foundation classes, no hand-fused ripple/label chrome | structured to **mirror MDC2** (same helper shapes, same definition order). MD3 renames arrive as the catalogue does: the MD3 typescale (`displayLarge`…`labelSmall`), four emphasis siblings (`elevatedButton`/`tonalButton`/`outlinedButton`/`textButton`), `elevation1/3/5`, and **no `banner`** (MD3 dropped it). Catalogue entries `@material/web` lacks (segmented button, snackbar, card, top app bar, drawer, data table, image list, tooltip) are hand-rolled over the `--md-sys-*` tokens, each injecting its stylesheet once via `ensureStyle`; pages need only the Roboto + Material Symbols fonts |
 | `PUI.Web.Shoelace` | `@shoelace-style/shoelace` custom elements, Lit-based so no bind deferral | the MDC3 recipe verbatim. Exclusive: the star `rating` editor. Shoelace's own names where the concept differs — `textField`/`textArea` (no fill/outline split, plain `label`), `toast` (`<sl-alert>`), `progressBar`, `sliderLive` (`<sl-range>`). Page links the light-theme CSS from the CDN; icons from the CDN base path set in the FFI. Typography is deliberately absent — Shoelace styles plain HTML, so the HTML oculars *are* the type scale |
 | `PUI.Web.Fluent` | Microsoft's `@fluentui/web-components` v3; tokens set globally from `webLightTheme` at load, so pages need no CSS link; labels associate via `<fluent-field>` wrappers | exclusives `ratingDisplay` (read-only — the catalogue has no star *editor*, and this vocabulary does not invent one) and `messageBar`; type ramp `title3`/`body1`/`caption1` over `<fluent-text>`. **Caveat**: FAST binds a beat after DOM insertion and replays pre-bind property writes at bind, and its update queue is rAF-driven (starving in frameless headless sessions) — so the dropdown/radio-group leaves defer writes on a **timer** poll (`whenBoundDo` in Fluent.js) and finish the two starvable registrations themselves; the dropdown's options must be wrapped in `<fluent-listbox>` (v3's markup contract) |
@@ -369,16 +379,18 @@ the dev server). Two suites: **demo/7guis/** (the
 | cells | **channel-fed 31×27 grid** — ~800 cells built once, `attrWith` + `text` in place, clicked key via `# toCase @l _.key`; hand-rolled formula evaluator over an `Expr` AST (nominal, since rows can't express μ) |
 
 The `-html` variants are the **plain-HTML floor**: one container `div` (so
-case panes re-attach inside the demo's own DOM), scalar leaves labelled
-in place (`input "text" # field @"Name"`), captions as `label`+`staticText`
+case panes re-attach inside the demo's own DOM), label-indexed leaves like
+every vocabulary's (`input @"Name" "text"`), captions as `label`+`staticText`
 merges, native `select` and `output`.
 
 ### nGUIs — one combinator each
 
 **Flagship.** order-form is the **four-direction showcase**: load action →
-`×→×` `looped` form (whole-row editor stages, sub-records nested via `field @l`;
-variant editors as `bracketed` pipelines of `tabBar`/`segmentedButton` +
-`inCase` editor panes; an **in-form Aff action** — the delivery distance is
+`×→×` `looped` form (whole-row editor stages, sub-records nested as labelled
+groups via `group @l` — Customer/Fulfillment/Payment, each label the field,
+the heading and the accessible group name at once — beside blind cards for
+the groups with no sub-record of their own; variant editors as `bracketed`
+pipelines of `tabBar`/`segmentedButton` + `inCase` editor panes; an **in-form Aff action** — the delivery distance is
 estimated on a button, `button @"Estimate distance" {}` →
 `action estimateDistance # atCase` → `updated`; the estimate records the
 address it was made for and `settled staleDistanceForgotten` keeps that
