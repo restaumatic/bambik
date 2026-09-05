@@ -24,28 +24,28 @@ orderFormMDC2 =
             (subtitle1 $ staticText "Identifier") # shown
             filledTextField @"Short ID" {}
             filledTextField @"Unique ID" {}
-          ( Category.do
-              filledTextField @"First name" {}
-              filledTextField @"Last name" {} ) # group @"Customer"
-          ( ( Category.do
-                tabBar @"selected"
-                  [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
-                filledTextField @"Table" {} # inCase @"Dine in" selection
-                filledTextField @"Time" {} # inCase @"Takeaway" selection
-                ( Category.do
-                    filledTextField @"Address" {} # settled staleDistanceForgotten
-                    ( Category.do
-                        button @"Estimate distance" { icon: "near_me" }
-                        indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-                    ( body1 $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase ) # group @"Fulfillment"
+          group @"Customer" $ Category.do
+            filledTextField @"First name" {}
+            filledTextField @"Last name" {}
+          group @"Fulfillment" $ ( Category.do
+              tabBar @"selected"
+                [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
+              filledTextField @"Table" {} # inCase @"Dine in" selection
+              filledTextField @"Time" {} # inCase @"Takeaway" selection
+              ( Category.do
+                  filledTextField @"Address" {} # settled staleDistanceForgotten
+                  ( Category.do
+                      button @"Estimate distance" { icon: "near_me" }
+                      indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
+                  ( body1 $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase
           card $ Category.do
             (subtitle1 $ staticText "Total") # shown
             filledTextField @"Total" {}
-          ( Category.do
-              segmentedButton @"Method"
-                [ choice @"cash", choice @"card" ] # required
-              filledTextField @"Paid" {}
-              ( body1 $ text payingLine ) # shown ) # group @"Payment"
+          group @"Payment" $ Category.do
+            segmentedButton @"Method"
+              [ choice @"cash", choice @"card" ] # required
+            filledTextField @"Paid" {}
+            ( body1 $ text payingLine ) # shown
           card $ Category.do
             (subtitle1 $ staticText "Remarks") # shown
             filledTextArea @"Remarks" { columns: 80, rows: 3 }

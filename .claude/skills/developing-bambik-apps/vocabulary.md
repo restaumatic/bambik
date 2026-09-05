@@ -54,7 +54,7 @@ direction module headers.
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | a field of the model, edited | the leaf with the field as its label: `filledTextField @"First name" {}`, `checkbox @l {}`, `slider @l {}` | every form | writing.md *Component citizenship* |
-| a card-headed group nesting a sub-model | `( Category.do … ) # group @"Customer"` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
+| a card-headed group nesting a sub-model | `group @"Customer" $ Category.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
 | a reusable sub-form over a flat sub-row (no wrapper field) | `addressForm # subStrong` | parcel | RecordToRecord.purs (`subStrong`) |
 | an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
 | a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |

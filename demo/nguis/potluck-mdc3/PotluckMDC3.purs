@@ -16,11 +16,11 @@ potluckMDC3 =
   body $
     elevation5 $ ( Category.do
         bodyMedium (text guestCountLine) # shown
-        ( list $
+        group @"Guests" $ list $
             ( listItem $ RecordToRecord.do
                 titleMedium (text guestName)
                 segmentedButton @"Dish"
-                  [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name" ) # group @"Guests"
+                  [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
         headlineSmall $ Category.do
           (staticText "On the table: ") # shown
           ( span $ text menuLine ) # foreach @"name" _."Guests"

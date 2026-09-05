@@ -270,7 +270,7 @@ the logic is the ordinary one.
 - **checkout** — a wizard: `folding` loops the step state silently, and two
   buttons carry their own cases into one loop case with `toCases`.
 - **order-form** — all four directions in one screen: `looped` form with
-  labelled groups (`# group @"Customer"`), a variant editor with
+  labelled groups (`group @"Customer" $ …`), a variant editor with
   `bracketed`, the debounced summary, `armed` buttons, dispatch, statuses.
 
 When a screen needs something and the word for it is missing,

@@ -1036,9 +1036,11 @@ cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 -- | model under field `l`, stamping the label as the accessible group name
 -- | (`role="group"`, `aria-labelledby` the heading) — so the group's view
 -- | line anchors at its field like every labelled leaf, and the words
--- | appear once. Without it a labelled group is three hand-aligned
--- | spellings — the `card`, a `staticText` heading, a trailing `# field @l`
--- | — free to drift apart.
+-- | appear once. It draws the surface, so it **leads its lines like any
+-- | container** (`group @"Customer" $ …`), never trailing as a `#` chain.
+-- | Without it a labelled group is three hand-aligned spellings — the
+-- | `card`, a `staticText` heading, a trailing `# field @l` — free to
+-- | drift apart.
 -- |
 -- | Derived, not primitive:
 -- |
@@ -1049,10 +1051,10 @@ cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 -- | well-defined because chrome commutes with the strengths (`Ocular`'s
 -- | admission law): `card w # field @l = card (w # field @l)`, so fusing
 -- | surface and lens loses nothing. The focus is any type `field @l`
--- | accepts — an editor ensemble (`# group @"Customer"`), a `bracketed`
--- | variant editor (`# group @"Fulfillment"`), a collection's array
--- | (potluck's `# group @"Guests"` over `acted`, reorder's
--- | `# group @"Setlist"` over `edited`). Fusion is earned by the
+-- | accepts — an editor ensemble (`group @"Customer" $ …`), a `bracketed`
+-- | variant editor (`group @"Fulfillment" $ …`), a collection's array
+-- | (potluck's `group @"Guests"` over `acted`, reorder's
+-- | `group @"Setlist"` over `edited`). Fusion is earned by the
 -- | leaf criterion — the label does work a trailing `# field @l` cannot
 -- | (heading copy, accessible name) — so a card grouping no model (a
 -- | display card, a button row) stays the blind `card`, and a flat

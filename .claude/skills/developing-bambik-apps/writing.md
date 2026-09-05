@@ -225,10 +225,13 @@ elevations, ...) are shape-preserving decorators — wrap freely; code
 order = DOM order.
 
 A card whose content is one model sub-record is not chrome but a
-**labelled group** — `( … ) # group @"Customer"` (MDC2/MDC3) states the
+**labelled group** — `group @"Customer" $ …` (MDC2/MDC3) states the
 surface, the heading and the `field @l` nesting in one word: the label
 is the field the group nests, the heading copy verbatim, and the
-accessible group name (`role="group"`). It is fused for the same reason
+accessible group name (`role="group"`). Because it draws the surface,
+the group **leads its lines like any container** (`card $`,
+`confirmed cfg $`) — never trailing as a `#` chain — so the `@l` anchor
+sits at the head of the block it wraps. It is fused for the same reason
 the leaves are — the label does work a trailing `# field @l` cannot
 (heading copy, accessible name) — so hand-spelling the trio (`card`, a
 `staticText` heading, `# field @l`) is the smell `group` deletes. A card
@@ -238,7 +241,7 @@ cards); a flat sub-row focus stays `# subStrong` (parcel's address
 form). The bare `field @l` itself is **design-system plumbing, not
 application vocabulary** (not re-exported from `PUI`): every vocabulary
 editor is `field @l`-lifted inside — the plain-HTML floor's
-`input @"Name" "text"` included — and sub-model nesting is `# group @l`,
+`input @"Name" "text"` included — and sub-model nesting is `group @l`,
 so a nesting no mechanism fits is a missing-vocabulary signal, never a
 reason to reach for the lens.
 
@@ -286,7 +289,7 @@ tip-calculator's money readouts — and for **pure chrome in a pipeline**:
 a blind card's caption is `(subtitle1 $ staticText "…") # shown`,
 registered at build, releasing every fed row; a card whose content is a
 model sub-record needs no such line — its heading is the label of
-`# group @l`). The rung trails like
+`group @l`). The rung trails like
 every data concern — the line leads with the visual content, the policy
 rides at its end with `#`. A live readout as a
 pipeline stage is just a display whose gate opens instantly.
@@ -486,8 +489,9 @@ element row narrow, so the id is never passed through and there is
 no call-site widening. (The same rule at a linear pipeline's `×→+`
 polarity flip is `# armed`: the emit stage reads the sub-row its
 emitters replay.) The result is a first-class
-`Array a → Array a` stage: nest it in a form via `# group @l` (reorder's
-`# group @"Setlist"`) or feed it straight to `# mvu`.
+`Array a → Array a` stage: nest it in a form under `group @l` (reorder's
+`group @"Setlist" $ list …`, the group leading like any container) or
+feed it straight to `# mvu`.
 
 Rows need stable identity (an id field) — the key is both the
 reconciliation identity and the return address of each edit, so an array
@@ -628,7 +632,7 @@ anchor, and the anchor's kind says what the line is:
 
 - a **field** — the `@l` on an editor, selector or labelled group: the
   label *is* the model field the line edits (`filledTextField @"First name" {}`,
-  `dropdown @"Room" {} […]`, a sub-form's `# group @"Customer"`, the
+  `dropdown @"Room" {} […]`, a sub-form's `group @"Customer" $ …`, the
   plain-HTML floor's `input @"Name" "text"`);
 - a **case** — the `@l` on an emitter, pane or status adoption: the
   label *is* the business case the line emits or shows
