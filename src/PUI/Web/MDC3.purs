@@ -427,7 +427,9 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
   attribute "type" "textarea"
   attribute "label" config.floatingLabel
   attribute "rows" (show config.rows)
-  attribute "style" ("width: " <> show config.columns <> "ch;")
+  -- `columns` is the preferred width; the card (or any container) wins on a
+  -- narrow viewport — a leaf never escapes its surface
+  attribute "style" ("width: " <> show config.columns <> "ch; max-width: 100%;")
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
