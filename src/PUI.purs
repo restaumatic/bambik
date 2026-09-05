@@ -199,7 +199,7 @@ instance Functor m => Strong (PUI m) where
             mab <- Ref.read lastab
             case mab of
               Nothing -> do
-                guard.blocked "Strong.first: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value."
+                guard.blocked "Strong.first: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value." []
                 tr "Strong.first: emission withheld (pair state unknown)" b
               Just prevab -> prop (Tuple b (snd prevab))
       }
@@ -218,7 +218,7 @@ instance Functor m => Strong (PUI m) where
             mab <- Ref.read lastab
             case mab of
               Nothing -> do
-                guard.blocked "Strong.second: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value."
+                guard.blocked "Strong.second: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value." []
                 tr "Strong.second: emission withheld (pair state unknown)" b
               Just prevab -> prop (Tuple (fst prevab) b)
       }
@@ -271,7 +271,7 @@ instance Functor m => Costrong (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw `unfirst`/`colens` chain from inside (`seeded`)."
+              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
               tr "Costrong.unfirst: input withheld (state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
@@ -290,7 +290,7 @@ instance Functor m => Costrong (PUI m) where
           ma <- Ref.read aRef
           case ma of
             Nothing -> do
-              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw chain from inside (`seeded`)."
+              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw chain from inside (`seeded`)." []
               tr "Costrong.unsecond: input withheld (state unprimed)" b
             Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
@@ -344,7 +344,7 @@ instance Functor m => Coresolving (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Use `folding`, which takes the fold's initial state as an argument, or seed a raw `coshutter` chain's loop branch (`seeded`)."
+              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Use `folding`, which takes the fold's initial state as an argument, or seed a raw `coshutter` chain's loop branch (`seeded`)." []
               tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop -> p'.fromUser case _ of
@@ -552,7 +552,7 @@ resolveFor millis p = wrap ado
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value."
+              guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value." []
               tr "Resolving.resolve: loop branch withheld (state unprimed)" b
             Just c -> prop $ Right c
     }
@@ -579,7 +579,7 @@ instance Functor m => Retaining (PUI m) where
             mc <- Ref.read cRef
             case mc of
               Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`)."
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`)." []
                 tr "Retaining.retain: emission withheld (state unprimed)" b
               Just c -> prop $ Tuple b c
       }
@@ -626,7 +626,7 @@ gatedRecordOutputs direction labels1 labels2 exact1 exact2 sub1 sub2 prop = do
     let mp2 = unsafePerformEffect $ Ref.read p2Last
     case mp2 of
       Nothing -> do
-        guard1.blocked $ starving fields1 fields2
+        guard1.blocked (starving fields1 fields2) labels2
         tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
       Just p2val -> do
         guard1.fed *> guard2.fed
@@ -637,7 +637,7 @@ gatedRecordOutputs direction labels1 labels2 exact1 exact2 sub1 sub2 prop = do
     let mp1 = unsafePerformEffect $ Ref.read p1Last
     case mp1 of
       Nothing -> do
-        guard2.blocked $ starving fields2 fields1
+        guard2.blocked (starving fields2 fields1) labels1
         tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
       Just p1val -> do
         guard1.fed *> guard2.fed
@@ -720,14 +720,20 @@ instance Applicative m => VariantToVariant (PUI m) where
 foreign import data Logged :: Type
 
 -- | Where diagnostics go. A carrier installs one; until then both are no-ops,
--- | so nothing prints even with the switches on.
+-- | so nothing prints even with the switches on. `warn` carries, beside the
+-- | message, the **field labels the failure is about** (the starving gate's
+-- | missing sibling fields; empty when the failure has no field locus) — as
+-- | data, so a carrier's sink can point at the labels' stamped hosts rather
+-- | than parse prose: the browser sink resolves each label through the stamp
+-- | invariant (`[name=…]`/`[aria-label=…]`) and logs the elements themselves,
+-- | clickable in DevTools.
 type Sink =
   { trace :: String -> Logged -> Effect Unit
-  , warn :: String -> Effect Unit
+  , warn :: String -> Array String -> Effect Unit
   }
 
 sinkRef :: Ref.Ref Sink
-sinkRef = unsafePerformEffect (Ref.new { trace: \_ _ -> pure unit, warn: \_ -> pure unit })
+sinkRef = unsafePerformEffect (Ref.new { trace: \_ _ -> pure unit, warn: \_ _ -> pure unit })
 
 -- | Install the sink. `PUI.Web` passes the browser console at its mount
 -- | entries; a different host passes whatever it logs to.
@@ -776,23 +782,26 @@ tr tag a = do
 warn :: String -> Effect Unit
 warn msg = do
   sink <- Ref.read sinkRef
-  sink.warn msg
+  sink.warn msg []
 
 -- | One-shot **starvation watchdog** for a knowledge gate. Every gated
 -- | combinator withholds what it cannot yet complete — correct, but
 -- | *silent*: an unprimed gate renders as a blank screen with no
 -- | diagnostic. The guard turns that into a self-explaining failure:
--- | `blocked msg` (called on each withheld emission or input) arms a timer
--- | on its first call; if the gate hasn't opened (`fed`) within 3 seconds,
--- | a single console warning prints `msg`, naming the gate and what it is
--- | waiting for. Fires at most once per gate instance, and only under
--- | `setDiagnostics true`.
-gateGuard :: Effect { blocked :: String -> Effect Unit, fed :: Effect Unit }
+-- | `blocked msg labels` (called on each withheld emission or input) arms a
+-- | timer on its first call; if the gate hasn't opened (`fed`) within 3
+-- | seconds, a single console warning prints `msg`, naming the gate and what
+-- | it is waiting for — and hands the sink `labels`, the missing fields as
+-- | data (the record merges pass the starving sibling's labels; guards with
+-- | no field locus pass `[]`), so the browser sink can log the labels'
+-- | stamped host elements beside the message. Fires at most once per gate
+-- | instance, and only under `setDiagnostics true`.
+gateGuard :: Effect { blocked :: String -> Array String -> Effect Unit, fed :: Effect Unit }
 gateGuard = do
   fedRef <- Ref.new false
   armedRef <- Ref.new false
   pure
-    { blocked: \msg -> do
+    { blocked: \msg labels -> do
         enabled <- Ref.read diagnosticsRef
         armed <- Ref.read armedRef
         when (enabled && not armed) do
@@ -803,7 +812,7 @@ gateGuard = do
               fed <- Ref.read fedRef
               unless fed do
                 sink <- Ref.read sinkRef
-                sink.warn msg
+                sink.warn msg labels
     , fed: Ref.write true fedRef
     }
 
@@ -867,7 +876,7 @@ updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
           ms <- Ref.read sRef
           case ms of
             Nothing -> do
-              guard.blocked "updated: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)."
+              guard.blocked "updated: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)." []
               tr "updated: event withheld (no retained state yet)" e
             Just s -> do
               tr "updated: folding event" e

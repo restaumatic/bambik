@@ -114,33 +114,38 @@ const main = async () => {
   let failures = 0
   try {
     for (const { name, mod } of mods) {
-      console.log(`\n▶ ${name} (${mod.url})`)
-      const session = await openSession(cdpBase, base + mod.url)
-      await new Promise(r => setTimeout(r, 1200)) // page + MDC init
-      const assertEq = (actual, expected, label) => {
-        // `ev()` yields undefined when the page expression produced no value —
-        // a selector that missed, a page that never mounted. JSON.stringify
-        // maps undefined to undefined on BOTH sides, so a naive compare would
-        // read that as a pass: an assertion that checks nothing. Reject it.
-        if (actual === undefined || expected === undefined) {
-          const which = actual === undefined && expected === undefined ? 'both sides are'
-            : actual === undefined ? 'the actual value is' : 'the expected value is'
-          console.log(`  FAIL ${label} — ${which} undefined (no value came back from the page; the assertion proves nothing)`)
-          failures++
-          return
+      // a test is one page (`url`) or a sweep (`pages`) — the twin suites run
+      // the same `run` against every vocabulary sibling, one session each
+      const pages = mod.pages ?? [{ url: mod.url }]
+      for (const page of pages) {
+        console.log(`\n▶ ${name} (${page.url})`)
+        const session = await openSession(cdpBase, base + page.url)
+        await new Promise(r => setTimeout(r, 1200)) // page + MDC init
+        const assertEq = (actual, expected, label) => {
+          // `ev()` yields undefined when the page expression produced no value —
+          // a selector that missed, a page that never mounted. JSON.stringify
+          // maps undefined to undefined on BOTH sides, so a naive compare would
+          // read that as a pass: an assertion that checks nothing. Reject it.
+          if (actual === undefined || expected === undefined) {
+            const which = actual === undefined && expected === undefined ? 'both sides are'
+              : actual === undefined ? 'the actual value is' : 'the expected value is'
+            console.log(`  FAIL ${label} — ${which} undefined (no value came back from the page; the assertion proves nothing)`)
+            failures++
+            return
+          }
+          const ok = JSON.stringify(actual) === JSON.stringify(expected)
+          console.log(`  ${ok ? 'PASS' : 'FAIL'} ${label}${ok ? '' : ` — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`}`)
+          if (!ok) failures++
         }
-        const ok = JSON.stringify(actual) === JSON.stringify(expected)
-        console.log(`  ${ok ? 'PASS' : 'FAIL'} ${label}${ok ? '' : ` — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`}`)
-        if (!ok) failures++
+        const sleep = ms => new Promise(r => setTimeout(r, ms))
+        try {
+          await mod.run({ ev: session.ev, session, assertEq, sleep, page: page.label ?? page.url })
+        } catch (e) {
+          console.log(`  FAIL ${name} crashed: ${e.message}`)
+          failures++
+        }
+        await session.close()
       }
-      const sleep = ms => new Promise(r => setTimeout(r, ms))
-      try {
-        await mod.run({ ev: session.ev, assertEq, sleep })
-      } catch (e) {
-        console.log(`  FAIL ${name} crashed: ${e.message}`)
-        failures++
-      }
-      await session.close()
     }
   } finally {
     const gone = new Promise(r => proc.once('exit', r))

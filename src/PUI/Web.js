@@ -7,9 +7,19 @@
 export const traceSink = (tag) => (value) => () =>
   console.debug("%c[bambik]%c " + tag, "color:#6200ee;font-weight:bold", "color:inherit", value);
 
-// warnSink :: String -> Effect Unit
-export const warnSink = (msg) => () =>
-  console.warn("%c[bambik]%c " + msg, "color:#b26a00;font-weight:bold", "color:inherit");
+// warnSink :: String -> Array String -> Effect Unit
+// Beside the message, the failure's field labels arrive as data; the stamp
+// invariant makes each label findable in the DOM (`name` on form citizens,
+// `aria-label` on quantity displays, `aria-labelledby`-named groups), so the
+// warning logs the labels' host elements themselves — clickable in DevTools,
+// jumping straight from the starving gate to the place on the page.
+export const warnSink = (msg) => (labels) => () => {
+  const hosts = labels.flatMap((l) => [
+    ...document.getElementsByName(l),
+    ...[...document.querySelectorAll("[aria-label]")].filter((e) => e.getAttribute("aria-label") === l),
+  ]);
+  console.warn("%c[bambik]%c " + msg, "color:#b26a00;font-weight:bold", "color:inherit", ...hosts);
+};
 
 // hostTracing :: Effect Boolean
 export function hostTracing() {

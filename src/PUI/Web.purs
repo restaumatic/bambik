@@ -209,7 +209,7 @@ foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> 
 foreign import hostTracing :: Effect Boolean
 foreign import hostDiagnostics :: Effect Boolean
 foreign import traceSink :: String -> Logged -> Effect Unit
-foreign import warnSink :: String -> Effect Unit
+foreign import warnSink :: String -> Array String -> Effect Unit
 
 -- | Hand the browser's console and diagnostics switches to `PUI`'s diagnostics,
 -- | which take all three as parameters and have no JavaScript of their own:

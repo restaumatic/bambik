@@ -1001,15 +1001,19 @@ screen. A blank pane or a stale readout is almost always a **knowledge
 gate withholding**: a merge emits only once every operand has spoken, so
 one unfed sibling silences the whole record.
 
-Two aids diagnose this in the browser, and reading them is part of
+Three aids diagnose this in the browser, and reading them is part of
 writing the app, not an afterthought:
 
 - **The starvation watchdog** is on by default. A gate that withholds
   and is never fed within 3s prints one `console.warn` naming the gate,
   the exact missing fields, and the fix — `seeded`/`announce`, or the
-  seed argument of `feedback`/`folding`/`unfolding`. An unprimed gate is
-  therefore a named failure, not a blank screen. Opt out with
-  `window.__bambikNoWarn = true`.
+  seed argument of `feedback`/`folding`/`unfolding` — and, where the
+  missing fields have rendered editors, logs **those elements
+  themselves** beside the message (found through the stamp: `name`/
+  `aria-label` is the field label), so clicking the warning's element in
+  DevTools jumps from the starving gate to its place on the page. An
+  unprimed gate is therefore a named failure, not a blank screen. Opt
+  out with `window.__bambikNoWarn = true`.
 - **The emission trace** is `window.__bambikTrace = true`, also settable
   with `localStorage.setItem("bambik-trace", "true")`. It logs every
   propagation decision — stage-to-stage flow, `looped` re-feeds and
@@ -1018,6 +1022,17 @@ writing the app, not an afterthought:
   enable the Verbose log level in DevTools. The labels the trace prints
   are the ones adoption introduced (`toCase @l`, the emitter's own `@l`), which is
   the practical reason to name cases rather than inject them inline.
+- **The accessibility tree is the model, live.** Because every citizen
+  stamps its label (the anchor invariant's runtime mirror), DevTools'
+  Elements → Accessibility view — or the full-page accessibility tree
+  toggle — shows the app as the model's own words: labelled groups as
+  sub-records, editors as fields with their current values, buttons as
+  business cases; chrome is anonymous because it names nothing. The
+  trace is the time axis of the same picture, under the same labels. So
+  "which state is on screen" is answered by the platform's inspector
+  with no bambik-specific tooling — and a role + accessible-name
+  locator addresses any citizen identically across the vocabulary twins
+  (the library's own twin-swept smokes are written that way).
 
 An unprimed *entry* needs neither: `body` demands input `{}`, so a
 forgotten seed is a compile error at the mount point naming the

@@ -1,6 +1,5 @@
 // Minimal Chrome DevTools Protocol session for the smoke harness: one
-// WebSocket per page target, `Runtime.evaluate` as the only verb — every
-// assertion runs as an expression inside the page.
+// WebSocket per page target, PLACEHOLDER// assertion runs as an expression inside the page.
 export const openSession = async (cdpBase, url) => {
   const target = await fetch(`${cdpBase}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' })
     .then(r => r.json())
@@ -28,5 +27,5 @@ export const openSession = async (cdpBase, url) => {
     await fetch(`${cdpBase}/json/close/${target.id}`).catch(() => {})
     ws.close()
   }
-  return { ev, close }
+  return { ev, close, send }
 }
