@@ -281,6 +281,18 @@ slotCounter = unsafePerformEffect $ Ref.new 0
 -- | `PUI.Web.HTML.text` is outside the family: copy is a function, not a
 -- | field, so it carries no label to stamp — under host diagnostics it
 -- | plants a bare `text` comment marker, and in production nothing.
+-- |
+-- | The invariant's second half is the **accessible name**: it must be the
+-- | caption *verbatim*. Browsers compute names from RENDERED text, so a
+-- | catalogue's styling would leak into them — MD2's stylesheet uppercases
+-- | buttons, tabs and segments, once computing a `@"Count"` button's name
+-- | as "COUNT" — therefore every face whose styling transforms its caption
+-- | stamps `aria-label` with the caption verbatim (MDC2's button family,
+-- | tabs, segments and the menu anchor), keeping name = label exactly, in
+-- | every vocabulary and browser alike. The smoke harness enforces both
+-- | halves: role + accessible-name locators match exactly
+-- | (scripts/smoke/a11y.mjs), and axe's name-and-reference rules run per
+-- | vocabulary (tests/a11y-laws.mjs).
 data OptCaption = OptCaption
 
 instance ConvertOption OptCaption sym a a where

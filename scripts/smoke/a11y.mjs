@@ -28,13 +28,15 @@ export const a11y = (session) => {
   }
 
   // All un-ignored AX nodes matching the role and/or accessible name. Name
-  // matching is case-insensitive (after whitespace trim), deliberately: the
-  // accessible name is computed from RENDERED text, so a design system's
-  // `text-transform` reaches it — MD2 uppercases button labels, making the
-  // "Count" button's computed name "COUNT" — while the word itself is the
-  // twin-invariant part and its casing is that catalogue's presentation.
-  // (Playwright's getByRole matches names the same way, for the same reason.)
-  const norm = (s) => (s || '').trim().toLowerCase()
+  // matching is EXACT (after whitespace trim), and that exactness is itself
+  // a law under test: the accessible name is computed from RENDERED text, so
+  // a catalogue's `text-transform` would leak into it — MD2 uppercases
+  // buttons, tabs and segments, which once computed the "Count" button's
+  // name as "COUNT" — and the vocabularies therefore stamp `aria-label` with
+  // the caption verbatim wherever their styling transforms it, keeping the
+  // name the label exactly, in every vocabulary and browser alike. A miss
+  // here on one twin means that vocabulary's stamp has a hole.
+  const norm = (s) => (s || '').trim()
   const query = async ({ role, name }) => {
     const root = await ensure()
     const r = await send('Accessibility.queryAXTree', {

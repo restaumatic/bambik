@@ -299,7 +299,11 @@ buttonOf
   -> { | provided }
   -> PUI Web { | r } [ | cl ]
 buttonOf mModifier provided = recordToCase @l $ eventLeaf $
-  el "button" >>> cl "mdc-button" >>> modifier >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+  -- aria-label carries the caption VERBATIM: MD2's stylesheet uppercases the
+  -- rendered label, and Chrome computes accessible names from rendered text,
+  -- so without the stamp this button would announce and match as "COUNT"
+  -- where its label says "Count" — presentation leaking into the name
+  el "button" >>> cl "mdc-button" >>> modifier >>> "aria-label" := fromMaybe (reflectSymbol (Proxy @l)) config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     static (span >>> cl "mdc-button__ripple")
     static (span >>> cl "mdc-button__focus-ring")
     case config.icon of
@@ -334,7 +338,9 @@ fab
   => { | provided }
   -> PUI Web { | r } [ | cl ]
 fab provided = recordToCase @l $ eventLeaf $
-  el "button" >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe config.icon config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+  -- the announced name is the CASE label even for the glyph-only face —
+  -- the business action's word, never the icon ligature
+  el "button" >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe (reflectSymbol (Proxy @l)) config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     static (div >>> cl "mdc-fab__ripple")
     static (span >>> cl "mdc-fab__focus-ring")
     span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText config.icon
@@ -812,7 +818,9 @@ segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI 
 segmentedLeaf options =
   div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ wrap do
     segments <- for options \o -> do
-      _ <- unwrap (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> o.label <> "</div></button>"))
+      -- aria-label = the choice label verbatim (MD2 uppercases the rendered
+      -- segment text; the stamp keeps the computed name the label exactly)
+      _ <- unwrap (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> o.label <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> o.label <> "</div></button>"))
       node <- gets _.sibling
       pure { node, value: o.value }
     mPropRef <- liftEffect $ Ref.new Nothing
@@ -968,7 +976,9 @@ tabBarLeaf options = wrap do
     }
   where
   tabMarkup o =
-    "<button class=\"mdc-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">"
+    -- aria-label = the choice label verbatim: MD2 uppercases the rendered
+    -- tab text, and the computed name follows rendering without the stamp
+    "<button class=\"mdc-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\" aria-label=\"" <> o.label <> "\">"
       <> "<span class=\"mdc-tab__content\">"
       <> (case o.icon of
             Just icon' -> "<span class=\"mdc-tab__icon material-icons\" aria-hidden=\"true\">" <> icon' <> "</span>"
@@ -1354,7 +1364,7 @@ bannerContainer content = wrap do
 -- | a value the model keeps, use `select`.
 menu :: { label :: String } -> Ocular (PUI Web)
 menu config content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
-  _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> config.label <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
+  _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> config.label <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> config.label <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
   anchorNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.ripple."MDCRipple" anchorNode
   w <- unwrap (div >>> cl "mdc-menu" >>> cl "mdc-menu-surface" $ ul >>> cl "mdc-deprecated-list" >>> "role" := "menu" >>> "aria-hidden" := "true" >>> "aria-orientation" := "vertical" $ content)
