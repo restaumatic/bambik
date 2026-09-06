@@ -1,6 +1,6 @@
-module EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, theUsual, usualOrder) where
+module EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder) where
 
-import Prelude (min, otherwise, (*), (+), (<>), (==))
+import Prelude (min, otherwise, (*), (+), (-), (<>), (==))
 
 import Data.Number.Format (fixed, toStringWith)
 import Data.String (trim)
@@ -62,7 +62,13 @@ sugarsText n
 price :: { "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Extra shot" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ] } -> Number
 price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty": loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
-  discounted p = match { member: \_ -> p * 0.9, guest: \_ -> p } loyalty
+  discounted p = match { member: \_ -> p * (1.0 - memberDiscount), guest: \_ -> p } loyalty
+
+memberDiscount :: Number
+memberDiscount = 0.1
+
+loyaltyNote :: String
+loyaltyNote = "Members get " <> toStringWith (fixed 0) (memberDiscount * 100.0) <> "% off"
 
 sizePrice :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ] -> Number
 sizePrice = match { "Small": \_ -> 3.0, "Medium": \_ -> 3.5, "Large": \_ -> 4.0 }

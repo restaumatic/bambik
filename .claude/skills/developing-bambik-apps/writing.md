@@ -687,6 +687,17 @@ induces — view first, logic module written to its names — is
   output-polymorphic, so it seeds record pipelines and `×→+` emitters
   alike), and `# with {}` is written inline when the payload is the
   informationless unit, since naming `{}` is ceremony.
+- **A decorator rides its element, never leads the line.** `cl`, `clWhen`,
+  `attrWith` and `tooltip` modify the element they are given, so they are
+  composed onto a container with `>>>` (`div >>> attrWith "style" cellFace
+  $ …`) or trail a finished leaf with `#` (`span (text _.title) # clWhen
+  isCompleted "todo-done"`, `checkbox @"Loyalty" … # tooltip { text:
+  loyaltyNote }`). Leading with one — `tooltip { … } $ checkbox @"Loyalty"
+  …` — puts chrome, and for a tooltip copy, where the line's anchor
+  belongs. A tooltip's note that states a business fact is a named value
+  in the logic module (espresso-bar's `loyaltyNote`, derived from the
+  discount it describes); a wholly static note may stay inline like a
+  heading.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line) and
   rides at the end of the UI component's last content line — close the paren

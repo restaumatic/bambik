@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, theUsual, usualOrder)
+import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
 import PUI (armed, forCase, mvu, required, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, div, staticText, text)
@@ -34,7 +34,7 @@ espressoBarMDC2 =
             filterChip @"Decaf" {}
           toggleSwitch @"Takeaway cup" {}
           iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
-          tooltip { text: "Members get 10% off" } $ checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member")
+          checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member") # tooltip { text: loyaltyNote }
           divider # shown
           menu { label: "Presets" } ( RecordToVariant.do
             menuItem @"The usual" {} # with theUsual

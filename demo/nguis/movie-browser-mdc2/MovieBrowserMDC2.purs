@@ -23,10 +23,9 @@ movieBrowserMDC2 =
         filterChip @"Oscar" {} )
       ( elevation1 $ subtitle1 $ text favoritesLine ) # shown
       list $
-        ( clWhen isFavorite "mdc-deprecated-list-item--selected"
-          $ listItem $ ( Category.do
-            span (text titleLine) # shown
-            span (text yearLine) # shown
-            span (text ratingLine) # shown
-            iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
+        ( listItem $ Category.do
+          span (text titleLine) # shown
+          span (text yearLine) # shown
+          span (text ratingLine) # shown
+          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
     ) # mvu movieCatalogue
