@@ -15,13 +15,13 @@ orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
     topAppBar { title: "Order Dashboard" } $ ( Category.do
-        every tickPeriod ordersArrive
-        rangePicker @"Showing" {}
-          [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
-        board $ Category.do
-          statTile @"Orders" { unit: "placed" } ordersCount # shown
-          statTile @"Revenue" { unit: "EUR" } revenue # shown
-          gauge @"Kitchen load" kitchenLoad # shown
-          trendChart @"Order flow" orderFlow # shown
-          leaderboard @"Top dishes" topDishes # shown
+      every tickPeriod ordersArrive
+      rangePicker @"Showing" {}
+        [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
+      board $ Category.do
+        statTile @"Orders" { unit: "placed" } ordersCount # shown
+        statTile @"Revenue" { unit: "EUR" } revenue # shown
+        gauge @"Kitchen load" kitchenLoad # shown
+        trendChart @"Order flow" orderFlow # shown
+        leaderboard @"Top dishes" topDishes # shown
     ) # mvu openingDay

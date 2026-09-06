@@ -16,16 +16,16 @@ photoGalleryMDC3 =
   body $
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
-          ( RecordToRecord.do
-              listOf { selected: isOpen } albumChoices (span (text _.name)) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
-              divider
-              list RecordToRecord.do
-                listItem $ staticText "Every photo is an SVG"
-                listItem $ staticText "developed from its caption"
-                listItem $ staticText "No network involved"
-              labelSmall $ staticText "Favorites"
-              imageList { columns: 2 } $ each favoriteShots imageListItem )
-          ( Category.do
-              ( displayMedium $ text albumTitle ) # shown
-              imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
+        ( RecordToRecord.do
+          listOf { selected: isOpen } albumChoices (span (text _.name)) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
+          divider
+          list RecordToRecord.do
+            listItem $ staticText "Every photo is an SVG"
+            listItem $ staticText "developed from its caption"
+            listItem $ staticText "No network involved"
+          labelSmall $ staticText "Favorites"
+          imageList { columns: 2 } $ each favoriteShots imageListItem )
+        ( Category.do
+          ( displayMedium $ text albumTitle ) # shown
+          imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
       ) # mvu landscapesOpen

@@ -32,10 +32,10 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
     else case parseDate returnInput of
-        Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
-        Just back -> case returnBetween { out: start, back } of
-          Nothing -> Left "the return date is before the start date"
-          Just itinerary -> Right itinerary
+      Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
+      Just back -> case returnBetween { out: start, back } of
+        Nothing -> Left "the return date is before the start date"
+        Just itinerary -> Right itinerary
 
 bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 bookingState = parse >>> either (\problem -> .problem { problem })

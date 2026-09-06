@@ -17,11 +17,11 @@ import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 orderSheet :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 orderSheet =
   { cells: fromHomogeneous
-      { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
-      , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
-      , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
-      , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
-      }
+    { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
+    , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
+    , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
+    , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
+    }
   , selected: .none {}
   , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
@@ -64,7 +64,7 @@ selectCell key m = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:
 commit :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
 commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match
   { picked: \p ->
-      if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m
+    if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m
   , none: \_ -> m
   } selected
 
@@ -86,21 +86,21 @@ formatNum :: Number -> String
 formatNum n =
   let scaled = Int.round (n * 100.0)
   in if scaled `mod` 100 == 0
-     then show (scaled / 100)
-     else show (Int.toNumber scaled / 100.0)
+    then show (scaled / 100)
+    else show (Int.toNumber scaled / 100.0)
 
 evalCell :: Object String -> List String -> String -> [ numV :: Number, textV :: String, errV :: String ]
 evalCell cells visiting key =
   if key `elem` visiting then .errV "#CYCLE"
   else case lookup key cells of
-      Nothing -> .textV ""
-      Just src -> case charAt 0 src of
-        Just '=' -> case parseExpr (drop 1 src) of
-          Just { val, rest } | length (skipSpace rest) == 0 -> evalExpr cells (key : visiting) val
-          _ -> .errV "#PARSE"
-        _ -> case fromString src of
-          Just n -> .numV n
-          Nothing -> .textV src
+    Nothing -> .textV ""
+    Just src -> case charAt 0 src of
+      Just '=' -> case parseExpr (drop 1 src) of
+        Just { val, rest } | length (skipSpace rest) == 0 -> evalExpr cells (key : visiting) val
+        _ -> .errV "#PARSE"
+      _ -> case fromString src of
+        Just n -> .numV n
+        Nothing -> .textV src
 
 numAt :: Object String -> List String -> String -> Either String Number
 numAt cells visiting key = case evalCell cells visiting key of
@@ -153,14 +153,14 @@ parseFactor s0 =
     Just c
       | isDigit c || c == '.' -> parseNumber s
       | c == 'S' && take 4 s == "SUM(" -> do
-          { val: from, rest: r1 } <- parseRef (drop 4 s)
-          case charAt 0 r1 of
-            Just ':' -> do
-              { val: to, rest: r2 } <- parseRef (drop 1 r1)
-              case charAt 0 r2 of
-                Just ')' -> Just { val: Sum { from, to }, rest: drop 1 r2 }
-                _ -> Nothing
-            _ -> Nothing
+        { val: from, rest: r1 } <- parseRef (drop 4 s)
+        case charAt 0 r1 of
+          Just ':' -> do
+            { val: to, rest: r2 } <- parseRef (drop 1 r1)
+            case charAt 0 r2 of
+              Just ')' -> Just { val: Sum { from, to }, rest: drop 1 r2 }
+              _ -> Nothing
+          _ -> Nothing
       | isUpper c -> map (\{ val, rest } -> { val: Ref (refKey val), rest }) (parseRef s)
     _ -> Nothing
 

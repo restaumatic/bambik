@@ -17,53 +17,53 @@ import QualifiedDo.Category as Category
 orderFormMDC2 :: Effect Unit
 orderFormMDC2 =
   body $ ( Category.do
-      indeterminateLinearProgress @"busy" # action loadOrder
-      ( Category.do
-          ( headline6 $ text orderLine ) # shown
-          card $ Category.do
-            ( subtitle1 $ staticText "Identifier" ) # shown
-            filledTextField @"Short ID" {}
-            filledTextField @"Unique ID" {}
-          group @"Customer" $ Category.do
-            filledTextField @"First name" {}
-            filledTextField @"Last name" {}
-          group @"Fulfillment" $ ( Category.do
-              tabBar @"selected"
-                [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
-              filledTextField @"Table" {} # inCase @"Dine in" selection
-              filledTextField @"Time" {} # inCase @"Takeaway" selection
-              ( Category.do
-                  filledTextField @"Address" {} # settled staleDistanceForgotten
-                  ( Category.do
-                      button @"Estimate distance" { icon: "near_me" }
-                      indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-                  ( body1 $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase
-          card $ Category.do
-            ( subtitle1 $ staticText "Total" ) # shown
-            filledTextField @"Total" {}
-          group @"Payment" $ Category.do
-            segmentedButton @"Method"
-              [ choice @"cash", choice @"card" ] # required
-            filledTextField @"Paid" {}
-            ( body1 $ text payingLine ) # shown
-          card $ Category.do
-            ( subtitle1 $ staticText "Remarks" ) # shown
-            filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
-      body1 ( Category.do
-          text summaryLine # shown # debounced summarySettleTime
-          text dineInLine # shownWhen @"Dine in" fulfillmentOf
-          text takeawayLine # shownWhen @"Takeaway" fulfillmentOf
-          text deliveryLine # shownWhen @"Delivery" fulfillmentOf
-          text awayLine # shownWhen @"estimated" deliveryDistance
-          text paidLine # shown # debounced summarySettleTime )
-      ( RecordToVariant.do
-          button @"Submit order" { icon: "save" }
-          button @"Receipt" { icon: "file" } ) # armed
-      VariantToVariant.do
-        indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
-        indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
-      VariantToRecord.do
-        snackbar # forCase @"orderSubmitted" submittedLine
-        snackbar # forCase @"submissionFailed" rejectionLine
-        snackbar # forCase @"receiptPrinted" receiptLine
+    indeterminateLinearProgress @"busy" # action loadOrder
+    ( Category.do
+      ( headline6 $ text orderLine ) # shown
+      card $ Category.do
+        ( subtitle1 $ staticText "Identifier" ) # shown
+        filledTextField @"Short ID" {}
+        filledTextField @"Unique ID" {}
+      group @"Customer" $ Category.do
+        filledTextField @"First name" {}
+        filledTextField @"Last name" {}
+      group @"Fulfillment" $ ( Category.do
+        tabBar @"selected"
+          [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
+        filledTextField @"Table" {} # inCase @"Dine in" selection
+        filledTextField @"Time" {} # inCase @"Takeaway" selection
+        ( Category.do
+          filledTextField @"Address" {} # settled staleDistanceForgotten
+          ( Category.do
+            button @"Estimate distance" { icon: "near_me" }
+            indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
+          ( body1 $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase
+      card $ Category.do
+        ( subtitle1 $ staticText "Total" ) # shown
+        filledTextField @"Total" {}
+      group @"Payment" $ Category.do
+        segmentedButton @"Method"
+          [ choice @"cash", choice @"card" ] # required
+        filledTextField @"Paid" {}
+        ( body1 $ text payingLine ) # shown
+      card $ Category.do
+        ( subtitle1 $ staticText "Remarks" ) # shown
+        filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
+    body1 ( Category.do
+      text summaryLine # shown # debounced summarySettleTime
+      text dineInLine # shownWhen @"Dine in" fulfillmentOf
+      text takeawayLine # shownWhen @"Takeaway" fulfillmentOf
+      text deliveryLine # shownWhen @"Delivery" fulfillmentOf
+      text awayLine # shownWhen @"estimated" deliveryDistance
+      text paidLine # shown # debounced summarySettleTime )
+    ( RecordToVariant.do
+      button @"Submit order" { icon: "save" }
+      button @"Receipt" { icon: "file" } ) # armed
+    VariantToVariant.do
+      indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
+      indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
+    VariantToRecord.do
+      snackbar # forCase @"orderSubmitted" submittedLine
+      snackbar # forCase @"submissionFailed" rejectionLine
+      snackbar # forCase @"receiptPrinted" receiptLine
   ) # with {}

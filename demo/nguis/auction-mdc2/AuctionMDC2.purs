@@ -14,8 +14,8 @@ auctionMDC2 :: Effect Unit
 auctionMDC2 =
   body $
     card $ ( Category.do
-        ( body2 $ text bidLine ) # shown
-        ( Category.do
-            sliderLive @"Your bid ($)" {} # settled raiseTop
-            ( headline6 $ text topLine ) # shown ) # feedback noBids
+      ( body2 $ text bidLine ) # shown
+      ( Category.do
+        sliderLive @"Your bid ($)" {} # settled raiseTop
+        ( headline6 $ text topLine ) # shown ) # feedback noBids
     ) # mvu openingBid

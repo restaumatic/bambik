@@ -26,9 +26,9 @@ seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
 plan :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean } -> [ complete :: { "Meeting title" :: String, room :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean }, incomplete :: {} ]
 plan { "Meeting title": title, "Room": room, "Duration (min)": duration, "Attendees": seats, "Include a Teams link": online } = match
   { chosen: \r -> match
-      { chosen: \d -> .complete { "Meeting title": title, room: r, duration: d, attendees: seats.current, "Include a Teams link": online }
-      , unchosen: \_ -> .incomplete {}
-      } duration
+    { chosen: \d -> .complete { "Meeting title": title, room: r, duration: d, attendees: seats.current, "Include a Teams link": online }
+    , unchosen: \_ -> .incomplete {}
+    } duration
   , unchosen: \_ -> .incomplete {}
   } room
 

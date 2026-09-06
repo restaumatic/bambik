@@ -11,6 +11,6 @@ import QualifiedDo.Category as Category
 counterHTML :: Effect Unit
 counterHTML =
   body $ div $ ( Category.do
-      h4 (text countLine) # shown
-      button (staticText "Count") # toCase @"Count" identity # applied increment
+    h4 (text countLine) # shown
+    button (staticText "Count") # toCase @"Count" identity # applied increment
   ) # mvu freshCount

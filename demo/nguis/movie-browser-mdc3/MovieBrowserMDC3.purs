@@ -15,17 +15,17 @@ movieBrowserMDC3 :: Effect Unit
 movieBrowserMDC3 =
   body $
     card $ ( Category.do
-        tabBar @"category"
-          [ choice @"All", choice @"Action", choice @"Drama", choice @"Comedy" ]
-        chipSet ( Category.do
-            filterChip @"Classic" {}
-            filterChip @"Cult" {}
-            filterChip @"Oscar" {} )
-        ( elevation1 $ titleMedium $ text favoritesLine ) # shown
-        list $
-          ( listItem $ Category.do
-              span (text titleLine) # shown
-              span (text yearLine) # shown
-              span (text ratingLine) # shown
-              iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
+      tabBar @"category"
+        [ choice @"All", choice @"Action", choice @"Drama", choice @"Comedy" ]
+      chipSet ( Category.do
+        filterChip @"Classic" {}
+        filterChip @"Cult" {}
+        filterChip @"Oscar" {} )
+      ( elevation1 $ titleMedium $ text favoritesLine ) # shown
+      list $
+        ( listItem $ Category.do
+          span (text titleLine) # shown
+          span (text yearLine) # shown
+          span (text ratingLine) # shown
+          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
     ) # mvu movieCatalogue

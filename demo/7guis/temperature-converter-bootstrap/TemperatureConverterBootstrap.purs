@@ -12,6 +12,6 @@ temperatureConverterBootstrap :: Effect Unit
 temperatureConverterBootstrap =
   body $
     card $ ( Category.do
-        textField @"°C" {} # settled fromCelsius
-        textField @"°F" {} # settled fromFahrenheit
+      textField @"°C" {} # settled fromCelsius
+      textField @"°F" {} # settled fromFahrenheit
     ) # mvu roomTemperature

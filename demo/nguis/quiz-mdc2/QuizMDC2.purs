@@ -14,12 +14,12 @@ quizMDC2 :: Effect Unit
 quizMDC2 =
   body $
     card $ ( Category.do
-        linearProgress @"Progress" quizProgress # shown
-        ( body1 $ text questionLine ) # shown
-        ( Category.do
-            headline5 (text askedPrompt) # shown
-            listOf {} _.choices (text _.label) # toCase @"picked" _.key ) # provided @"asking" quizPhase # updated (match { picked: answer })
-        ( Category.do
-            headline6 (text finalScoreLine) # shown
-            button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase # updated (match { "Restart": const (const freshQuizRun) })
+      linearProgress @"Progress" quizProgress # shown
+      ( body1 $ text questionLine ) # shown
+      ( Category.do
+        headline5 (text askedPrompt) # shown
+        listOf {} _.choices (text _.label) # toCase @"picked" _.key ) # provided @"asking" quizPhase # updated (match { picked: answer })
+      ( Category.do
+        headline6 (text finalScoreLine) # shown
+        button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase # updated (match { "Restart": const (const freshQuizRun) })
     ) # mvu freshQuizRun

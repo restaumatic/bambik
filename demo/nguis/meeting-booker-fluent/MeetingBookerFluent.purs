@@ -16,22 +16,22 @@ meetingBookerFluent =
   body $
     card $ Category.do
       ( Category.do
-          textField @"Meeting title" {}
-          dropdown @"Room" {}
-            [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional @"chosen" @"unchosen" # settled seatsInRoom
-          radioGroup @"Duration (min)" {}
-            [ choice @"15", choice @"30", choice @"60" ] # optional @"chosen" @"unchosen"
-          toggleSwitch @"Include a Teams link" {}
-          divider # shown
-          slider @"Attendees" {} # inCase @"chosen" roomOf
+        textField @"Meeting title" {}
+        dropdown @"Room" {}
+          [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional @"chosen" @"unchosen" # settled seatsInRoom
+        radioGroup @"Duration (min)" {}
+          [ choice @"15", choice @"30", choice @"60" ] # optional @"chosen" @"unchosen"
+        toggleSwitch @"Include a Teams link" {}
+        divider # shown
+        slider @"Attendees" {} # inCase @"chosen" roomOf
       ) # mvu blankBooking
       ( div $ RecordToRecord.do
-          caption1 $ staticText "How attendees rated this room"
-          ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" ratedRoom
+        caption1 $ staticText "How attendees rated this room"
+        ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" ratedRoom
       ( div $ RecordToRecord.do
-          caption1 $ staticText "Seats taken"
-          progressBar @"Seats taken" seatOccupancy ) # shownWhen @"seated" seatsTaken
+        caption1 $ staticText "Seats taken"
+        progressBar @"Seats taken" seatOccupancy ) # shownWhen @"seated" seatsTaken
       ( Category.do
-          body1 (text planLine) # shown
-          button @"Book the room" {} ) # provided @"complete" plan
+        body1 (text planLine) # shown
+        button @"Book the room" {} ) # provided @"complete" plan
       messageBar # forCase @"Book the room" bookedLine

@@ -14,11 +14,11 @@ import Effect.Random (randomInt)
 openingSetlist :: { "Setlist" :: Array { id :: String, "Title" :: String } }
 openingSetlist =
   { "Setlist":
-      [ { id: "t1", "Title": "Track 1" }
-      , { id: "t2", "Title": "Track 2" }
-      , { id: "t3", "Title": "Track 3" }
-      , { id: "t4", "Title": "Track 4" }
-      ]
+    [ { id: "t1", "Title": "Track 1" }
+    , { id: "t2", "Title": "Track 2" }
+    , { id: "t3", "Title": "Track 3" }
+    , { id: "t4", "Title": "Track 4" }
+    ]
   }
 
 rotateAction

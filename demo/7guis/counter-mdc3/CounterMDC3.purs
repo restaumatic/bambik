@@ -13,6 +13,6 @@ counterMDC3 :: Effect Unit
 counterMDC3 =
   body $
     card $ ( Category.do
-        headlineLarge (text countLine) # shown
-        button @"Count" {} # applied increment
+      headlineLarge (text countLine) # shown
+      button @"Count" {} # applied increment
     ) # mvu freshCount

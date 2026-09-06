@@ -15,21 +15,21 @@ inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $
     card $ ( Category.do
-        ( caption $ text unreadLine ) # shown
-        listOf { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
-        ( Category.do
-            headline6 (text subjectLine) # shown
-            body2 (text fromLine) # shown
-            body1 (text bodyText) # shown
-            iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
-        ( Category.do
-            ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
-                button @"Delete" {} # with {}
-                button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
-            banner # forCase @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
-        fab @"Compose" { icon: "edit" } # applied composeMessage
-        ( menu { label: "Sort" } $ RecordToVariant.do
-            menuItem @"By sender" {}
-            menuItem @"By subject" {}
-            menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
+      ( caption $ text unreadLine ) # shown
+      listOf { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+      ( Category.do
+        headline6 (text subjectLine) # shown
+        body2 (text fromLine) # shown
+        body1 (text bodyText) # shown
+        iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
+      ( Category.do
+        ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
+          button @"Delete" {} # with {}
+          button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
+        banner # forCase @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
+      fab @"Compose" { icon: "edit" } # applied composeMessage
+      ( menu { label: "Sort" } $ RecordToVariant.do
+        menuItem @"By sender" {}
+        menuItem @"By subject" {}
+        menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
     ) # mvu mondayMail

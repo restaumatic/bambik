@@ -16,13 +16,13 @@ checkoutMDC3 :: Effect Unit
 checkoutMDC3 =
   body $
     card $ ( Category.do
-        ( Category.do
-            ( bodyMedium $ text cartLine ) # shownWhen @"cart" checkoutStep
-            ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
-            ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
-            RecordToVariant.do
-              button @"Next" {} # toCases goneOn # provided @"onward" onwardFrom
-              button @"Back" {} # toCases goneBack # provided @"back" previousOf
-              button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
-        ( bodyMedium $ text placedLine ) # shownWhen @"placed" orderStatus
+      ( Category.do
+        ( bodyMedium $ text cartLine ) # shownWhen @"cart" checkoutStep
+        ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
+        ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
+        RecordToVariant.do
+          button @"Next" {} # toCases goneOn # provided @"onward" onwardFrom
+          button @"Back" {} # toCases goneBack # provided @"back" previousOf
+          button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
+      ( bodyMedium $ text placedLine ) # shownWhen @"placed" orderStatus
     ) # mvu freshOrder

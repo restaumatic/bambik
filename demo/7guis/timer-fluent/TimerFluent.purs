@@ -14,9 +14,9 @@ timerFluent :: Effect Unit
 timerFluent =
   body $
     card $ ( Category.do
-        progressBar @"Elapsed" elapsedFraction # shown
-        (body1 $ text progressLine) # shown
-        slider @"Duration" {}
-        every tickPeriod tick
-        button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
+      progressBar @"Elapsed" elapsedFraction # shown
+      (body1 $ text progressLine) # shown
+      slider @"Duration" {}
+      every tickPeriod tick
+      button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
     ) # mvu tenSecondFreshTimer

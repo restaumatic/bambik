@@ -16,15 +16,15 @@ signupFormMDC2 =
   body $
     card $ Category.do
       ( Category.do
-          (headline4 $ staticText "Create account") # shown
-          debouncedTextField @"Username" { ms: usernameSettleTime }
-          radioButton @"Plan"
-            [ choice @"Free", choice @"Pro", choice @"Team" ] # required
-          select @"Country" {}
-            [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ] # required
-          filledTextField @"Email" {}
-          tooltip { text: "You must accept the terms of service to sign up" } $
-            checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText "I accept the terms of service")
+        (headline4 $ staticText "Create account") # shown
+        debouncedTextField @"Username" { ms: usernameSettleTime }
+        radioButton @"Plan"
+          [ choice @"Free", choice @"Pro", choice @"Team" ] # required
+        select @"Country" {}
+          [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ] # required
+        filledTextField @"Email" {}
+        tooltip { text: "You must accept the terms of service to sign up" } $
+          checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText "I accept the terms of service")
       ) # mvu newApplicant
       ( body2 $ staticText "Pick a username to check its availability" ) # shownWhen @"unnamed" usernameStatus
       ( body2 $ text takenLine ) # shownWhen @"taken" usernameStatus

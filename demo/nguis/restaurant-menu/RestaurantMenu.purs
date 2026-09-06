@@ -22,16 +22,16 @@ restaurantMenu =
       hr
     div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
-          h2 (text courseName)
-          ul >>> cl "dishes" $
-            ( li >>> cl "dish" $ RecordToRecord.do
-                div >>> cl "dish-head" $ RecordToRecord.do
-                  span >>> cl "dish-name" $ text dishName
-                  static (span >>> cl "dish-dots")
-                  span >>> cl "dish-price" $ text priceLine
-                p >>> cl "dish-desc" $ text dishDescription
-                span >>> cl "tags" $
-                  ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" dishTags ) # foreach @"name" courseDishes ) # foreach @"name" menuCourses
+        h2 (text courseName)
+        ul >>> cl "dishes" $
+          ( li >>> cl "dish" $ RecordToRecord.do
+            div >>> cl "dish-head" $ RecordToRecord.do
+              span >>> cl "dish-name" $ text dishName
+              static (span >>> cl "dish-dots")
+              span >>> cl "dish-price" $ text priceLine
+            p >>> cl "dish-desc" $ text dishDescription
+            span >>> cl "tags" $
+              ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" dishTags ) # foreach @"name" courseDishes ) # foreach @"name" menuCourses
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"

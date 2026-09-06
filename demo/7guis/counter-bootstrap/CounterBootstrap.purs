@@ -13,6 +13,6 @@ counterBootstrap :: Effect Unit
 counterBootstrap =
   body $
     card $ ( Category.do
-        h4 (text countLine) # shown
-        button @"Count" {} # applied increment
+      h4 (text countLine) # shown
+      button @"Count" {} # applied increment
     ) # mvu freshCount

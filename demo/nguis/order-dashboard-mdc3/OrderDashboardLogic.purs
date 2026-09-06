@@ -21,8 +21,8 @@ ordersArrive :: { tick :: Int, orders :: Array { id :: Int, dish :: String, tota
 ordersArrive { tick, orders } = Just
   { tick: tick + 1
   , orders: case arrival (tick + 1) of
-      Just order -> snoc orders order
-      Nothing -> orders
+    Just order -> snoc orders order
+    Nothing -> orders
   }
 
 arrival :: Int -> Maybe { id :: Int, dish :: String, total :: Number, at :: Int }

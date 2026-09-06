@@ -15,15 +15,15 @@ flightBookerMDC3 =
   body $
     card $ Category.do
     ( Category.do
-        select @"Flight type" {}
-          [ choice @"one-way", choice @"return" ] # required
-        filledTextField @"Start date (DD.MM.YYYY)" {}
-        filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
+      select @"Flight type" {}
+        [ choice @"one-way", choice @"return" ] # required
+      filledTextField @"Start date (DD.MM.YYYY)" {}
+      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
     ) # mvu plannedTrip
     ( Category.do
-        bodyLarge (text problemLine) # shownWhen @"problem" bookingState
-        bodyLarge (text oneWayLine) # shownWhen @"one-way" bookingState
-        bodyLarge (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+      bodyLarge (text problemLine) # shownWhen @"problem" bookingState
+      bodyLarge (text oneWayLine) # shownWhen @"one-way" bookingState
+      bodyLarge (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
     snackbar # forCases bookingLine

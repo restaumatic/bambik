@@ -10,10 +10,10 @@ import Data.Variant (match)
 openingPosition :: { board :: Array [ x :: {}, o :: {}, free :: {} ] }
 openingPosition =
   { board:
-      [ .free {}, .free {}, .free {}
-      , .free {}, .free {}, .free {}
-      , .free {}, .free {}, .free {}
-      ]
+    [ .free {}, .free {}, .free {}
+    , .free {}, .free {}, .free {}
+    , .free {}, .free {}, .free {}
+    ]
   }
 
 cells :: { board :: Array [ x :: {}, o :: {}, free :: {} ] } -> Array { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] }

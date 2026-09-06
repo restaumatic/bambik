@@ -14,9 +14,9 @@ timerBootstrap :: Effect Unit
 timerBootstrap =
   body $
     card $ ( Category.do
-        progress @"Elapsed" elapsedFraction # shown
-        (p $ text progressLine) # shown
-        sliderLive @"Duration" {}
-        every tickPeriod tick
-        button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
+      progress @"Elapsed" elapsedFraction # shown
+      (p $ text progressLine) # shown
+      sliderLive @"Duration" {}
+      every tickPeriod tick
+      button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
     ) # mvu tenSecondFreshTimer

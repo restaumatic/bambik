@@ -20,22 +20,22 @@ albumCatalogue :: Array { name :: String, shots :: Array String }
 albumCatalogue =
   [ { name: "Landscapes"
     , shots:
-        [ "Dawn Ridge", "Quiet Lake", "Amber Dunes", "Foggy Pass", "Birch Line"
-        , "Tidal Flats", "Storm Front", "Green Valley", "Last Light", "Winter Field"
-        ]
+      [ "Dawn Ridge", "Quiet Lake", "Amber Dunes", "Foggy Pass", "Birch Line"
+      , "Tidal Flats", "Storm Front", "Green Valley", "Last Light", "Winter Field"
+      ]
     }
   , { name: "Portraits"
     , shots:
-        [ "Half Smile", "Sunday Hat", "The Violinist", "Grandfather", "Sideways Glance"
-        , "Freckles", "After the Match", "Reader by the Window"
-        ]
+      [ "Half Smile", "Sunday Hat", "The Violinist", "Grandfather", "Sideways Glance"
+      , "Freckles", "After the Match", "Reader by the Window"
+      ]
     }
   , { name: "Abstract"
     , shots:
-        [ "Orbit Study", "Noise Floor", "Copper Wash", "Interference", "Split Tone"
-        , "Modulation", "Phase Shift", "Grain Field", "Vector Bloom", "Slow Collapse"
-        , "Residue", "Afterimage"
-        ]
+      [ "Orbit Study", "Noise Floor", "Copper Wash", "Interference", "Split Tone"
+      , "Modulation", "Phase Shift", "Grain Field", "Vector Bloom", "Slow Collapse"
+      , "Residue", "Afterimage"
+      ]
     }
   ]
 

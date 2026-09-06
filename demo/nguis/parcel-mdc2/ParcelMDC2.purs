@@ -14,9 +14,9 @@ parcelMDC2 :: Effect Unit
 parcelMDC2 =
   body $
     card $ ( Category.do
-        filledTextField @"Recipient" {}
-        addressForm # subStrong
-        ( body1 $ text parcelLine ) # shown
+      filledTextField @"Recipient" {}
+      addressForm # subStrong
+      ( body1 $ text parcelLine ) # shown
     ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }

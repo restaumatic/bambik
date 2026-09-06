@@ -15,15 +15,15 @@ flightBookerShoelace =
   body $
     card $ Category.do
       ( Category.do
-          select @"Flight type" {}
-            [ choice @"one-way", choice @"return" ] # required
-          textField @"Start date (DD.MM.YYYY)" {}
-          textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
+        select @"Flight type" {}
+          [ choice @"one-way", choice @"return" ] # required
+        textField @"Start date (DD.MM.YYYY)" {}
+        textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
       ( Category.do
-          p (text problemLine) # shownWhen @"problem" bookingState
-          p (text oneWayLine) # shownWhen @"one-way" bookingState
-          p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+        p (text problemLine) # shownWhen @"problem" bookingState
+        p (text oneWayLine) # shownWhen @"one-way" bookingState
+        p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
       blank # action submit # atCase @"Book"
       toast # forCases bookingLine

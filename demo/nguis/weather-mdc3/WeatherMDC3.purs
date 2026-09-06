@@ -14,15 +14,15 @@ weatherMDC3 :: Effect Unit
 weatherMDC3 =
   body $
     card $ ( Category.do
-        ( Category.do
-            listOf { selected: isCurrent } forecastRequests (text _.city) # toCase @"cityPicked" reportRequest
-            indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
-        displayLarge (text temperatureLine) # shown
-        headlineMedium (text conditionLine) # shown
-        bodyLarge (text humidityWindLine) # shown
-        bodySmall (text servedLine) # shown
-        ( Category.do
-            iconButton @"About this dashboard" { icon: "info" }
-            simpleDialog { title: "About this dashboard", confirm: "Got it" }
-              ( bodyLarge (text aboutLine) ) # atCase @"About this dashboard" ) # shown
+      ( Category.do
+        listOf { selected: isCurrent } forecastRequests (text _.city) # toCase @"cityPicked" reportRequest
+        indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
+      displayLarge (text temperatureLine) # shown
+      headlineMedium (text conditionLine) # shown
+      bodyLarge (text humidityWindLine) # shown
+      bodySmall (text servedLine) # shown
+      ( Category.do
+        iconButton @"About this dashboard" { icon: "info" }
+        simpleDialog { title: "About this dashboard", confirm: "Got it" }
+          ( bodyLarge (text aboutLine) ) # atCase @"About this dashboard" ) # shown
     ) # mvu warsawBulletin

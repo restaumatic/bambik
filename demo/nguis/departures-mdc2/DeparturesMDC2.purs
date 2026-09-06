@@ -13,8 +13,8 @@ departuresMDC2 :: Effect Unit
 departuresMDC2 =
   body $
     card $ ( Category.do
-        every tickPeriod tick
-        ( Category.do
-            list $ ( listItem $ text flightLine ) # shown # dispatched arrival
-            body2 (text updateLine) ) # shown
+      every tickPeriod tick
+      ( Category.do
+        list $ ( listItem $ text flightLine ) # shown # dispatched arrival
+        body2 (text updateLine) ) # shown
     ) # mvu boardOpening

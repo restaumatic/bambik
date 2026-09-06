@@ -12,11 +12,11 @@ import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFresh
 timerHTML :: Effect Unit
 timerHTML =
   body $ div $ ( Category.do
-      progress @"Elapsed" elapsedFraction # shown
-      (p $ text progressLine) # shown
-      p ( label $ Category.do
-          (staticText "Duration ") # shown
-          rangeInput @"Duration" )
-      every tickPeriod tick
-      button (staticText "Reset") # with nothingElapsed # toCase @"Reset" identity # updated (match { "Reset": const })
+    progress @"Elapsed" elapsedFraction # shown
+    (p $ text progressLine) # shown
+    p ( label $ Category.do
+      (staticText "Duration ") # shown
+      rangeInput @"Duration" )
+    every tickPeriod tick
+    button (staticText "Reset") # with nothingElapsed # toCase @"Reset" identity # updated (match { "Reset": const })
   ) # mvu tenSecondFreshTimer

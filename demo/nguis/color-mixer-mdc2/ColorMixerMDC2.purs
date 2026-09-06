@@ -14,15 +14,15 @@ colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =
   body $
     card $ ( Category.do
-        sliderLive @"Red" {}
-        sliderLive @"Green" {}
-        sliderLive @"Blue" {}
-        ( div $ Category.do
-            div >>> attrWith "style" swatchStyle $ blank
-            div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-              clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-        ( body2 $ text hexLine ) # shown
-        ( body2 $ text rgbLine ) # shown
+      sliderLive @"Red" {}
+      sliderLive @"Green" {}
+      sliderLive @"Blue" {}
+      ( div $ Category.do
+        div >>> attrWith "style" swatchStyle $ blank
+        div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
+          clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # toCase @"preset" _.name # updated (match { preset: applyPreset })
+      ( body2 $ text hexLine ) # shown
+      ( body2 $ text rgbLine ) # shown
     ) # mvu duskViolet
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb mix <> ";"

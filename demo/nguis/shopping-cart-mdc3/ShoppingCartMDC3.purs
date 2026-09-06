@@ -15,12 +15,12 @@ shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
   body $
     card $ ( Category.do
-        listOf {} productCatalogue (text catalogueLine) # toCase @"productPicked" _.product # updated (match { productPicked: addUnit })
-        dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
-          ( ( clicked $ dataRow RecordToRecord.do
-                dataCell (text productLine)
-                dataCell (text quantityLine)
-                dataCell (text lineTotalLine) ) # foreach @"product" cartLines ) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
-        bodyLarge (text totalLine) # shown
-        button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
+      listOf {} productCatalogue (text catalogueLine) # toCase @"productPicked" _.product # updated (match { productPicked: addUnit })
+      dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
+        ( ( clicked $ dataRow RecordToRecord.do
+          dataCell (text productLine)
+          dataCell (text quantityLine)
+          dataCell (text lineTotalLine) ) # foreach @"product" cartLines ) # toCase @"linePicked" _.product # updated (match { linePicked: removeUnit })
+      bodyLarge (text totalLine) # shown
+      button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
     ) # mvu emptyCart

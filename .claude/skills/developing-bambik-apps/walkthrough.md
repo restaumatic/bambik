@@ -31,15 +31,15 @@ flightBookerMDC2 =
   body $
     card $ Category.do
     ( Category.do
-        select @"Flight type" {}
-          [ choice @"one-way", choice @"return" ] # required
-        filledTextField @"Start date (DD.MM.YYYY)" {}
-        filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
+      select @"Flight type" {}
+        [ choice @"one-way", choice @"return" ] # required
+      filledTextField @"Start date (DD.MM.YYYY)" {}
+      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
     ) # mvu plannedTrip
     ( Category.do
-        body1 (text problemLine) # shownWhen @"problem" bookingState
-        body1 (text oneWayLine) # shownWhen @"one-way" bookingState
-        body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+      body1 (text problemLine) # shownWhen @"problem" bookingState
+      body1 (text oneWayLine) # shownWhen @"one-way" bookingState
+      body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
     snackbar # forCases bookingLine
@@ -164,10 +164,10 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
     else case parseDate returnInput of
-        Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
-        Just back -> case returnBetween { out: start, back } of
-          Nothing -> Left "the return date is before the start date"
-          Just itinerary -> Right itinerary
+      Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
+      Just back -> case returnBetween { out: start, back } of
+        Nothing -> Left "the return date is before the start date"
+        Just itinerary -> Right itinerary
 
 bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 bookingState = parse >>> either (\problem -> .problem { problem })

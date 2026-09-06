@@ -15,28 +15,28 @@ crudHTML :: Effect Unit
 crudHTML = do
   catalogue <- sharedPeopleCatalogue
   body $ div $ ( Category.do
-      blank # action (loadPeopleCatalogue catalogue)
+    blank # action (loadPeopleCatalogue catalogue)
+    ( Category.do
+      p ( label $ Category.do
+        (staticText "Filter prefix (surname) ") # shown
+        input @"Filter prefix (surname)" "text" )
+      p ( label $ Category.do
+        (staticText "Name ") # shown
+        input @"Name" "text" )
+      p ( label $ Category.do
+        (staticText "Surname ") # shown
+        input @"Surname" "text" )
+      ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
+        ( clicked ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
       ( Category.do
-          p ( label $ Category.do
-              (staticText "Filter prefix (surname) ") # shown
-              input @"Filter prefix (surname)" "text" )
-          p ( label $ Category.do
-              (staticText "Name ") # shown
-              input @"Name" "text" )
-          p ( label $ Category.do
-              (staticText "Surname ") # shown
-              input @"Surname" "text" )
-          ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
-              ( clicked ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
-          ( Category.do
-              div $ RecordToVariant.do
-                button (staticText "Create") # toCase @"Create" identity
-                button (staticText "Update") # toCase @"Update" identity
-                button (staticText "Delete") # toCase @"Delete" identity
-              VariantToVariant.do
-                blank # action (createPerson catalogue) # atCase @"Create"
-                blank # action (updatePerson catalogue) # atCase @"Update"
-                blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+        div $ RecordToVariant.do
+          button (staticText "Create") # toCase @"Create" identity
+          button (staticText "Update") # toCase @"Update" identity
+          button (staticText "Delete") # toCase @"Delete" identity
+        VariantToVariant.do
+          blank # action (createPerson catalogue) # atCase @"Create"
+          blank # action (updatePerson catalogue) # atCase @"Update"
+          blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
   ) # with {}
 entryFace :: { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

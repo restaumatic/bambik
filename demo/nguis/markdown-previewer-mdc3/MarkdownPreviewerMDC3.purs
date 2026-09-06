@@ -16,8 +16,8 @@ markdownPreviewerMDC3 =
   body $
     card $
       layoutGrid $ ( Category.do
-          layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
-          layoutCell { span: 6 } $ ( dynamic \source -> each (parseMarkdown source) blockView ) # atField @"Source" # shown
+        layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
+        layoutCell { span: 6 } $ ( dynamic \source -> each (parseMarkdown source) blockView ) # atField @"Source" # shown
       ) # mvu welcomeDocument
 
 blockView :: [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }, paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ], bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ]), quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] ] -> PUI Web {} {}

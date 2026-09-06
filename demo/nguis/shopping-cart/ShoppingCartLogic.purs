@@ -27,7 +27,7 @@ catalogueLine { product } = product.name <> " · $" <> formatMoney product.unitP
 addUnit :: { name :: String, unitPrice :: Int } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
 addUnit product { order }
   | any (\l -> l.product.name == product.name) order =
-      { order: map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
+    { order: map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
   | otherwise = { order: snoc order { product, quantity: 1 } }
 
 removeUnit :: String -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }

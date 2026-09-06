@@ -13,6 +13,6 @@ counterFluent :: Effect Unit
 counterFluent =
   body $
     card $ ( Category.do
-        title3 (text countLine) # shown
-        button @"Count" {} # applied increment
+      title3 (text countLine) # shown
+      button @"Count" {} # applied increment
     ) # mvu freshCount

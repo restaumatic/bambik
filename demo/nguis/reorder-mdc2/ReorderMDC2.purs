@@ -16,15 +16,15 @@ import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
 reorderMDC2 :: Effect Unit
 reorderMDC2 =
   body $ ( Category.do
-      ( Category.do
-          RecordToVariant.do
-            button @"Rotate" { icon: "sync" }
-            button @"Shuffle" { icon: "shuffle" }
-          VariantToVariant.do
-            blank # action rotateAction # atCase @"Rotate"
-            blank # action shuffleAction # atCase @"Shuffle" ) # updated (match { reordered: setOrder })
-      group @"Setlist" $ list $
-        ( listItem $ RecordToRecord.do
-            static (el "input" >>> "type" := "checkbox")
-            filledTextField @"Title" {} ) # edited @"id"
+    ( Category.do
+      RecordToVariant.do
+        button @"Rotate" { icon: "sync" }
+        button @"Shuffle" { icon: "shuffle" }
+      VariantToVariant.do
+        blank # action rotateAction # atCase @"Rotate"
+        blank # action shuffleAction # atCase @"Shuffle" ) # updated (match { reordered: setOrder })
+    group @"Setlist" $ list $
+      ( listItem $ RecordToRecord.do
+        static (el "input" >>> "type" := "checkbox")
+        filledTextField @"Title" {} ) # edited @"id"
   ) # mvu openingSetlist

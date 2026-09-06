@@ -19,30 +19,30 @@ espressoBarMDC3 =
     topAppBar { title: "Espresso Bar" } $
       card $ Category.do
         ( Category.do
-            tabBar @"Drink"
-              [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
-            filledTextField @"Your name" {}
-            segmentedButton @"Size"
-              [ choice @"Small", choice @"Medium", choice @"Large" ] # required
-            select @"Milk" {}
-              [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
-            radioButton @"Roast"
-              [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
-            sliderLive @"Sugar" {}
-            chipSet Category.do
-              filterChip @"Extra shot" {}
-              filterChip @"Decaf" {}
-            toggleSwitch @"Takeaway cup" {}
-            iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
-            tooltip { text: "Members get 10% off" } $ checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member")
-            divider # shown
-            menu { label: "Presets" } ( RecordToVariant.do
-                menuItem @"The usual" {} # with theUsual
-                menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
+          tabBar @"Drink"
+            [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
+          filledTextField @"Your name" {}
+          segmentedButton @"Size"
+            [ choice @"Small", choice @"Medium", choice @"Large" ] # required
+          select @"Milk" {}
+            [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
+          radioButton @"Roast"
+            [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
+          sliderLive @"Sugar" {}
+          chipSet Category.do
+            filterChip @"Extra shot" {}
+            filterChip @"Decaf" {}
+          toggleSwitch @"Takeaway cup" {}
+          iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
+          tooltip { text: "Members get 10% off" } $ checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member")
+          divider # shown
+          menu { label: "Presets" } ( RecordToVariant.do
+            menuItem @"The usual" {} # with theUsual
+            menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
         ) # mvu usualOrder
         bodyMedium (text cupLine) # shown
         ( div $ RecordToRecord.do
-            labelMedium $ staticText "Caffeine"
-            linearProgress @"Caffeine" caffeineFraction ) # shown
+          labelMedium $ staticText "Caffeine"
+          linearProgress @"Caffeine" caffeineFraction ) # shown
         button @"Place order" { icon: "local_cafe" } # armed
         snackbar # forCase @"Place order" brewedLine

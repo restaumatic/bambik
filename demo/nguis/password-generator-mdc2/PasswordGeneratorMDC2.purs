@@ -14,14 +14,14 @@ passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
   body $
     card $ ( Category.do
-        slider @"Length" {}
-        toggleSwitch @"Uppercase letters" {}
-        toggleSwitch @"Lowercase letters" {}
-        toggleSwitch @"Digits" {}
-        toggleSwitch @"Symbols" {}
-        body2 (text strengthLine) # shown
-        code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
-        ( Category.do
-            button @"Generate" {}
-            indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
+      slider @"Length" {}
+      toggleSwitch @"Uppercase letters" {}
+      toggleSwitch @"Lowercase letters" {}
+      toggleSwitch @"Digits" {}
+      toggleSwitch @"Symbols" {}
+      body2 (text strengthLine) # shown
+      code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
+      ( Category.do
+        button @"Generate" {}
+        indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
     ) # mvu strongMixRecipe

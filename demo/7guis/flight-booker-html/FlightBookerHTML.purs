@@ -14,21 +14,21 @@ flightBookerHTML :: Effect Unit
 flightBookerHTML =
   body $ div $ Category.do
     ( Category.do
-        p ( label $ RecordToRecord.do
-            staticText "Flight type "
-            select @"Flight type"
-              [ choice @"one-way", choice @"return" ] ) # required
-        p ( label $ Category.do
-            (staticText "Start date (DD.MM.YYYY) ") # shown
-            input @"Start date (DD.MM.YYYY)" "text" )
-        p ( label $ Category.do
-            (staticText "Return date (DD.MM.YYYY) ") # shown
-            input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" tripType
+      p ( label $ RecordToRecord.do
+        staticText "Flight type "
+        select @"Flight type"
+          [ choice @"one-way", choice @"return" ] ) # required
+      p ( label $ Category.do
+        (staticText "Start date (DD.MM.YYYY) ") # shown
+        input @"Start date (DD.MM.YYYY)" "text" )
+      p ( label $ Category.do
+        (staticText "Return date (DD.MM.YYYY) ") # shown
+        input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" tripType
     ) # mvu plannedTrip
     ( Category.do
-        p (text problemLine) # shownWhen @"problem" bookingState
-        p (text oneWayLine) # shownWhen @"one-way" bookingState
-        p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+      p (text problemLine) # shownWhen @"problem" bookingState
+      p (text oneWayLine) # shownWhen @"one-way" bookingState
+      p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button (staticText "Book") # toCase @"Book" identity
     blank # action submit # atCase @"Book"
     output # forCases bookingLine

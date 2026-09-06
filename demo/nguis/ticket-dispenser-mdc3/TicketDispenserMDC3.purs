@@ -14,13 +14,13 @@ ticketDispenserMDC3 :: Effect Unit
 ticketDispenserMDC3 =
   body $
     card $ ( Category.do
-        displaySmall ( Category.do
-            (staticText "—") # shownWhen @"waiting" displayOf
-            (text ticketLine) # shownWhen @"serving" displayOf )
-        bodyMedium ( Category.do
-            (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
-            (text servingLine) # shownWhen @"serving" displayOf )
-        ( Category.do
-            button @"Take a number" {} # toCases ticketRequested
-            ticketIssuance identity # unfolding @"resume" firstTicket ) # updated const
+      displaySmall ( Category.do
+        (staticText "—") # shownWhen @"waiting" displayOf
+        (text ticketLine) # shownWhen @"serving" displayOf )
+      bodyMedium ( Category.do
+        (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
+        (text servingLine) # shownWhen @"serving" displayOf )
+      ( Category.do
+        button @"Take a number" {} # toCases ticketRequested
+        ticketIssuance identity # unfolding @"resume" firstTicket ) # updated const
     ) # mvu emptyQueue

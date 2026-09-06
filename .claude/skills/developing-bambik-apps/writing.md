@@ -706,6 +706,12 @@ induces — view first, logic module written to its names — is
   inside the element (one container around the collection instead of one
   per item). The `lcmap`-only adopter (`forProperty`) is safe either
   side of a shape-preserving ocular.
+- **Indentation is two spaces per step.** A block's lines sit two columns
+  deeper than the line that opens it — `( Category.do` included, so its
+  stages are two in from the `(` line — a continuation two deeper than the
+  line it continues, and a closer back at its opener's column
+  (`) # mvu seed` under `card $ ( Category.do`); `let` bindings align under
+  the first. No four-space steps, no alignment to a token mid-line.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live
   summary → events (×→+) → dispatch (+→+) → statuses (+→×) — closed by

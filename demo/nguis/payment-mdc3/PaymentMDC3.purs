@@ -15,11 +15,11 @@ paymentMDC3 :: Effect Unit
 paymentMDC3 =
   body $
     card $ ( Category.do
-        ( headlineSmall $ text amountLine ) # shown
-        ( bodyMedium $ text statusLine ) # shown
+      ( headlineSmall $ text amountLine ) # shown
+      ( bodyMedium $ text statusLine ) # shown
+      ( Category.do
+        button @"Charge card" { icon: "credit_card" } # toCases startCharge
         ( Category.do
-            button @"Charge card" { icon: "credit_card" } # toCases startCharge
-            ( Category.do
-                indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
-                snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
+          indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
+          snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
     ) # mvu unpaidOrder

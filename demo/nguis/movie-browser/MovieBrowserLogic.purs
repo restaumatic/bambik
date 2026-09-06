@@ -13,19 +13,19 @@ movieCatalogue =
   , "Cult": false
   , "Oscar": false
   , movies:
-      [ { title: "Die Hard", year: 1988, category: ."Action" {}, tags: [ ."Classic" {}, ."Cult" {} ], rating: 8.2, "Favorite": false }
-      , { title: "Mad Max: Fury Road", year: 2015, category: ."Action" {}, tags: [ ."Oscar" {} ], rating: 8.1, "Favorite": false }
-      , { title: "The Dark Knight", year: 2008, category: ."Action" {}, tags: [ ."Oscar" {} ], rating: 9.0, "Favorite": false }
-      , { title: "John Wick", year: 2014, category: ."Action" {}, tags: [ ."Cult" {} ], rating: 7.4, "Favorite": false }
-      , { title: "The Godfather", year: 1972, category: ."Drama" {}, tags: [ ."Classic" {}, ."Oscar" {} ], rating: 9.2, "Favorite": false }
-      , { title: "The Shawshank Redemption", year: 1994, category: ."Drama" {}, tags: [ ."Classic" {} ], rating: 9.3, "Favorite": false }
-      , { title: "Parasite", year: 2019, category: ."Drama" {}, tags: [ ."Oscar" {} ], rating: 8.5, "Favorite": false }
-      , { title: "Fight Club", year: 1999, category: ."Drama" {}, tags: [ ."Cult" {} ], rating: 8.8, "Favorite": false }
-      , { title: "Some Like It Hot", year: 1959, category: ."Comedy" {}, tags: [ ."Classic" {} ], rating: 8.2, "Favorite": false }
-      , { title: "The Big Lebowski", year: 1998, category: ."Comedy" {}, tags: [ ."Cult" {} ], rating: 8.1, "Favorite": false }
-      , { title: "The Grand Budapest Hotel", year: 2014, category: ."Comedy" {}, tags: [ ."Oscar" {} ], rating: 8.1, "Favorite": false }
-      , { title: "Groundhog Day", year: 1993, category: ."Comedy" {}, tags: [ ."Classic" {}, ."Cult" {} ], rating: 8.0, "Favorite": false }
-      ]
+    [ { title: "Die Hard", year: 1988, category: ."Action" {}, tags: [ ."Classic" {}, ."Cult" {} ], rating: 8.2, "Favorite": false }
+    , { title: "Mad Max: Fury Road", year: 2015, category: ."Action" {}, tags: [ ."Oscar" {} ], rating: 8.1, "Favorite": false }
+    , { title: "The Dark Knight", year: 2008, category: ."Action" {}, tags: [ ."Oscar" {} ], rating: 9.0, "Favorite": false }
+    , { title: "John Wick", year: 2014, category: ."Action" {}, tags: [ ."Cult" {} ], rating: 7.4, "Favorite": false }
+    , { title: "The Godfather", year: 1972, category: ."Drama" {}, tags: [ ."Classic" {}, ."Oscar" {} ], rating: 9.2, "Favorite": false }
+    , { title: "The Shawshank Redemption", year: 1994, category: ."Drama" {}, tags: [ ."Classic" {} ], rating: 9.3, "Favorite": false }
+    , { title: "Parasite", year: 2019, category: ."Drama" {}, tags: [ ."Oscar" {} ], rating: 8.5, "Favorite": false }
+    , { title: "Fight Club", year: 1999, category: ."Drama" {}, tags: [ ."Cult" {} ], rating: 8.8, "Favorite": false }
+    , { title: "Some Like It Hot", year: 1959, category: ."Comedy" {}, tags: [ ."Classic" {} ], rating: 8.2, "Favorite": false }
+    , { title: "The Big Lebowski", year: 1998, category: ."Comedy" {}, tags: [ ."Cult" {} ], rating: 8.1, "Favorite": false }
+    , { title: "The Grand Budapest Hotel", year: 2014, category: ."Comedy" {}, tags: [ ."Oscar" {} ], rating: 8.1, "Favorite": false }
+    , { title: "Groundhog Day", year: 1993, category: ."Comedy" {}, tags: [ ."Classic" {}, ."Cult" {} ], rating: 8.0, "Favorite": false }
+    ]
   }
 
 visibleMovies :: { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> Array { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean }

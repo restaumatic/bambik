@@ -15,13 +15,13 @@ stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
   body $
     card $ ( Category.do
-        headline3 (text elapsedText) # shown
-        every tickPeriod tick
-        ( RecordToVariant.do
-            button @"Start" { icon: "play_arrow" } # provided @"halted" stopwatchPhase
-            button @"Stop" { icon: "stop" } # provided @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
-        ( RecordToVariant.do
-            button @"Lap" { icon: "flag" } # provided @"timing" stopwatchPhase
-            button @"Reset" { icon: "replay" } # provided @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
-        ul $ ( li $ text lapLine ) # shownEach @"number" lapRows
+      headline3 (text elapsedText) # shown
+      every tickPeriod tick
+      ( RecordToVariant.do
+        button @"Start" { icon: "play_arrow" } # provided @"halted" stopwatchPhase
+        button @"Stop" { icon: "stop" } # provided @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
+      ( RecordToVariant.do
+        button @"Lap" { icon: "flag" } # provided @"timing" stopwatchPhase
+        button @"Reset" { icon: "replay" } # provided @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
+      ul $ ( li $ text lapLine ) # shownEach @"number" lapRows
     ) # mvu zeroedStopwatch

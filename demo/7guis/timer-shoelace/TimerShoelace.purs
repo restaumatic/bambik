@@ -14,9 +14,9 @@ timerShoelace :: Effect Unit
 timerShoelace =
   body $
     card $ ( Category.do
-        progressBar @"Elapsed" elapsedFraction # shown
-        (p $ text progressLine) # shown
-        sliderLive @"Duration" {}
-        every tickPeriod tick
-        button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
+      progressBar @"Elapsed" elapsedFraction # shown
+      (p $ text progressLine) # shown
+      sliderLive @"Duration" {}
+      every tickPeriod tick
+      button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
     ) # mvu tenSecondFreshTimer

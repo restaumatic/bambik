@@ -34,15 +34,15 @@ distanceLine { km } = "Distance " <> show km <> " km"
 
 fulfillmentOf ::
   { "Fulfillment" ::
-      [ "Dine in" :: { "Table" :: String }
-      , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
-      ]
+    [ "Dine in" :: { "Table" :: String }
+    , "Takeaway" :: { "Time" :: String }
+    , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+    ]
   }
   -> [ "Dine in" :: { "Table" :: String }
-     , "Takeaway" :: { "Time" :: String }
-     , "Delivery" :: { "Address" :: String }
-     ]
+    , "Takeaway" :: { "Time" :: String }
+    , "Delivery" :: { "Address" :: String }
+    ]
 fulfillmentOf { "Fulfillment": fulfillment } = match
   { "Dine in": \r -> ."Dine in" { "Table": r."Table" }
   , "Takeaway": \r -> ."Takeaway" { "Time": r."Time" }
@@ -60,10 +60,10 @@ deliveryLine r = "delivery to " <> r."Address"
 
 deliveryDistance ::
   { "Fulfillment" ::
-      [ "Dine in" :: { "Table" :: String }
-      , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
-      ]
+    [ "Dine in" :: { "Table" :: String }
+    , "Takeaway" :: { "Time" :: String }
+    , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+    ]
   }
   -> [ estimated :: { km :: Int }, unknown :: {} ]
 deliveryDistance { "Fulfillment": fulfillment } = match
@@ -117,22 +117,22 @@ loadOrder :: {} -> Aff
   { "Short ID" :: String
   , "Unique ID" :: String
   , "Customer" ::
-      { "First name" :: String
-      , "Last name" :: String
-      }
+    { "First name" :: String
+    , "Last name" :: String
+    }
   , "Fulfillment" ::
-      [ "Dine in" :: { "Table" :: String }
-      , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
-      ]
+    [ "Dine in" :: { "Table" :: String }
+    , "Takeaway" :: { "Time" :: String }
+    , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+    ]
   , "Total" :: String
   , "Payment" ::
-      { "Method" ::
-          [ "cash" :: {}
-          , "card" :: {}
-          ]
-      , "Paid" :: String
-      }
+    { "Method" ::
+      [ "cash" :: {}
+      , "card" :: {}
+      ]
+    , "Paid" :: String
+    }
   , "Remarks" :: String
   }
 loadOrder _ = do
@@ -143,9 +143,9 @@ loadOrder _ = do
     { "Short ID": "7"
     , "Unique ID": "4617821"
     , "Customer":
-        { "First name": "John"
-        , "Last name": "Doe"
-        }
+      { "First name": "John"
+      , "Last name": "Doe"
+      }
     , "Fulfillment": ."Takeaway" { "Time": "8:30" }
     , "Total": "12.30"
     , "Payment": { "Method": ."cash" {}, "Paid": "0.00" }

@@ -16,13 +16,13 @@ cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
   body $
     card $ ( Category.do
-        ( headlineSmall $ text balanceLine ) # shown
-        ( Category.do
-            RecordToVariant.do
-              button @"Refund a customer" { icon: "undo" } # with standardRefund
-              button @"Pay the courier" { icon: "local_shipping" } # with courierFee
-              button @"Take a deposit" { icon: "savings" } # with customerDeposit
-            ( VariantToVariant.do
-                ( confirmed { title: "Refund the customer?", confirm: "Refund" } $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"refunded" identity
-                ( confirmed { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: applyRefund, paidOut: applyPayout, "Take a deposit": applyDeposit })
+      ( headlineSmall $ text balanceLine ) # shown
+      ( Category.do
+        RecordToVariant.do
+          button @"Refund a customer" { icon: "undo" } # with standardRefund
+          button @"Pay the courier" { icon: "local_shipping" } # with courierFee
+          button @"Take a deposit" { icon: "savings" } # with customerDeposit
+        ( VariantToVariant.do
+          ( confirmed { title: "Refund the customer?", confirm: "Refund" } $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"refunded" identity
+          ( confirmed { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: applyRefund, paidOut: applyPayout, "Take a deposit": applyDeposit })
     ) # mvu openedTill

@@ -35,16 +35,16 @@ pressKey key tally@{ entry, operation, input }
   | key == "C" = blankTally
   | key == "±" = tally { entry = negated entry }
   | key == "." && typing input =
-      if contains (Pattern ".") entry then tally else tally { entry = entry <> "." }
+    if contains (Pattern ".") entry then tally else tally { entry = entry <> "." }
   | key == "." = tally { entry = "0.", input = .entering {} }
   | key `elem` operatorKeys = case settle { total: tally.total, operation, entry, input } of
-      Just total -> tally
-        { total = total
-        , operation = if key == "=" then .none {} else .pending { key }
-        , entry = format total
-        , input = .settled {}
-        }
-      Nothing -> blankTally { condition = .faulty {} }
+    Just total -> tally
+      { total = total
+      , operation = if key == "=" then .none {} else .pending { key }
+      , entry = format total
+      , input = .settled {}
+      }
+    Nothing -> blankTally { condition = .faulty {} }
   | typing input = tally { entry = if entry == "0" then key else entry <> key }
   | otherwise = tally { entry = key, input = .entering {} }
 

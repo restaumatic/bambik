@@ -14,11 +14,11 @@ import QualifiedDo.Category as Category
 potluckMDC2 :: Effect Unit
 potluckMDC2 =
   body $ ( Category.do
-      body2 (text guestCountLine) # shown
-      group @"Guests" $ list $
-          ( listItem $ RecordToRecord.do
-              subtitle1 (text guestName)
-              segmentedButton @"Dish"
-                [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
-      headline6 (text menuLine) # shown
+    body2 (text guestCountLine) # shown
+    group @"Guests" $ list $
+      ( listItem $ RecordToRecord.do
+        subtitle1 (text guestName)
+        segmentedButton @"Dish"
+          [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
+    headline6 (text menuLine) # shown
   ) # with invitation

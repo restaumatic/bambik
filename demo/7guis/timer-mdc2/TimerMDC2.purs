@@ -14,9 +14,9 @@ timerMDC2 :: Effect Unit
 timerMDC2 =
   body $
     card $ ( Category.do
-        linearProgress @"Elapsed" elapsedFraction # shown
-        (body1 $ text progressLine) # shown
-        sliderLive @"Duration" {}
-        every tickPeriod tick
-        button @"Reset" { icon: "replay" } # with nothingElapsed # updated (match { "Reset": const })
+      linearProgress @"Elapsed" elapsedFraction # shown
+      (body1 $ text progressLine) # shown
+      sliderLive @"Duration" {}
+      every tickPeriod tick
+      button @"Reset" { icon: "replay" } # with nothingElapsed # updated (match { "Reset": const })
     ) # mvu tenSecondFreshTimer

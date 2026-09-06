@@ -9,10 +9,10 @@ import Data.Variant (match)
 mondayMail :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ], nextId :: Int }
 mondayMail =
   { messages:
-      [ { id: 1, sender: "Alice Kowalska", subject: "Quarterly report ready", body: "The Q2 numbers are in - revenue up 12%, see the attached sheet before Friday's review.", status: .unread {} }
-      , { id: 2, sender: "Bob Nowak", subject: "Lunch on Thursday?", body: "The new ramen place near the office finally opened. Noon works for me.", status: .read {} }
-      , { id: 3, sender: "Carol Wu", subject: "Code review request", body: "Could you take a look at the profunctor refactor branch? Two files, mostly renames.", status: .unread {} }
-      ]
+    [ { id: 1, sender: "Alice Kowalska", subject: "Quarterly report ready", body: "The Q2 numbers are in - revenue up 12%, see the attached sheet before Friday's review.", status: .unread {} }
+    , { id: 2, sender: "Bob Nowak", subject: "Lunch on Thursday?", body: "The new ramen place near the office finally opened. Noon works for me.", status: .read {} }
+    , { id: 3, sender: "Carol Wu", subject: "Code review request", body: "Could you take a look at the profunctor refactor branch? Two files, mostly renames.", status: .unread {} }
+    ]
   , opened: .none {}
   , deletion: .silent {}
   , nextId: 4
@@ -57,8 +57,8 @@ openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g {
 messageView :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> [ reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ]
 messageView { messages, opened } = match
   { message: \m -> case find (\g -> g.id == m.id) messages of
-      Just message -> .reading { sender: message.sender, subject: message.subject, body: message.body }
-      Nothing -> .browsing {}
+    Just message -> .reading { sender: message.sender, subject: message.subject, body: message.body }
+    Nothing -> .browsing {}
   , none: const (.browsing {})
   } opened
 

@@ -58,10 +58,10 @@ selection { selected } = selected
 resizeSelected :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ], "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, drag :: [ adjusting :: {}, settled :: {} ], undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ], "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, drag :: [ adjusting :: {}, settled :: {} ], undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 resizeSelected m@{ "Diameter": diameter, circles, selected, drag, undoStack, redoStack } = match
   { chosen: \s -> case index circles s.index of
-      Just c | c.r /= diameter.current / 2.0 ->
-        let stacks = match { adjusting: \_ -> { undoStack, redoStack }, settled: \_ -> pushUndo { circles, undoStack, redoStack } } drag
-        in m { circles = fromMaybe circles (updateAt s.index (c { r = diameter.current / 2.0 }) circles), drag = .adjusting {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
-      _ -> m
+    Just c | c.r /= diameter.current / 2.0 ->
+      let stacks = match { adjusting: \_ -> { undoStack, redoStack }, settled: \_ -> pushUndo { circles, undoStack, redoStack } } drag
+      in m { circles = fromMaybe circles (updateAt s.index (c { r = diameter.current / 2.0 }) circles), drag = .adjusting {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
+    _ -> m
   , none: \_ -> m
   } selected
 

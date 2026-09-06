@@ -13,13 +13,13 @@ tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
   body $
     card $ ( Category.do
-        filledTextField @"Bill amount" {}
-        slider @"Tip percentage" {}
-        rangeInput @"Tip percentage"
-        body2 (text tipLine) # shown
-        body2 (text splitLine) # shown
-        slider @"Split between" {}
-        body2 (text tipAmountLine) # shown
-        body2 (text totalLine) # shown
-        body2 (text perPersonLine) # shown
+      filledTextField @"Bill amount" {}
+      slider @"Tip percentage" {}
+      rangeInput @"Tip percentage"
+      body2 (text tipLine) # shown
+      body2 (text splitLine) # shown
+      slider @"Split between" {}
+      body2 (text tipAmountLine) # shown
+      body2 (text totalLine) # shown
+      body2 (text perPersonLine) # shown
     ) # mvu dinnerBill

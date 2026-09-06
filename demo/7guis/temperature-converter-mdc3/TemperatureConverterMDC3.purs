@@ -12,6 +12,6 @@ temperatureConverterMDC3 :: Effect Unit
 temperatureConverterMDC3 =
   body $
     card $ ( Category.do
-        filledTextField @"°C" {} # settled fromCelsius
-        filledTextField @"°F" {} # settled fromFahrenheit
+      filledTextField @"°C" {} # settled fromCelsius
+      filledTextField @"°F" {} # settled fromFahrenheit
     ) # mvu roomTemperature

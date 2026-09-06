@@ -79,10 +79,10 @@ orderApp :: Effect Unit
 orderApp =
   body $
     card $ ( Category.do
-        filledTextField @"Pizza" {}
-        headlineSmall (text ?orderLine) # shown
-        button @"Order" {}
-        snackbar # forCase @"Order" ?confirmedLine
+      filledTextField @"Pizza" {}
+      headlineSmall (text ?orderLine) # shown
+      button @"Order" {}
+      snackbar # forCase @"Order" ?confirmedLine
     ) # with ?start
 </code></pre>
 
@@ -170,8 +170,8 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
     <h3>src/Order.purs — the display line takes its name</h3>
 <pre><code class="language-haskell">import OrderLogic (orderLine)
-          ⋮
-          headlineSmall (text orderLine) # shown
+  ⋮
+  headlineSmall (text orderLine) # shown
 </code></pre>
 
     <p>One closed-row signature in, and the next compile has no refusal left at
@@ -275,10 +275,10 @@ orderApp :: Effect Unit
 orderApp =
   body $
     card $ ( Category.do
-        filledTextField @"Pizza" {}
-        headlineSmall (text orderLine) # shown
-        button @"Order" {}
-        snackbar # forCase @"Order" confirmedLine
+      filledTextField @"Pizza" {}
+      headlineSmall (text orderLine) # shown
+      button @"Order" {}
+      snackbar # forCase @"Order" confirmedLine
     ) # with plainMargherita
 </code></pre>
 

@@ -10,11 +10,11 @@ import Data.Variant.Case (caseText)
 invitation :: { "Guests" :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }
 invitation =
   { "Guests":
-      [ { name: "Ada", "Dish": Nothing }
-      , { name: "Grace", "Dish": Nothing }
-      , { name: "Edsger", "Dish": Nothing }
-      , { name: "Barbara", "Dish": Nothing }
-      ]
+    [ { name: "Ada", "Dish": Nothing }
+    , { name: "Grace", "Dish": Nothing }
+    , { name: "Edsger", "Dish": Nothing }
+    , { name: "Barbara", "Dish": Nothing }
+    ]
   }
 
 guestCountLine :: { "Guests" :: Array { name :: String, "Dish" :: Maybe [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String

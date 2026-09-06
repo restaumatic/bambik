@@ -39,9 +39,9 @@ statTile config f =
 gauge :: forall @l r. IsSymbol l => Union r () r => ({ | r } -> Number) -> PUI Web { | r } {}
 gauge f =
   tile $ ( Category.do
-      ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
-      linearProgress @l f # shown
-      ( labelLarge $ text (percentLine <<< f) ) # shown ) # muted
+    ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
+    linearProgress @l f # shown
+    ( labelLarge $ text (percentLine <<< f) ) # shown ) # muted
 
 trendChart :: forall @l r. IsSymbol l => ({ | r } -> Array Number) -> PUI Web { | r } {}
 trendChart f =
@@ -79,11 +79,11 @@ sparkline :: Array Number -> String
 sparkline trend
   | length trend < 2 = "M 0 38 L 120 38"
   | otherwise =
-      let n = length trend
-          peak = foldl max 1.0 trend
-          x i = 120.0 * toNumber i / toNumber (n - 1)
-          y v = 38.0 - 36.0 * v / peak
-      in joinWith " " (mapWithIndex (\i v -> (if i == 0 then "M " else "L ") <> fmt (x i) <> " " <> fmt (y v)) trend)
+    let n = length trend
+        peak = foldl max 1.0 trend
+        x i = 120.0 * toNumber i / toNumber (n - 1)
+        y v = 38.0 - 36.0 * v / peak
+    in joinWith " " (mapWithIndex (\i v -> (if i == 0 then "M " else "L ") <> fmt (x i) <> " " <> fmt (y v)) trend)
 
 fmt :: Number -> String
 fmt n = show (toNumber (round (n * 10.0)) / 10.0)

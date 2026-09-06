@@ -15,14 +15,14 @@ todoMvcMDC2 :: Effect Unit
 todoMvcMDC2 =
   body $
     card $ ( Category.do
-        Category.do
-          filledTextField @"What needs to be done?" {}
-          button @"Add" {} # applied addTodo
-        listOf { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
-        segmentedButton @"Visibility"
-          [ choice @"All", choice @"Active", choice @"Completed" ] # required
-        Category.do
-          caption (text soleLine) # shownWhen @"sole" remainingItems
-          caption (text severalLine) # shownWhen @"several" remainingItems
-          button @"Clear completed" {} # applied clearCompleted
+      Category.do
+        filledTextField @"What needs to be done?" {}
+        button @"Add" {} # applied addTodo
+      listOf { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
+      segmentedButton @"Visibility"
+        [ choice @"All", choice @"Active", choice @"Completed" ] # required
+      Category.do
+        caption (text soleLine) # shownWhen @"sole" remainingItems
+        caption (text severalLine) # shownWhen @"several" remainingItems
+        button @"Clear completed" {} # applied clearCompleted
     ) # mvu emptyTodoList
