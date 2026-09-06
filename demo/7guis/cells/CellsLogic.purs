@@ -1,8 +1,8 @@
 module CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine) where
 
-import Prelude ((<>), bind, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
+import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
-import Data.Array (catMaybes, range)
+import Data.Array (range)
 import Data.Char (fromCharCode, toCharCode)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -35,18 +35,23 @@ cols = 26
 rows :: Int
 rows = 30
 
+colName :: Int -> String
+colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
+
+refKey :: { c :: Int, r :: Int } -> String
+refKey { c, r } = colName c <> show r
+
 gridRows :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ] } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, kind :: [ header :: {}, cell :: {} ], text :: String, status :: [ selected :: {}, unselected :: {} ] } }
 gridRows m =
   let
     values = evalSheet m.cells
-    colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
     colIndices = range 0 (cols - 1)
     headerCells =
       [ { domKey: "h", key: "", kind: .header {}, text: "", status: .unselected {} } ]
         <> (colIndices <#> \c -> { domKey: "h" <> show c, key: "", kind: .header {}, text: colName c, status: .unselected {} })
     rowCells r =
       [ { domKey: "l" <> show r, key: "", kind: .header {}, text: show r, status: .unselected {} } ]
-        <> (colIndices <#> \c -> let key = colName c <> show r in { domKey: key, key, kind: .cell {}, text: fromMaybe "" (lookup key values), status: statusOf key })
+        <> (colIndices <#> \c -> let key = refKey { c, r } in { domKey: key, key, kind: .cell {}, text: fromMaybe "" (lookup key values), status: statusOf key })
     statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
   in
     [ { rowKey: "header", cells: headerCells } ]
@@ -66,16 +71,16 @@ commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match
 evalSheet :: Object String -> Object String
 evalSheet cells = foldl insertVal empty keys
   where
-  keys = catMaybes do
+  keys = do
     c <- range 0 (cols - 1)
     r <- range 0 (rows - 1)
-    pure ((\ch -> singleton ch <> show r) <$> fromCharCode (toCharCode 'A' + c))
+    pure (refKey { c, r })
   insertVal acc key = case lookup key cells of
     Nothing -> acc
     Just _ -> insert key (display (evalCell cells Nil key)) acc
 
 display :: [ numV :: Number, textV :: String, errV :: String ] -> String
-display = match { numV: formatNum, textV: \t -> t, errV: \e -> e }
+display = match { numV: formatNum, textV: identity, errV: identity }
 
 formatNum :: Number -> String
 formatNum n =
@@ -180,9 +185,6 @@ parseRef s = case charAt 0 s of
       Just r -> Just { val: { c: toCharCode col - toCharCode 'A', r }, rest: drop (1 + length digits) s }
       Nothing -> Nothing
   _ -> Nothing
-
-refKey :: { c :: Int, r :: Int } -> String
-refKey { c, r } = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c)) <> show r
 
 evalExpr :: Object String -> List String -> Expr -> [ numV :: Number, textV :: String, errV :: String ]
 evalExpr cells visiting = go

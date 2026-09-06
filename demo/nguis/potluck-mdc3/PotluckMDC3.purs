@@ -5,9 +5,9 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PotluckLogic (guestCountLine, guestName, invitation, menuLine)
-import PUI (acted, foreach, with)
+import PUI (acted, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body, span, staticText, text)
+import PUI.Web.HTML (shown, body, text)
 import PUI.Web.MDC3 (bodyMedium, elevation5, group, headlineSmall, list, listItem, segmentedButton, titleMedium)
 import QualifiedDo.Category as Category
 
@@ -21,7 +21,5 @@ potluckMDC3 =
                 titleMedium (text guestName)
                 segmentedButton @"Dish"
                   [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
-        headlineSmall $ Category.do
-          (staticText "On the table: ") # shown
-          ( span $ text menuLine ) # foreach @"name" _."Guests"
+        headlineSmall (text menuLine) # shown
     ) # with invitation

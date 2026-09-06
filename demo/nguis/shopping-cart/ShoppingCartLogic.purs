@@ -42,13 +42,13 @@ cartLines { order } = map line order
   where
   line { product, quantity } = { product: product.name, unitPrice: product.unitPrice, quantity }
 
-productLine :: { product :: String, unitPrice :: Int, quantity :: Int } -> String
+productLine :: { product :: String } -> String
 productLine { product } = product
 
-quantityLine :: { product :: String, unitPrice :: Int, quantity :: Int } -> String
+quantityLine :: { quantity :: Int } -> String
 quantityLine { quantity } = show quantity
 
-lineTotalLine :: { product :: String, unitPrice :: Int, quantity :: Int } -> String
+lineTotalLine :: { unitPrice :: Int, quantity :: Int } -> String
 lineTotalLine { unitPrice, quantity } = "$" <> formatMoney (quantity * unitPrice)
 
 formatMoney :: Int -> String

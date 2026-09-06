@@ -743,8 +743,8 @@ infixr 10 attrDyn as :=>
 -- | data — visibility is **case adoption**: the argument is a business
 -- | function classifying the situation into a variant, and the pane is
 -- | attached and fed the payload of case `l`, detached on every other
--- | case. A ticket counter whose `display` is either `waiting` or `serving`
--- | shows its number pane as `pane # provided @"serving" displayOf`;
+-- | case. A quiz whose run is either `asking` or `finished` shows its
+-- | question pane as `pane # provided @"asking" quizPhase`;
 -- | checkout's wizard shows each step's pane off one `checkoutStep`
 -- | classifier whose cases carry what their panes review.
 -- |

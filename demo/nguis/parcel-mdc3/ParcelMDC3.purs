@@ -5,9 +5,9 @@ import Prelude (Unit, (#), ($))
 import Effect (Effect)
 import ParcelLogic (draftParcel, parcelLine)
 import PUI (PUI, subStrong, mvu)
-import PUI.Web.HTML (shown, body, text)
 import PUI.Web.MDC3 (bodyLarge, card, elevation5, filledTextField)
 import PUI.Web (Web)
+import PUI.Web.HTML (body, shown, text)
 import QualifiedDo.Category as Category
 
 parcelMDC3 :: Effect Unit

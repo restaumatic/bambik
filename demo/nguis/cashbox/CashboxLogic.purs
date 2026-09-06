@@ -36,4 +36,4 @@ applyDeposit :: { amount :: Number } -> { balance :: Number } -> { balance :: Nu
 applyDeposit { amount } { balance } = { balance: balance + amount }
 
 euros :: Number -> String
-euros n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
+euros n = let s = show n in fromMaybe s (stripSuffix (Pattern ".0") s)

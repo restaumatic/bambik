@@ -1,6 +1,6 @@
 module CalculatorLogic (blankTally, keyPad, operatorKeys, pressKey, readout) where
 
-import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), show)
+import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
 import Data.Array (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -46,7 +46,7 @@ pressKey key tally@{ entry, operation, input }
         }
       Nothing -> blankTally { condition = .faulty {} }
   | typing input = tally { entry = if entry == "0" then key else entry <> key }
-  | true = tally { entry = key, input = .entering {} }
+  | otherwise = tally { entry = key, input = .entering {} }
 
 typing :: [ entering :: {}, settled :: {} ] -> Boolean
 typing = match { entering: \_ -> true, settled: \_ -> false }

@@ -22,8 +22,8 @@ circleDrawerHTML =
               ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
                     >>> attrWith "fill" circleFill $ blank ) # foreach @"key" canvasCircles ) # toCase @"picked" identity )) # updated (match { picked: selectOrAddCircle })
       ( div $ RecordToVariant.do
-          button (staticText "Undo") # toCase @"undo" identity
-          button (staticText "Redo") # toCase @"redo" identity ) # updated (match { undo: const <<< undo, redo: const <<< redo })
+          button (staticText "Undo") # toCase @"Undo" identity
+          button (staticText "Redo") # toCase @"Redo" identity ) # updated (match { "Undo": const <<< undo, "Redo": const <<< redo })
   ) # mvu emptyCanvas
 circleFill :: { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status

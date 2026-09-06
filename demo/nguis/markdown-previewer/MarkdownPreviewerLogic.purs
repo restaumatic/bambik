@@ -1,9 +1,9 @@
 module MarkdownPreviewerLogic (parseMarkdown, welcomeDocument) where
 
-import Prelude (otherwise, (&&), (+), (/=), (<#>), (<>), (==), (>))
+import Prelude (not, otherwise, (&&), (+), (/=), (<#>), (<<<), (<>), (==), (>), (||))
 
 import Data.Array (cons, span, uncons)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust, isNothing)
 import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
@@ -55,33 +55,25 @@ blocks ls = case uncons ls of
     | Just t <- stripPrefix (Pattern "# ") l -> cons (.heading { level: 1, inlines: parseInlines t }) (blocks tail)
     | isBullet l ->
         let grouped = span isBullet (cons l tail)
-        in cons (.bullets (grouped.init <#> \item -> parseInlines (drop 2 item))) (blocks grouped.rest)
+        in cons (.bullets (grouped.init <#> parseInlines <<< dropMarker)) (blocks grouped.rest)
     | isQuote l ->
         let grouped = span isQuote (cons l tail)
-        in cons (.quote (parseInlines (joinWith " " (grouped.init <#> dropQuoteMark)))) (blocks grouped.rest)
+        in cons (.quote (parseInlines (joinWith " " (grouped.init <#> dropMarker)))) (blocks grouped.rest)
     | otherwise ->
         let grouped = span isPlainLine (cons l tail)
         in cons (.paragraph (parseInlines (joinWith " " grouped.init))) (blocks grouped.rest)
 
 isBullet :: String -> Boolean
-isBullet l = case stripPrefix (Pattern "- ") l of
-  Just _ -> true
-  Nothing -> false
+isBullet = isJust <<< stripPrefix (Pattern "- ")
 
 isQuote :: String -> Boolean
-isQuote l = case stripPrefix (Pattern "> ") l of
-  Just _ -> true
-  Nothing -> false
+isQuote = isJust <<< stripPrefix (Pattern "> ")
 
-dropQuoteMark :: String -> String
-dropQuoteMark = drop 2
+dropMarker :: String -> String
+dropMarker = drop 2
 
 isPlainLine :: String -> Boolean
-isPlainLine l = trim l /= "" && case stripPrefix (Pattern "#") l of
-  Just _ -> false
-  Nothing -> case isBullet l, isQuote l of
-    false, false -> true
-    _, _ -> false
+isPlainLine l = trim l /= "" && isNothing (stripPrefix (Pattern "#") l) && not (isBullet l || isQuote l)
 
 parseInlines :: String -> Array [ plain :: String, bold :: String, italic :: String, code :: String ]
 parseInlines s

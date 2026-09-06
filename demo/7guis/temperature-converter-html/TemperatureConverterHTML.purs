@@ -12,9 +12,9 @@ temperatureConverterHTML :: Effect Unit
 temperatureConverterHTML =
   body $ div $ ( Category.do
       p ( label $ Category.do
-          (staticText "Celsius ") # shown
+          (staticText "°C ") # shown
           input @"°C" "text" ) # settled fromCelsius
       p ( label $ Category.do
-          (staticText "Fahrenheit ") # shown
+          (staticText "°F ") # shown
           input @"°F" "text" ) # settled fromFahrenheit
   ) # mvu roomTemperature

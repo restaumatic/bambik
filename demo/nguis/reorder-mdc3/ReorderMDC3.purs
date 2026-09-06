@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, edited, mvu, updated, static, blank)
+import PUI (action, atCase, blank, edited, mvu, static, updated)
 import PUI.Web.HTML (body, el, (:=))
 import PUI.Web.MDC3 (button, elevation5, filledTextField, group, list, listItem)
 import QualifiedDo.Category as Category
@@ -24,8 +24,8 @@ reorderMDC3 =
             VariantToVariant.do
               blank # action rotateAction # atCase @"Rotate"
               blank # action shuffleAction # atCase @"Shuffle" ) # updated (match { reordered: setOrder })
-        group @"Setlist" $ list
-          ( ( listItem $ ( RecordToRecord.do
-                static (el "input" >>> "type" := "checkbox")
-                filledTextField @"Title" {} )) # edited @"id" )
+        group @"Setlist" $ list $
+          ( listItem $ RecordToRecord.do
+              static (el "input" >>> "type" := "checkbox")
+              filledTextField @"Title" {} ) # edited @"id"
     ) # mvu openingSetlist

@@ -1,12 +1,12 @@
-module WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin) where
+module WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, reportRequest, servedLine, temperatureLine, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
 import Data.Array (filter, index)
-import Data.Int (toNumber)
+import Data.Int (round, toNumber)
 import Data.Maybe (fromMaybe)
-import Effect.Aff (Aff, Milliseconds(..), delay)
 import Data.Variant (match)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 
 warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
 warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
@@ -21,10 +21,13 @@ humidityWindLine :: { report :: { city :: String, temperature :: Number, conditi
 humidityWindLine { report } = "Humidity " <> show report.humidity <> "% · Wind " <> show report.wind <> " km/h"
 
 servedLine :: { servedReports :: Int } -> String
-servedLine { servedReports } = "Simulated service · " <> show servedReports <> " reports served"
+servedLine { servedReports } = "Simulated service · " <> if servedReports == 1 then "1 report served" else show servedReports <> " reports served"
 
 aboutLine :: { servedReports :: Int } -> String
-aboutLine { servedReports } = "A simulated weather service: canned per-city climate with slight variation per reading, served with a 800 ms delay. Reports served so far: " <> show servedReports <> "."
+aboutLine { servedReports } = "A simulated weather service: canned per-city climate with slight variation per reading, served with a " <> show (round serviceDelay.ms) <> " ms delay. Reports served so far: " <> show servedReports <> "."
+
+serviceDelay :: { ms :: Number }
+serviceDelay = { ms: 800.0 }
 
 climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 climateTable =
@@ -51,9 +54,12 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: { city :: String, sample :: Int, focus :: [ current :: {}, other :: {} ] } -> Aff [ reportServed :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } ]
+reportRequest :: { city :: String, sample :: Int, focus :: [ current :: {}, other :: {} ] } -> { city :: String, sample :: Int }
+reportRequest { city, sample } = { city, sample }
+
+fetchReport :: { city :: String, sample :: Int } -> Aff [ reportServed :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } ]
 fetchReport { city, sample } = do
-  delay (Milliseconds 800.0)
+  delay (Milliseconds serviceDelay.ms)
   pure (.reportServed { report: conditionsFor city sample })
 
 rememberReport :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }

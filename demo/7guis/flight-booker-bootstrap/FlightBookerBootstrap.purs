@@ -2,12 +2,11 @@ module FlightBookerBootstrap (flightBookerBootstrap) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, debounced, forCases, mvu, required, blank)
-import PUI.Web.Bootstrap (button, card, select, textField, toast)
+import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
+import PUI.Web.Bootstrap (button, card, select, textField, toast)
 import PUI.Web.HTML (inCase, shownWhen, body, p, text)
 import QualifiedDo.Category as Category
 
@@ -26,5 +25,5 @@ flightBookerBootstrap =
           p (text oneWayLine) # shownWhen @"one-way" bookingState
           p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
-      blank # action (match { "Book": submit })
+      blank # action submit # atCase @"Book"
       toast # forCases bookingLine

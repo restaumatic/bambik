@@ -21,7 +21,7 @@ orderFormMDC3 =
       ( Category.do
           ( headlineSmall $ text orderLine ) # shown
           card $ Category.do
-            (titleMedium $ staticText "Identifier") # shown
+            ( titleMedium $ staticText "Identifier" ) # shown
             filledTextField @"Short ID" {}
             filledTextField @"Unique ID" {}
           group @"Customer" $ Category.do
@@ -39,7 +39,7 @@ orderFormMDC3 =
                       indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
                   ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase
           card $ Category.do
-            (titleMedium $ staticText "Total") # shown
+            ( titleMedium $ staticText "Total" ) # shown
             filledTextField @"Total" {}
           group @"Payment" $ Category.do
             segmentedButton @"Method"
@@ -47,9 +47,8 @@ orderFormMDC3 =
             filledTextField @"Paid" {}
             ( bodyLarge $ text payingLine ) # shown
           card $ Category.do
-            (titleMedium $ staticText "Remarks") # shown
-            filledTextArea @"Remarks" { columns: 80, rows: 3 }
-      ) # looped
+            ( titleMedium $ staticText "Remarks" ) # shown
+            filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
       bodyLarge ( Category.do
           text summaryLine # shown # debounced summarySettleTime
           text dineInLine # shownWhen @"Dine in" fulfillmentOf

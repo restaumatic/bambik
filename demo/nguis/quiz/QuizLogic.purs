@@ -1,4 +1,4 @@
-module QuizLogic (answer, askedChoices, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
+module QuizLogic (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
 
 import Prelude (show, (+), (/), (<>), (==), min)
 
@@ -29,7 +29,6 @@ answer choice run@{ question, correct } = case index questionCatalogue question 
   Just q -> { question: question + 1, correct: correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
--- the run is asking while the catalogue has a question left, finished after
 quizPhase :: { question :: Int, correct :: Int } -> [ asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ]
 quizPhase { question, correct } = case index questionCatalogue question of
   Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
@@ -37,9 +36,6 @@ quizPhase { question, correct } = case index questionCatalogue question of
 
 askedPrompt :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> String
 askedPrompt { prompt } = prompt
-
-askedChoices :: { prompt :: String, choices :: Array { key :: Int, label :: String } } -> Array { key :: Int, label :: String }
-askedChoices { choices } = choices
 
 finalScoreLine :: { correct :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)

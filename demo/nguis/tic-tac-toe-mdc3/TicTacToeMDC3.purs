@@ -16,13 +16,10 @@ ticTacToeMDC3 =
     elevation5 $
       card $ ( Category.do
           headlineSmall (text wonLine) # shownWhen @"won" gameOutcome
-          (headlineSmall (staticText "Draw")) # shownWhen @"drawn" gameOutcome
+          headlineSmall (staticText "Draw") # shownWhen @"drawn" gameOutcome
           headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
           ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-                  ( clicked
-                      ( div
-                          >>> attrWith "style" cellFace
-                          $ text cellMark )) # foreach @"key" cells ) # toCase @"cellPicked" _.key ) # updated (match { cellPicked: claimCell })
+                  clicked ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" cells ) # toCase @"cellPicked" _.key ) # updated (match { cellPicked: claimCell })
           button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
       ) # mvu openingPosition
 cellFace :: { mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String

@@ -18,5 +18,5 @@ timerHTML =
           (staticText "Duration ") # shown
           rangeInput @"Duration" )
       every tickPeriod tick
-      button (staticText "Reset") # with nothingElapsed # toCase @"reset" identity # updated (match { reset: const })
+      button (staticText "Reset") # with nothingElapsed # toCase @"Reset" identity # updated (match { "Reset": const })
   ) # mvu tenSecondFreshTimer

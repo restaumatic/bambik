@@ -1,9 +1,6 @@
-module RestaurantMenuLogic (courseDishes, courseName, courses, dishDescription, dishName, dishTags, menuCourses, priceLine, tagText) where
+module RestaurantMenuLogic (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
 
 import Prelude ((<>), map)
-
-menuCourses :: { courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } } -> Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
-menuCourses = _.courses
 
 courseName :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> String
 courseName = _.name
@@ -11,20 +8,14 @@ courseName = _.name
 courseDishes :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> Array { name :: String, price :: String, description :: String, tags :: Array String }
 courseDishes = _.dishes
 
-dishDescription :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
-dishDescription = _.description
-
 dishName :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
 dishName = _.name
 
-priceLine :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
-priceLine { price } = "€" <> price
+dishDescription :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishDescription = _.description
 
-dishTags :: { name :: String, price :: String, description :: String, tags :: Array String } -> Array { tag :: String }
-dishTags { tags } = map { tag: _ } tags
-
-courses :: Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
-courses =
+menuCourses :: {} -> Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
+menuCourses _ =
   [ { name: "Antipasti"
     , dishes:
         [ { name: "Burrata di Puglia", price: "14", description: "Heirloom tomato, basil oil, Maldon salt.", tags: [ "vegetarian" ] }
@@ -48,5 +39,8 @@ courses =
     }
   ]
 
-tagText :: { tag :: String } -> String
-tagText = _.tag
+priceLine :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+priceLine { price } = "€" <> price
+
+dishTags :: { name :: String, price :: String, description :: String, tags :: Array String } -> Array { tag :: String }
+dishTags { tags } = map { tag: _ } tags

@@ -16,22 +16,22 @@ splitLine :: { "Split between" :: { current :: Number, min :: Number, max :: Num
 splitLine r = "Split between: " <> whole r."Split between" <> " people"
 
 tipAmountLine :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
-tipAmountLine r = "Tip amount: " <> money (tipAmount r."Bill amount" r."Tip percentage")
+tipAmountLine r = "Tip amount: " <> money (tipAmount r)
 
 totalLine :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
-totalLine r = "Total: " <> money (total r."Bill amount" r."Tip percentage")
+totalLine r = "Total: " <> money (total r)
 
 perPersonLine :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
-perPersonLine r = "Per person: " <> money ((_ / r."Split between".current) <$> total r."Bill amount" r."Tip percentage")
+perPersonLine r = "Per person: " <> money ((_ / r."Split between".current) <$> total { "Bill amount": r."Bill amount", "Tip percentage": r."Tip percentage" })
 
 whole :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } -> String
 whole { current } = toStringWith (fixed 0) current
 
-tipAmount :: String -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } -> Maybe Number
-tipAmount amount tipPercent = (\a -> a * tipPercent.current / 100.0) <$> fromString amount
+tipAmount :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> Maybe Number
+tipAmount r = (\a -> a * r."Tip percentage".current / 100.0) <$> fromString r."Bill amount"
 
-total :: String -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } -> Maybe Number
-total amount tipPercent = (\a -> a * (1.0 + tipPercent.current / 100.0)) <$> fromString amount
+total :: { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> Maybe Number
+total r = (\a -> a * (1.0 + r."Tip percentage".current / 100.0)) <$> fromString r."Bill amount"
 
 money :: Maybe Number -> String
 money = maybe "—" (toStringWith (fixed 2))

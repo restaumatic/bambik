@@ -374,17 +374,17 @@ variant, and the pane exists while the variant sits at case `l`, fed
 that case's payload.
 
 When the model field is itself a payload-carrying variant, the pane
-adopts it directly — `# provided @"serving" identity # atField
-@"display"` (ticket-dispenser), or through a closed accessor at a
-row-stating position (`# shownWhen @"Dine in" fulfillmentOf`;
-`_.fulfillment` would leave the rung's row unsolved there). When the
+adopts it through a closed accessor — the pane's argument is a
+row-stating position, so the accessor states the field's row
+(`# shownWhen @"serving" displayOf` in ticket-dispenser,
+`# provided @"halted" stopwatchPhase` in stopwatch; `_.display` would
+leave the rung's row unsolved there). When the
 state is *derived*, one classifier derives it: every case named, each
 case carrying exactly the payload its pane displays — checkout's
 `checkoutStep` (`cart { item }`, `shipping { address }`,
 `payment { card }`), calculator's `readout` (`sound { entry }` /
-`faulty {}`), scoreboard's `standing` (`led`/`unled`), quiz's
-`quizPhase` (`asking`/`finished`), inbox's `readState`
-(`unread`/`read`) and `messageView` (`reading`/`browsing`),
+`faulty {}`), quiz's `quizPhase` (`asking`/`finished`), inbox's
+`messageView` (`reading`/`browsing`),
 signup-form's two classifiers (which replaced five `Maybe`
 projections). Two panes can then never both be on screen — which two
 separate "should this be visible?" tests can always accidentally allow
@@ -692,8 +692,9 @@ induces — view first, logic module written to its names — is
   rides at the end of the UI component's last content line — close the paren
   inline and continue. When a bracketed UI component nests, the enclosing
   levels' closers and chains cascade onto that same final line. The one
-  exception is the app-level closer: the last UI line stays
-  `) # mvu seed` / `) # with seed` on its own.
+  exception is a seed closer: a `) # mvu seed` / `) # with seed` line
+  stands on its own, whether it closes the whole app or an editor block
+  mid-pipeline (flight-booker, signup-form).
   **A cascading closer is spaced from the chain it closes over**, so each
   level reads as one `) # chain` unit rather than the paren fusing onto
   the previous level's last word:
@@ -908,11 +909,11 @@ induces — view first, logic module written to its names — is
   predicate, never a predicate hidden in a projection, and never a
   `Maybe`: a state a pane depends on is a variant with every case named,
   so exclusivity holds by construction and the view line names the state
-  it shows. Where the model field itself is the variant **and the context
-  pins the row**, the bare accessor says it (`# provided @"serving"
-  identity # atField @"display"`); at row-stating positions a closed
-  accessor or classifier stays, its signature being the footprint
-  declaration. `clWhen` stays predicate-driven — it toggles styling, not
+  it shows. Where the model field itself is the variant, a closed
+  accessor reads it (`# provided @"confirming" deletionOf`,
+  `# shownWhen @"serving" displayOf`) — the pane's argument is a
+  row-stating position, so the accessor's signature is the footprint
+  declaration, as a classifier's is. `clWhen` stays predicate-driven — it toggles styling, not
   existence.
 - **State lives in the model or in the algebra's loops. Nowhere else.**
   No FFI stashes, no module-level `Ref`s, no reading the DOM back as

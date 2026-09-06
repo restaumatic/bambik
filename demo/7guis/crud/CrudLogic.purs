@@ -3,14 +3,26 @@ module CrudLogic (createPerson, deletePerson, entries, isSelected, personLine, l
 import Prelude ((<$>), (<>), (==), bind, discard, pure)
 
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (Pattern(..), stripPrefix)
+import Data.Variant (match)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import Data.Variant (match)
+
+sharedPeopleCatalogue :: Effect (Ref (Array { "Name" :: String, "Surname" :: String }))
+sharedPeopleCatalogue = Ref.new
+  [ { "Name": "Hans", "Surname": "Emil" }
+  , { "Name": "Max", "Surname": "Mustermann" }
+  , { "Name": "Roman", "Surname": "Tisch" }
+  ]
+
+loadPeopleCatalogue :: Ref (Array { "Name" :: String, "Surname" :: String }) -> {} -> Aff { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] }
+loadPeopleCatalogue catalogue _ = do
+  people <- readPeople catalogue
+  pure { "Filter prefix (surname)": "", "Name": "", "Surname": "", people, selected: .none {} }
 
 pick :: Int -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ], "Name" :: String, "Surname" :: String } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ], "Name" :: String, "Surname" :: String }
 pick i m@{ people } = case index people i of
@@ -38,11 +50,6 @@ refreshPeople people m = m { people = people }
 peopleDeleted :: Array { "Name" :: String, "Surname" :: String } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] }
 peopleDeleted people = { people, selected: .none {} }
 
-loadPeopleCatalogue :: Ref (Array { "Name" :: String, "Surname" :: String }) -> {} -> Aff { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] }
-loadPeopleCatalogue catalogue _ = do
-  people <- readPeople catalogue
-  pure { "Filter prefix (surname)": "", "Name": "", "Surname": "", people, selected: .none {} }
-
 readPeople :: Ref (Array { "Name" :: String, "Surname" :: String }) -> Aff (Array { "Name" :: String, "Surname" :: String })
 readPeople catalogue = do
   delay (Milliseconds 300.0)
@@ -54,22 +61,13 @@ writePeople catalogue people = do
   liftEffect (Ref.write people catalogue)
   readPeople catalogue
 
-sharedPeopleCatalogue :: Effect (Ref (Array { "Name" :: String, "Surname" :: String }))
-sharedPeopleCatalogue = Ref.new
-  [ { "Name": "Hans", "Surname": "Emil" }
-  , { "Name": "Max", "Surname": "Mustermann" }
-  , { "Name": "Roman", "Surname": "Tisch" }
-  ]
-
 entries :: { "Filter prefix (surname)" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } -> Array { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] }
 entries { "Filter prefix (surname)": prefix, selected, people } =
   (\{ i, p } -> { key: i, "Name": p."Name", "Surname": p."Surname", status: statusOf i })
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where
   statusOf i = match { picked: \p -> if p.index == i then .selected {} else .unselected {}, none: \_ -> .unselected {} } selected
-  hasPrefix p s = case stripPrefix (Pattern p) s of
-    Just _ -> true
-    Nothing -> false
+  hasPrefix prefix s = isJust (stripPrefix (Pattern prefix) s)
 
 personLine :: { "Name" :: String, "Surname" :: String } -> String
 personLine { "Name": name, "Surname": surname } = surname <> ", " <> name

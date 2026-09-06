@@ -1,4 +1,4 @@
-module PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, developedPhoto, isOpen, landscapesOpen, openAlbum) where
+module PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum) where
 
 import Prelude (($), (*), (+), (<#>), (<>), (==), mod, show)
 
@@ -47,6 +47,9 @@ isOpen { state } = match { open: \_ -> true, closed: \_ -> false } state
 
 openAlbum :: String -> { album :: String }
 openAlbum album = { album }
+
+favoriteShots :: Array { src :: String, label :: String }
+favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \label -> { src: developedPhoto label, label }
 
 albumPhotos :: { album :: String } -> Array { src :: String, label :: String }
 albumPhotos { album } =

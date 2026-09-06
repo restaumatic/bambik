@@ -1,6 +1,6 @@
 module TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries) where
 
-import Prelude ((<>), (==), const, not, show)
+import Prelude ((<<<), (<>), (==), const, not, show)
 
 import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe)
@@ -19,10 +19,10 @@ toggleTodo :: Int -> { todos :: Array { title :: String, status :: [ active :: {
 toggleTodo i m@{ todos } = m { todos = fromMaybe todos (modifyAt i (\t -> t { status = flipped t.status }) todos) }
 
 clearCompleted :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } }
-clearCompleted m@{ todos } = m { todos = filter (\t -> not (completed t.status)) todos }
+clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
 
 itemsLeft :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> Int
-itemsLeft { todos } = length (filter (\t -> not (completed t.status)) todos)
+itemsLeft { todos } = length (filter (isActive <<< _.status) todos)
 
 remainingItems :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } } -> [ sole :: { count :: Int }, several :: { count :: Int } ]
 remainingItems { todos } =
@@ -38,13 +38,16 @@ severalLine { count } = show count <> " items left"
 visibleEntries :: { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }, "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ] } -> Array { key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] }
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) (mapWithIndex (\i t -> { key: i, title: t.title, status: t.status }) todos)
   where
-  matches v t = match { "All": const true, "Active": \_ -> not (completed t.status), "Completed": \_ -> completed t.status } v
+  matches v t = match { "All": const true, "Active": const (isActive t.status), "Completed": const (completed t.status) } v
 
 completed :: [ active :: {}, completed :: {} ] -> Boolean
-completed = match { active: \_ -> false, completed: \_ -> true }
+completed = match { active: const false, completed: const true }
+
+isActive :: [ active :: {}, completed :: {} ] -> Boolean
+isActive = not <<< completed
 
 flipped :: [ active :: {}, completed :: {} ] -> [ active :: {}, completed :: {} ]
-flipped = match { active: \_ -> .completed {}, completed: \_ -> .active {} }
+flipped = match { active: const (.completed {}), completed: const (.active {}) }
 
 isCompleted :: { key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] } -> Boolean
 isCompleted { status } = completed status

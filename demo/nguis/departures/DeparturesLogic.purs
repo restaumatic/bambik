@@ -5,20 +5,20 @@ import Prelude ((+), (<>), div, mod)
 import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
 
-boardOpening :: { n :: Int }
-boardOpening = { n: 0 }
+boardOpening :: { beat :: Int }
+boardOpening = { beat: 0 }
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: { n :: Int } -> Maybe { n :: Int }
-tick { n } = Just { n: n + 1 }
+tick :: { beat :: Int } -> Maybe { beat :: Int }
+tick { beat } = Just { beat: beat + 1 }
 
-arrival :: { n :: Int } -> { key :: String, value :: { code :: String, status :: String } }
-arrival { n } =
+arrival :: { beat :: Int } -> { key :: String, value :: { code :: String, status :: String } }
+arrival { beat } =
   let
-    code = pick flights n
-    status = pick statuses (n + n `div` length flights)
+    code = pick flights beat
+    status = pick statuses (beat + beat `div` length flights)
   in
     { key: code, value: { code, status } }
 

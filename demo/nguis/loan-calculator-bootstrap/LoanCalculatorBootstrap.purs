@@ -4,10 +4,10 @@ import Prelude (Unit, ($), (#))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyText, rateLine, totalInterestLine)
+import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
 import PUI (armed, forCase, mvu, required)
-import PUI.Web.Bootstrap (badge, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web (choice)
+import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (shown, body, div, staticText, text)
 import QualifiedDo.Category as Category
 
@@ -24,9 +24,7 @@ loanCalculatorBootstrap =
           toggleSwitch @"Payment protection insurance" {}
       ) # mvu cityCarLoan
       ( listGroup $ RecordToRecord.do
-          listGroupItem ( RecordToRecord.do
-              staticText "Monthly payment "
-              badge { variant: "primary" } (text monthlyText) )
+          listGroupItem (text monthlyLine)
           listGroupItem (text rateLine)
           listGroupItem (text totalInterestLine) ) # shown
       ( div $ RecordToRecord.do

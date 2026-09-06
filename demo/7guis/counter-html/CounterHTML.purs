@@ -12,5 +12,5 @@ counterHTML :: Effect Unit
 counterHTML =
   body $ div $ ( Category.do
       h4 (text countLine) # shown
-      button (staticText "Count") # toCase @"increment" identity # applied increment
+      button (staticText "Count") # toCase @"Count" identity # applied increment
   ) # mvu freshCount

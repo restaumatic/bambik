@@ -2,14 +2,13 @@ module TicketDispenserMDC3 (ticketDispenserMDC3) where
 
 import Prelude (Unit, const, identity, (#), ($))
 
-import Data.Lens.Reel (reelE)
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
-import PUI (mvu, updated)
+import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, body, staticText, text)
-import PUI.Web.MDC3 (bodyMedium, button, card, elevation5, displaySmall)
+import PUI.Web.MDC3 (bodyMedium, button, card, displaySmall, elevation5)
 import QualifiedDo.Category as Category
-import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, issue, nextTicket, servingLine, ticketLine)
+import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine, ticketRequested)
 
 ticketDispenserMDC3 :: Effect Unit
 ticketDispenserMDC3 =
@@ -23,6 +22,6 @@ ticketDispenserMDC3 =
               (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
               (text servingLine) # shownWhen @"serving" displayOf )
           ( Category.do
-              button @"Take a number" {}
-              (reelE issue nextTicket identity) # unfolding @"resume" firstTicket ) # updated const
+              button @"Take a number" {} # toCases ticketRequested
+              ticketIssuance identity # unfolding @"resume" firstTicket ) # updated const
       ) # mvu emptyQueue

@@ -20,5 +20,5 @@ export const run = async ({ ev, assertEq, sleep }) => {
 
   await ev(`[...document.querySelectorAll('button')].find(b => b.textContent.includes('Generate')).click()`)
   await sleep(400)
-  assertEq(await ev(`document.getElementById('password').textContent.length`), 60, 'generate samples a password of the chosen length')
+  assertEq(await ev(`document.querySelector('#demo-column code').textContent.length`), 60, 'generate samples a password of the chosen length')
 }

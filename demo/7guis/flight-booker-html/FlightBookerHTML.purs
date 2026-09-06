@@ -3,10 +3,9 @@ module FlightBookerHTML (flightBookerHTML) where
 import Prelude (identity, (#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, debounced, forCases, mvu, required, toCase, blank)
+import PUI (action, atCase, debounced, forCases, mvu, required, toCase, blank)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shown, shownWhen, body, button, div, input, label, output, p, select, staticText, text)
 import QualifiedDo.Category as Category
@@ -30,6 +29,6 @@ flightBookerHTML =
         p (text problemLine) # shownWhen @"problem" bookingState
         p (text oneWayLine) # shownWhen @"one-way" bookingState
         p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
-    button (staticText "Book") # toCase @"book" identity
-    blank # action (match { book: submit })
+    button (staticText "Book") # toCase @"Book" identity
+    blank # action submit # atCase @"Book"
     output # forCases bookingLine

@@ -1,6 +1,6 @@
 module CalculatorMDC2 (calculatorMDC2) where
 
-import Prelude (const, (#), ($), (<<<), (<>), (>>>), Unit)
+import Prelude (const, (#), ($), (<>), (>>>), Unit)
 
 import CalculatorLogic (blankTally, keyPad, operatorKeys, pressKey, readout)
 import Data.Array (elem)
@@ -24,13 +24,10 @@ calculatorMDC2 =
                     (staticText "Error") # shownWhen @"faulty" readout
                     text _.entry # provided @"sound" readout
                 div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key
-        ) # updated (match { keyPressed: pressKey }) # mvu blankTally
+                  clicked ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key # updated (match { keyPressed: pressKey })
+        ) # mvu blankTally
 keyFace :: { key :: String } -> String
-keyFace = keyStyle <<< _.key
-
-keyStyle :: String -> String
-keyStyle key =
+keyFace { key } =
   "height: 52px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "
     <> "border-radius: 4px; user-select: none; "

@@ -2,12 +2,11 @@ module FlightBookerFluent (flightBookerFluent) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, debounced, forCases, mvu, required, blank)
-import PUI.Web.Fluent (body1, button, card, dropdown, messageBar, textField)
+import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
+import PUI.Web.Fluent (body1, button, card, dropdown, messageBar, textField)
 import PUI.Web.HTML (inCase, shownWhen, body, text)
 import QualifiedDo.Category as Category
 
@@ -26,5 +25,5 @@ flightBookerFluent =
           body1 (text oneWayLine) # shownWhen @"one-way" bookingState
           body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
-      blank # action (match { "Book": submit })
+      blank # action submit # atCase @"Book"
       messageBar # forCases bookingLine

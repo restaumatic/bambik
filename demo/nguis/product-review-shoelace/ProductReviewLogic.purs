@@ -1,4 +1,4 @@
-module ProductReviewLogic (freshImpression, previewLine, starsText, submittedLine) where
+module ProductReviewLogic (freshImpression, previewLine, submittedLine) where
 
 import Prelude ((<>), (-))
 
@@ -17,16 +17,13 @@ freshImpression =
   , "Nickname": ""
   }
 
-starsText :: { "Overall rating" :: { current :: Number, max :: Int } } -> String
-starsText r = starGlyphs r."Overall rating"
-
 previewLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean } -> String
 previewLine r =
-  "Preview: " <> starsText { "Overall rating": r."Overall rating" } <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
+  "Preview: " <> starGlyphs r."Overall rating" <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
 
 submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Nickname" :: String } -> String
 submittedLine r =
-  "Thanks" <> forReviewer { "Nickname": r."Nickname" } <> "! Your " <> starsText { "Overall rating": r."Overall rating" } <> " review is in."
+  "Thanks" <> forReviewer { "Nickname": r."Nickname" } <> "! Your " <> starGlyphs r."Overall rating" <> " review is in."
 
 forReviewer :: { "Nickname" :: String } -> String
 forReviewer { "Nickname": nickname } = case trim nickname of

@@ -1,14 +1,14 @@
 module WeatherMDC3 (weatherMDC3) where
 
-import Prelude (Unit, identity, (#), ($))
+import Prelude (Unit, (#), ($))
 
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, mvu, toCase, updated)
 import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC3 (bodyLarge, bodySmall, card, elevation5, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import PUI.Web.MDC3 (bodyLarge, bodySmall, card, displayLarge, elevation5, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Category as Category
-import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin)
+import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, reportRequest, servedLine, temperatureLine, warsawBulletin)
 
 weatherMDC3 :: Effect Unit
 weatherMDC3 =
@@ -16,7 +16,7 @@ weatherMDC3 =
     elevation5 $
       card $ ( Category.do
           ( Category.do
-              listOf { selected: isCurrent } forecastRequests (text _.city) # toCase @"cityPicked" identity
+              listOf { selected: isCurrent } forecastRequests (text _.city) # toCase @"cityPicked" reportRequest
               indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
           displayLarge (text temperatureLine) # shown
           headlineMedium (text conditionLine) # shown

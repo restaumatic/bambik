@@ -2,10 +2,9 @@ module FlightBookerMDC2 (flightBookerMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, debounced, forCases, mvu, required)
+import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, body, text)
 import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
@@ -27,5 +26,5 @@ flightBookerMDC2 =
           body1 (text oneWayLine) # shownWhen @"one-way" bookingState
           body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
-      indeterminateLinearProgress @"busy" # action (match { "Book": submit })
+      indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
       snackbar # forCases bookingLine

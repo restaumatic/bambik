@@ -1,14 +1,13 @@
 module InboxMDC2 (inboxMDC2) where
 
-import Prelude (identity, (#), ($), (<<<), Unit, const)
+import Prelude ((#), ($), (<<<), Unit, const)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, readState, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (applied, atCase, forCase, mvu, observed, toCase, updated, with)
-import PUI.Web.HTML (shownWhen, shown, body, provided, span, staticText, text)
+import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import PUI (applied, forCase, mvu, observed, toCase, updated, with)
+import PUI.Web.HTML (shown, body, provided, span, text)
 import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
 
@@ -18,10 +17,7 @@ inboxMDC2 =
     elevation20 $
       card $ ( Category.do
           ( caption $ text unreadLine ) # shown
-          listOf { selected: highlighted } mailboxRows
-            ( span $ Category.do
-                (staticText "● ") # shownWhen @"unread" readState
-                text messageLine # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+          listOf { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
           ( Category.do
               headline6 (text subjectLine) # shown
               body2 (text fromLine) # shown
@@ -31,9 +27,7 @@ inboxMDC2 =
               ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
                   button @"Delete" {} # with {}
                   button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
-              VariantToVariant.do
-                banner # forCase @"Delete" (const inboxZeroLine) # observed
-                identity # atCase @"Keep" # toCase @"Keep" identity ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
+              banner # forCase @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
           fab @"Compose" { icon: "edit" } # applied composeMessage
           ( menu { label: "Sort" } $ RecordToVariant.do
               menuItem @"By sender" {}

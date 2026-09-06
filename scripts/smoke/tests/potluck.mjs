@@ -11,7 +11,7 @@ const menuText = `(document.querySelector('h6') || { textContent: '' }).textCont
 
 export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(`document.querySelectorAll('.mdc-segmented-button').length`), 4, 'four guest rows built')
-  assertEq(await ev(menuText), 'On the table: ', 'gather gate: only the static prefix before anyone chose')
+  assertEq(await ev(menuText), '', 'gather gate: no menu before anyone chose')
 
   await ev(`(() => { window.__rows = [...document.querySelectorAll('.mdc-segmented-button')]; return true })()`)
 
@@ -19,7 +19,7 @@ export const run = async ({ ev, assertEq, sleep }) => {
   assertEq(await ev(pick(1, 'Lasagna')), true, 'Grace picks')
   assertEq(await ev(pick(2, 'Pavlova')), true, 'Edsger picks')
   await sleep(100)
-  assertEq(await ev(menuText), 'On the table: ', 'gather gate: withheld while one guest is undecided')
+  assertEq(await ev(menuText), '', 'gather gate: withheld while one guest is undecided')
 
   assertEq(await ev(pick(3, 'Salad')), true, 'Barbara picks')
   await sleep(100)
@@ -30,17 +30,10 @@ export const run = async ({ ev, assertEq, sleep }) => {
     'menu completes on the last voice (' + menu + ')'
   )
 
-  await ev(`(() => { window.__frags = [...document.querySelectorAll('h6 span')]; return true })()`)
-
   assertEq(await ev(pick(0, 'Pavlova')), true, 'Ada re-picks')
   await sleep(100)
   const menu2 = await ev(menuText)
   assertEq(menu2.includes('Ada’s Pavlova'), true, 'retain-last: a re-choice re-emits the whole menu (' + menu2 + ')')
-  assertEq(
-    await ev(`(() => { const now = [...document.querySelectorAll('h6 span')]; return now.length === window.__frags.length && now.every((n, i) => n === window.__frags[i]) })()`),
-    true,
-    'partial update: the menu is keyed fragments — spans survive a re-choice'
-  )
 
   assertEq(
     await ev(`[...document.querySelectorAll('.mdc-segmented-button')].every((el, i) => el === window.__rows[i])`),

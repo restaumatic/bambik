@@ -4,10 +4,10 @@ import Prelude ((#), ($), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (foreach, with, static)
+import PUI (foreach, static, with)
 import PUI.Web.HTML (a, article, blockquote, body, cl, div, footer, h1, h2, h3, header, hr, li, p, section, span, staticText, text, ul, (:=))
 import PUI.Web.SVG as SVG
-import RestaurantMenuLogic (courseDishes, courseName, courses, dishDescription, dishName, dishTags, menuCourses, priceLine, tagText)
+import RestaurantMenuLogic (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
@@ -31,7 +31,7 @@ restaurantMenu =
                   span >>> cl "dish-price" $ text priceLine
                 p >>> cl "dish-desc" $ text dishDescription
                 span >>> cl "tags" $
-                  ( span >>> cl "tag" $ text tagText ) # foreach @"tag" dishTags ) # foreach @"name" courseDishes ) # foreach @"name" menuCourses
+                  ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" dishTags ) # foreach @"name" courseDishes ) # foreach @"name" menuCourses
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
@@ -46,4 +46,4 @@ restaurantMenu =
         staticText "A static page composed from HTML oculars with "
         a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"
         staticText " — no Material components, just structure."
-  ) # with { courses }
+  ) # with {}

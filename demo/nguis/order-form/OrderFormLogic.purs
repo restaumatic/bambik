@@ -69,7 +69,7 @@ deliveryDistance ::
 deliveryDistance { "Fulfillment": fulfillment } = match
   { "Dine in": const (.unknown {})
   , "Takeaway": const (.unknown {})
-  , "Delivery": \d -> match { estimated: \e -> .estimated { km: e.km }, unknown: const (.unknown {}) } d.distance
+  , "Delivery": \d -> distanceOf { distance: d.distance }
   } fulfillment
 
 awayLine :: { km :: Int } -> String

@@ -23,6 +23,9 @@ minDiameter = 4.0
 maxDiameter :: Number
 maxDiameter = 200.0
 
+freshCircleRadius :: Number
+freshCircleRadius = 20.0
+
 canvasCircles
   :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ] }
   -> Array { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] }
@@ -35,7 +38,7 @@ selectOrAddCircle { x, y } m@{ circles, "Diameter": diameter, undoStack, redoSta
   Just i -> m { selected = .chosen { index: i }, "Diameter" = diameter { current = fromMaybe diameter.current ((\c -> 2.0 * c.r) <$> index circles i) }, drag = .settled {} }
   Nothing ->
     let stacks = pushUndo { circles, undoStack, redoStack }
-    in m { circles = snoc circles { x, y, r: 20.0 }, selected = .none {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
+    in m { circles = snoc circles { x, y, r: freshCircleRadius }, selected = .none {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
 
 undo :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ], drag :: [ adjusting :: {}, settled :: {} ], undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ], drag :: [ adjusting :: {}, settled :: {} ], undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 undo m@{ undoStack, redoStack, circles } = case unsnoc undoStack of
@@ -52,8 +55,6 @@ redo m@{ redoStack, undoStack, circles } = case unsnoc redoStack of
 selection :: { selected :: [ chosen :: { index :: Int }, none :: {} ] } -> [ chosen :: { index :: Int }, none :: {} ]
 selection { selected } = selected
 
--- a drag resizes the chosen circle live; the first step of a drag is the one
--- undo transaction, later steps ride it
 resizeSelected :: { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ], "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, drag :: [ adjusting :: {}, settled :: {} ], undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) } -> { circles :: Array { x :: Number, y :: Number, r :: Number }, selected :: [ chosen :: { index :: Int }, none :: {} ], "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, drag :: [ adjusting :: {}, settled :: {} ], undoStack :: Array (Array { x :: Number, y :: Number, r :: Number }), redoStack :: Array (Array { x :: Number, y :: Number, r :: Number }) }
 resizeSelected m@{ "Diameter": diameter, circles, selected, drag, undoStack, redoStack } = match
   { chosen: \s -> case index circles s.index of

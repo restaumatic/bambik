@@ -41,7 +41,7 @@ bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start d
 bookingState = parse >>> either (\problem -> .problem { problem })
   (match
     { oneWayOn: \out -> ."one-way" { out }
-    , returnBetween: \r -> ."return" r
+    , returnBetween: ."return"
     })
 
 problemLine :: { problem :: String } -> String
@@ -60,7 +60,7 @@ summary = match
   }
 
 submit :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
-submit { "Flight type": flightType, "Start date (DD.MM.YYYY)": start, "Return date (DD.MM.YYYY)": back } = case parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": start, "Return date (DD.MM.YYYY)": back } of
+submit trip = case parse trip of
   Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
 

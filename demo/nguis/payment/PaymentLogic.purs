@@ -1,4 +1,4 @@
-module PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusText, unpaidOrder) where
+module PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder) where
 
 import Prelude (show, (<>), ($), (+), (<), discard, pure)
 
@@ -11,8 +11,8 @@ unpaidOrder = { amount: 42.0, approval: .pending {} }
 amountLine :: { amount :: Number } -> String
 amountLine { amount } = "Amount due: $" <> show amount
 
-statusText :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> String
-statusText { amount, approval } = match
+statusLine :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> String
+statusLine { amount, approval } = match
   { pending: \_ -> "Ready to charge — the gateway is flaky, so it retries automatically."
   , approved: \{ attempt } -> "Approved — $" <> show amount <> " charged on attempt " <> show attempt
   } approval
@@ -29,9 +29,8 @@ chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
   ]
 chargeFlaky r@{ attempt } = do
   delay (Milliseconds 700.0)
-  if attempt < 2
-    then pure $ .charge r { attempt = attempt + 1 }
-    else pure $ .charged { attempt: attempt + 1 }
+  let tried = attempt + 1
+  pure $ if attempt < 2 then .charge r { attempt = tried } else .charged { attempt: tried }
 
 recordCharged :: { attempt :: Int } -> { approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
 recordCharged approved = { approval: .approved approved }

@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<<<), Unit, const)
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
 import Effect (Effect)
-import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusText, unpaidOrder)
+import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
 import PUI (action, atCase, forCase, mvu, observed, toCases, updated)
 import PUI.Web.HTML (shown, body, text)
 import PUI.Web.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress, snackbar)
@@ -17,7 +17,7 @@ paymentMDC2 =
     elevation20 $
       card $ ( Category.do
           ( headline6 $ text amountLine ) # shown
-          (body2 (text statusText)) # shown
+          ( body2 $ text statusLine ) # shown
           ( Category.do
               button @"Charge card" { icon: "credit_card" } # toCases startCharge
               ( Category.do

@@ -5,10 +5,10 @@ import Prelude ((#), ($), (<<<), Unit, const)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, developedPhoto, isOpen, landscapesOpen, openAlbum)
+import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum)
 import PUI (mvu, toCase, updated)
-import PUI.Web.HTML (shownEach, shown, body, span, staticText, text)
-import PUI.Web.MDC3 (divider, drawer, displayMedium, imageList, imageListItem, imagePane, list, listItem, listOf, labelSmall, topAppBar)
+import PUI.Web.HTML (shownEach, shown, body, each, span, staticText, text)
+import PUI.Web.MDC3 (displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
 import QualifiedDo.Category as Category
 
 photoGalleryMDC3 :: Effect Unit
@@ -24,12 +24,8 @@ photoGalleryMDC3 =
                 listItem $ staticText "developed from its caption"
                 listItem $ staticText "No network involved"
               labelSmall $ staticText "Favorites"
-              imageList { columns: 2 } $ RecordToRecord.do
-                imageListItem { src: developedPhoto "Dawn Ridge", label: "Dawn Ridge" }
-                imageListItem { src: developedPhoto "Half Smile", label: "Half Smile" }
-                imageListItem { src: developedPhoto "Orbit Study", label: "Orbit Study" }
-                imageListItem { src: developedPhoto "Quiet Lake", label: "Quiet Lake" } )
+              imageList { columns: 2 } $ each favoriteShots imageListItem )
           ( Category.do
-              (displayMedium (text albumTitle)) # shown
+              ( displayMedium $ text albumTitle ) # shown
               imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
       ) # mvu landscapesOpen

@@ -24,6 +24,6 @@ cashboxMDC3 =
                 button @"Pay the courier" { icon: "local_shipping" } # with courierFee
                 button @"Take a deposit" { icon: "savings" } # with customerDeposit
               ( VariantToVariant.do
-                  ( confirmed { title: "Refund the customer?", confirm: "Refund" } $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"Refunded the customer" identity
-                  ( confirmed { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"Paid the courier" identity ) # subChoice ) # updated (match { "Refunded the customer": applyRefund, "Paid the courier": applyPayout, "Take a deposit": applyDeposit })
+                  ( confirmed { title: "Refund the customer?", confirm: "Refund" } $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"refunded" identity
+                  ( confirmed { title: "Pay the courier?", confirm: "Pay" } $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: applyRefund, paidOut: applyPayout, "Take a deposit": applyDeposit })
       ) # mvu openedTill
