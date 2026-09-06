@@ -5,6 +5,12 @@
 // which every catalogue draws as the accessible name by the stamp invariant —
 // and the readout as the leaf showing the count. A failure on one twin is
 // that vocabulary breaking the stamp, not a selector gone stale.
+//
+// Each twin also enters through its vocabulary's own `body`, which dresses the
+// page for its catalogue at mount — setup that used to run at import time and
+// now happens only because an app entered (guardrails L11). Where the dressing
+// leaves a DOM footprint it is asserted per twin; Shoelace's icon base path has
+// none on this page, and Bootstrap/HTML have nothing to dress.
 import { a11y } from '../a11y.mjs'
 
 const twins = ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html']
@@ -17,10 +23,18 @@ export const pages = twins.map((t) => ({ url: `/demo/7guis/counter-${t}/`, label
 const countShows = (n) => `[...document.querySelectorAll('#demo-column *')]
   .some(e => e.children.length === 0 && e.textContent.trim() === '${n}')`
 
+const dressed = {
+  mdc2: `document.body.classList.contains('mdc-typography')`,
+  mdc3: `[...document.adoptedStyleSheets].some(s => [...s.cssRules].some(r => r.cssText.includes('md-typescale')))`,
+  fluent: `getComputedStyle(document.documentElement).getPropertyValue('--colorNeutralBackground1').trim() !== ''`,
+}
+
 export const run = async ({ ev, session, assertEq, sleep, page }) => {
   const ax = a11y(session)
   await sleep(600) // custom-element upgrade + FAST's deferred bind
   for (let i = 0; i < 25 && !(await ev(`!!document.querySelector('#demo-column')`)); i++) await sleep(200)
+
+  if (dressed[page]) assertEq(await ev(dressed[page]), true, `[${page}] the vocabulary's body dressed the page at mount`)
 
   const buttons = await ax.query({ role: 'button', name: 'Count' })
   assertEq(buttons.length >= 1, true, `[${page}] the AX tree has a button named "Count" — the case label is the accessible name`)
