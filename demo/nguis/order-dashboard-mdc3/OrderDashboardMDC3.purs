@@ -7,8 +7,8 @@ import Effect (Effect)
 import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (every, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body)
-import PUI.Web.MDC3 (elevation5, topAppBar)
+import PUI.Web.HTML (shown)
+import PUI.Web.MDC3 (body, elevation5, topAppBar)
 import QualifiedDo.Category as Category
 
 orderDashboardMDC3 :: Effect Unit

@@ -6,8 +6,8 @@ import ColorMixerLogic (applyPreset, duskViolet, hexLine, mixOf, palette, rgb, r
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, toCase, updated)
-import PUI.Web.HTML (shown, attrWith, body, clicked, div, text, (:=))
-import PUI.Web.MDC3 (bodyMedium, card, elevation5, sliderLive)
+import PUI.Web.HTML (shown, attrWith, clicked, div, text, (:=))
+import PUI.Web.MDC3 (body, bodyMedium, card, elevation5, sliderLive)
 import QualifiedDo.Category as Category
 
 colorMixerMDC3 :: Effect Unit

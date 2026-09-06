@@ -7,8 +7,8 @@ import Data.Array (elem)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, toCase, updated)
-import PUI.Web.HTML (shownWhen, attrWith, body, clicked, div, provided, staticText, text, (:=))
-import PUI.Web.MDC2 (card, elevation20)
+import PUI.Web.HTML (shownWhen, attrWith, clicked, div, provided, staticText, text, (:=))
+import PUI.Web.MDC2 (body, card, elevation20)
 import QualifiedDo.Category as Category
 
 calculatorMDC2 :: Effect Unit

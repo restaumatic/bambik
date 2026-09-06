@@ -4,8 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (mvu, settled)
-import PUI.Web.Bootstrap (card, textField)
-import PUI.Web.HTML (body)
+import PUI.Web.Bootstrap (body, card, textField)
 import QualifiedDo.Category as Category
 import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 

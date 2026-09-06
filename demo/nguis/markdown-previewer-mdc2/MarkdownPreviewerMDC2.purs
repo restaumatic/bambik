@@ -7,8 +7,8 @@ import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (PUI, atField, mvu)
 import PUI.Web (Web)
-import PUI.Web.HTML (shown, blockquote, body, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
-import PUI.Web.MDC2 (card, elevation20, filledTextArea, layoutCell, layoutGrid)
+import PUI.Web.HTML (shown, blockquote, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
+import PUI.Web.MDC2 (body, card, elevation20, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Category as Category
 
 markdownPreviewerMDC2 :: Effect Unit

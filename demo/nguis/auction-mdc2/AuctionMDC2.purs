@@ -6,8 +6,8 @@ import AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Effect (Effect)
 import PUI (mvu, settled)
-import PUI.Web.HTML (body, shown, text)
-import PUI.Web.MDC2 (body2, card, elevation20, headline6, sliderLive)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC2 (body, body2, card, elevation20, headline6, sliderLive)
 import QualifiedDo.Category as Category
 
 auctionMDC2 :: Effect Unit

@@ -309,14 +309,17 @@ names, and drop them entirely for plain HTML.
 ## Design systems
 
 The starter uses MDC2. To use another vocabulary, switch the import in the
-app module, the npm dependency, and the page's CSS:
+app module, the npm dependency, and the page's CSS — the entry `body` is
+exported by every vocabulary module under the same signature (each dressing
+the page for its catalogue before it mounts), so the switch is still that one
+import line:
 
 | Vocabulary module    | npm dependency               | index.html needs                          | Demo to copy from            |
 |----------------------|------------------------------|-------------------------------------------|------------------------------|
 | `PUI.Web.MDC2`       | `material-components-web`    | MDC CSS + Material Icons links (starter)   | any `*-mdc2/`                |
 | `PUI.Web.MDC3`       | `@material/web`              | Roboto + Material Symbols Outlined fonts   | `espresso-bar-mdc3/`         |
 | `PUI.Web.Shoelace`   | `@shoelace-style/shoelace`   | Shoelace light theme CSS from CDN          | `product-review-shoelace/`   |
-| `PUI.Web.Fluent`     | `@fluentui/web-components`   | nothing (tokens ship in the bundle)        | `meeting-booker-fluent/`     |
+| `PUI.Web.Fluent`     | `@fluentui/web-components`   | nothing (`body` applies the theme at mount) | `meeting-booker-fluent/`     |
 | `PUI.Web.Bootstrap`  | — (CSS-only)                 | Bootstrap 5 CSS from CDN                   | `loan-calculator-bootstrap/` |
 | `PUI.Web.HTML` alone | — (none)                     | whatever CSS the app itself supplies       | `restaurant-menu/`           |
 

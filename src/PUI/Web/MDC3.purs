@@ -10,7 +10,9 @@
 -- | **The page must load** the Roboto and Material Symbols Outlined fonts.
 -- | Component styles ship in the bundle, so there is no design-system
 -- | stylesheet to link; theming is the `--md-sys-color-*` and
--- | `--md-sys-typescale-*` custom properties on the page.
+-- | `--md-sys-typescale-*` custom properties on the page. The app enters
+-- | through this vocabulary's `body`, which adopts the typescale stylesheet
+-- | before mounting; nothing happens at import time.
 -- |
 -- | The catalogue, by what the user does with it:
 -- |
@@ -33,6 +35,7 @@
 -- |     `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`, `chipSet`,
 -- |     `divider`, the type scale (`displayLarge` … `labelSmall`) and the
 -- |     elevations
+-- |   * **enter** — `body`, the page mounted and dressed for Material 3
 -- |
 -- | Material 3 entries `@material/web` does not implement (segmented button,
 -- | snackbar, card, top app bar, navigation drawer, data table, image list,
@@ -45,6 +48,7 @@ module PUI.Web.MDC3
   , OptLabel(..)
   , OptIcon(..)
   , OptSelected(..)
+  , body
   , bodyLarge
   , bodyMedium
   , bodySmall
@@ -134,6 +138,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, textOf, th, thead, tr, (:=))
+import PUI.Web.HTML (body) as HTML
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
@@ -1387,3 +1392,20 @@ foreign import closeDialog :: Node -> Effect Unit
 foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
 foreign import ensureStyle :: String -> String -> Effect Unit
 foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
+
+-- Entry point
+
+-- | Mount the app in the page's `<body>`, dressed for Material 3: the MD3
+-- | typescale stylesheet — what gives the `md-typescale-*` classes the
+-- | typography oculars wear their meaning — is adopted by the document
+-- | here, once, and the app then mounts exactly as `PUI.Web.HTML.body`
+-- | does — same signature, same closed-app demand (`PUI Web {} o`). The
+-- | entry is a word of the vocabulary like any other, so a screen changes
+-- | design system at its first line by changing the import, and nothing
+-- | runs at import time.
+body :: forall o. PUI Web {} o -> Effect Unit
+body ui = do
+  adoptTypescale
+  HTML.body ui
+
+foreign import adoptTypescale :: Effect Unit

@@ -8,8 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, toCase, updated, with, blank)
-import PUI.Web.HTML (shown, attrWith, body, clicked, div, li, text, ul, (:=))
-import PUI.Web.Shoelace (button, card, textField)
+import PUI.Web.HTML (shown, attrWith, clicked, div, li, text, ul, (:=))
+import PUI.Web.Shoelace (body, button, card, textField)
 import QualifiedDo.Category as Category
 
 crudShoelace :: Effect Unit

@@ -8,8 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, looped, atCase, toCase, updated, with)
-import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC2 (button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC2 (body, button, card, cardActions, elevation20, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Category as Category
 
 crudMDC2 :: Effect Unit

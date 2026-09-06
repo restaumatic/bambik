@@ -8,8 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, blank, edited, mvu, static, updated)
-import PUI.Web.HTML (body, el, (:=))
-import PUI.Web.MDC2 (button, elevation20, filledTextField, group, list, listItem)
+import PUI.Web.HTML (el, (:=))
+import PUI.Web.MDC2 (body, button, elevation20, filledTextField, group, list, listItem)
 import QualifiedDo.Category as Category
 import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
 

@@ -5,8 +5,8 @@ import Prelude (Unit, (#), ($))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, mvu, toCase, updated)
-import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC3 (bodyLarge, bodySmall, card, displayLarge, elevation5, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC3 (body, bodyLarge, bodySmall, card, displayLarge, elevation5, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Category as Category
 import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, reportRequest, servedLine, temperatureLine, warsawBulletin)
 

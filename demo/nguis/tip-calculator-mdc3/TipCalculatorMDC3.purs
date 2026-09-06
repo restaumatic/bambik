@@ -4,8 +4,8 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PUI (mvu)
-import PUI.Web.HTML (rangeInput, shown, body, text)
-import PUI.Web.MDC3 (bodyMedium, card, elevation5, filledTextField, slider)
+import PUI.Web.HTML (rangeInput, shown, text)
+import PUI.Web.MDC3 (body, bodyMedium, card, elevation5, filledTextField, slider)
 import QualifiedDo.Category as Category
 import TipCalculatorLogic (dinnerBill, perPersonLine, splitLine, tipAmountLine, tipLine, totalLine)
 

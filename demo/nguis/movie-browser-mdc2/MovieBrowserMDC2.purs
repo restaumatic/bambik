@@ -7,8 +7,8 @@ import Effect (Effect)
 import MovieBrowserLogic (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (foreach, mvu, toCase, updated)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body, clWhen, span, text)
-import PUI.Web.MDC2 (card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
+import PUI.Web.HTML (shown, clWhen, span, text)
+import PUI.Web.MDC2 (body, card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Category as Category
 
 movieBrowserMDC2 :: Effect Unit

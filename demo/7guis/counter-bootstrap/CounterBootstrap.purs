@@ -5,8 +5,8 @@ import Prelude ((#), ($), Unit)
 import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
-import PUI.Web.Bootstrap (button, card)
-import PUI.Web.HTML (body, h4, shown, text)
+import PUI.Web.Bootstrap (body, button, card)
+import PUI.Web.HTML (h4, shown, text)
 import QualifiedDo.Category as Category
 
 counterBootstrap :: Effect Unit

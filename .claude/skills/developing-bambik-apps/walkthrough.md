@@ -18,13 +18,12 @@ module FlightBookerMDC2 (flightBookerMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Variant (match)
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, debounced, forCases, mvu, required)
+import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, body, text)
-import PUI.Web.MDC2 (body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.HTML (inCase, shownWhen, text)
+import PUI.Web.MDC2 (body, body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
 flightBookerMDC2 :: Effect Unit
@@ -43,21 +42,24 @@ flightBookerMDC2 =
           body1 (text oneWayLine) # shownWhen @"one-way" bookingState
           body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" { icon: "flight_takeoff" }
-      indeterminateLinearProgress @"busy" # action (match { "Book": submit })
+      indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
       snackbar # forCases bookingLine
 ```
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
-that shape data flow (`mvu`, `required`, `debounced`, `action`, `forCases`),
-`PUI.Web.HTML` for the page and the display stages (`body`, `shownWhen`,
-`inCase`, `text`), and `PUI.Web.MDC2` for the design system.
+that shape data flow (`mvu`, `required`, `debounced`, `action`, `atCase`,
+`forCases`), `PUI.Web.HTML` for the display stages (`shownWhen`, `inCase`,
+`text`), and `PUI.Web.MDC2` for the design system — its `body` included:
+every vocabulary exports the entry under that one name and signature,
+dressing the page for its catalogue before it mounts.
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
 No merge block appears: each displayed line is one read function at one
 leaf, so no stage here reads more than one leaf. `QualifiedDo.Category as Category`
 gives `Category.do`: sequential composition, not a monad.
 
-**`body $ elevation20 $ card $ Category.do`.** Mount at the document body;
+**`body $ elevation20 $ card $ Category.do`.** Mount at the document body,
+dressed for Material 2 (the `body` is the vocabulary's);
 `elevation20` and `card` are *oculars* — visual wrappers that touch no data,
 which is why they are applied with `$`, the visual plumbing, and never with
 `#`, the data plumbing. The outer `Category.do` has five stages, and data
@@ -114,10 +116,11 @@ direction change, `×→+`: fed the model, it emits `[ "Book" :: model ]` on
 click, replaying the last model it was fed. Its case is its caption; `icon`
 is presentation config.
 
-**Stage 4 — `indeterminateLinearProgress @"busy" # action (match { "Book": submit })`.**
-`+→+`: the event's payload goes to `submit :: model -> Aff [ booked :: …,
-rejected :: String ]`, the progress bar shows while the `Aff` runs, and the
-outcome variant emits when it settles.
+**Stage 4 — `indeterminateLinearProgress @"busy" # action submit # atCase @"Book"`.**
+`+→+`: `atCase` adopts the button's case, so its payload goes to
+`submit :: model -> Aff [ booked :: …, rejected :: String ]`, the progress
+bar shows while the `Aff` runs, and the outcome variant emits when it
+settles.
 
 **Stage 5 — `snackbar # forCases bookingLine`.** `+→×`: one snackbar serves
 both outcomes; `bookingLine` renders each case to its line of copy. Its
@@ -170,7 +173,7 @@ bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start d
 bookingState = parse >>> either (\problem -> .problem { problem })
   (match
     { oneWayOn: \out -> ."one-way" { out }
-    , returnBetween: \r -> ."return" r
+    , returnBetween: ."return"
     })
 
 problemLine :: { problem :: String } -> String
@@ -189,7 +192,7 @@ summary = match
   }
 
 submit :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
-submit { "Flight type": flightType, "Start date (DD.MM.YYYY)": start, "Return date (DD.MM.YYYY)": back } = case parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": start, "Return date (DD.MM.YYYY)": back } of
+submit trip = case parse trip of
   Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
 
@@ -237,9 +240,10 @@ helper. It compiles and tests without a browser.
   business statement, not a view condition.
 - `bookingState` — the classifier behind the three `shownWhen` panes. It
   turns the model into one of three exclusive display states, each carrying
-  exactly the line its pane shows (`{ oneWayLine }`, `{ returnLine }`,
-  `{ problemLine }`), composed here — glue, warning glyph and all — so a
-  pane's `text @"oneWayLine"` is typed against it and the copy is testable.
+  exactly the source data its pane's line is computed from (`{ out }`,
+  `{ out, back }`, `{ problem }`), so a pane's `text oneWayLine` is typed
+  against it and the copy — glue, warning glyph and all — is one testable
+  function beside it.
 - `submit` — the `Aff` boundary. `parse` is shared with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses.
 - `bookingLine` — the record of per-case copy functions behind

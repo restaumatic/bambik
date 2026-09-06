@@ -113,6 +113,7 @@ direction module headers.
 | The app is | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | a model, edited and folded, redrawn on every change | `pipeline # mvu seed` | counter and most demos | writing.md *App shape* |
+| any of these, mounted | `body $ …`, `body` imported from the design-system module (`PUI.Web.HTML`'s at the plain floor) — one signature everywhere, each dressing the page for its catalogue before it mounts | every demo | HTML.purs (`body`); each vocabulary's header |
 | a pipeline with no loop of its own, seeded | `pipeline # with initial`; a form section inside it `# looped` | order-form; restaurant-menu | writing.md *App shape* |
 | a wizard whose step state loops silently | `# folding @"next" stepSeed` | checkout | RecordToVariant.purs (`folding`) |
 | a state field that loops output → input, invisible outside | `# feedback stateSeed` | auction | RecordToRecord.purs (`feedback`) |

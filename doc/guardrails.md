@@ -191,8 +191,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 ### L7. Pointedness is a typing discipline, supplied by terms.
 
 - A record input row is an initial-state obligation; `{}` is the one
-  self-pointed record. `body` MUST demand a closed app (`PUI Web {} o`),
-  and every knot-tying record-channel form (`feedback`, `folding`,
+  self-pointed record. `body` MUST demand a closed app (`PUI Web {} o`) —
+  every vocabulary's `body`, the design-system roots sharing
+  `PUI.Web.HTML.body`'s signature — and every knot-tying record-channel form (`feedback`, `folding`,
   `unfolding`, `mvu`/`with`) MUST take its t=0 value as an argument the
   caller cannot omit.
 - Events MUST NOT be primed — no canonical first occurrence exists;
@@ -247,6 +248,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   exists only as the algebra's residuals (`Retaining`'s durable `c`,
   `Resolving`'s ephemeral `c`, the seeded knots) — invisible in the
   pipeline's types by co-optic hiding, never by side channel.
+- A vocabulary MUST NOT act on the page at import time: page-level setup
+  (a theme, a stylesheet, an icon base path, a typography baseline) is the
+  work of its `body`, run at mount, so a bundle that merely links a
+  vocabulary changes nothing until an app enters it (2026-09-06 — the
+  Fluent theme and Shoelace base path moved out of module load).
 
 ### L12. The vocabulary never forces a nominal type.
 

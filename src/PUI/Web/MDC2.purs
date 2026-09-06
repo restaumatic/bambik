@@ -6,7 +6,9 @@
 -- |
 -- | **The page must load** the prebuilt MDC Web stylesheet, the Material
 -- | Icons font and Roboto. Unlike `PUI.Web.MDC3`, whose component styles
--- | ship in the bundle, Material 2's come from the page.
+-- | ship in the bundle, Material 2's come from the page. The app enters
+-- | through this vocabulary's `body`, which puts the MD2 typography
+-- | baseline on the page body before mounting.
 -- |
 -- | The catalogue, by what the user does with it:
 -- |
@@ -28,6 +30,7 @@
 -- |     `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`, `chipSet`,
 -- |     `divider`, the type scale (`headline1` … `overline`) and the
 -- |     elevations (`elevation1`/`elevation10`/`elevation20`)
+-- |   * **enter** — `body`, the page mounted and dressed for Material 2
 -- |
 -- | Anything in the Material 2 catalogue that MDC Web never implemented
 -- | (backdrop, bottom app bar, bottom navigation, date pickers, navigation
@@ -39,6 +42,7 @@ module PUI.Web.MDC2
   , OptIcon(..)
   , OptSelected(..)
   , banner
+  , body
   , body1
   , body2
   , button
@@ -123,7 +127,8 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach, static)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, h4, h5, h6, i, img, init, label, li, p, shown, span, staticText, table, tbody, td, textOf, th, thead, tr, ul, (:=))
-import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, clazz, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
+import PUI.Web.HTML (body) as HTML
+import PUI.Web (Node, Web, OptCaption(..), staticHTML, addClass, addEventListener, attribute, clazz, documentBody, element, getChecked, getValue, isFocused, onInputDebounced, setAttribute, setChecked, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1622,3 +1627,18 @@ foreign import material
      , tooltip :: { "MDCTooltip" :: ComponentClass }
      , topAppBar :: { "MDCTopAppBar" :: ComponentClass }
      }
+
+-- Entry point
+
+-- | Mount the app in the page's `<body>`, dressed for Material 2: the MD2
+-- | typography baseline (`mdc-typography`) goes on the page body, so the
+-- | plain text between components rides the type scale too, and the app
+-- | then mounts exactly as `PUI.Web.HTML.body` does — same signature, same
+-- | closed-app demand (`PUI Web {} o`). The entry is a word of the
+-- | vocabulary like any other, so a screen changes design system at its
+-- | first line by changing the import, and nothing runs at import time.
+body :: forall o. PUI Web {} o -> Effect Unit
+body ui = do
+  page <- documentBody
+  addClass page "mdc-typography"
+  HTML.body ui

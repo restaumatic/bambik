@@ -4,8 +4,8 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (muted, accumulated, every, foreach, mvu)
-import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC3 (bodyMedium, card, elevation5, list, listItem)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC3 (body, bodyMedium, card, elevation5, list, listItem)
 import QualifiedDo.Category as Category
 import ScoreboardLogic (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod)
 

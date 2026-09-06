@@ -1,8 +1,9 @@
 // Shoelace (Web Awesome) custom-element definitions used by PUI.Web.Shoelace —
 // importing a component module registers its <sl-*> tag, so `element "sl-..."`
 // upgrades. The base path points default-library icon fetches (sl-rating's
-// stars, alert icons) at the matching CDN release; the theme stylesheet
-// (themes/light.css) is a page requirement, linked from the same release.
+// stars, alert icons) at the matching CDN release — set by `body` at mount,
+// not at import; the theme stylesheet (themes/light.css) is a page
+// requirement, linked from the same release.
 import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
@@ -18,7 +19,7 @@ import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
-setBasePath('https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/');
+export const adoptIconBasePath = () => setBasePath('https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/');
 
 // property access — Shoelace components expose their model as element
 // properties (value, checked, open, ...)

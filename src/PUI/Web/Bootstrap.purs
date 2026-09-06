@@ -6,16 +6,20 @@
 -- | design system by changing this one import.
 -- |
 -- | **The page must load** the Bootstrap 5 stylesheet. No scripts and no
--- | fonts — the design system rides the system font stack.
+-- | fonts — the design system rides the system font stack. Its `body` is
+-- | `PUI.Web.HTML.body` under this vocabulary's name: the reboot needs
+-- | nothing on the page body, so the entry line reads the same and does no
+-- | more.
 -- |
 -- | The catalogue: `textField`, `sliderLive` and `toggleSwitch` to enter
 -- | values, `select` to choose one, `button` to act, `toast` to say what
--- | happened, `progress` to show a figure, and `card`,
--- | `listGroup`/`listGroupItem` and `badge` for structure. Typography is
--- | deliberately absent: Bootstrap styles plain HTML, so the `PUI.Web.HTML`
--- | elements are the type scale.
+-- | happened, `progress` to show a figure, `card`,
+-- | `listGroup`/`listGroupItem` and `badge` for structure, `body` to mount
+-- | the app. Typography is deliberately absent: Bootstrap styles plain HTML,
+-- | so the `PUI.Web.HTML` elements are the type scale.
 module PUI.Web.Bootstrap
   ( badge
+  , body
   , button
   , card
   , listGroup
@@ -48,6 +52,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, textOf, (:=))
+import PUI.Web.HTML (body) as HTML
 import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
@@ -344,3 +349,13 @@ eventText = Variant.on (Proxy @"event") identity Variant.case_
 -- Private
 
 foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
+
+-- Entry point
+
+-- | Mount the app in the page's `<body>` — `PUI.Web.HTML.body` unchanged,
+-- | under this vocabulary's name: Bootstrap's reboot needs nothing on the
+-- | page body, so there is no dressing to do, and the entry line still
+-- | reads the same as in every other vocabulary (same signature, same
+-- | closed-app demand), switching design system with the rest of the import.
+body :: forall o. PUI Web {} o -> Effect Unit
+body = HTML.body

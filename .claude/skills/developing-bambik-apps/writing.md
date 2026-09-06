@@ -1038,6 +1038,10 @@ writing the app, not an afterthought:
 An unprimed *entry* needs neither: `body` demands input `{}`, so a
 forgotten seed is a compile error at the mount point naming the
 unsupplied fields. Supplying it is what `with initial` / `mvu seed` do.
+`body` is imported from the design-system module (`PUI.Web.HTML`'s at
+the plain floor) — one signature everywhere, each vocabulary's dressing
+the page for its catalogue before it mounts — so the entry line switches
+design system with the rest of the import.
 
 ## Finish by running it
 
@@ -1062,7 +1066,9 @@ read them, not a summary. Paths are inside the fetched library,
   `accumulated`. The gated display family lives in `PUI.Web.HTML`
   (`shown`/`shownWhen`/`shownEach`) and the
   design systems (`confirmed`).
-- `src/PUI/Web/HTML.purs` — HTML vocabulary, `body`, element oculars,
+- `src/PUI/Web/HTML.purs` — HTML vocabulary, `body` (the plain-floor
+  entry; each design-system module exports its own of the same
+  signature), element oculars,
   `attrWith` for channel-fed structure-from-data, the builders
   `dynamic`/`each` for structure-from-value, and the
   `clicked`/`onClickedXY` events. SVG oculars are in

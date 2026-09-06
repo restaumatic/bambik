@@ -8,8 +8,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (mvu, toCases, updated)
-import PUI.Web.HTML (shownWhen, body, provided, text)
-import PUI.Web.MDC3 (bodyMedium, button, card, elevation5)
+import PUI.Web.HTML (shownWhen, provided, text)
+import PUI.Web.MDC3 (body, bodyMedium, button, card, elevation5)
 import QualifiedDo.Category as Category
 
 checkoutMDC3 :: Effect Unit

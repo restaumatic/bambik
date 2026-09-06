@@ -142,7 +142,14 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   feeds nothing, so it demands a **closed** app — a pipeline's residual input
   row *is* its initial-state obligation, discharged by `with initial`/`mvu seed`
   down to `{}`, the one self-pointed record. A forgotten seed is therefore a
-  compile error at the mount point, naming the unsupplied fields.
+  compile error at the mount point, naming the unsupplied fields. This is the
+  plain-HTML floor's entry: every design-system module exports a `body` of
+  the same signature that first dresses the page for its catalogue — MDC2
+  puts the `mdc-typography` baseline on the body, MDC3 adopts its typescale
+  stylesheet, Fluent applies its theme, Shoelace sets its icon base path,
+  Bootstrap's is this one under its own name — and then mounts here, so an app imports
+  its entry from its vocabulary like every other word and no vocabulary acts
+  on the page at import time.
 
   **Interaction vocabulary** (the collection combinators `foreach`/`edited`/
   `acted` live at the **PUI level** — see the container-action bullet):
@@ -247,15 +254,23 @@ design-system **umbrella**. What they share, stated once:
   `{ current, min, max, step }` as **model data from the seed** (`step` is
   `[ discrete :: Number, continuous :: {} ]` — a named two-state field, like every
   other), re-scopable at runtime, never UI config.
+- **Every vocabulary is entered through its own `body`** (2026-09-06),
+  `PUI Web {} o -> Effect Unit` exactly like `PUI.Web.HTML.body`: it does the
+  catalogue's page-level setup at mount — MD2's `mdc-typography` baseline,
+  MD3's typescale stylesheet, Fluent's theme, Shoelace's icon base path — and
+  then mounts; Bootstrap, needing none, names the plain one as its own. No
+  vocabulary acts on the page at import time any more, and a twin's entry
+  line switches design system with the rest of its import. The app bar and
+  drawer stay oculars inside it: a shell is chrome, the root is the mount.
 
 Per-catalogue deltas:
 
 | Module | Basis | Deltas worth knowing |
 | --- | --- | --- |
 | `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `listOf` (a **dynamic collection component**, `{ \\| provided } -> (i -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web i { \\| r }` — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav and content are sibling stages over the same types), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `field @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
-| `PUI.Web.MDC3` | Google's `@material/web` custom elements — a leaf is `element "md-…"` plus property/event wiring: no foundation classes, no hand-fused ripple/label chrome | structured to **mirror MDC2** (same helper shapes, same definition order). MD3 renames arrive as the catalogue does: the MD3 typescale (`displayLarge`…`labelSmall`), four emphasis siblings (`elevatedButton`/`tonalButton`/`outlinedButton`/`textButton`), `elevation1/3/5`, and **no `banner`** (MD3 dropped it). Catalogue entries `@material/web` lacks (segmented button, snackbar, card, top app bar, drawer, data table, image list, tooltip) are hand-rolled over the `--md-sys-*` tokens, each injecting its stylesheet once via `ensureStyle`; pages need only the Roboto + Material Symbols fonts |
-| `PUI.Web.Shoelace` | `@shoelace-style/shoelace` custom elements, Lit-based so no bind deferral | the MDC3 recipe verbatim. Exclusive: the star `rating` editor. Shoelace's own names where the concept differs — `textField`/`textArea` (no fill/outline split, plain `label`), `toast` (`<sl-alert>`), `progressBar`, `sliderLive` (`<sl-range>`). Page links the light-theme CSS from the CDN; icons from the CDN base path set in the FFI. Typography is deliberately absent — Shoelace styles plain HTML, so the HTML oculars *are* the type scale |
-| `PUI.Web.Fluent` | Microsoft's `@fluentui/web-components` v3; tokens set globally from `webLightTheme` at load, so pages need no CSS link; labels associate via `<fluent-field>` wrappers | exclusives `ratingDisplay` (read-only — the catalogue has no star *editor*, and this vocabulary does not invent one) and `messageBar`; type ramp `title3`/`body1`/`caption1` over `<fluent-text>`. **Caveat**: FAST binds a beat after DOM insertion and replays pre-bind property writes at bind, and its update queue is rAF-driven (starving in frameless headless sessions) — so the dropdown/radio-group leaves defer writes on a **timer** poll (`whenBoundDo` in Fluent.js) and finish the two starvable registrations themselves; the dropdown's options must be wrapped in `<fluent-listbox>` (v3's markup contract) |
+| `PUI.Web.MDC3` | Google's `@material/web` custom elements — a leaf is `element "md-…"` plus property/event wiring: no foundation classes, no hand-fused ripple/label chrome | structured to **mirror MDC2** (same helper shapes, same definition order). MD3 renames arrive as the catalogue does: the MD3 typescale (`displayLarge`…`labelSmall`), four emphasis siblings (`elevatedButton`/`tonalButton`/`outlinedButton`/`textButton`), `elevation1/3/5`, and **no `banner`** (MD3 dropped it). Catalogue entries `@material/web` lacks (segmented button, snackbar, card, top app bar, drawer, data table, image list, tooltip) are hand-rolled over the `--md-sys-*` tokens, each injecting its stylesheet once via `ensureStyle`, the `md-typescale-*` stylesheet adopted by its `body` at mount; pages need only the Roboto + Material Symbols fonts |
+| `PUI.Web.Shoelace` | `@shoelace-style/shoelace` custom elements, Lit-based so no bind deferral | the MDC3 recipe verbatim. Exclusive: the star `rating` editor. Shoelace's own names where the concept differs — `textField`/`textArea` (no fill/outline split, plain `label`), `toast` (`<sl-alert>`), `progressBar`, `sliderLive` (`<sl-range>`). Page links the light-theme CSS from the CDN; icons from the CDN base path its `body` sets at mount. Typography is deliberately absent — Shoelace styles plain HTML, so the HTML oculars *are* the type scale |
+| `PUI.Web.Fluent` | Microsoft's `@fluentui/web-components` v3; tokens set from `webLightTheme` by its `body` at mount, so pages need no CSS link; labels associate via `<fluent-field>` wrappers | exclusives `ratingDisplay` (read-only — the catalogue has no star *editor*, and this vocabulary does not invent one) and `messageBar`; type ramp `title3`/`body1`/`caption1` over `<fluent-text>`. **Caveat**: FAST binds a beat after DOM insertion and replays pre-bind property writes at bind, and its update queue is rAF-driven (starving in frameless headless sessions) — so the dropdown/radio-group leaves defer writes on a **timer** poll (`whenBoundDo` in Fluent.js) and finish the two starvable registrations themselves; the dropdown's options must be wrapped in `<fluent-listbox>` (v3's markup contract) |
 | `PUI.Web.Bootstrap` | **CSS-only**: native elements dressed in documented classes (`form-control`, `form-select`, `form-range`, `btn btn-primary`, `progress`, `toast`, `card`, `list-group`, `badge`) — no component JS, not an npm dep; the page links the Bootstrap 5 stylesheet from the CDN | the only FFI is the toast's `autoDismiss` timer (what Bootstrap's own JS plugin would do). No commit/live slider split (`sliderLive` only; the label line carries a live numeric readout). `listGroup`/`listGroupItem`, `badge`; typography is plain HTML |
 
 Internals (MDC2/MDC3): the live leaf is `field @l`-lifted — `field` is the

@@ -6,8 +6,8 @@ import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, toCase, updated)
-import PUI.Web.HTML (shown, attrWith, body, clicked, div, table, td, text, tr, (:=))
-import PUI.Web.MDC2 (body1, card, elevation20, filledTextField)
+import PUI.Web.HTML (shown, attrWith, clicked, div, table, td, text, tr, (:=))
+import PUI.Web.MDC2 (body, body1, card, elevation20, filledTextField)
 import QualifiedDo.Category as Category
 
 cellsMDC2 :: Effect Unit

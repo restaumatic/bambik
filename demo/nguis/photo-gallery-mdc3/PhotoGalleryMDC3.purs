@@ -7,8 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum)
 import PUI (mvu, toCase, updated)
-import PUI.Web.HTML (shownEach, shown, body, each, span, staticText, text)
-import PUI.Web.MDC3 (displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
+import PUI.Web.HTML (shownEach, shown, each, span, staticText, text)
+import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
 import QualifiedDo.Category as Category
 
 photoGalleryMDC3 :: Effect Unit

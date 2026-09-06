@@ -8,8 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (atCase, mvu, subChoice, toCase, updated, with)
-import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, headlineSmall, confirmed)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC3 (body, bodyLarge, button, card, elevation5, headlineSmall, confirmed)
 import QualifiedDo.Category as Category
 
 cashboxMDC3 :: Effect Unit

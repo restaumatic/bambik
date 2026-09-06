@@ -6,16 +6,18 @@
 -- | rating that is shown but not edited: the catalogue has no star
 -- | *editor*, and this vocabulary does not invent one.
 -- |
--- | **The page needs nothing**: the theme is applied from the bundle at
--- | load, and Fluent's type ramp rides the system font stack.
+-- | **The page needs nothing**: the theme is applied from the bundle by this
+-- | vocabulary's `body` at mount, and Fluent's type ramp rides the system
+-- | font stack.
 -- |
 -- | The catalogue: `textField`, `toggleSwitch` and `slider` to enter
 -- | values, `dropdown` and `radioGroup` to choose one, `button` to act,
 -- | `messageBar` to say what happened, `progressBar` and `ratingDisplay` to
--- | show a figure, and `card`, `divider` and the type ramp (`title3`,
--- | `body1`, `caption1`) for structure.
+-- | show a figure, `card`, `divider` and the type ramp (`title3`, `body1`,
+-- | `caption1`) for structure, and `body` to mount the app.
 module PUI.Web.Fluent
-  ( body1
+  ( body
+  , body1
   , button
   , caption1
   , card
@@ -50,6 +52,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (cl, clicked, div, el, staticText, text, textOf, (:=))
+import PUI.Web.HTML (body) as HTML
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
@@ -438,3 +441,19 @@ foreign import listenNode :: Node -> String -> Effect Unit -> Effect Unit
 foreign import containsFocus :: Node -> Effect Boolean
 foreign import ensureStyle :: String -> String -> Effect Unit
 foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
+
+-- Entry point
+
+-- | Mount the app in the page's `<body>`, dressed for Fluent: the web light
+-- | theme's tokens (`--colorNeutral*`, `--fontFamilyBase`, …) are set on the
+-- | document here, and the app then mounts exactly as `PUI.Web.HTML.body`
+-- | does — same signature, same closed-app demand (`PUI Web {} o`). The
+-- | entry is a word of the vocabulary like any other, so a screen changes
+-- | design system at its first line by changing the import, and nothing
+-- | runs at import time.
+body :: forall o. PUI Web {} o -> Effect Unit
+body ui = do
+  adoptTheme
+  HTML.body ui
+
+foreign import adoptTheme :: Effect Unit

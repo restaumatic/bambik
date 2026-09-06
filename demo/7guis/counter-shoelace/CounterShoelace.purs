@@ -5,8 +5,8 @@ import Prelude ((#), ($), Unit)
 import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
-import PUI.Web.HTML (body, h4, shown, text)
-import PUI.Web.Shoelace (button, card)
+import PUI.Web.HTML (h4, shown, text)
+import PUI.Web.Shoelace (body, button, card)
 import QualifiedDo.Category as Category
 
 counterShoelace :: Effect Unit

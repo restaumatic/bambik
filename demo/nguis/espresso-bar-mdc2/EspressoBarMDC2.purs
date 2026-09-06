@@ -9,8 +9,8 @@ import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, theUsual, usualOrder)
 import PUI (armed, forCase, mvu, required, updated, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body, div, staticText, text)
-import PUI.Web.MDC2 (body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
+import PUI.Web.HTML (shown, div, staticText, text)
+import PUI.Web.MDC2 (body, body2, button, caption, card, checkbox, chipSet, divider, elevation20, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Category as Category
 
 espressoBarMDC2 :: Effect Unit

@@ -6,8 +6,8 @@ import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, body, text)
-import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.HTML (inCase, shownWhen, text)
+import PUI.Web.MDC3 (body, bodyLarge, button, card, elevation5, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
 flightBookerMDC3 :: Effect Unit

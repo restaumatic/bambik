@@ -7,8 +7,8 @@ import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
 import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
-import PUI.Web.HTML (shown, body, div, staticText, text)
+import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
+import PUI.Web.HTML (shown, div, staticText, text)
 import QualifiedDo.Category as Category
 
 loanCalculatorBootstrap :: Effect Unit

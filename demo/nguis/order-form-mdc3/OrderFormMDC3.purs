@@ -10,8 +10,8 @@ import Effect (Effect)
 import OrderFormLogic (awayLine, deliveryDistance, deliveryLine, dineInLine, distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentOf, fulfillmentState, loadOrder, orderLine, paidLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime, takeawayLine)
 import PUI (action, armed, atCase, bracketed, debounced, forCase, looped, required, settled, updated, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, shown, body, staticText, text)
-import PUI.Web.MDC3 (bodyLarge, button, card, elevation5, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
+import PUI.Web.HTML (inCase, shownWhen, shown, staticText, text)
+import PUI.Web.MDC3 (body, bodyLarge, button, card, elevation5, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
 import QualifiedDo.Category as Category
 
 orderFormMDC3 :: Effect Unit

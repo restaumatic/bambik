@@ -8,16 +8,18 @@
 -- |
 -- | **The page must load** the Shoelace light theme stylesheet, from the
 -- | same release as the bundled components; icons load from the matching
--- | CDN. No webfont is needed — Shoelace uses the system font stack.
+-- | CDN, whose base path this vocabulary's `body` sets at mount. No webfont
+-- | is needed — Shoelace uses the system font stack.
 -- |
 -- | The catalogue: `textField`/`textArea`, `rating`, `sliderLive` and
 -- | `toggleSwitch` to enter values, `select` to choose one, `button` to
 -- | act, `toast` to say what happened, `progressBar` to show a figure,
--- | `card` and `divider` for structure. Typography is deliberately absent:
--- | Shoelace styles plain HTML, so the `PUI.Web.HTML` elements are the
--- | type scale.
+-- | `card` and `divider` for structure, `body` to mount the app.
+-- | Typography is deliberately absent: Shoelace styles plain HTML, so the
+-- | `PUI.Web.HTML` elements are the type scale.
 module PUI.Web.Shoelace
-  ( button
+  ( body
+  , button
   , card
   , divider
   , progressBar
@@ -47,6 +49,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (clicked, div, el, span, staticText, textOf, (:=))
+import PUI.Web.HTML (body) as HTML
 import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
@@ -384,3 +387,20 @@ foreign import setNumberProp :: String -> Node -> Number -> Effect Unit
 foreign import getNumberProp :: String -> Node -> Effect Number
 foreign import listenNode :: Node -> String -> Effect Unit -> Effect Unit
 foreign import showAlert :: Node -> Effect Unit
+
+-- Entry point
+
+-- | Mount the app in the page's `<body>`, dressed for Shoelace: the icon
+-- | base path — where `sl-rating`'s stars and the alert icons are fetched
+-- | from, the CDN release matching the bundled components — is set here,
+-- | and the app then mounts exactly as `PUI.Web.HTML.body` does — same
+-- | signature, same closed-app demand (`PUI Web {} o`). The entry is a
+-- | word of the vocabulary like any other, so a screen changes design
+-- | system at its first line by changing the import, and nothing runs at
+-- | import time.
+body :: forall o. PUI Web {} o -> Effect Unit
+body ui = do
+  adoptIconBasePath
+  HTML.body ui
+
+foreign import adoptIconBasePath :: Effect Unit

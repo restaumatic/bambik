@@ -907,7 +907,12 @@ each items build = wrap $ unwrap (foreachWith build) <#> \w ->
 
 -- | Mount the app in the page's `<body>` — the one call an application
 -- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # mvu
--- | initialGame`.
+-- | initialGame`. This is the plain-HTML floor's entry; every design-system
+-- | module exports a `body` of the same signature that first dresses the
+-- | page for its catalogue (MDC2's typography baseline, MDC3's typescale
+-- | stylesheet, Fluent's theme, Shoelace's icon base path) and then mounts
+-- | here, so an app imports its entry from its vocabulary like every other
+-- | word and no vocabulary acts on the page at import time.
 -- |
 -- | The app has to be **complete**: everything on screen must have a value
 -- | from the first frame, and `with`/`mvu` are where that starting state is

@@ -7,8 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
 import PUI (action, atCase, forCase, mvu, observed, toCases, updated)
-import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC2 (body2, button, card, elevation20, headline6, indeterminateCircularProgress, snackbar)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC2 (body, body2, button, card, elevation20, headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Category as Category
 
 paymentMDC2 :: Effect Unit

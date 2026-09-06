@@ -6,8 +6,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated)
-import PUI.Web.HTML (shown, shownEach, provided, body, li, text, ul)
-import PUI.Web.MDC2 (button, card, elevation20, headline3)
+import PUI.Web.HTML (shown, shownEach, provided, li, text, ul)
+import PUI.Web.MDC2 (body, button, card, elevation20, headline3)
 import QualifiedDo.Category as Category
 import StopwatchLogic (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
 

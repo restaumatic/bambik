@@ -5,8 +5,8 @@ import Prelude ((#), ($), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (mvu, toCase, updated)
-import PUI.Web.HTML (shown, body, provided, text)
-import PUI.Web.MDC2 (body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
+import PUI.Web.HTML (shown, provided, text)
+import PUI.Web.MDC2 (body, body1, button, card, elevation20, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Category as Category
 import QuizLogic (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizPhase, quizProgress)
 

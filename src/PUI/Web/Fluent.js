@@ -1,9 +1,9 @@
 // Fluent UI (Fluent 2) custom-element definitions used by PUI.Web.Fluent —
 // importing a component's define module registers its <fluent-*> tag, so
 // `element "fluent-..."` upgrades. The design tokens (--colorNeutral*,
-// --fontFamilyBase, ...) are set globally from the official web light theme,
-// so pages need no stylesheet link — the whole design system ships in the
-// bundle.
+// --fontFamilyBase, ...) are set from the official web light theme by `body`
+// at mount, so pages need no stylesheet link — the whole design system ships
+// in the bundle, and nothing acts on the page at import time.
 import '@fluentui/web-components/button.js';
 import '@fluentui/web-components/divider.js';
 import '@fluentui/web-components/dropdown.js';
@@ -23,7 +23,7 @@ import '@fluentui/web-components/text-input.js';
 import { setTheme } from '@fluentui/web-components/theme/set-theme.js';
 import { webLightTheme } from '@fluentui/tokens';
 
-setTheme(webLightTheme);
+export const adoptTheme = () => setTheme(webLightTheme);
 
 // property access — Fluent components expose their model as element
 // properties (value, valueAsNumber, checked, ...)

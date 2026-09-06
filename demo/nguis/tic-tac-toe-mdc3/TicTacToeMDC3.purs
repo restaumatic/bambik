@@ -5,8 +5,8 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, toCase, updated, with)
-import PUI.Web.HTML (shownWhen, attrWith, body, clicked, div, staticText, text, (:=))
-import PUI.Web.MDC3 (button, card, elevation5, headlineSmall)
+import PUI.Web.HTML (shownWhen, attrWith, clicked, div, staticText, text, (:=))
+import PUI.Web.MDC3 (body, button, card, elevation5, headlineSmall)
 import QualifiedDo.Category as Category
 import TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
 

@@ -6,8 +6,8 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, toCase, updated, with)
-import PUI.Web.HTML (shown, body, clicked, text)
-import PUI.Web.MDC2 (body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
+import PUI.Web.HTML (shown, clicked, text)
+import PUI.Web.MDC2 (body, body1, button, card, dataCell, dataRow, dataTable, elevation20, listOf)
 import QualifiedDo.Category as Category
 import ShoppingCartLogic (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine)
 

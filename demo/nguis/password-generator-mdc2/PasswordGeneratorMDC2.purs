@@ -6,8 +6,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PasswordGeneratorLogic (passwordText, rememberPassword, samplePassword, strengthLine, strongMixRecipe)
 import PUI (action, mvu, atCase, updated)
-import PUI.Web.HTML (shown, attr, body, code, text)
-import PUI.Web.MDC2 (body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
+import PUI.Web.HTML (shown, attr, code, text)
+import PUI.Web.MDC2 (body, body2, button, card, elevation20, indeterminateLinearProgress, slider, toggleSwitch)
 import QualifiedDo.Category as Category
 
 passwordGeneratorMDC2 :: Effect Unit

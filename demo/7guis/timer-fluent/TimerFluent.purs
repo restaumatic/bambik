@@ -5,8 +5,8 @@ import Prelude ((#), ($), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated, with)
-import PUI.Web.Fluent (body1, button, card, progressBar, slider)
-import PUI.Web.HTML (shown, body, text)
+import PUI.Web.Fluent (body, body1, button, card, progressBar, slider)
+import PUI.Web.HTML (shown, text)
 import QualifiedDo.Category as Category
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 

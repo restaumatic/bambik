@@ -5,8 +5,8 @@ import Prelude (Unit, const, identity, (#), ($))
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
 import PUI (mvu, toCases, updated)
-import PUI.Web.HTML (shownWhen, body, staticText, text)
-import PUI.Web.MDC3 (bodyMedium, button, card, displaySmall, elevation5)
+import PUI.Web.HTML (shownWhen, staticText, text)
+import PUI.Web.MDC3 (body, bodyMedium, button, card, displaySmall, elevation5)
 import QualifiedDo.Category as Category
 import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine, ticketRequested)
 

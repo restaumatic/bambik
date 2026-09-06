@@ -7,8 +7,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, settled, toCase, updated)
-import PUI.Web.Fluent (button, card, slider)
-import PUI.Web.HTML (attrWith, body, div, onClickedXY, inCase, (:=))
+import PUI.Web.Fluent (body, button, card, slider)
+import PUI.Web.HTML (attrWith, div, onClickedXY, inCase, (:=))
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Category as Category
 

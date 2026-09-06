@@ -7,8 +7,8 @@ import Effect (Effect)
 import PotluckLogic (guestCountLine, guestName, invitation, menuLine)
 import PUI (acted, with)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body, text)
-import PUI.Web.MDC2 (body2, elevation20, group, headline6, list, listItem, segmentedButton, subtitle1)
+import PUI.Web.HTML (shown, text)
+import PUI.Web.MDC2 (body, body2, elevation20, group, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Category as Category
 
 potluckMDC2 :: Effect Unit

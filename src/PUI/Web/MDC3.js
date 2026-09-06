@@ -30,10 +30,14 @@ import '@material/web/textfield/filled-text-field.js';
 import '@material/web/textfield/outlined-text-field.js';
 import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
 
-// the .md-typescale-* classes the typography oculars decorate with
-if (typeof document !== 'undefined' && typescaleStyles.styleSheet) {
-  document.adoptedStyleSheets = [...document.adoptedStyleSheets, typescaleStyles.styleSheet];
-}
+// the .md-typescale-* classes the typography oculars decorate with — adopted
+// by `body` at mount (once), not at import: a vocabulary acts on the page only
+// when the app enters it
+export const adoptTypescale = () => {
+  if (typescaleStyles.styleSheet && !document.adoptedStyleSheets.includes(typescaleStyles.styleSheet)) {
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, typescaleStyles.styleSheet];
+  }
+};
 
 // property access — @material/web components expose their model as element
 // properties (value, checked, selected, selectedIndex, activeTabIndex, ...)

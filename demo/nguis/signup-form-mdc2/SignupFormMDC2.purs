@@ -6,8 +6,8 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (armed, forCase, mvu, required, toCases)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, shownWhen, body, staticText, text)
-import PUI.Web.MDC2 (body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
+import PUI.Web.HTML (shown, shownWhen, staticText, text)
+import PUI.Web.MDC2 (body, body2, button, card, checkbox, debouncedTextField, elevation20, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Category as Category
 import SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, register, rejectionLine, takenLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
 

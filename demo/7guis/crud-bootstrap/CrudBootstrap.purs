@@ -8,8 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, toCase, updated, with, blank)
-import PUI.Web.Bootstrap (button, card, listGroup, listGroupItem, textField)
-import PUI.Web.HTML (body, cl, clWhen, clicked, div, text, (:=))
+import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, textField)
+import PUI.Web.HTML (cl, clWhen, clicked, div, text, (:=))
 import QualifiedDo.Category as Category
 
 crudBootstrap :: Effect Unit

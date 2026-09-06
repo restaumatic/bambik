@@ -6,8 +6,8 @@ import Effect (Effect)
 import ProductReviewLogic (freshImpression, previewLine, submittedLine)
 import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
-import PUI.Web.HTML (shown, body, p, text)
-import PUI.Web.Shoelace (button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
+import PUI.Web.HTML (shown, p, text)
+import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Category as Category
 
 productReviewShoelace :: Effect Unit

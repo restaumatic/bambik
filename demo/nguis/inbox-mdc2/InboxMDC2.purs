@@ -7,8 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (applied, forCase, mvu, observed, toCase, updated, with)
-import PUI.Web.HTML (shown, body, provided, span, text)
-import PUI.Web.MDC2 (banner, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
+import PUI.Web.HTML (shown, provided, span, text)
+import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, card, dialog, elevation20, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
 
 inboxMDC2 :: Effect Unit
