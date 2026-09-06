@@ -8,24 +8,23 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, toCase, updated)
 import PUI.Web.HTML (shownWhen, attrWith, clicked, div, provided, staticText, text, (:=))
-import PUI.Web.MDC2 (body, card, elevation20)
+import PUI.Web.MDC2 (body, card)
 import QualifiedDo.Category as Category
 
 calculatorMDC2 :: Effect Unit
 calculatorMDC2 =
   body $
-    elevation20 $
-      card $
-        ( ( div >>> "style" := "display: inline-block; width: 296px;" $ Category.do
-                div >>> "style"
-                  := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
-                        <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-                        <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Category.do
-                    (staticText "Error") # shownWhen @"faulty" readout
-                    text _.entry # provided @"sound" readout
-                div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-                  clicked ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key # updated (match { keyPressed: pressKey })
-        ) # mvu blankTally
+    card $
+      ( ( div >>> "style" := "display: inline-block; width: 296px;" $ Category.do
+              div >>> "style"
+                := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
+                      <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
+                      <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Category.do
+                  (staticText "Error") # shownWhen @"faulty" readout
+                  text _.entry # provided @"sound" readout
+              div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
+                clicked ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # toCase @"keyPressed" _.key # updated (match { keyPressed: pressKey })
+      ) # mvu blankTally
 keyFace :: { key :: String } -> String
 keyFace { key } =
   "height: 52px; display: flex; align-items: center; justify-content: center; "

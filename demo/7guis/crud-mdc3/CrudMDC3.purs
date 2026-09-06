@@ -9,28 +9,27 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, looped, atCase, toCase, updated, with)
 import PUI.Web.HTML (shown, text)
-import PUI.Web.MDC3 (body, button, card, cardActions, elevation5, filledTextField, indeterminateLinearProgress, listOf)
+import PUI.Web.MDC3 (body, button, card, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Category as Category
 
 crudMDC3 :: Effect Unit
 crudMDC3 = do
   catalogue <- sharedPeopleCatalogue
   body $
-    elevation5 $
-      card $ ( Category.do
-          indeterminateLinearProgress @"busy" # action (loadPeopleCatalogue catalogue)
-          ( Category.do
-              filledTextField @"Filter prefix (surname)" {}
-              filledTextField @"Name" {}
-              filledTextField @"Surname" {}
-              listOf { selected: isSelected } entries (text personLine # shown) # toCase @"picked" _.key # updated (match { picked: pick })
-              ( Category.do
-                  cardActions $ RecordToVariant.do
-                    button @"Create" {}
-                    button @"Update" {}
-                    button @"Delete" {}
-                  VariantToVariant.do
-                    indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"Create"
-                    indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"Update"
-                    indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
-      ) # with {}
+    card $ ( Category.do
+        indeterminateLinearProgress @"busy" # action (loadPeopleCatalogue catalogue)
+        ( Category.do
+            filledTextField @"Filter prefix (surname)" {}
+            filledTextField @"Name" {}
+            filledTextField @"Surname" {}
+            listOf { selected: isSelected } entries (text personLine # shown) # toCase @"picked" _.key # updated (match { picked: pick })
+            ( Category.do
+                cardActions $ RecordToVariant.do
+                  button @"Create" {}
+                  button @"Update" {}
+                  button @"Delete" {}
+                VariantToVariant.do
+                  indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"Create"
+                  indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"Update"
+                  indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+    ) # with {}

@@ -61,7 +61,7 @@
     holes — the display's read, the confirmation copy, the seed. Note what is
     <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>), the case
     anchor (<code>@"Order"</code>, stated once on the button and adopted once
-    by the snackbar), and the chrome (<code>elevation5</code>, <code>card</code>,
+    by the snackbar), and the chrome (<code>card</code>,
     <code>headlineSmall</code>) are complete as written.</p>
 
     <h3>src/Order.purs</h3>
@@ -72,19 +72,18 @@ import Prelude ((#), ($), Unit)
 import Effect (Effect)
 import PUI (forCase, with)
 import PUI.Web.HTML (shown, text)
-import PUI.Web.MDC3 (body, button, card, elevation5, filledTextField, headlineSmall, snackbar)
+import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Category as Category
 
 orderApp :: Effect Unit
 orderApp =
   body $
-    elevation5 $
-      card $ ( Category.do
-          filledTextField @"Pizza" {}
-          headlineSmall (text ?orderLine) # shown
-          button @"Order" {}
-          snackbar # forCase @"Order" ?confirmedLine
-      ) # with ?start
+    card $ ( Category.do
+        filledTextField @"Pizza" {}
+        headlineSmall (text ?orderLine) # shown
+        button @"Order" {}
+        snackbar # forCase @"Order" ?confirmedLine
+    ) # with ?start
 </code></pre>
 
     <p>The compiler answers with four messages. The first is a refusal at
@@ -269,19 +268,18 @@ import Effect (Effect)
 import OrderLogic (confirmedLine, orderLine, plainMargherita)
 import PUI (forCase, with)
 import PUI.Web.HTML (shown, text)
-import PUI.Web.MDC3 (body, button, card, elevation5, filledTextField, headlineSmall, snackbar)
+import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Category as Category
 
 orderApp :: Effect Unit
 orderApp =
   body $
-    elevation5 $
-      card $ ( Category.do
-          filledTextField @"Pizza" {}
-          headlineSmall (text orderLine) # shown
-          button @"Order" {}
-          snackbar # forCase @"Order" confirmedLine
-      ) # with plainMargherita
+    card $ ( Category.do
+        filledTextField @"Pizza" {}
+        headlineSmall (text orderLine) # shown
+        button @"Order" {}
+        snackbar # forCase @"Order" confirmedLine
+    ) # with plainMargherita
 </code></pre>
 
 <pre class="compiler">[1 of 2] Compiling OrderLogic

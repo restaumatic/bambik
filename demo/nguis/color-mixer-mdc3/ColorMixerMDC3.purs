@@ -7,24 +7,23 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, toCase, updated)
 import PUI.Web.HTML (shown, attrWith, clicked, div, text, (:=))
-import PUI.Web.MDC3 (body, bodyMedium, card, elevation5, sliderLive)
+import PUI.Web.MDC3 (body, bodyMedium, card, sliderLive)
 import QualifiedDo.Category as Category
 
 colorMixerMDC3 :: Effect Unit
 colorMixerMDC3 =
   body $
-    elevation5 $
-      card $ ( Category.do
-          sliderLive @"Red" {}
-          sliderLive @"Green" {}
-          sliderLive @"Blue" {}
-          ( div $ Category.do
-              div >>> attrWith "style" swatchStyle $ blank
-              div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-                clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # toCase @"preset" _.name # updated (match { preset: applyPreset })
-          ( bodyMedium $ text hexLine ) # shown
-          ( bodyMedium $ text rgbLine ) # shown
-      ) # mvu duskViolet
+    card $ ( Category.do
+        sliderLive @"Red" {}
+        sliderLive @"Green" {}
+        sliderLive @"Blue" {}
+        ( div $ Category.do
+            div >>> attrWith "style" swatchStyle $ blank
+            div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
+              clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # toCase @"preset" _.name # updated (match { preset: applyPreset })
+        ( bodyMedium $ text hexLine ) # shown
+        ( bodyMedium $ text rgbLine ) # shown
+    ) # mvu duskViolet
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb mix <> ";"
 

@@ -6,22 +6,21 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, toCase, updated, with)
 import PUI.Web.HTML (shownWhen, attrWith, clicked, div, staticText, text, (:=))
-import PUI.Web.MDC3 (body, button, card, elevation5, headlineSmall)
+import PUI.Web.MDC3 (body, button, card, headlineSmall)
 import QualifiedDo.Category as Category
 import TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
   body $
-    elevation5 $
-      card $ ( Category.do
-          headlineSmall (text wonLine) # shownWhen @"won" gameOutcome
-          headlineSmall (staticText "Draw") # shownWhen @"drawn" gameOutcome
-          headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
-          ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-                  clicked ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" cells ) # toCase @"cellPicked" _.key ) # updated (match { cellPicked: claimCell })
-          button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
-      ) # mvu openingPosition
+    card $ ( Category.do
+        headlineSmall (text wonLine) # shownWhen @"won" gameOutcome
+        headlineSmall (staticText "Draw") # shownWhen @"drawn" gameOutcome
+        headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
+        ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
+                clicked ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" cells ) # toCase @"cellPicked" _.key ) # updated (match { cellPicked: claimCell })
+        button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
+    ) # mvu openingPosition
 cellFace :: { mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String
 cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line
 

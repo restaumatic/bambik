@@ -11,12 +11,12 @@ import OrderFormLogic (awayLine, deliveryDistance, deliveryLine, dineInLine, dis
 import PUI (action, armed, atCase, bracketed, debounced, forCase, looped, required, settled, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, staticText, text)
-import PUI.Web.MDC2 (body, body1, button, card, elevation20, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
+import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, subtitle1, tabBar)
 import QualifiedDo.Category as Category
 
 orderFormMDC2 :: Effect Unit
 orderFormMDC2 =
-  body $ ( elevation20 Category.do
+  body $ ( Category.do
       indeterminateLinearProgress @"busy" # action loadOrder
       ( Category.do
           ( headline6 $ text orderLine ) # shown

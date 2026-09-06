@@ -8,19 +8,18 @@ import Effect (Effect)
 import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
 import PUI (action, atCase, forCase, mvu, observed, toCases, updated)
 import PUI.Web.HTML (shown, text)
-import PUI.Web.MDC2 (body, body2, button, card, elevation20, headline6, indeterminateCircularProgress, snackbar)
+import PUI.Web.MDC2 (body, body2, button, card, headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Category as Category
 
 paymentMDC2 :: Effect Unit
 paymentMDC2 =
   body $
-    elevation20 $
-      card $ ( Category.do
-          ( headline6 $ text amountLine ) # shown
-          ( body2 $ text statusLine ) # shown
-          ( Category.do
-              button @"Charge card" { icon: "credit_card" } # toCases startCharge
-              ( Category.do
-                  indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
-                  snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
-      ) # mvu unpaidOrder
+    card $ ( Category.do
+        ( headline6 $ text amountLine ) # shown
+        ( body2 $ text statusLine ) # shown
+        ( Category.do
+            button @"Charge card" { icon: "credit_card" } # toCases startCharge
+            ( Category.do
+                indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
+                snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
+    ) # mvu unpaidOrder

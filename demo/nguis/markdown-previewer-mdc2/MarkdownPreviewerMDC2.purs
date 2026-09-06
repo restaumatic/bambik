@@ -8,18 +8,17 @@ import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (PUI, atField, mvu)
 import PUI.Web (Web)
 import PUI.Web.HTML (shown, blockquote, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
-import PUI.Web.MDC2 (body, card, elevation20, filledTextArea, layoutCell, layoutGrid)
+import PUI.Web.MDC2 (body, card, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Category as Category
 
 markdownPreviewerMDC2 :: Effect Unit
 markdownPreviewerMDC2 =
   body $
-    elevation20 $
-      card $
-        layoutGrid $ ( Category.do
-            layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
-            layoutCell { span: 6 } $ ( dynamic \source -> each (parseMarkdown source) blockView ) # atField @"Source" # shown
-        ) # mvu welcomeDocument
+    card $
+      layoutGrid $ ( Category.do
+          layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
+          layoutCell { span: 6 } $ ( dynamic \source -> each (parseMarkdown source) blockView ) # atField @"Source" # shown
+      ) # mvu welcomeDocument
 
 blockView :: [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }, paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ], bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ]), quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] ] -> PUI Web {} {}
 blockView = match

@@ -929,7 +929,11 @@ induces — view first, logic module written to its names — is
   is the intended one. Custom styling is a last resort for genuinely
   data-driven graphics — an SVG canvas, a colour swatch — never for
   layout the design system already gives you. Every avoided style string
-  is code you don't write.
+  is code you don't write. **Wrappers are minimal**: a surface is stated
+  once — a `card` carries its own elevation, so `elevation* $ card $` stacks
+  a shadow on a shadow and the entry reads `body $ card $ …`; `elevation*`
+  is for a surface that has none of its own, and a pipeline whose groups
+  are already cards needs no outer surface at all (order-form, potluck).
 
 ## Writing order
 

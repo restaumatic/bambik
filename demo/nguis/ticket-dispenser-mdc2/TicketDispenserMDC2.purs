@@ -6,22 +6,21 @@ import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
 import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, staticText, text)
-import PUI.Web.MDC2 (body, body2, button, card, elevation20, headline3)
+import PUI.Web.MDC2 (body, body2, button, card, headline3)
 import QualifiedDo.Category as Category
 import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine, ticketRequested)
 
 ticketDispenserMDC2 :: Effect Unit
 ticketDispenserMDC2 =
   body $
-    elevation20 $
-      card $ ( Category.do
-          headline3 ( Category.do
-              (staticText "—") # shownWhen @"waiting" displayOf
-              (text ticketLine) # shownWhen @"serving" displayOf )
-          body2 ( Category.do
-              (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
-              (text servingLine) # shownWhen @"serving" displayOf )
-          ( Category.do
-              button @"Take a number" {} # toCases ticketRequested
-              ticketIssuance identity # unfolding @"resume" firstTicket ) # updated const
-      ) # mvu emptyQueue
+    card $ ( Category.do
+        headline3 ( Category.do
+            (staticText "—") # shownWhen @"waiting" displayOf
+            (text ticketLine) # shownWhen @"serving" displayOf )
+        body2 ( Category.do
+            (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
+            (text servingLine) # shownWhen @"serving" displayOf )
+        ( Category.do
+            button @"Take a number" {} # toCases ticketRequested
+            ticketIssuance identity # unfolding @"resume" firstTicket ) # updated const
+    ) # mvu emptyQueue

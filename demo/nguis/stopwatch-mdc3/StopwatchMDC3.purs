@@ -7,22 +7,21 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated)
 import PUI.Web.HTML (shown, shownEach, provided, li, text, ul)
-import PUI.Web.MDC3 (body, button, card, elevation5, displaySmall)
+import PUI.Web.MDC3 (body, button, card, displaySmall)
 import QualifiedDo.Category as Category
 import StopwatchLogic (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $
-    elevation5 $
-      card $ ( Category.do
-          displaySmall (text elapsedText) # shown
-          every tickPeriod tick
-          ( RecordToVariant.do
-              button @"Start" { icon: "play_arrow" } # provided @"halted" stopwatchPhase
-              button @"Stop" { icon: "stop" } # provided @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
-          ( RecordToVariant.do
-              button @"Lap" { icon: "flag" } # provided @"timing" stopwatchPhase
-              button @"Reset" { icon: "replay" } # provided @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
-          ul $ ( li $ text lapLine ) # shownEach @"number" lapRows
-      ) # mvu zeroedStopwatch
+    card $ ( Category.do
+        displaySmall (text elapsedText) # shown
+        every tickPeriod tick
+        ( RecordToVariant.do
+            button @"Start" { icon: "play_arrow" } # provided @"halted" stopwatchPhase
+            button @"Stop" { icon: "stop" } # provided @"timing" stopwatchPhase ) # updated (match { "Start": const (const beginTiming), "Stop": const (const haltTiming) })
+        ( RecordToVariant.do
+            button @"Lap" { icon: "flag" } # provided @"timing" stopwatchPhase
+            button @"Reset" { icon: "replay" } # provided @"halted" stopwatchPhase ) # updated (match { "Lap": const recordLap, "Reset": const (const clearStopwatch) })
+        ul $ ( li $ text lapLine ) # shownEach @"number" lapRows
+    ) # mvu zeroedStopwatch

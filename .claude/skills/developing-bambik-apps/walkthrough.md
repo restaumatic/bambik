@@ -23,27 +23,26 @@ import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWay
 import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, text)
-import PUI.Web.MDC2 (body, body1, button, card, elevation20, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Category as Category
 
 flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
   body $
-    elevation20 $
-      card $ Category.do
-      ( Category.do
-          select @"Flight type" {}
-            [ choice @"one-way", choice @"return" ] # required
-          filledTextField @"Start date (DD.MM.YYYY)" {}
-          filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
-      ) # mvu plannedTrip
-      ( Category.do
-          body1 (text problemLine) # shownWhen @"problem" bookingState
-          body1 (text oneWayLine) # shownWhen @"one-way" bookingState
-          body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
-      button @"Book" { icon: "flight_takeoff" }
-      indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
-      snackbar # forCases bookingLine
+    card $ Category.do
+    ( Category.do
+        select @"Flight type" {}
+          [ choice @"one-way", choice @"return" ] # required
+        filledTextField @"Start date (DD.MM.YYYY)" {}
+        filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
+    ) # mvu plannedTrip
+    ( Category.do
+        body1 (text problemLine) # shownWhen @"problem" bookingState
+        body1 (text oneWayLine) # shownWhen @"one-way" bookingState
+        body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+    button @"Book" { icon: "flight_takeoff" }
+    indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
+    snackbar # forCases bookingLine
 ```
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
@@ -58,11 +57,12 @@ No merge block appears: each displayed line is one read function at one
 leaf, so no stage here reads more than one leaf. `QualifiedDo.Category as Category`
 gives `Category.do`: sequential composition, not a monad.
 
-**`body $ elevation20 $ card $ Category.do`.** Mount at the document body,
-dressed for Material 2 (the `body` is the vocabulary's);
-`elevation20` and `card` are *oculars* — visual wrappers that touch no data,
-which is why they are applied with `$`, the visual plumbing, and never with
-`#`, the data plumbing. The outer `Category.do` has five stages, and data
+**`body $ card $ Category.do`.** Mount at the document body, dressed for
+Material 2 (the `body` is the vocabulary's); `card` is an *ocular* — a
+visual wrapper that touches no data, which is why it is applied with `$`,
+the visual plumbing, and never with `#`, the data plumbing. It is also the
+only wrapper: a card is a surface with its own elevation, so nothing stacks
+another on it. The outer `Category.do` has five stages, and data
 flows top to bottom exactly as the code reads: the form emits the model on
 every edit → the itinerary line shows it and passes it on → the button turns
 it into an event → the action turns the event into an outcome → the snackbar

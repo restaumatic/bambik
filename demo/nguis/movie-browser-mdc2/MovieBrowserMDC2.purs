@@ -8,26 +8,25 @@ import MovieBrowserLogic (favoriteMark, favoritesLine, isFavorite, markFavorite,
 import PUI (foreach, mvu, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, clWhen, span, text)
-import PUI.Web.MDC2 (body, card, chipSet, elevation1, elevation10, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
+import PUI.Web.MDC2 (body, card, chipSet, elevation1, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Category as Category
 
 movieBrowserMDC2 :: Effect Unit
 movieBrowserMDC2 =
   body $
-    elevation10 $
-      card $ ( Category.do
-          tabBar @"category"
-            [ choice @"All", choice @"Action", choice @"Drama", choice @"Comedy" ]
-          chipSet ( Category.do
-              filterChip @"Classic" {}
-              filterChip @"Cult" {}
-              filterChip @"Oscar" {} )
-          ( elevation1 $ subtitle1 $ text favoritesLine ) # shown
-          list $
-            ( clWhen isFavorite "mdc-deprecated-list-item--selected"
-                $ listItem $ ( Category.do
-                    span (text titleLine) # shown
-                    span (text yearLine) # shown
-                    span (text ratingLine) # shown
-                    iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
-      ) # mvu movieCatalogue
+    card $ ( Category.do
+        tabBar @"category"
+          [ choice @"All", choice @"Action", choice @"Drama", choice @"Comedy" ]
+        chipSet ( Category.do
+            filterChip @"Classic" {}
+            filterChip @"Cult" {}
+            filterChip @"Oscar" {} )
+        ( elevation1 $ subtitle1 $ text favoritesLine ) # shown
+        list $
+          ( clWhen isFavorite "mdc-deprecated-list-item--selected"
+              $ listItem $ ( Category.do
+                  span (text titleLine) # shown
+                  span (text yearLine) # shown
+                  span (text ratingLine) # shown
+                  iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) ) # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
+    ) # mvu movieCatalogue
