@@ -219,6 +219,13 @@ export function getChecked(node) {
   };
 }
 
+// textContent :: Node -> Effect String
+export function textContent(node) {
+  return function () {
+    return node.textContent;
+  };
+}
+
 // setChecked :: Node -> Boolean -> IOSync Unit
 export function setChecked(node) {
   return function (value) {

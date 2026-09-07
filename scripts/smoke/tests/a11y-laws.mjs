@@ -3,8 +3,10 @@
 // captioned buttons, named selects, and no dangling aria reference (the
 // group's `aria-labelledby` must point at its real heading). The audit runs
 // over the running demo only (#demo-column — the library's output; the page
-// chrome around it is not the vocabulary's), across all six counter twins and
-// the flagship order-form, so a vocabulary that drops a stamp fails here with
+// chrome around it is not the vocabulary's), across all six counter twins,
+// the flagship order-form and both espresso-bar twins (the widest catalogue
+// walk: tabs, segments, select, radios, slider, chips, switch, icon toggle,
+// checkbox, menu), so a vocabulary that drops a stamp fails here with
 // the offending element named by axe. The rule set is deliberately the
 // name-and-reference core, not a full audit: these rules ARE the stamp
 // invariant, stated by someone else's checker.
@@ -21,10 +23,12 @@ const axeSource = readFileSync(path.join(here, '../../../node_modules/axe-core/a
 const rules = ['label', 'button-name', 'select-name', 'input-button-name', 'aria-valid-attr', 'aria-valid-attr-value', 'label-content-name-mismatch']
 
 const twins = ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html']
-export const demos = [...twins.map((t) => `demo/7guis/counter-${t}`), 'demo/nguis/order-form-mdc2']
+export const demos = [...twins.map((t) => `demo/7guis/counter-${t}`), 'demo/nguis/order-form-mdc2', 'demo/nguis/espresso-bar-mdc2', 'demo/nguis/espresso-bar-mdc3']
 export const pages = [
   ...twins.map((t) => ({ url: `/demo/7guis/counter-${t}/`, label: `counter-${t}` })),
   { url: '/demo/nguis/order-form-mdc2/', label: 'order-form-mdc2' },
+  { url: '/demo/nguis/espresso-bar-mdc2/', label: 'espresso-bar-mdc2' },
+  { url: '/demo/nguis/espresso-bar-mdc3/', label: 'espresso-bar-mdc3' },
 ]
 
 export const run = async ({ ev, assertEq, sleep, page }) => {

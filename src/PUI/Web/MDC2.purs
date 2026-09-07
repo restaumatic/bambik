@@ -790,7 +790,7 @@ selectLeaf config options = wrap do
     "<div class=\"mdc-select mdc-select--filled\" style=\"min-width: 200px;\">"
       <> "<div class=\"mdc-select__anchor\" role=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-labelledby=\"" <> labelId <> " " <> textId <> "\">"
       <> "<span class=\"mdc-select__ripple\"></span>"
-      <> "<span class=\"mdc-floating-label\" id=\"" <> labelId <> "\">" <> config.floatingLabel <> "</span>"
+      <> "<span class=\"mdc-floating-label\" id=\"" <> labelId <> "\">" <> config.floatingLabel <> "</span> "
       <> "<span class=\"mdc-select__selected-text-container\"><span class=\"mdc-select__selected-text\" id=\"" <> textId <> "\"></span></span>"
       <> "<span class=\"mdc-select__dropdown-icon\">"
       <> "<svg class=\"mdc-select__dropdown-icon-graphic\" viewBox=\"7 10 10 5\" focusable=\"false\">"

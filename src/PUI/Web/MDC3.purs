@@ -139,7 +139,7 @@ import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach)
 import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, textOf, th, thead, tr, (:=))
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, uniqueId)
+import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, textContent, uniqueId)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -475,9 +475,15 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
     element "md-checkbox" (pure unit)
     node <- gets _.sibling
     lbl <- unwrap labelContent
+    -- the wrapping <label> names the host but not the input inside its shadow
+    -- root, so the rendered caption is stamped as the box's accessible name
+    caption <- gets _.parent
+    let stampCaption = textContent caption >>= setAttribute node "aria-label"
+    liftEffect stampCaption
     pure
       { toUser: \ma -> do
           lbl.toUser {}
+          stampCaption
           case Variant.prj (Proxy @c) ma of
             Nothing -> setChecked node false
             Just newa -> do
@@ -549,6 +555,7 @@ switchLeaf lbl =
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     element "md-switch" (pure unit)
     node <- gets _.sibling
+    liftEffect $ setAttribute node "aria-label" lbl
     _ <- unwrap (staticText lbl)
     mPropRef <- liftEffect $ Ref.new Nothing
     liftEffect $ listenNode node "change" do
@@ -1323,15 +1330,19 @@ tooltip :: { text :: String } -> Ocular (PUI Web)
 tooltip config content =
   span >>> cl "md3-tooltip-anchor" $ wrap do
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
-    w <- unwrap content
-    _ <- unwrap (staticHTML ("<div class=\"md3-tooltip\" role=\"tooltip\">" <> config.text <> "</div>"))
+    tipId <- liftEffect uniqueId
+    w <- unwrap ("aria-describedby" := tipId $ content)
+    _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> config.text <> "</div>"))
     pure w
 
+-- a plain tooltip is transient: it shows while the pointer rests on the anchor
+-- or the anchor has KEYBOARD focus (`:focus-visible`), never for the focus a
+-- click leaves behind — `:focus-within` kept it up after every tap
 tooltipCss :: String
 tooltipCss = """
 .md3-tooltip-anchor { position: relative; display: inline-block; }
 .md3-tooltip { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; background: var(--md-sys-color-inverse-surface, #322f35); color: var(--md-sys-color-inverse-on-surface, #f5eff7); font: 400 12px/16px Roboto, sans-serif; padding: 4px 8px; border-radius: 4px; white-space: nowrap; visibility: hidden; opacity: 0; transition: opacity .15s; z-index: 1000; pointer-events: none; }
-.md3-tooltip-anchor:hover .md3-tooltip, .md3-tooltip-anchor:focus-within .md3-tooltip { visibility: visible; opacity: 1; }
+.md3-tooltip-anchor:hover .md3-tooltip, .md3-tooltip-anchor:has(:focus-visible) .md3-tooltip { visibility: visible; opacity: 1; }
 """
 
 -- announcing statics (`{} → {}` chrome with a face)

@@ -42,6 +42,7 @@ module PUI.Web
   , staticHTML
   , setTextNodeValue
   , setValue
+  , textContent
   , uniqueId
   )
   where
@@ -176,6 +177,7 @@ foreign import isFocused :: Node -> Effect Boolean
 foreign import getValue :: Node -> Effect String
 foreign import setValue :: Node -> String -> Effect Unit
 foreign import getChecked :: Node -> Effect Boolean
+foreign import textContent :: Node -> Effect String
 foreign import setChecked :: Node -> Boolean -> Effect Unit
 foreign import documentBody :: Effect Node
 foreign import createTextNode :: String -> Effect Node
@@ -289,7 +291,11 @@ slotCounter = unsafePerformEffect $ Ref.new 0
 -- | as "COUNT" — therefore every face whose styling transforms its caption
 -- | stamps `aria-label` with the caption verbatim (MDC2's button family,
 -- | tabs, segments and the menu anchor), keeping name = label exactly, in
--- | every vocabulary and browser alike. The smoke harness enforces both
+-- | every vocabulary and browser alike — and so does every face the platform
+-- | cannot name by itself: MD3's checkbox and switch sit inside a wrapping
+-- | `<label>` whose association never reaches the input in their shadow
+-- | root, so the switch stamps its label and the checkbox the rendered text
+-- | of its content. The smoke harness enforces both
 -- | halves: role + accessible-name locators match exactly
 -- | (scripts/smoke/a11y.mjs), and axe's name-and-reference rules run per
 -- | vocabulary (tests/a11y-laws.mjs).
