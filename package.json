@@ -4,6 +4,7 @@
   "license": "BSD-3-Clause",
   "scripts": {
     "build": "spago build -w",
+    "test": "spago test",
     "dev": "node scripts/dev.mjs",
     "smoke": "node scripts/smoke/run.mjs",
     "api-docs": "spago docs --format markdown",
