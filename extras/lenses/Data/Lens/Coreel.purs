@@ -1,8 +1,13 @@
--- | The **`Coreel`** — the optic `Data.Profunctor.Coretaining`'s `coretain`
--- | generates by Pastro–Street, for the coined `+ → ×` shape. Both the class
--- | and the optic are this library's. Its strength-side sibling is
--- | `Data.Lens.Reel`, and nothing here mentions a row: the row form is
--- | `Data.Profunctor.Row.VariantToRecord.unfolding`.
+-- | The **`Coreel`** — the profunctor-encoded optic of
+-- | `Data.Profunctor.Coretaining`'s `coretain`, for the coined `+ → ×`
+-- | shape. Both the class and the optic are this library's. Its
+-- | strength-side sibling is `Data.Lens.Reel`, and nothing here mentions a
+-- | row: the row form is `Data.Profunctor.Row.VariantToRecord.unfolding`.
+-- |
+-- | Like the other coined optics: the existential constructor `coreelE` is
+-- | **sound**, and completeness is **not claimed** — see
+-- | `Data.Lens.Shutter`'s note. The ∃-to-∃ duality
+-- | `Coreel s t a b ≅ Shutter b a t s` (a pair swap) does hold.
 -- |
 -- | It claims a `Data.Lens.*` name and lives under the separate
 -- | `extras/lenses` source root because it belongs to that family by
@@ -21,8 +26,9 @@ import Data.Profunctor (dimap)
 import Data.Profunctor.Coretaining (class Coretaining, coretain)
 import Data.Tuple (Tuple(..))
 
--- | The optic `coretain` induces: the **Coreel** — the `Shutter` run
--- | backwards (`Coreel s t a b ≅ Shutter b a t s`). Eliminating the residual
+-- | The optic `coretain` encodes: the **Coreel** — the `Shutter` run
+-- | backwards (`Coreel s t a b ≅ Shutter b a t s`, at the existential
+-- | encodings: a pair swap). Eliminating the residual
 -- | `c` (instantiated to `b`) by co-Yoneda collapses
 -- | `∃c. (s + c → a) × (b → t × c)` to
 -- | `(embed : s → a) × (out : b → t) × (resume : b → a)`: every emission

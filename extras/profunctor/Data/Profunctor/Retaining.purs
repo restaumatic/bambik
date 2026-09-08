@@ -43,6 +43,16 @@ import Data.Tuple (Tuple)
 -- | `c` to place in the product on a fresh `Left a`, and no `b` on a `Right c`
 -- | resume — the product output can't be filled without retaining state.
 -- |
+-- | **Laws.** Naturality in `a`, `b` and dinaturality in `c` come free
+-- | (parametricity); the Tambara coherences are absent for the same reason
+-- | as `Resolving`'s — the mixed channels do not compose into one action —
+-- | so the class alone is property-light: its equational content is the
+-- | seeded retraction with `Coretaining`,
+-- | `coretain (seeded (Right c0) >>> retain g) ≈ g` (tested in
+-- | test/Main.purs). The consequence for the optic is stated in
+-- | `Data.Lens.Reel`: existential constructors are sound, completeness is
+-- | not claimed.
+-- |
 -- | This is the **bare strength** for the `+ → ×` direction (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is
 -- | `VariantToRecord.subRetaining` — exactly as `RecordToRecord.subStrong` is

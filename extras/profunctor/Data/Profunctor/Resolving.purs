@@ -44,10 +44,25 @@ import Data.Tuple (Tuple)
 -- | With no out-of-band loop signal in the wire protocol (values are just
 -- | values), the `PUI` instance derives the branch **from time**: every
 -- | emission loops (`Right`) while the UI component is still moving, and the last
--- | emission resolves (`Left`) at quiescence — so
--- | `coresolve (resolve g) = debounced g ≅ g` up to time, once primed.
+-- | emission resolves (`Left`) at quiescence — so the seeded retraction
+-- | reads `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`.
 -- | (No `(->)` instance: a timeless carrier could only give the trivial
 -- | always-`Done` step, which carries no iteration.)
+-- |
+-- | **Laws.** Naturality in `a`, `b` and dinaturality in `c` come free
+-- | (parametricity); the Tambara coherences are **deliberately absent and
+-- | provably unavailable**: at `c := 1` a lawful unit coherence would force
+-- | `resolve g = rmap Left g`, erasing the loop, and two nested `resolve`s
+-- | cannot fuse even in principle — input residuals compose as `c × d`,
+-- | output residuals as `c + d`, and no single channel carries both. So
+-- | this is a **single-application mixed strength**, not a Tambara module,
+-- | and the class alone is property-light: a carrier without a
+-- | `Coresolving` half admits degenerate instances (`Cont`'s always-`Done`
+-- | `resolve`). Its equational content lives in the seeded retraction with
+-- | its co-strength (`Data.Profunctor.Coresolving`; tested in
+-- | test/Main.purs). The consequence for the optic is stated in
+-- | `Data.Lens.Shutter`: existential constructors are sound, completeness
+-- | is not claimed.
 -- |
 -- | This is the **bare strength** for the `× → +` direction (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is

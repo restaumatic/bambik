@@ -14,6 +14,21 @@
 -- | made into a pass-through stage precisely by its gate. See
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
+-- | **The carrier contract** (doc/observational-semantics.md — the one
+-- | definition every law below is stated against): a `PUI` value denotes,
+-- | per instantiation, one two-phase process — `fromUser` registered once,
+-- | then feeds and emissions interleave. Law equality `≈` is observational
+-- | equivalence of the boundary channels under that protocol; refinement
+-- | `⊑` is emitting a withholding-subsequence; primed equivalence is
+-- | equality of the residuals once every gate has been fed. UI components owe
+-- | the protocol three laws the algebra leans on: **feed-idempotence**
+-- | (feeding the same value twice ≈ once — what lets `looped`'s idempotence
+-- | and `debounced`'s re-feeds be lawful), **record-echo totality** (a
+-- | `×`-output citizen answers every feed — what keeps the gates and the
+-- | seeded `×`-traces live), and **no synchronous variant echo** (a
+-- | `+`-output citizen never emits from inside its own feed — what makes
+-- | `Cochoice`'s re-entry an event loop, not a busy loop).
+-- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
 -- | stages are composed with `Category.do`, every emission travels
 -- | left-to-right through the stages, and `mvu` loops the final emission
@@ -180,6 +195,11 @@ instance Functor m => Profunctor (PUI m) where
 -- record merges follow): state a UI component hasn't received yet cannot be
 -- fabricated, so emissions needing it are withheld until
 -- the state channel has been fed.
+--
+-- The price is named: the ecosystem Strong law `lmap fst = rmap fst <<< first`
+-- holds only as primed equivalence — a pre-feed emission is dropped, not
+-- delayed (a permanent prefix difference, tested as such in test/Main.purs;
+-- doc/observational-semantics.md).
 instance Functor m => Strong (PUI m) where
   first p = wrap ado
     p' <- unwrap p
@@ -258,8 +278,21 @@ instance Functor m => Choice (PUI m) where
 -- | Knowledge-gated like every stateful instance: inputs are withheld until a
 -- | first `c` exists, so the loop needs priming — route the initial state in
 -- | through the UI component's input where possible, or use `looped` for the
--- | self-feeding diagonal special case, which has no gate. The retraction law
--- | `unfirst (first g) ≅ g` holds once the state channel is primed.
+-- | self-feeding diagonal special case, which has no gate.
+-- |
+-- | The raw retraction composite `unfirst (first g)` is **dead** on this
+-- | carrier: `unfirst`'s input gate waits on an emission that `first`'s own
+-- | gate withholds until fed, and no outside channel breaks the circle. So
+-- | the retraction law is stated (and tested) in **seeded** form, for `g`
+-- | honoring the record-echo protocol (each feed answered):
+-- |
+-- | ```
+-- | unfirst (seeded (Tuple a0 c0) >>> first g) ≈ seeded a0 >>> g
+-- | ```
+-- |
+-- | — exactly the composite `feedback` builds. Contrast `Cochoice` below,
+-- | whose retraction holds raw: this carrier is genuinely traced over `+`
+-- | and only pointed-traced over `×` (doc/observational-semantics.md).
 instance Functor m => Costrong (PUI m) where
   unfirst p = wrap ado
     p' <- unwrap p
@@ -305,7 +338,10 @@ instance Functor m => Costrong (PUI m) where
 -- | until an exit-branch emission passes through. The re-entry is a `toUser`,
 -- | so in `PUI` the loop is an *event* loop: it advances on the UI component's next
 -- | emission (variant-output UI components do not echo, so the leaf protocol cannot
--- | provoke a synchronous spin). Retraction law: `unleft (left g) ≅ g`.
+-- | provoke a synchronous spin — the no-synchronous-variant-echo law is this
+-- | instance's termination argument). Retraction law: `unleft (left g) = g`,
+-- | holding **raw** — no seed: the one trace whose yanking needs no pointing
+-- | (the `+`/`×` asymmetry, doc/observational-semantics.md).
 instance Functor m => Cochoice (PUI m) where
   unleft p = wrap $ unwrap p <#> \p' ->
     { toUser: \a -> p'.toUser $ Left a
@@ -329,7 +365,10 @@ instance Functor m => Cochoice (PUI m) where
 -- | the UI component joined with the last input (guarded), so the UI component
 -- | re-renders at every fold step; a `Left b` exits. Gated like `Costrong`
 -- | (a first `c` must arrive before inputs pass — `announce` an initial
--- | state to prime it); `coresolve (resolve g) ≅ g` once primed.
+-- | state to prime it). The raw composite `coresolve (resolve g)` is
+-- | input-dead (each gate waits on the other), so the retraction is stated
+-- | seeded — and the seeded composite IS `debounced`:
+-- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`.
 instance Functor m => Coresolving (PUI m) where
   coresolve p = wrap ado
     p' <- unwrap p
@@ -364,7 +403,9 @@ instance Functor m => Coresolving (PUI m) where
 -- | The `+ → ×` **co-strength** (retraction of `Retaining`): every emission
 -- | `Tuple b c` yields `b` and immediately re-enters the UI component as a
 -- | `Right c` resume — a **productive unfold**/generator.
--- | `coretain (retain g) ≅ g` once the state channel is primed.
+-- | The raw composite `coretain (retain g)` is output-dead (`retain`'s gate
+-- | waits on a resume only emissions can trigger), so the retraction is
+-- | stated seeded: `coretain (seeded (Right c0) >>> retain g) ≈ g`.
 instance Functor m => Coretaining (PUI m) where
   coretain p = wrap $ unwrap p <#> \p' ->
     -- the resume re-entry is guarded: a record-output UI component echoes on
@@ -516,9 +557,12 @@ instance Applicative m => RecordToVariant (PUI m) where
 -- | (re)arms a quiescence timer; when the UI component stays quiet for the
 -- | window, the last emission resolves: `Left b`. **Loop = still moving,
 -- | Done = quiescence** — which is the definition of debouncing, so the
--- | retraction law refines to `coresolve (resolve g) = debounced g ≅ g`
--- | up to time (once primed). The window is `resolveFor`'s parameter;
--- | the instance uses a 300ms default.
+-- | seeded retraction reads
+-- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g` — the tied
+-- | loop IS debouncing. The window is `resolveFor`'s parameter; the
+-- | instance fixes the carrier's **quiescence quantum**, 300ms — a semantic
+-- | constant of this instance, not of the class (`resolveFor` re-scopes it
+-- | per stage).
 instance Functor m => Resolving (PUI m) where
   resolve = resolveFor { ms: 300.0 }
 
@@ -1456,7 +1500,13 @@ actingGuarded busyRef act = do
 -- The gather mode: element emissions land in their slot, then the whole
 -- array re-emits from retained slots once every element has spoken —
 -- including immediately after a reconcile, so `[]` emits `[]` and survivors'
--- retained slots re-emit without waiting.
+-- retained slots re-emit without waiting. An echo provoked *during* the
+-- reconcile (an element that answers its feed, per the record-echo protocol)
+-- is retained but must not gather: `entriesRef` still holds the old vector
+-- mid-reconcile, so an unguarded gather would emit leavers — or a spurious
+-- `[]` on the very first feed — violating the gather-gate law (the wire-law
+-- test in test/Main.purs); the post-reconcile gather emits the clean vector.
+-- `edited` and `accumulated` guard their `onEmit` the same way.
 actedWith :: forall k a b node. Ord k => (a -> k) -> Hooks a b node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: (Array b -> Effect Unit) -> Effect Unit }
 actedWith key hooks = do
   propRef <- Ref.new Nothing
@@ -1471,7 +1521,8 @@ actedWith key hooks = do
         for_ mProp \prop -> prop bs
     onEmit _ slot b = do
       Ref.write (Just b) slot
-      gather
+      busy <- Ref.read busyRef
+      unless busy gather
   pure
     { toUser: \items -> actingGuarded busyRef do
         reconcileKeyed key hooks onEmit busyRef entriesRef items

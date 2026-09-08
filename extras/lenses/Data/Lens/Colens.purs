@@ -1,5 +1,8 @@
 -- | The **`Colens`** — the optic `Data.Profunctor.Costrong`'s `unfirst`
--- | generates by Pastro–Street. The class is the ecosystem's; the optic is
+-- | generates by the dual of Pastro–Street (the class is the ecosystem's,
+-- | with a lawful `×`-action carrying unit and composition, so — unlike the
+-- | coined mixed optics, see `Data.Lens.Shutter` — the representation is
+-- | the standard co-optic result). The class is the ecosystem's; the optic is
 -- | this library's, because `profunctor-lenses` never built it. Its dual is
 -- | `Data.Lens.Lens`, and nothing here mentions a row: the row form is
 -- | `Data.Profunctor.Row.RecordToRecord.feedback`.

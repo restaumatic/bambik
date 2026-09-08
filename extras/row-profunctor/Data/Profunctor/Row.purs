@@ -24,8 +24,16 @@
 -- | `*` marks what this library introduces; the rest is the ecosystem's
 -- | (`Strong`/`Choice` with their `Lens`/`Prism`, and the duals
 -- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
--- | ecosystem never built). The optics follow from the strength/co-strength
--- | classes by Pastro–Street, and neither those classes nor the optics
+-- | ecosystem never built). For the ecosystem pairs the optics follow by
+-- | Pastro–Street (`Strong`/`Choice` are lawful Tambara modules, so
+-- | `Lens`/`Prism` — and, dually, `Colens`/`Coprism` — are representation
+-- | theorems). The four **coined** optics are profunctor-encoded classes
+-- | with **sound existential constructors and no completeness claim**: the
+-- | mixed strengths carry no unit or composition coherence
+-- | (`Data.Profunctor.Resolving`), so Pastro–Street does not apply — and
+-- | indeed `identity` inhabits `Shutter a b a b` while no existential
+-- | shutter produces it (every existential carries an escape `s → t`).
+-- | Neither the classes nor the optics
 -- | mention a row, so neither lives in `Data.Profunctor.Row.*`. Both follow
 -- | the ecosystem's own layout: one class per module beside `Strong`/`Costrong`
 -- | (`Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`),
@@ -200,6 +208,16 @@
 -- |     So every (·,×)-shape gates and retains (`recordToRecord`,
 -- |     `variantToRecord`, `acted`'s gather) and no (·,+)-shape does
 -- |     (injections need no pairing).
+-- |   * **the gates' further price is bifunctoriality** — interchange,
+-- |     `(f ⊗ g) >>> (h ⊗ k) = (f >>> h) ⊗ (g >>> k)`, fails on the nose
+-- |     for the gated merges (the merged-first side withholds until every
+-- |     operand has spoken) and holds one-directionally, as refinement: the
+-- |     merged-first side emits a withholding-subsequence of the other —
+-- |     the lax duoidal interchange, meaningful only in the order-enriched
+-- |     semantics (doc/observational-semantics.md; deviation test in
+-- |     test/Main.purs). So a gated merge is a premonoidal-style tensor,
+-- |     not a monoidal one; unit and associativity hold and are tested,
+-- |     interchange is bought back only as `⊑`.
 -- |
 -- | See doc/collections-profunctor-algebra.md §1.
 -- |

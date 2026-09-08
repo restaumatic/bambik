@@ -1,8 +1,19 @@
--- | The **`Shutter`** — the optic `Data.Profunctor.Resolving`'s `resolve`
--- | generates by Pastro–Street, for the coined `× → +` shape. Both the class
--- | and the optic are this library's. Its co-optic is `Data.Lens.Coshutter`,
--- | and nothing here mentions a row: the row form is
+-- | The **`Shutter`** — the profunctor-encoded optic of
+-- | `Data.Profunctor.Resolving`'s `resolve`, for the coined `× → +` shape.
+-- | Both the class and the optic are this library's. Its co-optic is
+-- | `Data.Lens.Coshutter`, and nothing here mentions a row: the row form is
 -- | `Data.Profunctor.Row.RecordToVariant.subResolving`.
+-- |
+-- | **Soundness, not completeness.** `shutterE` constructs an inhabitant
+-- | from any existential datum — sound. The converse (every inhabitant of
+-- | the ∀-type arises from one existential) is **deliberately not claimed**:
+-- | Pastro–Street needs the action's unit and composition coherences, which
+-- | the mixed strength provably lacks (`Data.Profunctor.Resolving`) — and
+-- | the gap is real: `identity` inhabits `Shutter a b a b`, while every
+-- | existential shutter carries an escape `s → t` (the collapsed form
+-- | below), which `identity` has none of. The ∀-type also holds bare
+-- | `dimap`s and multi-application chains no single `shutterE` produces.
+-- | The library only ever uses the sound direction.
 -- |
 -- | It claims a `Data.Lens.*` name and lives under the separate
 -- | `extras/lenses` source root because it belongs to that family by
@@ -21,7 +32,7 @@ import Data.Profunctor (dimap)
 import Data.Profunctor.Resolving (class Resolving, resolve)
 import Data.Tuple (Tuple(..))
 
--- | The optic `resolve` induces: the **Shutter**. Eliminating the residual `c`
+-- | The optic `resolve` encodes: the **Shutter**. Eliminating the residual `c`
 -- | (instantiated to `s`) by co-Yoneda collapses `∃c. (s → a × c) × (b + c → t)`
 -- | to `(view : s → a) × (build : b → t) × (escape : s → t)` — a lens that can
 -- | *snap shut*: run the focus and `build` (the `Done` branch), or `escape`

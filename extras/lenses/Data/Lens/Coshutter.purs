@@ -1,8 +1,14 @@
--- | The **`Coshutter`** — the optic `Data.Profunctor.Coresolving`'s
--- | `coresolve` generates by Pastro–Street, for the coined `× → +` shape. Both
--- | the class and the optic are this library's. Its strength-side sibling is
--- | `Data.Lens.Shutter`, and nothing here mentions a row: the row form is
--- | `Data.Profunctor.Row.RecordToVariant.folding`.
+-- | The **`Coshutter`** — the profunctor-encoded optic of
+-- | `Data.Profunctor.Coresolving`'s `coresolve`, for the coined `× → +`
+-- | shape. Both the class and the optic are this library's. Its
+-- | strength-side sibling is `Data.Lens.Shutter`, and nothing here mentions
+-- | a row: the row form is `Data.Profunctor.Row.RecordToVariant.folding`.
+-- |
+-- | Like the other coined optics: the existential constructor `coshutterE`
+-- | is **sound**, and completeness is **not claimed** — see
+-- | `Data.Lens.Shutter`'s note (the mixed strengths carry no unit or
+-- | composition coherence, so Pastro–Street does not apply). The ∃-to-∃
+-- | duality `Coshutter s t a b ≅ Reel b a t s` (a pair swap) does hold.
 -- |
 -- | It claims a `Data.Lens.*` name and lives under the separate
 -- | `extras/lenses` source root because it belongs to that family by
@@ -21,8 +27,9 @@ import Data.Profunctor (dimap)
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Tuple (Tuple(..))
 
--- | The optic `coresolve` induces: the **Coshutter** — the `Reel` run
--- | backwards (`Coshutter s t a b ≅ Reel b a t s`). Eliminating the residual
+-- | The optic `coresolve` encodes: the **Coshutter** — the `Reel` run
+-- | backwards (`Coshutter s t a b ≅ Reel b a t s`, at the existential
+-- | encodings: a pair swap). Eliminating the residual
 -- | `c` (instantiated to `s → a`) by co-Yoneda collapses
 -- | `∃c. (s × c → a) × (b → t + c)` to a single `step : b → t + (s → a)`:
 -- | each emission either exits with `t` or yields a **new way to read

@@ -16,13 +16,28 @@
 -- | `Data.Profunctor.Row.VariantToVariant.iterate`.
 -- |
 -- | Laws — the trace axioms restricted to the diagonal (`identity` on
--- | `Category` carriers):
+-- | `Category` carriers), stated up to the observational equivalence of
+-- | doc/observational-semantics.md (boundary channels; inner feeds compared
+-- | up to consecutive duplication — the quotient feed-idempotence licenses):
 -- |
 -- | ```
--- | looped identity        = identity                       (yanking)
--- | looped (dimap f f g)   = dimap f f (looped g)           (f an iso — dinaturality)
--- | looped (looped g)      = looped g                       (idempotence: the guard)
+-- | looped identity         = identity                        (yanking)
+-- | looped (dimap f f⁻¹ g)  = dimap f f⁻¹ (looped g)          (conjugation — dinaturality at an iso f)
+-- | looped (looped g)       ≈ looped g                        (idempotence: the guard; nesting only duplicates feeds)
 -- | ```
+-- |
+-- | Conjugation needs the inverse pair: `dimap f f` in both positions is
+-- | false for every non-involutive iso — the loop path would re-feed
+-- | `f (f y)` where the re-fed value must be `g`'s own emission `y`
+-- | verbatim (counterexample in test/Main.purs).
+-- |
+-- | The equational triple is necessary, not sufficient: `looped = identity`
+-- | satisfies all three. What the class *means* is a fourth, behavioral law
+-- | (temporal, like `Seeding`'s point law):
+-- |
+-- |   * **re-entry** — each emission of the wrapped UI component is fed
+-- |     back to it exactly once, before propagating; the echoes that
+-- |     re-feed provokes are swallowed.
 -- |
 -- | What the carrier-agnostic layer builds on it: `mvu` (the app shape, in
 -- | `Data.Profunctor.Row.RecordToRecord`) and `bracketed` (the

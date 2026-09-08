@@ -2,9 +2,9 @@ module Test.Main where
 
 import Prelude
 
-import Data.Array (length, (!!))
+import Data.Array (last, length, (!!))
 import Data.Either (Either(..))
-import Data.Foldable (for_)
+import Data.Foldable (foldl, for_)
 import Data.Lens (over, set, view)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
@@ -22,10 +22,12 @@ import Data.Profunctor.Row.RecordToRecord (feedback, field, muted, subStrong, re
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (folding, recordToCase, recordToVariant, toCase)
 import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, variantToVariant)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
-import Data.Profunctor (lcmap)
-import Data.Variant (Variant, case_)
+import Data.Profunctor (dimap, lcmap, rmap)
+import Data.Profunctor.Acting (actedBy)
+import Data.Profunctor.Retaining (retain)
+import Data.Variant (Variant, case_, match)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
@@ -59,6 +61,24 @@ probeIO insRef propRef = PUI $ pure
   { toUser: \i -> Ref.modify_ (_ <> [ i ]) insRef
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
+
+-- A probe that answers each feed through `f` (the record-side citizen
+-- protocol: every feed echoes) and can also be fired by hand — the `g` the
+-- seeded ×-retraction law quantifies over.
+echoProbe :: forall i o. (i -> o) -> Ref.Ref (Array i) -> Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
+echoProbe f insRef propRef = PUI $ pure
+  { toUser: \i -> do
+      Ref.modify_ (_ <> [ i ]) insRef
+      mProp <- Ref.read propRef
+      for_ mProp \prop -> prop (f i)
+  , fromUser: \prop -> Ref.write (Just prop) propRef
+  }
+
+-- Collapse consecutive duplicates — the quotient feed-idempotence licenses:
+-- laws over inner feed streams are stated up to it
+-- (doc/observational-semantics.md).
+dedupConsecutive :: forall a. Eq a => Array a -> Array a
+dedupConsecutive = foldl (\acc x -> if last acc == Just x then acc else acc <> [ x ]) []
 
 -- An element probe for the container action: `acted` instantiates the wrapped
 -- UI component once per key, so each instantiation registers its own channel legs in
@@ -1100,3 +1120,369 @@ main = do
     fireElem roster 0 { title: "X" }
     Ref.read outs >>= \os -> assertEqual "edited: an edit folds immediately, its key re-attached by the carrier" (Just [ { id: "a", title: "X" }, { id: "b", title: "y" } ]) (os !! (length os - 1))
     Ref.read builds >>= assertEqual "edited: survivors were re-fed, never rebuilt" 2
+
+  -- == The seeded retraction laws (doc/observational-semantics.md): the ==
+  -- == raw ×-side composites deadlock — each gate waits on the other — so ==
+  -- == the trace-quartet retractions are stated and tested seeded. Only ==
+  -- == Cochoice's `unleft (left g) = g` holds raw (tested above). ==
+
+  -- The seeded × retraction: for a record-side citizen g (echoes each feed —
+  -- the protocol), tying first's channel around a seeded chain is g behind a
+  -- seeded wire: unfirst (seeded (Tuple a0 c0) >>> first g) ≈ seeded a0 >>> g.
+  do
+    insL <- Ref.new ([] :: Array Int)
+    lProp <- Ref.new Nothing
+    outsL <- Ref.new ([] :: Array String)
+    l <- unwrap (unfirst (seeded (Tuple 0 true) >>> first (echoProbe show insL lProp)))
+    l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
+    insR <- Ref.new ([] :: Array Int)
+    rProp <- Ref.new Nothing
+    outsR <- Ref.new ([] :: Array String)
+    r <- unwrap (seeded 0 >>> echoProbe show insR rProp)
+    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
+    l.toUser 1 *> r.toUser 1
+    fire lProp "manual" *> fire rProp "manual"
+    Ref.read insR >>= \expected -> Ref.read insL >>= assertEqual "seeded × retraction: g fed alike" expected
+    Ref.read outsR >>= \expected -> Ref.read outsL >>= assertEqual "seeded × retraction: boundary emits alike" expected
+    Ref.read insL >>= assertEqual "seeded × retraction: seed then input reached g" [ 0, 1 ]
+    Ref.read outsL >>= assertEqual "seeded × retraction: echoes and fires pass" [ "0", "1", "manual" ]
+
+  -- Why seeded: the raw composite unfirst (first g) is dead — unfirst's input
+  -- gate waits on an emission first's own gate withholds until fed.
+  do
+    ins <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (unfirst (first (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser 1
+    fire gProp "x"
+    Ref.read ins >>= assertEqual "raw unfirst∘first: inputs never reach g" []
+    Ref.read outs >>= assertEqual "raw unfirst∘first: emissions never leave" []
+
+  -- The seeded +→× retraction: coretain (seeded (Right c0) >>> retain g) ≈ g
+  -- (no echo needed — the seed primes retain's gate at registration).
+  do
+    insL <- Ref.new ([] :: Array Int)
+    lProp <- Ref.new Nothing
+    outsL <- Ref.new ([] :: Array String)
+    l <- unwrap (coretain (seeded (Right true) >>> retain (probeIO insL lProp :: PUI Effect Int String)))
+    l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
+    insR <- Ref.new ([] :: Array Int)
+    rProp <- Ref.new Nothing
+    outsR <- Ref.new ([] :: Array String)
+    r <- unwrap (probeIO insR rProp :: PUI Effect Int String)
+    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
+    l.toUser 1 *> r.toUser 1
+    fire lProp "out" *> fire rProp "out"
+    l.toUser 2 *> r.toUser 2
+    Ref.read insR >>= \expected -> Ref.read insL >>= assertEqual "seeded +→× retraction: g fed alike" expected
+    Ref.read outsR >>= \expected -> Ref.read outsL >>= assertEqual "seeded +→× retraction: boundary emits alike" expected
+    Ref.read insL >>= assertEqual "seeded +→× retraction: the script reached g" [ 1, 2 ]
+
+  -- Why seeded, the +→× raw half: coretain (retain g) passes feeds but
+  -- retain's gate withholds every emission — the resume only emissions could
+  -- trigger never arrives.
+  do
+    ins <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (coretain (retain (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Either Int Boolean) (Tuple String Boolean)))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser 1
+    fire gProp "x"
+    Ref.read ins >>= assertEqual "raw coretain∘retain: feeds pass" [ 1 ]
+    Ref.read outs >>= assertEqual "raw coretain∘retain: emissions never leave" []
+
+  -- And the ×→+ raw half: coresolve (resolve g) is input-dead — coresolve's
+  -- gate needs a Right that resolve's own gate withholds until fed. (The
+  -- seeded form is `debounced`'s body, tested above as the debouncing
+  -- theorem.)
+  do
+    ins <- Ref.new ([] :: Array Int)
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (coresolve (resolveFor { ms: 20.0 } (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Either String Boolean)))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser 1
+    Ref.read ins >>= assertEqual "raw coresolve∘resolve: inputs never reach g" []
+
+  -- == The Looping laws (Data.Profunctor.Looping): yanking, conjugation ==
+  -- == (the corrected dinaturality), idempotence — and the counterexample ==
+  -- == that corrected it. ==
+
+  -- yanking: looped identity = identity.
+  do
+    outs <- Ref.new ([] :: Array { n :: Int })
+    m <- unwrap (looped (identity :: PUI Effect { n :: Int } { n :: Int }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { n: 3 } *> m.toUser { n: 4 }
+    Ref.read outs >>= assertEqual "looped yanking: looped identity = identity" [ { n: 3 }, { n: 4 } ]
+
+  -- conjugation: looped (dimap f f⁻¹ g) = dimap f f⁻¹ (looped g) for an
+  -- inverse pair (f, f⁻¹). The fired emission is computed from what g
+  -- retained (its last feed), exhibiting the law's content.
+  do
+    let
+      inc r = { n: r.n + 1 }
+      dec r = { n: r.n - 1 }
+      run w = do
+        ins <- Ref.new ([] :: Array { n :: Int })
+        gProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { n :: Int })
+        m <- unwrap (w ins gProp)
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { n: 0 }
+        Ref.read ins >>= \is -> for_ (last is) \v -> fire gProp { n: v.n * 10 }
+        Ref.read ins >>= \is -> for_ (last is) \v -> fire gProp { n: v.n * 10 }
+        is <- Ref.read ins
+        os <- Ref.read outs
+        pure { is, os }
+    conjIn <- run \ins gProp -> looped (dimap inc dec (probeIO ins gProp))
+    conjOut <- run \ins gProp -> dimap inc dec (looped (probeIO ins gProp))
+    assertEqual "looped conjugation: g fed alike" conjOut.is conjIn.is
+    assertEqual "looped conjugation: boundary emits alike" conjOut.os conjIn.os
+    assertEqual "looped conjugation: the script's streams"
+      { is: [ { n: 1 }, { n: 10 }, { n: 100 } ], os: [ { n: 9 }, { n: 99 } ] } conjIn
+    -- the pre-correction form (`dimap f f`, both positions the same iso)
+    -- diverges: the loop path composes f ∘ f
+    sameIn <- run \ins gProp -> looped (dimap inc inc (probeIO ins gProp))
+    sameOut <- run \ins gProp -> dimap inc inc (looped (probeIO ins gProp))
+    assertEqual "looped `dimap f f` counterexample: the loop-inside side" [ { n: 11 }, { n: 121 } ] sameIn.os
+    assertEqual "looped `dimap f f` counterexample: the loop-outside side differs" [ { n: 11 }, { n: 101 } ] sameOut.os
+
+  -- idempotence: looped (looped g) ≈ looped g — equal boundary emissions;
+  -- nesting only duplicates inner feeds, the quotient feed-idempotence
+  -- licenses.
+  do
+    let
+      run w = do
+        ins <- Ref.new ([] :: Array { n :: Int })
+        gProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { n :: Int })
+        m <- unwrap (w ins gProp)
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { n: 5 }
+        fire gProp { n: 7 }
+        is <- Ref.read ins
+        os <- Ref.read outs
+        pure { is, os }
+    single <- run \ins gProp -> looped (probeIO ins gProp)
+    double <- run \ins gProp -> looped (looped (probeIO ins gProp))
+    assertEqual "looped idempotence: boundary emits alike" single.os double.os
+    assertEqual "looped idempotence: feeds agree up to consecutive duplication"
+      (dedupConsecutive single.is) (dedupConsecutive double.is)
+    assertEqual "looped idempotence: nesting duplicates the re-feed — what feed-idempotence absorbs"
+      [ { n: 5 }, { n: 7 }, { n: 7 } ] double.is
+
+  -- == Named deviations (doc/observational-semantics.md): the ecosystem ==
+  -- == Strong law holds only as primed equivalence, and the gated merges ==
+  -- == break interchange — one-directionally. ==
+
+  -- Strong: `lmap fst = rmap fst <<< first` — the gated side DROPS a
+  -- pre-feed emission (a permanent prefix difference, not a delay); the
+  -- residuals after priming agree.
+  do
+    lProp <- Ref.new Nothing
+    outsL <- Ref.new ([] :: Array String)
+    l <- unwrap (lcmap (fst :: Tuple Int Boolean -> Int) (probe lProp :: PUI Effect Int String))
+    l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
+    rProp <- Ref.new Nothing
+    outsR <- Ref.new ([] :: Array String)
+    r <- unwrap (rmap fst (first (probe rProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
+    fire lProp "early" *> fire rProp "early"
+    Ref.read outsL >>= assertEqual "Strong deviation: lmap fst passes the pre-feed emission" [ "early" ]
+    Ref.read outsR >>= assertEqual "Strong deviation: the gated side drops it — a prefix, not a delay" []
+    l.toUser (Tuple 1 true) *> r.toUser (Tuple 1 true)
+    fire lProp "b" *> fire rProp "b"
+    Ref.read outsL >>= assertEqual "Strong deviation: primed residuals agree (ungated side)" [ "early", "b" ]
+    Ref.read outsR >>= assertEqual "Strong deviation: primed residuals agree (gated side)" [ "b" ]
+
+  -- Interchange: (f ⊗ g) >>> (h ⊗ k) vs (f >>> h) ⊗ (g >>> k) — the
+  -- merged-first side synchronizes at the middle gate, so it fails on the
+  -- nose and holds as refinement: its stage feeds are the withheld tail of
+  -- the free side's, and once every operand has spoken the sides agree.
+  do
+    let
+      run grouping = do
+        fIns <- Ref.new ([] :: Array { s :: Int })
+        fProp <- Ref.new Nothing
+        gIns <- Ref.new ([] :: Array { s :: Int })
+        gProp <- Ref.new Nothing
+        hIns <- Ref.new ([] :: Array { a :: Int })
+        hProp <- Ref.new Nothing
+        kIns <- Ref.new ([] :: Array { b :: Int })
+        kProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { c :: Int, d :: Int })
+        m <- unwrap (grouping (probeIO fIns fProp :: PUI Effect { s :: Int } { a :: Int })
+                              (probeIO gIns gProp :: PUI Effect { s :: Int } { b :: Int })
+                              (probeIO hIns hProp :: PUI Effect { a :: Int } { c :: Int })
+                              (probeIO kIns kProp :: PUI Effect { b :: Int } { d :: Int }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { s: 1 }
+        fire fProp { a: 10 }
+        hMid <- Ref.read hIns
+        fire gProp { b: 20 }
+        fire hProp { c: 1 }
+        fire kProp { d: 2 }
+        hs <- Ref.read hIns
+        os <- Ref.read outs
+        pure { hMid, hs, os }
+    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord h k
+    free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
+    assertEqual "interchange: the middle gate withholds h's feed until g spoke" [] synced.hMid
+    assertEqual "interchange: the free side feeds h immediately" [ { a: 10 } ] free.hMid
+    assertEqual "interchange: once every operand spoke, h-feeds agree — refinement, not divergence" free.hs synced.hs
+    assertEqual "interchange: boundary streams agree at the end of the script" free.os synced.os
+
+  -- == Merge symmetry and the mixed merges' associativity — completing the ==
+  -- == coherence tests (×→× and +→+ associativity are tested above). ==
+
+  -- ×→× symmetry: operand order is not observable at the boundary.
+  do
+    let
+      run wrapper = do
+        p1Prop <- Ref.new Nothing
+        p2Prop <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+        m <- unwrap (wrapper (probe p1Prop :: PUI Effect { s :: Int } { a :: Int }) (probe p2Prop :: PUI Effect { s :: Int } { b :: String }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { s: 1 }
+        fire p1Prop { a: 1 } *> fire p2Prop { b: "x" } *> fire p1Prop { a: 2 }
+        Ref.read outs
+    ab <- run recordToRecord
+    ba <- run \p1 p2 -> recordToRecord p2 p1
+    assertEqual "×→× symmetry: boundary streams agree under either operand order" ab ba
+    assertEqual "×→× symmetry: the script's stream" [ { a: 1, b: "x" }, { a: 2, b: "x" } ] ab
+
+  -- +→× symmetry: likewise for the doubly-owned merge.
+  do
+    let
+      run wrapper = do
+        p1Prop <- Ref.new Nothing
+        p2Prop <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+        m <- unwrap (wrapper (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int }) (probe p2Prop :: PUI Effect [ y :: Unit ] { b :: String }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        fire p1Prop { a: 1 } *> fire p2Prop { b: "s" } *> fire p1Prop { a: 2 }
+        Ref.read outs
+    ab <- run variantToRecord
+    ba <- run \p1 p2 -> variantToRecord p2 p1
+    assertEqual "+→× symmetry: boundary streams agree under either operand order" ab ba
+    assertEqual "+→× symmetry: the script's stream" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] ab
+
+  -- +→× associativity: dispatch and the nested gates agree under both
+  -- groupings.
+  do
+    let
+      run grouping = do
+        aIns <- Ref.new ([] :: Array [ x :: Int ])
+        aProp <- Ref.new Nothing
+        bIns <- Ref.new ([] :: Array [ y :: Int ])
+        bProp <- Ref.new Nothing
+        cIns <- Ref.new ([] :: Array [ z :: Int ])
+        cProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int, b :: Int, c :: Int })
+        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] { a :: Int })
+                              (probeIO bIns bProp :: PUI Effect [ y :: Int ] { b :: Int })
+                              (probeIO cIns cProp :: PUI Effect [ z :: Int ] { c :: Int }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser (.x 1) *> m.toUser (.y 2) *> m.toUser (.z 3)
+        fire cProp { c: 9 } *> fire aProp { a: 1 } *> fire bProp { b: 2 } *> fire aProp { a: 3 }
+        as <- Ref.read aIns
+        bs <- Ref.read bIns
+        cs <- Ref.read cIns
+        os <- Ref.read outs
+        pure { as, bs, cs, os }
+    l <- run \a b c -> variantToRecord (variantToRecord a b) c
+    r <- run \a b c -> variantToRecord a (variantToRecord b c)
+    assertEqual "+→× associativity: dispatch and the nested gates agree" l r
+    assertEqual "+→× associativity: the script's streams"
+      { as: [ .x 1 ], bs: [ .y 2 ], cs: [ .z 3 ]
+      , os: [ { a: 1, b: 2, c: 9 }, { a: 3, b: 2, c: 9 } ] } l
+
+  -- ×→+ associativity: broadcast and shared exits agree under both
+  -- groupings.
+  do
+    let
+      run grouping = do
+        p1Prop <- Ref.new Nothing
+        p2Prop <- Ref.new Nothing
+        p3Prop <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ x :: Int, y :: Int, z :: Int ])
+        m <- unwrap (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ])
+                              (probe p2Prop :: PUI Effect { s :: Int } [ y :: Int ])
+                              (probe p3Prop :: PUI Effect { s :: Int } [ z :: Int ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { s: 1 }
+        fire p2Prop (.y 2) *> fire p1Prop (.x 1) *> fire p3Prop (.z 3)
+        Ref.read outs
+    l <- run \a b c -> recordToVariant (recordToVariant a b) c
+    r <- run \a b c -> recordToVariant a (recordToVariant b c)
+    assertEqual "×→+ associativity: broadcast and shared exits agree" l r
+    assertEqual "×→+ associativity: the script's stream" [ .y 2, .x 1, .z 3 ] l
+
+  -- == The container action's wire law: actedBy k identity ≈ identity at ==
+  -- == Array — elements are echo wires, so every fed array gathers whole ==
+  -- == immediately, and a mid-reconcile echo never gathers a torn vector ==
+  -- == (the guarded onEmit). ==
+  do
+    outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
+    m <- unwrap (actedBy _.k (identity :: PUI Effect { k :: String, v :: Int } { k :: String, v :: Int }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
+    Ref.read outs >>= assertEqual "actedBy identity: the fed array echoes whole, once — no torn mid-reconcile gather"
+      [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ] ]
+    m.toUser []
+    Ref.read outs >>= assertEqual "actedBy identity: [] echoes []"
+      [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [] ]
+    m.toUser [ { k: "b", v: 3 } ]
+    Ref.read outs >>= assertEqual "actedBy identity: a re-feed with a leaver gathers only the fed vector"
+      [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [], [ { k: "b", v: 3 } ] ]
+
+  -- == The (->) instances of the diagonal merges: the (M,N)-monoid laws as ==
+  -- == pure equalities. ==
+
+  assertEqual "recordToRecord/(->): the (×,×) zip"
+    { a: 10, b: "5" }
+    (recordToRecord (\(r :: { s :: Int }) -> { a: r.s * 2 }) (\(r :: { s :: Int }) -> { b: show r.s }) { s: 5 })
+  assertEqual "recordToRecord/(->): exactness — an echoing operand cannot shadow its sibling"
+    { a: 1, b: "x!" }
+    (recordToRecord (\(r :: { a :: Int }) -> r) (\(r :: { a :: Int, b :: String }) -> { b: r.b <> "!" }) { a: 1, b: "x" })
+  assertEqual "recordToRecord/(->): left unit"
+    { a: 7 }
+    (recordToRecord (identity :: {} -> {}) (\(r :: { s :: Int }) -> { a: r.s + 2 }) { s: 5 })
+  assertEqual "recordToRecord/(->): right unit"
+    { a: 7 }
+    (recordToRecord (\(r :: { s :: Int }) -> { a: r.s + 2 }) (identity :: {} -> {}) { s: 5 })
+  do
+    let
+      fA = \(r :: { s :: Int }) -> { a: r.s }
+      fB = \(r :: { s :: Int }) -> { b: show r.s }
+      fC = \(r :: { s :: Int }) -> { c: r.s > 0 }
+    assertEqual "recordToRecord/(->): associativity"
+      (recordToRecord (recordToRecord fA fB) fC { s: 5 })
+      (recordToRecord fA (recordToRecord fB fC) { s: 5 })
+    assertEqual "recordToRecord/(->): symmetry"
+      (recordToRecord fA fB { s: 5 })
+      (recordToRecord fB fA { s: 5 })
+
+  assertEqual "variantToVariant/(->): dispatch, first handler"
+    (.ok 5 :: [ ok :: Int, err :: String ])
+    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (match { y: \(s :: String) -> (.err s :: [ err :: String ]) }) (.x 5))
+  assertEqual "variantToVariant/(->): dispatch, second handler"
+    (.err "boom" :: [ ok :: Int, err :: String ])
+    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (match { y: \(s :: String) -> (.err s :: [ err :: String ]) }) (.y "boom"))
+  assertEqual "variantToVariant/(->): left unit"
+    (.ok 5 :: [ ok :: Int ])
+    (variantToVariant (identity :: Variant () -> Variant ()) (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (.x 5))
+  do
+    let
+      hx = match { x: \(n :: Int) -> (.ok (n + 1) :: [ ok :: Int ]) }
+      hy = match { y: \(n :: Int) -> (.ok (n * 2) :: [ ok :: Int ]) }
+      hz = match { z: \(n :: Int) -> (.ok (n - 1) :: [ ok :: Int ]) }
+      l = variantToVariant (variantToVariant hx hy) hz
+      r = variantToVariant hx (variantToVariant hy hz)
+    for_ ([ .x 5, .y 5, .z 5 ] :: Array [ x :: Int, y :: Int, z :: Int ]) \v ->
+      assertEqual "variantToVariant/(->): associativity" (l v) (r v)

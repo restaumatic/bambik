@@ -25,8 +25,12 @@ import Data.Tuple (Tuple)
 -- | control loops back while output flows every step (the dual corner to
 -- | `Coresolving`'s terminating fold in the trace quartet).
 -- |
--- | Retraction law: `coretain (retain g) ≅ g` — once the state channel is
--- | primed (state must enter somewhere).
+-- | Retraction law — in **seeded** form, because on gated carriers the raw
+-- | composite `coretain (retain g)` is output-dead (`retain`'s gate waits on
+-- | a resume only emissions can trigger):
+-- | `coretain (seeded (Right c0) >>> retain g) ≈ g` — state must enter
+-- | somewhere, and the seed is where; the row form `unfolding` takes it as
+-- | its first argument. Tested in test/Main.purs.
 -- |
 -- | (No `(->)` instance: tying a knot takes state.)
 class Profunctor p <= Coretaining p where

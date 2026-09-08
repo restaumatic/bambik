@@ -74,7 +74,7 @@ import Type.Proxy (Proxy(..))
 import Data.Lens.Shutter (shutterE)
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving, resolve)
-import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs, widenRecordInput)
+import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class SharedRecordInputs, class SharedVariantOutputs, exactRow, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | `coresolve` at row granularity — the **terminating fold** with labeled
@@ -94,19 +94,24 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | Emission-primed exotica remain expressible with raw
 -- | `coresolve`/`coshutter`.
 folding
-  :: forall @w p i fb iw done ow
+  :: forall @w p i il fb iw done ow
    . Seeding p
   => Coresolving p
   => IsSymbol w
   => ExclusiveRows i fb iw
   => Cons w { | fb } done ow
+  => RowToList i il
+  => FieldNames il i i
   => { | fb }
   -> p { | iw } [ | ow ]
   -> p { | i } [ | done ]
 folding seed g =
   coresolve
     (dimap
-      (\(Tuple i fb) -> Record.union i fb)
+      -- the join is left-biased; `exactRow` trims the fresh input to its
+      -- declared row so a fat upstream emission cannot shadow the folded
+      -- state fields with stale runtime copies (runtime-exactness)
+      (\(Tuple i fb) -> Record.union (exactRow i) fb)
       (on (Proxy @w) Right Left)
       (g >>> seeded (inj (Proxy @w) seed)))
 

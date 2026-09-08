@@ -27,10 +27,17 @@ import Data.Tuple (Tuple)
 -- | that emits at exit, `Coresolving` = state that emits at exit,
 -- | `Coretaining` = control that emits each step).
 -- |
--- | Retraction law, shared by all four traces: `coresolve (resolve g) ≅ g` —
--- | once the state channel is primed (state must enter somewhere; the `PUI`
--- | instance is knowledge-gated like `Costrong`, withholding inputs until a
--- | first `c` exists).
+-- | Retraction law — in **seeded** form, because on gated carriers the raw
+-- | composite `coresolve (resolve g)` is input-dead (each gate waits on the
+-- | other; of the four traces only `Cochoice`'s `unleft (left g) = g` holds
+-- | raw):
+-- |
+-- | ```
+-- | coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g
+-- | ```
+-- |
+-- | — state must enter somewhere, and the seed is where; the row form
+-- | `folding` takes it as its first argument. Tested in test/Main.purs.
 -- |
 -- | (No `(->)` instance: tying a knot takes state.)
 class Profunctor p <= Coresolving p where

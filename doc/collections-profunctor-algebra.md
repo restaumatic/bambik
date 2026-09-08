@@ -15,7 +15,10 @@ stateful carrier".*
 and **in parallel** (the merges, call them `⊗`). Categories with both, and a
 lax interchange `(f ⊗ g) ⊳ (h ⊗ k) → (f ⊳ h) ⊗ (g ⊳ k)`, are **duoidal**;
 the pipeline/merge distinction is not bambik-specific bookkeeping but this
-standard structure.
+standard structure. The 2-cell the lax interchange needs is real and named:
+the refinement order `⊑` of doc/observational-semantics.md — as an equality
+the interchange fails on the nose (tested), as `⊑` it holds in exactly the
+direction written above.
 
 One session bug becomes a theorem here. Broadcasting one input to two
 `⊳`-composed stages requires the first stage to be a **comonoid**: it must
@@ -46,7 +49,15 @@ par  :: p a b -> p c d -> p (a `M` c) (b `N` d)
 unit :: p 1_M 1_N
 ```
 
-with the evident coherence. All four direction classes are instances:
+with unit, associativity and symmetry coherence (all tested in
+test/Main.purs, on `PUI Effect` probes and — for the diagonal shapes — as
+pure equalities on `(->)`). **Interchange is deliberately not claimed**: on
+the gated merges `(f ⊗ g) ⊳ (h ⊗ k) = (f ⊳ h) ⊗ (g ⊳ k)` fails on the nose
+and holds one-directionally as refinement `⊑` — the lax duoidal interchange
+of §0, made precise by the order-enriched semantics
+(doc/observational-semantics.md §4; deviation test in test/Main.purs). So a
+gated merge is a premonoidal-style tensor, not a monoidal one. All four
+direction classes are instances:
 
 | direction | (M, N) | binary form on plain types |
 |---|---|---|
@@ -97,13 +108,23 @@ general notion behind the library's strength classes:
   The Pastro–Street correspondence then *generates* the optics: lenses are
   the optics of the `×` action, prisms of the `+` action — `field`,
   `subStrong`, `focusCase` are their row-strict forms.
-- `Resolving`/`Retaining` are the library's genuine addition: Tambara-like
+- `Resolving`/`Retaining` are the library's genuine addition: Tambara-*like*
   structures for **mixed actions that only a stateful, temporal carrier
   supports** (`resolve` needs a notion of quiescence — time; `retain` needs
-  memory — state). Their optics — `Shutter`, `Reel` — arise by the same
-  correspondence. The honest general statement: *a duplex, asynchronous,
-  stateful profunctor is a Tambara module for more actions than a pure one*,
-  and the library's mixed strengths chart that extra territory.
+  memory — state) — "like" carrying real weight: they are
+  **single-application mixed strengths**, with naturality and dinaturality
+  but provably without the unit and composition coherences (the mixed
+  channels compose as `c × d` on one side and `c + d` on the other — no
+  single channel carries both; doc/observational-semantics.md §6). So their
+  optics — `Shutter`, `Reel` — are *defined* by the profunctor encoding,
+  with **sound existential constructors and no completeness claim**: the
+  representation theorem does not carry over, and the gap is inhabited —
+  `identity` lives in the ∀-form of `Shutter a b a b` while every
+  existential shutter carries an escape `s → t` (`Data.Lens.Shutter`). The
+  honest general statement: *a duplex, asynchronous, stateful profunctor
+  supports more strengths than a pure one, but the mixed ones are
+  operations, not actions* — and the library's mixed strengths chart that
+  extra territory with their content living in the seeded retractions (§5).
 
 ## 3. The collection: the algebra is closed under containers
 
@@ -183,11 +204,17 @@ The co-strengths are not a bambik invention either — they are **traces**:
   structure; `Cochoice`/`unleft :: p (a + c) (b + c) -> p a b` the trace of
   `+` — Elgot/tail-recursive iteration, which is why `coprism` is literally
   `tailRec` at the optic level.
-- The library's law "each co-strength is its strength's retraction,
-  `co (strength g) ≅ g` once the state channel is primed" **is the yanking
-  law** of traced monoidal categories — with priming marking that a duplex
-  stateful carrier is traced only on the primed part (feedback needs a first
-  token).
+- The library's retraction laws are the yanking law of traced monoidal
+  categories — **stated seeded**, because on this carrier the raw `×`-side
+  composites are provably dead (each gate waits on the other; the deadlocks
+  are tested): `unfirst (seeded (Tuple a0 c0) >>> first g) ≈ seeded a0 >>> g`,
+  `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`,
+  `coretain (seeded (Right c0) >>> retain g) ≈ g` — while `unleft (left g) = g`
+  holds raw. That asymmetry is the theorem: **`PUI` is genuinely traced over
+  `+` and only pointed-traced over `×`** — coproduct iteration (Elgot) is
+  free, product feedback (Conway/Hasegawa fixpoints) needs a starting point,
+  and the seeds are the operational ⊥
+  (doc/observational-semantics.md §5).
 - By Hasegawa's correspondence (traces on cartesian structure ↔ Conway fixed
   points), `looped`/`mvu` *is* a fixpoint operator — the model-view-update
   loop is the Conway fixpoint of the update stage.

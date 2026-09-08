@@ -82,7 +82,7 @@ import Prim.RowList as RL
 import Record (get, insert, union) as Record
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class SharedRecordInputs)
+import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
@@ -98,6 +98,15 @@ class Profunctor p <= RecordToRecord p where
     SharedRecordInputs i1 i2 i i12 i1x i2x =>
     OwnedRecordOutputs o1 o2 o o1l o2l =>
     p { | i1 } { | o1 } -> p { | i2 } { | o2 } -> p { | i } { | o }
+
+-- | The timeless carrier: both operands read the shot, their disjoint exact
+-- | outputs union — the (×,×)-monoid on plain functions, which makes the
+-- | merge's unit, associativity and symmetry laws pure equalities
+-- | (test/Main.purs). The exactness trim mirrors the gated carriers': an
+-- | operand echoing its coercion-widened input must not shadow its sibling's
+-- | field.
+instance RecordToRecord (->) where
+  recordToRecord p1 p2 i = Record.union (exactRow (widenRecordInput p1 i)) (exactRow (widenRecordInput p2 i))
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   RecordToRecord p =>
@@ -176,17 +185,23 @@ mvu seed w = with seed (looped w)
 -- | Plain `Strong` underneath: split `s` into `(f, b)`, run the argument on `f`
 -- | via `first`, and re-merge `f'` with `b`.
 subStrong
-  :: forall p f f' b s s'
+  :: forall p f f' f'l b s s'
    . Strong p
   => ExclusiveRows f b s
   => ExclusiveRows f' b s'
+  => RowToList f' f'l
+  => FieldNames f'l f' f'
   => p { | f } { | f' }
   -> p { | s } { | s' }
 subStrong g =
   dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
-        -- `Record.union` is left-biased and does not nub; safe here only because
-        -- `ExclusiveRows f' b s'` guarantees `f'` and `b` are disjoint.
-        (\(Tuple f' b) -> Record.union f' b)
+        -- `Record.union` is left-biased and does not nub. `ExclusiveRows f' b s'`
+        -- keeps the typed halves disjoint, and `exactRow` trims the emission to
+        -- its declared row first: `g` may answer a feed *later* than the feed
+        -- that stocked the retained background (a debounced inner stage), so a
+        -- fat echo's runtime copies of background fields can be genuinely stale
+        -- — the same hazard the gated merges trim (runtime-exactness).
+        (\(Tuple f' b) -> Record.union (exactRow f') b)
         (first g)
 
 -- | Edit an existing field in place — the standard `Strong` field lens, read
@@ -319,18 +334,23 @@ settled f = rmap (\big -> unsafeUnion (f (unsafeCoerce big)) big :: { | big })
 -- | primed before any input arrives — a `feedback` stage never starves.
 -- | Emission-primed exotica remain expressible with raw `unfirst`/`colens`.
 feedback
-  :: forall p i o fb iw ow
+  :: forall p i il o fb iw ow
    . Seeding p
   => Costrong p
   => ExclusiveRows i fb iw
   => ExclusiveRows o fb ow
+  => RowToList i il
+  => FieldNames il i i
   => { | iw }
   -> p { | iw } { | ow }
   -> p { | i } { | o }
 feedback seed g =
   unfirst
     (dimap
-      (\(Tuple i fb) -> Record.union i fb)
+      -- the join is left-biased; `exactRow` trims the fresh input to its
+      -- declared row so a fat upstream emission cannot shadow the looped
+      -- state fields with stale runtime copies (runtime-exactness)
+      (\(Tuple i fb) -> Record.union (exactRow i) fb)
       -- coerce-split, as in `subStrong`: safe because `ExclusiveRows o fb ow`
       -- guarantees the two typed views are disjoint
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))

@@ -73,6 +73,14 @@ class Profunctor p <= VariantToVariant p where
     SharedVariantOutputs o1 o2 o o12 o1x o2x =>
     p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
 
+-- | The timeless carrier: dispatch to the one handler owning the case,
+-- | expand its answer — the (+,+)-monoid on plain functions, which makes
+-- | the merge's unit and associativity laws pure equalities (test/Main.purs).
+instance VariantToVariant (->) where
+  variantToVariant p1 p2 v = case splitVariant v of
+    Left v1 -> expand (p1 v1)
+    Right v2 -> expand (p2 v2)
+
 bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
   VariantToVariant p =>
   OwnedVariantInputs i1 i2 i i1l i2l =>

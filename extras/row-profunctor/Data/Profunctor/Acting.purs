@@ -1,8 +1,11 @@
 -- | The **container action**: lift a UI component over a container of its focus —
 -- | `p a b -> p (F a) (F b)` — here at `F = Array`, the container
 -- | `μ x. 1 + a × x`. Containers are generated from `×`, `+` and fixpoints,
--- | so this class is not a fifth merge direction: it is the closure of
--- | `Strong` and `Choice` under `μ` (the profunctor traversal), keyed as the
+-- | so this class is not a fifth merge direction: its *type* is the closure
+-- | of `Strong` and `Choice` under `μ` (the profunctor traversal,
+-- | Jaskelioff–O'Connor). The keyed, retaining semantics is genuine extra
+-- | carrier structure beyond that closure — a Strong/Choice-derived
+-- | traversal would rebuild per feed where this reconciles — keyed as the
 -- | species refinement: on stateful carriers reconciliation is the functorial
 -- | action along partial injections of key sets — survivors re-fed in place,
 -- | entrants built, leavers removed. **The key is a materialized identity
@@ -29,6 +32,12 @@
 -- |     runtime size).
 -- |   * **identity follows key** (stateful carriers) — re-feeding a surviving
 -- |     key reuses its instance; permuting keys reorders without rebuilding.
+-- |   * **wire** — `actedBy k identity ≈ identity` at `Array` (elements are
+-- |     echo wires, so every fed array gathers whole immediately; tested).
+-- |     Composition is deliberately **not** preserved:
+-- |     `actedBy k (p >>> q) ≠ actedBy k p >>> actedBy k q` in general —
+-- |     the right side gathers twice and re-feeds every `q`-element per
+-- |     `p`-element emission — so lift whole element pipelines, not stages.
 -- |
 -- | This module is the **pure algebra** — the class (whose primitive
 -- | `actedBy` takes the key as a function, the minimal carrier obligation),

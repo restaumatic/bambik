@@ -1,8 +1,14 @@
--- | The **`Reel`** — the optic `Data.Profunctor.Retaining`'s `retain`
--- | generates by Pastro–Street, for the coined `+ → ×` shape. Both the class
--- | and the optic are this library's. Its co-optic is `Data.Lens.Coreel`, and
--- | nothing here mentions a row: the row form is
+-- | The **`Reel`** — the profunctor-encoded optic of
+-- | `Data.Profunctor.Retaining`'s `retain`, for the coined `+ → ×` shape.
+-- | Both the class and the optic are this library's. Its co-optic is
+-- | `Data.Lens.Coreel`, and nothing here mentions a row: the row form is
 -- | `Data.Profunctor.Row.VariantToRecord.subRetaining`.
+-- |
+-- | Like the other coined optics: the existential constructor `reelE` is
+-- | **sound**, and completeness is **not claimed** — see
+-- | `Data.Lens.Shutter`'s note. (Here the existential does contain
+-- | `identity`, at `c := Void`; the multi-application inhabitants are still
+-- | unaccounted for, so the caveat stands.)
 -- |
 -- | It claims a `Data.Lens.*` name and lives under the separate
 -- | `extras/lenses` source root because it belongs to that family by
@@ -21,7 +27,7 @@ import Data.Profunctor (dimap)
 import Data.Profunctor.Retaining (class Retaining, retain)
 import Data.Tuple (Tuple(..))
 
--- | The optic `retain` induces: the **Reel**. Eliminating the residual `c`
+-- | The optic `retain` encodes: the **Reel**. Eliminating the residual `c`
 -- | (instantiated to `b → t`) by co-Yoneda collapses `∃c. (s → a + c) × (b × c → t)`
 -- | to `s → Either a (b → t)` — a per-input dispatch that either surfaces a focus
 -- | `a`, or supplies a *finisher* `b → t` drawn from retained state. Like a film

@@ -8,10 +8,12 @@
 -- |
 -- | `Cont r a b = (b -> r) -> (a -> r) ≅ a -> ((b -> r) -> r)`: the `Star` of
 -- | the continuation monad `K r`, which is where most of the instances below
--- | come from. It is the repo's only *pure* carrier of the row algebra — a
--- | timeless model in which the merge gate is continuation nesting rather
--- | than a pair of `Ref`s — so it is the natural home for value-level laws
--- | that today have to be stated on `PUI Effect` probes.
+-- | come from. It is the repo's *fullest* pure carrier of the row algebra —
+-- | `(->)` carries the two diagonal merges (`RecordToRecord`,
+-- | `VariantToVariant`), where the value-level merge laws now run, while
+-- | `Cont` alone adds the `×→+` merge (two answers must combine, hence
+-- | `Monoid r`) — a timeless model in which the merge gate is continuation
+-- | nesting rather than a pair of `Ref`s.
 -- |
 -- | What it validly inhabits, and why:
 -- |
@@ -43,8 +45,8 @@
 -- | `Acting`, `Seeding`, `Looping` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
--- | What it cannot inhabit, and why — the same reasons that shape the
--- | library's seeded trace forms:
+-- | What it cannot inhabit, and why — graded, because there are two kinds
+-- | of impossibility. **Type-level** (parametricity refuses any body):
 -- |
 -- |   * `Costrong`/`Coresolving` — `unfirst`/`coresolve` need a `c` on the
 -- |     *input* side before any output exists. Contrast `Cochoice`, where
@@ -54,13 +56,20 @@
 -- |     carrier has none (same reason there is no `(->)` instance)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
 -- |     other never contributes; retention is what `PUI`'s `Ref`s supply
--- |   * `Seeding` — needs a registration moment; a timeless carrier has none
--- |   * `Looping` — needs an emission channel that can re-enter its own
--- |     input; a CPS run is a single pass through one continuation, so
--- |     there is nothing to feed back into (`Seeding`'s sibling
--- |     impossibility: no beginning, no feedback)
 -- |   * `Closed` — would have to extract a `b` per `x`, and CPS only ever
 -- |     hands `b` to a continuation
+-- |
+-- | **Law-level** (a body typechecks; the class's temporal laws refuse it):
+-- |
+-- |   * `Seeding` — `announce a = wrap \k _ -> k a` typechecks, but the
+-- |     point law is about a registration moment a CPS run does not have:
+-- |     that "point" would fire once per run, not once at t=0. Declining
+-- |     the instance is a semantic refusal, not a parametricity theorem
+-- |   * `Looping` — `looped = identity` typechecks and even satisfies the
+-- |     equational trace triple (which is exactly why the class also states
+-- |     the behavioral re-entry law); what fails is re-entry itself — a CPS
+-- |     run is a single pass through one continuation, nothing to feed back
+-- |     into (`Seeding`'s sibling impossibility: no beginning, no feedback)
 module Data.Profunctor.Cont where
 
 import Prelude
