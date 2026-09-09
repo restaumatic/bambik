@@ -1516,14 +1516,15 @@ main = do
       assertEqual "variantToVariant/(->): associativity" (l v) (r v)
 
   -- == Observation levels (doc/observational-semantics.md §2, §4): the same ==
-  -- == interchange that fails at inner surfaces holds at the boundary — up ==
-  -- == to stutter — for protocol-respecting operands. ==
+  -- == interchange that fails at inner surfaces holds at the boundary on ==
+  -- == the nose for protocol-respecting operands — a feed is one step, so ==
+  -- == each broadcast releases once. ==
 
-  -- Boundary interchange with echo-total operands: the boundary streams
-  -- agree up to stutter (consecutive duplicates on a record channel, which
-  -- feed-idempotence makes unobservable downstream) — and only up to
-  -- stutter: the merged-first side broadcasts every middle-gate release to
-  -- both h and k, each echoing, so it stutters where the free side does not.
+  -- Boundary interchange with echo-total operands: the boundary streams are
+  -- equal on the nose. Before the stepped broadcast each side stuttered —
+  -- the free side emitted the torn { c: 20, d: 101 } between h's and k's
+  -- echoes, the merged-first side once more per middle-gate release; one
+  -- release per feed removes both.
   do
     let
       run grouping = do
@@ -1547,11 +1548,44 @@ main = do
         Ref.read outs
     synced <- run \f g h k -> recordToRecord f g >>> recordToRecord h k
     free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
-    assertEqual "boundary interchange: the streams agree up to stutter" (dedupConsecutive free) (dedupConsecutive synced)
-    assertEqual "boundary interchange: the free side's stream"
-      [ { c: 10, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 102 }, { c: 70, d: 102 }, { c: 99, d: 102 } ] free
-    assertEqual "boundary interchange: the merged-first side stutters at each middle-gate release"
-      [ { c: 10, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 102 }, { c: 70, d: 102 }, { c: 70, d: 102 }, { c: 99, d: 102 } ] synced
+    assertEqual "boundary interchange: the streams are equal on the nose" free synced
+    assertEqual "boundary interchange: the common stream — one emission per feed, every field fresh"
+      [ { c: 10, d: 101 }, { c: 20, d: 102 }, { c: 70, d: 102 }, { c: 99, d: 102 } ] free
+
+  -- == One feed, one release (the stepped broadcast): a feed that changes ==
+  -- == several fields emits once, every field fresh — never the torn row ==
+  -- == the per-operand release emitted between the two echoes. ==
+
+  do
+    aIns <- Ref.new ([] :: Array { s :: Int })
+    aProp <- Ref.new Nothing
+    bIns <- Ref.new ([] :: Array { s :: Int })
+    bProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
+    m <- unwrap (recordToRecord (echoProbe (\r -> { a: r.s }) aIns aProp) (echoProbe (\r -> { b: r.s + 100 }) bIns bProp))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { s: 1 } *> m.toUser { s: 2 }
+    Ref.read outs >>= assertEqual "one feed, one release: each broadcast releases once, both fields fresh (no torn { a: 2, b: 101 })"
+      [ { a: 1, b: 101 }, { a: 2, b: 102 } ]
+    -- a user emission arrives outside any step and releases at once
+    fire aProp { a: 7 }
+    Ref.read outs >>= assertEqual "one feed, one release: a user emission releases at once"
+      [ { a: 1, b: 101 }, { a: 2, b: 102 }, { a: 7, b: 102 } ]
+
+  -- nested: ((a ⊗ b) ⊗ c) fed once releases once — the inner step's single
+  -- release lands in the outer step and leaves with it.
+  do
+    aIns <- Ref.new ([] :: Array { s :: Int })
+    aProp <- Ref.new Nothing
+    bIns <- Ref.new ([] :: Array { s :: Int })
+    bProp <- Ref.new Nothing
+    cIns <- Ref.new ([] :: Array { s :: Int })
+    cProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: Int, c :: Int })
+    m <- unwrap (recordToRecord (recordToRecord (echoProbe (\r -> { a: r.s }) aIns aProp) (echoProbe (\r -> { b: r.s + 100 }) bIns bProp)) (echoProbe (\r -> { c: r.s + 1000 }) cIns cProp))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { s: 1 }
+    Ref.read outs >>= assertEqual "one feed, one release: nested merges release once" [ { a: 1, b: 101, c: 1001 } ]
 
   -- == Enrichment: composition and the merges are monotone in `⊑`, which is ==
   -- == what makes the refinement order a 2-cell and not just a remark. ==

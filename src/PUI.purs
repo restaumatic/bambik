@@ -20,19 +20,24 @@
 -- | `m`, where every stateful instance allocates its state (hence
 -- | `MonadEffect m` on exactly those instances; `Functor`/`Apply` on the
 -- | rest says *no state here*), `fromUser` registered once, then feeds and
--- | emissions interleave. Law equality `≈` is observational equivalence of
--- | the boundary channels under that protocol (record channels up to
--- | stutter — they carry behaviors); refinement `⊑` is emitting a
--- | withholding-subsequence, and `>>>`/the merges are monotone in it;
--- | primed equivalence is equality of the residuals once every gate has
--- | been fed. UI components owe
--- | the protocol three laws the algebra leans on: **feed-idempotence**
--- | (feeding the same value twice ≈ once — what lets `looped`'s idempotence
--- | and `debounced`'s re-feeds be lawful), **record-echo totality** (a
--- | `×`-output citizen answers every feed — what keeps the gates and the
--- | seeded `×`-traces live), and **no synchronous variant echo** (a
--- | `+`-output citizen never emits from inside its own feed — what makes
--- | `Cochoice`'s re-entry an event loop, not a busy loop).
+-- | emissions interleave, and a feed into a gated merge is one **step** —
+-- | the broadcast is batched and the gate releases once, so a multi-field
+-- | feed never emits a torn row. Law equality `≈` is observational
+-- | equivalence of the boundary channels under that protocol
+-- | (behavior-kinded channels up to stutter — a repeated value is no
+-- | change); refinement `⊑` is emitting a withholding-subsequence, and
+-- | `>>>`/the merges are monotone in it; primed equivalence is equality of
+-- | the residuals once every gate has been fed. UI components owe the
+-- | protocol three laws the algebra leans on: **feed-idempotence** (feeding
+-- | the same value twice ≈ once — what lets `looped`'s idempotence and
+-- | `debounced`'s re-feeds be lawful), **record-echo totality** (a
+-- | behavior-kinded citizen answers every feed — what keeps the gates and
+-- | the seeded `×`-traces live), and **no synchronous event echo** (an
+-- | event-kinded citizen — an occurrence source — never emits from inside
+-- | its own feed; kind, not shape: `bracketed`'s variant editor echoes
+-- | lawfully, `clicked`'s record output never does — what makes `Cochoice`'s
+-- | re-entry an event loop, not a busy loop, and lets `updated` arm an
+-- | emitter without firing it).
 -- |
 -- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
 -- | stages are composed with `Category.do`, every emission travels
@@ -337,7 +342,7 @@ instance MonadEffect m => Costrong (PUI m) where
 -- | until an exit-branch emission passes through. The re-entry is a `toUser`,
 -- | so in `PUI` the loop is an *event* loop: it advances on the UI component's next
 -- | emission (variant-output UI components do not echo, so the leaf protocol cannot
--- | provoke a synchronous spin — the no-synchronous-variant-echo law is this
+-- | provoke a synchronous spin — the no-synchronous-event-echo law is this
 -- | instance's termination argument). Retraction law: `unleft (left g) = g`,
 -- | holding **raw** — no seed: the one trace whose yanking needs no pointing
 -- | (the `+`/`×` asymmetry, doc/observational-semantics.md).
@@ -522,16 +527,19 @@ recordToRecordPUI :: forall m i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
 recordToRecordPUI p1 p2 = wrap do
   p1' <- unwrap (widenRecordInput p1)
   p2' <- unwrap (widenRecordInput p2)
-  gate <- liftEffect $ newRecordGate (rowLabels (Proxy @o1l)) (rowLabels (Proxy @o2l))
+  gate <- liftEffect $ newRecordGate labels1 labels2
   pure
-    { toUser: \new -> do
+    -- one feed is one step: the broadcast runs batched and the gate releases
+    -- once afterwards (`steppedFeed`), so a feed changing several fields
+    -- never emits a row that never existed
+    { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
           p1'.toUser new
           p2'.toUser new
-    , fromUser: gatedRecordOutputs "×→×"
-        (rowLabels (Proxy @o1l))
-        (rowLabels (Proxy @o2l))
-        gate exactRow exactRow p1'.fromUser p2'.fromUser
+    , fromUser: gatedRecordOutputs "×→×" labels1 labels2 gate exactRow exactRow p1'.fromUser p2'.fromUser
     }
+  where
+  labels1 = rowLabels (Proxy @o1l)
+  labels2 = rowLabels (Proxy @o2l)
 
 instance Applicative m => RecordToVariant (PUI m) where
   -- the one unit no wire reaches (terminal → initial): silent at any rows
@@ -647,14 +655,17 @@ instance MonadEffect m => VariantToRecord (PUI m) where
 -- | "+→×"), and `fields1`/`fields2` are the operands' rendered output labels,
 -- | so a withholding gate says exactly which sibling it is waiting for. The
 -- | gate's state arrives allocated (`newRecordGate`, in the merge's
--- | construction monad): this function is the streaming-phase algorithm only.
+-- | construction monad): this function is the streaming-phase subscription
+-- | only — a contribution lands in its side's slot and, outside a step,
+-- | releases at once (`releaseRecordGate`); inside a step (`steppedFeed`) it
+-- | is held for the step's single release.
 gatedRecordOutputs
   :: forall e1 e2 o1 o2 o
    . Union o1 o2 o
   => String
   -> Array String
   -> Array String
-  -> RecordGate o1 o2
+  -> RecordGate o1 o2 o
   -> (e1 -> { | o1 })
   -> (e2 -> { | o2 })
   -> ((e1 -> Effect Unit) -> Effect Unit)
@@ -662,38 +673,93 @@ gatedRecordOutputs
   -> ({ | o } -> Effect Unit)
   -> Effect Unit
 gatedRecordOutputs direction labels1 labels2 gate exact1 exact2 sub1 sub2 prop = do
+  -- the release reads the downstream continuation from the gate, so it is
+  -- written before the operands subscribe: a registration-time announcement
+  -- releases into a listening channel
+  Ref.write (Just prop) gate.prop
   -- a side owning zero fields contributes nothing: its only possible
   -- emission is the informationless {}, pre-known in the gate, so it neither
   -- opens the gate nor re-fires it — `identity @{}`, a silent display and
   -- an announcing one are indistinguishable as operands
   sub1 \partial -> unless (Array.null labels1) do
-    let exact = exact1 partial
-    Ref.write (Just exact) gate.p1Last
-    mp2 <- Ref.read gate.p2Last
-    case mp2 of
-      Nothing -> do
-        gate.guard1.blocked (starving fields1 fields2) labels2
-        tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
-      Just p2val -> do
-        gate.guard1.fed *> gate.guard2.fed
-        prop $ Record.union exact p2val
+    Ref.write (Just (exact1 partial)) gate.p1Last
+    contributed
   sub2 \partial -> unless (Array.null labels2) do
-    let exact = exact2 partial
-    Ref.write (Just exact) gate.p2Last
-    mp1 <- Ref.read gate.p1Last
-    case mp1 of
-      Nothing -> do
-        gate.guard2.blocked (starving fields2 fields1) labels1
-        tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
-      Just p1val -> do
-        gate.guard1.fed *> gate.guard2.fed
-        prop $ Record.union p1val exact
+    Ref.write (Just (exact2 partial)) gate.p2Last
+    contributed
+  where
+  contributed = do
+    batching <- Ref.read gate.batching
+    if batching
+      then Ref.write true gate.pending
+      else releaseRecordGate direction labels1 labels2 gate
+
+-- | The gate's **release**: both slots known → the union of the two exact
+-- | contributions goes downstream (left-biased, immaterial on disjoint
+-- | rows); one side still unknown → the starvation guard of the side that
+-- | spoke is armed, naming the sibling fields it waits for; nothing known →
+-- | nothing to say.
+releaseRecordGate
+  :: forall o1 o2 o
+   . Union o1 o2 o
+  => String
+  -> Array String
+  -> Array String
+  -> RecordGate o1 o2 o
+  -> Effect Unit
+releaseRecordGate direction labels1 labels2 gate = do
+  mp1 <- Ref.read gate.p1Last
+  mp2 <- Ref.read gate.p2Last
+  case mp1, mp2 of
+    Just p1val, Just p2val -> do
+      gate.guard1.fed *> gate.guard2.fed
+      mProp <- Ref.read gate.prop
+      for_ mProp \prop -> prop (Record.union p1val p2val)
+    Just p1val, Nothing -> do
+      gate.guard1.blocked (starving fields1 fields2) labels2
+      tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") p1val
+    Nothing, Just p2val -> do
+      gate.guard2.blocked (starving fields2 fields1) labels1
+      tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") p2val
+    Nothing, Nothing -> pure unit
   where
   fields1 = renderFieldNames labels1
   fields2 = renderFieldNames labels2
   starving mine sibling = direction <> " merge: emissions dropped for 3s — the operand producing " <> mine
     <> " keeps emitting, but its sibling operand producing " <> sibling
     <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
+
+-- | **One feed is one step.** The broadcast runs with the gate batching:
+-- | every operand's answer lands in its slot without releasing, and the gate
+-- | releases **once** afterwards, if anything arrived. So a feed that
+-- | changes several fields never emits a row that never existed (the
+-- | per-operand release used to emit `{ a: fresh, b: stale }` between the
+-- | two echoes), the boundary sees one emission per feed instead of one per
+-- | echoing operand, and interchange holds on the nose at the boundary
+-- | (doc/observational-semantics.md §4). A user emission arrives outside any
+-- | step and releases at once, as before. Re-entered while already stepping
+-- | (a synchronous cycle), it only feeds — the outer step releases.
+steppedFeed
+  :: forall o1 o2 o
+   . Union o1 o2 o
+  => String
+  -> Array String
+  -> Array String
+  -> RecordGate o1 o2 o
+  -> Effect Unit
+  -> Effect Unit
+steppedFeed direction labels1 labels2 gate feed = do
+  already <- Ref.read gate.batching
+  if already
+    then feed
+    else do
+      Ref.write true gate.batching
+      feed
+      Ref.write false gate.batching
+      pending <- Ref.read gate.pending
+      when pending do
+        Ref.write false gate.pending
+        releaseRecordGate direction labels1 labels2 gate
 
 -- | The per-merge gate state both record-output merges allocate: each side's
 -- | retained last contribution and its starvation guard, created in the
@@ -703,22 +769,31 @@ gatedRecordOutputs direction labels1 labels2 gate exact1 exact2 sub1 sub2 prop =
 -- | so the gate never waits for it — a display-side operand cannot starve
 -- | its siblings whether or not it has spoken (the silence law in
 -- | test/Main.purs).
-type RecordGate o1 o2 =
+type RecordGate o1 o2 o =
   { p1Last :: Ref.Ref (Maybe { | o1 })
   , p2Last :: Ref.Ref (Maybe { | o2 })
   , guard1 :: GateGuard
   , guard2 :: GateGuard
+  -- the step: contributions arriving while a broadcast is in progress are
+  -- held (`pending`) for the step's single release (`steppedFeed`)
+  , batching :: Ref.Ref Boolean
+  , pending :: Ref.Ref Boolean
+  -- the downstream continuation, written at registration, read at release
+  , prop :: Ref.Ref (Maybe ({ | o } -> Effect Unit))
   }
 
 type GateGuard = { blocked :: String -> Array String -> Effect Unit, fed :: Effect Unit }
 
-newRecordGate :: forall o1 o2. Array String -> Array String -> Effect (RecordGate o1 o2)
+newRecordGate :: forall o1 o2 o. Array String -> Array String -> Effect (RecordGate o1 o2 o)
 newRecordGate labels1 labels2 = do
   p1Last <- Ref.new (prime labels1)
   p2Last <- Ref.new (prime labels2)
   guard1 <- gateGuard
   guard2 <- gateGuard
-  pure { p1Last, p2Last, guard1, guard2 }
+  batching <- Ref.new false
+  pending <- Ref.new false
+  prop <- Ref.new Nothing
+  pure { p1Last, p2Last, guard1, guard2, batching, pending, prop }
   where
   prime :: forall r. Array String -> Maybe { | r }
   prime labels = if Array.null labels then Just (unsafeCoerce {}) else Nothing
@@ -733,19 +808,20 @@ variantToRecordPUI :: forall m i1 i1l i2 i2l o1 o2 i o o1l o2l.
 variantToRecordPUI p1 p2 = wrap do
   p1' <- unwrap p1
   p2' <- unwrap p2
-  gate <- liftEffect $ newRecordGate (rowLabels (Proxy @o1l)) (rowLabels (Proxy @o2l))
+  gate <- liftEffect $ newRecordGate labels1 labels2
   pure
     -- the input side is what differs from `recordToRecord`: one case at a
     -- time, dispatched to whichever operand owns it. The output side is the
-    -- same gate, held until both operands have contributed.
-    { toUser: \v -> do
+    -- same gate, held until both operands have contributed — and the same
+    -- step: one feed, one release.
+    { toUser: \v -> steppedFeed "+→×" labels1 labels2 gate do
         for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
         for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
-    , fromUser: gatedRecordOutputs "+→×"
-        (rowLabels (Proxy @o1l))
-        (rowLabels (Proxy @o2l))
-        gate exactRow exactRow p1'.fromUser p2'.fromUser
+    , fromUser: gatedRecordOutputs "+→×" labels1 labels2 gate exactRow exactRow p1'.fromUser p2'.fromUser
     }
+  where
+  labels1 = rowLabels (Proxy @o1l)
+  labels2 = rowLabels (Proxy @o2l)
 
 instance Applicative m => VariantToVariant (PUI m) where
   variantToVariant p1 p2 = wrap ado

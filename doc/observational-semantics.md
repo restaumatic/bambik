@@ -26,7 +26,10 @@ channels, reached in three phases:
    part of this phase — `compose` registers downstream first so they are
    heard.
 2. **Streaming**: `toUser` feeds and channel emissions interleave, each a
-   finite synchronous cascade.
+   finite synchronous cascade. A feed into a gated merge is one **step**:
+   the broadcast runs with the gate batching and the gate releases once
+   afterwards (`steppedFeed`), so one feed is one moment — never a sequence
+   of half-updated ones (§4, *one feed, one release*).
 
 The single-registration rule is not a convention but part of what a morphism
 *is*: the instances keep per-instantiation `Ref`s whose meaning assumes one
@@ -51,14 +54,18 @@ A morphism is a single-use process; reuse is re-instantiation.
   pre-priming difference is permanent, not a delay. This is deliberate UI
   semantics: an event that fired before any model existed refers to nothing
   and must not replay against a later model.
-- **Stutter**: on a **record** channel a consecutive duplicate emission is
-  no observation. A record channel carries a *behavior* — a value at every
-  moment, so repeating the current value is the same function of time — and
-  boundary streams on record channels are compared **up to stutter**. A
-  **variant** channel carries *events*; there every emission counts. This
-  is the inner-feed quotient above seen from the other side, and the same
-  fact as feed-idempotence (§3): to be a behavior *is* to be
-  stutter-invariant.
+- **Stutter**: on a **behavior-kinded** channel a consecutive duplicate
+  emission is no observation. A behavior is a value at every moment, so
+  repeating the current value is the same function of time, and boundary
+  streams on behavior channels are compared **up to stutter**. An
+  **event-kinded** channel carries occurrences; there every emission
+  counts. (Kind is not shape — §3 — though for every published leaf record
+  means behavior and variant means event.) This is the inner-feed quotient
+  above seen from the other side, and the same fact as feed-idempotence
+  (§3): to be a behavior *is* to be stutter-invariant. The carrier's own
+  combinators no longer produce stutter — a merge's broadcast is one step,
+  released once (§4) — so the quotient is carried by the component protocol
+  alone, not needed to make the merges lawful.
 - **Observation levels**. Two are natural, and laws are tagged by which
   they hold at: the **boundary** (the composite's own two channels) and the
   **inner surfaces** (what each stage was fed, and when — operationally, the
@@ -79,14 +86,31 @@ combinator laws below fail without them.
    (its `coresolve` re-feeds the last input on every emission), and
    `seeded a >>> seeded a ≈ seeded a`. The focus-guarded text fields and
    `settled`'s idempotence contract are both instances of this law.
-2. **Record-echo totality** — a `×`-output citizen answers every feed with
-   at least one emission (displays release the fed row, editors echo,
-   `identity` is the echo wire). What keeps the gated merges live and what
-   the seeded `×`-retraction laws quantify over.
-3. **No synchronous variant echo** — a `+`-output citizen never emits from
-   inside its own `toUser`. Events are occurrences, not responses; this is
-   the termination argument for `Cochoice`'s re-entry (an event loop, not a
-   busy loop) and for `iterate`.
+2. **Record-echo totality** — a *behavior-kinded* citizen answers every
+   feed with at least one emission (displays release the fed row, editors
+   echo, `identity` is the echo wire — every record-shaped leaf but the
+   occurrence source `clicked`, which only ever lives under `toCase`). What
+   keeps the gated merges live and what the seeded `×`-retraction laws
+   quantify over.
+3. **No synchronous event echo** — an *event-kinded* citizen (an occurrence
+   source: `button`, `clicked`, `menuItem`, a status's event input) never
+   emits from inside its own `toUser`. Events are occurrences, not
+   responses; this is the termination argument for `Cochoice`'s re-entry
+   (an event loop, not a busy loop) and for `iterate`, and what lets
+   `updated`/`applied` *arm* an emitter by feeding it without firing it.
+
+   The law is about **kind, not shape**. Its first statement here said
+   "`+`-output citizen" and was too strong: `bracketed`'s variant editor is
+   variant-*shaped* yet a *behavior* — its looped record ensemble echoes
+   every feed, projected into a variant emission, exactly as a whole-row
+   operand under `field @l` must — while `clicked` is record-shaped yet an
+   *event*, emitting on click and never answering a feed. Shape and kind
+   coincide for every published leaf, which is the design's bet; these two
+   are where the type cannot see the difference, and why the law cannot be
+   enforced by the present type (`identity` and `clicked` share a type). A
+   kind index orthogonal to shape could enforce it — a design note for a
+   major version, not a patch; today the law is a protocol obligation whose
+   whole proof burden is the finite set of occurrence primitives.
 
 ## 4. Named deviations from ecosystem laws
 
@@ -107,17 +131,28 @@ combinator laws below fail without them.
     interchange of doc/collections-profunctor-algebra.md §0, meaningful
     exactly because `⊑` exists;
   - at the **boundary**, for operands honoring the component protocol
-    (echo-total, feed-idempotent), it **holds up to stutter** — and only up
-    to stutter: each middle-gate release broadcasts to both `h` and `k`,
-    each echoes, and the merged-first side emits a duplicate where the free
-    side emits once (tested with the exact streams in test/Main.purs).
+    (echo-total, feed-idempotent), it **holds on the nose**: a feed is one
+    step — the broadcast runs batched and the gate releases once
+    (`steppedFeed`) — so neither side stutters and the streams are equal
+    (tested with the exact common stream in test/Main.purs). Before the
+    step both sides stuttered: the free side emitted the torn
+    `{ c: 20, d: 101 }` between `h`'s and `k`'s echoes, the merged-first side
+    once more per middle-gate release — the stutter quotient was carrying
+    what the step now guarantees.
 
   So the answer to "is the gated merge monoidal?" is "which category?":
-  counting only channels, it is monoidal up to stutter; counting renderings,
-  it is premonoidal — unit, associativity and symmetry hold outright (tested,
-  all four merges), interchange is bought back only as `⊑`. Symmetry itself
-  is a boundary-stream fact — operand order stays observable in feed order
-  to the operands, inside the `≈` quotient.
+  counting only channels, it is **monoidal**; counting renderings, it is
+  premonoidal — unit, associativity and symmetry hold outright (tested, all
+  four merges), interchange is bought back only as `⊑`. Symmetry itself is a
+  boundary-stream fact — operand order stays observable in feed order to
+  the operands, inside the `≈` quotient.
+- **One feed, one release** — the merge law the step states: a broadcast
+  that changes several fields emits **exactly once**, every field fresh; a
+  user emission arrives outside any step and releases at once; nested
+  merges release once, the inner step's release landing in the outer step
+  (all tested). Denotationally this makes the gated merge the *exact*
+  product of Mealy machines — one input, one output pair — where before it
+  was that product up to stutter.
 - **Enrichment.** `⊑` is a genuine 2-cell because composition and the merges
   are **monotone** in it: `p ⊑ p′ ⇒ p >>> q ⊑ p′ >>> q` and
   `p ⊑ p′ ⇒ p ⊗ r ⊑ p′ ⊗ r` (tested, with the gated/ungated pairs as
@@ -211,15 +246,31 @@ other cases' payloads — is what the editor retains across a selection change.
 
 ## 8. Glitch-freedom is a style theorem
 
-The gated merges emit on every contribution, so a *diamond* — one upstream
-field feeding two transforming stages whose outputs re-merge — emits torn
-intermediate rows. The algebra permits diamonds; **idiomatic bambik never
-builds them**: copy-is-a-function and the one-`settled`-normalization rule
-(writing.md) put all derivation in a single stage, so every merge's operands
-are independent sources and a "stale" sibling field is genuinely the current
-value of an unedited field. Glitch-freedom is guaranteed by the writing
-contract, not by the carrier — a diamond an application builds anyway is a
-style violation before it is a runtime surprise.
+Tearing has two sources, and they are settled by two different authorities.
+
+**Within a merge** the carrier now guarantees freedom: a broadcast that
+changes several fields releases once (§4, *one feed, one release*), so no
+`{ a: fresh, b: stale }` ever leaves the gate. The first version of this
+section argued that away from the independence of operands — a "stale"
+sibling being the current value of an unedited field — and that argument is
+sound only for *user edits*, where one operand changes at a time. A feed
+that changes two fields *did* tear under the per-operand release, and every
+stage between the merge and the loop end saw the phantom row (a `settled`
+invariant running against a state that never existed). The step closes it.
+Honest scope: no shipped demo ever built such a merge — every demo ensemble
+*sequences* its whole-row editors with `Category.do`, where each stage echoes
+once and nothing tears — so the hazard was latent in the algebra (any
+application may write `RecordToRecord.do` over editors) rather than live in
+a page, and the law is pinned at the value level, not by the demo suite.
+
+**Across merges** — a *diamond*, one upstream field feeding two transforming
+stages whose outputs re-merge downstream — the algebra still permits torn
+intermediates, and **idiomatic bambik never builds them**: copy-is-a-function
+and the one-`settled`-normalization rule (writing.md) put all derivation in
+a single stage, so every merge's operands are independent sources. There,
+glitch-freedom is guaranteed by the writing contract, not by the carrier — a
+diamond an application builds anyway is a style violation before it is a
+runtime surprise.
 
 ## 9. Where the tests live
 
@@ -232,8 +283,10 @@ visible), the Strong deviation, the interchange deviation at the inner
 surface and its refinement direction, merge symmetry (`×→×`, `+→×`) and
 mixed-merge associativity (`+→×`, `×→+`), the container action's wire law,
 and the `(->)` diagonal-merge instances' laws as pure equalities; then the
-observation-level section — boundary interchange up to stutter with the
-exact stuttering stream, `⊑`-monotonicity of `>>>` and `⊗`, the container
+observation-level section — boundary interchange on the nose with the exact
+common stream, one-feed-one-release (a two-field broadcast releasing once
+with no torn row, a user emission releasing at once, nested merges
+releasing once), `⊑`-monotonicity of `>>>` and `⊗`, the container
 action's laxity at the inner surface, `bracketed`'s retraction on the
 order-form pair, the Ocular admission law for a node-wrapping ocular and its
 failure for a capturing decorator, and `announce`'s naturality.

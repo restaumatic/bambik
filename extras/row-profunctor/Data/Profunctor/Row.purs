@@ -213,12 +213,18 @@
 -- |     fails on the nose when stage feeds are observed (the merged-first
 -- |     side withholds `h` until every operand has spoken) and holds there
 -- |     as refinement `⊑` in feed timing; at the **boundary**, for operands
--- |     honoring the component protocol, it holds **up to stutter** — the
--- |     merged-first side re-emits on each middle-gate release. Counting
--- |     only channels the gated merge is monoidal up to stutter; counting
--- |     renderings it is premonoidal — unit, associativity and symmetry hold
--- |     outright either way (doc/observational-semantics.md §4; both levels
--- |     tested in test/Main.purs).
+-- |     honoring the component protocol, it holds **on the nose**. Counting
+-- |     only channels the gated merge is monoidal; counting renderings it
+-- |     is premonoidal — unit, associativity and symmetry hold outright
+-- |     either way (doc/observational-semantics.md §4; both levels tested
+-- |     in test/Main.purs).
+-- |   * **a feed is one step** — on a stateful carrier a gated merge's
+-- |     broadcast is batched and released **once**: a feed that changes
+-- |     several fields emits one row with every field fresh, never a
+-- |     `{ a: fresh, b: stale }` between two echoes; a user emission,
+-- |     arriving outside any step, releases at once. It is what makes the
+-- |     boundary interchange exact rather than up to stutter, and the merge
+-- |     the exact product of Mealy machines (one input, one output pair).
 -- |
 -- | See doc/collections-profunctor-algebra.md §1.
 -- |

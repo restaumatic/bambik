@@ -19,9 +19,9 @@ standard structure. The 2-cell the lax interchange needs is real and named:
 the refinement order `⊑` of doc/observational-semantics.md — at the inner
 surfaces (what the stages are fed, when) the interchange fails as an
 equality and holds as `⊑` in exactly the direction written above; at the
-boundary, for protocol-respecting operands, it holds up to stutter. Which
-category `PUI` is depends on what one counts as an observation — both are
-tested.
+boundary, for protocol-respecting operands, it holds on the nose — a feed is
+one step, released once. Which category `PUI` is depends on what one counts
+as an observation — both are tested.
 
 One session bug becomes a theorem here. Broadcasting one input to two
 `⊳`-composed stages requires the first stage to be a **comonoid**: it must
@@ -58,10 +58,11 @@ pure equalities on `(->)`). **Interchange is observation-level-relative**:
 on the gated merges `(f ⊗ g) ⊳ (h ⊗ k) = (f ⊳ h) ⊗ (g ⊳ k)` fails on the
 nose at the inner surfaces and holds there one-directionally as refinement
 `⊑` — the lax duoidal interchange of §0 — while at the boundary, for
-protocol-respecting operands, it holds up to stutter
+protocol-respecting operands, it holds on the nose, because a feed is one
+step: the broadcast is batched and the gate releases once
 (doc/observational-semantics.md §4; both tested in test/Main.purs). So a
-gated merge is premonoidal counting renderings and monoidal-up-to-stutter
-counting channels. All four direction classes are instances:
+gated merge is premonoidal counting renderings and monoidal counting
+channels. All four direction classes are instances:
 
 | direction | (M, N) | binary form on plain types |
 |---|---|---|
@@ -95,7 +96,9 @@ use of a `+`-behaviour where a `×`-behaviour was required.
 laxator `p a b ⊗ p c d → p (a×c) (b×d)` is trivial. `PUI`'s channels are
 *event streams*; pairing two output streams into a stream of pairs has one
 canonical implementation — retain each side's last value, emit on change,
-withhold until both have spoken. That is the knowledge gate, and it appears
+withhold until both have spoken, and release **once per feed** (a broadcast
+is one step, so the product is computed atomically per moment, never torn).
+That is the knowledge gate, and it appears
 in **every** (·, ×)-monoidal structure (`recordToRecord`,
 `variantToRecord`'s retention) and in none of the (·, +) ones (injections
 need no pairing). The gate is what the product of behaviors costs when
