@@ -208,16 +208,17 @@
 -- |     So every (·,×)-shape gates and retains (`recordToRecord`,
 -- |     `variantToRecord`, `acted`'s gather) and no (·,+)-shape does
 -- |     (injections need no pairing).
--- |   * **the gates' further price is bifunctoriality** — interchange,
--- |     `(f ⊗ g) >>> (h ⊗ k) = (f >>> h) ⊗ (g >>> k)`, fails on the nose
--- |     for the gated merges (the merged-first side withholds until every
--- |     operand has spoken) and holds one-directionally, as refinement: the
--- |     merged-first side emits a withholding-subsequence of the other —
--- |     the lax duoidal interchange, meaningful only in the order-enriched
--- |     semantics (doc/observational-semantics.md; deviation test in
--- |     test/Main.purs). So a gated merge is a premonoidal-style tensor,
--- |     not a monoidal one; unit and associativity hold and are tested,
--- |     interchange is bought back only as `⊑`.
+-- |   * **the gates' further price is bifunctoriality — at the inner
+-- |     surfaces**: interchange `(f ⊗ g) >>> (h ⊗ k) = (f >>> h) ⊗ (g >>> k)`
+-- |     fails on the nose when stage feeds are observed (the merged-first
+-- |     side withholds `h` until every operand has spoken) and holds there
+-- |     as refinement `⊑` in feed timing; at the **boundary**, for operands
+-- |     honoring the component protocol, it holds **up to stutter** — the
+-- |     merged-first side re-emits on each middle-gate release. Counting
+-- |     only channels the gated merge is monoidal up to stutter; counting
+-- |     renderings it is premonoidal — unit, associativity and symmetry hold
+-- |     outright either way (doc/observational-semantics.md §4; both levels
+-- |     tested in test/Main.purs).
 -- |
 -- | See doc/collections-profunctor-algebra.md §1.
 -- |

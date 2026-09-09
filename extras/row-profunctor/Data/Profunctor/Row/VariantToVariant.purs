@@ -64,6 +64,21 @@ import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class
 -- | lives here, like a label-indexed emitter lives at its `× → +` result. The demos'
 -- | variant editors read
 -- | `(Category.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
+-- |
+-- | **Law on the arguments** — the pair is a section–retraction:
+-- |
+-- | ```
+-- | caseOf (stateOf v) = v            -- for every variant v
+-- | ```
+-- |
+-- | `stateOf` is the canonical embedding `Σᵢ Aᵢ → Πᵢ Aᵢ` of a sum into the
+-- | product of its summands, which exists only because every summand is
+-- | **pointed** (a default payload for each absent case — "seeding absent
+-- | payloads" is that pointing), and `caseOf` retracts it. The other
+-- | composite `stateOf ∘ caseOf` is deliberately *not* the identity: its
+-- | kernel — the other cases' payloads — is exactly what the editor retains
+-- | across a selection change. Value-level, tested on the demo pair in
+-- | test/Main.purs.
 bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
 bracketed f g w = dimap f g (looped w)
 

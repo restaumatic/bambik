@@ -16,11 +16,16 @@
 -- |
 -- | **The carrier contract** (doc/observational-semantics.md — the one
 -- | definition every law below is stated against): a `PUI` value denotes,
--- | per instantiation, one two-phase process — `fromUser` registered once,
--- | then feeds and emissions interleave. Law equality `≈` is observational
--- | equivalence of the boundary channels under that protocol; refinement
--- | `⊑` is emitting a withholding-subsequence; primed equivalence is
--- | equality of the residuals once every gate has been fed. UI components owe
+-- | per instantiation, one process reached in three phases — constructed in
+-- | `m`, where every stateful instance allocates its state (hence
+-- | `MonadEffect m` on exactly those instances; `Functor`/`Apply` on the
+-- | rest says *no state here*), `fromUser` registered once, then feeds and
+-- | emissions interleave. Law equality `≈` is observational equivalence of
+-- | the boundary channels under that protocol (record channels up to
+-- | stutter — they carry behaviors); refinement `⊑` is emitting a
+-- | withholding-subsequence, and `>>>`/the merges are monotone in it;
+-- | primed equivalence is equality of the residuals once every gate has
+-- | been fed. UI components owe
 -- | the protocol three laws the algebra leans on: **feed-idempotence**
 -- | (feeding the same value twice ≈ once — what lets `looped`'s idempotence
 -- | and `debounced`'s re-feeds be lawful), **record-echo totality** (a
@@ -200,16 +205,15 @@ instance Functor m => Profunctor (PUI m) where
 -- holds only as primed equivalence — a pre-feed emission is dropped, not
 -- delayed (a permanent prefix difference, tested as such in test/Main.purs;
 -- doc/observational-semantics.md).
-instance Functor m => Strong (PUI m) where
-  first p = wrap ado
+instance MonadEffect m => Strong (PUI m) where
+  first p = wrap do
     p' <- unwrap p
-    in
-      -- ref per build (inside the applicative's result), NOT in an ado
-      -- statement: a statement-position let is evaluated once per PUI
-      -- value, so every `foreach` row would share one ref
-      let lastab = unsafePerformEffect $ Ref.new Nothing
-          guard = unsafePerformEffect gateGuard
-      in
+    -- state is allocated in the construction monad, per instantiation — the
+    -- phase it belongs to (doc/observational-semantics.md §1), which is also
+    -- what keeps every `foreach` row on its own ref
+    lastab <- liftEffect $ Ref.new Nothing
+    guard <- liftEffect gateGuard
+    pure
       { toUser: \ab -> do
           guard.fed
           Ref.write (Just ab) lastab
@@ -223,12 +227,11 @@ instance Functor m => Strong (PUI m) where
                 tr "Strong.first: emission withheld (pair state unknown)" b
               Just prevab -> prop (Tuple b (snd prevab))
       }
-  second p = wrap ado
+  second p = wrap do
     p' <- unwrap p
-    in
-      let lastab = unsafePerformEffect $ Ref.new Nothing
-          guard = unsafePerformEffect gateGuard
-      in
+    lastab <- liftEffect $ Ref.new Nothing
+    guard <- liftEffect gateGuard
+    pure
       { toUser: \ab -> do
           guard.fed
           Ref.write (Just ab) lastab
@@ -243,12 +246,11 @@ instance Functor m => Strong (PUI m) where
               Just prevab -> prop (Tuple (fst prevab) b)
       }
 
-instance Functor m => Choice (PUI m) where
-  left p = wrap ado
+instance MonadEffect m => Choice (PUI m) where
+  left p = wrap do
     p' <- unwrap p
-    in
-      let mPropRef = unsafePerformEffect $ Ref.new Nothing
-      in
+    mPropRef <- liftEffect $ Ref.new Nothing
+    pure
       { toUser: case _ of
         Right c -> do
           mProp <- Ref.read mPropRef
@@ -258,11 +260,10 @@ instance Functor m => Choice (PUI m) where
         Ref.write (Just prop) mPropRef
         p'.fromUser \b -> prop (Left b)
       }
-  right p = wrap ado
+  right p = wrap do
     p' <- unwrap p
-    in
-      let mPropRef = unsafePerformEffect $ Ref.new Nothing
-      in
+    mPropRef <- liftEffect $ Ref.new Nothing
+    pure
       { toUser: case _ of
         Left c -> do
           mProp <- Ref.read mPropRef
@@ -293,13 +294,12 @@ instance Functor m => Choice (PUI m) where
 -- | — exactly the composite `feedback` builds. Contrast `Cochoice` below,
 -- | whose retraction holds raw: this carrier is genuinely traced over `+`
 -- | and only pointed-traced over `×` (doc/observational-semantics.md).
-instance Functor m => Costrong (PUI m) where
-  unfirst p = wrap ado
+instance MonadEffect m => Costrong (PUI m) where
+  unfirst p = wrap do
     p' <- unwrap p
-    in
-      let cRef = unsafePerformEffect $ Ref.new Nothing
-          guard = unsafePerformEffect gateGuard
-      in
+    cRef <- liftEffect $ Ref.new Nothing
+    guard <- liftEffect gateGuard
+    pure
       { toUser: \a -> do
           mc <- Ref.read cRef
           case mc of
@@ -313,12 +313,11 @@ instance Functor m => Costrong (PUI m) where
             Ref.write (Just c) cRef
             prop b
       }
-  unsecond p = wrap ado
+  unsecond p = wrap do
     p' <- unwrap p
-    in
-      let aRef = unsafePerformEffect $ Ref.new Nothing
-          guard = unsafePerformEffect gateGuard
-      in
+    aRef <- liftEffect $ Ref.new Nothing
+    guard <- liftEffect gateGuard
+    pure
       { toUser: \b -> do
           ma <- Ref.read aRef
           case ma of
@@ -369,15 +368,14 @@ instance Functor m => Cochoice (PUI m) where
 -- | input-dead (each gate waits on the other), so the retraction is stated
 -- | seeded — and the seeded composite IS `debounced`:
 -- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`.
-instance Functor m => Coresolving (PUI m) where
-  coresolve p = wrap ado
+instance MonadEffect m => Coresolving (PUI m) where
+  coresolve p = wrap do
     p' <- unwrap p
-    in
-      let aRef = unsafePerformEffect $ Ref.new Nothing
-          cRef = unsafePerformEffect $ Ref.new Nothing
-          busyRef = unsafePerformEffect $ Ref.new false
-          guard = unsafePerformEffect gateGuard
-      in
+    aRef <- liftEffect $ Ref.new Nothing
+    cRef <- liftEffect $ Ref.new Nothing
+    busyRef <- liftEffect $ Ref.new false
+    guard <- liftEffect gateGuard
+    pure
       { toUser: \a -> do
           Ref.write (Just a) aRef
           mc <- Ref.read cRef
@@ -406,12 +404,13 @@ instance Functor m => Coresolving (PUI m) where
 -- | The raw composite `coretain (retain g)` is output-dead (`retain`'s gate
 -- | waits on a resume only emissions can trigger), so the retraction is
 -- | stated seeded: `coretain (seeded (Right c0) >>> retain g) ≈ g`.
-instance Functor m => Coretaining (PUI m) where
-  coretain p = wrap $ unwrap p <#> \p' ->
+instance MonadEffect m => Coretaining (PUI m) where
+  coretain p = wrap do
+    p' <- unwrap p
     -- the resume re-entry is guarded: a record-output UI component echoes on
     -- `toUser`, and an unguarded re-feed would loop on its own echo
-    let busyRef = unsafePerformEffect $ Ref.new false
-    in
+    busyRef <- liftEffect $ Ref.new false
+    pure
       { toUser: \a -> p'.toUser $ Left a
       , fromUser: \prop -> p'.fromUser \(Tuple b c) -> do
           prop b
@@ -447,13 +446,13 @@ instance Apply m => Semigroupoid (PUI m) where
 -- | ignore a contribution of zero fields; those merges have no unit of their
 -- | own, and `VariantToRecord`'s is this wire entered from the empty
 -- | variant, `lcmap case_ identity`.
-instance Applicative m => Category (PUI m) where
-  -- the ref is created per unwrap (inside the functor map), NOT in a
-  -- top-level `let`: `identity` is a constant, and a constant's `let` is
-  -- evaluated once — every `identity` in the app would share one wire
-  identity = wrap $ pure unit <#> \_ ->
-    let mPropRef = unsafePerformEffect $ Ref.new Nothing
-    in
+instance MonadEffect m => Category (PUI m) where
+  -- the ref is allocated in the construction monad, per instantiation:
+  -- `identity` is a constant, and a top-level `let` would be evaluated
+  -- once — every `identity` in the app would share one wire
+  identity = wrap do
+    mPropRef <- liftEffect $ Ref.new Nothing
+    pure
       { toUser: \ch -> do
           mProp <- Ref.read mPropRef
           for_ mProp \prop -> prop ch
@@ -465,7 +464,7 @@ instance Applicative m => Category (PUI m) where
 -- | ignored. The pointedness primitive; the seeded echo wire the knot-tying
 -- | row forms (`feedback`/`folding`/`unfolding`) prime their state channels
 -- | with is derived from it through `Choice` (`Data.Profunctor.Seeding`).
-instance Applicative m => Seeding (PUI m) where
+instance MonadEffect m => Seeding (PUI m) where
   announce a = wrap $ pure
     { toUser: mempty
     , fromUser: \prop -> prop a
@@ -489,10 +488,11 @@ instance Applicative m => Seeding (PUI m) where
 -- | is the primitive the class exists
 -- | for: `Costrong`'s gated `unfirst` cannot self-feed, so the knot is
 -- | tied directly here.
-instance Functor m => Looping (PUI m) where
-  looped p = wrap $ unwrap p <#> \p' ->
-    let busyRef = unsafePerformEffect $ Ref.new false
-    in
+instance MonadEffect m => Looping (PUI m) where
+  looped p = wrap do
+    p' <- unwrap p
+    busyRef <- liftEffect $ Ref.new false
+    pure
       { toUser: p'.toUser
       , fromUser: \prop ->
           p'.fromUser \u -> do
@@ -507,7 +507,7 @@ instance Functor m => Looping (PUI m) where
                 prop u
       }
 
-instance Applicative m => RecordToRecord (PUI m) where
+instance MonadEffect m => RecordToRecord (PUI m) where
   recordToRecord = recordToRecordPUI
 
 -- Hoisted so the merge's `RowList` variables are in scope: the starvation
@@ -515,21 +515,22 @@ instance Applicative m => RecordToRecord (PUI m) where
 -- `MergeableRecords` superclass) to say exactly which sibling fields a
 -- withholding gate is still waiting for.
 recordToRecordPUI :: forall m i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
-  Applicative m =>
+  MonadEffect m =>
   SharedRecordInputs i1 i2 i i12 i1x i2x =>
   OwnedRecordOutputs o1 o2 o o1l o2l =>
   PUI m { | i1 } { | o1 } -> PUI m { | i2 } { | o2 } -> PUI m { | i } { | o }
-recordToRecordPUI p1 p2 = wrap ado
+recordToRecordPUI p1 p2 = wrap do
   p1' <- unwrap (widenRecordInput p1)
   p2' <- unwrap (widenRecordInput p2)
-  in
+  gate <- liftEffect $ newRecordGate (rowLabels (Proxy @o1l)) (rowLabels (Proxy @o2l))
+  pure
     { toUser: \new -> do
           p1'.toUser new
           p2'.toUser new
     , fromUser: gatedRecordOutputs "×→×"
         (rowLabels (Proxy @o1l))
         (rowLabels (Proxy @o2l))
-        exactRow exactRow p1'.fromUser p2'.fromUser
+        gate exactRow exactRow p1'.fromUser p2'.fromUser
     }
 
 instance Applicative m => RecordToVariant (PUI m) where
@@ -563,20 +564,19 @@ instance Applicative m => RecordToVariant (PUI m) where
 -- | instance fixes the carrier's **quiescence quantum**, 300ms — a semantic
 -- | constant of this instance, not of the class (`resolveFor` re-scopes it
 -- | per stage).
-instance Functor m => Resolving (PUI m) where
+instance MonadEffect m => Resolving (PUI m) where
   resolve = resolveFor { ms: 300.0 }
 
 -- | `resolve` with an explicit quiescence window — see the `Resolving`
 -- | instance. `Done` needs no state and fires (after the window) even
 -- | unprimed; only the `Loop` branch is gated on a first `c`.
-resolveFor :: forall m a b c. Functor m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
-resolveFor millis p = wrap ado
+resolveFor :: forall m a b c. MonadEffect m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
+resolveFor millis p = wrap do
   p' <- unwrap p
-  in
-    let cRef = unsafePerformEffect $ Ref.new Nothing
-        mFiberRef = unsafePerformEffect $ Ref.new Nothing
-        guard = unsafePerformEffect gateGuard
-    in
+  cRef <- liftEffect $ Ref.new Nothing
+  mFiberRef <- liftEffect $ Ref.new Nothing
+  guard <- liftEffect gateGuard
+  pure
     { toUser: \(Tuple a c) -> do
         guard.fed
         Ref.write (Just c) cRef
@@ -606,13 +606,12 @@ resolveFor millis p = wrap ado
 -- | output pairs it with the retained `c` — and is **withheld until a `c`
 -- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
 -- | mirroring the knowledge-gated record merges.
-instance Functor m => Retaining (PUI m) where
-  retain p = wrap ado
+instance MonadEffect m => Retaining (PUI m) where
+  retain p = wrap do
     p' <- unwrap p
-    in
-      let cRef = unsafePerformEffect $ Ref.new Nothing
-          guard = unsafePerformEffect gateGuard
-      in
+    cRef <- liftEffect $ Ref.new Nothing
+    guard <- liftEffect gateGuard
+    pure
       { toUser: case _ of
           Left a -> p'.toUser a
           Right c -> do
@@ -628,7 +627,7 @@ instance Functor m => Retaining (PUI m) where
               Just c -> prop $ Tuple b c
       }
 
-instance Applicative m => VariantToRecord (PUI m) where
+instance MonadEffect m => VariantToRecord (PUI m) where
   variantToRecord = variantToRecordPUI
 
 -- | The **output gate** both record-output merges run on, stated once.
@@ -646,74 +645,96 @@ instance Applicative m => VariantToRecord (PUI m) where
 -- |
 -- | `direction` names the merge in the trace and starvation copy ("×→×",
 -- | "+→×"), and `fields1`/`fields2` are the operands' rendered output labels,
--- | so a withholding gate says exactly which sibling it is waiting for.
+-- | so a withholding gate says exactly which sibling it is waiting for. The
+-- | gate's state arrives allocated (`newRecordGate`, in the merge's
+-- | construction monad): this function is the streaming-phase algorithm only.
 gatedRecordOutputs
   :: forall e1 e2 o1 o2 o
    . Union o1 o2 o
   => String
   -> Array String
   -> Array String
+  -> RecordGate o1 o2
   -> (e1 -> { | o1 })
   -> (e2 -> { | o2 })
   -> ((e1 -> Effect Unit) -> Effect Unit)
   -> ((e2 -> Effect Unit) -> Effect Unit)
   -> ({ | o } -> Effect Unit)
   -> Effect Unit
-gatedRecordOutputs direction labels1 labels2 exact1 exact2 sub1 sub2 prop = do
+gatedRecordOutputs direction labels1 labels2 gate exact1 exact2 sub1 sub2 prop = do
   -- a side owning zero fields contributes nothing: its only possible
-  -- emission is the informationless {}, pre-known below, so it neither
+  -- emission is the informationless {}, pre-known in the gate, so it neither
   -- opens the gate nor re-fires it — `identity @{}`, a silent display and
   -- an announcing one are indistinguishable as operands
   sub1 \partial -> unless (Array.null labels1) do
     let exact = exact1 partial
-    let _ = unsafePerformEffect $ Ref.write (Just exact) p1Last
-    let mp2 = unsafePerformEffect $ Ref.read p2Last
+    Ref.write (Just exact) gate.p1Last
+    mp2 <- Ref.read gate.p2Last
     case mp2 of
       Nothing -> do
-        guard1.blocked (starving fields1 fields2) labels2
+        gate.guard1.blocked (starving fields1 fields2) labels2
         tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") exact
       Just p2val -> do
-        guard1.fed *> guard2.fed
+        gate.guard1.fed *> gate.guard2.fed
         prop $ Record.union exact p2val
   sub2 \partial -> unless (Array.null labels2) do
     let exact = exact2 partial
-    let _ = unsafePerformEffect $ Ref.write (Just exact) p2Last
-    let mp1 = unsafePerformEffect $ Ref.read p1Last
+    Ref.write (Just exact) gate.p2Last
+    mp1 <- Ref.read gate.p1Last
     case mp1 of
       Nothing -> do
-        guard2.blocked (starving fields2 fields1) labels1
+        gate.guard2.blocked (starving fields2 fields1) labels1
         tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") exact
       Just p1val -> do
-        guard1.fed *> guard2.fed
+        gate.guard1.fed *> gate.guard2.fed
         prop $ Record.union p1val exact
   where
   fields1 = renderFieldNames labels1
   fields2 = renderFieldNames labels2
-  -- a side that owns zero fields is pre-satisfied: `{}` is the
-  -- informationless record, always known (L6), so the gate never waits
-  -- for it — a display-side operand cannot starve its siblings whether or
-  -- not it has spoken (the silence law in test/Main.purs)
-  prime :: forall r. Array String -> Maybe { | r }
-  prime labels = if Array.null labels then Just (unsafeCoerce {}) else Nothing
-  p1Last = unsafePerformEffect $ Ref.new (prime labels1)
-  p2Last = unsafePerformEffect $ Ref.new (prime labels2)
-  guard1 = unsafePerformEffect gateGuard
-  guard2 = unsafePerformEffect gateGuard
   starving mine sibling = direction <> " merge: emissions dropped for 3s — the operand producing " <> mine
     <> " keeps emitting, but its sibling operand producing " <> sibling
     <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
 
+-- | The per-merge gate state both record-output merges allocate: each side's
+-- | retained last contribution and its starvation guard, created in the
+-- | merge's construction monad at instantiation (the phase state belongs to
+-- | — doc/observational-semantics.md §1). A side that owns zero fields is
+-- | born satisfied: `{}` is the informationless record, always known (L6),
+-- | so the gate never waits for it — a display-side operand cannot starve
+-- | its siblings whether or not it has spoken (the silence law in
+-- | test/Main.purs).
+type RecordGate o1 o2 =
+  { p1Last :: Ref.Ref (Maybe { | o1 })
+  , p2Last :: Ref.Ref (Maybe { | o2 })
+  , guard1 :: GateGuard
+  , guard2 :: GateGuard
+  }
+
+type GateGuard = { blocked :: String -> Array String -> Effect Unit, fed :: Effect Unit }
+
+newRecordGate :: forall o1 o2. Array String -> Array String -> Effect (RecordGate o1 o2)
+newRecordGate labels1 labels2 = do
+  p1Last <- Ref.new (prime labels1)
+  p2Last <- Ref.new (prime labels2)
+  guard1 <- gateGuard
+  guard2 <- gateGuard
+  pure { p1Last, p2Last, guard1, guard2 }
+  where
+  prime :: forall r. Array String -> Maybe { | r }
+  prime labels = if Array.null labels then Just (unsafeCoerce {}) else Nothing
+
 -- Hoisted like `recordToRecordPUI`, for the same reason: the starvation
 -- diagnostics name the sibling fields a withholding gate is waiting for.
 variantToRecordPUI :: forall m i1 i1l i2 i2l o1 o2 i o o1l o2l.
-  Applicative m =>
+  MonadEffect m =>
   OwnedVariantInputs i1 i2 i i1l i2l =>
   OwnedRecordOutputs o1 o2 o o1l o2l =>
   PUI m [ | i1 ] { | o1 } -> PUI m [ | i2 ] { | o2 } -> PUI m [ | i ] { | o }
-variantToRecordPUI p1 p2 = wrap ado
+variantToRecordPUI p1 p2 = wrap do
   p1' <- unwrap p1
   p2' <- unwrap p2
-  in
+  gate <- liftEffect $ newRecordGate (rowLabels (Proxy @o1l)) (rowLabels (Proxy @o2l))
+  pure
     -- the input side is what differs from `recordToRecord`: one case at a
     -- time, dispatched to whichever operand owns it. The output side is the
     -- same gate, held until both operands have contributed.
@@ -723,7 +744,7 @@ variantToRecordPUI p1 p2 = wrap ado
     , fromUser: gatedRecordOutputs "+→×"
         (rowLabels (Proxy @o1l))
         (rowLabels (Proxy @o2l))
-        exactRow exactRow p1'.fromUser p2'.fromUser
+        gate exactRow exactRow p1'.fromUser p2'.fromUser
     }
 
 instance Applicative m => VariantToVariant (PUI m) where
@@ -897,17 +918,18 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | the plain diagonal stage.
 updated
   :: forall m small rest big narrow extra e
-   . Functor m
+   . MonadEffect m
   => Union small rest big
   => Union narrow extra big
   => (e -> { | small } -> { | small })
   -> PUI m { | narrow } e
   -> PUI m { | big } { | big }
-updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
-  let sRef = unsafePerformEffect $ Ref.new Nothing
-      mPropRef = unsafePerformEffect $ Ref.new Nothing
-      guard = unsafePerformEffect gateGuard
-  in
+updated handler w = wrap do
+  evts <- unwrap (widenRecordInput w)
+  sRef <- liftEffect $ Ref.new Nothing
+  mPropRef <- liftEffect $ Ref.new Nothing
+  guard <- liftEffect gateGuard
+  pure
     { toUser: \s -> do
         guard.fed
         Ref.write (Just s) sRef
@@ -963,7 +985,7 @@ updated handler w = wrap $ unwrap (widenRecordInput w) <#> \evts ->
 -- | things.
 applied
   :: forall m small rest big s
-   . Functor m
+   . MonadEffect m
   => Union small rest big
   => ({ | small } -> { | small })
   -> PUI m { | small } [ | s ]
@@ -985,13 +1007,14 @@ applied f = updated (const f)
 -- | only a status whose output is `{}`.
 observed
   :: forall m narrow wider
-   . Functor m
+   . MonadEffect m
   => Contractable wider narrow
   => PUI m [ | narrow ] {}
   -> PUI m [ | wider ] [ | wider ]
-observed status = wrap $ unwrap status <#> \st ->
-  let mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
+observed status = wrap do
+  st <- unwrap status
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
     { toUser: \v -> do
         case contract v of
           Just n -> do
@@ -1024,13 +1047,14 @@ observed status = wrap $ unwrap status <#> \st ->
 -- | `required`, the result is a **whole-row citizen**
 -- | `p { l :: [ c :: a, n :: {} ] | rest } { l :: [ c :: a, n :: {} ] | rest }` —
 -- | the echo-completed selector lifted under `field @l`, background carried.
-optional :: forall @c @n l m a b s v cr nr ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => IsSymbol c => IsSymbol n => Cons l (Maybe a) () ri => Cons l a () ro => Cons c a cr v => Cons n {} nr v => Cons l [ | v ] b s => Functor m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
+optional :: forall @c @n l m a b s v cr nr ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => IsSymbol c => IsSymbol n => Cons l (Maybe a) () ri => Cons l a () ro => Cons c a cr v => Cons n {} nr v => Cons l [ | v ] b s => MonadEffect m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
 optional p = field @l scalar
   where
   scalar :: PUI m [ | v ] [ | v ]
-  scalar = wrap $ unwrap p <#> \p' ->
-    let mPropRef = unsafePerformEffect $ Ref.new Nothing
-    in
+  scalar = wrap do
+    p' <- unwrap p
+    mPropRef <- liftEffect $ Ref.new Nothing
+    pure
       { toUser: \i -> do
           let picked = prj (Proxy @c) i
           p'.toUser (Record.insert (Proxy @l) picked {})
@@ -1057,7 +1081,7 @@ optional p = field @l scalar
 -- | tick, so the tick's footprint is stated once in the step's own signature.
 every
   :: forall m small rest big
-   . Applicative m
+   . MonadEffect m
   => Union small rest big
   => { ms :: Number }
   -> ({ | small } -> Maybe { | small })
@@ -1066,11 +1090,11 @@ every interval step = heartbeat interval \big -> (\s -> unsafeUnion s big :: { |
 
 -- | The type-agnostic heartbeat `every` is built from — private, because the
 -- | vocabulary's stages carry rows while this one is exact at any type.
-heartbeat :: forall m a. Applicative m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
-heartbeat interval step = wrap $ pure unit <#> \_ ->
-  let lastRef = unsafePerformEffect $ Ref.new Nothing
-      mPropRef = unsafePerformEffect $ Ref.new Nothing
-  in
+heartbeat :: forall m a. MonadEffect m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
+heartbeat interval step = wrap do
+  lastRef <- liftEffect $ Ref.new Nothing
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
     { toUser: \a -> do
         Ref.write (Just a) lastRef
         mProp <- Ref.read mPropRef
@@ -1095,7 +1119,7 @@ heartbeat interval step = wrap $ pure unit <#> \_ ->
 -- Optimized implementation. Not optimized would be an `lcmap` writing the
 -- constant over the field per feed.
 
-type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
+type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 
 -- | The transpose of an optic. `Optic p s t a b = p a b -> p s t`, and the
 -- | optic families quantify the *carrier* (`Lens s t a b = forall p. Strong
@@ -1119,6 +1143,10 @@ type Action s t a b = forall m. Functor m => Optic (PUI m) s t a b
 -- | slides freely past `field @l`/`subStrong`. A decorator that captures —
 -- | buffers, replays or withholds a feed — is still a natural transformation
 -- | but breaks these, and needs a stated protocol instead (a modal, say).
+-- | Both halves are tested in test/Main.purs: a node-wrapping ocular (a
+-- | construction-time effect, untouched channels) satisfies the law; a
+-- | capturing decorator counting emissions fails it before priming, seeing
+-- | inside the gate what the gate drops outside.
 type Ocular p = forall a b. Optic p a b a b
 
 -- | An element with **nothing in it**: an ocular applied to the wire, its
@@ -1150,12 +1178,11 @@ action arr w = action'
       Right o -> liftEffect $ post o)
   w
 
-action' :: forall a b i o m. Functor m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
-action' arr w = wrap ado
+action' :: forall a b i o m. MonadEffect m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
+action' arr w = wrap do
   w' <- unwrap w
-  in
-    let oVar = unsafePerformEffect $ liftEffect AVar.empty
-    in
+  oVar <- liftEffect AVar.empty
+  pure
     { toUser: \i -> launchAff_ $ arr i (\a -> void $ w'.toUser a) (\o -> void $ AVar.put o oVar mempty)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
@@ -1180,7 +1207,7 @@ action' arr w = wrap ado
 -- | `coresolve (resolve g) = debounced g` made the body: the quiescence
 -- | step composed with its retraction, the loop channel primed by a
 -- | `seeded` wire exactly as `folding` primes its fold state.
-debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
+debounced :: forall m. MonadEffect m => { ms :: Number } -> Ocular (PUI m)
 debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 
 -- The container action on PUI (class in Data.Profunctor.Acting — the pure

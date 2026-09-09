@@ -16,9 +16,12 @@ and **in parallel** (the merges, call them `⊗`). Categories with both, and a
 lax interchange `(f ⊗ g) ⊳ (h ⊗ k) → (f ⊳ h) ⊗ (g ⊳ k)`, are **duoidal**;
 the pipeline/merge distinction is not bambik-specific bookkeeping but this
 standard structure. The 2-cell the lax interchange needs is real and named:
-the refinement order `⊑` of doc/observational-semantics.md — as an equality
-the interchange fails on the nose (tested), as `⊑` it holds in exactly the
-direction written above.
+the refinement order `⊑` of doc/observational-semantics.md — at the inner
+surfaces (what the stages are fed, when) the interchange fails as an
+equality and holds as `⊑` in exactly the direction written above; at the
+boundary, for protocol-respecting operands, it holds up to stutter. Which
+category `PUI` is depends on what one counts as an observation — both are
+tested.
 
 One session bug becomes a theorem here. Broadcasting one input to two
 `⊳`-composed stages requires the first stage to be a **comonoid**: it must
@@ -51,13 +54,14 @@ unit :: p 1_M 1_N
 
 with unit, associativity and symmetry coherence (all tested in
 test/Main.purs, on `PUI Effect` probes and — for the diagonal shapes — as
-pure equalities on `(->)`). **Interchange is deliberately not claimed**: on
-the gated merges `(f ⊗ g) ⊳ (h ⊗ k) = (f ⊳ h) ⊗ (g ⊳ k)` fails on the nose
-and holds one-directionally as refinement `⊑` — the lax duoidal interchange
-of §0, made precise by the order-enriched semantics
-(doc/observational-semantics.md §4; deviation test in test/Main.purs). So a
-gated merge is a premonoidal-style tensor, not a monoidal one. All four
-direction classes are instances:
+pure equalities on `(->)`). **Interchange is observation-level-relative**:
+on the gated merges `(f ⊗ g) ⊳ (h ⊗ k) = (f ⊳ h) ⊗ (g ⊳ k)` fails on the
+nose at the inner surfaces and holds there one-directionally as refinement
+`⊑` — the lax duoidal interchange of §0 — while at the boundary, for
+protocol-respecting operands, it holds up to stutter
+(doc/observational-semantics.md §4; both tested in test/Main.purs). So a
+gated merge is premonoidal counting renderings and monoidal-up-to-stutter
+counting channels. All four direction classes are instances:
 
 | direction | (M, N) | binary form on plain types |
 |---|---|---|
@@ -320,4 +324,7 @@ Jaskelioff–O'Connor, *A representation theorem for second-order functionals*
 Joyal–Street–Verity, *Traced monoidal categories*; Hasegawa, traces ↔ Conway
 fixpoints; Aguiar–Mahajan, duoidal categories; Earnshaw–Hefford–Román, *The
 produoidal algebra of process decomposition* (sequential ⊗ parallel
-normalization for profunctors).
+normalization for profunctors); Katis–Sabadini–Walters, *Bicategories of
+processes* / *Feedback, trace and fixed-point semantics* (Mealy machines
+with feedback requiring an initial state — the seeded `×`-trace's
+denotational home, doc/observational-semantics.md §5).

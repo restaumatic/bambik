@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude
 
-import Data.Array (last, length, (!!))
+import Data.Array (last, length, uncons, (!!))
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
 import Data.Lens (over, set, view)
@@ -34,6 +34,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
+import OrderFormLogic (fulfillmentCase, fulfillmentState)
 import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -79,6 +80,33 @@ echoProbe f insRef propRef = PUI $ pure
 -- (doc/observational-semantics.md).
 dedupConsecutive :: forall a. Eq a => Array a -> Array a
 dedupConsecutive = foldl (\acc x -> if last acc == Just x then acc else acc <> [ x ]) []
+
+-- `xs` is a subsequence of `ys` — the refinement order `⊑` on streams: the
+-- withholding side emits what the other emits, possibly fewer
+-- (doc/observational-semantics.md §2).
+isSubsequence :: forall a. Eq a => Array a -> Array a -> Boolean
+isSubsequence xs ys = case uncons xs, uncons ys of
+  Nothing, _ -> true
+  _, Nothing -> false
+  Just x, Just y -> isSubsequence (if x.head == y.head then x.tail else xs) y.tail
+
+-- A **node-wrapping** ocular: a construction-time effect (here, a build log)
+-- and untouched channels — the shape of every design-system decorator. The
+-- admission law `ocular (first w) = first (ocular w)` holds for exactly this
+-- shape.
+wrappingOcular :: forall a b. Ref.Ref Int -> PUI Effect a b -> PUI Effect a b
+wrappingOcular builds w = PUI do
+  Ref.modify_ (_ + 1) builds
+  unwrap w
+
+-- A **capturing** decorator: observes the emission channel (here, counts it).
+-- Still a natural transformation, but not an ocular — it sees what a gate
+-- drops, so the admission law fails before priming (the module header's
+-- "a decorator that captures … breaks these").
+capturingDecorator :: forall a b. Ref.Ref Int -> PUI Effect a b -> PUI Effect a b
+capturingDecorator seen w = PUI do
+  w' <- unwrap w
+  pure { toUser: w'.toUser, fromUser: \prop -> w'.fromUser \b -> Ref.modify_ (_ + 1) seen *> prop b }
 
 -- An element probe for the container action: `acted` instantiates the wrapped
 -- UI component once per key, so each instantiation registers its own channel legs in
@@ -1486,3 +1514,211 @@ main = do
       r = variantToVariant hx (variantToVariant hy hz)
     for_ ([ .x 5, .y 5, .z 5 ] :: Array [ x :: Int, y :: Int, z :: Int ]) \v ->
       assertEqual "variantToVariant/(->): associativity" (l v) (r v)
+
+  -- == Observation levels (doc/observational-semantics.md §2, §4): the same ==
+  -- == interchange that fails at inner surfaces holds at the boundary — up ==
+  -- == to stutter — for protocol-respecting operands. ==
+
+  -- Boundary interchange with echo-total operands: the boundary streams
+  -- agree up to stutter (consecutive duplicates on a record channel, which
+  -- feed-idempotence makes unobservable downstream) — and only up to
+  -- stutter: the merged-first side broadcasts every middle-gate release to
+  -- both h and k, each echoing, so it stutters where the free side does not.
+  do
+    let
+      run grouping = do
+        fIns <- Ref.new ([] :: Array { s :: Int })
+        fProp <- Ref.new Nothing
+        gIns <- Ref.new ([] :: Array { s :: Int })
+        gProp <- Ref.new Nothing
+        hIns <- Ref.new ([] :: Array { a :: Int })
+        hProp <- Ref.new Nothing
+        kIns <- Ref.new ([] :: Array { b :: Int })
+        kProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { c :: Int, d :: Int })
+        m <- unwrap (grouping (echoProbe (\r -> { a: r.s }) fIns fProp)
+                              (echoProbe (\r -> { b: r.s + 100 }) gIns gProp)
+                              (echoProbe (\r -> { c: r.a * 10 }) hIns hProp)
+                              (echoProbe (\r -> { d: r.b }) kIns kProp))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { s: 1 } *> m.toUser { s: 2 }
+        fire fProp { a: 7 }
+        fire hProp { c: 99 }
+        Ref.read outs
+    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord h k
+    free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
+    assertEqual "boundary interchange: the streams agree up to stutter" (dedupConsecutive free) (dedupConsecutive synced)
+    assertEqual "boundary interchange: the free side's stream"
+      [ { c: 10, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 102 }, { c: 70, d: 102 }, { c: 99, d: 102 } ] free
+    assertEqual "boundary interchange: the merged-first side stutters at each middle-gate release"
+      [ { c: 10, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 101 }, { c: 20, d: 102 }, { c: 70, d: 102 }, { c: 70, d: 102 }, { c: 99, d: 102 } ] synced
+
+  -- == Enrichment: composition and the merges are monotone in `⊑`, which is ==
+  -- == what makes the refinement order a 2-cell and not just a remark. ==
+
+  -- p ⊑ p' ⇒ p >>> q ⊑ p' >>> q, with the Strong-deviation pair as p ⊑ p'
+  -- (the gated side drops a pre-feed emission).
+  do
+    let
+      run p = do
+        qIns <- Ref.new ([] :: Array String)
+        qProp <- Ref.new Nothing
+        gProp <- Ref.new Nothing
+        m <- unwrap (p gProp >>> probeIO qIns qProp)
+        m.fromUser \_ -> pure unit
+        fire gProp "early"
+        m.toUser (Tuple 1 true)
+        fire gProp "b"
+        Ref.read qIns
+      gated gProp = rmap fst (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
+      ungated gProp = lcmap (fst :: Tuple Int Boolean -> Int) (probe gProp :: PUI Effect Int String)
+    lower <- run gated
+    upper <- run ungated
+    assertEqual "enrichment: p ⊑ p' ⇒ p >>> q ⊑ p' >>> q" true (isSubsequence lower upper)
+    assertEqual "enrichment: the gated side's stage sees the residual only" [ "b" ] lower
+    assertEqual "enrichment: the ungated side's stage sees everything" [ "early", "b" ] upper
+
+  -- and the merge: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r — the gated leaf lift (`field`,
+  -- completing each emission from the retained background, so withholding
+  -- before a first feed) against the ungated whole-row probe.
+  do
+    let
+      script m fireP rProp = do
+        fireP 1 "early"
+        fire rProp { c: true }
+        m.toUser { a: 0, b: "fed" }
+        fireP 2 "fed"
+    lower <- do
+      gProp <- Ref.new Nothing
+      rProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
+      m <- unwrap (recordToRecord (field @"a" (probe gProp :: PUI Effect Int Int)) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      script m (\n _ -> fire gProp n) rProp
+      Ref.read outs
+    upper <- do
+      gProp <- Ref.new Nothing
+      rProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
+      m <- unwrap (recordToRecord (probe gProp :: PUI Effect { a :: Int, b :: String } { a :: Int, b :: String }) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      script m (\n b -> fire gProp { a: n, b }) rProp
+      Ref.read outs
+    assertEqual "enrichment: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "enrichment: the gated merge emits the residual only" [ { a: 2, b: "fed", c: true } ] lower
+    assertEqual "enrichment: the ungated merge emits everything" [ { a: 1, b: "early", c: true }, { a: 2, b: "fed", c: true } ] upper
+
+  -- The container action's laxity in `⊑`, exhibited: the two-stage form
+  -- re-feeds every q-element per p-element emission where the one-stage
+  -- form feeds only the element that spoke — a difference at the inner
+  -- surface; the boundary agrees.
+  do
+    let
+      run lifted = do
+        pBuilds <- Ref.new 0
+        pRoster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+        qBuilds <- Ref.new 0
+        qRoster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+        outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
+        m <- unwrap (lifted (elemProbe pBuilds pRoster) (elemProbe qBuilds qRoster))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
+        fireElem pRoster 0 { k: "a", v: 10 }
+        fireElem pRoster 1 { k: "b", v: 20 }
+        fireElem pRoster 0 { k: "a", v: 11 }
+        q1Ins <- Ref.read qRoster >>= \hs -> case hs !! 1 of
+          Just h -> Ref.read h.ins
+          Nothing -> pure []
+        fireElem qRoster 0 { k: "a", v: 100 }
+        fireElem qRoster 1 { k: "b", v: 200 }
+        os <- Ref.read outs
+        pure { q1Ins, os }
+    twoStage <- run \p q -> actedBy _.k p >>> actedBy _.k q
+    oneStage <- run \p q -> actedBy _.k (p >>> q)
+    assertEqual "actedBy laxity: the two-stage form re-feeds the untouched q-element on every gather"
+      [ { k: "b", v: 20 }, { k: "b", v: 20 } ] twoStage.q1Ins
+    assertEqual "actedBy laxity: the one-stage form feeds only the element that spoke"
+      [ { k: "b", v: 20 } ] oneStage.q1Ins
+    assertEqual "actedBy laxity: the boundary agrees" oneStage.os twoStage.os
+
+  -- == bracketed's argument law (Data.Profunctor.Row.VariantToVariant): ==
+  -- == caseOf ∘ stateOf = id, on the one pair the demos use. ==
+  for_
+    ( [ ."Dine in" { "Table": "4" }
+      , ."Takeaway" { "Time": "18:30" }
+      , ."Delivery" { "Address": "Main St 1", distance: .estimated { km: 3, to: "Main St 1" } }
+      , ."Delivery" { "Address": "Side St 2", distance: .unknown {} }
+      ] :: Array [ "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String }, "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ]
+    ) \v ->
+    assertEqual "bracketed: caseOf ∘ stateOf = id on order-form's fulfillment pair" v (fulfillmentCase (fulfillmentState v))
+
+  -- == The Ocular admission law (PUI's header): ocular (first w) = first ==
+  -- == (ocular w) for a node-wrapping ocular; a capturing decorator breaks ==
+  -- == it before priming. ==
+  -- (The two placements instantiate the ocular at different types — inside
+  -- the gate at `Int → String`, outside at the pairs — so each side builds
+  -- its own from the shared counter rather than sharing one polymorphic
+  -- argument, which a let-bound parameter cannot be.)
+  do
+    let
+      script m gProp = do
+        fire gProp "early"
+        m.toUser (Tuple 1 true)
+        fire gProp "x"
+    inside <- do
+      builds <- Ref.new 0
+      gProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array (Tuple String Boolean))
+      m <- unwrap (first (wrappingOcular builds (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      script m gProp
+      os <- Ref.read outs
+      n <- Ref.read builds
+      pure { os, n }
+    outside <- do
+      builds <- Ref.new 0
+      gProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array (Tuple String Boolean))
+      m <- unwrap (wrappingOcular builds (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      script m gProp
+      os <- Ref.read outs
+      n <- Ref.read builds
+      pure { os, n }
+    assertEqual "ocular admission: ocular (first w) = first (ocular w) — streams and builds agree" inside outside
+    assertEqual "ocular admission: the script's stream" { os: [ Tuple "x" true ], n: 1 } inside
+  do
+    let
+      script m gProp = do
+        fire gProp "early"
+        m.toUser (Tuple 1 true)
+        fire gProp "x"
+    inside <- do
+      seen <- Ref.new 0
+      gProp <- Ref.new Nothing
+      m <- unwrap (first (capturingDecorator seen (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
+      m.fromUser \_ -> pure unit
+      script m gProp
+      Ref.read seen
+    outside <- do
+      seen <- Ref.new 0
+      gProp <- Ref.new Nothing
+      m <- unwrap (capturingDecorator seen (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+      m.fromUser \_ -> pure unit
+      script m gProp
+      Ref.read seen
+    assertEqual "capturing decorator: inside the gate it sees the dropped emission too" 2 inside
+    assertEqual "capturing decorator: outside the gate it does not — the admission law fails, so it is not an ocular" 1 outside
+
+  -- announce's naturality: rmap f (announce a) = announce (f a).
+  do
+    let
+      run w = do
+        outs <- Ref.new ([] :: Array String)
+        m <- unwrap (w :: PUI Effect {} String)
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        Ref.read outs
+    l <- run (rmap show (announce 42))
+    r <- run (announce (show 42))
+    assertEqual "announce naturality: rmap f (announce a) = announce (f a)" r l
+    assertEqual "announce naturality: the point fires once" [ "42" ] l
