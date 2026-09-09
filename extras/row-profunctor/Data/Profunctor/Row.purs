@@ -417,6 +417,34 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --   recordToVariant  : SharedRecordInputs  + SharedVariantOutputs
 --   variantToVariant : OwnedVariantInputs  + SharedVariantOutputs
 --   variantToRecord  : OwnedVariantInputs  + OwnedRecordOutputs
+--
+-- **What an inclusive input side obliges.** A shared record input is a
+-- *broadcast*: one feed reaches both operands, so both may answer it. That
+-- is the sole cause of the two feed laws, and it states them as one
+-- sentence — **one feed in, at most one thing out, and if it is a record,
+-- a whole one** — differentiated only by what the output side can carry:
+--
+--   * output `×` — one thing, whole: the gated merge batches the broadcast
+--     and releases **once** (`steppedFeed` on the carrier), so a feed
+--     changing several fields never emits a torn row.
+--   * output `+` — one thing: an operand must not turn a feed into an
+--     occurrence (no synchronous **event** echo), or the pass-through
+--     broadcast would manufacture a second emission.
+--
+-- An exclusive variant input side carries neither obligation, and this is
+-- a consequence rather than a coincidence: `DisjointLabels` gives every
+-- case exactly one handler, so a feed is *dispatched*, not broadcast, and
+-- exactly one operand answers. There is no "one feed, several answers"
+-- situation to discipline — nothing to tear, nothing to duplicate.
+--
+-- The two axes are therefore independent, and the mechanisms follow both:
+-- the **input** side says whether the obligation exists at all (broadcast
+-- merges have it, dispatch merges do not), the **output** side says what
+-- discharges it (a record output gates and retains, so "one thing" also
+-- means "whole"; a variant output passes through, so it only means "do
+-- not manufacture a second"). `variantToRecord` is the case that separates
+-- them: dispatched input, so no broadcast to batch, yet a record output, so
+-- it gates and retains exactly like `recordToRecord`.
 
 -- | A merge's **record-input side**: everyone may read a field, so operand
 -- | rows may overlap. The merge action is a label-blind broadcast — no

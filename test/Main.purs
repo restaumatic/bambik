@@ -1587,6 +1587,37 @@ main = do
     m.toUser { s: 1 }
     Ref.read outs >>= assertEqual "one feed, one release: nested merges release once" [ { a: 1, b: 101, c: 1001 } ]
 
+  -- == The prediction of §8.0: the feed law belongs to INCLUSIVE input. ==
+  -- == `+→×` has disjoint-row operands and a retaining gate, i.e. every ==
+  -- == ingredient of the torn row EXCEPT a broadcast — and cannot tear. ==
+
+  do
+    aIns <- Ref.new ([] :: Array [ l :: Int ])
+    aProp <- Ref.new Nothing
+    bIns <- Ref.new ([] :: Array [ r :: Int ])
+    bProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
+    m <- unwrap (variantToRecord
+      (echoProbe (\v -> { a: match { l: identity } v }) aIns aProp)
+      (echoProbe (\v -> { b: match { r: identity } v }) bIns bProp))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    -- each feed is DISPATCHED: exactly one operand owns the case, so at most
+    -- one contribution arrives per feed and there is nothing to coalesce
+    m.toUser (.l 1)
+    Ref.read outs >>= assertEqual "+→× dispatch: one operand owns the case, so the first feed only fills a slot" []
+    m.toUser (.r 100)
+    Ref.read outs >>= assertEqual "+→× dispatch: the second case completes the row, released whole" [ { a: 1, b: 100 } ]
+    -- re-feeding one case emits the fresh field beside the RETAINED sibling —
+    -- correct, not torn: retention is the sibling's current value, and no
+    -- broadcast ever asked it to answer this feed
+    m.toUser (.l 2)
+    Ref.read outs >>= assertEqual "+→× dispatch: a re-fed case releases once, sibling retained (retention is not staleness)"
+      [ { a: 1, b: 100 }, { a: 2, b: 100 } ]
+    aFeeds <- Ref.read aIns
+    bFeeds <- Ref.read bIns
+    assertEqual "+→× dispatch: the `l` operand saw only its own cases" 2 (length aFeeds)
+    assertEqual "+→× dispatch: the `r` operand saw only its own — no broadcast" 1 (length bFeeds)
+
   -- == Enrichment: composition and the merges are monotone in `⊑`, which is ==
   -- == what makes the refinement order a 2-cell and not just a remark. ==
 

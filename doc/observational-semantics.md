@@ -112,6 +112,17 @@ combinator laws below fail without them.
    major version, not a patch; today the law is a protocol obligation whose
    whole proof burden is the finite set of occurrence primitives.
 
+   **Why the carrier cannot take this one on.** Laws 2 and 3 are the two
+   halves of a single obligation an *inclusive* record input carries — one
+   feed reaches both operands, so a broadcast merge owes the boundary at
+   most one thing back (§8.0). At a record output the carrier discharges it
+   itself, by gating and releasing once (`steppedFeed`); at a variant output
+   it cannot, because an event has no value between occurrences and so
+   nothing can be retained or gated. That is the whole reason this law sits
+   on components while its `×` sibling sits in the carrier — not a
+   difference in how much each is trusted, but in what a pass-through can
+   absorb.
+
 ## 4. Named deviations from ecosystem laws
 
 - **`Strong`**: `lmap fst = rmap fst <<< first` holds only as primed
@@ -246,6 +257,58 @@ other cases' payloads — is what the editor retains across a selection change.
 
 ## 8. Glitch-freedom is a style theorem
 
+### 8.0 One cause: an inclusive input side
+
+§3's no-synchronous-event-echo law and §4's one-feed-one-release are not two
+facts about two diagonals. They are **one obligation, read off at two output
+kinds**, and their shared cause sits on the *input* side of the merge.
+
+A shared record input (`SharedRecordInputs`) is **inclusive**: one feed
+reaches both operands, so both may answer it. A merge that broadcasts owes
+the boundary at most one thing back per feed:
+
+> **one feed in, at most one thing out — and if it is a record, a whole one.**
+
+What discharges that depends on what the output can carry:
+
+| output | what "one thing" needs | mechanism | where it lands |
+| --- | --- | --- | --- |
+| `×` | one emission, **whole** | gate + batch the broadcast, release once | the **carrier** (`steppedFeed`) |
+| `+` | one emission | nothing to gate — an event has no value between occurrences | the **operands** (no synchronous event echo) |
+
+The asymmetry in *where the law lands* is forced by the same fact. A record
+output can be retained, so the carrier can hold contributions and release a
+complete row itself. A variant output cannot be retained — a retained click
+is a click that already happened — so the merge is a bare pass-through with
+no way to absorb a second emission, and the obligation falls on the operands
+as a protocol law the type cannot enforce.
+
+**The prediction, and it holds.** Exactly the two merges with inclusive
+record input carry a feed law; the two with `OwnedVariantInputs` carry
+neither. That is a consequence, not a coincidence: `DisjointLabels` gives
+every case exactly one handler, so a variant-input feed is *dispatched* —
+exactly one operand answers — and there is no "one feed, several answers"
+situation to discipline. Nothing to tear, nothing to duplicate.
+
+|  | input | broadcast? | feed law |
+| --- | --- | --- | --- |
+| `×→×` | `SharedRecordInputs` | yes | one feed, one release (`steppedFeed`) |
+| `×→+` | `SharedRecordInputs` | yes | no synchronous event echo |
+| `+→×` | `OwnedVariantInputs` | no — dispatched | none |
+| `+→+` | `OwnedVariantInputs` | no — dispatched | none |
+
+The two axes are independent, and `+→×` is the case that separates them:
+**input** inclusivity says whether the obligation exists, **output** kind
+says what discharges it. `variantToRecord` dispatches its input (so it has
+no torn-row hazard — nothing coalesces, at most one operand answers a case)
+yet still gates and retains its output, because a record must be whole
+however its input arrived. Its `steppedFeed` is therefore not discharging a
+broadcast obligation; it is kept for re-entrant coalescing. `variantToVariant`
+has neither side's obligation, which is the structural reason it is the one
+merge needing no gate, no step, and no `MonadEffect`.
+
+### 8.1 Two sources of tearing
+
 Tearing has two sources, and they are settled by two different authorities.
 
 **Within a merge** the carrier now guarantees freedom: a broadcast that
@@ -301,7 +364,10 @@ and the `(->)` diagonal-merge instances' laws as pure equalities; then the
 observation-level section — boundary interchange on the nose with the exact
 common stream, one-feed-one-release (a two-field broadcast releasing once
 with no torn row, a user emission releasing at once, nested merges
-releasing once), `⊑`-monotonicity of `>>>` and `⊗`, the container
+releasing once, the disjoint-operand shape it is reachable from, and §8.0's
+prediction — `+→×` dispatch carrying every ingredient of the torn row except
+a broadcast, and provably not tearing: each operand sees only its own cases,
+a re-fed case releases once beside its retained sibling), `⊑`-monotonicity of `>>>` and `⊗`, the container
 action's laxity at the inner surface, `bracketed`'s retraction on the
 order-form pair, the Ocular admission law for a node-wrapping ocular and its
 failure for a capturing decorator, and `announce`'s naturality.

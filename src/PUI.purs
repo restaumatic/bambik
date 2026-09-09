@@ -529,9 +529,11 @@ recordToRecordPUI p1 p2 = wrap do
   p2' <- unwrap (widenRecordInput p2)
   gate <- liftEffect $ newRecordGate labels1 labels2
   pure
-    -- one feed is one step: the broadcast runs batched and the gate releases
-    -- once afterwards (`steppedFeed`), so a feed changing several fields
-    -- never emits a row that never existed
+    -- one feed is one step. The input side is INCLUSIVE (`SharedRecordInputs`),
+    -- so a feed is a broadcast — both operands may answer it — which is the
+    -- whole cause of the law: the broadcast runs batched and the gate
+    -- releases once afterwards (`steppedFeed`), so a feed changing several
+    -- fields never emits a row that never existed
     { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
           p1'.toUser new
           p2'.toUser new
@@ -547,6 +549,19 @@ instance Applicative m => RecordToVariant (PUI m) where
     { toUser: mempty
     , fromUser: mempty
     }
+  -- The `×→×` merge's sibling under one cause: the input side is inclusive
+  -- here too (`SharedRecordInputs`), so a feed is a broadcast reaching both
+  -- operands, and the merge owes the boundary at most ONE thing per feed.
+  -- What discharges that differs with the output kind. A record output can
+  -- be gated and retained, so `recordToRecord` batches and releases a whole
+  -- row (`steppedFeed`). A variant output cannot: an event has no value
+  -- between occurrences, so there is nothing to retain and nothing to gate,
+  -- and the broadcast is a bare pass-through. The obligation therefore
+  -- falls on the OPERANDS instead — no synchronous event echo — since a
+  -- pass-through has no way to absorb a second emission, and one that
+  -- arrived would be indistinguishable from a fresh occurrence.
+  -- doc/observational-semantics.md §3 states it as a component law (by
+  -- kind, not shape); the type cannot enforce it.
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
     p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
@@ -729,7 +744,15 @@ releaseRecordGate direction labels1 labels2 gate = do
     <> " keeps emitting, but its sibling operand producing " <> sibling
     <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
 
--- | **One feed is one step.** The broadcast runs with the gate batching:
+-- | **One feed is one step** — the obligation an *inclusive* input side
+-- | carries. A shared record input broadcasts one feed to both operands, so
+-- | both may answer it; the merge owes the boundary at most one thing back,
+-- | and a record must be whole. (The same inclusivity obliges `×→+` in the
+-- | other direction: no synchronous event echo, or its pass-through
+-- | broadcast would manufacture a second emission. One cause, two output
+-- | kinds — Data.Profunctor.Row, "What an inclusive input side obliges".)
+-- |
+-- | The broadcast runs with the gate batching:
 -- | every operand's answer lands in its slot without releasing, and the gate
 -- | releases **once** afterwards, if anything arrived. So a feed that
 -- | changes several fields never emits a row that never existed (the
@@ -810,10 +833,17 @@ variantToRecordPUI p1 p2 = wrap do
   p2' <- unwrap p2
   gate <- liftEffect $ newRecordGate labels1 labels2
   pure
-    -- the input side is what differs from `recordToRecord`: one case at a
-    -- time, dispatched to whichever operand owns it. The output side is the
-    -- same gate, held until both operands have contributed — and the same
-    -- step: one feed, one release.
+    -- the input side is what differs from `recordToRecord`, and it differs
+    -- in the way that matters: `OwnedVariantInputs` gives every case exactly
+    -- one handler (`DisjointLabels`), so a feed is DISPATCHED, not
+    -- broadcast — exactly one operand answers it. The torn row is a
+    -- broadcast hazard, so this merge does not have it (Data.Profunctor.Row,
+    -- "What an inclusive input side obliges"). The output side is
+    -- nonetheless the same gate, held until both operands have contributed,
+    -- because a record output must be whole however its input arrived. The
+    -- step is kept for that reason and for one it does carry: an operand
+    -- echoing re-entrantly during its own feed is coalesced rather than
+    -- released twice.
     { toUser: \v -> steppedFeed "+→×" labels1 labels2 gate do
         for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
         for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
@@ -823,6 +853,14 @@ variantToRecordPUI p1 p2 = wrap do
   labels1 = rowLabels (Proxy @o1l)
   labels2 = rowLabels (Proxy @o2l)
 
+-- The one merge carrying NEITHER feed obligation, and both absences follow
+-- from its sides. Input is exclusive (`OwnedVariantInputs`): every case has
+-- exactly one handler, so a feed is dispatched and exactly one operand
+-- answers — no broadcast, so no "one feed, several answers" to discipline.
+-- Output is a variant: nothing to gate, nothing to tear. Hence no gate, no
+-- step, no `MonadEffect` — this instance is stateless, and that is the
+-- structural reading of why (Data.Profunctor.Row, "What an inclusive input
+-- side obliges").
 instance Applicative m => VariantToVariant (PUI m) where
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
