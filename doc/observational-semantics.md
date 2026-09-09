@@ -257,11 +257,26 @@ sound only for *user edits*, where one operand changes at a time. A feed
 that changes two fields *did* tear under the per-operand release, and every
 stage between the merge and the loop end saw the phantom row (a `settled`
 invariant running against a state that never existed). The step closes it.
-Honest scope: no shipped demo ever built such a merge — every demo ensemble
-*sequences* its whole-row editors with `Category.do`, where each stage echoes
-once and nothing tears — so the hazard was latent in the algebra (any
-application may write `RecordToRecord.do` over editors) rather than live in
-a page, and the law is pinned at the value level, not by the demo suite.
+Honest scope, and it is narrower than it first looks. No shipped demo ever
+built such a merge — every demo ensemble *sequences* its whole-row editors
+with `Category.do`, where each stage echoes once and nothing tears. That is
+not merely idiom: **the merge type forbids the parallel-editor shape
+outright**. `OwnedRecordOutputs` demands the two operands own *disjoint*
+label sets, while `field @l` makes every editor a whole-row citizen
+`p { l | rest } { l | rest }` — input and output the same row `r`, the
+background retained and re-attached per emission. Two whole-row citizens
+therefore both claim the whole row, and no annotation satisfies the
+disjointness: `RecordToRecord.do` over two editors is a type error
+(`No type class instance … Prim.Row.Union`), not a lurking runtime hazard.
+
+So a torn row needs operands owning disjoint rows *and* a feed that changes
+several of those fields at once — the shape of the value-level probes here,
+reachable by a library-level or vocabulary-level assembly (a packaged
+control merging two disjoint sub-displays it also feeds), not by an
+application merging its editors. The law is pinned at the value level for
+that reason, and **not** by the demo suite: a demo exhibiting it would have
+to be written against the algebra rather than against the writing contract,
+which is precisely the thing guardrails L15 keeps the demos from becoming.
 
 **Across merges** — a *diamond*, one upstream field feeding two transforming
 stages whose outputs re-merge downstream — the algebra still permits torn

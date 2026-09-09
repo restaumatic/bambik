@@ -1756,3 +1756,32 @@ main = do
     r <- run (announce (show 42))
     assertEqual "announce naturality: rmap f (announce a) = announce (f a)" r l
     assertEqual "announce naturality: the point fires once" [ "42" ] l
+
+  -- == What one-feed-one-release is reachable FROM (doc §8). The torn row ==
+  -- == needs operands owning DISJOINT rows; whole-row editors cannot. ==
+
+  do
+    -- The positive half compiles right here: `disjointOperands` below is the
+    -- merge the law is about, and it typechecks. Its negative twin is a type
+    -- error and so cannot be written as a test — `OwnedRecordOutputs` wants
+    -- disjoint ownership, while `field @l` makes every editor a whole-row
+    -- citizen `p { l | rest } { l | rest }` claiming the entire row, so two
+    -- editors merged in parallel fail with `Prim.Row.Union` having no
+    -- instance, at any annotation. That is why this law is pinned by probes
+    -- and not by a demo: the shape is unreachable from application code.
+    outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
+    m <- unwrap disjointOperands
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { s: 5 }
+    Ref.read outs >>= assertEqual "disjoint operands are the merge's reachable shape, and release once" [ { a: 5, b: 105 } ]
+
+
+-- The reachable parallel-merge shape: two operands owning disjoint labels.
+-- A vocabulary-level assembly can build this (a packaged control merging two
+-- sub-displays it also feeds); an application merging two `field @l` editors
+-- cannot, since both would own the whole row. See doc/observational-semantics.md §8.
+disjointOperands :: PUI Effect { s :: Int } { a :: Int, b :: Int }
+disjointOperands = recordToRecord (rmap (\r -> { a: r.s }) idProbe) (rmap (\r -> { b: r.s + 100 }) idProbe)
+  where
+  idProbe :: PUI Effect { s :: Int } { s :: Int }
+  idProbe = identity
