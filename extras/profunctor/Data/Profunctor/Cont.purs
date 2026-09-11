@@ -32,8 +32,7 @@
 -- |   * `VariantToVariant` — one input case reaches exactly one operand, so
 -- |     no combining is needed
 -- |   * `RecordToVariant` — needs `Monoid r`: both operands are fed and both
--- |     may emit, so two answers must combine — the silent element
--- |     `\_ _ -> mempty` is the empty merge
+-- |     may emit, so two answers must combine, and the unit must be silent
 -- |
 -- | `Resolving`/`Coretaining` typecheck but are degenerate and stated here
 -- | only to record that: `resolve` can only ever take `Left` (without time
@@ -171,6 +170,7 @@ instance VariantToVariant (Cont r) where
     Right v2 -> unwrap (widenVariantOutput p2) k v2
 
 instance Monoid r => RecordToVariant (Cont r) where
+  silence = wrap \_ _ -> mempty
   recordToVariant p1 p2 = wrap \k i ->
     unwrap (widenVariantOutput (widenRecordInput p1)) k i
       <> unwrap (widenVariantOutput (widenRecordInput p2)) k i

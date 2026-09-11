@@ -35,7 +35,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormLogic (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -636,19 +636,15 @@ main = do
     fire p2Prop (.y "e")
     Ref.read outs >>= assertEqual "×→+ broadcast: either operand's case exits, ungated" [ .x 7, .y "e" ]
 
-  -- ×→+ empty-merge law: recordToVariant s g = g for any silent element s.
-  -- The shape has no unit — nothing maps the terminal {} into the initial
-  -- Variant (), so no wire reaches p {} (Variant ()) and the class carries
-  -- no member for it (`silence` deleted 2026-09-11); a silent element at
-  -- that type is forced by parametricity, and this is the carrier's.
+  -- ×→+ unit law: recordToVariant silence g = g (the unit is the silent
+  -- source — uninhabited variant output, so silence is forced).
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    let mute = PUI (pure { toUser: mempty, fromUser: mempty }) :: PUI Effect {} (Variant ())
-    m <- unwrap (recordToVariant mute (probe gProp :: PUI Effect {} [ x :: Int ]))
+    m <- unwrap (recordToVariant (silence :: PUI Effect {} (Variant ())) (probe gProp :: PUI Effect {} [ x :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp (.x 1)
-    Ref.read outs >>= assertEqual "empty-merge law ×→+: recordToVariant s g = g" [ .x 1 ]
+    Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant silence g = g" [ .x 1 ]
 
   -- +→+ merge (dispatch): each input case is routed to exactly its one
   -- handler; outputs may overlap and both exit.

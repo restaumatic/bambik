@@ -135,7 +135,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
 import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (armed, toCase, toCases) as Adopters
+import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (the gated displays, `updated`,
@@ -544,6 +544,11 @@ recordToRecordPUI p1 p2 = wrap do
   labels2 = rowLabels (Proxy @o2l)
 
 instance Applicative m => RecordToVariant (PUI m) where
+  -- the one unit no wire reaches (terminal → initial): silent at any rows
+  silence = wrap $ pure
+    { toUser: mempty
+    , fromUser: mempty
+    }
   -- The `×→×` merge's sibling under one cause: the input side is inclusive
   -- here too (`SharedRecordInputs`), so a feed is a broadcast reaching both
   -- operands, and the merge owes the boundary at most ONE thing per feed.

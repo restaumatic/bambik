@@ -23,31 +23,46 @@
 -- |     `Coshutter` optic's row form).
 -- |
 -- | Law connecting the two classes: the mixed directions have no `identity` to
--- | pin (nothing inhabits a mode-crossing diagonal), and this one has **no
--- | unit at all**: `{}` is terminal and `Variant ()` initial, so no wire —
--- | no `lcmap f identity` — reaches `p {} (Variant ())`, and the class
--- | carries no member for it either. (It did, as `silence`, until
--- | 2026-09-11: a nullary operator no vocabulary and no demo ever reached,
--- | whose only work was to be pinned in these laws — pruned under L14, L5
--- | amended.) What the laws use instead is the **empty-merge law** for any
--- | *silent element* `s :: p { | i } [ | o ]`, one that neither emits nor
--- | registers — forced on any `Variant ()` output by parametricity, and
--- | writable by a carrier at any rows (`PUI`'s is
--- | `{ toUser: mempty, fromUser: mempty }`, built as a probe in
--- | test/Main.purs): `recordToVariant s g = g`. The unary introduce
--- | operator is the **silent-pinned merge**,
+-- | pin (nothing inhabits a mode-crossing diagonal), but they have the class's
+-- | own **unit** `silence`, the silent source (a class member, and the one
+-- | unit no wire reaches: `{}` is terminal, `Variant ()` initial). The unary
+-- | introduce operator is the **unit-pinned merge**,
 -- |
 -- | ```
--- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) s
+-- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) silence
 -- | ```
 -- |
--- | and a silent operand contributes nothing — which is why `recordToCase`
+-- | and a pinned unit contributes nothing — which is why `recordToCase`
 -- | collapses to plain `rmap (inj l)` on any `Profunctor`.
+-- |
+-- | As nullary operator, `silence` is the empty merge:
+-- | `recordToVariant silence g = g`. Silence is forced on the output end (the
+-- | empty variant is uninhabited) and sufficient on the input end (the empty
+-- | record demands nothing), and parametricity extends both to arbitrary
+-- | rows — so the unit is stated at any rows, as `silence` itself.
+-- |
+-- | It is also the **absent branch of every conditional emitter**. A
+-- | `×→+` component that exists in one state and not in another
+-- | (`button @"Start" {} # provided @"halted" phaseOf`) is, per feed, the
+-- | copairing of the component with the zero over the classifier,
+-- |
+-- | ```
+-- | provided @l f w  ≈  lcmap f [ w , silence ]
+-- | ```
+-- |
+-- | the carrier primitive contributing only the detaching. So `silence` is
+-- | reached, unnamed, by every demo with a `provided` event source — which
+-- | is what keeps it under L14 — and its type is the honest one: silent at
+-- | *variant* output is a source with nothing to say, while silent at an
+-- | inhabited *record* output would be a starved gate, which is why the
+-- | record-side panes (`shownWhen`/`inCase`) release the fed row always
+-- | instead. (Deleted and restored 2026-09-11 on exactly this argument.)
 module Data.Profunctor.Row.RecordToVariant
   ( bind
   , class RecordToVariant
   , discard
   , folding
+  , silence
   , armed
   , recordToVariant
   , recordToCase
@@ -122,6 +137,17 @@ class Profunctor p <= RecordToVariant p where
     SharedRecordInputs i1 i2 i i12 i1x i2x =>
     SharedVariantOutputs o1 o2 o o12 o1x o2x =>
     p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ] -> p { | i } [ | o ]
+  -- | The **nullary** merge — the unit: reads nothing, emits no cases, at
+  -- | any rows. The one unit no wire reaches (`{}` is terminal, `Variant ()`
+  -- | initial — nothing maps terminal → initial), so it is the one unit that
+  -- | stays a class member; parametric in both rows because silence is
+  -- | forced on any variant output and sufficient on any record input, so
+  -- | one silent body serves every type. The pinned trivial operand of the
+  -- | mixed introduce laws, the terminal sink of event pipelines, and the
+  -- | absent branch of `provided` on an emitter (header). The
+  -- | lawful faceless leaf at *record* output is not silence but `blank`
+  -- | (the wire's `lcmap`-closure in `RecordToRecord`).
+  silence :: forall i o. p { | i } [ | o ]
 
 bind :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o.
   RecordToVariant p =>

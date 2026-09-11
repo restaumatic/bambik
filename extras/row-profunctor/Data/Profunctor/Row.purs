@@ -197,9 +197,8 @@
 -- |     `Category`'s `identity` at the unit object wherever a wire fits
 -- |     (`1_× = {}`, `1_+ = Variant ()`; the record gates treat a
 -- |     contribution of zero fields as no contribution, so the wire is the
--- |     unit exactly); the one shape no wire reaches, `×→+` (terminal →
--- |     initial), has no unit at all, only the empty-merge law for any
--- |     silent element. Pointing — emitting the canonical
+-- |     unit exactly), and `silence` for the one shape no wire reaches,
+-- |     `×→+` (terminal → initial). Pointing — emitting the canonical
 -- |     value of the inhabited `1_×` — is `Seeding`'s `announce`, not a
 -- |     unit's. Every starvation symptom is a sum-behaviour standing where
 -- |     a product-behaviour was required.
