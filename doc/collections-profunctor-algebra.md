@@ -88,8 +88,8 @@ nor emit and is silence by parametricity. `1_× = {}` is *terminal and
 inhabited*: it has a canonical global element, which is what **pointing**
 emits — `announce a`, `Seeding`'s primitive, a map out of `1_×` — but
 pointing is not a unit's job, and the units carry no information. The one
-merge whose unit no wire reaches is `×→+` (terminal → initial), and its
-unit is `silence`. Every starvation symptom in the library's history is a
+merge no wire reaches is `×→+` (terminal → initial), and it has no unit —
+only the empty-merge law for any silent element. Every starvation symptom in the library's history is a
 use of a `+`-behaviour where a `×`-behaviour was required.
 
 **Gates are the cost of laxity over time.** In a pure synchronous carrier the

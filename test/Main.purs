@@ -35,7 +35,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormLogic (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
@@ -192,7 +192,7 @@ main = do
     fire gProp { a: 2 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g identity = g" [ { a: 2 } ]
 
-  -- ×→× silence law: an operand owning zero fields is **pre-satisfied** — its
+  -- ×→× zero-field law: an operand owning zero fields is **pre-satisfied** — its
   -- only possible contribution is the informationless {}, so the gate must
   -- not wait for it. Sharper than the unit law: this operand never emits at
   -- all (a detached pane, an empty collection), where the wire echoes.
@@ -205,7 +205,7 @@ main = do
     m <- unwrap (recordToRecord (probe silentProp :: PUI Effect {} {}) (probe gProp :: PUI Effect {} { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
-    Ref.read outs >>= assertEqual "silence law ×→×: a zero-field operand never starves the gate" [ { a: 3 } ]
+    Ref.read outs >>= assertEqual "zero-field law ×→×: a zero-field operand never starves the gate" [ { a: 3 } ]
 
   -- a gated display inside feedback: the display renders the seed at
   -- registration — pins the merge-with-wire operand order (display first,
@@ -636,15 +636,19 @@ main = do
     fire p2Prop (.y "e")
     Ref.read outs >>= assertEqual "×→+ broadcast: either operand's case exits, ungated" [ .x 7, .y "e" ]
 
-  -- ×→+ unit law: recordToVariant silence g = g (the unit is the silent
-  -- source — uninhabited variant output, so silence is forced).
+  -- ×→+ empty-merge law: recordToVariant s g = g for any silent element s.
+  -- The shape has no unit — nothing maps the terminal {} into the initial
+  -- Variant (), so no wire reaches p {} (Variant ()) and the class carries
+  -- no member for it (`silence` deleted 2026-09-11); a silent element at
+  -- that type is forced by parametricity, and this is the carrier's.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    m <- unwrap (recordToVariant (silence :: PUI Effect {} (Variant ())) (probe gProp :: PUI Effect {} [ x :: Int ]))
+    let mute = PUI (pure { toUser: mempty, fromUser: mempty }) :: PUI Effect {} (Variant ())
+    m <- unwrap (recordToVariant mute (probe gProp :: PUI Effect {} [ x :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp (.x 1)
-    Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant silence g = g" [ .x 1 ]
+    Ref.read outs >>= assertEqual "empty-merge law ×→+: recordToVariant s g = g" [ .x 1 ]
 
   -- +→+ merge (dispatch): each input case is routed to exactly its one
   -- handler; outputs may overlap and both exit.

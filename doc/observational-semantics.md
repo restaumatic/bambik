@@ -352,7 +352,7 @@ runtime surprise.
 
 ## 9. Where the tests live
 
-test/Main.purs, in order: the merge unit/silence/exactness/gating laws; the
+test/Main.purs, in order: the merge unit/zero-field/exactness/gating laws; the
 trace quartet and its row forms; the Category laws; the container-action
 laws; then the audit section — seeded retractions and the three raw
 deadlocks, the `Looping` triple (yanking, conjugation with the `dimap f f`

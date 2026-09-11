@@ -152,12 +152,17 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the unit object — `identity @{}` for `×→×`, `identity @(Variant ())` for
   `+→+`, `lcmap case_ identity` for `+→×` — MUST play well with the merge,
   exactly, not up to an echo, because a record gate MUST treat
-  a contribution of zero fields as no contribution (L6). The one unit no
-  wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
-  maps terminal→initial), and it is the one class-member unit, `silence`
-  (parametricity, not policy). Pointing — one emission at registration — is `Seeding`'s
-  `announce`, never a unit's: units carry no information and add none.
-  No future combinator may invert this. Every starvation bug in the
+  a contribution of zero fields as no contribution (L6). The one shape no
+  wire reaches is `×→+` (`{}` is terminal, `Variant ()` initial — nothing
+  maps terminal→initial), and it has **no unit at all**: no class MUST
+  carry a unit member, and its merge law is the empty-merge law for any
+  *silent element* — one that neither emits nor registers, forced on any
+  `Variant ()` output by parametricity, written by a carrier where a law
+  needs one and never exported (`silence`, the former class-member unit,
+  was deleted 2026-09-11 as unreached by any vocabulary or demo; the
+  stated law survives on an inline probe). Pointing — one emission at
+  registration — is `Seeding`'s `announce`, never a unit's: units carry
+  no information and add none. No future combinator may invert this. Every starvation bug in the
   library's history was a `+`-behaviour where a `×`-behaviour was
   required; the units and the point are the fixed points that make that a
   diagnosable error.
@@ -169,7 +174,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   decided: an operand owning **zero fields is pre-satisfied** — its only
   possible contribution is the informationless `{}`, which is always
   known, so waiting for it is waiting for nothing and no invented data
-  can flow (the silence law in test/Main.purs) — and **inert**: a
+  can flow (the zero-field law in test/Main.purs) — and **inert**: a
   zero-field side's emissions neither open nor re-fire the gate, so a
   wire, a silent display and an announcing one are one operand and
   `identity @{}` is the unit exactly. This is what makes a

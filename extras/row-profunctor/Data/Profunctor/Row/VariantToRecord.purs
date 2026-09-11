@@ -24,14 +24,15 @@
 -- |
 -- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
 -- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
--- | any case and contributing no field (`PUI`'s parametric `silence` at that
--- | type; at `b = ()` it is the merge unit, `lcmap case_ identity`). A unary
+-- | any case and contributing no field (any element that neither emits nor
+-- | registers; at `b = ()` it is the merge unit, `lcmap case_ identity`). A unary
 -- | introduce operator — one case reducing into the record — is the
 -- | **sink-pinned merge**, derivable and therefore not exported (L14):
 -- |
 -- | ```
--- | reduce @l g = variantToRecord (lcmap unwrap g) silence
+-- | reduce @l g = variantToRecord (lcmap unwrap g) sink
 -- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
+-- |         sink :: p [ | b ] {}        -- any silent sink
 -- | ```
 -- |
 -- | with the cross-operand **retention** the merge machinery performs on
@@ -44,8 +45,7 @@
 -- | `variantToRecord (lcmap case_ identity) g = g = variantToRecord g
 -- | (lcmap case_ identity)`. Never fed,
 -- | owning no field, its side of the gate is pre-satisfied — which is why
--- | any silent element of that type serves equally, and `silence` at
--- | `b = ()` is one.
+-- | any silent element of that type serves equally.
 module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord

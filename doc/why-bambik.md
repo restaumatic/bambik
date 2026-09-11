@@ -178,9 +178,10 @@ cannot tell, and `identity` is the unit exactly. What *does* speak at
 registration is the point — `announce a`, `Seeding`'s primitive, one
 emission of `a` out of the terminal record, which `with`/`mvu` use to
 supply an app its initial state, and from which the seeded echo wire
-`seeded a` is derived. The one merge whose unit no wire reaches is the
-event merge `×→+`: nothing maps the terminal `{}` into the initial
-`Variant ()`, so its unit is `silence` — truly mute, by parametricity.
+`seeded a` is derived. The one merge no wire reaches is the event merge
+`×→+`: nothing maps the terminal `{}` into the initial `Variant ()`, so it
+has no unit — only the empty-merge law for any silent element, which
+parametricity forces to be truly mute.
 
 ## Unary operators: strengths, or the small UI component in the big world
 
