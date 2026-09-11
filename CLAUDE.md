@@ -143,7 +143,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
 
   | Word | What it is |
   | --- | --- |
-  | `silence` | the silent UI component, `×→+` shaped `{ \| i } → [ \| o ]`; silence forced by parametricity — the event merge's unit and the absent branch of every `provided` emitter (`provided @l f w ≈ lcmap f [ w, silence ]`), which is what reaches it; a class member because the type (variant output only) is the honesty boundary |
+  | `silence` | the silent UI component, `×→+` shaped `{ \| i } → [ \| o ]`; silence forced by parametricity — the event merge's unit, and what an emitter removed by `provided` observationally *is* (not an operand `provided` is built from: copairing with silence leaves the source's emission channel connected, so absence is `Hosting`'s); a class member because the type (variant output only) is the honesty boundary |
   | `blank` | the faceless *record*-output leaf `{ \| i } → {}`, the wire's `lcmap`-closure; for elements whose whole face is decorators, and `action`'s slot when there is no indicator |
   | `static` | an element with nothing in it — an ocular applied to the wire, pinned `{} → {}` (`static (span >>> cl "ripple")`); with `staticText`/`staticHTML` the three statics |
   | `announce` | the **point**, `Seeding`'s one primitive: one registration emission of `a` out of the terminal record, feeds ignored — what `with`/`mvu` close over |

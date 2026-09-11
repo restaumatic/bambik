@@ -41,22 +41,23 @@
 -- | record demands nothing), and parametricity extends both to arbitrary
 -- | rows — so the unit is stated at any rows, as `silence` itself.
 -- |
--- | It is also the **absent branch of every conditional emitter**. A
--- | `×→+` component that exists in one state and not in another
--- | (`button @"Start" {} # provided @"halted" phaseOf`) is, per feed, the
--- | copairing of the component with the zero over the classifier,
--- |
--- | ```
--- | provided @l f w  ≈  lcmap f [ w , silence ]
--- | ```
--- |
--- | the carrier primitive contributing only the detaching. So `silence` is
--- | reached, unnamed, by every demo with a `provided` event source — which
--- | is what keeps it under L14 — and its type is the honest one: silent at
+-- | It is also what an **absent event source is**. A `×→+` component that
+-- | exists in one state and not in another
+-- | (`button @"Start" {} # provided @"halted" phaseOf`) is, in the state
+-- | where it is absent, observationally `silence`: fed nothing, emitting
+-- | nothing. That is why the type is variant-output only — silent at
 -- | *variant* output is a source with nothing to say, while silent at an
 -- | inhabited *record* output would be a starved gate, which is why the
 -- | record-side panes (`shownWhen`/`inCase`) release the fed row always
--- | instead. (Deleted and restored 2026-09-11 on exactly this argument.)
+-- | instead. But absence is **not a copairing**: routing the input away
+-- | from `w` leaves `w`'s own emission channel connected, so
+-- | `lcmap f' (left w >>> right silence)` still emits when the source
+-- | fires in the "absent" case (checked on the probe carrier, 2026-09-11:
+-- | a Start button clicked while `timing` still emitted). Only removing
+-- | the component silences it, and removal is `Hosting`'s — the DOM's —
+-- | not the algebra's. So `provided` stays a carrier primitive, and
+-- | `silence` is the *value* of what it removes, not an operand it is
+-- | built from. (Deleted and restored 2026-09-11 on this argument.)
 module Data.Profunctor.Row.RecordToVariant
   ( bind
   , class RecordToVariant
@@ -143,8 +144,8 @@ class Profunctor p <= RecordToVariant p where
   -- | stays a class member; parametric in both rows because silence is
   -- | forced on any variant output and sufficient on any record input, so
   -- | one silent body serves every type. The pinned trivial operand of the
-  -- | mixed introduce laws, the terminal sink of event pipelines, and the
-  -- | absent branch of `provided` on an emitter (header). The
+  -- | mixed introduce laws, the terminal sink of event pipelines, and what
+  -- | an emitter removed by `provided` observationally is (header). The
   -- | lawful faceless leaf at *record* output is not silence but `blank`
   -- | (the wire's `lcmap`-closure in `RecordToRecord`).
   silence :: forall i o. p { | i } [ | o ]

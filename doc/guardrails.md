@@ -156,12 +156,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
   maps terminal→initial), and it is the one class-member unit, `silence`
   (parametricity, not policy) — a class member, not a carrier function,
-  because it is the absent branch of every conditional emitter
-  (`provided @l f w ≈ lcmap f [ w, silence ]`), so every `provided` event
-  source reaches it and its variant-only output type is the honesty
-  boundary: silent at an inhabited record output is a starved gate, which
-  the record-side panes avoid by releasing the row. Deleted and restored
-  2026-09-11 on that argument. Pointing — one emission at registration — is `Seeding`'s
+  and what an event source removed by `provided` observationally *is*;
+  its variant-only output type is the honesty boundary: silent at an
+  inhabited record output is a starved gate, which the record-side panes
+  avoid by releasing the row. It is NOT an operand `provided` is built
+  from: copairing with silence routes the input but leaves the source's
+  emission channel connected (verified on the probe carrier), so absence
+  is `Hosting`'s and `provided` stays a carrier primitive. Deleted and
+  restored 2026-09-11 on that argument. Pointing — one emission at registration — is `Seeding`'s
   `announce`, never a unit's: units carry no information and add none.
   No future combinator may invert this. Every starvation bug in the
   library's history was a `+`-behaviour where a `×`-behaviour was
